@@ -1,0 +1,183 @@
+
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { MapPin, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useCodigoPostal, useColoniasPorCP } from '@/hooks/useCatalogos';
+import { CatalogoSelector } from './CatalogoSelector';
+
+interface CodigoPostalInputProps {
+  label?: string;
+  value?: string;
+  onValueChange: (codigoPostal: string) => void;
+  onInfoChange?: (info: {
+    estado?: string;
+    municipio?: string;
+    localidad?: string;
+    colonia?: string;
+  }) => void;
+  required?: boolean;
+  className?: string;
+  showInfo?: boolean;
+  coloniaValue?: string;
+  onColoniaChange?: (colonia: string) => void;
+}
+
+export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
+  label = "Código Postal",
+  value = '',
+  onValueChange,
+  onInfoChange,
+  required = false,
+  className,
+  showInfo = true,
+  coloniaValue,
+  onColoniaChange
+}) => {
+  const [inputValue, setInputValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(inputValue);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  // Queries para código postal y colonias
+  const { data: cpInfo, isLoading: loadingCP, error: errorCP } = useCodigoPostal(
+    debouncedValue,
+    debouncedValue.length === 5
+  );
+
+  const { data: colonias = [], isLoading: loadingColonias } = useColoniasPorCP(
+    debouncedValue,
+    debouncedValue.length === 5 && !!cpInfo
+  );
+
+  // Actualizar información cuando cambie cpInfo
+  useEffect(() => {
+    if (cpInfo && onInfoChange) {
+      onInfoChange({
+        estado: cpInfo.estado_descripcion,
+        municipio: cpInfo.municipio_clave,
+        localidad: cpInfo.localidad_clave || undefined
+      });
+    }
+  }, [cpInfo, onInfoChange]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
+    setInputValue(newValue);
+    onValueChange(newValue);
+  };
+
+  const handleColoniaSelect = (clave: string) => {
+    onColoniaChange?.(clave);
+    if (onInfoChange) {
+      const colonia = colonias.find(c => c.clave_colonia === clave);
+      onInfoChange({
+        estado: cpInfo?.estado_descripcion,
+        municipio: cpInfo?.municipio_clave,
+        localidad: cpInfo?.localidad_clave || undefined,
+        colonia: colonia?.descripcion
+      });
+    }
+  };
+
+  const isValid = debouncedValue.length === 5 && cpInfo && !errorCP;
+  const isInvalid = debouncedValue.length === 5 && (!cpInfo || errorCP);
+
+  return (
+    <div className={cn("space-y-3", className)}>
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+        
+        <div className="relative">
+          <Input
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder="12345"
+            maxLength={5}
+            className={cn(
+              "pr-10",
+              isValid && "border-green-500",
+              isInvalid && "border-red-500"
+            )}
+          />
+          
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            {loadingCP ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+            ) : isValid ? (
+              <MapPin className="h-4 w-4 text-green-500" />
+            ) : isInvalid ? (
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            ) : null}
+          </div>
+        </div>
+
+        {isInvalid && (
+          <p className="text-sm text-red-500">
+            Código postal no válido o no encontrado
+          </p>
+        )}
+      </div>
+
+      {/* Información del código postal */}
+      {showInfo && isValid && cpInfo && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <MapPin className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-800">
+                Información del CP
+              </span>
+            </div>
+            
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center space-x-2">
+                <span className="text-muted-foreground">Estado:</span>
+                <Badge variant="secondary">{cpInfo.estado_descripcion}</Badge>
+              </div>
+              
+              {cpInfo.estimulo_frontera && (
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    Estímulo Frontera
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Selector de colonia */}
+      {isValid && colonias.length > 0 && onColoniaChange && (
+        <CatalogoSelector
+          label="Colonia"
+          placeholder="Seleccionar colonia..."
+          value={coloniaValue}
+          onValueChange={handleColoniaSelect}
+          items={colonias.map(c => ({
+            id: c.clave_colonia,
+            clave: c.clave_colonia,
+            descripcion: c.descripcion
+          }))}
+          isLoading={loadingColonias}
+          showClave={false}
+        />
+      )}
+    </div>
+  );
+};
