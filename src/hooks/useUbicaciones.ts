@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,7 +61,7 @@ export const useUbicaciones = (cartaPorteId?: string) => {
         nombreUbicacion: item.nombre_ubicacion,
         rfcAsociado: item.rfc_asociado,
         domicilio: item.domicilio,
-        coordenadas: item.coordenadas,
+        coordenadas: item.coordenadas || undefined, // Handle missing coordenadas property
         usoCount: item.uso_count
       })) as UbicacionFrecuente[];
     },
