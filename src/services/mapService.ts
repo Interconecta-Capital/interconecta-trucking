@@ -1,8 +1,9 @@
 
 import mapboxgl from 'mapbox-gl';
 
-// Note: In production, this should come from Supabase secrets
-const MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'your-mapbox-token-here';
+// Note: In production, this should come from Supabase secrets or environment variables
+// For now, we'll use a placeholder that needs to be configured
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'your-mapbox-token-here';
 
 export interface Coordinates {
   lat: number;
@@ -38,8 +39,18 @@ class MapService {
     }
   }
 
+  // Check if Mapbox token is configured
+  isConfigured(): boolean {
+    return this.accessToken !== 'your-mapbox-token-here' && this.accessToken.length > 0;
+  }
+
   // Geocodificar una dirección a coordenadas
   async geocodeAddress(address: string): Promise<GeocodeResult | null> {
+    if (!this.isConfigured()) {
+      console.warn('Mapbox token not configured. Please set VITE_MAPBOX_TOKEN environment variable.');
+      return null;
+    }
+
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${this.accessToken}&country=mx&types=address,poi&limit=1`
@@ -68,7 +79,9 @@ class MapService {
 
   // Buscar direcciones con autocompletado
   async searchAddresses(query: string): Promise<GeocodeResult[]> {
-    if (query.length < 3) return [];
+    if (!this.isConfigured() || query.length < 3) {
+      return [];
+    }
 
     try {
       const response = await fetch(
@@ -93,7 +106,9 @@ class MapService {
 
   // Calcular ruta entre múltiples puntos
   async calculateRoute(points: Coordinates[]): Promise<RouteResult | null> {
-    if (points.length < 2) return null;
+    if (!this.isConfigured() || points.length < 2) {
+      return null;
+    }
 
     try {
       const waypoints = points.map(p => `${p.lng},${p.lat}`).join(';');
@@ -128,6 +143,10 @@ class MapService {
 
   // Calcular matriz de distancias entre múltiples puntos
   async calculateDistanceMatrix(origins: Coordinates[], destinations: Coordinates[]): Promise<number[][]> {
+    if (!this.isConfigured()) {
+      return [];
+    }
+
     try {
       const originCoords = origins.map(p => `${p.lng},${p.lat}`).join(';');
       const destCoords = destinations.map(p => `${p.lng},${p.lat}`).join(';');
@@ -154,7 +173,9 @@ class MapService {
 
   // Optimizar orden de ubicaciones para ruta más eficiente
   async optimizeRoute(points: Coordinates[]): Promise<{ optimizedPoints: Coordinates[], totalDistance: number } | null> {
-    if (points.length < 3) return null;
+    if (!this.isConfigured() || points.length < 3) {
+      return null;
+    }
 
     try {
       const waypoints = points.map(p => `${p.lng},${p.lat}`).join(';');

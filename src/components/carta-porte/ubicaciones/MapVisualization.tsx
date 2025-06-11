@@ -4,12 +4,13 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Route, Maximize2, Minimize2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MapPin, Route, Maximize2, Minimize2, AlertCircle } from 'lucide-react';
 import { Ubicacion } from '@/hooks/useUbicaciones';
 import { Coordinates } from '@/services/mapService';
 
-// Note: In production, get this from environment or Supabase secrets
-const MAPBOX_ACCESS_TOKEN = 'your-mapbox-token-here';
+// Get token from environment variables
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 interface MapVisualizationProps {
   ubicaciones: Ubicacion[];
@@ -33,8 +34,11 @@ export function MapVisualization({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
 
+  // Check if Mapbox token is configured
+  const isConfigured = MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== 'your-mapbox-token-here';
+
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !isConfigured) return;
 
     // Initialize Mapbox
     mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
@@ -59,7 +63,7 @@ export function MapVisualization({
         map.current = null;
       }
     };
-  }, []);
+  }, [isConfigured]);
 
   // Actualizar marcadores cuando cambien las ubicaciones
   useEffect(() => {
@@ -71,9 +75,11 @@ export function MapVisualization({
 
     // Agregar nuevos marcadores
     ubicaciones.forEach((ubicacion, index) => {
-      // Aquí necesitaríamos las coordenadas, por simplicidad asumimos que las tenemos
-      // En implementación real, geocodificaríamos primero
-      const coords: Coordinates = { lat: 19.4326 + index * 0.1, lng: -99.1332 + index * 0.1 };
+      // Usar coordenadas si están disponibles, sino usar coordenadas por defecto
+      const coords: Coordinates = ubicacion.coordenadas || { 
+        lat: 19.4326 + index * 0.1, 
+        lng: -99.1332 + index * 0.1 
+      };
 
       // Crear elemento personalizado para el marcador
       const el = document.createElement('div');
@@ -108,8 +114,11 @@ export function MapVisualization({
     // Ajustar vista para mostrar todos los marcadores
     if (ubicaciones.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      ubicaciones.forEach((_, index) => {
-        const coords: Coordinates = { lat: 19.4326 + index * 0.1, lng: -99.1332 + index * 0.1 };
+      ubicaciones.forEach((ubicacion, index) => {
+        const coords: Coordinates = ubicacion.coordenadas || { 
+          lat: 19.4326 + index * 0.1, 
+          lng: -99.1332 + index * 0.1 
+        };
         bounds.extend([coords.lng, coords.lat]);
       });
       map.current.fitBounds(bounds, { padding: 50 });
@@ -155,6 +164,32 @@ export function MapVisualization({
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
+
+  // Show configuration message if token is not set
+  if (!isConfigured) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-6">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p className="font-medium">Configuración de Mapbox requerida</p>
+                <p className="text-sm">
+                  Para utilizar las funcionalidades de mapas, necesitas configurar tu token de Mapbox.
+                </p>
+                <ol className="text-sm list-decimal list-inside space-y-1">
+                  <li>Ve a <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">mapbox.com</a> y crea una cuenta</li>
+                  <li>Obtén tu token público en el dashboard</li>
+                  <li>Agrega el token como variable de entorno <code className="bg-gray-100 px-1 rounded">VITE_MAPBOX_TOKEN</code></li>
+                </ol>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (ubicaciones.length === 0) {
     return (
