@@ -1,245 +1,127 @@
 
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Plus,
-  Search,
-  Filter,
-  Eye,
-  Edit,
-  Download,
-  MapPin,
-  Calendar,
-  User
-} from "lucide-react";
+import { useState } from 'react';
+import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarInset } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CartaPorteForm } from '@/components/carta-porte/CartaPorteForm';
+import { Plus, FileText, Search, Filter } from 'lucide-react';
 
-const CartasPorte = () => {
-  const cartasPorte = [
-    {
-      id: "CP-2024-001",
-      folio: "A123456789",
-      fecha: "2024-01-15",
-      origen: "Ciudad de México, CDMX",
-      destino: "Guadalajara, JAL",
-      conductor: "Juan Pérez Martínez",
-      vehiculo: "ABC-123-45",
-      cliente: "Distribuidora Central S.A.",
-      mercancia: "Electrodomésticos",
-      peso: "15.5 ton",
-      valor: "$125,000.00",
-      status: "En tránsito",
-      statusColor: "bg-yellow-100 text-yellow-800"
-    },
-    {
-      id: "CP-2024-002",
-      folio: "A123456790",
-      fecha: "2024-01-14",
-      origen: "Monterrey, N.L.",
-      destino: "Tijuana, B.C.",
-      conductor: "María García López",
-      vehiculo: "DEF-678-90",
-      cliente: "Comercial del Norte S.A.",
-      mercancia: "Productos farmacéuticos",
-      peso: "8.2 ton",
-      valor: "$280,000.00",
-      status: "Entregado",
-      statusColor: "bg-green-100 text-green-800"
-    },
-    {
-      id: "CP-2024-003",
-      folio: "A123456791",
-      fecha: "2024-01-13",
-      origen: "Puebla, PUE",
-      destino: "Cancún, Q.R.",
-      conductor: "Carlos López Hernández",
-      vehiculo: "GHI-234-56",
-      cliente: "Turística del Caribe S.A.",
-      mercancia: "Alimentos y bebidas",
-      peso: "12.8 ton",
-      valor: "$95,000.00",
-      status: "Pendiente",
-      statusColor: "bg-gray-100 text-gray-800"
-    },
-    {
-      id: "CP-2024-004",
-      folio: "A123456792",
-      fecha: "2024-01-12",
-      origen: "León, GTO",
-      destino: "Mérida, YUC",
-      conductor: "Ana Rodríguez Flores",
-      vehiculo: "JKL-789-01",
-      cliente: "Industrial Bajío S.A.",
-      mercancia: "Calzado y textiles",
-      peso: "6.5 ton",
-      valor: "$65,000.00",
-      status: "Cancelado",
-      statusColor: "bg-red-100 text-red-800"
-    }
-  ];
+export default function CartasPorte() {
+  const [showForm, setShowForm] = useState(false);
+
+  if (showForm) {
+    return (
+      <div className="flex min-h-screen">
+        <AppSidebar />
+        <SidebarInset className="flex-1">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold">Nueva Carta Porte</h1>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowForm(false)}
+              >
+                Volver a Lista
+              </Button>
+            </div>
+            <CartaPorteForm />
+          </div>
+        </SidebarInset>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex w-full bg-gray-50">
+    <div className="flex min-h-screen">
       <AppSidebar />
-      <main className="flex-1">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 p-4">
+      <SidebarInset className="flex-1">
+        <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Cartas Porte</h1>
-                <p className="text-gray-600">Gestiona todas las cartas porte digitales</p>
-              </div>
-            </div>
-            <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Carta Porte
+            <h1 className="text-3xl font-bold">Cartas Porte</h1>
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Nueva Carta Porte</span>
             </Button>
           </div>
-        </header>
 
-        <div className="p-6">
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      placeholder="Buscar por folio, conductor, cliente..." 
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por folio, RFC o UUID..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <Button variant="outline" className="flex items-center space-x-2">
+              <Filter className="h-4 w-4" />
+              <span>Filtros</span>
+            </Button>
+          </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">127</div>
-                  <div className="text-sm text-gray-600">Total Cartas</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer border-dashed border-2 border-gray-300">
+              <CardContent className="p-6 text-center">
+                <Plus className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="font-semibold mb-2">Crear Nueva Carta Porte</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Formulario inteligente con autocompletado y validación SAT
+                </p>
+                <Button 
+                  onClick={() => setShowForm(true)}
+                  className="w-full"
+                >
+                  Comenzar
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">CP-2024-001</CardTitle>
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Timbrado
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm">
+                  <p><span className="font-medium">Emisor:</span> TRANSPORTES ABC SA</p>
+                  <p><span className="font-medium">Receptor:</span> CLIENTE XYZ SA</p>
+                  <p><span className="font-medium">Origen:</span> CDMX</p>
+                  <p><span className="font-medium">Destino:</span> Guadalajara</p>
+                  <p><span className="font-medium">Fecha:</span> 15/01/2024</p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">23</div>
-                  <div className="text-sm text-gray-600">En Tránsito</div>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">CP-2024-002</CardTitle>
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                    Borrador
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">89</div>
-                  <div className="text-sm text-gray-600">Entregadas</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">15</div>
-                  <div className="text-sm text-gray-600">Pendientes</div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm">
+                  <p><span className="font-medium">Emisor:</span> TRANSPORTES ABC SA</p>
+                  <p><span className="font-medium">Receptor:</span> EMPRESA DEF SA</p>
+                  <p><span className="font-medium">Origen:</span> Monterrey</p>
+                  <p><span className="font-medium">Destino:</span> Tijuana</p>
+                  <p><span className="font-medium">Fecha:</span> 16/01/2024</p>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Cartas Porte List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Lista de Cartas Porte</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {cartasPorte.map((carta) => (
-                  <div key={carta.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      {/* Main Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg text-gray-900">{carta.folio}</h3>
-                          <Badge className={carta.statusColor}>
-                            {carta.status}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                            {carta.fecha}
-                          </div>
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                            {carta.origen} → {carta.destino}
-                          </div>
-                          <div className="flex items-center">
-                            <User className="h-4 w-4 mr-2 text-gray-400" />
-                            {carta.conductor}
-                          </div>
-                        </div>
-
-                        <div className="mt-2 grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500">Cliente:</span>
-                            <div className="font-medium">{carta.cliente}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Mercancía:</span>
-                            <div className="font-medium">{carta.mercancia}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Peso:</span>
-                            <div className="font-medium">{carta.peso}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Valor:</span>
-                            <div className="font-medium text-green-600">{carta.valor}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </main>
+      </SidebarInset>
     </div>
   );
-};
-
-export default CartasPorte;
+}
