@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   Upload, 
-  FileTemplate, 
+  FileText, 
   Edit, 
   Search,
   Building2,
@@ -62,7 +62,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <FileTemplate className="h-5 w-5" />
+            <FileText className="h-5 w-5" />
             <span>Flujo de Inicio Inteligente</span>
           </CardTitle>
         </CardHeader>
@@ -75,7 +75,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
               onClick={() => onChange({ tipoCreacion: 'plantilla' })}
             >
               <CardContent className="p-4 text-center">
-                <FileTemplate className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                 <h3 className="font-semibold">Desde Plantilla</h3>
                 <p className="text-sm text-muted-foreground">
                   Usar viaje previo o plantilla predefinida
