@@ -51,12 +51,12 @@ export function usePlantillas() {
       // Cast the data to match our interface
       setPlantillas((userPlantillas || []).map(p => ({
         ...p,
-        template_data: p.template_data as CartaPorteData
+        template_data: p.template_data as unknown as CartaPorteData
       })));
       
       setPlantillasPublicas((publicPlantillas || []).map(p => ({
         ...p,
-        template_data: p.template_data as CartaPorteData
+        template_data: p.template_data as unknown as CartaPorteData
       })));
     } catch (error) {
       console.error('Error loading plantillas:', error);
@@ -108,7 +108,7 @@ export function usePlantillas() {
       .eq('id', plantillaId);
 
     await loadPlantillas();
-    return data.template_data as CartaPorteData;
+    return data.template_data as unknown as CartaPorteData;
   };
 
   const eliminarPlantilla = async (plantillaId: string) => {
@@ -150,7 +150,7 @@ export function usePlantillas() {
     // Cast the data to match our interface
     return (data || []).map(p => ({
       ...p,
-      template_data: p.template_data as CartaPorteData
+      template_data: p.template_data as unknown as CartaPorteData
     }));
   };
 
