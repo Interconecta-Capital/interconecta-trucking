@@ -1,8 +1,8 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { mapService, Coordinates } from '@/services/mapService';
 
 export interface Ubicacion {
   id?: string;
@@ -13,6 +13,7 @@ export interface Ubicacion {
   fechaHoraSalidaLlegada?: string;
   distanciaRecorrida?: number;
   ordenSecuencia?: number;
+  coordenadas?: Coordinates; // Nueva propiedad para coordenadas
   domicilio: {
     pais: string;
     codigoPostal: string;
@@ -32,11 +33,13 @@ export interface UbicacionFrecuente {
   nombreUbicacion: string;
   rfcAsociado: string;
   domicilio: Ubicacion['domicilio'];
+  coordenadas?: Coordinates; // Nueva propiedad
   usoCount: number;
 }
 
 export const useUbicaciones = (cartaPorteId?: string) => {
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
+  const [rutaCalculada, setRutaCalculada] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -57,6 +60,7 @@ export const useUbicaciones = (cartaPorteId?: string) => {
         nombreUbicacion: item.nombre_ubicacion,
         rfcAsociado: item.rfc_asociado,
         domicilio: item.domicilio,
+        coordenadas: item.coordenadas,
         usoCount: item.uso_count
       })) as UbicacionFrecuente[];
     },
@@ -71,6 +75,7 @@ export const useUbicaciones = (cartaPorteId?: string) => {
           nombre_ubicacion: ubicacion.nombreUbicacion,
           rfc_asociado: ubicacion.rfcAsociado,
           domicilio: ubicacion.domicilio,
+          coordenadas: ubicacion.coordenadas,
           uso_count: 1
         }, {
           onConflict: 'rfc_asociado,domicilio'
@@ -123,6 +128,110 @@ export const useUbicaciones = (cartaPorteId?: string) => {
     });
   }, []);
 
+  // Nueva función: Geocodificar ubicación automáticamente
+  const geocodificarUbicacion = useCallback(async (ubicacion: Ubicacion): Promise<Ubicacion> => {
+    const address = `${ubicacion.domicilio.calle} ${ubicacion.domicilio.numExterior}, ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}, ${ubicacion.domicilio.estado}, ${ubicacion.domicilio.codigoPostal}`;
+    
+    try {
+      const resultado = await mapService.geocodeAddress(address);
+      
+      if (resultado) {
+        return {
+          ...ubicacion,
+          coordenadas: resultado.coordinates
+        };
+      }
+    } catch (error) {
+      console.error('Error geocodificando ubicación:', error);
+    }
+    
+    return ubicacion;
+  }, []);
+
+  // Nueva función: Calcular distancias automáticamente
+  const calcularDistanciasAutomaticas = useCallback(async () => {
+    if (ubicaciones.length < 2) return;
+
+    try {
+      // Geocodificar todas las ubicaciones primero
+      const ubicacionesConCoordenadas = await Promise.all(
+        ubicaciones.map(geocodificarUbicacion)
+      );
+
+      // Calcular distancias entre puntos consecutivos
+      const ubicacionesConDistancias = await Promise.all(
+        ubicacionesConCoordenadas.map(async (ubicacion, index) => {
+          if (index === 0) return ubicacion; // El primer punto no tiene distancia recorrida
+
+          const puntoAnterior = ubicacionesConCoordenadas[index - 1];
+          
+          if (ubicacion.coordenadas && puntoAnterior.coordenadas) {
+            const ruta = await mapService.calculateRoute([
+              puntoAnterior.coordenadas,
+              ubicacion.coordenadas
+            ]);
+
+            return {
+              ...ubicacion,
+              distanciaRecorrida: ruta?.distance || 0
+            };
+          }
+
+          return ubicacion;
+        })
+      );
+
+      setUbicaciones(ubicacionesConDistancias);
+
+      toast({
+        title: "Distancias calculadas",
+        description: "Las distancias entre ubicaciones han sido calculadas automáticamente.",
+      });
+    } catch (error) {
+      console.error('Error calculando distancias:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron calcular las distancias automáticamente.",
+        variant: "destructive",
+      });
+    }
+  }, [ubicaciones, geocodificarUbicacion]);
+
+  // Nueva función: Calcular ruta completa
+  const calcularRutaCompleta = useCallback(async () => {
+    if (ubicaciones.length < 2) return;
+
+    try {
+      // Geocodificar ubicaciones
+      const ubicacionesConCoordenadas = await Promise.all(
+        ubicaciones.map(geocodificarUbicacion)
+      );
+
+      const coordenadas = ubicacionesConCoordenadas
+        .map(u => u.coordenadas)
+        .filter(Boolean) as Coordinates[];
+
+      if (coordenadas.length >= 2) {
+        const ruta = await mapService.calculateRoute(coordenadas);
+        setRutaCalculada(ruta);
+
+        if (ruta) {
+          toast({
+            title: "Ruta calculada",
+            description: `Distancia total: ${ruta.distance} km, Tiempo estimado: ${ruta.duration} min`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error calculando ruta completa:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo calcular la ruta completa.",
+        variant: "destructive",
+      });
+    }
+  }, [ubicaciones, geocodificarUbicacion]);
+
   const calcularDistanciaTotal = useCallback(() => {
     return ubicaciones.reduce((total, ubicacion) => {
       return total + (ubicacion.distanciaRecorrida || 0);
@@ -155,6 +264,7 @@ export const useUbicaciones = (cartaPorteId?: string) => {
     setUbicaciones,
     ubicacionesFrecuentes,
     loadingFrecuentes,
+    rutaCalculada,
     agregarUbicacion,
     actualizarUbicacion,
     eliminarUbicacion,
@@ -163,6 +273,11 @@ export const useUbicaciones = (cartaPorteId?: string) => {
     validarSecuenciaUbicaciones,
     generarIdUbicacion,
     guardarUbicacionFrecuente: guardarUbicacionFrecuente.mutate,
-    isGuardando: guardarUbicacionFrecuente.isPending
+    isGuardando: guardarUbicacionFrecuente.isPending,
+    
+    // Nuevas funciones de mapas
+    geocodificarUbicacion,
+    calcularDistanciasAutomaticas,
+    calcularRutaCompleta,
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { UbicacionForm } from './ubicaciones/UbicacionForm';
 import { UbicacionesList } from './ubicaciones/UbicacionesList';
-import { Plus, MapPin, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { MapVisualization } from './ubicaciones/MapVisualization';
+import { Plus, MapPin, ArrowRight, ArrowLeft, AlertCircle, Route, Calculator } from 'lucide-react';
 
 interface UbicacionesSectionProps {
   data: any[];
@@ -21,6 +21,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
     setUbicaciones,
     ubicacionesFrecuentes,
     loadingFrecuentes,
+    rutaCalculada,
     agregarUbicacion,
     actualizarUbicacion,
     eliminarUbicacion,
@@ -29,11 +30,14 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
     validarSecuenciaUbicaciones,
     generarIdUbicacion,
     guardarUbicacionFrecuente,
-    isGuardando
+    isGuardando,
+    calcularDistanciasAutomaticas,
+    calcularRutaCompleta
   } = useUbicaciones();
 
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   // Sincronizar con data prop
   React.useEffect(() => {
@@ -71,6 +75,15 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
     setEditingIndex(null);
   };
 
+  const handleCalcularDistancias = async () => {
+    await calcularDistanciasAutomaticas();
+  };
+
+  const handleCalcularRuta = async () => {
+    await calcularRutaCompleta();
+    setShowMap(true);
+  };
+
   const validation = validarSecuenciaUbicaciones();
   const distanciaTotal = calcularDistanciaTotal();
 
@@ -85,13 +98,37 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
             </CardTitle>
             
             {!showForm && (
-              <Button 
-                onClick={() => setShowForm(true)} 
-                className="flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Agregar Ubicación</span>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {ubicaciones.length >= 2 && (
+                  <>
+                    <Button 
+                      variant="outline"
+                      onClick={handleCalcularDistancias}
+                      className="flex items-center space-x-2"
+                    >
+                      <Calculator className="h-4 w-4" />
+                      <span>Calcular Distancias</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={handleCalcularRuta}
+                      className="flex items-center space-x-2"
+                    >
+                      <Route className="h-4 w-4" />
+                      <span>Ver Ruta</span>
+                    </Button>
+                  </>
+                )}
+                
+                <Button 
+                  onClick={() => setShowForm(true)} 
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Agregar Ubicación</span>
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -118,6 +155,15 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
         </CardContent>
       </Card>
 
+      {/* Visualización de Mapa */}
+      {showMap && ubicaciones.length > 0 && (
+        <MapVisualization
+          ubicaciones={ubicaciones}
+          ruta={rutaCalculada}
+          className="mb-6"
+        />
+      )}
+
       {/* Validaciones */}
       {!showForm && !validation.esValido && (
         <Alert variant="destructive">
@@ -133,6 +179,37 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
             </div>
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Información de Ruta */}
+      {rutaCalculada && !showForm && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Route className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-800">Información de Ruta</span>
+              </div>
+              <div className="flex items-center space-x-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Distancia: </span>
+                  <span className="font-medium">{rutaCalculada.distance} km</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Tiempo: </span>
+                  <span className="font-medium">{rutaCalculada.duration} min</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMap(!showMap)}
+                >
+                  {showMap ? 'Ocultar' : 'Ver'} Mapa
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Botones de navegación */}
