@@ -32,6 +32,32 @@ export interface VehiculoGuardado {
   remolques: RemolqueData[];
 }
 
+// Helper function to validate and convert Json to RemolqueData[]
+const parseRemolques = (remolquesJson: any): RemolqueData[] => {
+  if (!remolquesJson) return [];
+  
+  try {
+    // If it's already an array, validate each item
+    if (Array.isArray(remolquesJson)) {
+      return remolquesJson.filter((item: any) => 
+        item && 
+        typeof item === 'object' && 
+        typeof item.placa === 'string' && 
+        typeof item.subtipo_rem === 'string'
+      ).map((item: any) => ({
+        id: item.id,
+        placa: item.placa,
+        subtipo_rem: item.subtipo_rem
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error parsing remolques:', error);
+    return [];
+  }
+};
+
 export const useAutotransporte = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -47,7 +73,7 @@ export const useAutotransporte = () => {
 
       if (error) throw error;
       
-      // Transform the data to match our interface
+      // Transform the data to match our interface with proper type conversion
       const transformedData = (data || []).map(item => ({
         id: item.id,
         nombre_perfil: item.nombre_perfil,
@@ -55,7 +81,7 @@ export const useAutotransporte = () => {
         anio_modelo_vm: item.anio_modelo_vm,
         config_vehicular: item.config_vehicular,
         seguros: item.seguros,
-        remolques: Array.isArray(item.remolques) ? item.remolques as RemolqueData[] : []
+        remolques: parseRemolques(item.remolques)
       }));
       
       setVehiculosGuardados(transformedData);
@@ -89,7 +115,7 @@ export const useAutotransporte = () => {
             asegura_med_ambiente: datos.asegura_med_ambiente,
             poliza_med_ambiente: datos.poliza_med_ambiente,
           },
-          remolques: datos.remolques as any,
+          remolques: datos.remolques,
         });
 
       if (error) throw error;
