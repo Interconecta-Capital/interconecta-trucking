@@ -46,7 +46,19 @@ export const useAutotransporte = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setVehiculosGuardados(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        nombre_perfil: item.nombre_perfil,
+        placa_vm: item.placa_vm,
+        anio_modelo_vm: item.anio_modelo_vm,
+        config_vehicular: item.config_vehicular,
+        seguros: item.seguros,
+        remolques: Array.isArray(item.remolques) ? item.remolques as RemolqueData[] : []
+      }));
+      
+      setVehiculosGuardados(transformedData);
     } catch (error) {
       console.error('Error cargando vehículos guardados:', error);
       toast({
@@ -77,7 +89,7 @@ export const useAutotransporte = () => {
             asegura_med_ambiente: datos.asegura_med_ambiente,
             poliza_med_ambiente: datos.poliza_med_ambiente,
           },
-          remolques: datos.remolques,
+          remolques: datos.remolques as any,
         });
 
       if (error) throw error;

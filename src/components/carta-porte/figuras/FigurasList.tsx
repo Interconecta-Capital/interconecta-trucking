@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, User, Truck } from 'lucide-react';
+import { Edit, Trash2, User, Truck, Users } from 'lucide-react';
 import { FiguraTransporte } from '@/hooks/useFigurasTransporte';
 
 interface FigurasListProps {

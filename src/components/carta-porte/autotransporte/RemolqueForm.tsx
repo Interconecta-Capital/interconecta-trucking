@@ -41,8 +41,8 @@ export function RemolqueForm({ remolque, onSave, onCancel }: RemolqueFormProps) 
     setFormData(prev => ({ ...prev, placa: placaFormateada }));
   };
 
-  const handleSubtipoChange = (subtipo: any) => {
-    setFormData(prev => ({ ...prev, subtipo_rem: subtipo.clave }));
+  const handleSubtipoChange = (clave: string) => {
+    setFormData(prev => ({ ...prev, subtipo_rem: clave }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -93,14 +93,13 @@ export function RemolqueForm({ remolque, onSave, onCancel }: RemolqueFormProps) 
             </div>
 
             <div>
-              <Label>Subtipo de Remolque *</Label>
               <CatalogoSelector
+                label="Subtipo de Remolque"
                 items={subtiposRemolque || []}
                 value={formData.subtipo_rem}
-                onSelect={handleSubtipoChange}
+                onValueChange={handleSubtipoChange}
                 placeholder="Seleccionar subtipo..."
-                searchPlaceholder="Buscar subtipo..."
-                displayFormat={(item) => `${item.clave} - ${item.descripcion}`}
+                required
               />
               {erroresValidacion.subtipo_rem?.map((error, index) => (
                 <p key={index} className="text-sm text-red-600 mt-1">{error}</p>

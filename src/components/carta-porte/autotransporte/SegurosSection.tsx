@@ -16,8 +16,8 @@ export function SegurosSection({ data, onChange }: SegurosSectionProps) {
   const [erroresValidacion, setErroresValidacion] = useState<Record<string, string[]>>({});
   const { data: tiposPermiso } = useTiposPermiso();
 
-  const handlePermisoSCTChange = (permiso: any) => {
-    onChange({ perm_sct: permiso.clave });
+  const handlePermisoSCTChange = (clave: string) => {
+    onChange({ perm_sct: clave });
   };
 
   const handleNumPermisoChange = (value: string) => {
@@ -66,14 +66,13 @@ export function SegurosSection({ data, onChange }: SegurosSectionProps) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>Tipo de Permiso SCT *</Label>
           <CatalogoSelector
+            label="Tipo de Permiso SCT"
             items={tiposPermiso || []}
             value={data.perm_sct}
-            onSelect={handlePermisoSCTChange}
+            onValueChange={handlePermisoSCTChange}
             placeholder="Seleccionar tipo de permiso..."
-            searchPlaceholder="Buscar permiso..."
-            displayFormat={(item) => `${item.clave} - ${item.descripcion}`}
+            required
           />
         </div>
 

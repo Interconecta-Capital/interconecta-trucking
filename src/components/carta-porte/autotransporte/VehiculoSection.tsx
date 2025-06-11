@@ -40,8 +40,8 @@ export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
     onChange({ anio_modelo_vm: anio });
   };
 
-  const handleConfiguracionChange = (configuracion: any) => {
-    onChange({ config_vehicular: configuracion.clave });
+  const handleConfiguracionChange = (clave: string) => {
+    onChange({ config_vehicular: clave });
   };
 
   return (
@@ -82,14 +82,13 @@ export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
       </div>
 
       <div>
-        <Label>Configuración Vehicular *</Label>
         <CatalogoSelector
+          label="Configuración Vehicular"
           items={configuraciones || []}
           value={data.config_vehicular}
-          onSelect={handleConfiguracionChange}
+          onValueChange={handleConfiguracionChange}
           placeholder="Seleccionar configuración vehicular..."
-          searchPlaceholder="Buscar configuración..."
-          displayFormat={(item) => `${item.clave} - ${item.descripcion}`}
+          required
         />
       </div>
     </div>

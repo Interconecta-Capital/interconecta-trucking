@@ -61,11 +61,11 @@ export function FiguraForm({ figura, onSave, onCancel }: FiguraFormProps) {
     }
   }, [figura]);
 
-  const handleTipoFiguraChange = (tipo: any) => {
+  const handleTipoFiguraChange = (clave: string) => {
     setFormData(prev => ({ 
       ...prev, 
-      tipo_figura: tipo.clave,
-      num_licencia: tipo.clave === '01' ? prev.num_licencia : '' // Limpiar licencia si no es operador
+      tipo_figura: clave,
+      num_licencia: clave === '01' ? prev.num_licencia : '' // Limpiar licencia si no es operador
     }));
   };
 
@@ -93,28 +93,24 @@ export function FiguraForm({ figura, onSave, onCancel }: FiguraFormProps) {
     setFormData(prev => ({ ...prev, num_licencia: licenciaFormateada }));
   };
 
-  const handleEstadoChange = (estado: any) => {
+  const handleEstadoChange = (clave: string) => {
     setFormData(prev => ({
       ...prev,
       domicilio: {
         ...prev.domicilio!,
-        estado: estado.clave
+        estado: clave
       }
     }));
   };
 
-  const handleCodigoPostalChange = (cpData: any) => {
-    if (cpData) {
-      setFormData(prev => ({
-        ...prev,
-        domicilio: {
-          ...prev.domicilio!,
-          codigo_postal: cpData.codigo_postal,
-          estado: cpData.estado_clave,
-          municipio: cpData.municipio_clave,
-        }
-      }));
-    }
+  const handleCodigoPostalChange = (codigoPostal: string) => {
+    setFormData(prev => ({
+      ...prev,
+      domicilio: {
+        ...prev.domicilio!,
+        codigo_postal: codigoPostal
+      }
+    }));
   };
 
   const handleDomicilioChange = (field: string, value: string) => {
@@ -189,14 +185,13 @@ export function FiguraForm({ figura, onSave, onCancel }: FiguraFormProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Tipo de Figura *</Label>
                 <CatalogoSelector
+                  label="Tipo de Figura"
                   items={figuras || []}
                   value={formData.tipo_figura}
-                  onSelect={handleTipoFiguraChange}
+                  onValueChange={handleTipoFiguraChange}
                   placeholder="Seleccionar tipo de figura..."
-                  searchPlaceholder="Buscar figura..."
-                  displayFormat={(item) => `${item.clave} - ${item.descripcion}`}
+                  required
                 />
                 {erroresValidacion.tipo_figura?.map((error, index) => (
                   <p key={index} className="text-sm text-red-600 mt-1">{error}</p>
@@ -257,10 +252,11 @@ export function FiguraForm({ figura, onSave, onCancel }: FiguraFormProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>Código Postal *</Label>
                 <CodigoPostalInput
+                  label="Código Postal"
                   value={formData.domicilio?.codigo_postal || ''}
-                  onChange={handleCodigoPostalChange}
+                  onValueChange={handleCodigoPostalChange}
+                  required
                 />
                 {erroresValidacion.codigo_postal?.map((error, index) => (
                   <p key={index} className="text-sm text-red-600 mt-1">{error}</p>
@@ -268,14 +264,12 @@ export function FiguraForm({ figura, onSave, onCancel }: FiguraFormProps) {
               </div>
 
               <div>
-                <Label>Estado</Label>
                 <CatalogoSelector
+                  label="Estado"
                   items={estados || []}
                   value={formData.domicilio?.estado || ''}
-                  onSelect={handleEstadoChange}
+                  onValueChange={handleEstadoChange}
                   placeholder="Seleccionar estado..."
-                  searchPlaceholder="Buscar estado..."
-                  displayFormat={(item) => item.descripcion}
                 />
               </div>
 
