@@ -100,6 +100,14 @@ export const useAutotransporte = () => {
   const guardarVehiculo = useCallback(async (datos: AutotransporteData, nombrePerfil: string) => {
     try {
       setLoading(true);
+      
+      // Convert RemolqueData[] to plain objects for JSON storage
+      const remolquesForDb = datos.remolques.map(remolque => ({
+        id: remolque.id,
+        placa: remolque.placa,
+        subtipo_rem: remolque.subtipo_rem
+      }));
+
       const { error } = await supabase
         .from('vehiculos_guardados')
         .insert({
@@ -115,7 +123,7 @@ export const useAutotransporte = () => {
             asegura_med_ambiente: datos.asegura_med_ambiente,
             poliza_med_ambiente: datos.poliza_med_ambiente,
           },
-          remolques: datos.remolques,
+          remolques: remolquesForDb,
         });
 
       if (error) throw error;
