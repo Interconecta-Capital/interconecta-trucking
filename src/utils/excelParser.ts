@@ -28,8 +28,8 @@ export class ExcelParser {
       
       reader.onload = (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const arrayBuffer = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
           const worksheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[worksheetName];
           
@@ -42,9 +42,9 @@ export class ExcelParser {
           }
           
           const headers = jsonData[0] as string[];
-          const data = jsonData.slice(1) as any[][];
+          const rowsData = jsonData.slice(1) as any[][];
           
-          resolve({ headers, data });
+          resolve({ headers, data: rowsData });
         } catch (error) {
           reject(new Error('Error al procesar el archivo Excel/CSV'));
         }
