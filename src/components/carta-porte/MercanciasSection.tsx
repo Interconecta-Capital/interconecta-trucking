@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MercanciaForm } from './mercancias/MercanciaForm';
 import { MercanciasList } from './mercancias/MercanciasList';
 import { ImportDialog } from './mercancias/ImportDialog';
+import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { useMercancias, Mercancia } from '@/hooks/useMercancias';
-import { Package, Upload, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
+import { Package, Upload, ArrowRight, ArrowLeft, Plus, FileText, Sparkles } from 'lucide-react';
 
 interface MercanciasSectionProps {
   data: any[];
@@ -29,6 +30,7 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
   const [showForm, setShowForm] = useState(false);
   const [editingMercancia, setEditingMercancia] = useState<Mercancia | undefined>();
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
 
   // Sincronizar con prop data cuando hay cambios
   React.useEffect(() => {
@@ -53,6 +55,11 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
     setEditingMercancia(undefined);
   };
 
+  const handleDocumentProcessed = async (extractedMercancias: Mercancia[]) => {
+    // Import the extracted mercancías
+    await importarMercancias(extractedMercancias);
+  };
+
   const canContinue = mercancias.length > 0;
 
   return (
@@ -66,21 +73,29 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
             </CardTitle>
             
             {!showForm && (
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDocumentDialog(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>IA: PDF/XML/OCR</span>
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setShowImportDialog(true)}
                   className="flex items-center space-x-2"
                 >
                   <Upload className="h-4 w-4" />
-                  <span>Importar Excel/CSV</span>
+                  <span>Excel/CSV</span>
                 </Button>
                 <Button 
                   onClick={() => setShowForm(true)}
                   className="flex items-center space-x-2"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Agregar Mercancía</span>
+                  <span>Agregar Manual</span>
                 </Button>
               </div>
             )}
@@ -129,11 +144,18 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
         </div>
       )}
 
-      {/* Dialog de importación */}
+      {/* Dialog de importación tradicional */}
       <ImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         onImport={importarMercancias}
+      />
+
+      {/* Dialog de procesamiento de documentos con IA */}
+      <DocumentUploadDialog
+        open={showDocumentDialog}
+        onOpenChange={setShowDocumentDialog}
+        onDocumentProcessed={handleDocumentProcessed}
       />
     </div>
   );

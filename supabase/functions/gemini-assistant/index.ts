@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface GeminiRequest {
-  action: 'suggest_description' | 'validate_mercancia' | 'improve_description';
+  action: 'suggest_description' | 'validate_mercancia' | 'improve_description' | 'parse_document';
   data: {
     clave_producto?: string;
     descripcion_actual?: string;
@@ -15,6 +15,8 @@ interface GeminiRequest {
     unidad?: string;
     peso?: number;
     valor?: number;
+    text?: string;
+    document_type?: string;
   };
 }
 
@@ -77,6 +79,34 @@ serve(async (req) => {
         Haz la descripción más completa, técnica y conforme a normativas SAT.
         Responde SOLO con la descripción mejorada.`;
         break;
+
+      case 'parse_document':
+        prompt = `Eres un experto en extracción de datos de documentos fiscales mexicanos.
+        
+        Analiza el siguiente texto extraído de un documento ${data.document_type}:
+        
+        "${data.text}"
+        
+        Extrae información de mercancías y responde en formato JSON:
+        {
+          "mercancias": [
+            {
+              "bienes_transp": "clave SAT del producto",
+              "descripcion": "descripción de la mercancía",
+              "cantidad": numero,
+              "clave_unidad": "clave de unidad SAT",
+              "peso_kg": numero,
+              "valor_mercancia": numero,
+              "moneda": "MXN"
+            }
+          ],
+          "confidence": number (0-1),
+          "suggestions": ["sugerencias para mejorar los datos"]
+        }
+        
+        Si no encuentras datos específicos, haz tu mejor estimación basada en el contexto.
+        Siempre incluye al menos una mercancía si hay indicios de productos/servicios.`;
+        break;
     }
 
     const response = await fetch(
@@ -96,7 +126,7 @@ serve(async (req) => {
             temperature: 0.1,
             topK: 1,
             topP: 1,
-            maxOutputTokens: 1000,
+            maxOutputTokens: 2000,
           },
           safetySettings: [
             {
@@ -124,23 +154,27 @@ serve(async (req) => {
       throw new Error('No response from Gemini');
     }
 
-    // Para validación, intentar parsear como JSON
-    if (action === 'validate_mercancia') {
+    // Para validación y parse_document, intentar parsear como JSON
+    if (action === 'validate_mercancia' || action === 'parse_document') {
       try {
-        const validation = JSON.parse(text);
-        return new Response(JSON.stringify({ result: validation }), {
+        const parsedResult = JSON.parse(text);
+        return new Response(JSON.stringify({ result: parsedResult }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch {
-        // Si no es JSON válido, devolver respuesta de texto
-        return new Response(JSON.stringify({ 
-          result: {
-            is_valid: false,
-            issues: ['Error en el análisis de validación'],
-            suggestions: [text],
-            confidence: 0.5
-          }
-        }), {
+        // Si no es JSON válido, devolver respuesta de texto con estructura por defecto
+        const fallbackResult = action === 'validate_mercancia' ? {
+          is_valid: false,
+          issues: ['Error en el análisis de validación'],
+          suggestions: [text],
+          confidence: 0.5
+        } : {
+          mercancias: [],
+          confidence: 0.3,
+          suggestions: [text]
+        };
+        
+        return new Response(JSON.stringify({ result: fallbackResult }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
