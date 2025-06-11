@@ -48,8 +48,16 @@ export function usePlantillas() {
 
       if (publicError) throw publicError;
 
-      setPlantillas(userPlantillas || []);
-      setPlantillasPublicas(publicPlantillas || []);
+      // Cast the data to match our interface
+      setPlantillas((userPlantillas || []).map(p => ({
+        ...p,
+        template_data: p.template_data as CartaPorteData
+      })));
+      
+      setPlantillasPublicas((publicPlantillas || []).map(p => ({
+        ...p,
+        template_data: p.template_data as CartaPorteData
+      })));
     } catch (error) {
       console.error('Error loading plantillas:', error);
     } finally {
@@ -70,7 +78,7 @@ export function usePlantillas() {
       .insert({
         nombre,
         descripcion,
-        template_data: templateData,
+        template_data: templateData as any, // Cast to Json type
         usuario_id: user.id,
         es_publica: esPublica,
         uso_count: 0
@@ -87,7 +95,7 @@ export function usePlantillas() {
   const cargarPlantilla = async (plantillaId: string): Promise<CartaPorteData> => {
     const { data, error } = await supabase
       .from('plantillas_carta_porte')
-      .select('template_data')
+      .select('template_data, uso_count')
       .eq('id', plantillaId)
       .single();
 
@@ -96,7 +104,7 @@ export function usePlantillas() {
     // Incrementar contador de uso
     await supabase
       .from('plantillas_carta_porte')
-      .update({ uso_count: (data.template_data as any).uso_count + 1 })
+      .update({ uso_count: (data.uso_count || 0) + 1 })
       .eq('id', plantillaId);
 
     await loadPlantillas();
@@ -138,7 +146,12 @@ export function usePlantillas() {
       .order('uso_count', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Cast the data to match our interface
+    return (data || []).map(p => ({
+      ...p,
+      template_data: p.template_data as CartaPorteData
+    }));
   };
 
   const getPlantillasFrecuentes = () => {

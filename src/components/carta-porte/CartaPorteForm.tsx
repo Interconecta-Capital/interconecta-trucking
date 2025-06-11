@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -73,10 +72,19 @@ export function CartaPorteForm() {
   });
 
   const updateFormData = (section: string, data: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: data,
-    }));
+    if (section === 'configuracion') {
+      // For configuration, merge the data with existing form data
+      setFormData(prev => ({
+        ...prev,
+        ...data,
+      }));
+    } else {
+      // For other sections, update specific property
+      setFormData(prev => ({
+        ...prev,
+        [section]: data,
+      }));
+    }
   };
 
   const getStepProgress = () => {

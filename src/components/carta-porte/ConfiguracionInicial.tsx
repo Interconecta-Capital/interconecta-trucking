@@ -39,7 +39,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
   const { cargarPlantilla, getSugerenciasPlantillas } = usePlantillas();
 
   const handleTipoCfdiChange = (tipo: 'Ingreso' | 'Traslado') => {
-    const updates: any = { tipoCfdi: tipo };
+    const updates: Partial<CartaPorteData> = { tipoCfdi: tipo };
     
     // Si es Traslado, el RFC Receptor debe ser igual al Emisor
     if (tipo === 'Traslado' && data.rfcEmisor) {
@@ -51,7 +51,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
   };
 
   const handleRfcEmisorChange = (rfc: string) => {
-    const updates: any = { rfcEmisor: rfc };
+    const updates: Partial<CartaPorteData> = { rfcEmisor: rfc };
     
     // Si es Traslado, sincronizar receptor
     if (data.tipoCfdi === 'Traslado') {
