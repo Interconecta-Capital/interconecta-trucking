@@ -20,6 +20,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
+				'sora': ['Sora', 'system-ui', 'sans-serif'],
 				'inter': ['Inter', 'system-ui', 'sans-serif'],
 			},
 			colors: {
@@ -66,20 +67,16 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				trucking: {
-					blue: {
-						50: '#eff6ff',
-						100: '#dbeafe',
-						500: '#3b82f6',
-						600: '#2563eb',
-						700: '#1d4ed8',
-						800: '#1e40af',
-						900: '#1e3a8a',
-					},
-					orange: {
-						500: '#f97316',
-						600: '#ea580c',
-					}
+				interconecta: {
+					primary: '#1A69FA',
+					'primary-light': '#DEEEFF',
+					accent: '#0F47B3',
+					'text-primary': '#1C1C28',
+					'text-body': '#2F2F3A',
+					'text-secondary': '#6C6C84',
+					'border-subtle': '#D8E4F9',
+					'bg-component': '#FFFFFF',
+					'bg-alternate': '#F5F9FF'
 				}
 			},
 			borderRadius: {
@@ -120,8 +117,8 @@ export default {
 				'slide-in': 'slide-in 0.3s ease-out'
 			},
 			backgroundImage: {
-				'gradient-trucking': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #f97316 100%)',
-				'gradient-card': 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+				'gradient-interconecta': 'linear-gradient(135deg, #1A69FA 0%, #0F47B3 100%)',
+				'gradient-card': 'linear-gradient(135deg, #ffffff 0%, #F5F9FF 100%)',
 			}
 		}
 	},

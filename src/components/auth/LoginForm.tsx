@@ -20,7 +20,7 @@ export function LoginForm() {
 
     try {
       await signIn(email, password);
-      toast.success('Bienvenido a TruckFlow');
+      toast.success('Bienvenido a Interconecta Trucking');
     } catch (error: any) {
       toast.error(error.message || 'Error al iniciar sesión');
     } finally {
@@ -29,23 +29,27 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+      <Card className="w-full max-w-md border-interconecta-border-subtle">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-600 to-orange-500 p-3 rounded-xl">
+            <div className="interconecta-gradient p-3 rounded-xl">
               <Truck className="h-8 w-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">TruckFlow</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold font-sora text-interconecta-text-primary">
+            Interconecta Trucking
+          </CardTitle>
+          <CardDescription className="font-inter text-interconecta-text-secondary">
             Sistema de Gestión de Cartas Porte
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
+              <Label htmlFor="email" className="font-inter text-interconecta-text-body">
+                Correo Electrónico
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -53,19 +57,27 @@ export function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="border-interconecta-border-subtle focus:ring-interconecta-primary"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="font-inter text-interconecta-text-body">
+                Contraseña
+              </Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="border-interconecta-border-subtle focus:ring-interconecta-primary"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora font-medium" 
+              disabled={loading}
+            >
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
           </form>
