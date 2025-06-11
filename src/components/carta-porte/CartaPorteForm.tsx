@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { ConfiguracionInicial } from './ConfiguracionInicial';
 import { UbicacionesSection } from './UbicacionesSection';
 import { MercanciasSection } from './MercanciasSection';
 import { AutotransporteSection } from './AutotransporteSection';
 import { FigurasTransporteSection } from './FigurasTransporteSection';
+import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { 
   FileText, 
   MapPin, 
@@ -15,7 +17,9 @@ import {
   Truck, 
   Users,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Save,
+  Download
 } from 'lucide-react';
 
 export interface CartaPorteData {
@@ -52,6 +56,7 @@ const steps = [
 
 export function CartaPorteForm() {
   const [activeStep, setActiveStep] = useState('configuracion');
+  const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
   const [formData, setFormData] = useState<CartaPorteData>({
     tipoCreacion: 'manual',
     tipoCfdi: 'Traslado',
@@ -96,6 +101,21 @@ export function CartaPorteForm() {
     }
   };
 
+  const getTotalProgress = () => {
+    const completedSteps = steps.filter(step => isStepComplete(step.id)).length;
+    return (completedSteps / steps.length) * 100;
+  };
+
+  const canSaveAsTemplate = () => {
+    // Debe tener al menos configuración básica y una ubicación
+    return isStepComplete('configuracion') && formData.ubicaciones.length > 0;
+  };
+
+  const handleGenerateXML = () => {
+    console.log('Generar XML', formData);
+    // Aquí iría la lógica para generar el XML
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header con progreso */}
@@ -105,11 +125,24 @@ export function CartaPorteForm() {
             <CardTitle className="text-2xl font-bold">
               Nueva Carta Porte 3.1
             </CardTitle>
-            <div className="text-sm text-muted-foreground">
-              Progreso: {Math.round(getStepProgress())}%
+            <div className="flex items-center space-x-4">
+              {canSaveAsTemplate() && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGuardarPlantilla(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Guardar como Plantilla</span>
+                </Button>
+              )}
+              <div className="text-sm text-muted-foreground">
+                Progreso: {Math.round(getTotalProgress())}%
+              </div>
             </div>
           </div>
-          <Progress value={getStepProgress()} className="w-full" />
+          <Progress value={getTotalProgress()} className="w-full" />
         </CardHeader>
       </Card>
 
@@ -182,13 +215,58 @@ export function CartaPorteForm() {
                   data={formData.figuras}
                   onChange={(data) => updateFormData('figuras', data)}
                   onPrev={() => setActiveStep('autotransporte')}
-                  onFinish={() => console.log('Generar XML', formData)}
+                  onFinish={handleGenerateXML}
                 />
               </TabsContent>
             </div>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Acciones finales cuando está completo */}
+      {getTotalProgress() === 100 && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+                <div>
+                  <h3 className="font-semibold text-green-800">
+                    Carta Porte Lista para Timbrar
+                  </h3>
+                  <p className="text-sm text-green-600">
+                    Todos los datos requeridos han sido completados
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowGuardarPlantilla(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Guardar Plantilla</span>
+                </Button>
+                <Button 
+                  onClick={handleGenerateXML}
+                  className="flex items-center space-x-2"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Generar XML</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dialog para guardar plantilla */}
+      <GuardarPlantillaDialog
+        open={showGuardarPlantilla}
+        onClose={() => setShowGuardarPlantilla(false)}
+        cartaPorteData={formData}
+      />
     </div>
   );
 }

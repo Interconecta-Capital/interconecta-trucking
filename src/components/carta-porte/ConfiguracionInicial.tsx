@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { PlantillasSelector } from './plantillas/PlantillasSelector';
+import { usePlantillas, PlantillaData } from '@/hooks/usePlantillas';
 import { 
   Upload, 
   FileText, 
@@ -16,9 +18,12 @@ import {
   Building2,
   AlertTriangle,
   Globe,
-  MapPin
+  MapPin,
+  CheckCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { CartaPorteData } from './CartaPorteForm';
+import { toast } from 'sonner';
 
 interface ConfiguracionInicialProps {
   data: CartaPorteData;
@@ -28,6 +33,10 @@ interface ConfiguracionInicialProps {
 
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showPlantillasSelector, setShowPlantillasSelector] = useState(false);
+  const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<PlantillaData | null>(null);
+  
+  const { cargarPlantilla, getSugerenciasPlantillas } = usePlantillas();
 
   const handleTipoCfdiChange = (tipo: 'Ingreso' | 'Traslado') => {
     const updates: any = { tipoCfdi: tipo };
@@ -52,12 +61,93 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
     onChange(updates);
   };
 
+  const handleSelectPlantilla = async (plantilla: PlantillaData) => {
+    try {
+      const templateData = await cargarPlantilla(plantilla.id);
+      
+      // Cargar todos los datos de la plantilla
+      onChange(templateData);
+      setPlantillaSeleccionada(plantilla);
+      setShowPlantillasSelector(false);
+      
+      toast.success(`Plantilla "${plantilla.nombre}" cargada exitosamente`);
+    } catch (error) {
+      toast.error('Error al cargar la plantilla');
+      console.error('Error:', error);
+    }
+  };
+
+  const handleTipoCreacionChange = (tipo: 'plantilla' | 'carga' | 'manual') => {
+    onChange({ tipoCreacion: tipo });
+    
+    if (tipo === 'plantilla') {
+      setShowPlantillasSelector(true);
+    }
+  };
+
   const isFormValid = () => {
     return data.rfcEmisor && data.rfcReceptor && data.nombreEmisor && data.nombreReceptor;
   };
 
+  const sugerencias = getSugerenciasPlantillas();
+
+  // Si se está mostrando el selector de plantillas
+  if (showPlantillasSelector) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowPlantillasSelector(false)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+          <span className="text-sm text-muted-foreground">Seleccionar Plantilla</span>
+        </div>
+        
+        <PlantillasSelector
+          onSelectPlantilla={handleSelectPlantilla}
+          onClose={() => setShowPlantillasSelector(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Mostrar plantilla seleccionada si existe */}
+      {plantillaSeleccionada && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800">
+                    Plantilla "{plantillaSeleccionada.nombre}" cargada
+                  </p>
+                  <p className="text-sm text-green-600">
+                    Los datos han sido pre-llenados. Puedes modificarlos si es necesario.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setPlantillaSeleccionada(null);
+                  setShowPlantillasSelector(true);
+                }}
+              >
+                Cambiar Plantilla
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tipo de Creación */}
       <Card>
         <CardHeader>
@@ -72,7 +162,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
               className={`cursor-pointer border-2 transition-colors ${
                 data.tipoCreacion === 'plantilla' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
               }`}
-              onClick={() => onChange({ tipoCreacion: 'plantilla' })}
+              onClick={() => handleTipoCreacionChange('plantilla')}
             >
               <CardContent className="p-4 text-center">
                 <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
@@ -80,6 +170,11 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
                 <p className="text-sm text-muted-foreground">
                   Usar viaje previo o plantilla predefinida
                 </p>
+                {sugerencias.length > 0 && (
+                  <Badge variant="secondary" className="mt-2">
+                    {sugerencias.length} sugerencias
+                  </Badge>
+                )}
               </CardContent>
             </Card>
 
@@ -87,7 +182,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
               className={`cursor-pointer border-2 transition-colors ${
                 data.tipoCreacion === 'carga' ? 'border-green-500 bg-green-50' : 'border-gray-200'
               }`}
-              onClick={() => onChange({ tipoCreacion: 'carga' })}
+              onClick={() => handleTipoCreacionChange('carga')}
             >
               <CardContent className="p-4 text-center">
                 <Upload className="h-8 w-8 mx-auto mb-2 text-green-600" />
@@ -102,7 +197,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
               className={`cursor-pointer border-2 transition-colors ${
                 data.tipoCreacion === 'manual' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
               }`}
-              onClick={() => onChange({ tipoCreacion: 'manual' })}
+              onClick={() => handleTipoCreacionChange('manual')}
             >
               <CardContent className="p-4 text-center">
                 <Edit className="h-8 w-8 mx-auto mb-2 text-orange-600" />
