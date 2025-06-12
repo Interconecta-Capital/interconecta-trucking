@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star } from "lucide-react";
+import { FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star, Brain, Upload, Zap, FileSpreadsheet, Bot, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -52,7 +52,7 @@ const Index = () => {
           <div className="inline-flex items-center bg-interconecta-primary-light border border-interconecta-border-subtle rounded-full px-4 py-2 mb-6">
             <Star className="h-4 w-4 text-interconecta-primary mr-2" />
             <span className="text-sm font-inter font-medium text-interconecta-text-body">
-              #1 en Gestión de Cartas Porte en México
+              #1 en Gestión de Cartas Porte con IA en México
             </span>
           </div>
           
@@ -63,7 +63,7 @@ const Index = () => {
           </h2>
           
           <p className="text-xl font-inter text-interconecta-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
-            Gestiona cartas porte, controla tu flota y administra socios desde una sola plataforma. 
+            Gestiona cartas porte con inteligencia artificial, importa datos masivamente y automatiza procesos. 
             Cumple con todas las regulaciones SAT de manera fácil y eficiente.
           </p>
           
@@ -110,7 +110,7 @@ const Index = () => {
             Características Principales
           </h3>
           <p className="text-xl font-inter text-interconecta-text-secondary max-w-2xl mx-auto">
-            Todo lo que necesitas para gestionar tu empresa de transporte de manera eficiente
+            Tecnología avanzada con IA para revolucionar tu empresa de transporte
           </p>
         </div>
 
@@ -118,13 +118,69 @@ const Index = () => {
           <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
             <CardHeader className="text-center pb-4">
               <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <FileText className="h-8 w-8 text-white" />
+                <Brain className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Cartas Porte Digitales</CardTitle>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Asistente IA Avanzado</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-interconecta-text-secondary text-center font-inter">
-                Crea, edita y gestiona cartas porte cumpliendo con todas las regulaciones mexicanas
+                Inteligencia artificial que genera descripciones automáticamente y valida mercancías según catálogos SAT
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
+            <CardHeader className="text-center pb-4">
+              <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <FileSpreadsheet className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Importación Masiva</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-interconecta-text-secondary text-center font-inter">
+                Importa mercancías desde Excel, PDF o XML con OCR y procesamiento automático de documentos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
+            <CardHeader className="text-center pb-4">
+              <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Zap className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Automatización Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-interconecta-text-secondary text-center font-inter">
+                Automatiza timbrado, generación de XML y validaciones con inteligencia artificial integrada
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
+            <CardHeader className="text-center pb-4">
+              <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Cartas Porte Inteligentes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-interconecta-text-secondary text-center font-inter">
+                Genera cartas porte con sugerencias de IA y cumplimiento automático de regulaciones mexicanas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
+            <CardHeader className="text-center pb-4">
+              <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Bot className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Procesamiento Documental</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-interconecta-text-secondary text-center font-inter">
+                Extrae datos automáticamente de facturas, remisiones y documentos con tecnología OCR avanzada
               </p>
             </CardContent>
           </Card>
@@ -134,11 +190,11 @@ const Index = () => {
               <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Users className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Multi-Tenant</CardTitle>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Multi-Tenant Avanzado</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-interconecta-text-secondary text-center font-inter">
-                Cada cliente transportista tiene su propia cuenta con datos completamente separados
+                Cada empresa tiene su entorno aislado con datos completamente separados y configuraciones personalizadas
               </p>
             </CardContent>
           </Card>
@@ -148,25 +204,11 @@ const Index = () => {
               <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <BarChart3 className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Control de Flota</CardTitle>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Analytics Inteligentes</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-interconecta-text-secondary text-center font-inter">
-                Gestiona vehículos, conductores y asigna rutas de manera eficiente
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
-            <CardHeader className="text-center pb-4">
-              <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Reportes y Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-interconecta-text-secondary text-center font-inter">
-                Dashboards en tiempo real con métricas clave para tu negocio
+                Dashboards con IA que analizan patrones y generan insights automáticos para tu negocio
               </p>
             </CardContent>
           </Card>
@@ -176,11 +218,11 @@ const Index = () => {
               <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Shield className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Seguridad Total</CardTitle>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Seguridad Enterprise</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-interconecta-text-secondary text-center font-inter">
-                Cifrado de datos, backups automáticos y cumplimiento normativo
+                Cifrado avanzado, backups automáticos y cumplimiento total con normativas de privacidad mexicanas
               </p>
             </CardContent>
           </Card>
@@ -188,13 +230,13 @@ const Index = () => {
           <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
             <CardHeader className="text-center pb-4">
               <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Globe className="h-8 w-8 text-white" />
+                <Sparkles className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Acceso Web</CardTitle>
+              <CardTitle className="text-xl font-sora text-interconecta-text-primary">Plantillas Inteligentes</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-interconecta-text-secondary text-center font-inter">
-                Accede desde cualquier dispositivo, en cualquier lugar y momento
+                Plantillas que se adaptan automáticamente y aprenden de tus patrones para acelerar la creación
               </p>
             </CardContent>
           </Card>
@@ -209,7 +251,7 @@ const Index = () => {
               ¿Por qué Interconecta Trucking?
             </h3>
             <p className="text-xl font-inter text-interconecta-primary-light max-w-2xl mx-auto">
-              Diseñado específicamente para el mercado mexicano de transporte
+              La única plataforma con IA especializada en el mercado mexicano de transporte
             </p>
           </div>
 
@@ -217,9 +259,9 @@ const Index = () => {
             <div className="flex items-start space-x-4 text-white">
               <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">Cumplimiento Normativo</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">Automatización con IA</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Totalmente alineado con las regulaciones SAT y normas mexicanas de transporte
+                  Reduce hasta 80% el tiempo de creación de cartas porte con asistencia de inteligencia artificial
                 </p>
               </div>
             </div>
@@ -227,9 +269,9 @@ const Index = () => {
             <div className="flex items-start space-x-4 text-white">
               <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">Escalabilidad</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">Importación Masiva</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Crece desde 1 vehículo hasta flotas de cientos sin cambiar de plataforma
+                  Procesa cientos de documentos en minutos con OCR y validación automática
                 </p>
               </div>
             </div>
@@ -237,9 +279,9 @@ const Index = () => {
             <div className="flex items-start space-x-4 text-white">
               <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">Soporte 24/7</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">Cumplimiento Garantizado</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Equipo de soporte técnico mexicano disponible cuando lo necesites
+                  IA especializada en regulaciones SAT que valida automáticamente todos tus documentos
                 </p>
               </div>
             </div>
@@ -249,7 +291,7 @@ const Index = () => {
               <div>
                 <h4 className="text-xl font-semibold font-sora mb-2">ROI Comprobado</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Nuestros clientes reducen costos administrativos hasta en un 40%
+                  Reduce costos operativos hasta 60% con automatización inteligente y procesamiento masivo
                 </p>
               </div>
             </div>
@@ -261,10 +303,10 @@ const Index = () => {
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-3xl mx-auto">
           <h3 className="text-4xl font-bold font-sora text-interconecta-text-primary mb-6">
-            ¿Listo para revolucionar tu negocio?
+            ¿Listo para revolucionar tu negocio con IA?
           </h3>
           <p className="text-xl font-inter text-interconecta-text-secondary mb-8">
-            Únete a cientos de transportistas que ya confían en Interconecta Trucking para gestionar su negocio
+            Únete a cientos de transportistas que ya usan inteligencia artificial para automatizar sus procesos
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth/trial">
@@ -297,7 +339,7 @@ const Index = () => {
                 <h5 className="text-xl font-bold font-sora">Interconecta Trucking</h5>
               </div>
               <p className="font-inter text-interconecta-primary-light">
-                La plataforma líder en gestión de transporte en México.
+                La plataforma líder con IA en gestión de transporte en México.
               </p>
             </div>
             <div>
