@@ -98,39 +98,39 @@ const Socios = () => {
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
       <AppSidebar />
-      <main className="flex-1">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+      <main className="flex-1 w-full">
+        {/* Header - Mobile optimized */}
+        <header className="bg-white border-b border-gray-200 p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
+            <div className="flex items-center space-x-2 md:space-x-4">
               <SidebarTrigger />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Socios Comerciales</h1>
-                <p className="text-gray-600">Gestiona tus clientes y socios estratégicos</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Socios Comerciales</h1>
+                <p className="text-sm md:text-base text-gray-600 hidden sm:block">Gestiona tus clientes y socios estratégicos</p>
               </div>
             </div>
-            <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600">
+            <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600 w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Agregar Socio
             </Button>
           </div>
         </header>
 
-        <div className="p-6">
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
+        <div className="p-3 md:p-6">
+          {/* Filters - Mobile optimized */}
+          <Card className="mb-4 md:mb-6">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input 
                       placeholder="Buscar por nombre, RFC, contacto..." 
-                      className="pl-10"
+                      className="pl-10 text-sm"
                     />
                   </div>
                 </div>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full md:w-auto">
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
                 </Button>
@@ -138,62 +138,62 @@ const Socios = () => {
             </CardContent>
           </Card>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          {/* Stats Cards - Mobile optimized grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-6">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">156</div>
-                  <div className="text-sm text-gray-600">Total Socios</div>
+                  <div className="text-lg md:text-2xl font-bold text-gray-900">156</div>
+                  <div className="text-xs md:text-sm text-gray-600">Total Socios</div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">142</div>
-                  <div className="text-sm text-gray-600">Activos</div>
+                  <div className="text-lg md:text-2xl font-bold text-green-600">142</div>
+                  <div className="text-xs md:text-sm text-gray-600">Activos</div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">28</div>
-                  <div className="text-sm text-gray-600">Premium</div>
+                  <div className="text-lg md:text-2xl font-bold text-purple-600">28</div>
+                  <div className="text-xs md:text-sm text-gray-600">Premium</div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-trucking-orange-600">$5.2M</div>
-                  <div className="text-sm text-gray-600">Facturación</div>
+                  <div className="text-lg md:text-2xl font-bold text-trucking-orange-600">$5.2M</div>
+                  <div className="text-xs md:text-sm text-gray-600">Facturación</div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Socios Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Socios Grid - Mobile optimized */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {socios.map((socio) => (
               <Card key={socio.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-3 md:pb-4">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-trucking-blue-100 text-trucking-blue-600 font-semibold">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
+                        <AvatarFallback className="bg-trucking-blue-100 text-trucking-blue-600 font-semibold text-xs md:text-sm">
                           {getInitials(socio.nombre)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg leading-tight">{socio.nombre}</CardTitle>
-                        <p className="text-sm text-gray-600">{socio.contacto}</p>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base md:text-lg leading-tight truncate">{socio.nombre}</CardTitle>
+                        <p className="text-xs md:text-sm text-gray-600 truncate">{socio.contacto}</p>
                         <p className="text-xs text-gray-500">{socio.rfc}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge className={socio.tipoColor}>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <Badge className={`${socio.tipoColor} text-xs`}>
                         {socio.tipo}
                       </Badge>
                       <div className="text-xs text-gray-600">
@@ -203,49 +203,49 @@ const Socios = () => {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-3 text-sm">
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                      <span>{socio.telefono}</span>
+                <CardContent className="space-y-3 md:space-y-4">
+                  <div className="grid grid-cols-1 gap-2 md:gap-3 text-xs md:text-sm">
+                    <div className="flex items-center min-w-0">
+                      <Phone className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{socio.telefono}</span>
                     </div>
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                    <div className="flex items-center min-w-0">
+                      <Mail className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 flex-shrink-0" />
                       <span className="truncate">{socio.email}</span>
                     </div>
-                    <div className="flex items-start">
-                      <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">{socio.direccion}</span>
+                    <div className="flex items-start min-w-0">
+                      <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs md:text-sm break-words">{socio.direccion}</span>
                     </div>
                   </div>
 
-                  <div className="border-t pt-4">
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="border-t pt-3 md:pt-4">
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
                       <div>
-                        <div className="text-xl font-bold text-trucking-blue-600">{socio.viajes}</div>
+                        <div className="text-base md:text-xl font-bold text-trucking-blue-600">{socio.viajes}</div>
                         <div className="text-xs text-gray-600">Viajes</div>
                       </div>
                       <div>
-                        <div className="text-xl font-bold text-green-600">{socio.facturacion}</div>
+                        <div className="text-base md:text-xl font-bold text-green-600">{socio.facturacion}</div>
                         <div className="text-xs text-gray-600">Facturación</div>
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{socio.ultimoViaje}</div>
+                        <div className="text-xs md:text-sm font-medium text-gray-900">{socio.ultimoViaje}</div>
                         <div className="text-xs text-gray-600">Último Viaje</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs">
                       <Building className="h-3 w-3 mr-1" />
                       Ver Perfil
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       Historial
                     </Button>
-                    <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white">
+                    <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white flex-1 text-xs">
                       <Plus className="h-3 w-3 mr-1" />
                       Cotizar
                     </Button>

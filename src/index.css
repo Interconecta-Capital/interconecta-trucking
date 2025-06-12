@@ -95,6 +95,38 @@
   body {
     @apply bg-background text-foreground font-inter;
   }
+
+  /* Mobile-first responsive typography */
+  html {
+    font-size: 14px;
+  }
+
+  @screen sm {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @screen md {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  /* Mobile touch improvements */
+  @media (hover: none) and (pointer: coarse) {
+    button, a, [role="button"] {
+      @apply min-h-[44px] min-w-[44px];
+    }
+  }
+
+  /* Improve text readability on mobile */
+  @media (max-width: 768px) {
+    body {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+  }
 }
 
 @layer components {
@@ -108,5 +140,88 @@
 
   .interconecta-gradient {
     @apply bg-gradient-to-r from-interconecta-primary to-interconecta-accent;
+  }
+
+  /* Mobile-optimized scrollbars */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  /* Mobile-optimized cards */
+  @media (max-width: 768px) {
+    .card {
+      @apply rounded-lg shadow-sm;
+    }
+  }
+
+  /* Responsive grid utilities */
+  .grid-mobile-1 {
+    @apply grid grid-cols-1;
+  }
+
+  .grid-mobile-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+
+  .grid-mobile-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  /* Mobile-first spacing */
+  .space-mobile {
+    @apply space-y-3 md:space-y-6;
+  }
+
+  .padding-mobile {
+    @apply p-3 md:p-6;
+  }
+
+  .margin-mobile {
+    @apply m-3 md:m-6;
+  }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Improve sidebar experience on mobile */
+  .sidebar-mobile {
+    @apply fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out;
+  }
+
+  /* Better button sizes for touch */
+  .btn-mobile {
+    @apply min-h-[44px] px-4 py-3 text-sm;
+  }
+
+  /* Optimize form inputs for mobile */
+  .input-mobile {
+    @apply text-base px-3 py-3;
+  }
+
+  /* Better card spacing on mobile */
+  .card-mobile {
+    @apply p-3 rounded-lg;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .landscape-mobile {
+    @apply h-screen overflow-hidden;
   }
 }

@@ -75,13 +75,13 @@ export default function ResetPassword() {
             <img 
               src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
               alt="Interconecta Trucking Logo"
-              className="h-16 w-16 rounded-xl"
+              className="h-12 w-12 md:h-16 md:w-16 rounded-xl"
             />
           </div>
-          <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+          <h1 className="text-xl md:text-2xl font-bold font-sora text-interconecta-text-primary">
             Interconecta Trucking
           </h1>
-          <p className="font-inter text-interconecta-text-secondary">
+          <p className="font-inter text-interconecta-text-secondary text-sm md:text-base">
             Restablecer Contraseña
           </p>
         </div>
@@ -89,19 +89,19 @@ export default function ResetPassword() {
         <Card className="border-interconecta-border-subtle">
           <CardHeader className="text-center pb-4">
             <div className="flex justify-center mb-4">
-              <div className="h-12 w-12 bg-interconecta-primary-light rounded-full flex items-center justify-center">
-                <Lock className="h-6 w-6 text-interconecta-primary" />
+              <div className="h-10 w-10 md:h-12 md:w-12 bg-interconecta-primary-light rounded-full flex items-center justify-center">
+                <Lock className="h-5 w-5 md:h-6 md:w-6 text-interconecta-primary" />
               </div>
             </div>
-            <CardTitle className="text-xl font-sora">Nueva Contraseña</CardTitle>
-            <CardDescription className="font-inter">
+            <CardTitle className="text-lg md:text-xl font-sora">Nueva Contraseña</CardTitle>
+            <CardDescription className="font-inter text-sm">
               Ingresa tu nueva contraseña para completar la recuperación
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password" className="font-inter">
+                <Label htmlFor="password" className="font-inter text-sm">
                   Nueva Contraseña
                 </Label>
                 <div className="relative">
@@ -131,7 +131,7 @@ export default function ResetPassword() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="confirm-password" className="font-inter">
+                <Label htmlFor="confirm-password" className="font-inter text-sm">
                   Confirmar Nueva Contraseña
                 </Label>
                 <div className="relative">
@@ -161,7 +161,7 @@ export default function ResetPassword() {
               
               <Button 
                 type="submit" 
-                className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
+                className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-sm md:text-base" 
                 disabled={loading}
               >
                 {loading ? 'Actualizando contraseña...' : 'Actualizar Contraseña'}
