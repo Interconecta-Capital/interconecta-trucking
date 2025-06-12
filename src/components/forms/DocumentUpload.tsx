@@ -1,5 +1,5 @@
 
-import { useState, useCallback, memo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,13 +43,13 @@ const TIPOS_DOCUMENTO = {
   ]
 };
 
-export const DocumentUpload = memo(({ entidadTipo, entidadId, documentos, onDocumentosChange }: DocumentUploadProps) => {
+export const DocumentUpload = ({ entidadTipo, entidadId, documentos, onDocumentosChange }: DocumentUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tipoDocumento, setTipoDocumento] = useState('');
   const [fechaVencimiento, setFechaVencimiento] = useState('');
   const { subirDocumento, eliminarDocumento, isLoading } = useDocumentosEntidades();
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validar tamaño (máximo 10MB)
@@ -67,15 +67,13 @@ export const DocumentUpload = memo(({ entidadTipo, entidadId, documentos, onDocu
       
       setSelectedFile(file);
     }
-  }, []);
+  };
 
-  const handleUpload = useCallback(async () => {
+  const handleUpload = async () => {
     if (!selectedFile || !tipoDocumento) {
       toast.error('Selecciona un archivo y tipo de documento');
       return;
     }
-
-    console.log('Uploading document:', { selectedFile: selectedFile.name, tipoDocumento, entidadTipo, entidadId });
 
     const resultado = await subirDocumento(
       selectedFile,
@@ -95,23 +93,22 @@ export const DocumentUpload = memo(({ entidadTipo, entidadId, documentos, onDocu
       const fileInput = document.getElementById('file-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
     }
-  }, [selectedFile, tipoDocumento, fechaVencimiento, entidadTipo, entidadId, subirDocumento, onDocumentosChange]);
+  };
 
-  const handleEliminar = useCallback(async (documentoId: string) => {
+  const handleEliminar = async (documentoId: string) => {
     if (confirm('¿Estás seguro de que deseas eliminar este documento?')) {
-      console.log('Deleting document:', documentoId);
       await eliminarDocumento(documentoId);
       onDocumentosChange();
     }
-  }, [eliminarDocumento, onDocumentosChange]);
+  };
 
-  const formatFileSize = useCallback((bytes: number) => {
+  const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }, []);
+  };
 
   return (
     <Card>
@@ -211,6 +208,4 @@ export const DocumentUpload = memo(({ entidadTipo, entidadId, documentos, onDocu
       </CardContent>
     </Card>
   );
-});
-
-DocumentUpload.displayName = 'DocumentUpload';
+};

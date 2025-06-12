@@ -47,10 +47,7 @@ export const useAuthState = () => {
       return profile;
     },
     enabled: !!user?.id,
-    staleTime: 15 * 60 * 1000, // 15 minutos - datos de usuario cambian poco
-    gcTime: 60 * 60 * 1000, // 1 hora en memoria
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    staleTime: 1 * 60 * 1000, // 1 minuto
   });
 
   // Obtener datos del usuario y tenant desde la tabla usuarios
@@ -89,10 +86,7 @@ export const useAuthState = () => {
       return usuario;
     },
     enabled: !!user?.id,
-    staleTime: 15 * 60 * 1000, // 15 minutos - datos de usuario cambian poco
-    gcTime: 60 * 60 * 1000, // 1 hora en memoria
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    staleTime: 1 * 60 * 1000, // 1 minuto
   });
 
   // Configurar listeners de autenticación
@@ -115,9 +109,6 @@ export const useAuthState = () => {
         // Limpiar cache al cerrar sesión
         if (event === 'SIGNED_OUT') {
           queryClient.clear();
-          // Limpiar localStorage de datos de sesión
-          localStorage.removeItem('user-profile-cache');
-          localStorage.removeItem('user-data-cache');
         }
         
         // Manejar usuarios OAuth nuevos
@@ -136,7 +127,7 @@ export const useAuthState = () => {
 
   // Actualizar usuario con datos del perfil y tenant cuando estén disponibles
   useEffect(() => {
-    if (user && (profileData || userData)) {
+    if (user) {
       console.log('Updating user with profile and user data:', { profileData, userData });
       
       const updatedUser: AuthUser = {
@@ -158,52 +149,6 @@ export const useAuthState = () => {
       };
       
       setUser(updatedUser);
-      
-      // Persistir datos críticos en localStorage para navegación
-      if (profileData) {
-        localStorage.setItem('user-profile-cache', JSON.stringify(profileData));
-      }
-      if (userData) {
-        localStorage.setItem('user-data-cache', JSON.stringify(userData));
-      }
-    }
-  }, [user?.id, profileData, userData]);
-
-  // Recuperar datos del cache local si están disponibles
-  useEffect(() => {
-    if (user && !profileData && !userData) {
-      try {
-        const cachedProfile = localStorage.getItem('user-profile-cache');
-        const cachedUserData = localStorage.getItem('user-data-cache');
-        
-        if (cachedProfile || cachedUserData) {
-          console.log('Restoring user data from cache');
-          const parsedProfile = cachedProfile ? JSON.parse(cachedProfile) : null;
-          const parsedUserData = cachedUserData ? JSON.parse(cachedUserData) : null;
-          
-          const updatedUser: AuthUser = {
-            ...user,
-            profile: parsedProfile || {
-              id: user.id,
-              nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Usuario',
-              email: user.email || '',
-              empresa: user.user_metadata?.empresa || '',
-              rfc: user.user_metadata?.rfc || '',
-              telefono: user.user_metadata?.telefono || '',
-            },
-            tenant: parsedUserData?.tenant || null,
-            usuario: parsedUserData ? {
-              id: parsedUserData.id,
-              nombre: parsedUserData.nombre,
-              rol: parsedUserData.rol,
-            } : undefined,
-          };
-          
-          setUser(updatedUser);
-        }
-      } catch (error) {
-        console.error('Error restoring cached user data:', error);
-      }
     }
   }, [user?.id, profileData, userData]);
 
