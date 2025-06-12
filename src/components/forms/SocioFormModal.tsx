@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSocios } from '@/hooks/useSocios';
 import { toast } from 'sonner';
 import { Plus, Building } from 'lucide-react';
 
@@ -32,15 +31,14 @@ const socioSchema = z.object({
 type SocioFormData = z.infer<typeof socioSchema>;
 
 interface SocioFormModalProps {
-  trigger?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: SocioFormData) => Promise<void>;
   socio?: any;
-  onSuccess?: () => void;
+  loading?: boolean;
 }
 
-export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProps) {
-  const [open, setOpen] = useState(false);
-  const { crearSocio, updateSocio, isCreating, isUpdating } = useSocios();
-
+export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }: SocioFormModalProps) {
   const form = useForm<SocioFormData>({
     resolver: zodResolver(socioSchema),
     defaultValues: socio ? {
@@ -58,40 +56,17 @@ export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProp
     },
   });
 
-  const onSubmit = async (data: SocioFormData) => {
+  const handleSubmit = async (data: SocioFormData) => {
     try {
-      // Ensure required fields are present and convert to proper format
-      const socioData = {
-        nombre_razon_social: data.nombre_razon_social,
-        rfc: data.rfc,
-        tipo_persona: data.tipo_persona,
-        telefono: data.telefono || undefined,
-        email: data.email || undefined,
-      };
-
-      if (socio) {
-        await updateSocio({ id: socio.id, ...socioData });
-      } else {
-        await crearSocio(socioData);
-      }
-      setOpen(false);
+      await onSubmit(data);
       form.reset();
-      onSuccess?.();
     } catch (error) {
       toast.error('Error al guardar el socio');
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Socio
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -103,7 +78,7 @@ export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProp
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nombre_razon_social">Nombre / Razón Social *</Label>
             <Input
@@ -181,16 +156,16 @@ export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProp
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={isCreating || isUpdating}
+              disabled={loading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isCreating || isUpdating ? 'Guardando...' : (socio ? 'Actualizar' : 'Crear Socio')}
+              {loading ? 'Guardando...' : (socio ? 'Actualizar' : 'Crear Socio')}
             </Button>
           </div>
         </form>

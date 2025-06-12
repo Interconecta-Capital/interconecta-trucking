@@ -37,7 +37,7 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
   });
 
   const [showProgramarModal, setShowProgramarModal] = useState(false);
-  const { crearVehiculo, updateVehiculo, vehiculos, isLoading } = useVehiculos();
+  const { crearVehiculo, actualizarVehiculo, vehiculos, loading } = useVehiculos();
   const { documentos, cargarDocumentos } = useDocumentosEntidades();
 
   const vehiculoActual = vehiculoId ? vehiculos.find(v => v.id === vehiculoId) : null;
@@ -79,7 +79,7 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
     };
 
     if (vehiculoId) {
-      updateVehiculo({ id: vehiculoId, ...vehiculoData });
+      actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
     } else {
       crearVehiculo(vehiculoData);
     }
@@ -263,8 +263,8 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
                   Cancelar
                 </Button>
               )}
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Guardando...' : (vehiculoId ? 'Actualizar' : 'Crear')}
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Guardando...' : (vehiculoId ? 'Actualizar' : 'Crear')}
               </Button>
               
               {vehiculoId && (

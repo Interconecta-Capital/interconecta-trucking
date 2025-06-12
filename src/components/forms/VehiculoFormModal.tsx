@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useVehiculos } from '@/hooks/useVehiculos';
 import { toast } from 'sonner';
 import { Plus, Truck } from 'lucide-react';
 
@@ -33,15 +32,14 @@ const vehiculoSchema = z.object({
 type VehiculoFormData = z.infer<typeof vehiculoSchema>;
 
 interface VehiculoFormModalProps {
-  trigger?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: VehiculoFormData) => Promise<void>;
   vehiculo?: any;
-  onSuccess?: () => void;
+  loading?: boolean;
 }
 
-export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoFormModalProps) {
-  const [open, setOpen] = useState(false);
-  const { crearVehiculo, updateVehiculo, isCreating, isUpdating } = useVehiculos();
-
+export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo, loading }: VehiculoFormModalProps) {
   const form = useForm<VehiculoFormData>({
     resolver: zodResolver(vehiculoSchema),
     defaultValues: vehiculo ? {
@@ -65,28 +63,10 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
     },
   });
 
-  const onSubmit = async (data: VehiculoFormData) => {
+  const handleSubmit = async (data: VehiculoFormData) => {
     try {
-      // Ensure required fields are present and convert to proper format
-      const vehiculoData = {
-        placa: data.placa,
-        marca: data.marca || undefined,
-        modelo: data.modelo || undefined,
-        anio: data.anio || undefined,
-        num_serie: data.num_serie || undefined,
-        config_vehicular: data.config_vehicular || undefined,
-        poliza_seguro: data.poliza_seguro || undefined,
-        vigencia_seguro: data.vigencia_seguro || undefined,
-      };
-
-      if (vehiculo) {
-        await updateVehiculo({ id: vehiculo.id, ...vehiculoData });
-      } else {
-        await crearVehiculo(vehiculoData);
-      }
-      setOpen(false);
+      await onSubmit(data);
       form.reset();
-      onSuccess?.();
     } catch (error) {
       toast.error('Error al guardar el vehículo');
     }
@@ -102,15 +82,7 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
   ];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Vehículo
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -122,7 +94,7 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="placa">Placa *</Label>
@@ -222,16 +194,16 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={isCreating || isUpdating}
+              disabled={loading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isCreating || isUpdating ? 'Guardando...' : (vehiculo ? 'Actualizar' : 'Crear Vehículo')}
+              {loading ? 'Guardando...' : (vehiculo ? 'Actualizar' : 'Crear Vehículo')}
             </Button>
           </div>
         </form>
