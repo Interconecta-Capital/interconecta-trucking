@@ -153,11 +153,14 @@ export const useAuthActions = () => {
   };
 
   /**
-   * Cerrar sesión
+   * Cerrar sesión y redirigir a /auth
    */
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    
+    // Redirigir a la página de autenticación
+    window.location.href = '/auth';
   };
 
   /**

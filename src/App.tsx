@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SecurityProvider } from "@/components/SecurityProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
+import Index from "./pages/Index";
 import Planes from "./pages/Planes";
 import Vehiculos from "./pages/Vehiculos";
 import Conductores from "./pages/Conductores";
@@ -26,18 +27,17 @@ function App() {
             <div className="min-h-screen bg-background font-sans antialiased">
               <Router>
                 <Routes>
+                  {/* Landing page - sin autenticación */}
+                  <Route path="/" element={<Index />} />
+                  
+                  {/* Rutas de autenticación */}
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/login" element={<Auth />} />
                   <Route path="/register" element={<Auth />} />
                   <Route path="/recover-password" element={<Auth />} />
                   <Route path="/new-password" element={<Auth />} />
 
-                  <Route path="/" element={
-                    <AuthGuard>
-                      <Navigate to="/dashboard" replace />
-                    </AuthGuard>
-                  } />
-
+                  {/* Rutas protegidas - todas con BaseLayout */}
                   <Route path="/dashboard" element={
                     <AuthGuard>
                       <BaseLayout>
@@ -46,34 +46,42 @@ function App() {
                     </AuthGuard>
                   } />
 
+                  <Route path="/cartas-porte" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <CartasPorte />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
                   <Route path="/planes" element={
                     <AuthGuard>
-                      <Planes />
+                      <BaseLayout>
+                        <Planes />
+                      </BaseLayout>
                     </AuthGuard>
                   } />
 
                   <Route path="/vehiculos" element={
                     <AuthGuard>
-                      <Vehiculos />
+                      <BaseLayout>
+                        <Vehiculos />
+                      </BaseLayout>
                     </AuthGuard>
                   } />
 
                   <Route path="/conductores" element={
                     <AuthGuard>
-                      <Conductores />
+                      <BaseLayout>
+                        <Conductores />
+                      </BaseLayout>
                     </AuthGuard>
                   } />
 
                   <Route path="/socios" element={
                     <AuthGuard>
-                      <Socios />
-                    </AuthGuard>
-                  } />
-
-                  <Route path="/cartas-porte" element={
-                    <AuthGuard>
                       <BaseLayout>
-                        <CartasPorte />
+                        <Socios />
                       </BaseLayout>
                     </AuthGuard>
                   } />
