@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +48,7 @@ const mockEventos = [
 ];
 
 export function QuickActionsCard() {
+  const navigate = useNavigate();
   const [showConductorForm, setShowConductorForm] = useState(false);
   const [showVehiculoForm, setShowVehiculoForm] = useState(false);
   const [showSocioForm, setShowSocioForm] = useState(false);
@@ -54,6 +56,10 @@ export function QuickActionsCard() {
   const [showVerificacionForm, setShowVerificacionForm] = useState(false);
   const [showRevisionGPSForm, setShowRevisionGPSForm] = useState(false);
   const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
+
+  const handleVerDocumentos = () => {
+    navigate('/viajes?tab=documentos');
+  };
 
   return (
     <>
@@ -78,7 +84,7 @@ export function QuickActionsCard() {
             <Button 
               variant="outline" 
               className="w-full justify-start h-10"
-              onClick={() => setShowCartaPorteForm(true)}
+              onClick={handleVerDocumentos}
             >
               <FileText className="h-4 w-4 mr-2" />
               Ver Documentos
