@@ -237,16 +237,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
+    // Usar la URL actual del navegador para la redirección
+    const currentUrl = window.location.origin;
+    const redirectUrl = `${currentUrl}/dashboard`;
+    
+    console.log('Google OAuth redirect URL:', redirectUrl);
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Google OAuth error:', error);
+      throw error;
+    }
   };
 
   const resetPassword = async (email: string) => {

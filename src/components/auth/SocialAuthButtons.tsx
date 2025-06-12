@@ -16,11 +16,12 @@ export function SocialAuthButtons({ mode = 'login' }: SocialAuthButtonsProps) {
   const handleGoogleAuth = async () => {
     setGoogleLoading(true);
     try {
+      console.log('Iniciando autenticación con Google...');
       await signInWithGoogle();
-      toast.success(mode === 'login' ? '¡Bienvenido de vuelta!' : '¡Cuenta creada exitosamente!');
+      // No mostramos toast aquí porque la redirección de Google manejará el flujo
     } catch (error: any) {
+      console.error('Error en autenticación con Google:', error);
       toast.error(error.message || 'Error al autenticar con Google');
-    } finally {
       setGoogleLoading(false);
     }
   };
@@ -56,7 +57,7 @@ export function SocialAuthButtons({ mode = 'login' }: SocialAuthButtonsProps) {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span>{googleLoading ? 'Cargando...' : `${actionText} con Google`}</span>
+          <span>{googleLoading ? 'Redirigiendo...' : `${actionText} con Google`}</span>
         </div>
       </Button>
 
