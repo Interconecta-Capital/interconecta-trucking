@@ -51,6 +51,14 @@ export const EstadoSuscripcion = () => {
     return new Date(dateString).toLocaleDateString('es-MX');
   };
 
+  const handleVerificarSuscripcion = () => {
+    verificarSuscripcion();
+  };
+
+  const handleAbrirPortal = () => {
+    abrirPortalCliente();
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -92,7 +100,7 @@ export const EstadoSuscripcion = () => {
 
           <div className="flex gap-2">
             <Button
-              onClick={verificarSuscripcion}
+              onClick={handleVerificarSuscripcion}
               disabled={isVerifyingSubscription}
               variant="outline"
               size="sm"
@@ -104,7 +112,7 @@ export const EstadoSuscripcion = () => {
 
             {suscripcion.status === 'active' && (
               <Button
-                onClick={abrirPortalCliente}
+                onClick={handleAbrirPortal}
                 disabled={isOpeningPortal}
                 variant="outline"
                 size="sm"
