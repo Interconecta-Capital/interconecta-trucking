@@ -13,7 +13,7 @@ import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { 
   FileText, 
   Upload, 
-  Template, 
+  FileTemplate, 
   Edit3,
   ArrowRight,
   AlertCircle,
@@ -85,20 +85,9 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
     setTipoCreacion('manual');
   };
 
-  const handleCargarDocumento = (datos: any) => {
-    // Procesar datos del documento cargado
-    if (datos.emisor) {
-      onChange({
-        rfcEmisor: datos.emisor.rfc,
-        nombreEmisor: datos.emisor.nombre,
-      });
-    }
-    if (datos.receptor) {
-      onChange({
-        rfcReceptor: datos.receptor.rfc,
-        nombreReceptor: datos.receptor.nombre,
-      });
-    }
+  const handleCargarDocumento = (mercancias: any[]) => {
+    // Process extracted goods data and update form
+    console.log('Mercancías extraídas:', mercancias);
     setShowDocumentUpload(false);
     setTipoCreacion('manual');
   };
@@ -137,7 +126,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
               }}
             >
               <CardContent className="p-4 text-center">
-                <Template className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <FileTemplate className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                 <h3 className="font-semibold">Usar Plantilla</h3>
                 <p className="text-sm text-gray-600">Partir de una plantilla guardada</p>
               </CardContent>
@@ -359,7 +348,6 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       {/* Dialogs */}
       {showPlantillas && (
         <PlantillasSelector
-          onSelect={handleCargarPlantilla}
           onClose={() => setShowPlantillas(false)}
         />
       )}
@@ -367,8 +355,8 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       {showDocumentUpload && (
         <DocumentUploadDialog
           open={showDocumentUpload}
-          onClose={() => setShowDocumentUpload(false)}
-          onDataExtracted={handleCargarDocumento}
+          onOpenChange={setShowDocumentUpload}
+          onDocumentProcessed={handleCargarDocumento}
         />
       )}
     </div>
