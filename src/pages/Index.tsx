@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star } from "lucide-react";
@@ -145,7 +146,7 @@ const Index = () => {
           <Card className="border-interconecta-border-subtle hover:shadow-lg transition-shadow duration-300 hover:border-interconecta-primary">
             <CardHeader className="text-center pb-4">
               <div className="interconecta-gradient p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Truck className="h-8 w-8 text-white" />
+                <BarChart3 className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl font-sora text-interconecta-text-primary">Control de Flota</CardTitle>
             </CardHeader>
