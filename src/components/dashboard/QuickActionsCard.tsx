@@ -13,6 +13,21 @@ export function QuickActionsCard() {
   const [showVehiculoForm, setShowVehiculoForm] = useState(false);
   const [showSocioForm, setShowSocioForm] = useState(false);
 
+  const handleConductorClick = () => {
+    console.log('Opening conductor form');
+    setShowConductorForm(true);
+  };
+
+  const handleVehiculoClick = () => {
+    console.log('Opening vehiculo form');
+    setShowVehiculoForm(true);
+  };
+
+  const handleSocioClick = () => {
+    console.log('Opening socio form');
+    setShowSocioForm(true);
+  };
+
   return (
     <>
       <Card>
@@ -39,7 +54,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start"
-            onClick={() => setShowConductorForm(true)}
+            onClick={handleConductorClick}
           >
             <UserCheck className="h-4 w-4 mr-2" />
             Nuevo Conductor
@@ -48,7 +63,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start"
-            onClick={() => setShowVehiculoForm(true)}
+            onClick={handleVehiculoClick}
           >
             <Truck className="h-4 w-4 mr-2" />
             Nuevo Vehículo
@@ -57,7 +72,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start"
-            onClick={() => setShowSocioForm(true)}
+            onClick={handleSocioClick}
           >
             <Users className="h-4 w-4 mr-2" />
             Nuevo Socio

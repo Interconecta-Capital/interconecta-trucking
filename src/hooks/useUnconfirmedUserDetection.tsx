@@ -11,22 +11,44 @@ export const useUnconfirmedUserDetection = () => {
   const [showUnconfirmedDialog, setShowUnconfirmedDialog] = useState(false);
 
   useEffect(() => {
-    if (user && user.profile) {
-      const isIncomplete = 
-        !user.profile.rfc || 
-        !user.profile.telefono || 
-        !user.profile.empresa ||
-        !user.profile.nombre;
-      
-      console.log('Profile check:', {
-        rfc: user.profile.rfc,
-        telefono: user.profile.telefono,
-        empresa: user.profile.empresa,
-        nombre: user.profile.nombre,
-        isIncomplete
-      });
-      
-      setNeedsCompletion(isIncomplete);
+    if (user) {
+      // Verificar si el usuario está autenticado y tiene profile
+      const checkProfile = async () => {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (error && error.code !== 'PGRST116') {
+            console.error('Error fetching profile:', error);
+            return;
+          }
+
+          // Si no hay profile o faltan campos críticos
+          const isIncomplete = !profile || 
+            !profile.rfc || 
+            !profile.telefono || 
+            !profile.empresa ||
+            !profile.nombre;
+          
+          console.log('Profile check:', {
+            hasProfile: !!profile,
+            rfc: profile?.rfc,
+            telefono: profile?.telefono,
+            empresa: profile?.empresa,
+            nombre: profile?.nombre,
+            isIncomplete
+          });
+          
+          setNeedsCompletion(isIncomplete);
+        } catch (error) {
+          console.error('Error checking profile completion:', error);
+        }
+      };
+
+      checkProfile();
     } else {
       setNeedsCompletion(false);
     }

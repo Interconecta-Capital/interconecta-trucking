@@ -77,8 +77,8 @@ export function AppSidebar() {
         <div className="flex items-center space-x-3">
           <img 
             src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-            alt="Interconecta Trucking Logo"
-            className="h-8 w-8 rounded-lg"
+            alt="Interconecta Capital Logo"
+            className="h-10 w-10 rounded-lg flex-shrink-0"
           />
           <div className="group-data-[collapsible=icon]:hidden">
             <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
@@ -97,12 +97,12 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className="w-full h-12 text-base"
+                    className="w-full h-14 text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     size="lg"
                   >
                     <Link to={item.url} className="flex items-center space-x-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-6 w-6 flex-shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -117,10 +117,10 @@ export function AppSidebar() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="w-full justify-start text-red-400 hover:text-red-300 h-10" 
+            className="w-full justify-start text-red-400 hover:text-red-300 h-12" 
             onClick={handleSignOut}
           >
-            <LogOut className="h-4 w-4 mr-2" />
+            <LogOut className="h-5 w-5 mr-2 flex-shrink-0" />
             <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
           </Button>
         </div>

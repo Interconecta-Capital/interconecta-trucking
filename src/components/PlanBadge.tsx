@@ -6,7 +6,7 @@ import { Calendar, Clock } from 'lucide-react';
 
 export function PlanBadge() {
   const { trialInfo, loading } = useTrialTracking();
-  const { enPeriodoPrueba } = useSuscripcion();
+  const { suscripcion, enPeriodoPrueba } = useSuscripcion();
 
   if (loading) {
     return (
@@ -17,15 +17,7 @@ export function PlanBadge() {
     );
   }
 
-  if (trialInfo.isTrialExpired) {
-    return (
-      <Badge variant="destructive">
-        <Calendar className="h-3 w-3 mr-1" />
-        Trial Expirado
-      </Badge>
-    );
-  }
-
+  // Si está en período de prueba, mostrar "Trial"
   if (trialInfo.isTrialActive || enPeriodoPrueba()) {
     return (
       <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
@@ -35,6 +27,26 @@ export function PlanBadge() {
     );
   }
 
+  // Si el trial expiró
+  if (trialInfo.isTrialExpired) {
+    return (
+      <Badge variant="destructive">
+        <Calendar className="h-3 w-3 mr-1" />
+        Trial Expirado
+      </Badge>
+    );
+  }
+
+  // Si tiene suscripción activa, mostrar el nombre del plan
+  if (suscripcion?.status === 'active' && suscripcion.plan) {
+    return (
+      <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+        {suscripcion.plan.nombre}
+      </Badge>
+    );
+  }
+
+  // Por defecto mostrar Premium si no está en trial
   return (
     <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
       Plan Premium

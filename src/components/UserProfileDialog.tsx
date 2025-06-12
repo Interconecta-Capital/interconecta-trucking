@@ -42,7 +42,9 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
     setLoading(true);
 
     try {
-      await updateProfile(formData);
+      await updateProfile({
+        telefono: formData.telefono,
+      });
       toast.success('Perfil actualizado exitosamente');
       onOpenChange(false);
     } catch (error: any) {
@@ -52,7 +54,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
     }
   };
 
-  const userName = user?.profile?.nombre || user?.usuario?.nombre || user?.email?.split('@')[0] || 'Usuario';
+  const userName = user?.profile?.nombre || user?.email?.split('@')[0] || 'Usuario';
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
@@ -99,6 +101,9 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
               disabled
               className="bg-gray-100"
             />
+            <p className="text-xs text-gray-500">
+              * El RFC no puede ser modificado. Contacta soporte para cambios.
+            </p>
           </div>
         </div>
 
@@ -108,13 +113,16 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
             <Input
               id="email"
               value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              placeholder="Tu email"
+              disabled
+              className="bg-gray-100"
             />
+            <p className="text-xs text-gray-500">
+              * Para cambiar el email, contacta soporte técnico.
+            </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="telefono">Teléfono</Label>
+            <Label htmlFor="telefono">Teléfono *</Label>
             <Input
               id="telefono"
               value={formData.telefono}
