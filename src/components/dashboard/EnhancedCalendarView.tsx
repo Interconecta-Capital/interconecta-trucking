@@ -88,7 +88,7 @@ export function EnhancedCalendarView() {
     
     try {
       await createEvent({
-        tipo,
+        tipo_evento: tipo,
         titulo,
         descripcion: `${titulo} programado`,
         fecha_inicio: selectedDate,
@@ -178,7 +178,7 @@ export function EnhancedCalendarView() {
                 
                 return (
                   <div className="relative">
-                    <button {...props} className={cn(props.className, "relative")}>
+                    <button {...props}>
                       {date.getDate()}
                       {hasEvents && (
                         <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">

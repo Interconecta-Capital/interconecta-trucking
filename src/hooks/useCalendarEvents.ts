@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 export interface CalendarEvent {
   id?: string;
   user_id?: string;
-  tipo: string;
+  tipo_evento: string;
   titulo: string;
   descripcion?: string;
   fecha_inicio: Date;
@@ -28,6 +28,9 @@ export const useCalendarEvents = () => {
       .from('eventos_calendario')
       .insert({
         ...eventData,
+        tipo_evento: eventData.tipo_evento,
+        fecha_inicio: eventData.fecha_inicio.toISOString(),
+        fecha_fin: eventData.fecha_fin?.toISOString(),
         user_id: user.id,
       })
       .select()

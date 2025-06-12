@@ -92,12 +92,28 @@ export function CartaPorteForm() {
   // Auto-guardar cuando se completa la configuración inicial
   useEffect(() => {
     if (formData.rfcEmisor && formData.rfcReceptor && !cartaPorteId) {
-      crearCartaPorte(formData, {
-        onSuccess: (nuevaCartaPorte) => {
+      // Transform CartaPorteData to match expected type
+      const cartaPortePayload = {
+        tipo_cfdi: formData.tipoCfdi,
+        rfc_emisor: formData.rfcEmisor,
+        nombre_emisor: formData.nombreEmisor,
+        rfc_receptor: formData.rfcReceptor,
+        nombre_receptor: formData.nombreReceptor,
+        transporte_internacional: formData.transporteInternacional,
+        registro_istmo: formData.registroIstmo,
+        entrada_salida_merc: formData.entrada_salida_merc,
+        pais_origen_destino: formData.pais_origen_destino,
+        via_entrada_salida: formData.via_entrada_salida,
+      };
+
+      crearCartaPorte(cartaPortePayload)
+        .then((nuevaCartaPorte) => {
           setCartaPorteId(nuevaCartaPorte.id);
           setFormData(prev => ({ ...prev, cartaPorteId: nuevaCartaPorte.id }));
-        }
-      });
+        })
+        .catch((error) => {
+          console.error('Error al crear carta porte:', error);
+        });
     }
   }, [formData.rfcEmisor, formData.rfcReceptor, cartaPorteId, crearCartaPorte]);
 
@@ -130,7 +146,19 @@ export function CartaPorteForm() {
       
       // Actualizar carta porte si ya existe
       if (cartaPorteId) {
-        actualizarCartaPorte({ id: cartaPorteId, data: newData });
+        const updatePayload = {
+          tipo_cfdi: newData.tipoCfdi,
+          rfc_emisor: newData.rfcEmisor,
+          nombre_emisor: newData.nombreEmisor,
+          rfc_receptor: newData.rfcReceptor,
+          nombre_receptor: newData.nombreReceptor,
+          transporte_internacional: newData.transporteInternacional,
+          registro_istmo: newData.registroIstmo,
+          entrada_salida_merc: newData.entrada_salida_merc,
+          pais_origen_destino: newData.pais_origen_destino,
+          via_entrada_salida: newData.via_entrada_salida,
+        };
+        actualizarCartaPorte({ id: cartaPorteId, data: updatePayload });
       }
     } else {
       setFormData(prev => ({
