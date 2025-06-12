@@ -15,7 +15,7 @@ import {
   Shield,
   FileImage
 } from 'lucide-react';
-import { useXMLGeneration } from '@/hooks/useXMLGeneration';
+import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { PDFPreviewDialog } from '../pdf/PDFPreviewDialog';
@@ -45,7 +45,7 @@ export function XMLGenerationPanel({
     timbrarCartaPorte,
     descargarXML,
     validarConexionPAC
-  } = useXMLGeneration();
+  } = useCartaPorteXMLManager();
 
   const {
     isGenerating: isGeneratingPDF,
