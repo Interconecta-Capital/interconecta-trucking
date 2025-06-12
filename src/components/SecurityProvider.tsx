@@ -11,6 +11,7 @@ interface SecurityContextType {
   validateEmail: (email: string) => { isValid: boolean; errors: string[] };
   sanitizeInput: (input: string, maxLength?: number) => string;
   checkRateLimit: (action: string, maxAttempts?: number) => boolean;
+  validateFormData: (data: Record<string, any>) => { isValid: boolean; errors: string[] };
 }
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
