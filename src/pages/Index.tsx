@@ -1,8 +1,11 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star, Brain, Upload, Zap, FileSpreadsheet, Bot, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import ROICalculator from "@/components/landing/ROICalculator";
+import USPSection from "@/components/landing/USPSection";
+import PricingSection from "@/components/landing/PricingSection";
+import UrgencySection from "@/components/landing/UrgencySection";
 
 const Index = () => {
   return (
@@ -46,62 +49,69 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section Mejorado */}
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-5xl mx-auto animate-fade-in">
-          <div className="inline-flex items-center bg-interconecta-primary-light border border-interconecta-border-subtle rounded-full px-4 py-2 mb-6">
-            <Star className="h-4 w-4 text-interconecta-primary mr-2" />
-            <span className="text-sm font-inter font-medium text-interconecta-text-body">
-              #1 en Gestión de Cartas Porte con IA en México
+          <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-full px-4 py-2 mb-6">
+            <Star className="h-4 w-4 text-green-600 mr-2" />
+            <span className="text-sm font-inter font-medium text-green-700">
+              🏆 Primera Plataforma IA Especializada en Transporte Mexicano
             </span>
           </div>
           
           <h2 className="text-5xl md:text-6xl font-bold font-sora text-interconecta-text-primary mb-6 leading-tight">
-            La Plataforma Completa para
+            Automatiza tu Transporte con
             <br />
-            <span className="gradient-text">Transportistas Mexicanos</span>
+            <span className="gradient-text">Inteligencia Artificial</span>
           </h2>
           
           <p className="text-xl font-inter text-interconecta-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
-            Gestiona cartas porte con inteligencia artificial, importa datos masivamente y automatiza procesos. 
-            Cumple con todas las regulaciones SAT de manera fácil y eficiente.
+            La única plataforma que combina IA avanzada con conocimiento especializado en regulaciones SAT. 
+            Evita multas, automatiza procesos y escala sin límites.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link to="/auth/trial">
-              <Button size="lg" className="bg-interconecta-primary hover:bg-interconecta-accent text-white px-8 py-4 text-lg font-sora font-semibold">
+              <Button size="lg" className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 text-lg font-sora font-semibold shadow-lg">
                 <Calendar className="mr-2 h-5 w-5" />
-                Prueba 14 días gratis
+                Demo Personalizada Gratis
               </Button>
             </Link>
             <Link to="/auth/login">
               <Button size="lg" variant="outline" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light px-8 py-4 text-lg font-sora font-medium">
-                Iniciar Sesión
+                Calcular mi ROI
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto text-center">
-            <div>
-              <div className="text-2xl font-bold font-sora text-interconecta-text-primary">+500</div>
-              <div className="text-sm font-inter text-interconecta-text-secondary">Empresas</div>
+          {/* Stats Mejorados */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto text-center">
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
+              <div className="text-2xl font-bold font-sora text-green-600">$2.5M</div>
+              <div className="text-sm font-inter text-interconecta-text-secondary">En multas evitadas</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold font-sora text-interconecta-text-primary">+10K</div>
-              <div className="text-sm font-inter text-interconecta-text-secondary">Cartas Porte</div>
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
+              <div className="text-2xl font-bold font-sora text-interconecta-primary">500+</div>
+              <div className="text-sm font-inter text-interconecta-text-secondary">Cartas porte diarias</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold font-sora text-interconecta-text-primary">99.9%</div>
-              <div className="text-sm font-inter text-interconecta-text-secondary">Uptime</div>
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
+              <div className="text-2xl font-bold font-sora text-interconecta-primary">99.9%</div>
+              <div className="text-sm font-inter text-interconecta-text-secondary">Precisión IA</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold font-sora text-interconecta-text-primary">24/7</div>
-              <div className="text-sm font-inter text-interconecta-text-secondary">Soporte</div>
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
+              <div className="text-2xl font-bold font-sora text-green-600">15 min</div>
+              <div className="text-sm font-inter text-interconecta-text-secondary">vs 2 horas manual</div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ROI Calculator */}
+      <ROICalculator />
+
+      {/* USP Section */}
+      <USPSection />
 
       {/* Features Section */}
       <section id="features" className="container mx-auto px-4 py-20">
@@ -243,61 +253,67 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* Pricing Section */}
+      <PricingSection />
+
+      {/* Benefits Section Mejorada */}
       <section id="benefits" className="bg-gradient-interconecta py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold font-sora text-white mb-4">
-              ¿Por qué Interconecta Trucking?
+              Resultados Comprobados
             </h3>
             <p className="text-xl font-inter text-interconecta-primary-light max-w-2xl mx-auto">
-              La única plataforma con IA especializada en el mercado mexicano de transporte
+              Empresas que ya usan Interconecta Trucking reportan estos beneficios
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="flex items-start space-x-4 text-white">
-              <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
+              <CheckCircle className="h-6 w-6 text-green-300 mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">Automatización con IA</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">80% Menos Tiempo</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Reduce hasta 80% el tiempo de creación de cartas porte con asistencia de inteligencia artificial
+                  De 2 horas a 15 minutos por carta porte con automatización IA
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 text-white">
-              <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
+              <CheckCircle className="h-6 w-6 text-green-300 mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">Importación Masiva</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">Cero Multas SAT</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Procesa cientos de documentos en minutos con OCR y validación automática
+                  Validación automática y cumplimiento garantizado al 99.9%
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 text-white">
-              <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
+              <CheckCircle className="h-6 w-6 text-green-300 mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">Cumplimiento Garantizado</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">ROI en 30 días</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  IA especializada en regulaciones SAT que valida automáticamente todos tus documentos
+                  Retorno de inversión positivo desde el primer mes de uso
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 text-white">
-              <CheckCircle className="h-6 w-6 text-interconecta-primary-light mt-1 flex-shrink-0" />
+              <CheckCircle className="h-6 w-6 text-green-300 mt-1 flex-shrink-0" />
               <div>
-                <h4 className="text-xl font-semibold font-sora mb-2">ROI Comprobado</h4>
+                <h4 className="text-xl font-semibold font-sora mb-2">Escalabilidad Total</h4>
                 <p className="font-inter text-interconecta-primary-light">
-                  Reduce costos operativos hasta 60% con automatización inteligente y procesamiento masivo
+                  Desde 1 hasta 1,000+ vehículos sin cambiar de plataforma
                 </p>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Urgency Section */}
+      <UrgencySection />
 
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20 text-center">
