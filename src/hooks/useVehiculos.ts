@@ -119,7 +119,7 @@ export const useVehiculos = () => {
   return {
     vehiculos,
     isLoading,
-    createVehiculo: createVehiculoMutation.mutate,
+    crearVehiculo: createVehiculoMutation.mutate,
     updateVehiculo: updateVehiculoMutation.mutate,
     eliminarVehiculo: eliminarVehiculo.mutate,
     isCreating: createVehiculoMutation.isPending,
