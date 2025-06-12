@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -161,6 +163,7 @@ function RegisterForm() {
     telefono: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -180,14 +183,20 @@ function RegisterForm() {
     setLoading(true);
 
     try {
-      await signUp(formData.email, formData.password, {
+      const result = await signUp(formData.email, formData.password, {
         nombre: formData.nombre,
         empresa: formData.empresa,
         rfc: formData.rfc,
         telefono: formData.telefono
       });
-      toast.success('¡Cuenta creada exitosamente! Bienvenido a Interconecta Trucking');
-      navigate('/dashboard');
+      
+      if (result.needsVerification) {
+        setShowVerification(true);
+        toast.success('¡Cuenta creada! Revisa tu correo para verificar tu cuenta.');
+      } else {
+        toast.success('¡Cuenta creada exitosamente! Bienvenido a Interconecta Trucking');
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Error al crear la cuenta');
     } finally {
@@ -198,6 +207,15 @@ function RegisterForm() {
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (showVerification) {
+    return (
+      <EmailVerificationMessage 
+        email={formData.email}
+        onBack={() => setShowVerification(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

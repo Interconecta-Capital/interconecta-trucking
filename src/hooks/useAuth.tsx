@@ -20,10 +20,11 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<void>;
+  signUp: (email: string, password: string, userData: any) => Promise<{ needsVerification?: boolean }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   hasAccess: (resource: string) => boolean;
+  resendConfirmation: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth event:', event, session?.user?.email_confirmed_at);
+        
         setUser(session?.user ?? null);
         setLoading(false);
         
@@ -147,11 +150,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
     if (error) throw error;
+    
+    // Verificar si el usuario ha confirmado su email
+    if (data.user && !data.user.email_confirmed_at) {
+      throw new Error('Por favor verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.');
+    }
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
@@ -168,8 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (error) throw error;
     
-    // Si el usuario se registró exitosamente, crear el tenant y usuario
-    if (data.user) {
+    // Si el usuario se registró exitosamente pero necesita confirmar email
+    if (data.user && !data.user.email_confirmed_at) {
+      console.log('Usuario creado, necesita confirmación por email');
+      return { needsVerification: true };
+    }
+    
+    // Si el usuario se registró exitosamente y ya está confirmado, crear el tenant y usuario
+    if (data.user && data.user.email_confirmed_at) {
       try {
         // Crear tenant
         const { data: tenant, error: tenantError } = await supabase
@@ -201,6 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error creating tenant/user:', dbError);
       }
     }
+    
+    return {};
   };
 
   const signInWithGoogle = async () => {
@@ -218,6 +235,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
+
+  const resendConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    
     if (error) throw error;
   };
 
@@ -241,6 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithGoogle,
       signOut,
       hasAccess,
+      resendConfirmation,
     }}>
       {children}
     </AuthContext.Provider>

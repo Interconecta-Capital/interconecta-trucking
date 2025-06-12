@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, Calendar } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
 
 export default function Trial() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function Trial() {
     telefono: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -39,15 +41,21 @@ export default function Trial() {
     setLoading(true);
 
     try {
-      await signUp(formData.email, formData.password, {
+      const result = await signUp(formData.email, formData.password, {
         nombre: formData.nombre,
         empresa: formData.empresa,
         rfc: formData.rfc,
         telefono: formData.telefono,
         isTrial: true
       });
-      toast.success('¡Tu prueba gratuita de 14 días ha comenzado!');
-      navigate('/dashboard');
+      
+      if (result.needsVerification) {
+        setShowVerification(true);
+        toast.success('¡Tu prueba gratuita está lista! Revisa tu correo para verificar tu cuenta.');
+      } else {
+        toast.success('¡Tu prueba gratuita de 14 días ha comenzado!');
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Error al iniciar la prueba gratuita');
     } finally {
@@ -104,115 +112,122 @@ export default function Trial() {
 
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Formulario */}
-            <Card className="border-interconecta-border-subtle">
-              <CardHeader>
-                <CardTitle className="text-2xl font-sora">Crear cuenta de prueba</CardTitle>
-                <CardDescription className="font-inter">
-                  Completa el formulario para comenzar tu prueba gratuita
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <SocialAuthButtons mode="register" />
-                  
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+            {showVerification ? (
+              <EmailVerificationMessage 
+                email={formData.email}
+                onBack={() => setShowVerification(false)}
+              />
+            ) : (
+              <Card className="border-interconecta-border-subtle">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-sora">Crear cuenta de prueba</CardTitle>
+                  <CardDescription className="font-inter">
+                    Completa el formulario para comenzar tu prueba gratuita
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <SocialAuthButtons mode="register" />
+                    
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="nombre" className="font-inter">Nombre Completo</Label>
+                          <Input
+                            id="nombre"
+                            value={formData.nombre}
+                            onChange={(e) => handleChange('nombre', e.target.value)}
+                            required
+                            className="border-interconecta-border-subtle"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
+                          <Input
+                            id="telefono"
+                            value={formData.telefono}
+                            onChange={(e) => handleChange('telefono', e.target.value)}
+                            className="border-interconecta-border-subtle"
+                          />
+                        </div>
+                      </div>
+                      
                       <div className="space-y-2">
-                        <Label htmlFor="nombre" className="font-inter">Nombre Completo</Label>
+                        <Label htmlFor="empresa" className="font-inter">Nombre de la Empresa</Label>
                         <Input
-                          id="nombre"
-                          value={formData.nombre}
-                          onChange={(e) => handleChange('nombre', e.target.value)}
+                          id="empresa"
+                          value={formData.empresa}
+                          onChange={(e) => handleChange('empresa', e.target.value)}
                           required
                           className="border-interconecta-border-subtle"
                         />
                       </div>
+                      
                       <div className="space-y-2">
-                        <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
+                        <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
                         <Input
-                          id="telefono"
-                          value={formData.telefono}
-                          onChange={(e) => handleChange('telefono', e.target.value)}
+                          id="rfc"
+                          value={formData.rfc}
+                          onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
+                          required
+                          maxLength={13}
                           className="border-interconecta-border-subtle"
                         />
                       </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="empresa" className="font-inter">Nombre de la Empresa</Label>
-                      <Input
-                        id="empresa"
-                        value={formData.empresa}
-                        onChange={(e) => handleChange('empresa', e.target.value)}
-                        required
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
-                      <Input
-                        id="rfc"
-                        value={formData.rfc}
-                        onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
-                        required
-                        maxLength={13}
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="font-inter">Correo Electrónico</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleChange('email', e.target.value)}
-                        required
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="font-inter">Contraseña</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => handleChange('password', e.target.value)}
-                        required
-                        minLength={6}
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={formData.confirmPassword}
-                        onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                        required
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
-                      disabled={loading}
-                    >
-                      {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
-                    </Button>
-                    
-                    <p className="text-xs text-interconecta-text-secondary text-center font-inter">
-                      Al registrarte, aceptas nuestros términos de servicio y política de privacidad
-                    </p>
-                  </form>
-                </div>
-              </CardContent>
-            </Card>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="font-inter">Correo Electrónico</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => handleChange('email', e.target.value)}
+                          required
+                          className="border-interconecta-border-subtle"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="font-inter">Contraseña</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => handleChange('password', e.target.value)}
+                          required
+                          minLength={6}
+                          className="border-interconecta-border-subtle"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                          required
+                          className="border-interconecta-border-subtle"
+                        />
+                      </div>
+                      
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
+                        disabled={loading}
+                      >
+                        {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
+                      </Button>
+                      
+                      <p className="text-xs text-interconecta-text-secondary text-center font-inter">
+                        Al registrarte, aceptas nuestros términos de servicio y política de privacidad
+                      </p>
+                    </form>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Beneficios */}
             <div className="space-y-6">
