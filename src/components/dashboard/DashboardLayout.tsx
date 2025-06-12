@@ -3,7 +3,6 @@ import { PersonalizedGreeting } from './PersonalizedGreeting';
 import { DashboardMetricsGrid } from './DashboardMetricsGrid';
 import { QuickActionsCard } from './QuickActionsCard';
 import { EnhancedCalendarView } from './EnhancedCalendarView';
-import { ProximosEventos } from './ProximosEventos';
 import { NotificationsPanel } from './NotificationsPanel';
 import { AnalyticsPanel } from './AnalyticsPanel';
 import { RealtimeMetrics } from './RealtimeMetrics';
@@ -81,16 +80,15 @@ export function DashboardLayout({
           
           {/* Layout principal con tres columnas en desktop, una en móvil */}
           <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
-            {/* Primera columna - Acciones rápidas y métricas detalladas */}
+            {/* Primera columna - Acciones rápidas (incluyendo próximos eventos) */}
             <div className="space-y-4">
               <QuickActionsCard />
               <RealtimeMetrics metrics={mockMetrics} />
             </div>
             
-            {/* Segunda columna - Calendario y próximos eventos */}
+            {/* Segunda columna - Calendario */}
             <div className="space-y-4">
               <EnhancedCalendarView />
-              <ProximosEventos />
             </div>
             
             {/* Tercera columna - Notificaciones y análisis */}
