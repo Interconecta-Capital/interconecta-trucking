@@ -31,7 +31,11 @@ export const useUnconfirmedUserDetection = () => {
             !profile.rfc || 
             !profile.telefono || 
             !profile.empresa ||
-            !profile.nombre;
+            !profile.nombre ||
+            profile.rfc === '' ||
+            profile.telefono === '' ||
+            profile.empresa === '' ||
+            profile.nombre === '';
           
           console.log('Profile check:', {
             hasProfile: !!profile,
@@ -94,12 +98,44 @@ export const useUnconfirmedUserDetection = () => {
     }
   };
 
+  // Función para validar RFC único
+  const validateUniqueRFC = async (rfc: string): Promise<{ isValid: boolean; message?: string }> => {
+    if (!rfc || !user) return { isValid: false, message: 'RFC requerido' };
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('rfc', rfc.toUpperCase())
+        .neq('id', user.id) // Excluir el usuario actual
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error validating RFC:', error);
+        return { isValid: false, message: 'Error al validar RFC' };
+      }
+
+      if (data) {
+        return { 
+          isValid: false, 
+          message: `Este RFC ya está registrado por otro usuario (${data.email})` 
+        };
+      }
+
+      return { isValid: true };
+    } catch (error) {
+      console.error('Error validating RFC:', error);
+      return { isValid: false, message: 'Error al validar RFC' };
+    }
+  };
+
   return { 
     needsCompletion,
     unconfirmedEmail,
     showUnconfirmedDialog,
     checkIfUserIsUnconfirmed,
     closeUnconfirmedDialog,
-    handleVerificationSent
+    handleVerificationSent,
+    validateUniqueRFC
   };
 };

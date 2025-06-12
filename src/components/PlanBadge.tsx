@@ -17,12 +17,12 @@ export function PlanBadge() {
     );
   }
 
-  // Si está en período de prueba, mostrar "Trial"
-  if (trialInfo.isTrialActive || enPeriodoPrueba()) {
+  // Si está en período de prueba, mostrar "Prueba"
+  if (trialInfo.isTrialActive || enPeriodoPrueba() || suscripcion?.status === 'trial') {
     return (
       <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
         <Calendar className="h-3 w-3 mr-1" />
-        Trial: {trialInfo.daysRemaining} días restantes
+        Prueba: {trialInfo.daysRemaining} días restantes
       </Badge>
     );
   }
@@ -32,7 +32,7 @@ export function PlanBadge() {
     return (
       <Badge variant="destructive">
         <Calendar className="h-3 w-3 mr-1" />
-        Trial Expirado
+        Prueba Expirada
       </Badge>
     );
   }
@@ -46,10 +46,11 @@ export function PlanBadge() {
     );
   }
 
-  // Por defecto mostrar Premium si no está en trial
+  // Por defecto mostrar el plan actual o Básico si no hay información
+  const planName = suscripcion?.plan?.nombre || 'Plan Básico';
   return (
-    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-      Plan Premium
+    <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
+      {planName}
     </Badge>
   );
 }

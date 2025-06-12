@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ interface CompleteProfileModalProps {
 
 export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   const { user, updateProfile } = useAuth();
+  const { validateUniqueRFC } = useUnconfirmedUserDetection();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -43,8 +45,26 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
     setLoading(true);
 
     try {
-      await updateProfile(formData);
+      // Validar RFC único
+      const rfcValidation = await validateUniqueRFC(formData.rfc);
+      if (!rfcValidation.isValid) {
+        toast.error(rfcValidation.message || 'RFC inválido');
+        setLoading(false);
+        return;
+      }
+
+      await updateProfile({
+        ...formData,
+        rfc: formData.rfc.toUpperCase()
+      });
+      
       toast.success('Perfil completado exitosamente');
+      
+      // Forzar recarga para refrescar el estado
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error: any) {
       toast.error('Error al completar perfil: ' + error.message);
     } finally {
@@ -55,7 +75,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   const isFormValid = formData.nombre && formData.empresa && formData.rfc && formData.telefono;
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Completa tu perfil</DialogTitle>
