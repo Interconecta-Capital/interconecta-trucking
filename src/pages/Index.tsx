@@ -1,9 +1,9 @@
 
 import Header from "@/components/landing/Header";
 import HeroSection from "@/components/landing/HeroSection";
-import ROICalculator from "@/components/landing/ROICalculator";
-import USPSection from "@/components/landing/USPSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
+import USPSection from "@/components/landing/USPSection";
+import ROICalculator from "@/components/landing/ROICalculator";
 import PricingSection from "@/components/landing/PricingSection";
 import BenefitsSection from "@/components/landing/BenefitsSection";
 import CTASection from "@/components/landing/CTASection";
@@ -14,9 +14,9 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white">
       <Header />
       <HeroSection />
-      <ROICalculator />
-      <USPSection />
       <FeaturesSection />
+      <USPSection />
+      <ROICalculator />
       <PricingSection />
       <BenefitsSection />
       <CTASection />

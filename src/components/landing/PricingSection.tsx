@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Star, Zap, Building, Rocket, Bot, FileText, HardDrive, Users, Headphones } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ContactSalesModal } from "./ContactSalesModal";
 
 const PricingSection = () => {
   const plans = [
     {
       name: "Plan Esencial SAT",
       icon: Rocket,
-      originalPrice: 149,
-      price: 30,
+      price: 149,
       description: "Perfecto para: Transportistas 1-5 unidades",
       popular: false,
       features: [
@@ -25,8 +25,7 @@ const PricingSection = () => {
     {
       name: "Plan Gestión IA",
       icon: Star,
-      originalPrice: 299,
-      price: 65,
+      price: 299,
       description: "Perfecto para: Flotas medianas 6-15 unidades",
       popular: true,
       features: [
@@ -42,8 +41,7 @@ const PricingSection = () => {
     {
       name: "Plan Automatización Total",
       icon: Zap,
-      originalPrice: 499,
-      price: 125,
+      price: 499,
       description: "Perfecto para: Empresas grandes 16-30 unidades",
       popular: false,
       features: [
@@ -60,10 +58,10 @@ const PricingSection = () => {
     {
       name: "Plan Enterprise Sin Límites",
       icon: Building,
-      originalPrice: 999,
-      price: 250,
+      price: null,
       description: "Perfecto para: Corporativos 30+ unidades",
       popular: false,
+      isEnterprise: true,
       features: [
         "Cartas porte ILIMITADAS",
         "Usuarios ILIMITADOS",
@@ -131,7 +129,7 @@ const PricingSection = () => {
             }`}>
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <span className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white px-2 py-1 rounded-full text-xs font-semibold font-sora whitespace-nowrap">
+                  <span className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white px-3 py-1 rounded-full text-xs font-semibold font-sora whitespace-nowrap">
                     MÁS POPULAR
                   </span>
                 </div>
@@ -145,20 +143,20 @@ const PricingSection = () => {
                 </div>
                 <CardTitle className="text-xl font-sora text-interconecta-text-primary">{plan.name}</CardTitle>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-center space-x-2">
-                    <span className="text-lg text-interconecta-text-secondary line-through">
-                      ${plan.originalPrice} USD/mes
-                    </span>
-                  </div>
-                  <div className="text-3xl font-bold font-sora text-interconecta-primary">
-                    ${plan.price} USD/mes
-                  </div>
-                  <div className="text-sm font-inter text-interconecta-text-secondary">
-                    <small>+ IVA</small>
-                  </div>
-                  <div className="text-sm font-medium font-inter text-interconecta-primary">
-                    Ahorro: ${(plan.originalPrice - plan.price)} USD/mes
-                  </div>
+                  {plan.isEnterprise ? (
+                    <div className="text-2xl font-bold font-sora text-interconecta-primary">
+                      Contactar Ventas
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold font-sora text-interconecta-primary">
+                        ${plan.price} USD/mes
+                      </div>
+                      <div className="text-sm font-inter text-interconecta-text-secondary">
+                        <small>+ IVA</small>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <p className="text-sm font-inter text-interconecta-text-secondary mt-2">{plan.description}</p>
               </CardHeader>
@@ -173,17 +171,21 @@ const PricingSection = () => {
                   ))}
                 </ul>
 
-                <Link to="/auth/trial" className="block">
-                  <Button 
-                    className={`w-full font-sora font-semibold ${
-                      plan.popular 
-                        ? 'bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white' 
-                        : 'bg-interconecta-primary hover:bg-interconecta-accent text-white'
-                    }`}
-                  >
-                    Empezar Prueba Gratis
-                  </Button>
-                </Link>
+                {plan.isEnterprise ? (
+                  <ContactSalesModal />
+                ) : (
+                  <Link to="/auth/trial" className="block">
+                    <Button 
+                      className={`w-full font-sora font-semibold ${
+                        plan.popular 
+                          ? 'bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white' 
+                          : 'bg-interconecta-primary hover:bg-interconecta-accent text-white'
+                      }`}
+                    >
+                      Empezar Prueba Gratis
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ))}

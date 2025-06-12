@@ -10,9 +10,9 @@ const Header = () => {
           <img 
             src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
             alt="Interconecta Trucking Logo"
-            className="h-10 w-10 rounded-lg"
+            className="h-8 w-8 rounded-lg"
           />
-          <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+          <h1 className="text-lg font-bold font-sora text-interconecta-primary">
             Interconecta Trucking
           </h1>
         </div>
@@ -35,7 +35,7 @@ const Header = () => {
           </Link>
           <Link to="/auth/trial">
             <Button className="bg-interconecta-primary hover:bg-interconecta-accent text-white font-sora font-medium">
-              Solicitar Demo
+              Prueba Gratis
             </Button>
           </Link>
         </div>

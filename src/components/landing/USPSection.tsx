@@ -6,43 +6,39 @@ const USPSection = () => {
   const strengths = [
     {
       icon: Crown,
-      title: "💎 Producto Único en México",
+      title: "Producto Único en México",
       features: [
         "Primera y única plataforma IA especializada en transporte",
         "Desarrollada específicamente para regulaciones mexicanas SAT",
         "Sin competencia directa en automatización total"
-      ],
-      gradient: "from-yellow-500 to-orange-500"
+      ]
     },
     {
       icon: Brain,
-      title: "🧠 Inteligencia Artificial Avanzada",
+      title: "Inteligencia Artificial Avanzada",
       features: [
         "OCR que lee cualquier documento en segundos",
         "IA que genera descripciones SAT automáticamente",
         "Validación en tiempo real con catálogos oficiales"
-      ],
-      gradient: "from-purple-500 to-pink-500"
+      ]
     },
     {
       icon: Shield,
-      title: "🔒 Cumplimiento Garantizado",
+      title: "Cumplimiento Garantizado",
       features: [
         "100% compatible con regulaciones SAT actuales",
         "Actualizaciones automáticas de normativas",
         "SLA 99.9% de disponibilidad"
-      ],
-      gradient: "from-green-500 to-emerald-500"
+      ]
     },
     {
       icon: TrendingUp,
-      title: "📈 Escalabilidad Sin Límites",
+      title: "Escalabilidad Sin Límites",
       features: [
         "Desde 1 hasta 1,000+ vehículos",
         "Multi-tenant para empresas grandes",
         "API completa para integraciones"
-      ],
-      gradient: "from-blue-500 to-cyan-500"
+      ]
     }
   ];
 
@@ -68,7 +64,7 @@ const USPSection = () => {
           {strengths.map((strength, index) => (
             <Card key={index} className="border-interconecta-border-subtle hover:shadow-xl transition-all duration-300 hover:border-interconecta-primary group">
               <CardHeader className="text-center pb-4">
-                <div className={`p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center bg-gradient-to-r ${strength.gradient} group-hover:scale-110 transition-transform duration-300`}>
+                <div className="p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center bg-gradient-to-r from-interconecta-primary to-interconecta-accent group-hover:scale-110 transition-transform duration-300">
                   <strength.icon className="h-10 w-10 text-white" />
                 </div>
                 <CardTitle className="text-xl font-sora text-interconecta-text-primary">
@@ -79,7 +75,7 @@ const USPSection = () => {
                 <ul className="space-y-3">
                   {strength.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 bg-gradient-to-r ${strength.gradient}`}></div>
+                      <div className="w-2 h-2 rounded-full mt-2 bg-gradient-to-r from-interconecta-primary to-interconecta-accent"></div>
                       <span className="font-inter text-interconecta-text-body">{feature}</span>
                     </li>
                   ))}

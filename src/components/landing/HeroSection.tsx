@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Calendar, Star, ArrowRight } from "lucide-react";
+import { Calendar, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const HeroSection = () => {
@@ -8,34 +8,33 @@ const HeroSection = () => {
     <section className="container mx-auto px-4 py-20 text-center">
       <div className="max-w-5xl mx-auto animate-fade-in">
         <div className="inline-flex items-center bg-gradient-to-r from-blue-100 to-indigo-100 border border-blue-200 rounded-full px-4 py-2 mb-6">
-          <Star className="h-4 w-4 text-blue-600 mr-2" />
           <span className="text-sm font-inter font-medium text-blue-700">
             Primera Plataforma IA Especializada en Transporte Mexicano
           </span>
         </div>
         
         <h2 className="text-5xl md:text-6xl font-bold font-sora text-interconecta-text-primary mb-6 leading-tight">
-          Automatiza tu Transporte con
+          La Plataforma Completa para
           <br />
-          <span className="gradient-text">Inteligencia Artificial</span>
+          <span className="gradient-text">Transportistas Mexicanos</span>
         </h2>
         
         <p className="text-xl font-inter text-interconecta-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
-          La única plataforma que combina IA avanzada con conocimiento especializado en regulaciones SAT. 
-          Evita multas, automatiza procesos y escala sin límites.
+          Gestiona cartas porte con inteligencia artificial, importa datos masivamente y automatiza procesos. 
+          Cumple con todas las regulaciones SAT de manera fácil y eficiente.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link to="/auth/trial">
             <Button size="lg" className="bg-interconecta-primary hover:bg-interconecta-accent text-white px-8 py-4 text-lg font-sora font-semibold shadow-lg">
               <Calendar className="mr-2 h-5 w-5" />
-              Solicitar Demo
+              Prueba 14 días gratis
             </Button>
           </Link>
           <Link to="/auth/login">
             <Button size="lg" variant="outline" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light px-8 py-4 text-lg font-sora font-medium">
-              Calcular mi ROI
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <LogIn className="ml-2 h-5 w-5" />
+              Iniciar sesión
             </Button>
           </Link>
         </div>
