@@ -31,7 +31,7 @@ export function LoginForm() {
     const success = await secureLogin(email, password);
     if (!success) {
       // Check if this is an unconfirmed user
-      await checkIfUserIsUnconfirmed(email, { message: 'Invalid login credentials' });
+      checkIfUserIsUnconfirmed(email, { message: 'Invalid login credentials' });
     }
   };
 

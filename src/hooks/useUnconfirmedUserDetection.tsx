@@ -24,9 +24,18 @@ export const useUnconfirmedUserDetection = () => {
     }
   }, [user]);
 
-  const checkIfUserIsUnconfirmed = (email: string) => {
-    setUnconfirmedEmail(email);
-    setShowUnconfirmedDialog(true);
+  const checkIfUserIsUnconfirmed = (email: string, error?: any): boolean => {
+    // Check if error indicates unconfirmed user
+    if (error && (
+      error.message?.includes('Email not confirmed') ||
+      error.message?.includes('email_not_confirmed') ||
+      error.message?.includes('signup_not_found')
+    )) {
+      setUnconfirmedEmail(email);
+      setShowUnconfirmedDialog(true);
+      return true;
+    }
+    return false;
   };
 
   const closeUnconfirmedDialog = () => {

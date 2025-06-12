@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -188,7 +189,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
       navigate('/dashboard');
     } catch (error: any) {
       // Check if this is an unconfirmed user
-      const isUnconfirmed = await checkIfUserIsUnconfirmed(email, error);
+      const isUnconfirmed = checkIfUserIsUnconfirmed(email, error);
       
       if (!isUnconfirmed) {
         // Show original error if not unconfirmed user issue

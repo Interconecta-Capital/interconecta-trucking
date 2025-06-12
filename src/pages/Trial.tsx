@@ -93,7 +93,7 @@ export default function Trial() {
       }
 
       // Check if this might be an existing unconfirmed user
-      const isUnconfirmed = await checkIfUserIsUnconfirmed(formData.email, error);
+      const isUnconfirmed = checkIfUserIsUnconfirmed(formData.email, error);
       
       if (!isUnconfirmed) {
         toast.error(error.message || 'Error al iniciar la prueba gratuita');
