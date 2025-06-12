@@ -100,14 +100,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
-    const { error } = await supabase.auth.signUp({
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: redirectUrl,
         data: userData,
       },
     });
+    
     if (error) throw error;
+    
+    // Si el usuario se registró exitosamente, crear el tenant y usuario
+    if (data.user) {
+      try {
+        // Crear tenant
+        const { data: tenant, error: tenantError } = await supabase
+          .from('tenants')
+          .insert({
+            nombre_empresa: userData.empresa,
+            rfc_empresa: userData.rfc,
+          })
+          .select()
+          .single();
+
+        if (tenantError) throw tenantError;
+
+        // Crear usuario en la tabla usuarios
+        const { error: usuarioError } = await supabase
+          .from('usuarios')
+          .insert({
+            auth_user_id: data.user.id,
+            email: email,
+            nombre: userData.nombre,
+            tenant_id: tenant.id,
+            telefono: userData.telefono,
+            empresa: userData.empresa,
+            rol: 'admin', // El primer usuario siempre es admin del tenant
+          });
+
+        if (usuarioError) throw usuarioError;
+      } catch (dbError) {
+        console.error('Error creating tenant/user:', dbError);
+        // No lanzamos el error para no interrumpir el proceso de registro
+        // El usuario puede loguearse y completar la configuración después
+      }
+    }
   };
 
   const signOut = async () => {

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -5,9 +6,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Trial from "./pages/Trial";
 import Dashboard from "./pages/Dashboard";
 import CartasPorte from "./pages/CartasPorte";
 import Conductores from "./pages/Conductores";
@@ -20,33 +23,55 @@ import { useFloatingNotifications } from "@/hooks/useFloatingNotifications";
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginForm />;
-  }
-
   return (
     <BrowserRouter>
-      <SidebarProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/cartas-porte" element={<CartasPorte />} />
-          <Route path="/conductores" element={<Conductores />} />
-          <Route path="/vehiculos" element={<Vehiculos />} />
-          <Route path="/socios" element={<Socios />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </SidebarProvider>
+      <Routes>
+        {/* Rutas públicas */}
+        <Route path="/" element={<Index />} />
+        <Route path="/auth/login" element={<Auth />} />
+        <Route path="/auth/register" element={<Auth />} />
+        <Route path="/auth/trial" element={<Trial />} />
+        
+        {/* Rutas protegidas */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <SidebarProvider>
+              <Dashboard />
+            </SidebarProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/cartas-porte" element={
+          <ProtectedRoute>
+            <SidebarProvider>
+              <CartasPorte />
+            </SidebarProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/conductores" element={
+          <ProtectedRoute>
+            <SidebarProvider>
+              <Conductores />
+            </SidebarProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/vehiculos" element={
+          <ProtectedRoute>
+            <SidebarProvider>
+              <Vehiculos />
+            </SidebarProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/socios" element={
+          <ProtectedRoute>
+            <SidebarProvider>
+              <Socios />
+            </SidebarProvider>
+          </ProtectedRoute>
+        } />
+        
+        {/* Ruta 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </BrowserRouter>
   );
 }

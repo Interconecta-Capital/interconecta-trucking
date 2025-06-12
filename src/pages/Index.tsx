@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star } from "lucide-react";
@@ -30,12 +29,12 @@ const Index = () => {
             </a>
           </nav>
           <div className="flex items-center space-x-3">
-            <Link to="/dashboard">
+            <Link to="/auth/login">
               <Button variant="outline" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light font-sora font-medium">
                 Iniciar Sesión
               </Button>
             </Link>
-            <Link to="/dashboard">
+            <Link to="/auth/trial">
               <Button className="bg-interconecta-primary hover:bg-interconecta-accent text-white font-sora font-medium">
                 Prueba 14 días gratis
               </Button>
@@ -66,13 +65,13 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link to="/dashboard">
+            <Link to="/auth/trial">
               <Button size="lg" className="bg-interconecta-primary hover:bg-interconecta-accent text-white px-8 py-4 text-lg font-sora font-semibold">
                 <Calendar className="mr-2 h-5 w-5" />
                 Prueba 14 días gratis
               </Button>
             </Link>
-            <Link to="/dashboard">
+            <Link to="/auth/login">
               <Button size="lg" variant="outline" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light px-8 py-4 text-lg font-sora font-medium">
                 Iniciar Sesión
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -265,13 +264,13 @@ const Index = () => {
             Únete a cientos de transportistas que ya confían en Interconecta Trucking para gestionar su negocio
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/dashboard">
+            <Link to="/auth/trial">
               <Button size="lg" className="bg-interconecta-primary hover:bg-interconecta-accent text-white px-12 py-4 text-xl font-sora font-semibold">
                 <Calendar className="mr-2 h-6 w-6" />
                 Comenzar Prueba Gratuita
               </Button>
             </Link>
-            <Link to="/dashboard">
+            <Link to="/auth/register">
               <Button size="lg" variant="outline" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light px-12 py-4 text-xl font-sora font-medium">
                 Ver Demo
                 <ArrowRight className="ml-2 h-6 w-6" />
