@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
+import { useSecurity } from '@/components/SecurityProvider';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface CompleteProfileModalProps {
 export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   const { user, updateProfile } = useAuth();
   const { validateUniqueRFC } = useUnconfirmedUserDetection();
+  const { validateFormData, sanitizeInput, checkRateLimit, logSecurityEvent } = useSecurity();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -40,15 +42,46 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
     }
   }, [user]);
 
+  const handleInputChange = (field: string, value: string) => {
+    // Sanitize input on change
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (!checkRateLimit('profile_update', 3)) {
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Log attempt
+      await logSecurityEvent('PROFILE_UPDATE_ATTEMPT', {
+        fields: Object.keys(formData)
+      });
+
+      // Validate form data
+      const validation = validateFormData(formData);
+      if (!validation.isValid) {
+        validation.errors.forEach(error => toast.error(error));
+        await logSecurityEvent('PROFILE_UPDATE_VALIDATION_FAILED', {
+          errors: validation.errors
+        });
+        setLoading(false);
+        return;
+      }
+
       // Validar RFC único
       const rfcValidation = await validateUniqueRFC(formData.rfc);
       if (!rfcValidation.isValid) {
         toast.error(rfcValidation.message || 'RFC inválido');
+        await logSecurityEvent('PROFILE_UPDATE_RFC_DUPLICATE', {
+          rfc: formData.rfc
+        });
         setLoading(false);
         return;
       }
@@ -60,13 +93,20 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
       
       toast.success('Perfil completado exitosamente');
       
+      await logSecurityEvent('PROFILE_UPDATE_SUCCESS');
+      
       // Forzar recarga para refrescar el estado
       setTimeout(() => {
         window.location.reload();
       }, 1000);
       
     } catch (error: any) {
-      toast.error('Error al completar perfil: ' + error.message);
+      const errorMessage = 'Error al completar perfil: ' + error.message;
+      toast.error(errorMessage);
+      
+      await logSecurityEvent('PROFILE_UPDATE_ERROR', {
+        error: error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -90,9 +130,10 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
             <Input
               id="nombre"
               value={formData.nombre}
-              onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+              onChange={(e) => handleInputChange('nombre', e.target.value)}
               placeholder="Tu nombre completo"
               required
+              maxLength={255}
             />
           </div>
 
@@ -101,9 +142,10 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
             <Input
               id="empresa"
               value={formData.empresa}
-              onChange={(e) => setFormData(prev => ({ ...prev, empresa: e.target.value }))}
+              onChange={(e) => handleInputChange('empresa', e.target.value)}
               placeholder="Nombre de tu empresa"
               required
+              maxLength={255}
             />
           </div>
 
@@ -112,9 +154,11 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
             <Input
               id="rfc"
               value={formData.rfc}
-              onChange={(e) => setFormData(prev => ({ ...prev, rfc: e.target.value.toUpperCase() }))}
+              onChange={(e) => handleInputChange('rfc', e.target.value.toUpperCase())}
               placeholder="RFC de tu empresa"
               required
+              maxLength={13}
+              pattern="[A-ZÑ&0-9]{12,13}"
             />
           </div>
 
@@ -123,9 +167,11 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
             <Input
               id="telefono"
               value={formData.telefono}
-              onChange={(e) => setFormData(prev => ({ ...prev, telefono: e.target.value }))}
+              onChange={(e) => handleInputChange('telefono', e.target.value)}
               placeholder="Tu número de teléfono"
               required
+              maxLength={20}
+              pattern="[0-9\-\+\(\)\s]*"
             />
           </div>
 

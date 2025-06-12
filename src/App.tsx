@@ -1,138 +1,79 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SecurityProvider } from "@/components/SecurityProvider";
+import Dashboard from "./pages/Dashboard";
+import Planes from "./pages/Planes";
+import { AuthGuard } from "./components/auth/AuthGuard";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { RecoverPassword } from "./pages/RecoverPassword";
+import { NewPassword } from "./pages/NewPassword";
+import { useAuth } from "./hooks/useAuth";
+import { BaseLayout } from "./components/layout/BaseLayout";
+import { Button } from "./components/ui/button";
+import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import CartasPorte from "./pages/CartasPorte";
+import CartaPorteDetail from "./pages/CartaPorteDetail";
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/hooks/useAuth';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { AuthGuard } from '@/components/auth/AuthGuard';
-import { AppSidebar } from '@/components/AppSidebar';
-import { GlobalHeader } from '@/components/GlobalHeader';
-
-// Pages
-import Index from '@/pages/Index';
-import Auth from '@/pages/Auth';
-import Dashboard from '@/pages/Dashboard';
-import CartasPorte from '@/pages/CartasPorte';
-import Conductores from '@/pages/Conductores';
-import Vehiculos from '@/pages/Vehiculos';
-import Socios from '@/pages/Socios';
-import Planes from '@/pages/Planes';
-import ResetPassword from '@/pages/ResetPassword';
-import Trial from '@/pages/Trial';
-import NotFound from '@/pages/NotFound';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos
-      retry: 1,
-    },
-  },
-});
-
-function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-1 flex-col">
-          <GlobalHeader />
-          <main className="flex-1 p-6 bg-gray-50">
-            <AuthGuard>
-              {children}
-            </AuthGuard>
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
-  );
-}
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Rutas públicas */}
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/login" element={<Auth />} />
-            <Route path="/auth/trial" element={<Trial />} />
-            <Route path="/trial" element={<Trial />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
-            
-            {/* Rutas protegidas */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Dashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/cartas-porte" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CartasPorte />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/conductores" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Conductores />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/vehiculos" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Vehiculos />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/socios" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Socios />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/planes" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
+      <SecurityProvider>
+        <TooltipProvider>
+          <div className="min-h-screen bg-background font-sans antialiased">
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/recover-password" element={<RecoverPassword />} />
+                <Route path="/new-password" element={<NewPassword />} />
+
+                <Route path="/" element={
+                  <AuthGuard>
+                    <Navigate to="/dashboard" replace />
+                  </AuthGuard>
+                } />
+
+                <Route path="/dashboard" element={
+                  <AuthGuard>
+                    <BaseLayout>
+                      <Dashboard />
+                    </BaseLayout>
+                  </AuthGuard>
+                } />
+
+                <Route path="/planes" element={
+                  <AuthGuard>
                     <Planes />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Redirección por defecto */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-          <SonnerToaster />
-        </Router>
-      </AuthProvider>
+                  </AuthGuard>
+                } />
+
+                <Route path="/cartas-porte" element={
+                  <AuthGuard>
+                    <BaseLayout>
+                      <CartasPorte />
+                    </BaseLayout>
+                  </AuthGuard>
+                } />
+
+                <Route path="/cartas-porte/:id" element={
+                  <AuthGuard>
+                    <BaseLayout>
+                      <CartaPorteDetail />
+                    </BaseLayout>
+                  </AuthGuard>
+                } />
+              </Routes>
+            </Router>
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </SecurityProvider>
     </QueryClientProvider>
   );
 }
