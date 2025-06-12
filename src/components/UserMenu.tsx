@@ -14,12 +14,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Settings, User } from 'lucide-react';
 import { UserProfileDialog } from './UserProfileDialog';
 import { SettingsDialog } from './SettingsDialog';
+import { MobileTrialInfo } from './MobileTrialInfo';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
     try {
@@ -49,10 +52,12 @@ export function UserMenu() {
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium leading-none">{userName}</p>
-                <p className="text-xs text-gray-500">{userRole}</p>
-              </div>
+              {!isMobile && (
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium leading-none">{userName}</p>
+                  <p className="text-xs text-gray-500">{userRole}</p>
+                </div>
+              )}
             </div>
           </Button>
         </DropdownMenuTrigger>
@@ -78,6 +83,10 @@ export function UserMenu() {
               </div>
             </div>
           </DropdownMenuLabel>
+
+          {/* Información de Trial/Plan para móvil */}
+          {isMobile && <MobileTrialInfo />}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowProfile(true)}>
             <User className="mr-2 h-4 w-4" />
