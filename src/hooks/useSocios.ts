@@ -8,10 +8,11 @@ export interface Socio {
   id?: string;
   nombre_razon_social: string;
   rfc: string;
-  tipo_persona?: 'fisica' | 'moral';
-  email?: string;
+  tipo_persona?: string;
   telefono?: string;
+  email?: string;
   direccion?: any;
+  estado?: string;
   activo?: boolean;
 }
 
@@ -35,7 +36,7 @@ export const useSocios = () => {
   });
 
   // Crear socio
-  const crearSocio = useMutation({
+  const createSocioMutation = useMutation({
     mutationFn: async (socio: Socio) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
@@ -69,7 +70,7 @@ export const useSocios = () => {
   });
 
   // Actualizar socio
-  const actualizarSocio = useMutation({
+  const updateSocioMutation = useMutation({
     mutationFn: async ({ id, ...socio }: Socio & { id: string }) => {
       const { data, error } = await supabase
         .from('socios')
@@ -112,10 +113,10 @@ export const useSocios = () => {
   return {
     socios,
     isLoading,
-    crearSocio: crearSocio.mutate,
-    actualizarSocio: actualizarSocio.mutate,
+    crearSocio: createSocioMutation.mutate,
+    updateSocio: updateSocioMutation.mutate,
     eliminarSocio: eliminarSocio.mutate,
-    isCreating: crearSocio.isPending,
-    isUpdating: actualizarSocio.isPending,
+    isCreating: createSocioMutation.isPending,
+    isUpdating: updateSocioMutation.isPending,
   };
 };

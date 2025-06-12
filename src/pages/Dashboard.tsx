@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RealtimeMetrics } from '@/components/dashboard/RealtimeMetrics';
@@ -8,9 +9,12 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, Users, Truck, BarChart3 } from 'lucide-react';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
+import { CompleteProfileModal } from '@/components/auth/CompleteProfileModal';
+import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 
 export default function Dashboard() {
   const { dashboardMetrics, realtimeMetrics, isLoadingDashboard, isLoadingRealtime } = useAnalytics();
+  const { needsCompletion } = useUnconfirmedUserDetection();
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
@@ -76,6 +80,9 @@ export default function Dashboard() {
         }}
         isLoading={isLoadingRealtime}
       />
+
+      {/* Modal para completar perfil */}
+      <CompleteProfileModal open={needsCompletion} />
     </div>
   );
 }

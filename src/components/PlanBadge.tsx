@@ -1,10 +1,12 @@
 
 import { Badge } from '@/components/ui/badge';
 import { useTrialTracking } from '@/hooks/useTrialTracking';
+import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { Calendar, Clock } from 'lucide-react';
 
 export function PlanBadge() {
   const { trialInfo, loading } = useTrialTracking();
+  const { enPeriodoPrueba } = useSuscripcion();
 
   if (loading) {
     return (
@@ -24,9 +26,9 @@ export function PlanBadge() {
     );
   }
 
-  if (trialInfo.isTrialActive) {
+  if (trialInfo.isTrialActive || enPeriodoPrueba()) {
     return (
-      <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+      <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
         <Calendar className="h-3 w-3 mr-1" />
         Trial: {trialInfo.daysRemaining} días restantes
       </Badge>

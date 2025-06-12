@@ -10,7 +10,6 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
@@ -73,21 +72,18 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img 
-              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-              alt="Interconecta Trucking Logo"
-              className="h-8 w-8 rounded-lg"
-            />
-            <div className="group-data-[collapsible=icon]:hidden">
-              <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
-              <p className="text-sm text-sidebar-foreground font-inter">Capital</p>
-            </div>
+        <div className="flex items-center space-x-3">
+          <img 
+            src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+            alt="Interconecta Trucking Logo"
+            className="h-8 w-8 rounded-lg"
+          />
+          <div className="group-data-[collapsible=icon]:hidden">
+            <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
+            <p className="text-sm text-sidebar-foreground font-inter">Capital</p>
           </div>
-          <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
         </div>
       </SidebarHeader>
       

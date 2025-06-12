@@ -10,12 +10,15 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LimitUsageIndicator } from './LimitUsageIndicator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export function GlobalHeader() {
   const [showSettings, setShowSettings] = useState(false);
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+      <SidebarTrigger />
+      
       <div className="flex flex-1 items-center gap-2">
         <form className="flex-1 max-w-md">
           <div className="relative">

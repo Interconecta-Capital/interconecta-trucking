@@ -18,6 +18,14 @@ export const useUnconfirmedUserDetection = () => {
         !user.profile.empresa ||
         !user.profile.nombre;
       
+      console.log('Profile check:', {
+        rfc: user.profile.rfc,
+        telefono: user.profile.telefono,
+        empresa: user.profile.empresa,
+        nombre: user.profile.nombre,
+        isIncomplete
+      });
+      
       setNeedsCompletion(isIncomplete);
     } else {
       setNeedsCompletion(false);

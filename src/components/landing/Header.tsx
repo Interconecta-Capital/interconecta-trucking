@@ -1,8 +1,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const Header = () => {
+  const location = useLocation();
+  
+  // Solo mostrar en la página de inicio y auth
+  if (location.pathname !== '/' && !location.pathname.startsWith('/auth')) {
+    return null;
+  }
+
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-interconecta-border-subtle sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
