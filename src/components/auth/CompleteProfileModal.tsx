@@ -43,7 +43,6 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   }, [user]);
 
   const handleInputChange = (field: string, value: string) => {
-    // Sanitize input on change
     const sanitizedValue = sanitizeInput(value);
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
   };
@@ -51,44 +50,41 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Rate limiting check
     if (!checkRateLimit('profile_update', 3)) {
+      toast.error('Demasiados intentos. Intenta nuevamente en 15 minutos.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Log attempt
       await logSecurityEvent('PROFILE_UPDATE_ATTEMPT', {
         fields: Object.keys(formData)
       });
 
-      // Validate form data (without email since it's already available)
-      const validation = validateFormData({
-        ...formData,
-        email: user?.email // Use existing email from auth
-      });
-      if (!validation.isValid) {
-        validation.errors.forEach(error => toast.error(error));
-        await logSecurityEvent('PROFILE_UPDATE_VALIDATION_FAILED', {
-          errors: validation.errors
-        });
+      // Validar que todos los campos requeridos estén presentes
+      if (!formData.nombre || !formData.empresa || !formData.rfc || !formData.telefono) {
+        toast.error('Todos los campos son obligatorios');
         setLoading(false);
         return;
       }
 
-      // Validar RFC único
-      const rfcValidation = await validateUniqueRFC(formData.rfc);
-      if (!rfcValidation.isValid) {
-        toast.error(rfcValidation.message || 'RFC inválido');
-        await logSecurityEvent('PROFILE_UPDATE_RFC_DUPLICATE', {
-          rfc: formData.rfc
-        });
-        setLoading(false);
-        return;
+      // Validar RFC único solo si el RFC cambió
+      const currentRFC = user?.profile?.rfc;
+      if (formData.rfc.toUpperCase() !== currentRFC?.toUpperCase()) {
+        console.log('Validando RFC único:', formData.rfc);
+        const rfcValidation = await validateUniqueRFC(formData.rfc);
+        if (!rfcValidation.isValid) {
+          toast.error(rfcValidation.message || 'RFC inválido o ya registrado');
+          await logSecurityEvent('PROFILE_UPDATE_RFC_DUPLICATE', {
+            rfc: formData.rfc
+          });
+          setLoading(false);
+          return;
+        }
       }
 
+      // Actualizar perfil
       await updateProfile({
         ...formData,
         rfc: formData.rfc.toUpperCase()
@@ -98,13 +94,14 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
       
       await logSecurityEvent('PROFILE_UPDATE_SUCCESS');
       
-      // Forzar recarga para refrescar el estado
+      // Recargar la página después de un breve delay
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 1500);
       
     } catch (error: any) {
-      const errorMessage = 'Error al completar perfil: ' + error.message;
+      console.error('Error updating profile:', error);
+      const errorMessage = 'Error al completar perfil: ' + (error.message || 'Error desconocido');
       toast.error(errorMessage);
       
       await logSecurityEvent('PROFILE_UPDATE_ERROR', {
