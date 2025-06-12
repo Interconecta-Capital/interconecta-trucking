@@ -63,7 +63,14 @@ export const useSecurityMonitoring = () => {
         return [];
       }
 
-      return data || [];
+      // Transform data to match our interface types
+      return (data || []).map(event => ({
+        ...event,
+        event_data: typeof event.event_data === 'object' && event.event_data !== null 
+          ? event.event_data as Record<string, any>
+          : {},
+        ip_address: event.ip_address ? String(event.ip_address) : null
+      }));
     },
     enabled: isAdmin,
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -86,7 +93,13 @@ export const useSecurityMonitoring = () => {
         return [];
       }
 
-      return data || [];
+      // Transform data to match our interface types
+      return (data || []).map(attempt => ({
+        ...attempt,
+        metadata: typeof attempt.metadata === 'object' && attempt.metadata !== null 
+          ? attempt.metadata as Record<string, any>
+          : {}
+      }));
     },
     enabled: isAdmin,
     refetchInterval: 30000,
