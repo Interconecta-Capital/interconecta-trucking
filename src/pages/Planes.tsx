@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap, Clock } from 'lucide-react';
+import { Check, Crown, Star, Zap } from 'lucide-react';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useTrialTracking } from '@/hooks/useTrialTracking';
 
@@ -114,30 +114,27 @@ export default function Planes() {
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-600" />
+              <Zap className="h-5 w-5 text-orange-600" />
               Período de Prueba
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="font-semibold text-lg">
+              <div>
+                <p className="font-semibold">
                   {trialInfo.daysRemaining} días restantes de tu prueba gratuita
                 </p>
                 <p className="text-muted-foreground">
                   Has usado {trialInfo.daysUsed} de {trialInfo.totalTrialDays} días
                 </p>
               </div>
-              <div className="text-right min-w-[120px]">
-                <div className="w-32 bg-gray-200 rounded-full h-3 mb-2">
+              <div className="text-right">
+                <div className="w-32 bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-orange-600 h-3 rounded-full transition-all duration-300" 
+                    className="bg-orange-600 h-2 rounded-full" 
                     style={{ width: `${(trialInfo.daysUsed / trialInfo.totalTrialDays) * 100}%` }}
                   ></div>
                 </div>
-                <p className="text-xs text-gray-600">
-                  {Math.round((trialInfo.daysUsed / trialInfo.totalTrialDays) * 100)}% usado
-                </p>
               </div>
             </div>
           </CardContent>

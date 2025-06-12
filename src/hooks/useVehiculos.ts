@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export interface Vehiculo {
   id: string;
@@ -28,12 +29,11 @@ export const useVehiculos = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query optimizada con cache mejorado
-  const { data: vehiculos = [], isLoading: loading, error } = useQuery({
+  const { data: vehiculos = [], isLoading: loading } = useQuery({
     queryKey: ['vehiculos', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
+      
       const { data, error } = await supabase
         .from('vehiculos')
         .select('*')
@@ -45,76 +45,82 @@ export const useVehiculos = () => {
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos (renamed from cacheTime)
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  // Mutación para crear vehículo
-  const crearVehiculoMutation = useMutation({
-    mutationFn: async (vehiculoData: any) => {
+  const createMutation = useMutation({
+    mutationFn: async (data: Omit<Vehiculo, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
-
-      const { data, error } = await supabase
+      
+      const { data: result, error } = await supabase
         .from('vehiculos')
         .insert({
-          ...vehiculoData,
+          ...data,
           user_id: user.id,
         })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
+      toast.success('Vehículo creado exitosamente');
     },
+    onError: (error: any) => {
+      toast.error(`Error al crear vehículo: ${error.message}`);
+    }
   });
 
-  // Mutación para actualizar vehículo
-  const actualizarVehiculoMutation = useMutation({
-    mutationFn: async ({ id, ...vehiculoData }: any) => {
-      const { data, error } = await supabase
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Vehiculo> }) => {
+      const { data: result, error } = await supabase
         .from('vehiculos')
-        .update(vehiculoData)
+        .update(data)
         .eq('id', id)
-        .eq('user_id', user?.id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
+      toast.success('Vehículo actualizado exitosamente');
     },
+    onError: (error: any) => {
+      toast.error(`Error al actualizar vehículo: ${error.message}`);
+    }
   });
 
-  // Mutación para eliminar vehículo
-  const eliminarVehiculoMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('vehiculos')
         .update({ activo: false })
-        .eq('id', id)
-        .eq('user_id', user?.id);
+        .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
+      toast.success('Vehículo eliminado exitosamente');
     },
+    onError: (error: any) => {
+      toast.error(`Error al eliminar vehículo: ${error.message}`);
+    }
   });
 
-  return {
-    vehiculos,
+  return { 
+    vehiculos, 
     loading,
-    error,
-    crearVehiculo: crearVehiculoMutation.mutateAsync,
-    actualizarVehiculo: actualizarVehiculoMutation.mutateAsync,
-    eliminarVehiculo: eliminarVehiculoMutation.mutateAsync,
-    isCreating: crearVehiculoMutation.isPending,
-    isUpdating: actualizarVehiculoMutation.isPending,
-    isDeleting: eliminarVehiculoMutation.isPending,
+    crearVehiculo: createMutation.mutateAsync,
+    actualizarVehiculo: updateMutation.mutateAsync,
+    eliminarVehiculo: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };

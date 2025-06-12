@@ -1,443 +1,425 @@
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { X, Upload, User, FileText, CreditCard, Calendar } from 'lucide-react';
-import { DocumentUpload } from '@/components/forms/DocumentUpload';
+import { toast } from 'sonner';
+import { Plus, Truck, FileText, Users, X } from 'lucide-react';
+import { DocumentUpload } from './DocumentUpload';
 import { useConductores } from '@/hooks/useConductores';
 import { useVehiculoConductores } from '@/hooks/useVehiculoConductores';
-import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
-import { toast } from 'sonner';
+
+const vehiculoSchema = z.object({
+  placa: z.string().min(1, 'La placa es requerida').max(10, 'Máximo 10 caracteres'),
+  marca: z.string().optional(),
+  modelo: z.string().optional(),
+  anio: z.number().optional(),
+  num_serie: z.string().optional(),
+  config_vehicular: z.string().optional(),
+  poliza_seguro: z.string().optional(),
+  vigencia_seguro: z.string().optional(),
+});
+
+type VehiculoFormData = z.infer<typeof vehiculoSchema>;
 
 interface VehiculoFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: VehiculoFormData) => Promise<void>;
   vehiculo?: any;
+  loading?: boolean;
 }
 
-export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo }: VehiculoFormModalProps) {
-  const [formData, setFormData] = useState({
-    placa: '',
-    marca: '',
-    modelo: '',
-    anio: '',
-    num_serie: '',
-    config_vehicular: '',
-    poliza_seguro: '',
-    vigencia_seguro: '',
-    verificacion_vigencia: '',
-    id_equipo_gps: '',
-    fecha_instalacion_gps: '',
-    acta_instalacion_gps: '',
-    estado: 'disponible'
+export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo, loading }: VehiculoFormModalProps) {
+  const [selectedConductores, setSelectedConductores] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('datos');
+  
+  const { conductores } = useConductores();
+  const { asignaciones, asignarConductor, desasignarConductor } = useVehiculoConductores(vehiculo?.id);
+  
+  const form = useForm<VehiculoFormData>({
+    resolver: zodResolver(vehiculoSchema),
+    defaultValues: vehiculo ? {
+      placa: vehiculo.placa || '',
+      marca: vehiculo.marca || '',
+      modelo: vehiculo.modelo || '',
+      anio: vehiculo.anio || new Date().getFullYear(),
+      num_serie: vehiculo.num_serie || '',
+      config_vehicular: vehiculo.config_vehicular || '',
+      poliza_seguro: vehiculo.poliza_seguro || '',
+      vigencia_seguro: vehiculo.vigencia_seguro || '',
+    } : {
+      placa: '',
+      marca: '',
+      modelo: '',
+      anio: new Date().getFullYear(),
+      num_serie: '',
+      config_vehicular: '',
+      poliza_seguro: '',
+      vigencia_seguro: '',
+    },
   });
 
-  const [selectedConductores, setSelectedConductores] = useState<string[]>([]);
-  const [documentos, setDocumentos] = useState([]);
-  const { conductores } = useConductores();
-  const { asignarConductor, desasignarConductor } = useVehiculoConductores();
-  const { cargarDocumentos } = useDocumentosEntidades();
-
+  // Cargar conductores asignados cuando se edita un vehículo
   useEffect(() => {
-    if (vehiculo) {
-      setFormData({
-        placa: vehiculo.placa || '',
-        marca: vehiculo.marca || '',
-        modelo: vehiculo.modelo || '',
-        anio: vehiculo.anio?.toString() || '',
-        num_serie: vehiculo.num_serie || '',
-        config_vehicular: vehiculo.config_vehicular || '',
-        poliza_seguro: vehiculo.poliza_seguro || '',
-        vigencia_seguro: vehiculo.vigencia_seguro || '',
-        verificacion_vigencia: vehiculo.verificacion_vigencia || '',
-        id_equipo_gps: vehiculo.id_equipo_gps || '',
-        fecha_instalacion_gps: vehiculo.fecha_instalacion_gps || '',
-        acta_instalacion_gps: vehiculo.acta_instalacion_gps || '',
-        estado: vehiculo.estado || 'disponible'
-      });
-      // Cargar documentos existentes
-      loadDocumentos();
-    } else {
-      setFormData({
-        placa: '',
-        marca: '',
-        modelo: '',
-        anio: '',
-        num_serie: '',
-        config_vehicular: '',
-        poliza_seguro: '',
-        vigencia_seguro: '',
-        verificacion_vigencia: '',
-        id_equipo_gps: '',
-        fecha_instalacion_gps: '',
-        acta_instalacion_gps: '',
-        estado: 'disponible'
-      });
-      setSelectedConductores([]);
-      setDocumentos([]);
+    if (vehiculo?.id && asignaciones.length > 0) {
+      const conductoresAsignados = asignaciones.map(a => a.conductor_id);
+      setSelectedConductores(conductoresAsignados);
     }
-  }, [vehiculo, open]);
+  }, [vehiculo?.id, asignaciones]);
 
-  const loadDocumentos = async () => {
-    if (vehiculo?.id) {
-      try {
-        const docs = await cargarDocumentos('vehiculo', vehiculo.id);
-        setDocumentos(docs);
-      } catch (error) {
-        console.error('Error loading documentos:', error);
-      }
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleConductorToggle = (conductorId: string) => {
-    setSelectedConductores(prev => {
-      if (prev.includes(conductorId)) {
-        return prev.filter(id => id !== conductorId);
-      } else {
-        return [...prev, conductorId];
-      }
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (data: VehiculoFormData) => {
     try {
-      // Convertir año a número si está presente
-      const dataToSubmit = {
-        ...formData,
-        anio: formData.anio ? parseInt(formData.anio) : null
-      };
-
-      await onSubmit(dataToSubmit);
+      await onSubmit(data);
       
-      // Si es un vehículo nuevo y se creó exitosamente, asignar conductores
-      if (!vehiculo && selectedConductores.length > 0) {
-        // Aquí necesitaríamos el ID del vehículo recién creado
-        // Por ahora mostramos un mensaje de éxito
-        toast.success('Vehículo creado exitosamente');
+      // Si es un vehículo nuevo o se modificaron los conductores, actualizar asignaciones
+      if (vehiculo?.id) {
+        // Remover asignaciones que ya no están seleccionadas
+        const conductoresActuales = asignaciones.map(a => a.conductor_id);
+        const conductoresARemover = conductoresActuales.filter(id => !selectedConductores.includes(id));
+        
+        for (const conductorId of conductoresARemover) {
+          const asignacion = asignaciones.find(a => a.conductor_id === conductorId);
+          if (asignacion) {
+            await desasignarConductor(asignacion.id);
+          }
+        }
+        
+        // Agregar nuevas asignaciones
+        const conductoresAAsignar = selectedConductores.filter(id => !conductoresActuales.includes(id));
+        
+        for (const conductorId of conductoresAAsignar) {
+          await asignarConductor({
+            vehiculoId: vehiculo.id,
+            conductorId
+          });
+        }
       }
       
-      onOpenChange(false);
+      form.reset();
+      setSelectedConductores([]);
     } catch (error) {
-      console.error('Error al guardar vehículo:', error);
       toast.error('Error al guardar el vehículo');
     }
   };
 
-  const configVehicularOptions = [
-    { value: 'C2', label: 'C2 - Camión Unitario' },
-    { value: 'C3', label: 'C3 - Camión Unitario' },
-    { value: 'T3S2', label: 'T3S2 - Tractocamión Semirremolque' },
-    { value: 'T3S3', label: 'T3S3 - Tractocamión Semirremolque' }
+  const configuracionesVehiculares = [
+    'C2 - Camión Unitario (2 llantas en el eje delantero y 4 llantas en el eje trasero)',
+    'C3 - Camión Unitario (2 llantas en el eje delantero y 6 llantas en el eje trasero)',
+    'T3S2 - Tractocamión con Semirremolque',
+    'T3S3 - Tractocamión con Semirremolque',
+    'T3S2R4 - Tractocamión con Semirremolque y Remolque',
+    'Otro'
   ];
 
-  const estadoOptions = [
-    { value: 'disponible', label: 'Disponible' },
-    { value: 'en_uso', label: 'En Uso' },
-    { value: 'mantenimiento', label: 'Mantenimiento' },
-    { value: 'fuera_servicio', label: 'Fuera de Servicio' }
-  ];
+  const toggleConductor = (conductorId: string) => {
+    setSelectedConductores(prev => 
+      prev.includes(conductorId) 
+        ? prev.filter(id => id !== conductorId)
+        : [...prev, conductorId]
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">
-              {vehiculo ? 'Editar Vehículo' : 'Nuevo Vehículo'}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <Truck className="h-5 w-5" />
+            {vehiculo ? 'Editar Vehículo' : 'Nuevo Vehículo'}
+          </DialogTitle>
+          <DialogDescription>
+            {vehiculo ? 'Modifica los datos del vehículo' : 'Ingresa los datos del nuevo vehículo'}
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información Básica */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Información Básica
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="placa">Placa *</Label>
-                <Input
-                  id="placa"
-                  value={formData.placa}
-                  onChange={(e) => handleInputChange('placa', e.target.value)}
-                  placeholder="Ej: ABC-123"
-                  required
-                />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="datos" className="flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              Datos Básicos
+            </TabsTrigger>
+            <TabsTrigger value="documentos" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Documentos
+            </TabsTrigger>
+            <TabsTrigger value="conductores" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Conductores
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="datos" className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="placa">Placa *</Label>
+                  <Input
+                    id="placa"
+                    {...form.register('placa')}
+                    placeholder="ABC-123"
+                    className="uppercase"
+                    onChange={(e) => {
+                      form.setValue('placa', e.target.value.toUpperCase());
+                    }}
+                  />
+                  {form.formState.errors.placa && (
+                    <p className="text-sm text-red-500">{form.formState.errors.placa.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="marca">Marca</Label>
+                  <Input
+                    id="marca"
+                    {...form.register('marca')}
+                    placeholder="Ej: Volvo, Mercedes, Kenworth"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="modelo">Modelo</Label>
+                  <Input
+                    id="modelo"
+                    {...form.register('modelo')}
+                    placeholder="Ej: FH16, Actros, T680"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="anio">Año</Label>
+                  <Input
+                    id="anio"
+                    type="number"
+                    {...form.register('anio', { valueAsNumber: true })}
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="marca">Marca *</Label>
-                <Input
-                  id="marca"
-                  value={formData.marca}
-                  onChange={(e) => handleInputChange('marca', e.target.value)}
-                  placeholder="Ej: Freightliner"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="modelo">Modelo *</Label>
-                <Input
-                  id="modelo"
-                  value={formData.modelo}
-                  onChange={(e) => handleInputChange('modelo', e.target.value)}
-                  placeholder="Ej: Cascadia"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="anio">Año</Label>
-                <Input
-                  id="anio"
-                  type="number"
-                  value={formData.anio}
-                  onChange={(e) => handleInputChange('anio', e.target.value)}
-                  placeholder="2020"
-                />
+                <Label htmlFor="config_vehicular">Configuración Vehicular</Label>
+                <Select 
+                  value={form.watch('config_vehicular')} 
+                  onValueChange={(value) => form.setValue('config_vehicular', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona la configuración" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {configuracionesVehiculares.map((config) => (
+                      <SelectItem key={config} value={config}>
+                        {config}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="num_serie">Número de Serie</Label>
                 <Input
                   id="num_serie"
-                  value={formData.num_serie}
-                  onChange={(e) => handleInputChange('num_serie', e.target.value)}
+                  {...form.register('num_serie')}
                   placeholder="Número de serie del vehículo"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="config_vehicular">Configuración Vehicular</Label>
-                <Select value={formData.config_vehicular} onValueChange={(value) => handleInputChange('config_vehicular', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar configuración" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {configVehicularOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="estado">Estado</Label>
-                <Select value={formData.estado} onValueChange={(value) => handleInputChange('estado', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estadoOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Información de Seguro */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Información de Seguro
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="poliza_seguro">Póliza de Seguro</Label>
-                <Input
-                  id="poliza_seguro"
-                  value={formData.poliza_seguro}
-                  onChange={(e) => handleInputChange('poliza_seguro', e.target.value)}
-                  placeholder="Número de póliza"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="vigencia_seguro">Vigencia del Seguro</Label>
-                <Input
-                  id="vigencia_seguro"
-                  type="date"
-                  value={formData.vigencia_seguro}
-                  onChange={(e) => handleInputChange('vigencia_seguro', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="verificacion_vigencia">Vigencia de Verificación</Label>
-                <Input
-                  id="verificacion_vigencia"
-                  type="date"
-                  value={formData.verificacion_vigencia}
-                  onChange={(e) => handleInputChange('verificacion_vigencia', e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Información GPS */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Información GPS
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="id_equipo_gps">ID Equipo GPS</Label>
-                <Input
-                  id="id_equipo_gps"
-                  value={formData.id_equipo_gps}
-                  onChange={(e) => handleInputChange('id_equipo_gps', e.target.value)}
-                  placeholder="Identificador del GPS"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fecha_instalacion_gps">Fecha Instalación GPS</Label>
-                <Input
-                  id="fecha_instalacion_gps"
-                  type="date"
-                  value={formData.fecha_instalacion_gps}
-                  onChange={(e) => handleInputChange('fecha_instalacion_gps', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="acta_instalacion_gps">Acta de Instalación GPS</Label>
-                <Textarea
-                  id="acta_instalacion_gps"
-                  value={formData.acta_instalacion_gps}
-                  onChange={(e) => handleInputChange('acta_instalacion_gps', e.target.value)}
-                  placeholder="Detalles del acta de instalación"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Carga de Documentos */}
-          {vehiculo && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Documentos del Vehículo
-              </h3>
-              
-              <DocumentUpload
-                entidadTipo="vehiculo"
-                entidadId={vehiculo.id}
-                documentos={documentos}
-                onDocumentosChange={loadDocumentos}
-              />
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Asignación de Conductores */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Asignar Conductores
-            </h3>
-            
-            {conductores.length > 0 ? (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Selecciona los conductores que pueden manejar este vehículo:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {conductores.map((conductor) => (
-                    <div
-                      key={conductor.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedConductores.includes(conductor.id)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => handleConductorToggle(conductor.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{conductor.nombre}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Lic: {conductor.num_licencia || 'N/A'}
-                          </p>
-                        </div>
-                        {selectedConductores.includes(conductor.id) && (
-                          <Badge variant="default">Seleccionado</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="poliza_seguro">Póliza de Seguro</Label>
+                  <Input
+                    id="poliza_seguro"
+                    {...form.register('poliza_seguro')}
+                    placeholder="Número de póliza"
+                  />
                 </div>
-                {selectedConductores.length > 0 && (
-                  <p className="text-sm text-green-600">
-                    {selectedConductores.length} conductor(es) seleccionado(s)
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No hay conductores registrados</p>
-                <p className="text-sm">Registra conductores primero para poder asignarlos</p>
-              </div>
-            )}
-          </div>
 
-          {/* Botones de acción */}
-          <div className="flex justify-end space-x-3 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {vehiculo ? 'Actualizar' : 'Crear'} Vehículo
-            </Button>
-          </div>
-        </form>
+                <div className="space-y-2">
+                  <Label htmlFor="vigencia_seguro">Vigencia del Seguro</Label>
+                  <Input
+                    id="vigencia_seguro"
+                    type="date"
+                    {...form.register('vigencia_seguro')}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? 'Guardando...' : (vehiculo ? 'Actualizar' : 'Crear Vehículo')}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="documentos" className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-3">Documentos del Vehículo</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Sube los documentos importantes del vehículo como tarjeta de circulación, seguros, verificaciones, etc.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DocumentUpload
+                  label="Tarjeta de Circulación"
+                  tipoDocumento="tarjeta_circulacion"
+                  entidadTipo="vehiculo"
+                  entidadId={vehiculo?.id}
+                />
+                
+                <DocumentUpload
+                  label="Póliza de Seguro"
+                  tipoDocumento="poliza_seguro"
+                  entidadTipo="vehiculo"
+                  entidadId={vehiculo?.id}
+                />
+                
+                <DocumentUpload
+                  label="Verificación Vehicular"
+                  tipoDocumento="verificacion"
+                  entidadTipo="vehiculo"
+                  entidadId={vehiculo?.id}
+                />
+                
+                <DocumentUpload
+                  label="Otros Documentos"
+                  tipoDocumento="otros"
+                  entidadTipo="vehiculo"
+                  entidadId={vehiculo?.id}
+                />
+              </div>
+
+              {!vehiculo?.id && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Nota:</strong> Primero guarda el vehículo para poder subir documentos.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="conductores" className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-3">Asignar Conductores</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Selecciona los conductores que pueden operar este vehículo.
+                </p>
+              </div>
+
+              {conductores.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-sm text-gray-500 mb-4">
+                    No hay conductores registrados
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Registra conductores primero para poder asignarlos a vehículos
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedConductores.length > 0 && (
+                      <div className="w-full">
+                        <Label className="text-sm font-medium">Conductores Seleccionados:</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedConductores.map(conductorId => {
+                            const conductor = conductores.find(c => c.id === conductorId);
+                            return conductor ? (
+                              <Badge key={conductorId} variant="secondary" className="flex items-center gap-1">
+                                {conductor.nombre}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleConductor(conductorId)}
+                                  className="ml-1 hover:bg-gray-200 rounded-full"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                        <Separator className="my-4" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                    {conductores.map((conductor) => (
+                      <div
+                        key={conductor.id}
+                        className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                          selectedConductores.includes(conductor.id)
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => toggleConductor(conductor.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-sm">{conductor.nombre}</h4>
+                            <div className="text-xs text-gray-500 space-y-1">
+                              {conductor.num_licencia && (
+                                <p>Licencia: {conductor.num_licencia}</p>
+                              )}
+                              {conductor.telefono && (
+                                <p>Teléfono: {conductor.telefono}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <Badge variant={conductor.estado === 'disponible' ? 'default' : 'secondary'}>
+                              {conductor.estado}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!vehiculo?.id && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Nota:</strong> Primero guarda el vehículo para poder asignar conductores.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

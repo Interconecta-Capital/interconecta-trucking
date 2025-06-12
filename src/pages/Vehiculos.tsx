@@ -1,272 +1,359 @@
-
 import { useState } from 'react';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useVehiculoConductores } from '@/hooks/useVehiculoConductores';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Plus, Search, Edit, Trash2, Car, Wrench, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useVehiculos } from '@/hooks/useVehiculos';
 import { VehiculoFormModal } from '@/components/forms/VehiculoFormModal';
-import { ProtectedActions } from '@/components/ProtectedActions';
-import { Plus, Search, Edit, Trash2, Truck, User, Calendar, Shield } from 'lucide-react';
-import { toast } from 'sonner';
-
-interface DataTableSearchProps {
-  query: string;
-  onQueryChange: (query: string) => void;
-}
-
-function DataTableSearch({ query, onQueryChange }: DataTableSearchProps) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <Search className="w-4 h-4 mr-2 text-gray-500" />
-        <Input
-          type="search"
-          placeholder="Buscar vehículo..."
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-    </div>
-  );
-}
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export default function Vehiculos() {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const { vehiculos, crearVehiculo, actualizarVehiculo, eliminarVehiculo, loading } = useVehiculos();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingVehiculo, setEditingVehiculo] = useState(null);
+  
+  const { 
+    vehiculos, 
+    loading, 
+    crearVehiculo, 
+    actualizarVehiculo, 
+    eliminarVehiculo,
+    isCreating,
+    isUpdating,
+    isDeleting
+  } = useVehiculos();
 
-  const handleCreate = async (data: any) => {
-    try {
-      await crearVehiculo(data);
-      toast.success('Vehículo creado exitosamente');
-      setShowForm(false);
-    } catch (error: any) {
-      toast.error(`Error al crear vehículo: ${error.message}`);
+  const handleCreateVehiculo = async (data) => {
+    await crearVehiculo(data);
+    setIsFormOpen(false);
+  };
+
+  const handleUpdateVehiculo = async (data) => {
+    if (editingVehiculo) {
+      await actualizarVehiculo({ id: editingVehiculo.id, data });
+      setEditingVehiculo(null);
+      setIsFormOpen(false);
     }
   };
 
-  const handleUpdate = async (data: any) => {
-    try {
-      await actualizarVehiculo({ id: selectedVehiculo.id, ...data });
-      toast.success('Vehículo actualizado exitosamente');
-      setShowForm(false);
-      setSelectedVehiculo(null);
-    } catch (error: any) {
-      toast.error(`Error al actualizar vehículo: ${error.message}`);
-    }
+  const handleDeleteVehiculo = async (id) => {
+    await eliminarVehiculo(id);
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await eliminarVehiculo(id);
-      toast.success('Vehículo eliminado exitosamente');
-    } catch (error: any) {
-      toast.error(`Error al eliminar vehículo: ${error.message}`);
-    }
-  };
-
-  const handleEdit = (vehiculo: any) => {
-    setSelectedVehiculo(vehiculo);
-    setShowForm(true);
-  };
-
-  const filteredVehiculos = vehiculos.filter((vehiculo) =>
-    vehiculo.placa.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vehiculo.marca.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vehiculo.modelo.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredVehiculos = vehiculos.filter(vehiculo =>
+    vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const disponibles = vehiculos.filter(v => v.estado === 'disponible').length;
+  const enUso = vehiculos.filter(v => v.estado === 'en_uso').length;
+  const mantenimiento = vehiculos.filter(v => v.estado === 'mantenimiento').length;
+
+  const getEstadoBadge = (estado) => {
+    const variants = {
+      'disponible': 'default',
+      'en_uso': 'secondary',
+      'mantenimiento': 'destructive',
+      'fuera_servicio': 'outline'
+    };
+    
+    const labels = {
+      'disponible': 'Disponible',
+      'en_uso': 'En Uso',
+      'mantenimiento': 'Mantenimiento',
+      'fuera_servicio': 'Fuera de Servicio'
+    };
+
+    return (
+      <Badge variant={variants[estado] || 'outline'}>
+        {labels[estado] || estado}
+      </Badge>
+    );
+  };
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Encabezado de la página */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Vehículos
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Administra tu flota de vehículos
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Vehículos</h1>
+          <p className="text-muted-foreground">
+            Gestiona tu flota de vehículos
           </p>
         </div>
-        <ProtectedActions
-          action="create"
-          resource="vehiculos"
-          onAction={() => setShowForm(true)}
-          buttonText="Registrar Vehículo"
+        <Button 
+          onClick={() => {
+            setEditingVehiculo(null);
+            setIsFormOpen(true);
+          }}
+          className="bg-blue-600 hover:bg-blue-700"
+          disabled={isCreating}
         >
-          <div />
-        </ProtectedActions>
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Vehículo
+        </Button>
       </div>
 
-      {/* Buscador de vehículos */}
-      <DataTableSearch
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-      />
-      
-      {/* Tabla de vehículos */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Vehículos</CardTitle>
+            <Car className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{vehiculos.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Disponibles</CardTitle>
+            <div className="h-4 w-4 rounded-full bg-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{disponibles}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">En Uso</CardTitle>
+            <div className="h-4 w-4 rounded-full bg-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{enUso}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Mantenimiento</CardTitle>
+            <Wrench className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{mantenimiento}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Truck className="h-5 w-5" />
-            Lista de Vehículos
-          </CardTitle>
-          <CardDescription>
-            Gestiona tu flota de vehículos y sus conductores asignados
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+            <div>
+              <CardTitle>Lista de Vehículos</CardTitle>
+              <CardDescription>
+                Administra todos tus vehículos registrados
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por placa, marca o modelo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-64"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {vehiculos.length === 0 ? (
+          {loading ? (
             <div className="text-center py-12">
-              <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No hay vehículos registrados
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-muted-foreground">Cargando vehículos...</p>
+            </div>
+          ) : filteredVehiculos.length === 0 ? (
+            <div className="text-center py-12">
+              <Car className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                {searchTerm ? 'No se encontraron vehículos' : 'No hay vehículos registrados'}
               </h3>
-              <p className="text-gray-600 mb-4">
-                Comienza agregando tu primer vehículo a la flota
+              <p className="text-muted-foreground mb-4">
+                {searchTerm 
+                  ? 'Intenta con otros términos de búsqueda'
+                  : 'Comienza registrando tu primer vehículo'
+                }
               </p>
-              <ProtectedActions
-                action="create"
-                resource="vehiculos"
-                onAction={() => setShowForm(true)}
-                buttonText="Registrar Primer Vehículo"
-              >
-                <div />
-              </ProtectedActions>
+              {!searchTerm && (
+                <Button onClick={() => setIsFormOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registrar Primer Vehículo
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>Marca/Modelo</TableHead>
-                    <TableHead>Año</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Conductores</TableHead>
-                    <TableHead>Seguro</TableHead>
-                    <TableHead>Verificación</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVehiculos.map((vehiculo) => {
-                    const { asignaciones } = useVehiculoConductores(vehiculo.id);
-                    
-                    return (
-                      <TableRow key={vehiculo.id}>
-                        <TableCell className="font-medium">
-                          {vehiculo.placa}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{vehiculo.marca}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {vehiculo.modelo}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{vehiculo.anio || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              vehiculo.estado === 'disponible' ? 'default' :
-                              vehiculo.estado === 'en_uso' ? 'secondary' :
-                              vehiculo.estado === 'mantenimiento' ? 'destructive' :
-                              'outline'
-                            }
-                          >
-                            {vehiculo.estado === 'disponible' && 'Disponible'}
-                            {vehiculo.estado === 'en_uso' && 'En Uso'}
-                            {vehiculo.estado === 'mantenimiento' && 'Mantenimiento'}
-                            {vehiculo.estado === 'fuera_servicio' && 'Fuera de Servicio'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
-                              {asignaciones.length} conductor{asignaciones.length !== 1 ? 'es' : ''}
-                            </span>
-                          </div>
-                          {asignaciones.length > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {asignaciones.map(a => a.conductor?.nombre).join(', ')}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                            <div className="text-sm">
-                              {vehiculo.vigencia_seguro ? (
-                                <div>
-                                  <div>{vehiculo.poliza_seguro || 'N/A'}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Vence: {new Date(vehiculo.vigencia_seguro).toLocaleDateString()}
-                                  </div>
-                                </div>
-                              ) : (
-                                'Sin seguro'
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <div className="text-sm">
-                              {vehiculo.verificacion_vigencia ? (
-                                <div className="text-xs">
-                                  Vence: {new Date(vehiculo.verificacion_vigencia).toLocaleDateString()}
-                                </div>
-                              ) : (
-                                'Sin verificación'
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(vehiculo)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(vehiculo.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Placa</TableHead>
+                  <TableHead>Marca/Modelo</TableHead>
+                  <TableHead>Año</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Conductores</TableHead>
+                  <TableHead>Seguro</TableHead>
+                  <TableHead>Verificación</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredVehiculos.map((vehiculo) => (
+                  <VehiculoRow 
+                    key={vehiculo.id} 
+                    vehiculo={vehiculo}
+                    onEdit={(v) => {
+                      setEditingVehiculo(v);
+                      setIsFormOpen(true);
+                    }}
+                    onDelete={handleDeleteVehiculo}
+                    isUpdating={isUpdating}
+                    isDeleting={isDeleting}
+                  />
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
-      {/* Modal del formulario */}
       <VehiculoFormModal
-        open={showForm}
-        onOpenChange={setShowForm}
-        onSubmit={selectedVehiculo ? handleUpdate : handleCreate}
-        vehiculo={selectedVehiculo}
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSubmit={editingVehiculo ? handleUpdateVehiculo : handleCreateVehiculo}
+        vehiculo={editingVehiculo}
+        loading={isCreating || isUpdating}
       />
     </div>
+  );
+}
+
+// Componente separado para la fila del vehículo
+function VehiculoRow({ vehiculo, onEdit, onDelete, isUpdating, isDeleting }) {
+  const { asignaciones, isLoading: loadingConductores } = useVehiculoConductores(vehiculo.id);
+
+  const getEstadoBadge = (estado) => {
+    const variants = {
+      'disponible': 'default',
+      'en_uso': 'secondary',
+      'mantenimiento': 'destructive',
+      'fuera_servicio': 'outline'
+    };
+    
+    const labels = {
+      'disponible': 'Disponible',
+      'en_uso': 'En Uso',
+      'mantenimiento': 'Mantenimiento',
+      'fuera_servicio': 'Fuera de Servicio'
+    };
+
+    return (
+      <Badge variant={variants[estado] || 'outline'}>
+        {labels[estado] || estado}
+      </Badge>
+    );
+  };
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{vehiculo.placa}</TableCell>
+      <TableCell>
+        <div>
+          <div className="font-medium">{vehiculo.marca}</div>
+          <div className="text-sm text-muted-foreground">{vehiculo.modelo}</div>
+        </div>
+      </TableCell>
+      <TableCell>{vehiculo.anio}</TableCell>
+      <TableCell>{getEstadoBadge(vehiculo.estado)}</TableCell>
+      <TableCell>
+        {loadingConductores ? (
+          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+        ) : asignaciones.length > 0 ? (
+          <div className="space-y-1">
+            {asignaciones.slice(0, 2).map((asignacion) => (
+              <Badge key={asignacion.id} variant="outline" className="text-xs">
+                {asignacion.conductor?.nombre}
+              </Badge>
+            ))}
+            {asignaciones.length > 2 && (
+              <Badge variant="outline" className="text-xs">
+                +{asignaciones.length - 2} más
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">Sin asignar</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {vehiculo.vigencia_seguro ? (
+          <div className="text-sm">
+            {new Date(vehiculo.vigencia_seguro) < new Date() ? (
+              <Badge variant="destructive">Vencido</Badge>
+            ) : (
+              <Badge variant="default">Vigente</Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Sin información</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {vehiculo.verificacion_vigencia ? (
+          <div className="text-sm">
+            {new Date(vehiculo.verificacion_vigencia) < new Date() ? (
+              <Badge variant="destructive">Vencida</Badge>
+            ) : (
+              <Badge variant="default">Vigente</Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Sin información</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(vehiculo)}
+            disabled={isUpdating}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isDeleting}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Eliminar vehículo?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. El vehículo {vehiculo.placa} será eliminado permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(vehiculo.id)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Eliminar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
