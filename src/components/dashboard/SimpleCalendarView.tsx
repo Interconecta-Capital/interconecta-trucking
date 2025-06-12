@@ -1,90 +1,59 @@
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'moment/locale/es';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, MapPin, Clock, Truck } from 'lucide-react';
-import { TripDetailModal } from './TripDetailModal';
+import { CalendarIcon, MapPin, Truck } from 'lucide-react';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  resource: {
-    tipo_evento: string;
-    descripcion?: string;
-    ubicacion_origen?: string;
-    ubicacion_destino?: string;
-    carta_porte_id?: string;
-    metadata?: any;
-  };
-}
+moment.locale('es');
+const localizer = momentLocalizer(moment);
 
 export function SimpleCalendarView() {
-  const { user } = useAuth();
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [showTripModal, setShowTripModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const { data: eventos = [], isLoading } = useQuery({
-    queryKey: ['eventos-calendario', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('eventos_calendario')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('fecha_inicio', { ascending: true });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Crear algunos eventos de ejemplo si no hay datos
-  const eventosEjemplo = [
+  // Mock data para eventos del calendario
+  const eventos = [
     {
       id: '1',
-      titulo: 'Entrega CDMX - Guadalajara',
-      fecha_inicio: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString(),
-      fecha_fin: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
+      titulo: 'Viaje CDMX - Guadalajara',
+      fecha_inicio: '2024-01-15T08:00:00',
+      fecha_fin: '2024-01-15T18:00:00',
       tipo_evento: 'viaje',
       ubicacion_origen: 'Ciudad de México',
-      ubicacion_destino: 'Guadalajara, Jalisco',
-      descripcion: 'Entrega de mercancía electrónica',
-      carta_porte_id: 'cp-001',
-      metadata: { vehiculo: 'ABC-123', conductor: 'Juan Pérez' }
+      ubicacion_destino: 'Guadalajara',
+      descripcion: 'Entrega de mercancía',
+      carta_porte_id: 'CP-2024-001',
+      metadata: { conductor: 'Juan Pérez', vehiculo: 'ABC-123-45' }
     },
     {
       id: '2',
-      titulo: 'Mantenimiento Vehículo ABC-123',
-      fecha_inicio: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      fecha_fin: new Date(Date.now() + 1000 * 60 * 60 * 26).toISOString(),
+      titulo: 'Mantenimiento Vehículo DEF-678',
+      fecha_inicio: '2024-01-16T09:00:00',
+      fecha_fin: '2024-01-16T15:00:00',
       tipo_evento: 'mantenimiento',
-      descripcion: 'Servicio programado y verificación',
+      ubicacion_origen: 'Taller Central',
+      descripcion: 'Mantenimiento preventivo',
       carta_porte_id: null,
-      metadata: { taller: 'AutoServicio Central', costo_estimado: 2500 }
+      metadata: { vehiculo: 'DEF-678-90', tipo: 'preventivo' }
     },
     {
       id: '3',
-      titulo: 'Recogida Monterrey',
-      fecha_inicio: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
-      fecha_fin: new Date(Date.now() + 1000 * 60 * 60 * 50).toISOString(),
+      titulo: 'Entrega Cliente XYZ',
+      fecha_inicio: '2024-01-17T10:00:00',
+      fecha_fin: '2024-01-17T12:00:00',
       tipo_evento: 'entrega',
-      ubicacion_origen: 'Monterrey, NL',
-      descripcion: 'Recogida de carga industrial',
-      carta_porte_id: 'cp-002',
-      metadata: { cliente: 'Industrias del Norte', peso: '15 toneladas' }
-    },
+      ubicacion_origen: 'Almacén Principal',
+      ubicacion_destino: 'Cliente XYZ',
+      descripcion: 'Entrega programada',
+      carta_porte_id: 'CP-2024-002',
+      metadata: { cliente: 'Cliente XYZ', productos: 'Electrodomésticos' }
+    }
   ];
 
-  const eventosMostrar = eventos.length > 0 ? eventos : eventosEjemplo;
-
-  const calendarEvents: CalendarEvent[] = eventosMostrar.map(evento => ({
+  const calendarEvents = eventos.map((evento) => ({
     id: evento.id,
     title: evento.titulo,
     start: new Date(evento.fecha_inicio),
@@ -95,145 +64,120 @@ export function SimpleCalendarView() {
       ubicacion_origen: evento.ubicacion_origen,
       ubicacion_destino: evento.ubicacion_destino,
       carta_porte_id: evento.carta_porte_id,
-      metadata: evento.metadata,
-    },
+      metadata: evento.metadata
+    }
   }));
 
-  const handleSelectEvent = (event: CalendarEvent) => {
+  const handleSelectEvent = (event: any) => {
     setSelectedEvent(event);
-    setShowTripModal(true);
   };
 
-  const getEventTypeColor = (tipo: string) => {
-    switch (tipo) {
+  const eventStyleGetter = (event: any) => {
+    let backgroundColor = '#3174ad';
+    switch (event.resource.tipo_evento) {
       case 'viaje':
-        return 'bg-green-100 text-green-800 border-green-200';
+        backgroundColor = '#10b981';
+        break;
       case 'entrega':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        backgroundColor = '#f59e0b';
+        break;
       case 'mantenimiento':
-        return 'bg-red-100 text-red-800 border-red-200';
+        backgroundColor = '#ef4444';
+        break;
       default:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        backgroundColor = '#6366f1';
     }
+
+    return {
+      style: {
+        backgroundColor,
+        borderRadius: '4px',
+        opacity: 0.8,
+        color: 'white',
+        border: '0px',
+        display: 'block'
+      }
+    };
   };
 
-  const getEventIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'viaje':
-        return <Truck className="h-4 w-4" />;
-      case 'entrega':
-        return <MapPin className="h-4 w-4" />;
-      case 'mantenimiento':
-        return <Clock className="h-4 w-4" />;
-      default:
-        return <CalendarIcon className="h-4 w-4" />;
-    }
+  const messages = {
+    allDay: 'Todo el día',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    today: 'Hoy',
+    month: 'Mes',
+    week: 'Semana',
+    day: 'Día',
+    agenda: 'Agenda',
+    date: 'Fecha',
+    time: 'Hora',
+    event: 'Evento',
+    noEventsInRange: 'No hay eventos en este rango.',
+    showMore: (total: number) => `+ Ver más (${total})`
   };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Calendario de Viajes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Calendario de Viajes
-            </CardTitle>
-            <div className="flex gap-2">
-              <Badge variant="outline" className="bg-green-50 text-green-700">
-                <Truck className="h-3 w-3 mr-1" />
-                Viajes
-              </Badge>
-              <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                <MapPin className="h-3 w-3 mr-1" />
-                Entregas
-              </Badge>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5" />
+            Calendario de Viajes
+          </CardTitle>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="bg-green-50 text-green-700">
+              <Truck className="h-3 w-3 mr-1" />
+              Viajes
+            </Badge>
+            <Badge variant="outline" className="bg-orange-50 text-orange-700">
+              <MapPin className="h-3 w-3 mr-1" />
+              Entregas
+            </Badge>
+            <Badge variant="outline" className="bg-red-50 text-red-700">
+              <span className="h-3 w-3 mr-1">🔧</span>
+              Mantenimiento
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div style={{ height: '600px' }}>
+          <Calendar
+            localizer={localizer}
+            events={calendarEvents}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: '100%' }}
+            onSelectEvent={handleSelectEvent}
+            eventPropGetter={eventStyleGetter}
+            messages={messages}
+            views={['month', 'week', 'day', 'agenda']}
+            defaultView="month"
+            popup
+            step={60}
+            showMultiDayTimes
+          />
+        </div>
+        
+        {selectedEvent && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-semibold mb-2">{selectedEvent.title}</h4>
+            <div className="space-y-1 text-sm text-gray-600">
+              <p><strong>Tipo:</strong> {selectedEvent.resource.tipo_evento}</p>
+              <p><strong>Descripción:</strong> {selectedEvent.resource.descripcion}</p>
+              {selectedEvent.resource.ubicacion_origen && (
+                <p><strong>Origen:</strong> {selectedEvent.resource.ubicacion_origen}</p>
+              )}
+              {selectedEvent.resource.ubicacion_destino && (
+                <p><strong>Destino:</strong> {selectedEvent.resource.ubicacion_destino}</p>
+              )}
+              {selectedEvent.resource.carta_porte_id && (
+                <p><strong>Carta Porte:</strong> {selectedEvent.resource.carta_porte_id}</p>
+              )}
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Próximos Eventos</h3>
-            <div className="space-y-3">
-              {calendarEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => handleSelectEvent(event)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="mt-1">
-                        {getEventIcon(event.resource.tipo_evento)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900">{event.title}</h4>
-                          <Badge 
-                            variant="outline" 
-                            className={getEventTypeColor(event.resource.tipo_evento)}
-                          >
-                            {event.resource.tipo_evento}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {event.start.toLocaleDateString('es-ES', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                        {event.resource.descripcion && (
-                          <p className="text-sm text-gray-500">
-                            {event.resource.descripcion}
-                          </p>
-                        )}
-                        {(event.resource.ubicacion_origen || event.resource.ubicacion_destino) && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <MapPin className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-500">
-                              {event.resource.ubicacion_origen && event.resource.ubicacion_destino
-                                ? `${event.resource.ubicacion_origen} → ${event.resource.ubicacion_destino}`
-                                : event.resource.ubicacion_origen || event.resource.ubicacion_destino
-                              }
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {selectedEvent && (
-        <TripDetailModal
-          event={selectedEvent}
-          open={showTripModal}
-          onOpenChange={setShowTripModal}
-        />
-      )}
-    </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -1,4 +1,3 @@
-
 import { AppSidebar } from "@/components/AppSidebar";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,8 @@ import {
   Calendar,
   AlertTriangle,
   Fuel,
-  Wrench
+  Wrench,
+  MapPin
 } from "lucide-react";
 
 const Vehiculos = () => {
