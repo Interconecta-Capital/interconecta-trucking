@@ -6,6 +6,7 @@ interface UseVirtualizedDataProps<T> {
   searchFields?: (keyof T)[];
   sortField?: keyof T;
   pageSize?: number;
+  compactMode?: boolean;
 }
 
 interface UseVirtualizedDataReturn<T> {
@@ -18,17 +19,22 @@ interface UseVirtualizedDataReturn<T> {
   sortBy: (field: keyof T) => void;
   totalItems: number;
   isFiltered: boolean;
+  compactMode: boolean;
+  setCompactMode: (compact: boolean) => void;
+  clearFilters: () => void;
 }
 
 export function useVirtualizedData<T>({
   data,
   searchFields = [],
   sortField,
-  pageSize = 100
+  pageSize = 100,
+  compactMode = false
 }: UseVirtualizedDataProps<T>): UseVirtualizedDataReturn<T> {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentSortField, setCurrentSortField] = useState<keyof T | null>(sortField || null);
+  const [compactModeState, setCompactModeState] = useState(compactMode);
 
   const filteredData = useMemo(() => {
     let filtered = [...data];
@@ -58,6 +64,8 @@ export function useVirtualizedData<T>({
           comparison = aValue.localeCompare(bValue);
         } else if (typeof aValue === 'number' && typeof bValue === 'number') {
           comparison = aValue - bValue;
+        } else if (aValue instanceof Date && bValue instanceof Date) {
+          comparison = aValue.getTime() - bValue.getTime();
         } else {
           comparison = String(aValue).localeCompare(String(bValue));
         }
@@ -78,6 +86,16 @@ export function useVirtualizedData<T>({
     }
   }, [currentSortField]);
 
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setCurrentSortField(null);
+    setSortDirection('asc');
+  }, []);
+
+  const setCompactMode = useCallback((compact: boolean) => {
+    setCompactModeState(compact);
+  }, []);
+
   return {
     filteredData,
     searchTerm,
@@ -87,6 +105,9 @@ export function useVirtualizedData<T>({
     currentSortField,
     sortBy,
     totalItems: data.length,
-    isFiltered: searchTerm !== '' || currentSortField !== null
+    isFiltered: searchTerm !== '' || currentSortField !== null,
+    compactMode: compactModeState,
+    setCompactMode,
+    clearFilters
   };
 }

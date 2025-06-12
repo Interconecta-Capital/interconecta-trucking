@@ -1,7 +1,9 @@
 
 import React, { useMemo } from 'react';
 import { FixedSizeList as List } from 'react-window';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { LayoutGrid, List as ListIcon } from 'lucide-react';
 
 interface VirtualizedTableProps {
   data: any[];
@@ -15,6 +17,9 @@ interface VirtualizedTableProps {
   height?: number;
   onItemClick?: (item: any, index: number) => void;
   className?: string;
+  compact?: boolean;
+  onCompactToggle?: (compact: boolean) => void;
+  showCompactToggle?: boolean;
 }
 
 interface RowProps {
@@ -24,11 +29,12 @@ interface RowProps {
     items: any[];
     columns: VirtualizedTableProps['columns'];
     onItemClick?: VirtualizedTableProps['onItemClick'];
+    compact: boolean;
   };
 }
 
 const Row = ({ index, style, data }: RowProps) => {
-  const { items, columns, onItemClick } = data;
+  const { items, columns, onItemClick, compact } = data;
   const item = items[index];
 
   return (
@@ -36,7 +42,8 @@ const Row = ({ index, style, data }: RowProps) => {
       style={style}
       className={cn(
         "flex items-center border-b border-border hover:bg-muted/50 cursor-pointer",
-        "transition-colors duration-150"
+        "transition-colors duration-150",
+        compact ? "text-xs" : "text-sm"
       )}
       onClick={() => onItemClick?.(item, index)}
     >
@@ -44,7 +51,10 @@ const Row = ({ index, style, data }: RowProps) => {
         <div
           key={column.key}
           style={{ width: column.width }}
-          className="px-4 py-2 text-sm truncate"
+          className={cn(
+            "truncate",
+            compact ? "px-2 py-1" : "px-4 py-2"
+          )}
         >
           {column.render ? column.render(item, index) : item[column.key]}
         </div>
@@ -59,13 +69,20 @@ export function VirtualizedTable({
   itemHeight = 60,
   height = 400,
   onItemClick,
-  className
+  className,
+  compact = false,
+  onCompactToggle,
+  showCompactToggle = false
 }: VirtualizedTableProps) {
   const itemData = useMemo(() => ({
     items: data,
     columns,
-    onItemClick
-  }), [data, columns, onItemClick]);
+    onItemClick,
+    compact
+  }), [data, columns, onItemClick, compact]);
+
+  const adjustedItemHeight = compact ? Math.max(itemHeight * 0.6, 32) : itemHeight;
+  const headerHeight = compact ? 32 : 48;
 
   if (data.length === 0) {
     return (
@@ -77,26 +94,52 @@ export function VirtualizedTable({
 
   return (
     <div className={cn("border rounded-lg overflow-hidden", className)}>
-      {/* Header */}
-      <div className="flex bg-muted/50 border-b">
-        {columns.map((column) => (
-          <div
-            key={column.key}
-            style={{ width: column.width }}
-            className="px-4 py-3 text-sm font-medium text-muted-foreground"
-          >
-            {column.header}
+      {/* Header with compact toggle */}
+      <div 
+        className="flex bg-muted/50 border-b"
+        style={{ height: headerHeight }}
+      >
+        <div className="flex flex-1">
+          {columns.map((column) => (
+            <div
+              key={column.key}
+              style={{ width: column.width }}
+              className={cn(
+                "flex items-center font-medium text-muted-foreground",
+                compact ? "px-2 py-1 text-xs" : "px-4 py-3 text-sm"
+              )}
+            >
+              {column.header}
+            </div>
+          ))}
+        </div>
+        
+        {showCompactToggle && onCompactToggle && (
+          <div className="flex items-center px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onCompactToggle(!compact)}
+              className="h-6 w-6 p-0"
+              title={compact ? "Vista normal" : "Vista compacta"}
+            >
+              {compact ? (
+                <ListIcon className="h-3 w-3" />
+              ) : (
+                <LayoutGrid className="h-3 w-3" />
+              )}
+            </Button>
           </div>
-        ))}
+        )}
       </div>
       
       {/* Virtualized Content */}
       <List
         height={height}
         itemCount={data.length}
-        itemSize={itemHeight}
+        itemSize={adjustedItemHeight}
         itemData={itemData}
-        overscanCount={5}
+        overscanCount={compact ? 15 : 5}
       >
         {Row}
       </List>

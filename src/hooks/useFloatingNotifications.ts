@@ -46,7 +46,6 @@ export function useFloatingNotifications() {
       action: {
         label: 'Ver Guía',
         onClick: () => {
-          // Abrir guía de materiales peligrosos
           window.open('/guia-materiales-peligrosos', '_blank');
         }
       }
@@ -64,7 +63,7 @@ export function useFloatingNotifications() {
       message: 'La conexión con los servicios SAT se ha restablecido',
     }),
 
-    backup automatico: () => addNotification({
+    backupAutomatico: () => addNotification({
       type: 'info',
       title: 'Respaldo Automático',
       message: 'Sus datos se han guardado automáticamente',
