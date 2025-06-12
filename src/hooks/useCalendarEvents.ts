@@ -1,93 +1,47 @@
 
-import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
-interface CalendarEvent {
+export interface CalendarEvent {
   id?: string;
+  user_id?: string;
   tipo: string;
   titulo: string;
   descripcion?: string;
   fecha_inicio: Date;
   fecha_fin?: Date;
-  recordatorios?: any[];
-  metadata?: Record<string, any>;
+  metadata?: any;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export function useCalendarEvents() {
+export const useCalendarEvents = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const createEvent = async (eventData: CalendarEvent) => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "Debe estar autenticado para crear eventos",
-        variant: "destructive",
-      });
-      return;
-    }
+  const createEvent = async (eventData: Omit<CalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user?.id) throw new Error('Usuario no autenticado');
 
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('calendar_events')
-        .insert({
-          user_id: user.id,
-          tipo: eventData.tipo,
-          titulo: eventData.titulo,
-          descripcion: eventData.descripcion,
-          fecha_inicio: eventData.fecha_inicio.toISOString(),
-          fecha_fin: eventData.fecha_fin?.toISOString(),
-          recordatorios: eventData.recordatorios || [],
-          metadata: eventData.metadata || {},
-        })
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from('eventos_calendario')
+      .insert({
+        ...eventData,
+        user_id: user.id,
+      })
+      .select()
+      .single();
 
-      if (error) throw error;
+    if (error) throw error;
 
-      toast({
-        title: "Evento programado",
-        description: `${eventData.titulo} ha sido programado exitosamente`,
-      });
-
-      return data;
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: `Error al programar evento: ${error.message}`,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getEvents = async () => {
-    if (!user?.id) return [];
-
-    try {
-      const { data, error } = await supabase
-        .from('calendar_events')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('fecha_inicio', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error: any) {
-      console.error('Error al obtener eventos:', error);
-      return [];
-    }
+    queryClient.invalidateQueries({ queryKey: ['eventos-calendario'] });
+    toast.success('Evento creado exitosamente');
+    
+    return data;
   };
 
   return {
     createEvent,
-    getEvents,
-    isLoading,
   };
-}
+};

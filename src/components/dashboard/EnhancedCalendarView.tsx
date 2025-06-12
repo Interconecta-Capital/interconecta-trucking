@@ -16,7 +16,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { DayPicker } from 'react-day-picker';
 
 export function EnhancedCalendarView() {
   const { user } = useAuth();
@@ -40,7 +39,7 @@ export function EnhancedCalendarView() {
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   // Mock data mejorado para mejor visualización
@@ -173,7 +172,7 @@ export function EnhancedCalendarView() {
               ...eventModifiersClassNames
             }}
             components={{
-              Day: ({ date, ...props }) => {
+              Day: ({ date, displayMonth, ...props }) => {
                 const events = getEventsForDate(date);
                 const hasEvents = events.length > 0;
                 
