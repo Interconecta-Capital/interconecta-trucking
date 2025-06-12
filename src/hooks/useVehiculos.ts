@@ -34,6 +34,8 @@ export const useVehiculos = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      console.log('Fetching vehiculos for user:', user.id);
+      
       const { data, error } = await supabase
         .from('vehiculos')
         .select('*')
@@ -41,17 +43,26 @@ export const useVehiculos = () => {
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching vehiculos:', error);
+        throw error;
+      }
+      
+      console.log('Vehiculos loaded:', data?.length || 0);
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 30 * 60 * 1000, // 30 minutos en memoria
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: Omit<Vehiculo, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
+      
+      console.log('Creating vehiculo:', data);
       
       const { data: result, error } = await supabase
         .from('vehiculos')
@@ -62,20 +73,30 @@ export const useVehiculos = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating vehiculo:', error);
+        throw error;
+      }
+      
+      console.log('Vehiculo created:', result);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (newVehiculo) => {
+      // Actualización optimista del cache
+      queryClient.setQueryData(['vehiculos', user?.id], (old: Vehiculo[] = []) => [newVehiculo, ...old]);
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
       toast.success('Vehículo creado exitosamente');
     },
     onError: (error: any) => {
+      console.error('Mutation error:', error);
       toast.error(`Error al crear vehículo: ${error.message}`);
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Vehiculo> }) => {
+      console.log('Updating vehiculo:', id, data);
+      
       const { data: result, error } = await supabase
         .from('vehiculos')
         .update(data)
@@ -83,32 +104,54 @@ export const useVehiculos = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating vehiculo:', error);
+        throw error;
+      }
+      
+      console.log('Vehiculo updated:', result);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (updatedVehiculo) => {
+      // Actualización optimista del cache
+      queryClient.setQueryData(['vehiculos', user?.id], (old: Vehiculo[] = []) => 
+        old.map(v => v.id === updatedVehiculo.id ? updatedVehiculo : v)
+      );
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
       toast.success('Vehículo actualizado exitosamente');
     },
     onError: (error: any) => {
+      console.error('Mutation error:', error);
       toast.error(`Error al actualizar vehículo: ${error.message}`);
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting vehiculo:', id);
+      
       const { error } = await supabase
         .from('vehiculos')
         .update({ activo: false })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting vehiculo:', error);
+        throw error;
+      }
+      
+      console.log('Vehiculo deleted:', id);
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
+      // Actualización optimista del cache
+      queryClient.setQueryData(['vehiculos', user?.id], (old: Vehiculo[] = []) => 
+        old.filter(v => v.id !== deletedId)
+      );
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
       toast.success('Vehículo eliminado exitosamente');
     },
     onError: (error: any) => {
+      console.error('Mutation error:', error);
       toast.error(`Error al eliminar vehículo: ${error.message}`);
     }
   });

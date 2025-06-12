@@ -1912,6 +1912,57 @@ export type Database = {
           },
         ]
       }
+      vehiculo_conductores: {
+        Row: {
+          activo: boolean
+          conductor_id: string
+          created_at: string
+          fecha_asignacion: string
+          id: string
+          observaciones: string | null
+          updated_at: string
+          user_id: string
+          vehiculo_id: string
+        }
+        Insert: {
+          activo?: boolean
+          conductor_id: string
+          created_at?: string
+          fecha_asignacion?: string
+          id?: string
+          observaciones?: string | null
+          updated_at?: string
+          user_id: string
+          vehiculo_id: string
+        }
+        Update: {
+          activo?: boolean
+          conductor_id?: string
+          created_at?: string
+          fecha_asignacion?: string
+          id?: string
+          observaciones?: string | null
+          updated_at?: string
+          user_id?: string
+          vehiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehiculo_conductores_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehiculo_conductores_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehiculos: {
         Row: {
           acta_instalacion_gps: string | null
