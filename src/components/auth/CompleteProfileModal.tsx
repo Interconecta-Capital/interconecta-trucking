@@ -110,7 +110,7 @@ export function CompleteProfileModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[425px]" hideCloseButton>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Completa tu perfil</DialogTitle>
           <DialogDescription>
