@@ -10,9 +10,15 @@ interface ProtectedFeatureProps {
   children: ReactNode;
   feature: string;
   fallback?: ReactNode;
+  showUpgrade?: boolean;
 }
 
-export const ProtectedFeature = ({ children, feature, fallback }: ProtectedFeatureProps) => {
+export const ProtectedFeature = ({ 
+  children, 
+  feature, 
+  fallback,
+  showUpgrade = true 
+}: ProtectedFeatureProps) => {
   const { puedeAcceder } = usePermisosSubscripcion();
   const navigate = useNavigate();
   
@@ -31,14 +37,16 @@ export const ProtectedFeature = ({ children, feature, fallback }: ProtectedFeatu
       <Lock className="h-4 w-4" />
       <AlertDescription className="flex items-center justify-between">
         <span>{razon}</span>
-        <Button 
-          size="sm" 
-          onClick={() => navigate('/planes')}
-          className="ml-4"
-        >
-          <TrendingUp className="w-3 h-3 mr-1" />
-          Actualizar Plan
-        </Button>
+        {showUpgrade && (
+          <Button 
+            size="sm" 
+            onClick={() => navigate('/planes')}
+            className="ml-4"
+          >
+            <TrendingUp className="w-3 h-3 mr-1" />
+            Actualizar Plan
+          </Button>
+        )}
       </AlertDescription>
     </Alert>
   );

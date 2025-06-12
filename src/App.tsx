@@ -1,101 +1,147 @@
 
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AuthProvider } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Trial from "./pages/Trial";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import CartasPorte from "./pages/CartasPorte";
-import Conductores from "./pages/Conductores";
-import Vehiculos from "./pages/Vehiculos";
-import Socios from "./pages/Socios";
-import NotFound from "./pages/NotFound";
-import { FloatingNotificationsContainer } from "@/components/ui/floating-notifications-container";
-import { useFloatingNotifications } from "@/hooks/useFloatingNotifications";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/hooks/useAuth';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { AppSidebar } from '@/components/AppSidebar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 
-const queryClient = new QueryClient();
+// Pages
+import Index from '@/pages/Index';
+import Auth from '@/pages/Auth';
+import Dashboard from '@/pages/Dashboard';
+import CartasPorte from '@/pages/CartasPorte';
+import Conductores from '@/pages/Conductores';
+import Vehiculos from '@/pages/Vehiculos';
+import Socios from '@/pages/Socios';
+import Planes from '@/pages/Planes';
+import ResetPassword from '@/pages/ResetPassword';
+import Trial from '@/pages/Trial';
+import NotFound from '@/pages/NotFound';
 
-function AppContent() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      retry: 1,
+    },
+  },
+});
+
+function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Rutas públicas */}
-        <Route path="/" element={<Index />} />
-        <Route path="/auth/login" element={<Auth />} />
-        <Route path="/auth/register" element={<Auth />} />
-        <Route path="/auth/trial" element={<Trial />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
-        
-        {/* Rutas protegidas */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <SidebarProvider>
-              <Dashboard />
-            </SidebarProvider>
-          </ProtectedRoute>
-        } />
-        <Route path="/cartas-porte" element={
-          <ProtectedRoute>
-            <SidebarProvider>
-              <CartasPorte />
-            </SidebarProvider>
-          </ProtectedRoute>
-        } />
-        <Route path="/conductores" element={
-          <ProtectedRoute>
-            <SidebarProvider>
-              <Conductores />
-            </SidebarProvider>
-          </ProtectedRoute>
-        } />
-        <Route path="/vehiculos" element={
-          <ProtectedRoute>
-            <SidebarProvider>
-              <Vehiculos />
-            </SidebarProvider>
-          </ProtectedRoute>
-        } />
-        <Route path="/socios" element={
-          <ProtectedRoute>
-            <SidebarProvider>
-              <Socios />
-            </SidebarProvider>
-          </ProtectedRoute>
-        } />
-        
-        {/* Ruta 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+          <GlobalHeader />
+          <main className="flex-1 p-6 bg-gray-50">
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
 
-const App = () => {
-  const { notifications, removeNotification } = useFloatingNotifications();
-
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Rutas públicas */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            
+            {/* Rutas protegidas */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/cartas-porte" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CartasPorte />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/conductores" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Conductores />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/vehiculos" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Vehiculos />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/socios" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Socios />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/planes" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Planes />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/trial" 
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Trial />
+                  </AppLayout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Redirección por defecto */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
           <Toaster />
-          <Sonner />
-          <FloatingNotificationsContainer 
-            notifications={notifications}
-            onDismiss={removeNotification}
-          />
-          <AppContent />
-        </AuthProvider>
-      </TooltipProvider>
+          <SonnerToaster />
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
