@@ -7,7 +7,7 @@ import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useTrialTracking } from '@/hooks/useTrialTracking';
 
 export default function Planes() {
-  const { suscripcionActual, crearCheckoutSession, abrirPortalCliente, isLoading } = useSuscripcion();
+  const { suscripcion, crearCheckout, abrirPortalCliente, isCreatingCheckout } = useSuscripcion();
   const { trialInfo, loading: trialLoading } = useTrialTracking();
 
   const planes = [
@@ -58,10 +58,14 @@ export default function Planes() {
 
   const handleSelectPlan = async (planId: string) => {
     try {
-      await crearCheckoutSession(planId);
+      crearCheckout(planId);
     } catch (error) {
       console.error('Error al crear sesión de checkout:', error);
     }
+  };
+
+  const handleManageSubscription = () => {
+    abrirPortalCliente();
   };
 
   return (
@@ -74,7 +78,7 @@ export default function Planes() {
       </div>
 
       {/* Estado actual */}
-      {suscripcionActual && (
+      {suscripcion && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -85,19 +89,19 @@ export default function Planes() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-lg">{suscripcionActual.plan?.nombre}</p>
+                <p className="font-semibold text-lg">{suscripcion.plan?.nombre}</p>
                 <p className="text-muted-foreground">
-                  Estado: <Badge variant={suscripcionActual.status === 'active' ? 'default' : 'secondary'}>
-                    {suscripcionActual.status}
+                  Estado: <Badge variant={suscripcion.status === 'active' ? 'default' : 'secondary'}>
+                    {suscripcion.status}
                   </Badge>
                 </p>
-                {suscripcionActual.fecha_vencimiento && (
+                {suscripcion.fecha_vencimiento && (
                   <p className="text-sm text-muted-foreground">
-                    Vence: {new Date(suscripcionActual.fecha_vencimiento).toLocaleDateString()}
+                    Vence: {new Date(suscripcion.fecha_vencimiento).toLocaleDateString()}
                   </p>
                 )}
               </div>
-              <Button variant="outline" onClick={abrirPortalCliente}>
+              <Button variant="outline" onClick={handleManageSubscription}>
                 Gestionar Suscripción
               </Button>
             </div>
@@ -141,7 +145,7 @@ export default function Planes() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {planes.map((plan) => {
           const Icon = plan.icon;
-          const isCurrentPlan = suscripcionActual?.plan?.nombre?.toLowerCase() === plan.nombre.toLowerCase();
+          const isCurrentPlan = suscripcion?.plan?.nombre?.toLowerCase() === plan.nombre.toLowerCase();
           
           return (
             <Card 
@@ -181,7 +185,7 @@ export default function Planes() {
                 <Button 
                   className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                   variant={plan.popular ? 'default' : 'outline'}
-                  disabled={isLoading || isCurrentPlan}
+                  disabled={isCreatingCheckout || isCurrentPlan}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {isCurrentPlan ? 'Plan Actual' : `Seleccionar ${plan.nombre}`}
