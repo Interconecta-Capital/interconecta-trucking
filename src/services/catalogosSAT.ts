@@ -159,48 +159,62 @@ export class CatalogosSATService {
     }));
   }
 
-  // Buscar información de código postal
+  // Buscar información de código postal con mejor manejo de errores
   static async buscarCodigoPostal(codigoPostal: string): Promise<CodigoPostalInfo | null> {
-    const { data, error } = await supabase
-      .from('cat_codigo_postal')
-      .select(`
-        codigo_postal,
-        estado_clave,
-        municipio_clave,
-        localidad_clave,
-        estimulo_frontera
-      `)
-      .eq('codigo_postal', codigoPostal.padStart(5, '0'))
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('cat_codigo_postal')
+        .select(`
+          codigo_postal,
+          estado_clave,
+          municipio_clave,
+          localidad_clave,
+          estimulo_frontera
+        `)
+        .eq('codigo_postal', codigoPostal.padStart(5, '0'))
+        .single();
 
-    if (error) {
-      console.warn('Código postal no encontrado:', codigoPostal);
+      if (error) {
+        console.log('Código postal no encontrado en catálogos:', codigoPostal);
+        return null;
+      }
+
+      // Obtener descripción del estado solo si encontramos el código postal
+      const { data: estadoData } = await supabase
+        .from('cat_estado')
+        .select('descripcion')
+        .eq('clave_estado', data.estado_clave)
+        .single();
+
+      return {
+        ...data,
+        estado_descripcion: estadoData?.descripcion || `Estado ${data.estado_clave}`
+      };
+    } catch (error) {
+      console.log('Error buscando código postal:', error);
       return null;
     }
-
-    // Obtener descripción del estado
-    const { data: estadoData } = await supabase
-      .from('cat_estado')
-      .select('descripcion')
-      .eq('clave_estado', data.estado_clave)
-      .single();
-
-    return {
-      ...data,
-      estado_descripcion: estadoData?.descripcion
-    };
   }
 
-  // Buscar colonias por código postal
+  // Buscar colonias por código postal con mejor manejo de errores
   static async buscarColoniasPorCP(codigoPostal: string): Promise<ColoniaInfo[]> {
-    const { data, error } = await supabase
-      .from('cat_colonia')
-      .select('clave_colonia, descripcion, codigo_postal')
-      .eq('codigo_postal', codigoPostal.padStart(5, '0'))
-      .order('descripcion');
+    try {
+      const { data, error } = await supabase
+        .from('cat_colonia')
+        .select('clave_colonia, descripcion, codigo_postal')
+        .eq('codigo_postal', codigoPostal.padStart(5, '0'))
+        .order('descripcion');
 
-    if (error) throw error;
-    return data || [];
+      if (error) {
+        console.log('No se encontraron colonias para CP:', codigoPostal);
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.log('Error buscando colonias:', error);
+      return [];
+    }
   }
 
   // Buscar estados
@@ -238,13 +252,28 @@ export class CatalogosSATService {
     const config = tablaMap[catalogo];
     if (!config) throw new Error(`Catálogo ${catalogo} no válido`);
 
-    // Use type assertion for the table name since we know it exists
-    const { count, error } = await (supabase as any)
-      .from(config.tabla)
-      .select('id', { count: 'exact', head: true })
-      .eq(config.columna, clave);
+    try {
+      // Use type assertion for the table name since we know it exists
+      const { count, error } = await (supabase as any)
+        .from(config.tabla)
+        .select('id', { count: 'exact', head: true })
+        .eq(config.columna, clave);
 
-    if (error) throw error;
-    return (count || 0) > 0;
+      if (error) throw error;
+      return (count || 0) > 0;
+    } catch (error) {
+      console.log(`Error validating ${catalogo} clave ${clave}:`, error);
+      return false;
+    }
+  }
+
+  // Función helper para validar si un código postal es válido (formato)
+  static validarFormatoCodigoPostal(codigoPostal: string): boolean {
+    return /^\d{5}$/.test(codigoPostal?.trim() || '');
+  }
+
+  // Función helper para limpiar código postal
+  static limpiarCodigoPostal(codigoPostal: string): string {
+    return codigoPostal?.replace(/\D/g, '').slice(0, 5) || '';
   }
 }

@@ -80,7 +80,7 @@ export const useBuscarMaterialesPeligrosos = (busqueda: string, enabled = true) 
   });
 };
 
-// Hook para información de código postal con validación mejorada
+// Hook para información de código postal con validación mejorada y mejor manejo de errores
 export const useCodigoPostal = (codigoPostal: string, enabled = true) => {
   return useQuery({
     queryKey: ['catalogos', 'codigoPostal', codigoPostal],
@@ -90,20 +90,25 @@ export const useCodigoPostal = (codigoPostal: string, enabled = true) => {
       console.log('Resultado código postal:', result);
       return result;
     },
-    enabled: enabled && codigoPostal.length === 5 && /^\d{5}$/.test(codigoPostal),
+    enabled: enabled && CatalogosSATService.validarFormatoCodigoPostal(codigoPostal),
     staleTime: 30 * 60 * 1000, // 30 minutos
-    retry: 2,
-    retryDelay: 1000,
+    retry: 1, // Reducir reintentos para evitar spam de logs
+    retryDelay: 500,
+    // No considerar como error cuando no se encuentra el CP
+    throwOnError: false,
   });
 };
 
-// Hook para colonias por código postal
+// Hook para colonias por código postal con mejor manejo de errores
 export const useColoniasPorCP = (codigoPostal: string, enabled = true) => {
   return useQuery({
     queryKey: ['catalogos', 'colonias', codigoPostal],
     queryFn: () => CatalogosSATService.buscarColoniasPorCP(codigoPostal),
-    enabled: enabled && codigoPostal.length === 5 && /^\d{5}$/.test(codigoPostal),
+    enabled: enabled && CatalogosSATService.validarFormatoCodigoPostal(codigoPostal),
     staleTime: 30 * 60 * 1000,
+    retry: 1,
+    retryDelay: 500,
+    throwOnError: false,
   });
 };
 
@@ -123,5 +128,6 @@ export const useValidarClave = (catalogo: string, clave: string, enabled = true)
     queryFn: () => CatalogosSATService.validarClave(catalogo, clave),
     enabled: enabled && clave.length > 0,
     staleTime: 10 * 60 * 1000,
+    throwOnError: false,
   });
 };

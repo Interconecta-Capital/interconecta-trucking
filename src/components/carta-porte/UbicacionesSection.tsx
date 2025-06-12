@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
 
   // Sincronizar con data prop
   React.useEffect(() => {
@@ -52,17 +54,60 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
   }, [ubicaciones, onChange]);
 
   const handleSaveUbicacion = (ubicacion: any) => {
-    if (editingIndex !== null) {
-      actualizarUbicacion(editingIndex, ubicacion);
-      setEditingIndex(null);
-    } else {
-      agregarUbicacion(ubicacion);
+    try {
+      // Validar ubicación antes de guardar
+      const errors = validateUbicacion(ubicacion);
+      if (errors.length > 0) {
+        setFormErrors(errors);
+        return; // No cerrar el formulario si hay errores
+      }
+
+      setFormErrors([]);
+      
+      if (editingIndex !== null) {
+        actualizarUbicacion(editingIndex, ubicacion);
+        setEditingIndex(null);
+      } else {
+        agregarUbicacion(ubicacion);
+      }
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving ubicacion:', error);
+      setFormErrors(['Error al guardar la ubicación. Verifique los datos ingresados.']);
     }
-    setShowForm(false);
+  };
+
+  const validateUbicacion = (ubicacion: any): string[] => {
+    const errors: string[] = [];
+    
+    if (!ubicacion.rfcRemitenteDestinatario?.trim()) {
+      errors.push('El RFC es requerido');
+    }
+    
+    if (!ubicacion.nombreRemitenteDestinatario?.trim()) {
+      errors.push('El nombre es requerido');
+    }
+    
+    if (!ubicacion.domicilio?.codigoPostal?.trim()) {
+      errors.push('El código postal es requerido');
+    } else if (!/^\d{5}$/.test(ubicacion.domicilio.codigoPostal)) {
+      errors.push('El código postal debe tener 5 dígitos');
+    }
+    
+    if (!ubicacion.domicilio?.calle?.trim()) {
+      errors.push('La calle es requerida');
+    }
+    
+    if (!ubicacion.domicilio?.numExterior?.trim()) {
+      errors.push('El número exterior es requerido');
+    }
+    
+    return errors;
   };
 
   const handleEditUbicacion = (index: number) => {
     setEditingIndex(index);
+    setFormErrors([]);
     setShowForm(true);
   };
 
@@ -73,19 +118,35 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingIndex(null);
+    setFormErrors([]);
   };
 
   const handleCalcularDistancias = async () => {
-    await calcularDistanciasAutomaticas();
+    try {
+      await calcularDistanciasAutomaticas();
+    } catch (error) {
+      console.error('Error calculating distances:', error);
+    }
   };
 
   const handleCalcularRuta = async () => {
-    await calcularRutaCompleta();
-    setShowMap(true);
+    try {
+      await calcularRutaCompleta();
+      setShowMap(true);
+    } catch (error) {
+      console.error('Error calculating route:', error);
+    }
   };
 
   const validation = validarSecuenciaUbicaciones();
   const distanciaTotal = calcularDistanciaTotal();
+
+  const handleNext = () => {
+    // Solo permitir continuar si la validación es exitosa
+    if (validation.esValido) {
+      onNext();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -122,7 +183,10 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
                 )}
                 
                 <Button 
-                  onClick={() => setShowForm(true)} 
+                  onClick={() => {
+                    setFormErrors([]);
+                    setShowForm(true);
+                  }} 
                   className="flex items-center space-x-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -135,14 +199,32 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
         
         <CardContent>
           {showForm ? (
-            <UbicacionForm
-              ubicacion={editingIndex !== null ? ubicaciones[editingIndex] : undefined}
-              onSave={handleSaveUbicacion}
-              onCancel={handleCancelForm}
-              onSaveToFavorites={guardarUbicacionFrecuente}
-              generarId={generarIdUbicacion}
-              ubicacionesFrecuentes={ubicacionesFrecuentes}
-            />
+            <div className="space-y-4">
+              {formErrors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-1">
+                      <p className="font-medium">Corrija los siguientes errores:</p>
+                      <ul className="list-disc list-inside">
+                        {formErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <UbicacionForm
+                ubicacion={editingIndex !== null ? ubicaciones[editingIndex] : undefined}
+                onSave={handleSaveUbicacion}
+                onCancel={handleCancelForm}
+                onSaveToFavorites={guardarUbicacionFrecuente}
+                generarId={generarIdUbicacion}
+                ubicacionesFrecuentes={ubicacionesFrecuentes}
+              />
+            </div>
           ) : (
             <UbicacionesList
               ubicaciones={ubicaciones}
@@ -225,7 +307,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
           </Button>
           
           <Button 
-            onClick={onNext} 
+            onClick={handleNext} 
             disabled={!validation.esValido}
             className="flex items-center space-x-2"
           >

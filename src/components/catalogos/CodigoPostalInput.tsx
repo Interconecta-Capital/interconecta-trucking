@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, AlertCircle } from 'lucide-react';
+import { MapPin, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCodigoPostal, useColoniasPorCP } from '@/hooks/useCatalogos';
 import { CatalogoSelector } from './CatalogoSelector';
@@ -39,6 +39,12 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [debouncedValue, setDebouncedValue] = useState(value);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualInfo, setManualInfo] = useState({
+    estado: '',
+    municipio: '',
+    colonia: ''
+  });
 
   // Debounce para búsqueda
   useEffect(() => {
@@ -70,13 +76,30 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
         municipio: cpInfo.municipio_clave,
         localidad: cpInfo.localidad_clave || undefined
       });
+      setShowManualEntry(false);
+    } else if (shouldSearch && !cpInfo && !loadingCP && onInfoChange) {
+      // Si no se encuentra el CP, mostrar opción de entrada manual
+      setShowManualEntry(true);
+      if (manualInfo.estado || manualInfo.municipio || manualInfo.colonia) {
+        onInfoChange({
+          estado: manualInfo.estado,
+          municipio: manualInfo.municipio,
+          colonia: manualInfo.colonia
+        });
+      }
     }
-  }, [cpInfo, onInfoChange]);
+  }, [cpInfo, onInfoChange, shouldSearch, loadingCP, manualInfo]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
     setInputValue(newValue);
     onValueChange(newValue);
+    
+    // Reset manual entry when CP changes
+    if (newValue !== debouncedValue) {
+      setShowManualEntry(false);
+      setManualInfo({ estado: '', municipio: '', colonia: '' });
+    }
   };
 
   const handleColoniaSelect = (clave: string) => {
@@ -94,8 +117,22 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
     }
   };
 
+  const handleManualInfoChange = (field: string, value: string) => {
+    const newManualInfo = { ...manualInfo, [field]: value };
+    setManualInfo(newManualInfo);
+    
+    if (onInfoChange) {
+      onInfoChange({
+        estado: newManualInfo.estado,
+        municipio: newManualInfo.municipio,
+        colonia: newManualInfo.colonia
+      });
+    }
+  };
+
   const isValid = shouldSearch && cpInfo && !errorCP;
-  const isInvalid = shouldSearch && (!cpInfo || errorCP);
+  const isWarning = shouldSearch && !cpInfo && !errorCP && !loadingCP;
+  const isInvalid = !shouldSearch && inputValue.length > 0 && inputValue.length < 5;
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -115,6 +152,7 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
             className={cn(
               "pr-10",
               isValid && "border-green-500",
+              isWarning && "border-yellow-500",
               isInvalid && "border-red-500"
             )}
           />
@@ -124,6 +162,8 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
             ) : isValid ? (
               <MapPin className="h-4 w-4 text-green-500" />
+            ) : isWarning ? (
+              <Info className="h-4 w-4 text-yellow-500" />
             ) : isInvalid ? (
               <AlertCircle className="h-4 w-4 text-red-500" />
             ) : null}
@@ -132,7 +172,13 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
 
         {isInvalid && (
           <p className="text-sm text-red-500">
-            Código postal no válido o no encontrado
+            El código postal debe tener 5 dígitos
+          </p>
+        )}
+
+        {isWarning && (
+          <p className="text-sm text-yellow-600">
+            Código postal válido pero no encontrado en catálogos. Puede continuar ingresando la información manualmente.
           </p>
         )}
       </div>
@@ -166,7 +212,53 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
         </Card>
       )}
 
-      {/* Selector de colonia */}
+      {/* Entrada manual cuando no se encuentra el CP */}
+      {showInfo && showManualEntry && shouldSearch && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="p-3">
+            <div className="flex items-center space-x-2 mb-3">
+              <Info className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-800">
+                Información Manual
+              </span>
+            </div>
+            
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs">Estado</Label>
+                <Input
+                  value={manualInfo.estado}
+                  onChange={(e) => handleManualInfoChange('estado', e.target.value)}
+                  placeholder="Nombre del estado"
+                  className="h-8"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs">Municipio</Label>
+                <Input
+                  value={manualInfo.municipio}
+                  onChange={(e) => handleManualInfoChange('municipio', e.target.value)}
+                  placeholder="Nombre del municipio"
+                  className="h-8"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs">Colonia</Label>
+                <Input
+                  value={manualInfo.colonia}
+                  onChange={(e) => handleManualInfoChange('colonia', e.target.value)}
+                  placeholder="Nombre de la colonia"
+                  className="h-8"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Selector de colonia automático */}
       {isValid && colonias.length > 0 && onColoniaChange && (
         <CatalogoSelector
           label="Colonia"
