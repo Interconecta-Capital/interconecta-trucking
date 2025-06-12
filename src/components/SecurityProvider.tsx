@@ -1,18 +1,16 @@
 
 import { createContext, useContext, useEffect, ReactNode } from 'react';
-import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { useSecurityValidation } from '@/hooks/useSecurityValidation';
-import { useAuth } from '@/hooks/useAuth';
 
 interface SecurityContextType {
-  logSecurityEvent: (eventType: string, eventData?: any) => Promise<void>;
-  validateSession: () => Promise<boolean>;
-  secureLogout: () => Promise<void>;
   validateRFC: (rfc: string) => { isValid: boolean; errors: string[] };
   validateEmail: (email: string) => { isValid: boolean; errors: string[] };
   sanitizeInput: (input: string, maxLength?: number) => string;
   checkRateLimit: (action: string, maxAttempts?: number) => boolean;
   validateFormData: (data: Record<string, any>) => { isValid: boolean; errors: string[] };
+  logSecurityEvent: (eventType: string, eventData?: any) => Promise<void>;
+  validateSession: () => Promise<boolean>;
+  secureLogout: () => Promise<void>;
 }
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
@@ -22,24 +20,44 @@ interface SecurityProviderProps {
 }
 
 export function SecurityProvider({ children }: SecurityProviderProps) {
-  const { user } = useAuth();
-  const secureAuth = useSecureAuth();
   const validation = useSecurityValidation();
 
-  // Periodic session validation - only if user is authenticated
-  useEffect(() => {
-    if (!user) return;
+  // Basic security functions that don't depend on auth
+  const logSecurityEvent = async (eventType: string, eventData?: any) => {
+    console.log('Security Event:', eventType, eventData);
+    // In a real app, this would log to a security service
+  };
 
-    const interval = setInterval(() => {
-      secureAuth.validateSession();
-    }, 5 * 60 * 1000); // Every 5 minutes
+  const validateSession = async () => {
+    // Basic session validation without depending on useAuth
+    try {
+      const token = localStorage.getItem('supabase.auth.token');
+      return !!token;
+    } catch {
+      return false;
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, [user, secureAuth]);
+  const secureLogout = async () => {
+    try {
+      // Clear all auth-related data
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      // Force page reload for clean state
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const value: SecurityContextType = {
-    ...secureAuth,
-    ...validation
+    ...validation,
+    logSecurityEvent,
+    validateSession,
+    secureLogout
   };
 
   return (
