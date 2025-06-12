@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { useSecurityValidation } from '@/hooks/useSecurityValidation';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SecurityContextType {
   logSecurityEvent: (eventType: string, eventData?: any) => Promise<void>;
@@ -21,17 +22,20 @@ interface SecurityProviderProps {
 }
 
 export function SecurityProvider({ children }: SecurityProviderProps) {
+  const { user } = useAuth();
   const secureAuth = useSecureAuth();
   const validation = useSecurityValidation();
 
-  // Periodic session validation
+  // Periodic session validation - only if user is authenticated
   useEffect(() => {
+    if (!user) return;
+
     const interval = setInterval(() => {
       secureAuth.validateSession();
     }, 5 * 60 * 1000); // Every 5 minutes
 
     return () => clearInterval(interval);
-  }, [secureAuth]);
+  }, [user, secureAuth]);
 
   const value: SecurityContextType = {
     ...secureAuth,
