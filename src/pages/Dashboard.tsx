@@ -8,10 +8,13 @@ import { RealtimeMetrics } from '@/components/dashboard/RealtimeMetrics';
 import { SimpleCalendarView } from '@/components/dashboard/SimpleCalendarView';
 import { MetricsCards } from '@/components/dashboard/MetricsCards';
 import { NotificationsPanel } from '@/components/dashboard/NotificationsPanel';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, Users, Truck, BarChart3 } from 'lucide-react';
 
 export default function Dashboard() {
+  const { dashboardMetrics, realtimeMetrics, isLoadingDashboard, isLoadingRealtime } = useAnalytics();
+
   return (
     <div className="flex min-h-screen w-full">
       <AppSidebar />
@@ -28,7 +31,19 @@ export default function Dashboard() {
           </div>
 
           {/* Métricas principales */}
-          <MetricsCards />
+          <MetricsCards 
+            metrics={dashboardMetrics || {
+              cartasPorteActivas: 0,
+              vehiculosEnRuta: 0,
+              conductoresActivos: 0,
+              ingresosMes: 0,
+              cambioCartasPorte: 0,
+              cambioVehiculos: 0,
+              cambioConductores: 0,
+              cambioIngresos: 0
+            }} 
+            isLoading={isLoadingDashboard} 
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Calendario - 2 columnas */}
@@ -46,7 +61,7 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Panel lateral con acciones rápidas */}
+            {/* Panel lateral con acciones rápidas y notificaciones */}
             <div className="space-y-4">
               {/* Acciones Rápidas */}
               <Card>
@@ -97,7 +112,17 @@ export default function Dashboard() {
           </div>
 
           {/* Métricas en tiempo real */}
-          <RealtimeMetrics />
+          <RealtimeMetrics 
+            metrics={realtimeMetrics || {
+              vehiculosActivos: 0,
+              alertasActivas: 0,
+              eficienciaPromedio: 0,
+              consumoCombustible: 0,
+              tiempoPromedioEntrega: 0,
+              satisfaccionCliente: 0
+            }}
+            isLoading={isLoadingRealtime}
+          />
         </div>
       </SidebarInset>
     </div>

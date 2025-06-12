@@ -1,131 +1,98 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
 
 export interface DashboardMetrics {
   cartasPorteActivas: number;
   vehiculosEnRuta: number;
   conductoresActivos: number;
   ingresosMes: number;
-  activeTrips: number;
-  todayDeliveries: number;
   cambioCartasPorte: number;
   cambioVehiculos: number;
   cambioConductores: number;
   cambioIngresos: number;
 }
 
-export interface RouteMetrics {
-  ruta: string;
-  frecuencia: number;
-  ingresoPromedio: number;
-  satisfaccion: number;
-  tiempoPromedio: number;
-}
-
-export interface PerformanceMetrics {
-  mes: string;
-  eficiencia: number;
-  combustible: number;
-  mantenimiento: number;
-  entregas: number;
-}
-
-export interface TrendData {
-  fecha: string;
-  cartasPorte: number;
-  ingresos: number;
-  entregas: number;
+export interface RealtimeMetrics {
+  vehiculosActivos: number;
+  alertasActivas: number;
+  eficienciaPromedio: number;
+  consumoCombustible: number;
+  tiempoPromedioEntrega: number;
+  satisfaccionCliente: number;
 }
 
 export const useAnalytics = () => {
-  const { user } = useAuth();
-
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ['dashboard-metrics', user?.id],
+  const { data: dashboardMetrics, isLoading: isLoadingDashboard } = useQuery({
+    queryKey: ['dashboard-metrics'],
     queryFn: async (): Promise<DashboardMetrics> => {
-      if (!user?.id) {
-        return {
-          cartasPorteActivas: 0,
-          vehiculosEnRuta: 0,
-          conductoresActivos: 0,
-          ingresosMes: 0,
-          activeTrips: 0,
-          todayDeliveries: 0,
-          cambioCartasPorte: 0,
-          cambioVehiculos: 0,
-          cambioConductores: 0,
-          cambioIngresos: 0,
-        };
-      }
+      // Obtener cartas porte del usuario actual
+      const { data: cartasPorte, error } = await supabase
+        .from('cartas_porte')
+        .select('id, status, created_at')
+        .eq('usuario_id', (await supabase.auth.getUser()).data.user?.id);
 
-      // Simular datos para el dashboard
-      // En una aplicación real, estas consultas serían a la base de datos
-      const mockMetrics: DashboardMetrics = {
-        cartasPorteActivas: 45,
-        vehiculosEnRuta: 12,
-        conductoresActivos: 8,
-        ingresosMes: 125000,
-        activeTrips: 12,
-        todayDeliveries: 8,
-        cambioCartasPorte: 5,
-        cambioVehiculos: 2,
-        cambioConductores: -1,
-        cambioIngresos: 12,
+      if (error) throw error;
+
+      const ahora = new Date();
+      const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+      const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+
+      // Cartas porte activas (no completadas/canceladas)
+      const cartasActivas = cartasPorte?.filter(cp => 
+        cp.status !== 'completado' && cp.status !== 'cancelado'
+      ).length || 0;
+
+      // Cartas del mes actual vs anterior para comparación
+      const cartasMesActual = cartasPorte?.filter(cp => 
+        new Date(cp.created_at) >= inicioMesActual
+      ).length || 0;
+
+      const cartasMesAnterior = cartasPorte?.filter(cp => {
+        const fecha = new Date(cp.created_at);
+        return fecha >= mesAnterior && fecha < inicioMesActual;
+      }).length || 0;
+
+      const cambioCartasPorte = cartasMesAnterior > 0 
+        ? ((cartasMesActual - cartasMesAnterior) / cartasMesAnterior) * 100 
+        : 0;
+
+      return {
+        cartasPorteActivas: cartasActivas,
+        vehiculosEnRuta: Math.floor(cartasActivas * 0.7), // Estimación basada en cartas activas
+        conductoresActivos: Math.floor(cartasActivas * 0.8),
+        ingresosMes: cartasMesActual * 15000, // Estimación de $15,000 por carta porte
+        cambioCartasPorte: Math.round(cambioCartasPorte),
+        cambioVehiculos: Math.round(cambioCartasPorte * 0.8),
+        cambioConductores: Math.round(cambioCartasPorte * 0.9),
+        cambioIngresos: Math.round(cambioCartasPorte * 1.2)
       };
-
-      return mockMetrics;
     },
-    enabled: !!user?.id,
+    refetchInterval: 5 * 60 * 1000, // Actualizar cada 5 minutos
   });
 
-  // Mock data para las rutas
-  const mockRouteMetrics: RouteMetrics[] = [
-    {
-      ruta: "Ciudad de México - Guadalajara",
-      frecuencia: 15,
-      ingresoPromedio: 85000,
-      satisfaccion: 4.8,
-      tiempoPromedio: 6.5
+  const { data: realtimeMetrics, isLoading: isLoadingRealtime } = useQuery({
+    queryKey: ['realtime-metrics'],
+    queryFn: async (): Promise<RealtimeMetrics> => {
+      // Por ahora devolvemos datos simulados pero realistas
+      // En el futuro se conectarán con sensores/GPS reales
+      return {
+        vehiculosActivos: dashboardMetrics?.vehiculosEnRuta || 0,
+        alertasActivas: Math.floor(Math.random() * 5),
+        eficienciaPromedio: 85 + Math.floor(Math.random() * 10),
+        consumoCombustible: 15 + Math.floor(Math.random() * 5),
+        tiempoPromedioEntrega: 6.5 + Math.random() * 2,
+        satisfaccionCliente: 4.2 + Math.random() * 0.6
+      };
     },
-    {
-      ruta: "Monterrey - Ciudad de México",
-      frecuencia: 12,
-      ingresoPromedio: 78000,
-      satisfaccion: 4.6,
-      tiempoPromedio: 8.2
-    },
-    {
-      ruta: "Guadalajara - Tijuana",
-      frecuencia: 8,
-      ingresoPromedio: 95000,
-      satisfaccion: 4.9,
-      tiempoPromedio: 12.0
-    }
-  ];
-
-  // Mock data para performance
-  const mockPerformanceMetrics: PerformanceMetrics[] = [
-    { mes: "Enero", eficiencia: 92, combustible: 88, mantenimiento: 95, entregas: 90 },
-    { mes: "Febrero", eficiencia: 94, combustible: 85, mantenimiento: 92, entregas: 93 },
-    { mes: "Marzo", eficiencia: 89, combustible: 90, mantenimiento: 88, entregas: 95 }
-  ];
-
-  // Mock data para tendencias
-  const mockTrendData: TrendData[] = [
-    { fecha: "2024-01-01", cartasPorte: 45, ingresos: 125000, entregas: 42 },
-    { fecha: "2024-01-02", cartasPorte: 52, ingresos: 138000, entregas: 48 },
-    { fecha: "2024-01-03", cartasPorte: 38, ingresos: 112000, entregas: 35 },
-    { fecha: "2024-01-04", cartasPorte: 61, ingresos: 155000, entregas: 58 },
-    { fecha: "2024-01-05", cartasPorte: 47, ingresos: 128000, entregas: 44 }
-  ];
+    enabled: !!dashboardMetrics,
+    refetchInterval: 30 * 1000, // Actualizar cada 30 segundos
+  });
 
   return {
-    metrics,
-    isLoading,
-    routeMetrics: mockRouteMetrics,
-    performanceMetrics: mockPerformanceMetrics,
-    trendData: mockTrendData,
+    dashboardMetrics,
+    realtimeMetrics,
+    isLoadingDashboard,
+    isLoadingRealtime
   };
 };
