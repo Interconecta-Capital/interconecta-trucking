@@ -1,192 +1,105 @@
 
-import { AppSidebar } from "@/components/AppSidebar";
-import { GlobalHeader } from "@/components/GlobalHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Plus,
-  RefreshCw,
-  BrainCircuit,
-  AlertTriangle,
-  BarChart3,
-  Truck,
-  Package
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { useAnalytics } from "@/hooks/useAnalytics";
-import { SimpleCalendarView } from "@/components/dashboard/SimpleCalendarView";
-import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
-import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
+import { AppSidebar } from '@/components/AppSidebar';
+import { GlobalHeader } from '@/components/GlobalHeader';
+import { SidebarInset } from '@/components/ui/sidebar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { RealtimeMetrics } from '@/components/dashboard/RealtimeMetrics';
+import { SimpleCalendarView } from '@/components/dashboard/SimpleCalendarView';
+import { MetricsCards } from '@/components/dashboard/MetricsCards';
+import { NotificationsPanel } from '@/components/dashboard/NotificationsPanel';
+import { Link } from 'react-router-dom';
+import { Plus, FileText, Users, Truck, BarChart3 } from 'lucide-react';
 
-const Dashboard = () => {
-  const { 
-    metrics, 
-    isLoading
-  } = useAnalytics();
-
+export default function Dashboard() {
   return (
-    <div className="min-h-screen flex w-full bg-gray-50">
+    <div className="flex min-h-screen w-full">
       <AppSidebar />
-      <main className="flex-1 w-full">
+      <SidebarInset className="flex-1">
         <GlobalHeader />
-
-        <div className="p-6 space-y-6">
-          {/* Métricas principales */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Viajes Activos</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {isLoading ? '...' : metrics?.activeTrips || 12}
-                    </p>
-                  </div>
-                  <div className="bg-green-100 p-3 rounded-full">
-                    <Truck className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <Badge variant="outline" className="text-green-700 bg-green-50">
-                    +2 desde ayer
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Entregas Hoy</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {isLoading ? '...' : metrics?.todayDeliveries || 8}
-                    </p>
-                  </div>
-                  <div className="bg-blue-100 p-3 rounded-full">
-                    <Package className="h-6 w-6 text-blue-600" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <Badge variant="outline" className="text-blue-700 bg-blue-50">
-                    75% completado
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Alertas</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {isLoading ? '...' : 5}
-                    </p>
-                  </div>
-                  <div className="bg-orange-100 p-3 rounded-full">
-                    <AlertTriangle className="h-6 w-6 text-orange-600" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <Badge variant="outline" className="text-orange-700 bg-orange-50">
-                    2 urgentes
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Eficiencia</p>
-                    <p className="text-2xl font-bold text-gray-900">94%</p>
-                  </div>
-                  <div className="bg-purple-100 p-3 rounded-full">
-                    <BarChart3 className="h-6 w-6 text-purple-600" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <Badge variant="outline" className="text-purple-700 bg-purple-50">
-                    +3% vs mes anterior
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Botones de análisis IA */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button 
-              className="h-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-              size="lg"
-            >
-              <BrainCircuit className="h-6 w-6 mr-2" />
-              <div className="text-left">
-                <div className="font-semibold">Analizar Viajes con IA</div>
-                <div className="text-sm opacity-90">Optimiza rutas y tiempos con Gemini</div>
-              </div>
-            </Button>
-
-            <Button 
-              variant="outline"
-              className="h-16 border-orange-300 hover:bg-orange-50"
-              size="lg"
-            >
-              <AlertTriangle className="h-6 w-6 mr-2 text-orange-600" />
-              <div className="text-left">
-                <div className="font-semibold">Analizar Alertas</div>
-                <div className="text-sm text-gray-600">Revisa incidencias y problemas</div>
-              </div>
-            </Button>
-          </div>
-
-          {/* Calendario y Panel lateral */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Calendario principal */}
-            <div className="lg:col-span-3">
-              <SimpleCalendarView />
+        <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Resumen general de tus operaciones
+              </p>
             </div>
+          </div>
 
-            {/* Panel lateral */}
-            <div className="space-y-6">
-              <NotificationsPanel />
-              <AnalyticsPanel />
-              
-              {/* Acciones rápidas */}
+          {/* Métricas principales */}
+          <MetricsCards />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            {/* Calendario - 2 columnas */}
+            <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold">Acciones Rápidas</CardTitle>
+                  <CardTitle>Calendario de Viajes</CardTitle>
+                  <CardDescription>
+                    Programa y visualiza tus entregas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SimpleCalendarView />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Panel lateral con acciones rápidas */}
+            <div className="space-y-4">
+              {/* Acciones Rápidas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Link to="/cartas-porte">
-                    <Button className="w-full justify-start bg-trucking-blue-500 hover:bg-trucking-blue-600 text-sm">
+                  <Link to="/cartas-porte" className="block">
+                    <Button 
+                      className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Nueva Carta Porte
                     </Button>
                   </Link>
-                  <Link to="/conductores">
-                    <Button variant="outline" className="w-full justify-start text-sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agregar Conductor
+                  
+                  <Link to="/cartas-porte" className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Ver Documentos
                     </Button>
                   </Link>
-                  <Link to="/vehiculos">
-                    <Button variant="outline" className="w-full justify-start text-sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Registrar Vehículo
+                  
+                  <Link to="/conductores" className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Users className="h-4 w-4 mr-2" />
+                      Gestionar Conductores
                     </Button>
                   </Link>
+                  
+                  <Link to="/vehiculos" className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Truck className="h-4 w-4 mr-2" />
+                      Gestionar Vehículos
+                    </Button>
+                  </Link>
+                  
+                  <Button variant="outline" className="w-full justify-start">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Reportes
+                  </Button>
                 </CardContent>
               </Card>
+
+              {/* Notificaciones */}
+              <NotificationsPanel />
             </div>
           </div>
+
+          {/* Métricas en tiempo real */}
+          <RealtimeMetrics />
         </div>
-      </main>
+      </SidebarInset>
     </div>
   );
-};
-
-export default Dashboard;
+}

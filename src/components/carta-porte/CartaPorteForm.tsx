@@ -1,9 +1,11 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { useCartasPorte } from '@/hooks/useCartasPorte';
+import { useUbicacionesPersistence } from '@/hooks/useUbicacionesPersistence';
+import { useMercanciasPersistence } from '@/hooks/useMercanciasPersistence';
 import { ConfiguracionInicial } from './ConfiguracionInicial';
 import { UbicacionesSection } from './UbicacionesSection';
 import { MercanciasSection } from './MercanciasSection';
@@ -18,9 +20,7 @@ import {
   Truck, 
   Users,
   CheckCircle,
-  AlertCircle,
   Save,
-  Download,
   Stamp
 } from 'lucide-react';
 
@@ -84,15 +84,55 @@ export function CartaPorteForm() {
     figuras: [],
   });
 
+  // Hooks de persistencia
+  const { crearCartaPorte, actualizarCartaPorte, isCreating, isUpdating } = useCartasPorte();
+  const { guardarUbicaciones } = useUbicacionesPersistence(cartaPorteId);
+  const { guardarMercancias } = useMercanciasPersistence(cartaPorteId);
+
+  // Auto-guardar cuando se completa la configuración inicial
+  useEffect(() => {
+    if (formData.rfcEmisor && formData.rfcReceptor && !cartaPorteId) {
+      crearCartaPorte(formData, {
+        onSuccess: (nuevaCartaPorte) => {
+          setCartaPorteId(nuevaCartaPorte.id);
+          setFormData(prev => ({ ...prev, cartaPorteId: nuevaCartaPorte.id }));
+        }
+      });
+    }
+  }, [formData.rfcEmisor, formData.rfcReceptor, cartaPorteId, crearCartaPorte]);
+
+  // Auto-guardar ubicaciones cuando cambian
+  useEffect(() => {
+    if (cartaPorteId && formData.ubicaciones.length > 0) {
+      const timer = setTimeout(() => {
+        guardarUbicaciones(formData.ubicaciones);
+      }, 1000); // Debounce de 1 segundo
+
+      return () => clearTimeout(timer);
+    }
+  }, [formData.ubicaciones, cartaPorteId, guardarUbicaciones]);
+
+  // Auto-guardar mercancías cuando cambian
+  useEffect(() => {
+    if (cartaPorteId && formData.mercancias.length > 0) {
+      const timer = setTimeout(() => {
+        guardarMercancias(formData.mercancias);
+      }, 1000); // Debounce de 1 segundo
+
+      return () => clearTimeout(timer);
+    }
+  }, [formData.mercancias, cartaPorteId, guardarMercancias]);
+
   const updateFormData = (section: string, data: any) => {
     if (section === 'configuracion') {
-      // For configuration, merge the data with existing form data
-      setFormData(prev => ({
-        ...prev,
-        ...data,
-      }));
+      const newData = { ...formData, ...data };
+      setFormData(newData);
+      
+      // Actualizar carta porte si ya existe
+      if (cartaPorteId) {
+        actualizarCartaPorte({ id: cartaPorteId, data: newData });
+      }
     } else {
-      // For other sections, update specific property
       setFormData(prev => ({
         ...prev,
         [section]: data,
@@ -158,6 +198,11 @@ export function CartaPorteForm() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">
               Nueva Carta Porte 3.1
+              {cartaPorteId && (
+                <span className="text-sm font-normal text-green-600 ml-2">
+                  ✓ Guardando automáticamente
+                </span>
+              )}
             </CardTitle>
             <div className="flex items-center space-x-4">
               {canSaveAsTemplate() && (
