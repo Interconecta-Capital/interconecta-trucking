@@ -1,130 +1,22 @@
 
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { Ubicacion } from '@/types/ubicaciones';
-import { SATValidation } from '@/utils/satValidation';
+import { XMLUtils } from './xmlUtils';
 
-export interface XMLGenerationResult {
-  success: boolean;
-  xml?: string;
-  errors?: string[];
-  warnings?: string[];
-}
-
-export interface TimbradoConfig {
-  produccion: boolean;
-  usuario: string;
-  password: string;
-  url?: string;
-}
-
-export class XMLCartaPorteGenerator {
-  private static readonly NAMESPACE = {
-    cfdi: 'http://www.sat.gob.mx/cfd/4',
-    cartaporte31: 'http://www.sat.gob.mx/CartaPorte31',
-    xsi: 'http://www.w3.org/2001/XMLSchema-instance'
-  };
-
-  static async generarXML(data: CartaPorteData): Promise<XMLGenerationResult> {
-    try {
-      // Validar datos antes de generar XML
-      const erroresValidacion = await SATValidation.validarCartaPorteCompleta(data);
-      if (erroresValidacion.some(e => !e.isValid)) {
-        return {
-          success: false,
-          errors: erroresValidacion.filter(e => !e.isValid).map(e => e.message || 'Error de validación')
-        };
-      }
-
-      const xml = this.construirXML(data);
-      
-      return {
-        success: true,
-        xml,
-        warnings: this.obtenerAdvertencias(data)
-      };
-    } catch (error) {
-      console.error('Error generando XML:', error);
-      return {
-        success: false,
-        errors: [`Error interno: ${error instanceof Error ? error.message : 'Error desconocido'}`]
-      };
-    }
-  }
-
-  private static construirXML(data: CartaPorteData): string {
-    const fechaActual = new Date().toISOString();
-    const folio = this.generarFolio();
-    
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<cfdi:Comprobante 
-  xmlns:cfdi="${this.NAMESPACE.cfdi}"
-  xmlns:cartaporte31="${this.NAMESPACE.cartaporte31}"
-  xmlns:xsi="${this.NAMESPACE.xsi}"
-  xsi:schemaLocation="${this.NAMESPACE.cfdi} http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd ${this.NAMESPACE.cartaporte31} http://www.sat.gob.mx/sitio_internet/cfd/CartaPorte31/CartaPorte31.xsd"
-  Version="4.0"
-  Serie="CP"
-  Folio="${folio}"
-  Fecha="${fechaActual}"
-  TipoDeComprobante="${data.tipoCfdi === 'Traslado' ? 'T' : 'I'}"
-  SubTotal="0"
-  Total="0"
-  Moneda="XXX"
-  LugarExpedicion="${this.obtenerCodigoPostalExpedicion(data)}">
-  
-  ${this.construirEmisor(data)}
-  ${this.construirReceptor(data)}
-  ${this.construirConceptos(data)}
-  ${this.construirComplemento(data)}
-  
-</cfdi:Comprobante>`;
-  }
-
-  private static construirEmisor(data: CartaPorteData): string {
-    return `<cfdi:Emisor 
-    Rfc="${data.rfcEmisor}" 
-    Nombre="${data.nombreEmisor}"
-    RegimenFiscal="601" />`;
-  }
-
-  private static construirReceptor(data: CartaPorteData): string {
-    return `<cfdi:Receptor 
-    Rfc="${data.rfcReceptor}" 
-    Nombre="${data.nombreReceptor}"
-    DomicilioFiscalReceptor="${this.obtenerCodigoPostalReceptor(data)}"
-    RegimenFiscalReceptor="601"
-    UsoCFDI="S01" />`;
-  }
-
-  private static construirConceptos(data: CartaPorteData): string {
-    const conceptos = data.mercancias.map((mercancia, index) => {
-      return `<cfdi:Concepto 
-        ClaveProdServ="${mercancia.bienes_transp || '78101800'}"
-        Cantidad="${mercancia.cantidad || 1}"
-        ClaveUnidad="${mercancia.clave_unidad || 'KGM'}"
-        Descripcion="${mercancia.descripcion || 'Servicio de transporte de carga'}"
-        ValorUnitario="0"
-        Importe="0"
-        ObjetoImp="01" />`;
-    }).join('\n    ');
-
-    return `<cfdi:Conceptos>
-    ${conceptos}
-  </cfdi:Conceptos>`;
-  }
-
-  private static construirComplemento(data: CartaPorteData): string {
+export class XMLComplementoBuilder {
+  static construirComplemento(data: CartaPorteData): string {
     return `<cfdi:Complemento>
     ${this.construirCartaPorte(data)}
   </cfdi:Complemento>`;
   }
 
   private static construirCartaPorte(data: CartaPorteData): string {
-    const distanciaTotal = this.calcularDistanciaTotal(data.ubicaciones);
+    const distanciaTotal = XMLUtils.calcularDistanciaTotal(data.ubicaciones);
     
     return `<cartaporte31:CartaPorte 
       Version="3.1" 
       TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
-      ${data.transporteInternacional ? this.construirAtributosInternacionales(data) : ''}
+      ${data.transporteInternacional ? XMLUtils.construirAtributosInternacionales(data) : ''}
       TotalDistRec="${distanciaTotal}">
       
       ${this.construirUbicaciones(data.ubicaciones)}
@@ -281,57 +173,5 @@ export class XMLCartaPorteGenerator {
     return `<cartaporte31:Remolques>
       ${remolquesXML}
     </cartaporte31:Remolques>`;
-  }
-
-  private static construirAtributosInternacionales(data: CartaPorteData): string {
-    let attrs = '';
-    if (data.transporteInternacional) {
-      attrs += `EntradaSalidaMerc="${data.entrada_salida_merc || ''}" `;
-      attrs += `PaisOrigenDestino="${data.pais_origen_destino || ''}" `;
-      attrs += `ViaEntradaSalida="${data.via_entrada_salida || ''}" `;
-    }
-    return attrs;
-  }
-
-  private static obtenerCodigoPostalExpedicion(data: CartaPorteData): string {
-    // Usar el código postal del origen o un valor por defecto
-    const origen = data.ubicaciones?.find(u => u.tipoUbicacion === 'Origen');
-    return origen?.domicilio?.codigoPostal || '01000';
-  }
-
-  private static obtenerCodigoPostalReceptor(data: CartaPorteData): string {
-    // Usar el código postal del destino o un valor por defecto
-    const destino = data.ubicaciones?.find(u => u.tipoUbicacion === 'Destino');
-    return destino?.domicilio?.codigoPostal || '01000';
-  }
-
-  private static calcularDistanciaTotal(ubicaciones: Ubicacion[]): number {
-    return ubicaciones?.reduce((total, ubicacion) => {
-      return total + (ubicacion.distanciaRecorrida || 0);
-    }, 0) || 0;
-  }
-
-  private static generarFolio(): string {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${timestamp}${random}`;
-  }
-
-  private static obtenerAdvertencias(data: CartaPorteData): string[] {
-    const advertencias: string[] = [];
-    
-    if (!data.mercancias || data.mercancias.length === 0) {
-      advertencias.push('No se han especificado mercancías');
-    }
-    
-    if (!data.ubicaciones || data.ubicaciones.length < 2) {
-      advertencias.push('Se requieren al menos 2 ubicaciones (origen y destino)');
-    }
-    
-    if (!data.figuras || data.figuras.length === 0) {
-      advertencias.push('No se han especificado figuras de transporte');
-    }
-    
-    return advertencias;
   }
 }

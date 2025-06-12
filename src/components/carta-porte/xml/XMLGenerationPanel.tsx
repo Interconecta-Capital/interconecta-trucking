@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
   Eye,
   Stamp,
   Shield,
-  FilePdf
+  FileImage
 } from 'lucide-react';
 import { useXMLGeneration } from '@/hooks/useXMLGeneration';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
@@ -162,7 +161,7 @@ export function XMLGenerationPanel({
           {/* Sección de PDF */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium flex items-center space-x-2">
-              <FilePdf className="h-4 w-4" />
+              <FileImage className="h-4 w-4" />
               <span>Representación Impresa PDF</span>
             </h3>
             
@@ -176,7 +175,7 @@ export function XMLGenerationPanel({
                 {isGeneratingPDF ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <FilePdf className="h-4 w-4" />
+                  <FileImage className="h-4 w-4" />
                 )}
                 <span>{isGeneratingPDF ? 'Generando...' : 'Generar PDF'}</span>
               </Button>
