@@ -14,7 +14,30 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Obtener datos del usuario y tenant desde la base de datos
+  // Obtener datos del perfil y tenant desde la base de datos
+  const { data: profileData } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(`
+          *
+        `)
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return profile;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Obtener datos del usuario y tenant desde la tabla usuarios
   const { data: userData } = useQuery({
     queryKey: ['user-data', user?.id],
     queryFn: async () => {
@@ -29,7 +52,10 @@ export const useAuthState = () => {
         .eq('auth_user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user data:', error);
+        return null;
+      }
       return usuario;
     },
     enabled: !!user?.id,
@@ -68,20 +94,21 @@ export const useAuthState = () => {
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
-  // Actualizar usuario con datos del tenant cuando estén disponibles
+  // Actualizar usuario con datos del perfil y tenant cuando estén disponibles
   useEffect(() => {
-    if (user && userData) {
+    if (user && (profileData || userData)) {
       setUser({
         ...user,
-        tenant: userData.tenant,
-        usuario: {
+        profile: profileData,
+        tenant: userData?.tenant,
+        usuario: userData ? {
           id: userData.id,
           nombre: userData.nombre,
           rol: userData.rol,
-        },
+        } : undefined,
       });
     }
-  }, [user?.id, userData]);
+  }, [user?.id, profileData, userData]);
 
   return {
     user,

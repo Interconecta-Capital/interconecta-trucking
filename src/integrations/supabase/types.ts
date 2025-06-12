@@ -717,6 +717,65 @@ export type Database = {
           },
         ]
       }
+      eventos_calendario: {
+        Row: {
+          carta_porte_id: string | null
+          created_at: string | null
+          descripcion: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          google_event_id: string | null
+          id: string
+          metadata: Json | null
+          tipo_evento: string
+          titulo: string
+          ubicacion_destino: string | null
+          ubicacion_origen: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          carta_porte_id?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          fecha_fin: string
+          fecha_inicio: string
+          google_event_id?: string | null
+          id?: string
+          metadata?: Json | null
+          tipo_evento?: string
+          titulo: string
+          ubicacion_destino?: string | null
+          ubicacion_origen?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          carta_porte_id?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          fecha_fin?: string
+          fecha_inicio?: string
+          google_event_id?: string | null
+          id?: string
+          metadata?: Json | null
+          tipo_evento?: string
+          titulo?: string
+          ubicacion_destino?: string | null
+          ubicacion_origen?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_calendario_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       figuras_frecuentes: {
         Row: {
           created_at: string | null
@@ -876,6 +935,42 @@ export type Database = {
           },
         ]
       }
+      notificaciones: {
+        Row: {
+          created_at: string | null
+          id: string
+          leida: boolean | null
+          mensaje: string
+          metadata: Json | null
+          tipo: string
+          titulo: string
+          urgente: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          leida?: boolean | null
+          mensaje: string
+          metadata?: Json | null
+          tipo: string
+          titulo: string
+          urgente?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          leida?: boolean | null
+          mensaje?: string
+          metadata?: Json | null
+          tipo?: string
+          titulo?: string
+          urgente?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       plantillas_carta_porte: {
         Row: {
           created_at: string | null
@@ -929,6 +1024,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          configuracion_calendario: Json | null
+          created_at: string | null
+          email: string
+          empresa: string | null
+          id: string
+          nombre: string
+          rfc: string | null
+          telefono: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          configuracion_calendario?: Json | null
+          created_at?: string | null
+          email: string
+          empresa?: string | null
+          id: string
+          nombre: string
+          rfc?: string | null
+          telefono?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          configuracion_calendario?: Json | null
+          created_at?: string | null
+          email?: string
+          empresa?: string | null
+          id?: string
+          nombre?: string
+          rfc?: string | null
+          telefono?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       remolques: {
         Row: {
@@ -1135,6 +1272,7 @@ export type Database = {
           email: string
           id: string
           nombre: string
+          profile_id: string | null
           rol: string | null
           tenant_id: string | null
           updated_at: string | null
@@ -1146,6 +1284,7 @@ export type Database = {
           email: string
           id?: string
           nombre: string
+          profile_id?: string | null
           rol?: string | null
           tenant_id?: string | null
           updated_at?: string | null
@@ -1157,11 +1296,19 @@ export type Database = {
           email?: string
           id?: string
           nombre?: string
+          profile_id?: string | null
           rol?: string | null
           tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "usuarios_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "usuarios_tenant_id_fkey"
             columns: ["tenant_id"]

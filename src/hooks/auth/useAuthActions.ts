@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UserSignUpData } from './types';
+import { UserSignUpData, UserProfile } from './types';
 import { createTenantAndUser, getRedirectUrl } from './useAuthUtils';
 
 /**
@@ -135,6 +135,24 @@ export const useAuthActions = () => {
   };
 
   /**
+   * Actualizar perfil del usuario
+   */
+  const updateProfile = async (profileData: Partial<UserProfile>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuario no autenticado');
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        ...profileData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (error) throw error;
+  };
+
+  /**
    * Cerrar sesión
    */
   const signOut = async () => {
@@ -164,6 +182,7 @@ export const useAuthActions = () => {
     signInWithMagicLink,
     resetPassword,
     updateEmail,
+    updateProfile,
     signOut,
     resendConfirmation,
   };
