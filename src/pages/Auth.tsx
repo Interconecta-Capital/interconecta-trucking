@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Truck, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -29,9 +29,11 @@ export default function Auth() {
           </Link>
           
           <div className="flex justify-center mb-4">
-            <div className="interconecta-gradient p-3 rounded-xl">
-              <Truck className="h-8 w-8 text-white" />
-            </div>
+            <img 
+              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+              alt="Interconecta Trucking Logo"
+              className="h-16 w-16 rounded-xl"
+            />
           </div>
           <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
             Interconecta Trucking

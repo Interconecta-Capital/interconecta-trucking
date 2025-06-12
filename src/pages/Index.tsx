@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star } from "lucide-react";
+import { FileText, Users, Shield, BarChart3, Globe, ArrowRight, CheckCircle, Calendar, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -10,9 +10,11 @@ const Index = () => {
       <header className="bg-white/90 backdrop-blur-md border-b border-interconecta-border-subtle sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="interconecta-gradient p-2 rounded-lg">
-              <Truck className="h-8 w-8 text-white" />
-            </div>
+            <img 
+              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+              alt="Interconecta Trucking Logo"
+              className="h-10 w-10 rounded-lg"
+            />
             <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
               Interconecta Trucking
             </h1>
@@ -286,9 +288,11 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="interconecta-gradient p-2 rounded-lg">
-                  <Truck className="h-6 w-6 text-white" />
-                </div>
+                <img 
+                  src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+                  alt="Interconecta Trucking Logo"
+                  className="h-8 w-8 rounded-lg"
+                />
                 <h5 className="text-xl font-bold font-sora">Interconecta Trucking</h5>
               </div>
               <p className="font-inter text-interconecta-primary-light">

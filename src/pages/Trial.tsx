@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Truck, ArrowLeft, Check, Calendar } from 'lucide-react';
+import { ArrowLeft, Check, Calendar } from 'lucide-react';
 
 export default function Trial() {
   const [formData, setFormData] = useState({
@@ -65,9 +65,11 @@ export default function Trial() {
       <header className="bg-white/90 backdrop-blur-md border-b border-interconecta-border-subtle">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-3">
-            <div className="interconecta-gradient p-2 rounded-lg">
-              <Truck className="h-6 w-6 text-white" />
-            </div>
+            <img 
+              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+              alt="Interconecta Trucking Logo"
+              className="h-8 w-8 rounded-lg"
+            />
             <span className="text-xl font-bold font-sora text-interconecta-text-primary">
               Interconecta Trucking
             </span>
