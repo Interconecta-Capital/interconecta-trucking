@@ -7,6 +7,9 @@ import { SecurityProvider } from "@/components/SecurityProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import Planes from "./pages/Planes";
+import Vehiculos from "./pages/Vehiculos";
+import Conductores from "./pages/Conductores";
+import Socios from "./pages/Socios";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import Auth from "./pages/Auth";
 import { BaseLayout } from "./components/layout/BaseLayout";
@@ -46,6 +49,24 @@ function App() {
                   <Route path="/planes" element={
                     <AuthGuard>
                       <Planes />
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/vehiculos" element={
+                    <AuthGuard>
+                      <Vehiculos />
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/conductores" element={
+                    <AuthGuard>
+                      <Conductores />
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/socios" element={
+                    <AuthGuard>
+                      <Socios />
                     </AuthGuard>
                   } />
 

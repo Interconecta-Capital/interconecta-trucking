@@ -64,8 +64,11 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
         fields: Object.keys(formData)
       });
 
-      // Validate form data
-      const validation = validateFormData(formData);
+      // Validate form data (without email since it's already available)
+      const validation = validateFormData({
+        ...formData,
+        email: user?.email // Use existing email from auth
+      });
       if (!validation.isValid) {
         validation.errors.forEach(error => toast.error(error));
         await logSecurityEvent('PROFILE_UPDATE_VALIDATION_FAILED', {
