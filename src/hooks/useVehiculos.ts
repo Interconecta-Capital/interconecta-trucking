@@ -1,8 +1,28 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export interface Vehiculo {
+  id: string;
+  user_id: string;
+  placa: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  num_serie?: string;
+  config_vehicular?: string;
+  poliza_seguro?: string;
+  vigencia_seguro?: string;
+  verificacion_vigencia?: string;
+  id_equipo_gps?: string;
+  fecha_instalacion_gps?: string;
+  acta_instalacion_gps?: string;
+  estado: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useVehiculos = () => {
   const { user } = useAuth();
@@ -26,7 +46,7 @@ export const useVehiculos = () => {
     },
     enabled: !!user?.id,
     staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos (renamed from cacheTime)
   });
 
   // Mutación para crear vehículo
