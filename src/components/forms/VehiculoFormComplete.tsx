@@ -74,18 +74,17 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
 
     const vehiculoData = {
       ...formData,
-      anio: formData.anio ? parseInt(formData.anio) : null,
+      anio: formData.anio ? parseInt(formData.anio) : undefined,
       activo: true
     };
 
-    let resultado;
     if (vehiculoId) {
-      resultado = await updateVehiculo(vehiculoId, vehiculoData);
+      updateVehiculo({ id: vehiculoId, ...vehiculoData });
     } else {
-      resultado = await createVehiculo(vehiculoData);
+      createVehiculo(vehiculoData);
     }
 
-    if (resultado && onSuccess) {
+    if (onSuccess) {
       onSuccess();
     }
   };
