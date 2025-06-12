@@ -27,9 +27,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="space-y-4 md:space-y-6">
       {children}
       
-      {/* Desktop layout - calendario a la izquierda, acciones a la derecha */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="lg:col-span-2">
+      {/* Desktop layout - calendario más ancho a la izquierda, acciones y eventos a la derecha */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="lg:col-span-3">
           <EnhancedCalendarView />
         </div>
         <div className="lg:col-span-1">

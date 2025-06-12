@@ -42,37 +42,37 @@ export function EnhancedCalendarView() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Mock data mejorado para mejor visualización
+  // Mock data mejorado para visualización como en las imágenes
   const mockEventos = [
     {
       fecha: new Date(2024, 5, 15),
       tipo: 'viaje',
       titulo: 'Viaje CDMX - Guadalajara',
-      color: 'bg-green-100 text-green-800'
+      color: 'bg-green-500'
     },
     {
       fecha: new Date(2024, 5, 18),
       tipo: 'mantenimiento',
       titulo: 'Mantenimiento Preventivo',
-      color: 'bg-red-100 text-red-800'
+      color: 'bg-red-500'
     },
     {
       fecha: new Date(2024, 5, 20),
       tipo: 'entrega',
       titulo: 'Entrega Cliente XYZ',
-      color: 'bg-blue-100 text-blue-800'
+      color: 'bg-blue-500'
     },
     {
       fecha: new Date(2024, 5, 22),
       tipo: 'revision_gps',
       titulo: 'Revisión GPS',
-      color: 'bg-purple-100 text-purple-800'
+      color: 'bg-purple-500'
     },
     {
       fecha: new Date(2024, 5, 25),
       tipo: 'verificacion',
       titulo: 'Verificación Vehicular',
-      color: 'bg-orange-100 text-orange-800'
+      color: 'bg-orange-500'
     }
   ];
 
@@ -105,15 +105,6 @@ export function EnhancedCalendarView() {
     return mockEventos.filter(evento => 
       evento.fecha.toDateString() === date.toDateString()
     );
-  };
-
-  // Modificador personalizado para el calendario
-  const eventModifiers = {
-    hasEvents: (date: Date) => getEventsForDate(date).length > 0
-  };
-
-  const eventModifiersClassNames = {
-    hasEvents: "relative"
   };
 
   if (isLoading) {
@@ -159,84 +150,77 @@ export function EnhancedCalendarView() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Calendario más grande */}
+        {/* Calendario más grande y visual */}
         <div className="flex justify-center">
           <Calendar
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            className={cn("rounded-md border pointer-events-auto", isMobile ? "text-sm" : "text-base")}
-            modifiers={eventModifiers}
-            modifiersClassNames={{
-              selected: "bg-primary text-primary-foreground",
-              ...eventModifiersClassNames
+            className={cn("rounded-md border pointer-events-auto w-full", isMobile ? "text-sm" : "text-base")}
+            classNames={{
+              months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
+              month: "space-y-4 w-full",
+              caption: "flex justify-center pt-1 relative items-center",
+              caption_label: "text-lg font-medium",
+              nav: "space-x-1 flex items-center",
+              nav_button: cn(
+                "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+              ),
+              nav_button_previous: "absolute left-1",
+              nav_button_next: "absolute right-1",
+              table: "w-full border-collapse space-y-1",
+              head_row: "flex w-full",
+              head_cell: "text-muted-foreground rounded-md w-full font-normal text-sm flex-1 text-center",
+              row: "flex w-full mt-2",
+              cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 flex-1 h-12",
+              day: cn(
+                "h-12 w-full p-0 font-normal aria-selected:opacity-100 flex flex-col items-center justify-center relative hover:bg-accent rounded-md"
+              ),
+              day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+              day_today: "bg-accent text-accent-foreground font-semibold",
+              day_outside: "text-muted-foreground opacity-50",
+              day_disabled: "text-muted-foreground opacity-50",
+              day_hidden: "invisible",
             }}
             components={{
-              Day: ({ date, displayMonth, ...props }) => {
+              Day: ({ date, displayMonth }) => {
                 const events = getEventsForDate(date);
                 const hasEvents = events.length > 0;
+                const isSelected = selectedDate?.toDateString() === date.toDateString();
+                const isToday = new Date().toDateString() === date.toDateString();
                 
                 return (
-                  <div className="relative">
-                    <button {...props}>
-                      {date.getDate()}
-                      {hasEvents && (
-                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                          {events.slice(0, 3).map((evento, index) => (
-                            <div
-                              key={index}
-                              className={cn(
-                                "w-1 h-1 rounded-full",
-                                evento.tipo === 'viaje' && "bg-green-600",
-                                evento.tipo === 'mantenimiento' && "bg-red-600",
-                                evento.tipo === 'entrega' && "bg-blue-600",
-                                evento.tipo === 'revision_gps' && "bg-purple-600",
-                                evento.tipo === 'verificacion' && "bg-orange-600"
-                              )}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleDateSelect(date)}
+                    className={cn(
+                      "h-12 w-full p-1 font-normal flex flex-col items-center justify-center relative hover:bg-accent rounded-md transition-colors",
+                      isSelected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                      isToday && !isSelected && "bg-accent text-accent-foreground font-semibold",
+                      date.getMonth() !== displayMonth.getMonth() && "text-muted-foreground opacity-50"
+                    )}
+                  >
+                    <span className="text-sm">{date.getDate()}</span>
+                    {hasEvents && (
+                      <div className="flex gap-0.5 mt-0.5">
+                        {events.slice(0, 3).map((evento, index) => (
+                          <div
+                            key={index}
+                            className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              evento.color
+                            )}
+                          />
+                        ))}
+                        {events.length > 3 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                        )}
+                      </div>
+                    )}
+                  </button>
                 );
               }
             }}
           />
-        </div>
-        
-        {/* Lista de eventos próximos mejorada */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            Próximos Eventos
-          </h4>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {mockEventos.slice(0, 5).map((evento, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  {evento.tipo === 'viaje' && <Truck className="h-4 w-4 text-green-600" />}
-                  {evento.tipo === 'mantenimiento' && <Wrench className="h-4 w-4 text-red-600" />}
-                  {evento.tipo === 'entrega' && <MapPin className="h-4 w-4 text-orange-600" />}
-                  {evento.tipo === 'revision_gps' && <MapPin className="h-4 w-4 text-purple-600" />}
-                  {evento.tipo === 'verificacion' && <CheckCircle className="h-4 w-4 text-orange-600" />}
-                  <div>
-                    <p className="text-sm font-medium">{evento.titulo}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {evento.fecha.toLocaleDateString('es-ES', { 
-                        weekday: 'short', 
-                        day: 'numeric', 
-                        month: 'short' 
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="outline" className={evento.color}>
-                  {evento.tipo.replace('_', ' ')}
-                </Badge>
-              </div>
-            ))}
-          </div>
         </div>
       </CardContent>
 
@@ -245,7 +229,7 @@ export function EnhancedCalendarView() {
         <PopoverTrigger asChild>
           <div></div>
         </PopoverTrigger>
-        <PopoverContent className="w-72" align="center">
+        <PopoverContent className="w-72 z-50" align="center" side="top">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
