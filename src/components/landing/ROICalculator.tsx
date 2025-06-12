@@ -19,7 +19,7 @@ const ROICalculator = () => {
   const annualSavings = monthlySavings * 12;
 
   return (
-    <div className="bg-gradient-to-br from-red-50 to-orange-50 py-16">
+    <div className="bg-gradient-to-br from-interconecta-bg-alternate to-white py-16">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <div className="inline-flex items-center bg-red-100 border border-red-200 rounded-full px-4 py-2 mb-6">
@@ -37,8 +37,8 @@ const ROICalculator = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <Card className="border-red-200 shadow-xl">
-            <CardHeader className="text-center bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-t-lg">
+          <Card className="border-interconecta-border-subtle shadow-xl">
+            <CardHeader className="text-center bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white rounded-t-lg">
               <CardTitle className="flex items-center justify-center text-2xl font-sora">
                 <Calculator className="mr-3 h-6 w-6" />
                 Calculadora de ROI
@@ -84,16 +84,16 @@ const ROICalculator = () => {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                <div className="bg-gradient-to-br from-interconecta-primary-light to-interconecta-bg-alternate p-6 rounded-lg border border-interconecta-border-subtle">
                   <div className="text-center">
-                    <TrendingUp className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                    <h4 className="text-2xl font-bold font-sora text-blue-700 mb-2">
+                    <TrendingUp className="h-12 w-12 text-interconecta-primary mx-auto mb-4" />
+                    <h4 className="text-2xl font-bold font-sora text-interconecta-text-primary mb-2">
                       Ahorro Anual Estimado
                     </h4>
-                    <div className="text-4xl font-bold font-sora text-blue-600 mb-4">
+                    <div className="text-4xl font-bold font-sora text-interconecta-primary mb-4">
                       ${annualSavings.toLocaleString('es-MX')} MXN
                     </div>
-                    <div className="text-lg font-medium font-inter text-blue-700">
+                    <div className="text-lg font-medium font-inter text-interconecta-text-secondary">
                       ${monthlySavings.toLocaleString('es-MX')} MXN por mes
                     </div>
                   </div>
@@ -111,9 +111,9 @@ const ROICalculator = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-interconecta-border-subtle">
                 <div className="text-center">
-                  <div className="text-2xl font-bold font-sora text-red-600">$500,000</div>
+                  <div className="text-2xl font-bold font-sora text-interconecta-primary">$500,000</div>
                   <div className="text-sm font-inter text-interconecta-text-secondary">Multa máxima SAT</div>
                 </div>
                 <div className="text-center">
@@ -121,7 +121,7 @@ const ROICalculator = () => {
                   <div className="text-sm font-inter text-interconecta-text-secondary">vs 1.5 horas manual</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold font-sora text-blue-600">99.9%</div>
+                  <div className="text-2xl font-bold font-sora text-interconecta-primary">99.9%</div>
                   <div className="text-sm font-inter text-interconecta-text-secondary">Precisión IA</div>
                 </div>
                 <div className="text-center">

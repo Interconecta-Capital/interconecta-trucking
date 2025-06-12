@@ -30,6 +30,18 @@ export function SocialAuthButtons({ mode = 'login' }: SocialAuthButtonsProps) {
 
   return (
     <div className="space-y-4">
+      {/* Separador */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
+            O continúa con
+          </span>
+        </div>
+      </div>
+
       {/* Botón de Google */}
       <Button
         type="button"
@@ -60,18 +72,6 @@ export function SocialAuthButtons({ mode = 'login' }: SocialAuthButtonsProps) {
           <span>{googleLoading ? 'Redirigiendo...' : `${actionText} con Google`}</span>
         </div>
       </Button>
-
-      {/* Separador */}
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <Separator className="w-full" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
-            O continúa con
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

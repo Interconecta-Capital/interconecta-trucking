@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Star, Zap, Building, Rocket } from "lucide-react";
+import { CheckCircle, Star, Zap, Building, Rocket, Bot, FileText, HardDrive, Users, Headphones } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const PricingSection = () => {
@@ -78,11 +78,36 @@ const PricingSection = () => {
   ];
 
   const addOns = [
-    { name: "IA Extra", description: "+200 consultas adicionales", price: 25 },
-    { name: "OCR Extra", description: "+400 documentos adicionales", price: 35 },
-    { name: "Almacenamiento", description: "+25 GB adicionales", price: 10 },
-    { name: "Usuario Extra", description: "Por usuario adicional", price: 15 },
-    { name: "Soporte VIP", description: "Soporte dedicado 24/7", price: 50 }
+    { 
+      name: "IA Extra", 
+      description: "+200 consultas adicionales", 
+      price: 25,
+      icon: Bot
+    },
+    { 
+      name: "OCR Extra", 
+      description: "+400 documentos adicionales", 
+      price: 35,
+      icon: FileText
+    },
+    { 
+      name: "Almacenamiento", 
+      description: "+25 GB adicionales", 
+      price: 10,
+      icon: HardDrive
+    },
+    { 
+      name: "Usuario Extra", 
+      description: "Por usuario adicional", 
+      price: 15,
+      icon: Users
+    },
+    { 
+      name: "Soporte VIP", 
+      description: "Soporte dedicado 24/7", 
+      price: 50,
+      icon: Headphones
+    }
   ];
 
   return (
@@ -106,7 +131,7 @@ const PricingSection = () => {
             }`}>
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <span className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white px-3 py-1 rounded-full text-xs sm:text-sm font-semibold font-sora whitespace-nowrap">
+                  <span className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white px-2 py-1 rounded-full text-xs font-semibold font-sora whitespace-nowrap">
                     MÁS POPULAR
                   </span>
                 </div>
@@ -131,7 +156,7 @@ const PricingSection = () => {
                   <div className="text-sm font-inter text-interconecta-text-secondary">
                     <small>+ IVA</small>
                   </div>
-                  <div className="text-sm font-medium font-inter text-green-600">
+                  <div className="text-sm font-medium font-inter text-interconecta-primary">
                     Ahorro: ${(plan.originalPrice - plan.price)} USD/mes
                   </div>
                 </div>
@@ -172,6 +197,11 @@ const PricingSection = () => {
           <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
             {addOns.map((addon, index) => (
               <div key={index} className="text-center p-4 border border-interconecta-border-subtle rounded-lg hover:border-interconecta-primary transition-colors">
+                <div className="flex justify-center mb-3">
+                  <div className="p-2 rounded-full bg-interconecta-primary-light">
+                    <addon.icon className="h-6 w-6 text-interconecta-primary" />
+                  </div>
+                </div>
                 <div className="text-lg font-bold font-sora text-interconecta-primary">
                   ${addon.price} USD/mes
                 </div>
