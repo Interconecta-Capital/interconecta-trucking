@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -167,15 +166,13 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
         <CatalogoSelector
           label="Colonia"
           placeholder="Seleccionar colonia..."
-          value={coloniaValue}
+          value={coloniaValue || ''}
           onValueChange={handleColoniaSelect}
           items={colonias.map(c => ({
-            id: c.clave_colonia,
             clave: c.clave_colonia,
             descripcion: c.descripcion
           }))}
           isLoading={loadingColonias}
-          showClave={false}
         />
       )}
     </div>

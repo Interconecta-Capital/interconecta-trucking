@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,7 +28,7 @@ export function UbicacionForm({
 }: UbicacionFormProps) {
   const [formData, setFormData] = useState<Ubicacion>({
     idUbicacion: '',
-    tipoUbicacion: undefined as any, // Inicializar sin valor
+    tipoUbicacion: undefined as any,
     rfcRemitenteDestinatario: '',
     nombreRemitenteDestinatario: '',
     fechaHoraSalidaLlegada: '',
@@ -75,7 +74,6 @@ export function UbicacionForm({
   };
 
   const handleRFCChange = (rfc: string) => {
-    // Solo validar si hay contenido
     if (rfc.length > 0) {
       const rfcFormateado = RFCValidator.formatearRFC(rfc);
       const validation = RFCValidator.validarRFC(rfcFormateado);
@@ -189,7 +187,7 @@ export function UbicacionForm({
   };
 
   const isFormValid = () => {
-    const hasValidType = formData.tipoUbicacion && formData.tipoUbicacion !== '';
+    const hasValidType = formData.tipoUbicacion != null && formData.tipoUbicacion !== undefined;
     const hasValidRFC = formData.rfcRemitenteDestinatario === '' || rfcValidation.esValido;
     const hasValidData = formData.nombreRemitenteDestinatario && 
                         formData.domicilio.codigoPostal &&
