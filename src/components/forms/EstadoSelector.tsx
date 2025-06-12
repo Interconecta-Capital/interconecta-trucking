@@ -16,7 +16,13 @@ interface EstadoSelectorProps {
   onEstadoChange: () => void;
 }
 
-const ESTADOS_CONFIG = {
+interface EstadoConfig {
+  label: string;
+  color: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const ESTADOS_CONFIG: Record<string, Record<string, EstadoConfig>> = {
   vehiculo: {
     disponible: { label: 'Disponible', color: 'bg-green-500', icon: CheckCircle },
     en_viaje: { label: 'En Viaje', color: 'bg-blue-500', icon: Clock },
@@ -47,8 +53,8 @@ export const EstadoSelector = ({ entidadTipo, entidadId, estadoActual, onEstadoC
   const { cambiarEstado, isLoading } = useEstadosInteligentes();
 
   const estados = ESTADOS_CONFIG[entidadTipo];
-  const estadoConfig = estados[estadoActual as keyof typeof estados];
-  const IconComponent = estadoConfig?.icon || AlertCircle;
+  const estadoConfig = estados[estadoActual] || { label: estadoActual, color: 'bg-gray-500', icon: AlertCircle };
+  const IconComponent = estadoConfig.icon;
 
   const handleCambiarEstado = async () => {
     if (!nuevoEstado) return;
@@ -80,8 +86,8 @@ export const EstadoSelector = ({ entidadTipo, entidadId, estadoActual, onEstadoC
       <CardContent className="space-y-4">
         {/* Estado actual */}
         <div className="flex items-center gap-2">
-          <Badge className={`${estadoConfig?.color} text-white`}>
-            {estadoConfig?.label || estadoActual}
+          <Badge className={`${estadoConfig.color} text-white`}>
+            {estadoConfig.label}
           </Badge>
         </div>
 

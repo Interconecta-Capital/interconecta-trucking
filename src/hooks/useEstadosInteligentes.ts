@@ -180,7 +180,7 @@ export const useEstadosInteligentes = () => {
 
       // Cambiar estado de la entidad de vuelta a disponible
       await cambiarEstado(
-        programacion.entidad_tipo,
+        programacion.entidad_tipo as 'vehiculo' | 'conductor',
         programacion.entidad_id,
         'disponible',
         `Programación completada: ${programacion.descripcion}`,
@@ -197,7 +197,7 @@ export const useEstadosInteligentes = () => {
     }
   };
 
-  const obtenerHistorial = async (entidadTipo: string, entidadId: string) => {
+  const obtenerHistorial = async (entidadTipo: 'vehiculo' | 'conductor' | 'socio', entidadId: string) => {
     if (!user) return [];
 
     try {
@@ -216,7 +216,7 @@ export const useEstadosInteligentes = () => {
     }
   };
 
-  const obtenerProgramaciones = async (entidadTipo?: string, entidadId?: string) => {
+  const obtenerProgramaciones = async (entidadTipo?: 'vehiculo' | 'conductor', entidadId?: string) => {
     if (!user) return [];
 
     try {

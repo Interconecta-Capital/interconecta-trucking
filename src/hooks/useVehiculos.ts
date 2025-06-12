@@ -15,6 +15,10 @@ export interface Vehiculo {
   poliza_seguro?: string;
   vigencia_seguro?: string;
   verificacion_vigencia?: string;
+  id_equipo_gps?: string;
+  fecha_instalacion_gps?: string;
+  acta_instalacion_gps?: string;
+  estado?: string;
   activo?: boolean;
 }
 
@@ -38,7 +42,7 @@ export const useVehiculos = () => {
   });
 
   // Crear vehículo
-  const crearVehiculo = useMutation({
+  const createVehiculoMutation = useMutation({
     mutationFn: async (vehiculo: Vehiculo) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
@@ -72,7 +76,7 @@ export const useVehiculos = () => {
   });
 
   // Actualizar vehículo
-  const actualizarVehiculo = useMutation({
+  const updateVehiculoMutation = useMutation({
     mutationFn: async ({ id, ...vehiculo }: Vehiculo & { id: string }) => {
       const { data, error } = await supabase
         .from('vehiculos')
@@ -115,10 +119,10 @@ export const useVehiculos = () => {
   return {
     vehiculos,
     isLoading,
-    crearVehiculo: crearVehiculo.mutate,
-    actualizarVehiculo: actualizarVehiculo.mutate,
+    createVehiculo: createVehiculoMutation.mutate,
+    updateVehiculo: updateVehiculoMutation.mutate,
     eliminarVehiculo: eliminarVehiculo.mutate,
-    isCreating: crearVehiculo.isPending,
-    isUpdating: actualizarVehiculo.isPending,
+    isCreating: createVehiculoMutation.isPending,
+    isUpdating: updateVehiculoMutation.isPending,
   };
 };
