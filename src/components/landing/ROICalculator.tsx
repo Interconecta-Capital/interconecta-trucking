@@ -6,13 +6,14 @@ import { Calculator, AlertTriangle, TrendingUp } from "lucide-react";
 
 const ROICalculator = () => {
   const [monthlyTrips, setMonthlyTrips] = useState([50]);
-  const [avoidedFines, setAvoidedFines] = useState([5]);
+  const [avoidedFines, setAvoidedFines] = useState([2]);
 
-  // Cálculos del ROI
-  const timePerTrip = 2; // 2 horas manual vs 15 minutos automatizado
-  const savedTimePerTrip = 1.75; // 1 hora 45 minutos ahorrados
-  const hourlyRate = 250; // MXN por hora
-  const fineAmount = 100000; // MXN promedio por multa
+  // Cálculos del ROI con números reales
+  const timePerTripManual = 1.5; // 1.5 horas manual vs 15 minutos automatizado
+  const timePerTripAuto = 0.25; // 15 minutos
+  const savedTimePerTrip = timePerTripManual - timePerTripAuto; // 1.25 horas ahorradas
+  const hourlyRate = 180; // MXN por hora (más realista)
+  const fineAmount = 75000; // MXN promedio por multa (más realista)
   
   const monthlySavings = (monthlyTrips[0] * savedTimePerTrip * hourlyRate) + (avoidedFines[0] * fineAmount);
   const annualSavings = monthlySavings * 12;
@@ -53,14 +54,14 @@ const ROICalculator = () => {
                     <Slider
                       value={monthlyTrips}
                       onValueChange={setMonthlyTrips}
-                      max={500}
-                      min={10}
-                      step={10}
+                      max={300}
+                      min={5}
+                      step={5}
                       className="w-full"
                     />
                     <div className="flex justify-between text-sm text-interconecta-text-secondary mt-2">
-                      <span>10</span>
-                      <span>500</span>
+                      <span>5</span>
+                      <span>300</span>
                     </div>
                   </div>
 
@@ -71,28 +72,28 @@ const ROICalculator = () => {
                     <Slider
                       value={avoidedFines}
                       onValueChange={setAvoidedFines}
-                      max={20}
+                      max={10}
                       min={0}
                       step={1}
                       className="w-full"
                     />
                     <div className="flex justify-between text-sm text-interconecta-text-secondary mt-2">
                       <span>0</span>
-                      <span>20</span>
+                      <span>10</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
                   <div className="text-center">
-                    <TrendingUp className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                    <h4 className="text-2xl font-bold font-sora text-green-700 mb-2">
+                    <TrendingUp className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                    <h4 className="text-2xl font-bold font-sora text-blue-700 mb-2">
                       Ahorro Anual Estimado
                     </h4>
-                    <div className="text-4xl font-bold font-sora text-green-600 mb-4">
+                    <div className="text-4xl font-bold font-sora text-blue-600 mb-4">
                       ${annualSavings.toLocaleString('es-MX')} MXN
                     </div>
-                    <div className="text-lg font-medium font-inter text-green-700">
+                    <div className="text-lg font-medium font-inter text-blue-700">
                       ${monthlySavings.toLocaleString('es-MX')} MXN por mes
                     </div>
                   </div>
@@ -117,10 +118,10 @@ const ROICalculator = () => {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold font-sora text-interconecta-primary">15 min</div>
-                  <div className="text-sm font-inter text-interconecta-text-secondary">vs 2 horas manual</div>
+                  <div className="text-sm font-inter text-interconecta-text-secondary">vs 1.5 horas manual</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold font-sora text-green-600">99.9%</div>
+                  <div className="text-2xl font-bold font-sora text-blue-600">99.9%</div>
                   <div className="text-sm font-inter text-interconecta-text-secondary">Precisión IA</div>
                 </div>
                 <div className="text-center">

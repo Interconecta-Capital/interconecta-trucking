@@ -7,10 +7,10 @@ const HeroSection = () => {
   return (
     <section className="container mx-auto px-4 py-20 text-center">
       <div className="max-w-5xl mx-auto animate-fade-in">
-        <div className="inline-flex items-center bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-full px-4 py-2 mb-6">
-          <Star className="h-4 w-4 text-green-600 mr-2" />
-          <span className="text-sm font-inter font-medium text-green-700">
-            🏆 Primera Plataforma IA Especializada en Transporte Mexicano
+        <div className="inline-flex items-center bg-gradient-to-r from-blue-100 to-indigo-100 border border-blue-200 rounded-full px-4 py-2 mb-6">
+          <Star className="h-4 w-4 text-blue-600 mr-2" />
+          <span className="text-sm font-inter font-medium text-blue-700">
+            Primera Plataforma IA Especializada en Transporte Mexicano
           </span>
         </div>
         
@@ -27,9 +27,9 @@ const HeroSection = () => {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link to="/auth/trial">
-            <Button size="lg" className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 text-lg font-sora font-semibold shadow-lg">
+            <Button size="lg" className="bg-interconecta-primary hover:bg-interconecta-accent text-white px-8 py-4 text-lg font-sora font-semibold shadow-lg">
               <Calendar className="mr-2 h-5 w-5" />
-              Demo Personalizada Gratis
+              Solicitar Demo
             </Button>
           </Link>
           <Link to="/auth/login">
@@ -43,7 +43,7 @@ const HeroSection = () => {
         {/* Stats Mejorados */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto text-center">
           <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
-            <div className="text-2xl font-bold font-sora text-green-600">$2.5M</div>
+            <div className="text-2xl font-bold font-sora text-interconecta-primary">$2.5M</div>
             <div className="text-sm font-inter text-interconecta-text-secondary">En multas evitadas</div>
           </div>
           <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
@@ -55,7 +55,7 @@ const HeroSection = () => {
             <div className="text-sm font-inter text-interconecta-text-secondary">Precisión IA</div>
           </div>
           <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-interconecta-border-subtle">
-            <div className="text-2xl font-bold font-sora text-green-600">15 min</div>
+            <div className="text-2xl font-bold font-sora text-interconecta-primary">15 min</div>
             <div className="text-sm font-inter text-interconecta-text-secondary">vs 2 horas manual</div>
           </div>
         </div>

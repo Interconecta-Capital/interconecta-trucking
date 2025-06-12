@@ -17,7 +17,7 @@ const CTASection = () => {
           <Link to="/auth/trial">
             <Button size="lg" className="bg-interconecta-primary hover:bg-interconecta-accent text-white px-12 py-4 text-xl font-sora font-semibold">
               <Calendar className="mr-2 h-6 w-6" />
-              Comenzar Prueba Gratuita
+              Solicitar Demo
             </Button>
           </Link>
           <Link to="/auth/register">

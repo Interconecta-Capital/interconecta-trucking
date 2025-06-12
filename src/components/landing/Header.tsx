@@ -35,7 +35,7 @@ const Header = () => {
           </Link>
           <Link to="/auth/trial">
             <Button className="bg-interconecta-primary hover:bg-interconecta-accent text-white font-sora font-medium">
-              Prueba 14 días gratis
+              Solicitar Demo
             </Button>
           </Link>
         </div>

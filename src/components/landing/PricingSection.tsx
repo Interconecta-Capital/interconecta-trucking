@@ -9,8 +9,8 @@ const PricingSection = () => {
     {
       name: "Plan Esencial SAT",
       icon: Rocket,
-      originalPrice: 2999,
-      price: 599,
+      originalPrice: 149,
+      price: 30,
       description: "Perfecto para: Transportistas 1-5 unidades",
       popular: false,
       features: [
@@ -25,8 +25,8 @@ const PricingSection = () => {
     {
       name: "Plan Gestión IA",
       icon: Star,
-      originalPrice: 5999,
-      price: 1299,
+      originalPrice: 299,
+      price: 65,
       description: "Perfecto para: Flotas medianas 6-15 unidades",
       popular: true,
       features: [
@@ -42,8 +42,8 @@ const PricingSection = () => {
     {
       name: "Plan Automatización Total",
       icon: Zap,
-      originalPrice: 9999,
-      price: 2499,
+      originalPrice: 499,
+      price: 125,
       description: "Perfecto para: Empresas grandes 16-30 unidades",
       popular: false,
       features: [
@@ -58,10 +58,10 @@ const PricingSection = () => {
       ]
     },
     {
-      name: "Plan Enterprise",
+      name: "Plan Enterprise Sin Límites",
       icon: Building,
-      originalPrice: 19999,
-      price: 4999,
+      originalPrice: 999,
+      price: 250,
       description: "Perfecto para: Corporativos 30+ unidades",
       popular: false,
       features: [
@@ -78,11 +78,11 @@ const PricingSection = () => {
   ];
 
   const addOns = [
-    { name: "IA Extra", description: "+200 consultas adicionales", price: 499 },
-    { name: "OCR Extra", description: "+400 documentos adicionales", price: 699 },
-    { name: "Almacenamiento", description: "+25 GB adicionales", price: 199 },
-    { name: "Usuario Extra", description: "Por usuario adicional", price: 299 },
-    { name: "Soporte VIP", description: "Soporte dedicado 24/7", price: 999 }
+    { name: "IA Extra", description: "+200 consultas adicionales", price: 25 },
+    { name: "OCR Extra", description: "+400 documentos adicionales", price: 35 },
+    { name: "Almacenamiento", description: "+25 GB adicionales", price: 10 },
+    { name: "Usuario Extra", description: "Por usuario adicional", price: 15 },
+    { name: "Soporte VIP", description: "Soporte dedicado 24/7", price: 50 }
   ];
 
   return (
@@ -105,14 +105,14 @@ const PricingSection = () => {
                 : 'border-interconecta-border-subtle hover:border-interconecta-primary'
             }`}>
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white px-4 py-1 rounded-full text-sm font-semibold font-sora">
-                    ⭐ MÁS POPULAR
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white px-3 py-1 rounded-full text-xs sm:text-sm font-semibold font-sora whitespace-nowrap">
+                    MÁS POPULAR
                   </span>
                 </div>
               )}
 
-              <CardHeader className="text-center pb-4">
+              <CardHeader className="text-center pb-4 pt-6">
                 <div className={`p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center ${
                   plan.popular ? 'bg-gradient-to-r from-interconecta-primary to-interconecta-accent' : 'bg-interconecta-primary-light'
                 }`}>
@@ -122,15 +122,17 @@ const PricingSection = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-center space-x-2">
                     <span className="text-lg text-interconecta-text-secondary line-through">
-                      ${plan.originalPrice.toLocaleString('es-MX')}
-                    </span>
-                    <span className="text-3xl font-bold font-sora text-interconecta-primary">
-                      ${plan.price.toLocaleString('es-MX')}
+                      ${plan.originalPrice} USD/mes
                     </span>
                   </div>
-                  <div className="text-sm font-inter text-interconecta-text-secondary">MXN/mes</div>
+                  <div className="text-3xl font-bold font-sora text-interconecta-primary">
+                    ${plan.price} USD/mes
+                  </div>
+                  <div className="text-sm font-inter text-interconecta-text-secondary">
+                    <small>+ IVA</small>
+                  </div>
                   <div className="text-sm font-medium font-inter text-green-600">
-                    Ahorro: ${(plan.originalPrice - plan.price).toLocaleString('es-MX')} MXN/mes
+                    Ahorro: ${(plan.originalPrice - plan.price)} USD/mes
                   </div>
                 </div>
                 <p className="text-sm font-inter text-interconecta-text-secondary mt-2">{plan.description}</p>
@@ -165,13 +167,16 @@ const PricingSection = () => {
         {/* Add-ons Section */}
         <div className="bg-white rounded-lg border border-interconecta-border-subtle p-8">
           <h4 className="text-2xl font-bold font-sora text-interconecta-text-primary mb-6 text-center">
-            🎁 Add-ons Premium
+            ADD-ONS PREMIUM
           </h4>
           <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
             {addOns.map((addon, index) => (
               <div key={index} className="text-center p-4 border border-interconecta-border-subtle rounded-lg hover:border-interconecta-primary transition-colors">
                 <div className="text-lg font-bold font-sora text-interconecta-primary">
-                  ${addon.price}/mes
+                  ${addon.price} USD/mes
+                </div>
+                <div className="text-xs font-inter text-interconecta-text-secondary mb-1">
+                  <small>+ IVA</small>
                 </div>
                 <div className="text-sm font-semibold font-inter text-interconecta-text-primary">
                   {addon.name}
