@@ -25,18 +25,23 @@ export const useTrackingAdvanced = (cartaPorteId?: string) => {
         throw error;
       }
       
-      return (data || []).map(event => ({
-        id: event.id,
-        cartaPorteId: event.carta_porte_id,
-        evento: event.evento,
-        descripcion: event.descripcion,
-        timestamp: event.created_at,
-        ubicacion: event.ubicacion,
-        coordenadas: event.metadata?.coordenadas,
-        metadata: event.metadata,
-        automatico: event.metadata?.automatico || false,
-        uuidFiscal: event.uuid_fiscal
-      })) as TrackingEvent[];
+      return (data || []).map(event => {
+        // Safely parse metadata
+        const metadata = event.metadata as Record<string, any> || {};
+        
+        return {
+          id: event.id,
+          cartaPorteId: event.carta_porte_id,
+          evento: event.evento,
+          descripcion: event.descripcion,
+          timestamp: event.created_at,
+          ubicacion: event.ubicacion,
+          coordenadas: metadata.coordenadas,
+          metadata: metadata,
+          automatico: metadata.automatico || false,
+          uuidFiscal: event.uuid_fiscal
+        } as TrackingEvent;
+      });
     },
     enabled: !!cartaPorteId,
     refetchInterval: 30000, // Refrescar cada 30 segundos
