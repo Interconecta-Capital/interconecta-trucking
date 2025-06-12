@@ -30,6 +30,8 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
 
   useEffect(() => {
     if (user) {
+      console.log('User data in dialog:', user);
+      
       setFormData({
         email: user.email || '',
         telefono: user.profile?.telefono || '',
@@ -54,8 +56,24 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
     }
   };
 
-  const userName = user?.profile?.nombre || user?.email?.split('@')[0] || 'Usuario';
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
+  // Datos del usuario con fallbacks mejorados
+  const userName = user?.profile?.nombre || 
+                   user?.user_metadata?.nombre || 
+                   user?.user_metadata?.name || 
+                   user?.email?.split('@')[0] || 
+                   'Usuario';
+  
+  const userCompany = user?.profile?.empresa || 
+                      user?.user_metadata?.empresa || 
+                      user?.tenant?.nombre_empresa || 
+                      '';
+  
+  const userRFC = user?.profile?.rfc || 
+                  user?.user_metadata?.rfc || 
+                  user?.tenant?.rfc_empresa || 
+                  '';
+
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,7 +97,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
           <div className="space-y-2">
             <Label>Nombre</Label>
             <Input
-              value={user?.profile?.nombre || ''}
+              value={userName}
               disabled
               className="bg-gray-100"
             />
@@ -88,18 +106,20 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
           <div className="space-y-2">
             <Label>Empresa</Label>
             <Input
-              value={user?.profile?.empresa || ''}
+              value={userCompany}
               disabled
               className="bg-gray-100"
+              placeholder={userCompany ? userCompany : "No especificada"}
             />
           </div>
 
           <div className="space-y-2">
             <Label>RFC</Label>
             <Input
-              value={user?.profile?.rfc || ''}
+              value={userRFC}
               disabled
               className="bg-gray-100"
+              placeholder={userRFC ? userRFC : "No especificado"}
             />
             <p className="text-xs text-gray-500">
               * El RFC no puede ser modificado. Contacta soporte para cambios.

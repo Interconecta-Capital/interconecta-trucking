@@ -11,6 +11,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EventManagementModal } from './EventManagementModal';
+import { CartaPorteFormModal } from './CartaPorteFormModal';
+import { MantenimientoFormModal } from './MantenimientoFormModal';
+import { VerificacionFormModal } from './VerificacionFormModal';
+import { RevisionGPSFormModal } from './RevisionGPSFormModal';
 import {
   Popover,
   PopoverContent,
@@ -26,6 +30,12 @@ export function EnhancedCalendarView() {
   const [showEventMenu, setShowEventMenu] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [showEventManagement, setShowEventManagement] = useState(false);
+  
+  // Estados para los modales
+  const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
+  const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
+  const [showVerificacionForm, setShowVerificacionForm] = useState(false);
+  const [showRevisionGPSForm, setShowRevisionGPSForm] = useState(false);
 
   const { data: eventos = [], isLoading } = useQuery({
     queryKey: ['eventos-calendario', user?.id],
@@ -109,21 +119,24 @@ export function EnhancedCalendarView() {
     setShowEventManagement(true);
   };
 
-  const handleCreateEvent = async (tipo: string, titulo: string) => {
-    if (!selectedDate) return;
-    
-    try {
-      await createEvent({
-        tipo_evento: tipo,
-        titulo,
-        descripcion: `${titulo} programado`,
-        fecha_inicio: selectedDate,
-        fecha_fin: new Date(selectedDate.getTime() + 60 * 60 * 1000), // 1 hora después
-      });
-      setShowEventMenu(false);
-    } catch (error) {
-      console.error('Error al crear evento:', error);
-    }
+  const handleCreateViaje = () => {
+    setShowCartaPorteForm(true);
+    setShowEventMenu(false);
+  };
+
+  const handleCreateMantenimiento = () => {
+    setShowMantenimientoForm(true);
+    setShowEventMenu(false);
+  };
+
+  const handleCreateVerificacion = () => {
+    setShowVerificacionForm(true);
+    setShowEventMenu(false);
+  };
+
+  const handleCreateRevisionGPS = () => {
+    setShowRevisionGPSForm(true);
+    setShowEventMenu(false);
   };
 
   // Función para obtener eventos de una fecha específica
@@ -278,7 +291,7 @@ export function EnhancedCalendarView() {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start h-9"
-                  onClick={() => handleCreateEvent('viaje', 'Nuevo Viaje')}
+                  onClick={handleCreateViaje}
                 >
                   <Truck className="h-4 w-4 mr-2 text-green-600" />
                   Programar Viaje
@@ -286,7 +299,7 @@ export function EnhancedCalendarView() {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start h-9"
-                  onClick={() => handleCreateEvent('mantenimiento', 'Mantenimiento Preventivo')}
+                  onClick={handleCreateMantenimiento}
                 >
                   <Wrench className="h-4 w-4 mr-2 text-red-600" />
                   Mantenimiento
@@ -294,7 +307,7 @@ export function EnhancedCalendarView() {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start h-9"
-                  onClick={() => handleCreateEvent('verificacion', 'Verificación Vehicular')}
+                  onClick={handleCreateVerificacion}
                 >
                   <CheckCircle className="h-4 w-4 mr-2 text-orange-600" />
                   Verificación
@@ -302,7 +315,7 @@ export function EnhancedCalendarView() {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start h-9"
-                  onClick={() => handleCreateEvent('revision_gps', 'Revisión GPS')}
+                  onClick={handleCreateRevisionGPS}
                 >
                   <MapPin className="h-4 w-4 mr-2 text-purple-600" />
                   Revisión GPS
@@ -318,6 +331,27 @@ export function EnhancedCalendarView() {
         open={showEventManagement}
         onOpenChange={setShowEventManagement}
         event={selectedEvent}
+      />
+
+      {/* Modales para los formularios */}
+      <CartaPorteFormModal 
+        open={showCartaPorteForm}
+        onOpenChange={setShowCartaPorteForm}
+      />
+      
+      <MantenimientoFormModal 
+        open={showMantenimientoForm}
+        onOpenChange={setShowMantenimientoForm}
+      />
+      
+      <VerificacionFormModal 
+        open={showVerificacionForm}
+        onOpenChange={setShowVerificacionForm}
+      />
+      
+      <RevisionGPSFormModal 
+        open={showRevisionGPSForm}
+        onOpenChange={setShowRevisionGPSForm}
       />
     </>
   );
