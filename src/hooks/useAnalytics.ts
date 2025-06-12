@@ -16,6 +16,29 @@ export interface DashboardMetrics {
   cambioIngresos: number;
 }
 
+export interface RouteMetrics {
+  ruta: string;
+  frecuencia: number;
+  ingresoPromedio: number;
+  satisfaccion: number;
+  tiempoPromedio: number;
+}
+
+export interface PerformanceMetrics {
+  mes: string;
+  eficiencia: number;
+  combustible: number;
+  mantenimiento: number;
+  entregas: number;
+}
+
+export interface TrendData {
+  fecha: string;
+  cartasPorte: number;
+  ingresos: number;
+  entregas: number;
+}
+
 export const useAnalytics = () => {
   const { user } = useAuth();
 
@@ -57,8 +80,52 @@ export const useAnalytics = () => {
     enabled: !!user?.id,
   });
 
+  // Mock data para las rutas
+  const mockRouteMetrics: RouteMetrics[] = [
+    {
+      ruta: "Ciudad de México - Guadalajara",
+      frecuencia: 15,
+      ingresoPromedio: 85000,
+      satisfaccion: 4.8,
+      tiempoPromedio: 6.5
+    },
+    {
+      ruta: "Monterrey - Ciudad de México",
+      frecuencia: 12,
+      ingresoPromedio: 78000,
+      satisfaccion: 4.6,
+      tiempoPromedio: 8.2
+    },
+    {
+      ruta: "Guadalajara - Tijuana",
+      frecuencia: 8,
+      ingresoPromedio: 95000,
+      satisfaccion: 4.9,
+      tiempoPromedio: 12.0
+    }
+  ];
+
+  // Mock data para performance
+  const mockPerformanceMetrics: PerformanceMetrics[] = [
+    { mes: "Enero", eficiencia: 92, combustible: 88, mantenimiento: 95, entregas: 90 },
+    { mes: "Febrero", eficiencia: 94, combustible: 85, mantenimiento: 92, entregas: 93 },
+    { mes: "Marzo", eficiencia: 89, combustible: 90, mantenimiento: 88, entregas: 95 }
+  ];
+
+  // Mock data para tendencias
+  const mockTrendData: TrendData[] = [
+    { fecha: "2024-01-01", cartasPorte: 45, ingresos: 125000, entregas: 42 },
+    { fecha: "2024-01-02", cartasPorte: 52, ingresos: 138000, entregas: 48 },
+    { fecha: "2024-01-03", cartasPorte: 38, ingresos: 112000, entregas: 35 },
+    { fecha: "2024-01-04", cartasPorte: 61, ingresos: 155000, entregas: 58 },
+    { fecha: "2024-01-05", cartasPorte: 47, ingresos: 128000, entregas: 44 }
+  ];
+
   return {
     metrics,
     isLoading,
+    routeMetrics: mockRouteMetrics,
+    performanceMetrics: mockPerformanceMetrics,
+    trendData: mockTrendData,
   };
 };

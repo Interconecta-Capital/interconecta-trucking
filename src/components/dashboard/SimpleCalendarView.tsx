@@ -56,6 +56,8 @@ export function SimpleCalendarView() {
       ubicacion_origen: 'Ciudad de México',
       ubicacion_destino: 'Guadalajara, Jalisco',
       descripcion: 'Entrega de mercancía electrónica',
+      carta_porte_id: 'cp-001',
+      metadata: { vehiculo: 'ABC-123', conductor: 'Juan Pérez' }
     },
     {
       id: '2',
@@ -64,6 +66,8 @@ export function SimpleCalendarView() {
       fecha_fin: new Date(Date.now() + 1000 * 60 * 60 * 26).toISOString(),
       tipo_evento: 'mantenimiento',
       descripcion: 'Servicio programado y verificación',
+      carta_porte_id: null,
+      metadata: { taller: 'AutoServicio Central', costo_estimado: 2500 }
     },
     {
       id: '3',
@@ -73,6 +77,8 @@ export function SimpleCalendarView() {
       tipo_evento: 'entrega',
       ubicacion_origen: 'Monterrey, NL',
       descripcion: 'Recogida de carga industrial',
+      carta_porte_id: 'cp-002',
+      metadata: { cliente: 'Industrias del Norte', peso: '15 toneladas' }
     },
   ];
 
