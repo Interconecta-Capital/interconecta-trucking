@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useConductores } from '@/hooks/useConductores';
 import { toast } from 'sonner';
-import { Plus, Users } from 'lucide-react';
+import { Plus, User } from 'lucide-react';
 
 const conductorSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -33,15 +33,14 @@ const conductorSchema = z.object({
 type ConductorFormData = z.infer<typeof conductorSchema>;
 
 interface ConductorFormModalProps {
-  trigger?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: ConductorFormData) => Promise<void>;
   conductor?: any;
-  onSuccess?: () => void;
+  loading?: boolean;
 }
 
-export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorFormModalProps) {
-  const [open, setOpen] = useState(false);
-  const { crearConductor, actualizarConductor, isCreating, isUpdating } = useConductores();
-
+export function ConductorFormModal({ open, onOpenChange, onSubmit, conductor, loading }: ConductorFormModalProps) {
   const form = useForm<ConductorFormData>({
     resolver: zodResolver(conductorSchema),
     defaultValues: conductor ? {
@@ -65,55 +64,21 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
     },
   });
 
-  const onSubmit = async (data: ConductorFormData) => {
+  const handleSubmit = async (data: ConductorFormData) => {
     try {
-      // Ensure required fields are present and convert to proper format
-      const conductorData = {
-        nombre: data.nombre,
-        rfc: data.rfc || undefined,
-        curp: data.curp || undefined,
-        num_licencia: data.num_licencia || undefined,
-        tipo_licencia: data.tipo_licencia || undefined,
-        vigencia_licencia: data.vigencia_licencia || undefined,
-        telefono: data.telefono || undefined,
-        email: data.email || undefined,
-      };
-
-      if (conductor) {
-        await actualizarConductor({ id: conductor.id, ...conductorData });
-      } else {
-        await crearConductor(conductorData);
-      }
-      setOpen(false);
+      await onSubmit(data);
       form.reset();
-      onSuccess?.();
     } catch (error) {
       toast.error('Error al guardar el conductor');
     }
   };
 
-  const tiposLicencia = [
-    'A - Motocicletas y ciclomotores',
-    'B - Automóviles y camionetas',
-    'C - Camiones y autobuses',
-    'D - Vehículos articulados',
-    'E - Remolques y semirremolques'
-  ];
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Conductor
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+            <User className="h-5 w-5" />
             {conductor ? 'Editar Conductor' : 'Nuevo Conductor'}
           </DialogTitle>
           <DialogDescription>
@@ -121,13 +86,13 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre completo *</Label>
             <Input
               id="nombre"
               {...form.register('nombre')}
-              placeholder="Nombre completo del conductor"
+              placeholder="Nombre del conductor"
             />
             {form.formState.errors.nombre && (
               <p className="text-sm text-red-500">{form.formState.errors.nombre.message}</p>
@@ -164,45 +129,6 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="num_licencia">Número de Licencia</Label>
-              <Input
-                id="num_licencia"
-                {...form.register('num_licencia')}
-                placeholder="Número de licencia"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tipo_licencia">Tipo de Licencia</Label>
-              <Select 
-                value={form.watch('tipo_licencia')} 
-                onValueChange={(value) => form.setValue('tipo_licencia', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona el tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposLicencia.map((tipo) => (
-                    <SelectItem key={tipo} value={tipo}>
-                      {tipo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="vigencia_licencia">Vigencia de Licencia</Label>
-            <Input
-              id="vigencia_licencia"
-              type="date"
-              {...form.register('vigencia_licencia')}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
               <Label htmlFor="telefono">Teléfono</Label>
               <Input
                 id="telefono"
@@ -225,20 +151,59 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="num_licencia">Número de Licencia</Label>
+              <Input
+                id="num_licencia"
+                {...form.register('num_licencia')}
+                placeholder="Número de licencia"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tipo_licencia">Tipo de Licencia</Label>
+              <Select 
+                value={form.watch('tipo_licencia')} 
+                onValueChange={(value) => form.setValue('tipo_licencia', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona el tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">Tipo A</SelectItem>
+                  <SelectItem value="B">Tipo B</SelectItem>
+                  <SelectItem value="C">Tipo C</SelectItem>
+                  <SelectItem value="D">Tipo D</SelectItem>
+                  <SelectItem value="E">Tipo E</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="vigencia_licencia">Vigencia de Licencia</Label>
+            <Input
+              id="vigencia_licencia"
+              type="date"
+              {...form.register('vigencia_licencia')}
+            />
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={isCreating || isUpdating}
+              disabled={loading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isCreating || isUpdating ? 'Guardando...' : (conductor ? 'Actualizar' : 'Crear Conductor')}
+              {loading ? 'Guardando...' : (conductor ? 'Actualizar' : 'Crear Conductor')}
             </Button>
           </div>
         </form>

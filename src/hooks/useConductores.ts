@@ -15,6 +15,7 @@ export interface Conductor {
   telefono?: string;
   email?: string;
   direccion?: any;
+  estado?: string;
   activo?: boolean;
 }
 
@@ -23,7 +24,7 @@ export const useConductores = () => {
   const queryClient = useQueryClient();
 
   // Obtener conductores del usuario
-  const { data: conductores = [], isLoading } = useQuery({
+  const { data: conductores = [], isLoading: loading } = useQuery({
     queryKey: ['conductores'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -38,7 +39,7 @@ export const useConductores = () => {
   });
 
   // Crear conductor
-  const crearConductor = useMutation({
+  const crearConductorMutation = useMutation({
     mutationFn: async (conductor: Conductor) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
@@ -72,17 +73,17 @@ export const useConductores = () => {
   });
 
   // Actualizar conductor
-  const actualizarConductor = useMutation({
-    mutationFn: async ({ id, ...conductor }: Conductor & { id: string }) => {
-      const { data, error } = await supabase
+  const actualizarConductorMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Conductor }) => {
+      const { data: result, error } = await supabase
         .from('conductores')
-        .update(conductor)
+        .update(data)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conductores'] });
@@ -94,7 +95,7 @@ export const useConductores = () => {
   });
 
   // Eliminar conductor (soft delete)
-  const eliminarConductor = useMutation({
+  const eliminarConductorMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('conductores')
@@ -114,11 +115,12 @@ export const useConductores = () => {
 
   return {
     conductores,
-    isLoading,
-    crearConductor: crearConductor.mutate,
-    actualizarConductor: actualizarConductor.mutate,
-    eliminarConductor: eliminarConductor.mutate,
-    isCreating: crearConductor.isPending,
-    isUpdating: actualizarConductor.isPending,
+    loading,
+    crearConductor: crearConductorMutation.mutate,
+    actualizarConductor: actualizarConductorMutation.mutate,
+    eliminarConductor: eliminarConductorMutation.mutate,
+    isCreating: crearConductorMutation.isPending,
+    isUpdating: actualizarConductorMutation.isPending,
+    isDeleting: eliminarConductorMutation.isPending,
   };
 };

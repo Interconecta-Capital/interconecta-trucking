@@ -27,7 +27,7 @@ export const useVehiculos = () => {
   const queryClient = useQueryClient();
 
   // Obtener vehículos del usuario
-  const { data: vehiculos = [], isLoading } = useQuery({
+  const { data: vehiculos = [], isLoading: loading } = useQuery({
     queryKey: ['vehiculos'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -77,16 +77,16 @@ export const useVehiculos = () => {
 
   // Actualizar vehículo
   const updateVehiculoMutation = useMutation({
-    mutationFn: async ({ id, ...vehiculo }: Vehiculo & { id: string }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: Vehiculo }) => {
+      const { data: result, error } = await supabase
         .from('vehiculos')
-        .update(vehiculo)
+        .update(data)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
@@ -98,7 +98,7 @@ export const useVehiculos = () => {
   });
 
   // Eliminar vehículo (soft delete)
-  const eliminarVehiculo = useMutation({
+  const eliminarVehiculoMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('vehiculos')
@@ -118,11 +118,12 @@ export const useVehiculos = () => {
 
   return {
     vehiculos,
-    isLoading,
+    loading,
     crearVehiculo: createVehiculoMutation.mutate,
-    updateVehiculo: updateVehiculoMutation.mutate,
-    eliminarVehiculo: eliminarVehiculo.mutate,
+    actualizarVehiculo: updateVehiculoMutation.mutate,
+    eliminarVehiculo: eliminarVehiculoMutation.mutate,
     isCreating: createVehiculoMutation.isPending,
     isUpdating: updateVehiculoMutation.isPending,
+    isDeleting: eliminarVehiculoMutation.isPending,
   };
 };

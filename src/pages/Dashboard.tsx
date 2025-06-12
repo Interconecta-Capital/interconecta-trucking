@@ -10,12 +10,16 @@ import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useSocios } from '@/hooks/useSocios';
 import { FileText, Car, User, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Dashboard() {
   const { cartasPorte, loading: loadingCartas } = useCartasPorte();
   const { vehiculos, loading: loadingVehiculos } = useVehiculos();
   const { conductores, loading: loadingConductores } = useConductores();
   const { socios, loading: loadingSocios } = useSocios();
+
+  // Estado temporal para el TrendChart
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   // Calcular métricas reales
   const totalCartasPorte = cartasPorte.length;
@@ -35,6 +39,15 @@ export default function Dashboard() {
   const sociosActivos = socios.filter(s => s.estado === 'activo').length;
 
   const isLoading = loadingCartas || loadingVehiculos || loadingConductores || loadingSocios;
+
+  // Datos temporales para el TrendChart hasta que implementemos analíticas reales
+  const mockTrendData = [
+    { fecha: '2024-01-01', cartasPorte: 5, ingresos: 50000, entregas: 4 },
+    { fecha: '2024-01-02', cartasPorte: 8, ingresos: 75000, entregas: 7 },
+    { fecha: '2024-01-03', cartasPorte: 12, ingresos: 120000, entregas: 11 },
+    { fecha: '2024-01-04', cartasPorte: 6, ingresos: 60000, entregas: 5 },
+    { fecha: '2024-01-05', cartasPorte: 15, ingresos: 150000, entregas: 14 },
+  ];
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
@@ -156,7 +169,12 @@ export default function Dashboard() {
 
       {/* Gráficos y análisis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <TrendChart />
+        <TrendChart 
+          data={mockTrendData}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          isLoading={isLoading}
+        />
         <AnalyticsPanel />
       </div>
 

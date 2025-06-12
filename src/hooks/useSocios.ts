@@ -21,7 +21,7 @@ export const useSocios = () => {
   const queryClient = useQueryClient();
 
   // Obtener socios del usuario
-  const { data: socios = [], isLoading } = useQuery({
+  const { data: socios = [], isLoading: loading } = useQuery({
     queryKey: ['socios'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -71,16 +71,16 @@ export const useSocios = () => {
 
   // Actualizar socio
   const updateSocioMutation = useMutation({
-    mutationFn: async ({ id, ...socio }: Socio & { id: string }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: Socio }) => {
+      const { data: result, error } = await supabase
         .from('socios')
-        .update(socio)
+        .update(data)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['socios'] });
@@ -92,7 +92,7 @@ export const useSocios = () => {
   });
 
   // Eliminar socio (soft delete)
-  const eliminarSocio = useMutation({
+  const eliminarSocioMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('socios')
@@ -112,11 +112,12 @@ export const useSocios = () => {
 
   return {
     socios,
-    isLoading,
+    loading,
     crearSocio: createSocioMutation.mutate,
-    updateSocio: updateSocioMutation.mutate,
-    eliminarSocio: eliminarSocio.mutate,
+    actualizarSocio: updateSocioMutation.mutate,
+    eliminarSocio: eliminarSocioMutation.mutate,
     isCreating: createSocioMutation.isPending,
     isUpdating: updateSocioMutation.isPending,
+    isDeleting: eliminarSocioMutation.isPending,
   };
 };
