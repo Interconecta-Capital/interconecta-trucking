@@ -2,22 +2,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { CatalogosSATService, CatalogItem, CodigoPostalInfo, ColoniaInfo } from "@/services/catalogosSAT";
 
-// Hook para buscar productos/servicios
+// Hook para buscar productos/servicios con opciones iniciales
 export const useBuscarProductosServicios = (busqueda: string, enabled = true) => {
   return useQuery({
     queryKey: ['catalogos', 'productos', busqueda],
-    queryFn: () => CatalogosSATService.buscarProductosServicios(busqueda),
-    enabled: enabled && busqueda.length >= 2,
+    queryFn: async () => {
+      if (busqueda.length === 0) {
+        // Cargar productos más comunes inicialmente
+        return CatalogosSATService.buscarProductosServicios('transporte');
+      }
+      return CatalogosSATService.buscarProductosServicios(busqueda);
+    },
+    enabled: enabled && (busqueda.length >= 2 || busqueda.length === 0),
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 
-// Hook para buscar claves de unidad
+// Hook para buscar claves de unidad con opciones iniciales
 export const useBuscarClaveUnidad = (busqueda: string, enabled = true) => {
   return useQuery({
     queryKey: ['catalogos', 'unidades', busqueda],
-    queryFn: () => CatalogosSATService.buscarClaveUnidad(busqueda),
-    enabled: enabled && busqueda.length >= 1,
+    queryFn: async () => {
+      if (busqueda.length === 0) {
+        // Cargar unidades más comunes inicialmente
+        return CatalogosSATService.buscarClaveUnidad('');
+      }
+      return CatalogosSATService.buscarClaveUnidad(busqueda);
+    },
+    enabled: enabled && (busqueda.length >= 1 || busqueda.length === 0),
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -68,13 +80,20 @@ export const useBuscarMaterialesPeligrosos = (busqueda: string, enabled = true) 
   });
 };
 
-// Hook para información de código postal
+// Hook para información de código postal con validación mejorada
 export const useCodigoPostal = (codigoPostal: string, enabled = true) => {
   return useQuery({
     queryKey: ['catalogos', 'codigoPostal', codigoPostal],
-    queryFn: () => CatalogosSATService.buscarCodigoPostal(codigoPostal),
-    enabled: enabled && codigoPostal.length === 5,
+    queryFn: async () => {
+      console.log('Buscando código postal:', codigoPostal);
+      const result = await CatalogosSATService.buscarCodigoPostal(codigoPostal);
+      console.log('Resultado código postal:', result);
+      return result;
+    },
+    enabled: enabled && codigoPostal.length === 5 && /^\d{5}$/.test(codigoPostal),
     staleTime: 30 * 60 * 1000, // 30 minutos
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
@@ -83,7 +102,7 @@ export const useColoniasPorCP = (codigoPostal: string, enabled = true) => {
   return useQuery({
     queryKey: ['catalogos', 'colonias', codigoPostal],
     queryFn: () => CatalogosSATService.buscarColoniasPorCP(codigoPostal),
-    enabled: enabled && codigoPostal.length === 5,
+    enabled: enabled && codigoPostal.length === 5 && /^\d{5}$/.test(codigoPostal),
     staleTime: 30 * 60 * 1000,
   });
 };

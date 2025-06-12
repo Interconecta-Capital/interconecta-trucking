@@ -14,7 +14,7 @@ import {
   useBuscarMaterialesPeligrosos 
 } from '@/hooks/useCatalogos';
 import { Mercancia } from '@/hooks/useMercancias';
-import { Save, X } from 'lucide-react';
+import { Save, X, Sparkles } from 'lucide-react';
 
 interface MercanciaFormProps {
   mercancia?: Mercancia;
@@ -49,15 +49,17 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
   const [busquedaProducto, setBusquedaProducto] = useState('');
   const [busquedaUnidad, setBusquedaUnidad] = useState('');
   const [busquedaMaterial, setBusquedaMaterial] = useState('');
+  const [showAI, setShowAI] = useState(true);
 
+  // Cargar opciones iniciales cuando se abre el formulario
   const { data: productos = [], isLoading: loadingProductos } = useBuscarProductosServicios(
     busquedaProducto, 
-    busquedaProducto.length >= 2
+    true // Siempre habilitado para cargar opciones iniciales
   );
 
   const { data: unidades = [], isLoading: loadingUnidades } = useBuscarClaveUnidad(
     busquedaUnidad,
-    busquedaUnidad.length >= 1
+    true // Siempre habilitado para cargar opciones iniciales
   );
 
   const { data: materiales = [], isLoading: loadingMateriales } = useBuscarMaterialesPeligrosos(
@@ -102,15 +104,26 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           {mercancia ? 'Editar Mercancía' : 'Agregar Mercancía'}
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAI(!showAI)}
+              className="flex items-center space-x-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>{showAI ? 'Ocultar' : 'Mostrar'} IA</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={`grid gap-6 ${showAI ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
           {/* Formulario principal */}
-          <div className="lg:col-span-2">
+          <div className={showAI ? 'lg:col-span-2' : 'col-span-1'}>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Clave Producto/Servicio */}
@@ -124,8 +137,8 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
                       if (item && !formData.descripcion) {
                         handleInputChange('descripcion', item.descripcion);
                       }
-                      setBusquedaProducto('');
                     }}
+                    onSearchChange={setBusquedaProducto}
                     items={productos}
                     isLoading={loadingProductos}
                     required
@@ -141,8 +154,8 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
                     value={formData.clave_unidad}
                     onValueChange={(clave) => {
                       handleInputChange('clave_unidad', clave);
-                      setBusquedaUnidad('');
                     }}
+                    onSearchChange={setBusquedaUnidad}
                     items={unidades}
                     isLoading={loadingUnidades}
                     required
@@ -248,8 +261,8 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
                       value={formData.cve_material_peligroso || ''}
                       onValueChange={(clave) => {
                         handleInputChange('cve_material_peligroso', clave);
-                        setBusquedaMaterial('');
                       }}
+                      onSearchChange={setBusquedaMaterial}
                       items={materiales}
                       isLoading={loadingMateriales}
                       required={formData.material_peligroso}
@@ -304,8 +317,8 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
           </div>
 
           {/* Panel de Asistente IA */}
-          <div className="lg:col-span-1">
-            {formData.bienes_transp && (
+          {showAI && (
+            <div className="lg:col-span-1">
               <AIAssistant
                 claveProducto={formData.bienes_transp}
                 descripcionActual={formData.descripcion}
@@ -315,8 +328,8 @@ export const MercanciaForm: React.FC<MercanciaFormProps> = ({
                 valor={formData.valor_mercancia}
                 onDescriptionUpdate={handleDescriptionUpdate}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

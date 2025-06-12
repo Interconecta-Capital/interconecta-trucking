@@ -1,446 +1,239 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { PlantillasSelector } from './plantillas/PlantillasSelector';
-import { usePlantillas, PlantillaData } from '@/hooks/usePlantillas';
+import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { 
-  Upload, 
   FileText, 
-  Edit, 
-  Search,
-  Building2,
-  AlertTriangle,
-  Globe,
-  MapPin,
-  CheckCircle,
-  ArrowLeft
+  Upload, 
+  Sparkles, 
+  ArrowRight, 
+  Building, 
+  Truck,
+  FileSpreadsheet,
+  FileImage
 } from 'lucide-react';
-import { CartaPorteData } from './CartaPorteForm';
-import { toast } from 'sonner';
 
 interface ConfiguracionInicialProps {
-  data: CartaPorteData;
+  data: any;
   onChange: (data: any) => void;
   onNext: () => void;
 }
 
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showPlantillasSelector, setShowPlantillasSelector] = useState(false);
-  const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<PlantillaData | null>(null);
-  
-  const { cargarPlantilla, getSugerenciasPlantillas } = usePlantillas();
+  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
 
-  const handleTipoCfdiChange = (tipo: 'Ingreso' | 'Traslado') => {
-    const updates: Partial<CartaPorteData> = { tipoCfdi: tipo };
-    
-    // Si es Traslado, el RFC Receptor debe ser igual al Emisor
-    if (tipo === 'Traslado' && data.rfcEmisor) {
-      updates.rfcReceptor = data.rfcEmisor;
-      updates.nombreReceptor = data.nombreEmisor;
-    }
-    
-    onChange(updates);
+  const handleInputChange = (field: string, value: string) => {
+    onChange({ ...data, [field]: value });
   };
 
-  const handleRfcEmisorChange = (rfc: string) => {
-    const updates: Partial<CartaPorteData> = { rfcEmisor: rfc };
-    
-    // Si es Traslado, sincronizar receptor
-    if (data.tipoCfdi === 'Traslado') {
-      updates.rfcReceptor = rfc;
-    }
-    
-    onChange(updates);
-  };
-
-  const handleSelectPlantilla = async (plantilla: PlantillaData) => {
-    try {
-      const templateData = await cargarPlantilla(plantilla.id);
-      
-      // Cargar todos los datos de la plantilla
-      onChange(templateData);
-      setPlantillaSeleccionada(plantilla);
-      setShowPlantillasSelector(false);
-      
-      toast.success(`Plantilla "${plantilla.nombre}" cargada exitosamente`);
-    } catch (error) {
-      toast.error('Error al cargar la plantilla');
-      console.error('Error:', error);
-    }
-  };
-
-  const handleTipoCreacionChange = (tipo: 'plantilla' | 'carga' | 'manual') => {
-    onChange({ tipoCreacion: tipo });
-    
-    if (tipo === 'plantilla') {
-      setShowPlantillasSelector(true);
-    }
+  const handleDocumentProcessed = async (extractedData: any) => {
+    // Aplicar los datos extraídos del documento
+    onChange({ ...data, ...extractedData });
+    setShowDocumentDialog(false);
   };
 
   const isFormValid = () => {
-    return data.rfcEmisor && data.rfcReceptor && data.nombreEmisor && data.nombreReceptor;
+    return data.rfcEmisor && 
+           data.nombreEmisor && 
+           data.rfcReceptor && 
+           data.nombreReceptor;
   };
-
-  const sugerencias = getSugerenciasPlantillas();
-
-  // Si se está mostrando el selector de plantillas
-  if (showPlantillasSelector) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setShowPlantillasSelector(false)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
-          </Button>
-          <span className="text-sm text-muted-foreground">Seleccionar Plantilla</span>
-        </div>
-        
-        <PlantillasSelector
-          onSelectPlantilla={handleSelectPlantilla}
-          onClose={() => setShowPlantillasSelector(false)}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {/* Mostrar plantilla seleccionada si existe */}
-      {plantillaSeleccionada && (
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-green-800">
-                    Plantilla "{plantillaSeleccionada.nombre}" cargada
-                  </p>
-                  <p className="text-sm text-green-600">
-                    Los datos han sido pre-llenados. Puedes modificarlos si es necesario.
-                  </p>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setPlantillaSeleccionada(null);
-                  setShowPlantillasSelector(true);
-                }}
-              >
-                Cambiar Plantilla
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tipo de Creación */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5" />
-            <span>Flujo de Inicio Inteligente</span>
+            <Building className="h-5 w-5" />
+            <span>Configuración Inicial de Carta Porte</span>
           </CardTitle>
         </CardHeader>
+        
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card 
-              className={`cursor-pointer border-2 transition-colors ${
-                data.tipoCreacion === 'plantilla' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-              }`}
-              onClick={() => handleTipoCreacionChange('plantilla')}
-            >
-              <CardContent className="p-4 text-center">
-                <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <h3 className="font-semibold">Desde Plantilla</h3>
-                <p className="text-sm text-muted-foreground">
-                  Usar viaje previo o plantilla predefinida
-                </p>
-                {sugerencias.length > 0 && (
-                  <Badge variant="secondary" className="mt-2">
-                    {sugerencias.length} sugerencias
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card 
-              className={`cursor-pointer border-2 transition-colors ${
-                data.tipoCreacion === 'carga' ? 'border-green-500 bg-green-50' : 'border-gray-200'
-              }`}
-              onClick={() => handleTipoCreacionChange('carga')}
-            >
-              <CardContent className="p-4 text-center">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                <h3 className="font-semibold">Carga de Origen</h3>
-                <p className="text-sm text-muted-foreground">
-                  Importar desde PDF/XML/Excel
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className={`cursor-pointer border-2 transition-colors ${
-                data.tipoCreacion === 'manual' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
-              }`}
-              onClick={() => handleTipoCreacionChange('manual')}
-            >
-              <CardContent className="p-4 text-center">
-                <Edit className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-                <h3 className="font-semibold">Creación Manual</h3>
-                <p className="text-sm text-muted-foreground">
-                  Proceso guiado paso a paso
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Datos Básicos del CFDI */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Datos Básicos del CFDI</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="tipoCfdi">Tipo de CFDI *</Label>
-              <Select 
-                value={data.tipoCfdi} 
-                onValueChange={(value: 'Ingreso' | 'Traslado') => handleTipoCfdiChange(value)}
+          {/* Flujo de Inicio Inteligente */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-3 flex items-center">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Flujo de Inicio Inteligente
+            </h3>
+            <p className="text-sm text-blue-700 mb-4">
+              Acelera la creación importando datos desde documentos existentes
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDocumentDialog(true)}
+                className="flex items-center justify-center space-x-2 h-20 flex-col border-blue-300 hover:bg-blue-100"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Ingreso">Ingreso</SelectItem>
-                  <SelectItem value="Traslado">Traslado</SelectItem>
-                </SelectContent>
-              </Select>
-              {data.tipoCfdi === 'Traslado' && (
-                <div className="flex items-center space-x-2 text-sm text-amber-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>En Traslado, el RFC Receptor debe ser igual al Emisor</span>
+                <Upload className="h-6 w-6 text-blue-600" />
+                <div className="text-center">
+                  <div className="font-medium text-blue-800">Carga de Origen</div>
+                  <div className="text-xs text-blue-600">PDF, XML, Excel</div>
                 </div>
-              )}
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="flex items-center justify-center space-x-2 h-20 flex-col border-gray-300"
+                disabled
+              >
+                <FileText className="h-6 w-6 text-gray-400" />
+                <div className="text-center">
+                  <div className="font-medium text-gray-600">Plantilla</div>
+                  <div className="text-xs text-gray-500">Próximamente</div>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="flex items-center justify-center space-x-2 h-20 flex-col border-gray-300"
+                disabled
+              >
+                <Truck className="h-6 w-6 text-gray-400" />
+                <div className="text-center">
+                  <div className="font-medium text-gray-600">Ruta Guardada</div>
+                  <div className="text-xs text-gray-500">Próximamente</div>
+                </div>
+              </Button>
             </div>
           </div>
 
-          <Separator />
-
-          {/* Datos del Emisor */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center space-x-2">
-              <Building2 className="h-5 w-5" />
-              <span>Datos del Emisor</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rfcEmisor">RFC Emisor *</Label>
-                <div className="relative">
+          {/* Formulario Manual */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Datos del Emisor</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rfcEmisor">RFC Emisor *</Label>
                   <Input
                     id="rfcEmisor"
-                    value={data.rfcEmisor}
-                    onChange={(e) => handleRfcEmisorChange(e.target.value.toUpperCase())}
+                    value={data.rfcEmisor || ''}
+                    onChange={(e) => handleInputChange('rfcEmisor', e.target.value.toUpperCase())}
                     placeholder="ABC123456789"
-                    className="pr-10"
+                    maxLength={13}
                   />
-                  <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="nombreEmisor">Nombre/Razón Social Emisor *</Label>
+                  <Input
+                    id="nombreEmisor"
+                    value={data.nombreEmisor || ''}
+                    onChange={(e) => handleInputChange('nombreEmisor', e.target.value)}
+                    placeholder="Nombre del emisor"
+                  />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="nombreEmisor">Nombre/Razón Social Emisor *</Label>
-                <Input
-                  id="nombreEmisor"
-                  value={data.nombreEmisor}
-                  onChange={(e) => onChange({ nombreEmisor: e.target.value })}
-                  placeholder="Nombre completo o razón social"
-                />
-              </div>
             </div>
-          </div>
 
-          <Separator />
-
-          {/* Datos del Receptor */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center space-x-2">
-              <Building2 className="h-5 w-5" />
-              <span>Datos del Receptor</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rfcReceptor">RFC Receptor *</Label>
-                <div className="relative">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Datos del Receptor</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rfcReceptor">RFC Receptor *</Label>
                   <Input
                     id="rfcReceptor"
-                    value={data.rfcReceptor}
-                    onChange={(e) => onChange({ rfcReceptor: e.target.value.toUpperCase() })}
+                    value={data.rfcReceptor || ''}
+                    onChange={(e) => handleInputChange('rfcReceptor', e.target.value.toUpperCase())}
                     placeholder="XYZ987654321"
-                    className="pr-10"
-                    disabled={data.tipoCfdi === 'Traslado'}
+                    maxLength={13}
                   />
-                  <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="nombreReceptor">Nombre/Razón Social Receptor *</Label>
+                  <Input
+                    id="nombreReceptor"
+                    value={data.nombreReceptor || ''}
+                    onChange={(e) => handleInputChange('nombreReceptor', e.target.value)}
+                    placeholder="Nombre del receptor"
+                  />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="nombreReceptor">Nombre/Razón Social Receptor *</Label>
-                <Input
-                  id="nombreReceptor"
-                  value={data.nombreReceptor}
-                  onChange={(e) => onChange({ nombreReceptor: e.target.value })}
-                  placeholder="Nombre completo o razón social"
-                  disabled={data.tipoCfdi === 'Traslado'}
-                />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Configuración del Transporte</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tipoTransporte">Tipo de Transporte</Label>
+                  <Select 
+                    value={data.tipoTransporte || ''} 
+                    onValueChange={(value) => handleInputChange('tipoTransporte', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="autotransporte">Autotransporte Federal</SelectItem>
+                      <SelectItem value="maritimo">Marítimo</SelectItem>
+                      <SelectItem value="aereo">Aéreo</SelectItem>
+                      <SelectItem value="ferroviario">Ferroviario</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tipoServicio">Tipo de Servicio</Label>
+                  <Select 
+                    value={data.tipoServicio || ''} 
+                    onValueChange={(value) => handleInputChange('tipoServicio', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="carga">Carga</SelectItem>
+                      <SelectItem value="pasajeros">Pasajeros</SelectItem>
+                      <SelectItem value="mixto">Mixto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="modalidadTransporte">Modalidad</Label>
+                  <Select 
+                    value={data.modalidadTransporte || ''} 
+                    onValueChange={(value) => handleInputChange('modalidadTransporte', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nacional">Nacional</SelectItem>
+                      <SelectItem value="internacional">Internacional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <Button 
+              onClick={onNext} 
+              disabled={!isFormValid()}
+              className="flex items-center space-x-2"
+            >
+              <span>Continuar a Ubicaciones</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Configuraciones Especiales */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuraciones Especiales</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Globe className="h-5 w-5" />
-              <Label htmlFor="transporte-internacional">Transporte Internacional</Label>
-            </div>
-            <Switch
-              id="transporte-internacional"
-              checked={data.transporteInternacional}
-              onCheckedChange={(checked) => onChange({ transporteInternacional: checked })}
-            />
-          </div>
-
-          {data.transporteInternacional && (
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Entrada/Salida Mercancía</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Entrada">Entrada</SelectItem>
-                        <SelectItem value="Salida">Salida</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>País Origen/Destino</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar país..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USA">Estados Unidos</SelectItem>
-                        <SelectItem value="CAN">Canadá</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Vía Entrada/Salida</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar vía..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="01">Terrestre</SelectItem>
-                        <SelectItem value="02">Aéreo</SelectItem>
-                        <SelectItem value="03">Marítimo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-5 w-5" />
-              <Label htmlFor="registro-istmo">Registro ISTMO</Label>
-            </div>
-            <Switch
-              id="registro-istmo"
-              checked={data.registroIstmo}
-              onCheckedChange={(checked) => onChange({ registroIstmo: checked })}
-            />
-          </div>
-
-          {data.registroIstmo && (
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Ubicación Polo Origen</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="01">Salina Cruz</SelectItem>
-                        <SelectItem value="02">Coatzacoalcos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Ubicación Polo Destino</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="01">Salina Cruz</SelectItem>
-                        <SelectItem value="02">Coatzacoalcos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Botones de navegación */}
-      <div className="flex justify-end space-x-4">
-        <Button 
-          onClick={onNext} 
-          disabled={!isFormValid()}
-          className="px-8"
-        >
-          Continuar a Ubicaciones
-        </Button>
-      </div>
+      {/* Dialog de carga de documentos */}
+      <DocumentUploadDialog
+        open={showDocumentDialog}
+        onOpenChange={setShowDocumentDialog}
+        onDocumentProcessed={handleDocumentProcessed}
+      />
     </div>
   );
 }

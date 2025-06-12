@@ -29,7 +29,7 @@ export function UbicacionForm({
 }: UbicacionFormProps) {
   const [formData, setFormData] = useState<Ubicacion>({
     idUbicacion: '',
-    tipoUbicacion: 'Origen',
+    tipoUbicacion: undefined as any, // Inicializar sin valor
     rfcRemitenteDestinatario: '',
     nombreRemitenteDestinatario: '',
     fechaHoraSalidaLlegada: '',
@@ -63,7 +63,10 @@ export function UbicacionForm({
   }, [ubicacion]);
 
   const handleTipoChange = (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => {
+    console.log('Changing type to:', tipo);
     const newId = generarId(tipo);
+    console.log('Generated ID:', newId);
+    
     setFormData(prev => ({
       ...prev,
       tipoUbicacion: tipo,
@@ -72,14 +75,23 @@ export function UbicacionForm({
   };
 
   const handleRFCChange = (rfc: string) => {
-    const rfcFormateado = RFCValidator.formatearRFC(rfc);
-    const validation = RFCValidator.validarRFC(rfcFormateado);
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      rfcRemitenteDestinatario: rfcFormateado 
-    }));
-    setRfcValidation(validation);
+    // Solo validar si hay contenido
+    if (rfc.length > 0) {
+      const rfcFormateado = RFCValidator.formatearRFC(rfc);
+      const validation = RFCValidator.validarRFC(rfcFormateado);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        rfcRemitenteDestinatario: rfcFormateado 
+      }));
+      setRfcValidation(validation);
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        rfcRemitenteDestinatario: rfc 
+      }));
+      setRfcValidation({ esValido: true, errores: [] });
+    }
   };
 
   const handleNombreChange = (nombre: string) => {
@@ -151,6 +163,7 @@ export function UbicacionForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isFormValid()) {
+      console.log('Saving ubicacion:', formData);
       onSave(formData);
     }
   };
@@ -176,13 +189,22 @@ export function UbicacionForm({
   };
 
   const isFormValid = () => {
-    return formData.tipoUbicacion && 
-           rfcValidation.esValido &&
-           formData.rfcRemitenteDestinatario && 
-           formData.nombreRemitenteDestinatario &&
-           formData.domicilio.codigoPostal &&
-           formData.domicilio.estado &&
-           formData.domicilio.calle;
+    const hasValidType = formData.tipoUbicacion && formData.tipoUbicacion !== '';
+    const hasValidRFC = formData.rfcRemitenteDestinatario === '' || rfcValidation.esValido;
+    const hasValidData = formData.nombreRemitenteDestinatario && 
+                        formData.domicilio.codigoPostal &&
+                        formData.domicilio.estado &&
+                        formData.domicilio.calle;
+    
+    console.log('Form validation:', {
+      hasValidType,
+      hasValidRFC,
+      hasValidData,
+      tipoUbicacion: formData.tipoUbicacion,
+      idUbicacion: formData.idUbicacion
+    });
+    
+    return hasValidType && hasValidRFC && hasValidData;
   };
 
   return (

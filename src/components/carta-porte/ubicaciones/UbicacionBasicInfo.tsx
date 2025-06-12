@@ -20,7 +20,14 @@ export function UbicacionBasicInfo({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="space-y-2">
         <Label>Tipo de Ubicación *</Label>
-        <Select value={formData.tipoUbicacion} onValueChange={onTipoChange}>
+        <Select 
+          value={formData.tipoUbicacion || ''} 
+          onValueChange={(value) => {
+            if (value) {
+              onTipoChange(value as 'Origen' | 'Destino' | 'Paso Intermedio');
+            }
+          }}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar tipo..." />
           </SelectTrigger>
@@ -35,9 +42,10 @@ export function UbicacionBasicInfo({
       <div className="space-y-2">
         <Label>ID Ubicación</Label>
         <Input
-          value={formData.idUbicacion}
+          value={formData.idUbicacion || ''}
           disabled
           className="bg-gray-50"
+          placeholder="Se genera automáticamente al seleccionar tipo"
         />
       </div>
 
