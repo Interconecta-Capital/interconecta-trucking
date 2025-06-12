@@ -2,9 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { LimitUsageIndicator } from '@/components/LimitUsageIndicator';
+import { PlanSummaryCard } from './PlanSummaryCard';
 import { Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Settings } from 'lucide-react';
 
 export const EstadoSuscripcion = () => {
@@ -19,12 +19,8 @@ export const EstadoSuscripcion = () => {
     abrirPortalCliente,
     isOpeningPortal
   } = useSuscripcion();
-  
-  const { obtenerUsoActual } = usePermisosSubscripcion();
 
   if (!suscripcion) return null;
-
-  const usoActual = obtenerUsoActual();
 
   const getStatusBadge = () => {
     if (estaBloqueado) {
@@ -60,11 +56,15 @@ export const EstadoSuscripcion = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Resumen del Plan */}
+      <PlanSummaryCard />
+
+      {/* Detalles de la Suscripción */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Estado de Suscripción</span>
+            <span>Detalles de Suscripción</span>
             {getStatusBadge()}
           </CardTitle>
         </CardHeader>
@@ -126,32 +126,16 @@ export const EstadoSuscripcion = () => {
         </CardContent>
       </Card>
 
+      {/* Uso Detallado */}
       <Card>
         <CardHeader>
-          <CardTitle>Uso Actual vs Límites</CardTitle>
+          <CardTitle>Uso Detallado por Recurso</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {Object.entries(usoActual).map(([key, data]) => {
-            const porcentaje = data.limite ? (data.usado / data.limite) * 100 : 0;
-            const esSinLimite = data.limite === null;
-            
-            return (
-              <div key={key} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="capitalize">{key.replace('_', ' ')}</span>
-                  <span>
-                    {data.usado} {esSinLimite ? '(ilimitado)' : `/ ${data.limite}`}
-                  </span>
-                </div>
-                {!esSinLimite && (
-                  <Progress 
-                    value={porcentaje} 
-                    className={`h-2 ${porcentaje > 80 ? 'bg-red-100' : 'bg-gray-200'}`}
-                  />
-                )}
-              </div>
-            );
-          })}
+          <LimitUsageIndicator resource="cartas_porte" />
+          <LimitUsageIndicator resource="conductores" />
+          <LimitUsageIndicator resource="vehiculos" />
+          <LimitUsageIndicator resource="socios" />
         </CardContent>
       </Card>
     </div>

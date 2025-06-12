@@ -8,6 +8,8 @@ import { PlanBadge } from './PlanBadge';
 import { ScheduleDropdown } from './ScheduleDropdown';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { LimitUsageIndicator } from './LimitUsageIndicator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export function GlobalHeader() {
   const [showSettings, setShowSettings] = useState(false);
@@ -28,7 +30,32 @@ export function GlobalHeader() {
       </div>
       
       <div className="flex items-center gap-3">
-        <PlanBadge />
+        {/* Plan Badge con indicador de límites */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="cursor-pointer">
+              <PlanBadge />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="end">
+            <div className="space-y-3">
+              <h4 className="font-medium">Uso Actual</h4>
+              <div className="space-y-3">
+                <LimitUsageIndicator resource="cartas_porte" />
+                <LimitUsageIndicator resource="conductores" />
+                <LimitUsageIndicator resource="vehiculos" />
+                <LimitUsageIndicator resource="socios" />
+              </div>
+              <div className="pt-2 border-t">
+                <Link to="/planes">
+                  <Button size="sm" className="w-full">
+                    Ver Planes
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         
         <Link to="/cartas-porte">
           <Button 
