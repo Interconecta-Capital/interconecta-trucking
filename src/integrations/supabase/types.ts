@@ -62,6 +62,39 @@ export type Database = {
           },
         ]
       }
+      bloqueos_usuario: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          fecha_bloqueo: string | null
+          fecha_desbloqueo: string | null
+          id: string
+          mensaje_bloqueo: string | null
+          motivo: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          fecha_bloqueo?: string | null
+          fecha_desbloqueo?: string | null
+          id?: string
+          mensaje_bloqueo?: string | null
+          motivo: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          fecha_bloqueo?: string | null
+          fecha_desbloqueo?: string | null
+          id?: string
+          mensaje_bloqueo?: string | null
+          motivo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cantidad_transporta: {
         Row: {
           cantidad: number | null
@@ -1022,6 +1055,125 @@ export type Database = {
         }
         Relationships: []
       }
+      pagos: {
+        Row: {
+          created_at: string | null
+          factura_url: string | null
+          fecha_pago: string | null
+          id: string
+          metodo_pago: string | null
+          moneda: string | null
+          monto: number
+          periodo_fin: string | null
+          periodo_inicio: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+          suscripcion_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          factura_url?: string | null
+          fecha_pago?: string | null
+          id?: string
+          metodo_pago?: string | null
+          moneda?: string | null
+          monto: number
+          periodo_fin?: string | null
+          periodo_inicio?: string | null
+          status: string
+          stripe_payment_intent_id?: string | null
+          suscripcion_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          factura_url?: string | null
+          fecha_pago?: string | null
+          id?: string
+          metodo_pago?: string | null
+          moneda?: string | null
+          monto?: number
+          periodo_fin?: string | null
+          periodo_inicio?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          suscripcion_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planes_suscripcion: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          descripcion: string | null
+          dias_prueba: number | null
+          id: string
+          limite_cartas_porte: number | null
+          limite_conductores: number | null
+          limite_socios: number | null
+          limite_vehiculos: number | null
+          nombre: string
+          precio_anual: number | null
+          precio_mensual: number
+          puede_cancelar_cfdi: boolean | null
+          puede_generar_xml: boolean | null
+          puede_timbrar: boolean | null
+          puede_tracking: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string | null
+          dias_prueba?: number | null
+          id?: string
+          limite_cartas_porte?: number | null
+          limite_conductores?: number | null
+          limite_socios?: number | null
+          limite_vehiculos?: number | null
+          nombre: string
+          precio_anual?: number | null
+          precio_mensual: number
+          puede_cancelar_cfdi?: boolean | null
+          puede_generar_xml?: boolean | null
+          puede_timbrar?: boolean | null
+          puede_tracking?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string | null
+          dias_prueba?: number | null
+          id?: string
+          limite_cartas_porte?: number | null
+          limite_conductores?: number | null
+          limite_socios?: number | null
+          limite_vehiculos?: number | null
+          nombre?: string
+          precio_anual?: number | null
+          precio_mensual?: number
+          puede_cancelar_cfdi?: boolean | null
+          puede_generar_xml?: boolean | null
+          puede_timbrar?: boolean | null
+          puede_tracking?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       plantillas_carta_porte: {
         Row: {
           created_at: string | null
@@ -1245,6 +1397,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      suscripciones: {
+        Row: {
+          created_at: string | null
+          dias_gracia: number | null
+          fecha_fin_prueba: string | null
+          fecha_inicio: string | null
+          fecha_vencimiento: string | null
+          id: string
+          plan_id: string
+          proximo_pago: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          ultimo_pago: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dias_gracia?: number | null
+          fecha_fin_prueba?: string | null
+          fecha_inicio?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          plan_id: string
+          proximo_pago?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          ultimo_pago?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dias_gracia?: number | null
+          fecha_fin_prueba?: string | null
+          fecha_inicio?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          plan_id?: string
+          proximo_pago?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          ultimo_pago?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suscripciones_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "planes_suscripcion"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenants: {
         Row: {
@@ -1573,6 +1784,10 @@ export type Database = {
           p_window_minutes?: number
         }
         Returns: boolean
+      }
+      check_subscription_expiry: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       log_security_event: {
         Args: {
