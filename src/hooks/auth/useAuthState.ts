@@ -14,7 +14,7 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Obtener datos del perfil y tenant desde la base de datos
+  // Obtener datos del perfil desde la base de datos
   const { data: profileData, refetch: refetchProfile } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -36,7 +36,7 @@ export const useAuthState = () => {
           updated_at
         `)
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -47,7 +47,8 @@ export const useAuthState = () => {
       return profile;
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000, // 1 minuto
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 
   // Obtener datos del usuario y tenant desde la tabla usuarios
@@ -75,7 +76,7 @@ export const useAuthState = () => {
           )
         `)
         .eq('auth_user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user data:', error);
@@ -86,24 +87,57 @@ export const useAuthState = () => {
       return usuario;
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000, // 1 minuto
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 
   // Configurar listeners de autenticación
   useEffect(() => {
+    let mounted = true;
+
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session:', session?.user?.email);
-      setUser(session?.user ?? null);
+      const authUser = session?.user;
+      
+      if (authUser) {
+        const baseUser: AuthUser = {
+          ...authUser,
+          profile: null,
+          tenant: null,
+          usuario: undefined,
+        };
+        setUser(baseUser);
+      } else {
+        setUser(null);
+      }
+      
       setLoading(false);
     });
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth event:', event, session?.user?.email);
         
-        setUser(session?.user ?? null);
+        const authUser = session?.user;
+        
+        if (authUser) {
+          const baseUser: AuthUser = {
+            ...authUser,
+            profile: null,
+            tenant: null,
+            usuario: undefined,
+          };
+          setUser(baseUser);
+        } else {
+          setUser(null);
+        }
+        
         setLoading(false);
         
         // Limpiar cache al cerrar sesión
@@ -117,43 +151,44 @@ export const useAuthState = () => {
             await handleOAuthUser(session.user);
             // Refetch profile data después de manejar usuario OAuth
             refetchProfile();
-          }, 0);
+          }, 100);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [queryClient, refetchProfile]);
 
-  // Actualizar usuario con datos del perfil y tenant cuando estén disponibles
-  useEffect(() => {
-    if (user) {
-      console.log('Updating user with profile and user data:', { profileData, userData });
-      
-      const updatedUser: AuthUser = {
-        ...user,
-        profile: profileData || {
-          id: user.id,
-          nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Usuario',
-          email: user.email || '',
-          empresa: user.user_metadata?.empresa || '',
-          rfc: user.user_metadata?.rfc || '',
-          telefono: user.user_metadata?.telefono || '',
-        },
-        tenant: userData?.tenant || null,
-        usuario: userData ? {
-          id: userData.id,
-          nombre: userData.nombre,
-          rol: userData.rol,
-        } : undefined,
-      };
-      
-      setUser(updatedUser);
-    }
-  }, [user?.id, profileData, userData]);
+  // Crear el usuario completo con datos adicionales cuando estén disponibles
+  const fullUser: AuthUser | null = user ? {
+    ...user,
+    profile: profileData || {
+      id: user.id,
+      nombre: user.user_metadata?.nombre || user.user_metadata?.name || 'Usuario',
+      email: user.email || '',
+      empresa: user.user_metadata?.empresa || '',
+      rfc: user.user_metadata?.rfc || '',
+      telefono: user.user_metadata?.telefono || '',
+    },
+    tenant: userData?.tenant || null,
+    usuario: userData ? {
+      id: userData.id,
+      nombre: userData.nombre,
+      rol: userData.rol,
+    } : undefined,
+  } : null;
+
+  console.log('Current full user state:', fullUser?.email, {
+    hasProfile: !!fullUser?.profile,
+    hasTenant: !!fullUser?.tenant,
+    hasUsuario: !!fullUser?.usuario
+  });
 
   return {
-    user,
+    user: fullUser,
     loading,
     setUser,
     queryClient
