@@ -1,6 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 import { CompleteProfileModal } from './CompleteProfileModal';
 
 interface AuthGuardProps {
@@ -9,6 +10,7 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
+  const { needsCompletion } = useUnconfirmedUserDetection();
 
   if (loading) {
     return (
@@ -25,7 +27,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   return (
     <>
       {children}
-      <CompleteProfileModal />
+      <CompleteProfileModal open={needsCompletion} />
     </>
   );
 }

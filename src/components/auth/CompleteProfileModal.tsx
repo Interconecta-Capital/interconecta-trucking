@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -57,7 +56,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
 
   return (
     <Dialog open={open}>
-      <DialogContent className="sm:max-w-[500px]" hideCloseButton>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Completa tu perfil</DialogTitle>
           <DialogDescription>
@@ -110,7 +109,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
             />
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end">
             <Button 
               type="submit" 
               disabled={loading || !isFormValid}
@@ -118,7 +117,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
             >
               {loading ? 'Completando...' : 'Completar perfil'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
