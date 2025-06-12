@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,6 +21,7 @@ import { Plus, Truck, FileText, Users, X } from 'lucide-react';
 import { DocumentUpload } from './DocumentUpload';
 import { useConductores } from '@/hooks/useConductores';
 import { useVehiculoConductores } from '@/hooks/useVehiculoConductores';
+import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
 
 const vehiculoSchema = z.object({
   placa: z.string().min(1, 'La placa es requerida').max(10, 'Máximo 10 caracteres'),
@@ -50,6 +50,10 @@ export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo, load
   
   const { conductores } = useConductores();
   const { asignaciones, asignarConductor, desasignarConductor } = useVehiculoConductores(vehiculo?.id);
+  const { documentos, loading: loadingDocumentos, refetch: refetchDocumentos } = useDocumentosEntidades(
+    'vehiculo',
+    vehiculo?.id || ''
+  );
   
   const form = useForm<VehiculoFormData>({
     resolver: zodResolver(vehiculoSchema),
@@ -288,37 +292,14 @@ export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo, load
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vehiculo?.id ? (
                 <DocumentUpload
-                  label="Tarjeta de Circulación"
-                  tipoDocumento="tarjeta_circulacion"
                   entidadTipo="vehiculo"
-                  entidadId={vehiculo?.id}
+                  entidadId={vehiculo.id}
+                  documentos={documentos}
+                  onDocumentosChange={refetchDocumentos}
                 />
-                
-                <DocumentUpload
-                  label="Póliza de Seguro"
-                  tipoDocumento="poliza_seguro"
-                  entidadTipo="vehiculo"
-                  entidadId={vehiculo?.id}
-                />
-                
-                <DocumentUpload
-                  label="Verificación Vehicular"
-                  tipoDocumento="verificacion"
-                  entidadTipo="vehiculo"
-                  entidadId={vehiculo?.id}
-                />
-                
-                <DocumentUpload
-                  label="Otros Documentos"
-                  tipoDocumento="otros"
-                  entidadTipo="vehiculo"
-                  entidadId={vehiculo?.id}
-                />
-              </div>
-
-              {!vehiculo?.id && (
+              ) : (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm text-yellow-800">
                     <strong>Nota:</strong> Primero guarda el vehículo para poder subir documentos.
