@@ -1,8 +1,6 @@
 
-import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreeting';
-import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
-import { DashboardMetricsGrid } from '@/components/dashboard/DashboardMetricsGrid';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
@@ -42,30 +40,25 @@ export default function Dashboard() {
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
-      {/* Saludo personalizado */}
-      <PersonalizedGreeting />
+      {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
+      <WelcomeCard show={showWelcomeCard} />
 
-      <DashboardLayout>
-        {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
-        <WelcomeCard show={showWelcomeCard} />
-
-        {/* Métricas principales */}
-        <DashboardMetricsGrid
-          isLoading={isLoading}
-          totalCartasPorte={totalCartasPorte}
-          cartasPendientes={cartasPendientes}
-          cartasCompletadas={cartasCompletadas}
-          totalVehiculos={totalVehiculos}
-          vehiculosDisponibles={vehiculosDisponibles}
-          vehiculosEnUso={vehiculosEnUso}
-          vehiculosMantenimiento={vehiculosMantenimiento}
-          totalConductores={totalConductores}
-          conductoresDisponibles={conductoresDisponibles}
-          conductoresEnViaje={conductoresEnViaje}
-          totalSocios={totalSocios}
-          sociosActivos={sociosActivos}
-        />
-      </DashboardLayout>
+      {/* Dashboard principal */}
+      <DashboardLayout
+        isLoading={isLoading}
+        totalCartasPorte={totalCartasPorte}
+        cartasPendientes={cartasPendientes}
+        cartasCompletadas={cartasCompletadas}
+        totalVehiculos={totalVehiculos}
+        vehiculosDisponibles={vehiculosDisponibles}
+        vehiculosEnUso={vehiculosEnUso}
+        vehiculosMantenimiento={vehiculosMantenimiento}
+        totalConductores={totalConductores}
+        conductoresDisponibles={conductoresDisponibles}
+        conductoresEnViaje={conductoresEnViaje}
+        totalSocios={totalSocios}
+        sociosActivos={sociosActivos}
+      />
     </div>
   );
 }
