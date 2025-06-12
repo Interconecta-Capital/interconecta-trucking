@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +21,8 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   hasAccess: (resource: string) => boolean;
 }
@@ -70,6 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_OUT') {
           queryClient.clear();
         }
+        
+        // Manejar usuarios OAuth nuevos
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(async () => {
+            await handleOAuthUser(session.user);
+          }, 0);
+        }
       }
     );
 
@@ -90,6 +98,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
   }, [user?.id, userData]);
+
+  const handleOAuthUser = async (oauthUser: User) => {
+    try {
+      // Verificar si el usuario ya existe en nuestra tabla
+      const { data: existingUser } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('auth_user_id', oauthUser.id)
+        .single();
+
+      if (!existingUser) {
+        // Es un usuario OAuth nuevo, necesita completar información
+        // Por ahora crearemos un tenant básico, pero esto puede mejorarse
+        // para mostrar un modal de registro adicional
+        const email = oauthUser.email || '';
+        const name = oauthUser.user_metadata?.full_name || 
+                    oauthUser.user_metadata?.name || 
+                    email.split('@')[0];
+        
+        // Crear tenant básico
+        const { data: tenant, error: tenantError } = await supabase
+          .from('tenants')
+          .insert({
+            nombre_empresa: `${name} - Empresa`,
+            rfc_empresa: 'TEMP000000000', // Temporal, el usuario deberá actualizarlo
+          })
+          .select()
+          .single();
+
+        if (tenantError) throw tenantError;
+
+        // Crear usuario en la tabla usuarios
+        const { error: usuarioError } = await supabase
+          .from('usuarios')
+          .insert({
+            auth_user_id: oauthUser.id,
+            email: email,
+            nombre: name,
+            tenant_id: tenant.id,
+            rol: 'admin',
+          });
+
+        if (usuarioError) throw usuarioError;
+      }
+    } catch (error) {
+      console.error('Error handling OAuth user:', error);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -138,16 +194,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             tenant_id: tenant.id,
             telefono: userData.telefono,
             empresa: userData.empresa,
-            rol: 'admin', // El primer usuario siempre es admin del tenant
+            rol: 'admin',
           });
 
         if (usuarioError) throw usuarioError;
       } catch (dbError) {
         console.error('Error creating tenant/user:', dbError);
-        // No lanzamos el error para no interrumpir el proceso de registro
-        // El usuario puede loguearse y completar la configuración después
       }
     }
+  };
+
+  const signInWithGoogle = async () => {
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+    
+    if (error) throw error;
+  };
+
+  const signInWithApple = async () => {
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'apple',
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+    
+    if (error) throw error;
   };
 
   const signOut = async () => {
@@ -172,6 +252,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn,
       signUp,
+      signInWithGoogle,
+      signInWithApple,
       signOut,
       hasAccess,
     }}>
