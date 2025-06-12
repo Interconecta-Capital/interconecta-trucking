@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ContactSalesModal } from "./ContactSalesModal";
 
 interface PricingPlan {
   name: string;
-  originalPrice?: string;
   price: string;
   description: string;
   features: string[];
@@ -16,7 +16,6 @@ interface PricingPlan {
   buttonText: string;
   buttonLink: string;
   isEnterprise?: boolean;
-  onContactSales?: () => void;
 }
 
 interface PricingCardProps {
@@ -35,9 +34,6 @@ export function PricingCard({ plan }: PricingCardProps) {
       <CardHeader className="text-center">
         <CardTitle className="text-xl font-sora text-interconecta-text-primary">{plan.name}</CardTitle>
         <div className="mt-4">
-          {plan.originalPrice && (
-            <div className="text-lg text-gray-400 line-through font-inter">{plan.originalPrice}</div>
-          )}
           <div className="text-3xl font-bold font-sora text-interconecta-primary">{plan.price}</div>
         </div>
         <p className="text-interconecta-text-secondary font-inter">{plan.description}</p>
@@ -54,12 +50,7 @@ export function PricingCard({ plan }: PricingCardProps) {
         </ul>
         
         {plan.isEnterprise ? (
-          <Button 
-            className="w-full bg-interconecta-primary hover:bg-interconecta-accent text-white font-sora font-medium"
-            onClick={plan.onContactSales}
-          >
-            {plan.buttonText}
-          </Button>
+          <ContactSalesModal />
         ) : (
           <Link to={plan.buttonLink}>
             <Button className={`w-full font-sora font-medium ${

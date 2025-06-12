@@ -2,15 +2,11 @@
 import React, { useState } from "react";
 import { PricingCard } from "./PricingCard";
 import { AddOnsSection } from "./AddOnsSection";
-import { ContactSalesModal } from "./ContactSalesModal";
 
 const PricingSection = () => {
-  const [showContactModal, setShowContactModal] = useState(false);
-
   const plans = [
     {
       name: "Plan Esencial SAT",
-      originalPrice: "$299 USD/mes",
       price: "$149 USD/mes + IVA",
       description: "Ideal para empresas pequeñas que inician con cumplimiento SAT",
       features: [
@@ -25,7 +21,6 @@ const PricingSection = () => {
     },
     {
       name: "Plan Gestión IA",
-      originalPrice: "$599 USD/mes",
       price: "$299 USD/mes + IVA",
       description: "Para empresas en crecimiento que buscan automatización",
       features: [
@@ -42,7 +37,6 @@ const PricingSection = () => {
     },
     {
       name: "Plan Automatización Total",
-      originalPrice: "$999 USD/mes",
       price: "$499 USD/mes + IVA",
       description: "Solución completa para empresas establecidas",
       features: [
@@ -70,8 +64,7 @@ const PricingSection = () => {
       ],
       isEnterprise: true,
       buttonText: "Contactar Ventas",
-      buttonLink: "#",
-      onContactSales: () => setShowContactModal(true)
+      buttonLink: "#"
     }
   ];
 
@@ -93,11 +86,6 @@ const PricingSection = () => {
       </div>
 
       <AddOnsSection />
-      
-      <ContactSalesModal 
-        isOpen={showContactModal}
-        onClose={() => setShowContactModal(false)}
-      />
     </section>
   );
 };
