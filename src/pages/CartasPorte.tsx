@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { AppSidebar } from '@/components/AppSidebar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +13,10 @@ export default function CartasPorte() {
 
   if (showForm) {
     return (
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full">
         <AppSidebar />
         <SidebarInset className="flex-1">
+          <GlobalHeader />
           <div className="p-3 md:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 space-y-3 sm:space-y-0">
               <h1 className="text-xl md:text-2xl font-bold">Nueva Carta Porte</h1>
@@ -34,9 +36,10 @@ export default function CartasPorte() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen w-full">
       <AppSidebar />
       <SidebarInset className="flex-1">
+        <GlobalHeader />
         <div className="p-3 md:p-6 space-y-4 md:space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
             <h1 className="text-2xl md:text-3xl font-bold">Cartas Porte</h1>

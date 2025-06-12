@@ -1,16 +1,12 @@
 
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { UserMenu } from "@/components/UserMenu";
+import { GlobalHeader } from "@/components/GlobalHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Plus,
-  Calendar,
-  MapPin,
   RefreshCw,
-  Bell,
   BrainCircuit,
   AlertTriangle,
   BarChart3,
@@ -33,29 +29,7 @@ const Dashboard = () => {
     <div className="min-h-screen flex w-full bg-gray-50">
       <AppSidebar />
       <main className="flex-1 w-full">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-base text-gray-600">Control integral de tus operaciones</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Actualizar
-              </Button>
-              <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Carta Porte
-              </Button>
-              <UserMenu />
-            </div>
-          </div>
-        </header>
+        <GlobalHeader />
 
         <div className="p-6 space-y-6">
           {/* Métricas principales */}

@@ -1,6 +1,6 @@
 
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { GlobalHeader } from "@/components/GlobalHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,147 +10,69 @@ import {
   Search,
   Filter,
   Truck,
-  Fuel,
   Calendar,
-  User,
   AlertTriangle,
-  CheckCircle
+  Fuel,
+  Wrench
 } from "lucide-react";
 
 const Vehiculos = () => {
   const vehiculos = [
     {
       id: "1",
-      placas: "ABC-123-45",
+      placa: "ABC-123-45",
       marca: "Freightliner",
       modelo: "Cascadia",
-      año: "2020",
+      año: 2020,
       tipo: "Tractocamión",
-      conductor: "Juan Pérez Martínez",
-      status: "En Ruta",
-      statusColor: "bg-blue-100 text-blue-800",
-      ubicacion: "CDMX → Guadalajara",
-      kilometraje: "245,380 km",
-      ultimoMantenimiento: "2024-01-05",
-      proximoMantenimiento: "2024-02-05",
-      verificacion: "2024-08-15",
-      seguro: "2024-12-30",
-      combustible: "85%"
-    },
-    {
-      id: "2",
-      placas: "DEF-678-90",
-      marca: "Volvo",
-      modelo: "VNL 760",
-      año: "2019",
-      tipo: "Tractocamión",
-      conductor: "María García López",
-      status: "Disponible",
+      status: "Activo",
       statusColor: "bg-green-100 text-green-800",
-      ubicacion: "Base Monterrey",
-      kilometraje: "312,150 km",
+      conductor: "Juan Pérez",
+      ubicacion: "En ruta - CDMX → Guadalajara",
       ultimoMantenimiento: "2024-01-10",
-      proximoMantenimiento: "2024-02-10",
-      verificacion: "2024-09-22",
-      seguro: "2025-01-15",
-      combustible: "92%"
+      proximoMantenimiento: "2024-04-10",
+      kilometraje: 245000,
+      combustible: 85
     },
     {
-      id: "3",
-      placas: "GHI-234-56",
+      id: "2", 
+      placa: "DEF-678-90",
       marca: "Kenworth",
       modelo: "T680",
-      año: "2021",
+      año: 2019,
       tipo: "Tractocamión",
-      conductor: "Carlos López Hernández",
-      status: "Mantenimiento",
-      statusColor: "bg-yellow-100 text-yellow-800",
-      ubicacion: "Taller Central",
-      kilometraje: "189,760 km",
-      ultimoMantenimiento: "2024-01-15",
-      proximoMantenimiento: "2024-01-20",
-      verificacion: "2024-06-10",
-      seguro: "2024-11-25",
-      combustible: "15%"
-    },
-    {
-      id: "4",
-      placas: "JKL-789-01",
-      marca: "Mercedes-Benz",
-      modelo: "Actros",
-      año: "2018",
-      tipo: "Camión Rígido",
-      conductor: "Ana Rodríguez Flores",
-      status: "Fuera de Servicio",
-      statusColor: "bg-red-100 text-red-800",
-      ubicacion: "Base León",
-      kilometraje: "420,890 km",
-      ultimoMantenimiento: "2023-12-20",
-      proximoMantenimiento: "Vencido",
-      verificacion: "2024-03-05",
-      seguro: "2024-02-10",
-      combustible: "0%"
+      status: "Disponible",
+      statusColor: "bg-blue-100 text-blue-800",
+      conductor: "No asignado",
+      ubicacion: "Base Monterrey",
+      ultimoMantenimiento: "2024-01-05",
+      proximoMantenimiento: "2024-04-05",
+      kilometraje: 198000,
+      combustible: 92
     }
   ];
-
-  const isMaintenanceDue = (fecha: string) => {
-    if (fecha === "Vencido") return true;
-    const today = new Date();
-    const maintenanceDate = new Date(fecha);
-    const daysUntilMaintenance = Math.ceil((maintenanceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilMaintenance <= 7;
-  };
-
-  const isDocumentExpiring = (fecha: string) => {
-    const today = new Date();
-    const expirationDate = new Date(fecha);
-    const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiration <= 30;
-  };
-
-  const getFuelColor = (fuel: string) => {
-    const percentage = parseInt(fuel);
-    if (percentage <= 20) return "text-red-600";
-    if (percentage <= 50) return "text-yellow-600";
-    return "text-green-600";
-  };
 
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
       <AppSidebar />
-      <main className="flex-1">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Vehículos</h1>
-                <p className="text-gray-600">Gestiona tu flota de vehículos</p>
-              </div>
-            </div>
-            <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Registrar Vehículo
-            </Button>
-          </div>
-        </header>
+      <main className="flex-1 w-full">
+        <GlobalHeader />
 
-        <div className="p-6">
+        <div className="p-3 md:p-6">
           {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
+          <Card className="mb-4 md:mb-6">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input 
-                      placeholder="Buscar por placas, marca, conductor..." 
-                      className="pl-10"
+                      placeholder="Buscar por placa, marca, modelo..." 
+                      className="pl-10 text-sm"
                     />
                   </div>
                 </div>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full md:w-auto">
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
                 </Button>
@@ -159,154 +81,107 @@ const Vehiculos = () => {
           </Card>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-6">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">23</div>
-                  <div className="text-sm text-gray-600">Total Vehículos</div>
+                  <div className="text-lg md:text-2xl font-bold text-gray-900">24</div>
+                  <div className="text-xs md:text-sm text-gray-600">Total Vehículos</div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">15</div>
-                  <div className="text-sm text-gray-600">En Ruta</div>
+                  <div className="text-lg md:text-2xl font-bold text-green-600">18</div>
+                  <div className="text-xs md:text-sm text-gray-600">Activos</div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">6</div>
-                  <div className="text-sm text-gray-600">Disponibles</div>
+                  <div className="text-lg md:text-2xl font-bold text-blue-600">6</div>
+                  <div className="text-xs md:text-sm text-gray-600">Disponibles</div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">2</div>
-                  <div className="text-sm text-gray-600">Mantenimiento</div>
+                  <div className="text-lg md:text-2xl font-bold text-orange-600">3</div>
+                  <div className="text-xs md:text-sm text-gray-600">Mantenimiento</div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Vehículos Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Vehiculos Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {vehiculos.map((vehiculo) => (
               <Card key={vehiculo.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-3 md:pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="bg-trucking-blue-100 p-3 rounded-lg">
                         <Truck className="h-6 w-6 text-trucking-blue-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{vehiculo.placas}</CardTitle>
-                        <p className="text-sm text-gray-600">
+                        <CardTitle className="text-base md:text-lg">{vehiculo.placa}</CardTitle>
+                        <p className="text-xs md:text-sm text-gray-600">
                           {vehiculo.marca} {vehiculo.modelo} {vehiculo.año}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={vehiculo.statusColor}>
-                        {vehiculo.status}
-                      </Badge>
-                      {(isMaintenanceDue(vehiculo.proximoMantenimiento) || 
-                        isDocumentExpiring(vehiculo.verificacion) || 
-                        isDocumentExpiring(vehiculo.seguro)) && (
-                        <AlertTriangle className="h-4 w-4 text-orange-500" />
-                      )}
-                    </div>
+                    <Badge className={vehiculo.statusColor}>
+                      {vehiculo.status}
+                    </Badge>
                   </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-xs md:text-sm">
                     <div>
-                      <span className="text-gray-500">Tipo:</span>
-                      <div className="font-medium">{vehiculo.tipo}</div>
+                      <p className="text-gray-600">Conductor</p>
+                      <p className="font-medium">{vehiculo.conductor}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Kilometraje:</span>
-                      <div className="font-medium">{vehiculo.kilometraje}</div>
-                    </div>
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="truncate">{vehiculo.conductor}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Fuel className={`h-4 w-4 mr-2 ${getFuelColor(vehiculo.combustible)}`} />
-                      <span className={getFuelColor(vehiculo.combustible)}>
-                        {vehiculo.combustible}
-                      </span>
+                      <p className="text-gray-600">Tipo</p>
+                      <p className="font-medium">{vehiculo.tipo}</p>
                     </div>
                   </div>
 
                   <div className="border-t pt-4">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Ubicación:</span>
-                        <span className="font-medium">{vehiculo.ubicacion}</span>
+                    <p className="text-xs md:text-sm text-gray-600 mb-2">Ubicación actual</p>
+                    <p className="font-medium text-sm md:text-base flex items-center">
+                      <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                      {vehiculo.ubicacion}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <Fuel className="h-4 w-4 mr-1 text-blue-500" />
+                        <span className="text-sm font-medium">{vehiculo.combustible}%</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Próximo Mantenimiento:</span>
-                        <span className={`font-medium ${
-                          isMaintenanceDue(vehiculo.proximoMantenimiento) 
-                            ? 'text-red-600' 
-                            : 'text-gray-900'
-                        }`}>
-                          {vehiculo.proximoMantenimiento}
-                        </span>
+                      <p className="text-xs text-gray-600">Combustible</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <Wrench className="h-4 w-4 mr-1 text-orange-500" />
+                        <span className="text-sm font-medium">15 días</span>
                       </div>
+                      <p className="text-xs text-gray-600">Próx. Mant.</p>
                     </div>
                   </div>
 
-                  {/* Document Status */}
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Estado de Documentos</h4>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span>Verificación:</span>
-                        {isDocumentExpiring(vehiculo.verificacion) ? (
-                          <AlertTriangle className="h-3 w-3 text-orange-500" />
-                        ) : (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Seguro:</span>
-                        {isDocumentExpiring(vehiculo.seguro) ? (
-                          <AlertTriangle className="h-3 w-3 text-orange-500" />
-                        ) : (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {(isMaintenanceDue(vehiculo.proximoMantenimiento) || 
-                    isDocumentExpiring(vehiculo.verificacion) || 
-                    isDocumentExpiring(vehiculo.seguro)) && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-4 w-4 text-orange-500 mr-2" />
-                        <span className="text-sm text-orange-700">
-                          Requiere atención: documentos próximos a vencer
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs">
                       Ver Detalles
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Programar Mant.
+                    <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white flex-1 text-xs">
+                      Asignar Viaje
                     </Button>
                   </div>
                 </CardContent>

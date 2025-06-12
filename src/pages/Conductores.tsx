@@ -1,6 +1,5 @@
-
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { GlobalHeader } from "@/components/GlobalHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,22 +91,7 @@ const Conductores = () => {
     <div className="min-h-screen flex w-full bg-gray-50">
       <AppSidebar />
       <main className="flex-1 w-full">
-        {/* Header - Mobile optimized */}
-        <header className="bg-white border-b border-gray-200 p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Conductores</h1>
-                <p className="text-sm md:text-base text-gray-600 hidden sm:block">Gestiona tu equipo de conductores</p>
-              </div>
-            </div>
-            <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600 w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Conductor
-            </Button>
-          </div>
-        </header>
+        <GlobalHeader />
 
         <div className="p-3 md:p-6">
           {/* Filters - Mobile optimized */}

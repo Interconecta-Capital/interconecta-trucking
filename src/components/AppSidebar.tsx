@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from 'sonner';
 
 const menuItems = [
   {
@@ -53,6 +55,16 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Sesión cerrada exitosamente');
+    } catch (error: any) {
+      toast.error('Error al cerrar sesión: ' + error.message);
+    }
+  };
 
   return (
     <Sidebar>
@@ -96,11 +108,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="space-y-2">
-          <Button variant="ghost" size="sm" className="w-full justify-start">
-            <Settings className="h-4 w-4 mr-2" />
-            Configuración
-          </Button>
-          <Button variant="ghost" size="sm" className="w-full justify-start text-red-400 hover:text-red-300">
+          <Button variant="ghost" size="sm" className="w-full justify-start text-red-400 hover:text-red-300" onClick={handleSignOut}>
             <LogOut className="h-4 w-4 mr-2" />
             Cerrar Sesión
           </Button>
