@@ -60,12 +60,31 @@ export const useIntegraciones = () => {
     return multiTenancyService.configurarIntegraciones(integraciones);
   };
 
+  const obtenerConfiguracionIntegraciones = async () => {
+    return multiTenancyService.getConfiguracionIntegraciones();
+  };
+
   // Verificar si las integraciones están configuradas
   const integracionesDisponibles = {
     mapbox: mapService.isConfigured(),
-    webhooks: !!tenantConfig?.configuracion?.integraciones?.webhook_urls,
-    facturacion: !!tenantConfig?.configuracion?.facturacion
+    webhooks: false, // Se actualizará cuando se cargue la configuración
+    facturacion: false // Se actualizará cuando se cargue la configuración
   };
+
+  // Cargar configuraciones al inicializar
+  useEffect(() => {
+    const cargarConfiguraciones = async () => {
+      if (tenantConfig) {
+        const integraciones = await obtenerConfiguracionIntegraciones();
+        const facturacion = await multiTenancyService.getConfiguracionFacturacion();
+        
+        integracionesDisponibles.webhooks = !!integraciones?.webhook_urls;
+        integracionesDisponibles.facturacion = !!facturacion;
+      }
+    };
+
+    cargarConfiguraciones();
+  }, [tenantConfig]);
 
   return {
     // Estado
@@ -86,6 +105,7 @@ export const useIntegraciones = () => {
     obtenerEstadisticasTenant,
     configurarTema,
     configurarIntegraciones,
+    obtenerConfiguracionIntegraciones,
 
     // Servicios directos
     webhookService,

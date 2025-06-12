@@ -97,14 +97,14 @@ class MultiTenancyService {
     }
   }
 
-  // Obtener datos filtrados por tenant
-  async getDataWithTenantFilter(tabla: string, filters: any = {}) {
+  // Obtener datos de cartas porte filtrados por tenant
+  async getCartasPorteByTenant(filters: any = {}) {
     if (!this.currentTenant) {
       throw new Error('No hay tenant configurado');
     }
 
     const { data, error } = await supabase
-      .from(tabla)
+      .from('cartas_porte')
       .select('*')
       .eq('tenant_id', this.currentTenant.id)
       .match(filters);
@@ -113,22 +113,16 @@ class MultiTenancyService {
     return data;
   }
 
-  // Configurar tema personalizado por tenant
+  // Configurar tema personalizado por tenant (usando metadata en lugar de configuracion)
   async configurarTema(configuracion: any) {
     if (!this.currentTenant) return false;
 
     try {
-      const { error } = await supabase
-        .from('tenants')
-        .update({
-          configuracion: {
-            ...this.currentTenant.configuracion,
-            tema: configuracion
-          }
-        })
-        .eq('id', this.currentTenant.id);
-
-      return !error;
+      // Por ahora guardamos la configuración en el localStorage hasta que se agregue el campo a la DB
+      localStorage.setItem(`tenant_tema_${this.currentTenant.id}`, JSON.stringify(configuracion));
+      
+      console.log('Configuración de tema guardada localmente:', configuracion);
+      return true;
     } catch (error) {
       console.error('Error configurando tema:', error);
       return false;
@@ -171,22 +165,14 @@ class MultiTenancyService {
     }
   }
 
-  // Configurar integraciones por tenant
+  // Configurar integraciones por tenant (usando localStorage temporalmente)
   async configurarIntegraciones(integraciones: any) {
     if (!this.currentTenant) return false;
 
     try {
-      const { error } = await supabase
-        .from('tenants')
-        .update({
-          configuracion: {
-            ...this.currentTenant.configuracion,
-            integraciones
-          }
-        })
-        .eq('id', this.currentTenant.id);
-
-      return !error;
+      localStorage.setItem(`tenant_integraciones_${this.currentTenant.id}`, JSON.stringify(integraciones));
+      console.log('Configuración de integraciones guardada localmente:', integraciones);
+      return true;
     } catch (error) {
       console.error('Error configurando integraciones:', error);
       return false;
@@ -197,7 +183,13 @@ class MultiTenancyService {
   async getConfiguracionFacturacion() {
     if (!this.currentTenant) return null;
 
-    return this.currentTenant.configuracion.facturacion || null;
+    try {
+      const config = localStorage.getItem(`tenant_facturacion_${this.currentTenant.id}`);
+      return config ? JSON.parse(config) : null;
+    } catch (error) {
+      console.error('Error obteniendo configuración de facturación:', error);
+      return null;
+    }
   }
 
   // Guardar configuración de facturación
@@ -205,20 +197,38 @@ class MultiTenancyService {
     if (!this.currentTenant) return false;
 
     try {
-      const { error } = await supabase
-        .from('tenants')
-        .update({
-          configuracion: {
-            ...this.currentTenant.configuracion,
-            facturacion: config
-          }
-        })
-        .eq('id', this.currentTenant.id);
-
-      return !error;
+      localStorage.setItem(`tenant_facturacion_${this.currentTenant.id}`, JSON.stringify(config));
+      console.log('Configuración de facturación guardada localmente:', config);
+      return true;
     } catch (error) {
       console.error('Error guardando configuración de facturación:', error);
       return false;
+    }
+  }
+
+  // Obtener configuración de integraciones
+  async getConfiguracionIntegraciones() {
+    if (!this.currentTenant) return null;
+
+    try {
+      const config = localStorage.getItem(`tenant_integraciones_${this.currentTenant.id}`);
+      return config ? JSON.parse(config) : null;
+    } catch (error) {
+      console.error('Error obteniendo configuración de integraciones:', error);
+      return null;
+    }
+  }
+
+  // Obtener configuración de tema
+  async getConfiguracionTema() {
+    if (!this.currentTenant) return null;
+
+    try {
+      const config = localStorage.getItem(`tenant_tema_${this.currentTenant.id}`);
+      return config ? JSON.parse(config) : null;
+    } catch (error) {
+      console.error('Error obteniendo configuración de tema:', error);
+      return null;
     }
   }
 }
