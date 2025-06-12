@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,8 @@ import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
 import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
+import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -168,6 +169,14 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  
+  const {
+    unconfirmedEmail,
+    showUnconfirmedDialog,
+    checkIfUserIsUnconfirmed,
+    closeUnconfirmedDialog,
+    handleVerificationSent,
+  } = useUnconfirmedUserDetection();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,85 +187,122 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
       toast.success('¡Bienvenido de vuelta!');
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.message || 'Error al iniciar sesión');
+      // Check if this is an unconfirmed user
+      const isUnconfirmed = await checkIfUserIsUnconfirmed(email, error);
+      
+      if (!isUnconfirmed) {
+        // Show original error if not unconfirmed user issue
+        toast.error(error.message || 'Error al iniciar sesión');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <SocialAuthButtons mode="login" />
-      
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-interconecta-border-subtle" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
-            O accede con
-          </span>
-        </div>
-      </div>
-      
-      <div className="space-y-3">
-        <Button
-          onClick={onShowMagicLink}
-          variant="outline"
-          className="w-full border-interconecta-border-subtle text-interconecta-text-primary hover:bg-interconecta-bg-alternate font-inter"
-        >
-          Link Mágico (Sin contraseña)
-        </Button>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="login-email" className="font-inter">
-            Correo Electrónico
-          </Label>
-          <Input
-            id="login-email"
-            type="email"
-            placeholder="tu@empresa.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="border-interconecta-border-subtle"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="login-password" className="font-inter">
-            Contraseña
-          </Label>
-          <Input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="border-interconecta-border-subtle"
-          />
+    <>
+      <div className="space-y-6">
+        <SocialAuthButtons mode="login" />
+        
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-interconecta-border-subtle" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
+              O accede con
+            </span>
+          </div>
         </div>
         
-        <div className="text-right">
-          <button
-            type="button"
-            onClick={onShowForgotPassword}
-            className="text-sm text-interconecta-primary hover:text-interconecta-accent font-inter underline"
+        <div className="space-y-3">
+          <Button
+            onClick={onShowMagicLink}
+            variant="outline"
+            className="w-full border-interconecta-border-subtle text-interconecta-text-primary hover:bg-interconecta-bg-alternate font-inter"
           >
-            ¿Olvidaste tu contraseña?
-          </button>
+            Link Mágico (Sin contraseña)
+          </Button>
         </div>
         
-        <Button 
-          type="submit" 
-          className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
-          disabled={loading}
-        >
-          {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-        </Button>
-      </form>
-    </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="login-email" className="font-inter">
+              Correo Electrónico
+            </Label>
+            <Input
+              id="login-email"
+              type="email"
+              placeholder="tu@empresa.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="border-interconecta-border-subtle"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="login-password" className="font-inter">
+              Contraseña
+            </Label>
+            <Input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="border-interconecta-border-subtle"
+            />
+          </div>
+          
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={onShowForgotPassword}
+              className="text-sm text-interconecta-primary hover:text-interconecta-accent font-inter underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
+            disabled={loading}
+          >
+            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          </Button>
+        </form>
+        
+        {/* Help text for unconfirmed users */}
+        <div className="text-center">
+          <p className="text-xs text-interconecta-text-secondary font-inter">
+            ¿Te registraste pero no verificaste tu correo?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                if (email) {
+                  checkIfUserIsUnconfirmed(email, { message: 'Email not confirmed' });
+                } else {
+                  toast.error('Por favor ingresa tu correo electrónico primero');
+                }
+              }}
+              className="text-interconecta-primary hover:text-interconecta-accent underline"
+            >
+              Reenviar verificación
+            </button>
+          </p>
+        </div>
+      </div>
+      
+      {/* Unconfirmed User Dialog */}
+      {showUnconfirmedDialog && unconfirmedEmail && (
+        <UnconfirmedUserDialog
+          email={unconfirmedEmail}
+          onClose={closeUnconfirmedDialog}
+          onVerificationSent={handleVerificationSent}
+        />
+      )}
+    </>
   );
 }
 

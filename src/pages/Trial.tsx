@@ -9,8 +9,18 @@ import { toast } from 'sonner';
 import { ArrowLeft, Check, Calendar } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
+import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
+import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 
 export default function Trial() {
+  const {
+    unconfirmedEmail,
+    showUnconfirmedDialog,
+    checkIfUserIsUnconfirmed,
+    closeUnconfirmedDialog,
+    handleVerificationSent,
+  } = useUnconfirmedUserDetection();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -57,7 +67,12 @@ export default function Trial() {
         navigate('/dashboard');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Error al iniciar la prueba gratuita');
+      // Check if this might be an existing unconfirmed user
+      const isUnconfirmed = await checkIfUserIsUnconfirmed(formData.email, error);
+      
+      if (!isUnconfirmed) {
+        toast.error(error.message || 'Error al iniciar la prueba gratuita');
+      }
     } finally {
       setLoading(false);
     }
@@ -268,6 +283,18 @@ export default function Trial() {
           </div>
         </div>
       </div>
+      
+      {/* Unconfirmed User Dialog */}
+      {showUnconfirmedDialog && unconfirmedEmail && (
+        <UnconfirmedUserDialog
+          email={unconfirmedEmail}
+          onClose={closeUnconfirmedDialog}
+          onVerificationSent={() => {
+            handleVerificationSent();
+            setShowVerification(true);
+          }}
+        />
+      )}
     </div>
   );
 }
