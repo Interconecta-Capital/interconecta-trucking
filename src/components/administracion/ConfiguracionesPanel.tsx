@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings, Bell, Database, Security } from 'lucide-react';
+import { Settings, Bell, Database, Shield } from 'lucide-react';
 
 export function ConfiguracionesPanel() {
   return (
@@ -66,7 +66,7 @@ export function ConfiguracionesPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Security className="h-5 w-5" />
+            <Shield className="h-5 w-5" />
             Configuración de Seguridad
           </CardTitle>
         </CardHeader>
