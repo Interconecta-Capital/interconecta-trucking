@@ -69,6 +69,10 @@ export const PlanSummaryCard = () => {
     return enPeriodoPrueba() || suscripcion.plan?.nombre === 'Básico';
   };
 
+  const handlePortalClick = () => {
+    abrirPortalCliente();
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
@@ -113,7 +117,7 @@ export const PlanSummaryCard = () => {
           
           {suscripcion.status === 'active' && (
             <Button
-              onClick={abrirPortalCliente}
+              onClick={handlePortalClick}
               disabled={isOpeningPortal}
               variant="outline"
               size="sm"
