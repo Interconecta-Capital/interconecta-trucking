@@ -58,12 +58,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center space-x-3">
-          <div className="bg-gradient-trucking p-2 rounded-lg">
-            <Truck className="h-6 w-6 text-white" />
-          </div>
+          <img 
+            src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+            alt="Interconecta Trucking Logo"
+            className="h-8 w-8 rounded-lg"
+          />
           <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground">TruckFlow</h2>
-            <p className="text-xs text-sidebar-foreground/60">Transportes ABC S.A.</p>
+            <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
+            <p className="text-xs text-sidebar-foreground/60 font-inter">Transportes ABC S.A.</p>
           </div>
         </div>
       </SidebarHeader>
