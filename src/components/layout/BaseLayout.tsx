@@ -4,6 +4,7 @@ import { GlobalHeader } from '@/components/GlobalHeader';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface BaseLayoutProps {
   children: ReactNode;
