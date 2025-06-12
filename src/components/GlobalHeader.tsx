@@ -30,20 +30,6 @@ export function GlobalHeader() {
       <SidebarTrigger />
       
       <div className="flex flex-1 items-center gap-2">
-        {/* Logo/Título - Solo en desktop, nada en móvil */}
-        {!isMobile && (
-          <div className="flex items-center space-x-3 mr-4">
-            <img 
-              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-              alt="Interconecta Trucking Logo"
-              className="h-8 w-8 rounded-lg"
-            />
-            <h1 className="text-lg font-bold font-sora text-interconecta-primary">
-              Interconecta Trucking
-            </h1>
-          </div>
-        )}
-
         {/* Barra de búsqueda - Optimizada para móvil */}
         <form className="flex-1 max-w-md">
           <div className="relative">

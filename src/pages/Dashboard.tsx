@@ -1,25 +1,24 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricsCards } from '@/components/dashboard/MetricsCards';
-import { CalendarView } from '@/components/dashboard/CalendarView';
+import { EnhancedCalendarView } from '@/components/dashboard/EnhancedCalendarView';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
-import { TrendChart } from '@/components/dashboard/TrendChart';
 import { AnalyticsPanel } from '@/components/dashboard/AnalyticsPanel';
+import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreeting';
+import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useSocios } from '@/hooks/useSocios';
-import { FileText, Car, User, Users, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { FileText, Car, User, Users, AlertTriangle } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Dashboard() {
   const { cartasPorte, loading: loadingCartas } = useCartasPorte();
   const { vehiculos, loading: loadingVehiculos } = useVehiculos();
   const { conductores, loading: loadingConductores } = useConductores();
   const { socios, loading: loadingSocios } = useSocios();
-
-  // Estado temporal para el TrendChart
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const isMobile = useIsMobile();
 
   // Calcular métricas reales
   const totalCartasPorte = cartasPorte.length;
@@ -40,25 +39,20 @@ export default function Dashboard() {
 
   const isLoading = loadingCartas || loadingVehiculos || loadingConductores || loadingSocios;
 
-  // Datos temporales para el TrendChart hasta que implementemos analíticas reales
-  const mockTrendData = [
-    { fecha: '2024-01-01', cartasPorte: 5, ingresos: 50000, entregas: 4 },
-    { fecha: '2024-01-02', cartasPorte: 8, ingresos: 75000, entregas: 7 },
-    { fecha: '2024-01-03', cartasPorte: 12, ingresos: 120000, entregas: 11 },
-    { fecha: '2024-01-04', cartasPorte: 6, ingresos: 60000, entregas: 5 },
-    { fecha: '2024-01-05', cartasPorte: 15, ingresos: 150000, entregas: 14 },
-  ];
+  // Determinar si mostrar la tarjeta de bienvenida
+  const showWelcomeCard = !isLoading && 
+    totalCartasPorte === 0 && 
+    totalVehiculos === 0 && 
+    totalConductores === 0 && 
+    totalSocios === 0;
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Bienvenido a tu panel de control
-          </p>
-        </div>
-      </div>
+      {/* Saludo personalizado */}
+      <PersonalizedGreeting />
+
+      {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
+      <WelcomeCard show={showWelcomeCard} />
 
       {/* Métricas principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -157,61 +151,31 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Acciones rápidas y calendario */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="lg:col-span-1">
+      {/* Distribución para Web y Móvil */}
+      {isMobile ? (
+        // Layout para móvil - estructura vertical
+        <div className="space-y-4">
           <QuickActionsCard />
+          <EnhancedCalendarView />
+          <AnalyticsPanel />
         </div>
-        <div className="lg:col-span-2">
-          <CalendarView />
-        </div>
-      </div>
-
-      {/* Gráficos y análisis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <TrendChart 
-          data={mockTrendData}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          isLoading={isLoading}
-        />
-        <AnalyticsPanel />
-      </div>
-
-      {/* Métricas adicionales si no hay datos */}
-      {!isLoading && totalCartasPorte === 0 && totalVehiculos === 0 && totalConductores === 0 && totalSocios === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>¡Bienvenido a tu Dashboard!</CardTitle>
-            <CardDescription>
-              Comienza configurando tu sistema para ver estadísticas en tiempo real
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="text-center p-4 border rounded-lg">
-                <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <h3 className="font-semibold">Cartas de Porte</h3>
-                <p className="text-sm text-muted-foreground">Crea tu primera carta porte</p>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <Car className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                <h3 className="font-semibold">Vehículos</h3>
-                <p className="text-sm text-muted-foreground">Registra tu flota</p>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <User className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                <h3 className="font-semibold">Conductores</h3>
-                <p className="text-sm text-muted-foreground">Añade tu equipo</p>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <Users className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-                <h3 className="font-semibold">Socios</h3>
-                <p className="text-sm text-muted-foreground">Gestiona clientes y proveedores</p>
-              </div>
+      ) : (
+        // Layout para desktop - calendario a la izquierda, acciones a la derecha
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="lg:col-span-2">
+              <EnhancedCalendarView />
             </div>
-          </CardContent>
-        </Card>
+            <div className="lg:col-span-1">
+              <QuickActionsCard />
+            </div>
+          </div>
+
+          {/* Solo Analytics Panel - sin TrendChart */}
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 md:gap-6">
+            <AnalyticsPanel />
+          </div>
+        </>
       )}
     </div>
   );
