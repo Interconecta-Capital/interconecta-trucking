@@ -16,19 +16,23 @@ export function UbicacionBasicInfo({
   onTipoChange, 
   onFechaChange 
 }: UbicacionBasicInfoProps) {
+  
+  const handleTipoChange = (value: string) => {
+    // Prevenir navegación no deseada
+    if (value && (value === 'Origen' || value === 'Destino' || value === 'Paso Intermedio')) {
+      onTipoChange(value as 'Origen' | 'Destino' | 'Paso Intermedio');
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="space-y-2">
         <Label>Tipo de Ubicación *</Label>
         <Select 
           value={formData.tipoUbicacion || ''} 
-          onValueChange={(value) => {
-            if (value) {
-              onTipoChange(value as 'Origen' | 'Destino' | 'Paso Intermedio');
-            }
-          }}
+          onValueChange={handleTipoChange}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Seleccionar tipo..." />
           </SelectTrigger>
           <SelectContent>

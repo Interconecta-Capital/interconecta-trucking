@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,20 +44,22 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedValue(inputValue);
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [inputValue]);
 
-  // Queries para código postal y colonias
+  // Queries para código postal y colonias - solo buscar si el CP es válido
+  const shouldSearch = debouncedValue.length === 5 && /^\d{5}$/.test(debouncedValue);
+  
   const { data: cpInfo, isLoading: loadingCP, error: errorCP } = useCodigoPostal(
     debouncedValue,
-    debouncedValue.length === 5
+    shouldSearch
   );
 
   const { data: colonias = [], isLoading: loadingColonias } = useColoniasPorCP(
     debouncedValue,
-    debouncedValue.length === 5 && !!cpInfo
+    shouldSearch && !!cpInfo
   );
 
   // Actualizar información cuando cambie cpInfo
@@ -77,20 +80,22 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
   };
 
   const handleColoniaSelect = (clave: string) => {
-    onColoniaChange?.(clave);
-    if (onInfoChange) {
-      const colonia = colonias.find(c => c.clave_colonia === clave);
-      onInfoChange({
-        estado: cpInfo?.estado_descripcion,
-        municipio: cpInfo?.municipio_clave,
-        localidad: cpInfo?.localidad_clave || undefined,
-        colonia: colonia?.descripcion
-      });
+    if (onColoniaChange) {
+      onColoniaChange(clave);
+      if (onInfoChange) {
+        const colonia = colonias.find(c => c.clave_colonia === clave);
+        onInfoChange({
+          estado: cpInfo?.estado_descripcion,
+          municipio: cpInfo?.municipio_clave,
+          localidad: cpInfo?.localidad_clave || undefined,
+          colonia: colonia?.descripcion
+        });
+      }
     }
   };
 
-  const isValid = debouncedValue.length === 5 && cpInfo && !errorCP;
-  const isInvalid = debouncedValue.length === 5 && (!cpInfo || errorCP);
+  const isValid = shouldSearch && cpInfo && !errorCP;
+  const isInvalid = shouldSearch && (!cpInfo || errorCP);
 
   return (
     <div className={cn("space-y-3", className)}>

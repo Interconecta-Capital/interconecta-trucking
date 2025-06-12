@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CodigoPostalInput } from '@/components/catalogos/CodigoPostalInput';
-import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
 import { useEstados } from '@/hooks/useCatalogos';
 import { Ubicacion } from '@/hooks/useUbicaciones';
 
@@ -29,6 +28,18 @@ export function UbicacionDomicilioSection({
 }: UbicacionDomicilioSectionProps) {
   const { data: estados = [] } = useEstados();
 
+  const handlePaisChange = (value: string) => {
+    if (value) {
+      onDomicilioChange('pais', value);
+    }
+  };
+
+  const handleEstadoChange = (value: string) => {
+    if (value) {
+      onDomicilioChange('estado', value);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Domicilio</h3>
@@ -37,10 +48,10 @@ export function UbicacionDomicilioSection({
         <div className="space-y-2">
           <Label>País</Label>
           <Select 
-            value={domicilio.pais} 
-            onValueChange={(value) => onDomicilioChange('pais', value)}
+            value={domicilio.pais || 'MEX'} 
+            onValueChange={handlePaisChange}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -60,14 +71,24 @@ export function UbicacionDomicilioSection({
           required
         />
 
-        <CatalogoSelector
-          label="Estado"
-          value={domicilio.estado}
-          onValueChange={(clave) => onDomicilioChange('estado', clave)}
-          items={estados}
-          placeholder="Seleccionar estado..."
-          required
-        />
+        <div className="space-y-2">
+          <Label>Estado *</Label>
+          <Select 
+            value={domicilio.estado || ''} 
+            onValueChange={handleEstadoChange}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Seleccionar estado..." />
+            </SelectTrigger>
+            <SelectContent>
+              {estados.map((estado) => (
+                <SelectItem key={estado.clave} value={estado.clave}>
+                  {estado.clave} - {estado.descripcion}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
