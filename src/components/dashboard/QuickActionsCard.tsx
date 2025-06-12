@@ -1,256 +1,226 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, User, FileText, Building, CalendarIcon, MapPin, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { VehiculoFormModal } from '../forms/VehiculoFormModal';
-import { ConductorFormModal } from '../forms/ConductorFormModal';
-import { SocioFormModal } from '../forms/SocioFormModal';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useConductores } from '@/hooks/useConductores';
-import { useSocios } from '@/hooks/useSocios';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { Plus, FileText, Users, Truck, BarChart3, UserCheck, Wrench, MapPin, CheckCircle, CalendarIcon } from 'lucide-react';
+import { ConductorFormModal } from './ConductorFormModal';
+import { VehiculoFormModal } from './VehiculoFormModal';
+import { SocioFormModal } from './SocioFormModal';
+import { MantenimientoFormModal } from './MantenimientoFormModal';
+import { VerificacionFormModal } from './VerificacionFormModal';
+import { RevisionGPSFormModal } from './RevisionGPSFormModal';
+import { CartaPorteFormModal } from './CartaPorteFormModal';
+
+// Mock data para eventos próximos
+const mockEventos = [
+  {
+    fecha: new Date(2024, 5, 15),
+    tipo: 'viaje',
+    titulo: 'Viaje CDMX - Guadalajara',
+    color: 'bg-green-100 text-green-800'
+  },
+  {
+    fecha: new Date(2024, 5, 18),
+    tipo: 'mantenimiento',
+    titulo: 'Mantenimiento Preventivo',
+    color: 'bg-red-100 text-red-800'
+  },
+  {
+    fecha: new Date(2024, 5, 20),
+    tipo: 'entrega',
+    titulo: 'Entrega Cliente XYZ',
+    color: 'bg-blue-100 text-blue-800'
+  },
+  {
+    fecha: new Date(2024, 5, 22),
+    tipo: 'revision_gps',
+    titulo: 'Revisión GPS',
+    color: 'bg-purple-100 text-purple-800'
+  },
+  {
+    fecha: new Date(2024, 5, 25),
+    tipo: 'verificacion',
+    titulo: 'Verificación Vehicular',
+    color: 'bg-orange-100 text-orange-800'
+  }
+];
 
 export function QuickActionsCard() {
-  const [showVehiculoForm, setShowVehiculoForm] = useState(false);
   const [showConductorForm, setShowConductorForm] = useState(false);
+  const [showVehiculoForm, setShowVehiculoForm] = useState(false);
   const [showSocioForm, setShowSocioForm] = useState(false);
-  const { crearVehiculo } = useVehiculos();
-  const { crearConductor } = useConductores();
-  const { crearSocio } = useSocios();
-  const { user } = useAuth();
-
-  const handleCreateVehiculo = async (data: any) => {
-    await crearVehiculo(data);
-    setShowVehiculoForm(false);
-  };
-
-  const handleCreateConductor = async (data: any) => {
-    await crearConductor(data);
-    setShowConductorForm(false);
-  };
-
-  const handleCreateSocio = async (data: any) => {
-    await crearSocio(data);
-    setShowSocioForm(false);
-  };
-
-  // Query para próximos eventos
-  const { data: eventos = [], isLoading: eventosLoading } = useQuery({
-    queryKey: ['proximos-eventos', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('eventos_calendario')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('fecha_inicio', new Date().toISOString())
-        .order('fecha_inicio', { ascending: true })
-        .limit(3);
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const getEventIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'viaje':
-        return <Truck className="h-4 w-4 text-blue-600" />;
-      case 'mantenimiento':
-        return <Clock className="h-4 w-4 text-orange-600" />;
-      case 'entrega':
-        return <MapPin className="h-4 w-4 text-green-600" />;
-      default:
-        return <CalendarIcon className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getEventBadgeColor = (tipo: string) => {
-    switch (tipo) {
-      case 'viaje':
-        return 'bg-blue-100 text-blue-800';
-      case 'mantenimiento':
-        return 'bg-orange-100 text-orange-800';
-      case 'entrega':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
+  const [showVerificacionForm, setShowVerificacionForm] = useState(false);
+  const [showRevisionGPSForm, setShowRevisionGPSForm] = useState(false);
+  const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Acciones Rápidas */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
-            <CardDescription>
-              Accesos directos a las funciones principales
-            </CardDescription>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Acciones Rápidas
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button 
-              asChild 
-              className="w-full justify-start bg-blue-600 hover:bg-blue-700"
+              className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white h-10"
+              onClick={() => setShowCartaPorteForm(true)}
             >
-              <Link to="/cartas-porte/nuevo">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Carta Porte
-              </Link>
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Carta Porte
             </Button>
             
             <Button 
               variant="outline" 
-              className="w-full justify-start"
+              className="w-full justify-start h-10"
+              onClick={() => setShowCartaPorteForm(true)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Ver Documentos
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowConductorForm(true)}
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Nuevo Conductor
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
               onClick={() => setShowVehiculoForm(true)}
             >
               <Truck className="h-4 w-4 mr-2" />
-              Registrar Vehículo
+              Nuevo Vehículo
             </Button>
             
             <Button 
               variant="outline" 
-              className="w-full justify-start"
-              onClick={() => setShowConductorForm(true)}
-            >
-              <User className="h-4 w-4 mr-2" />
-              Registrar Conductor
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
+              className="w-full justify-start h-10"
               onClick={() => setShowSocioForm(true)}
             >
-              <Building className="h-4 w-4 mr-2" />
-              Registrar Socio
+              <Users className="h-4 w-4 mr-2" />
+              Nuevo Socio
+            </Button>
+
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowMantenimientoForm(true)}
+            >
+              <Wrench className="h-4 w-4 mr-2" />
+              Programar Mantenimiento
+            </Button>
+
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowVerificacionForm(true)}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Programar Verificación
+            </Button>
+
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowRevisionGPSForm(true)}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Revisión GPS
             </Button>
             
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/cartas-porte">
-                <FileText className="h-4 w-4 mr-2" />
-                Ver Cartas Porte
-              </Link>
+            <Button variant="outline" className="w-full justify-start h-10">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Reportes
             </Button>
           </CardContent>
         </Card>
 
-        {/* Próximos Eventos */}
+        {/* Próximos Eventos - Movido al final como resumen */}
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Próximos Eventos</CardTitle>
-                <CardDescription>
-                  Tus próximas actividades programadas
-                </CardDescription>
-              </div>
-              <Button
-                size="sm"
-                asChild
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Link to="/cartas-porte/nuevo">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nuevo
-                </Link>
-              </Button>
-            </div>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Resumen de Próximos Eventos
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {eventosLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : eventos.length === 0 ? (
-              <div className="text-center py-4">
-                <CalendarIcon className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-500 mb-3">
-                  No tienes eventos próximos
-                </p>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  asChild
-                >
-                  <Link to="/cartas-porte/nuevo">
-                    Programar Viaje
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {eventos.map((evento) => (
-                  <div key={evento.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="mt-0.5">
-                      {getEventIcon(evento.tipo_evento)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {evento.titulo}
-                        </h4>
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs ${getEventBadgeColor(evento.tipo_evento)}`}
-                        >
-                          {evento.tipo_evento}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(evento.fecha_inicio).toLocaleDateString('es-ES', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {mockEventos.slice(0, 3).map((evento, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    {evento.tipo === 'viaje' && <Truck className="h-3 w-3 text-green-600" />}
+                    {evento.tipo === 'mantenimiento' && <Wrench className="h-3 w-3 text-red-600" />}
+                    {evento.tipo === 'entrega' && <MapPin className="h-3 w-3 text-orange-600" />}
+                    {evento.tipo === 'revision_gps' && <MapPin className="h-3 w-3 text-purple-600" />}
+                    {evento.tipo === 'verificacion' && <CheckCircle className="h-3 w-3 text-orange-600" />}
+                    <div>
+                      <p className="text-xs font-medium">{evento.titulo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {evento.fecha.toLocaleDateString('es-ES', { 
+                          weekday: 'short', 
+                          day: 'numeric', 
+                          month: 'short' 
                         })}
                       </p>
-                      {evento.descripcion && (
-                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                          {evento.descripcion}
-                        </p>
-                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <Badge variant="outline" className={`${evento.color} text-xs`}>
+                    {evento.tipo.replace('_', ' ')}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="w-full text-xs mt-2">
+              Ver todos los eventos
+            </Button>
           </CardContent>
         </Card>
       </div>
 
-      {/* Modales */}
-      <VehiculoFormModal
-        open={showVehiculoForm}
-        onOpenChange={setShowVehiculoForm}
-        onSubmit={handleCreateVehiculo}
-      />
-      
-      <ConductorFormModal
+      {/* Modales para formularios */}
+      <ConductorFormModal 
         open={showConductorForm}
         onOpenChange={setShowConductorForm}
-        onSubmit={handleCreateConductor}
       />
       
-      <SocioFormModal
+      <VehiculoFormModal 
+        open={showVehiculoForm}
+        onOpenChange={setShowVehiculoForm}
+      />
+      
+      <SocioFormModal 
         open={showSocioForm}
         onOpenChange={setShowSocioForm}
-        onSubmit={handleCreateSocio}
+      />
+
+      <MantenimientoFormModal 
+        open={showMantenimientoForm}
+        onOpenChange={setShowMantenimientoForm}
+      />
+
+      <VerificacionFormModal 
+        open={showVerificacionForm}
+        onOpenChange={setShowVerificacionForm}
+      />
+
+      <RevisionGPSFormModal 
+        open={showRevisionGPSForm}
+        onOpenChange={setShowRevisionGPSForm}
+      />
+
+      <CartaPorteFormModal 
+        open={showCartaPorteForm}
+        onOpenChange={setShowCartaPorteForm}
       />
     </>
   );

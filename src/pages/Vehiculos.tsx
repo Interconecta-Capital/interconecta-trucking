@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { Plus, Search, Edit, Trash2, Car, Wrench, AlertTriangle } from 'lucide-r
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useVehiculos } from '@/hooks/useVehiculos';
-import { useVehiculoConductores } from '@/hooks/useVehiculoConductores';
 import { VehiculoFormModal } from '@/components/forms/VehiculoFormModal';
 import {
   Table,
@@ -200,7 +198,6 @@ export default function Vehiculos() {
                   <TableHead>Marca/Modelo</TableHead>
                   <TableHead>Año</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Conductores</TableHead>
                   <TableHead>Seguro</TableHead>
                   <TableHead>Verificación</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -208,17 +205,82 @@ export default function Vehiculos() {
               </TableHeader>
               <TableBody>
                 {filteredVehiculos.map((vehiculo) => (
-                  <VehiculoRow 
-                    key={vehiculo.id} 
-                    vehiculo={vehiculo}
-                    onEdit={(v) => {
-                      setEditingVehiculo(v);
-                      setIsFormOpen(true);
-                    }}
-                    onDelete={handleDeleteVehiculo}
-                    isUpdating={isUpdating}
-                    isDeleting={isDeleting}
-                  />
+                  <TableRow key={vehiculo.id}>
+                    <TableCell className="font-medium">{vehiculo.placa}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{vehiculo.marca}</div>
+                        <div className="text-sm text-muted-foreground">{vehiculo.modelo}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{vehiculo.anio}</TableCell>
+                    <TableCell>{getEstadoBadge(vehiculo.estado)}</TableCell>
+                    <TableCell>
+                      {vehiculo.vigencia_seguro ? (
+                        <div className="text-sm">
+                          {new Date(vehiculo.vigencia_seguro) < new Date() ? (
+                            <Badge variant="destructive">Vencido</Badge>
+                          ) : (
+                            <Badge variant="default">Vigente</Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Sin información</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {vehiculo.verificacion_vigencia ? (
+                        <div className="text-sm">
+                          {new Date(vehiculo.verificacion_vigencia) < new Date() ? (
+                            <Badge variant="destructive">Vencida</Badge>
+                          ) : (
+                            <Badge variant="default">Vigente</Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Sin información</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingVehiculo(vehiculo);
+                            setIsFormOpen(true);
+                          }}
+                          disabled={isUpdating}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" disabled={isDeleting}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar vehículo?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. El vehículo {vehiculo.placa} será eliminado permanentemente.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteVehiculo(vehiculo.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
@@ -234,128 +296,5 @@ export default function Vehiculos() {
         loading={isCreating || isUpdating}
       />
     </div>
-  );
-}
-
-// Componente separado para la fila del vehículo
-function VehiculoRow({ vehiculo, onEdit, onDelete, isUpdating, isDeleting }) {
-  const { asignaciones, isLoading: loadingConductores } = useVehiculoConductores(vehiculo.id);
-
-  const getEstadoBadge = (estado) => {
-    const variants = {
-      'disponible': 'default',
-      'en_uso': 'secondary',
-      'mantenimiento': 'destructive',
-      'fuera_servicio': 'outline'
-    };
-    
-    const labels = {
-      'disponible': 'Disponible',
-      'en_uso': 'En Uso',
-      'mantenimiento': 'Mantenimiento',
-      'fuera_servicio': 'Fuera de Servicio'
-    };
-
-    return (
-      <Badge variant={variants[estado] || 'outline'}>
-        {labels[estado] || estado}
-      </Badge>
-    );
-  };
-
-  return (
-    <TableRow>
-      <TableCell className="font-medium">{vehiculo.placa}</TableCell>
-      <TableCell>
-        <div>
-          <div className="font-medium">{vehiculo.marca}</div>
-          <div className="text-sm text-muted-foreground">{vehiculo.modelo}</div>
-        </div>
-      </TableCell>
-      <TableCell>{vehiculo.anio}</TableCell>
-      <TableCell>{getEstadoBadge(vehiculo.estado)}</TableCell>
-      <TableCell>
-        {loadingConductores ? (
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
-        ) : asignaciones.length > 0 ? (
-          <div className="space-y-1">
-            {asignaciones.slice(0, 2).map((asignacion) => (
-              <Badge key={asignacion.id} variant="outline" className="text-xs">
-                {asignacion.conductor?.nombre}
-              </Badge>
-            ))}
-            {asignaciones.length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{asignaciones.length - 2} más
-              </Badge>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted-foreground text-sm">Sin asignar</span>
-        )}
-      </TableCell>
-      <TableCell>
-        {vehiculo.vigencia_seguro ? (
-          <div className="text-sm">
-            {new Date(vehiculo.vigencia_seguro) < new Date() ? (
-              <Badge variant="destructive">Vencido</Badge>
-            ) : (
-              <Badge variant="default">Vigente</Badge>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Sin información</span>
-        )}
-      </TableCell>
-      <TableCell>
-        {vehiculo.verificacion_vigencia ? (
-          <div className="text-sm">
-            {new Date(vehiculo.verificacion_vigencia) < new Date() ? (
-              <Badge variant="destructive">Vencida</Badge>
-            ) : (
-              <Badge variant="default">Vigente</Badge>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Sin información</span>
-        )}
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(vehiculo)}
-            disabled={isUpdating}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isDeleting}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Eliminar vehículo?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción no se puede deshacer. El vehículo {vehiculo.placa} será eliminado permanentemente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => onDelete(vehiculo.id)}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Eliminar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </TableCell>
-    </TableRow>
   );
 }
