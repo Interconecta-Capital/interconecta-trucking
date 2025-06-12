@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -116,7 +115,10 @@ export default function Trial() {
     // Real-time RFC validation
     if (field === 'rfc' && sanitizedValue) {
       const validation = validateRFCFormat(sanitizedValue);
-      setRfcValidation(validation);
+      setRfcValidation({ 
+        isValid: validation.isValid, 
+        message: validation.message || '' 
+      });
     } else if (field === 'rfc' && !sanitizedValue) {
       setRfcValidation({ isValid: true, message: '' });
     }
