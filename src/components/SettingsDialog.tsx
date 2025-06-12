@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useTrialTracking } from '@/hooks/useTrialTracking';
+import { useSuscripcion } from '@/hooks/useSuscripcion';
+import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
 import {
   Dialog,
   DialogContent,
@@ -29,8 +30,19 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { user } = useAuth();
-  const { trialInfo, loading } = useTrialTracking();
+  const { 
+    suscripcion, 
+    enPeriodoPrueba, 
+    diasRestantesPrueba,
+    suscripcionVencida,
+    estaBloqueado,
+    abrirPortalCliente,
+    isOpeningPortal
+  } = useSuscripcion();
+  const { obtenerUsoActual } = usePermisosSubscripcion();
   const [activeTab, setActiveTab] = useState('account');
+
+  const usoActual = obtenerUsoActual();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,16 +102,16 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Plan Actual:</span>
-                      <Badge variant={trialInfo.isTrialActive ? 'secondary' : 'default'}>
-                        {trialInfo.isTrialActive ? 'Prueba Gratuita' : 'Plan Premium'}
+                      <Badge variant={enPeriodoPrueba() ? 'secondary' : 'default'}>
+                        {enPeriodoPrueba() ? 'Prueba Gratuita' : (suscripcion?.plan?.nombre || 'Plan Premium')}
                       </Badge>
                     </div>
                     
-                    {trialInfo.isTrialActive && (
+                    {enPeriodoPrueba() && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Días Restantes:</span>
                         <span className="text-sm font-bold text-orange-600">
-                          {trialInfo.daysRemaining} días
+                          {diasRestantesPrueba()} días
                         </span>
                       </div>
                     )}
@@ -134,14 +146,40 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">25</div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {usoActual.cartas_porte.usado}
+                        </div>
                         <div className="text-xs text-gray-600">Cartas Porte</div>
-                        <div className="text-xs text-gray-500">de 50 permitidas</div>
+                        <div className="text-xs text-gray-500">
+                          de {usoActual.cartas_porte.limite || '∞'} permitidas
+                        </div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">8</div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {usoActual.vehiculos.usado}
+                        </div>
                         <div className="text-xs text-gray-600">Vehículos</div>
-                        <div className="text-xs text-gray-500">de 10 permitidos</div>
+                        <div className="text-xs text-gray-500">
+                          de {usoActual.vehiculos.limite || '∞'} permitidos
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {usoActual.conductores.usado}
+                        </div>
+                        <div className="text-xs text-gray-600">Conductores</div>
+                        <div className="text-xs text-gray-500">
+                          de {usoActual.conductores.limite || '∞'} permitidos
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {usoActual.socios.usado}
+                        </div>
+                        <div className="text-xs text-gray-600">Socios</div>
+                        <div className="text-xs text-gray-500">
+                          de {usoActual.socios.limite || '∞'} permitidos
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -158,21 +196,34 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Próxima Facturación:</span>
                     <span className="text-sm">
-                      {trialInfo.trialEndDate ? trialInfo.trialEndDate.toLocaleDateString() : 'N/A'}
+                      {suscripcion?.proximo_pago ? new Date(suscripcion.proximo_pago).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Método de Pago:</span>
-                    <Badge variant="outline">No configurado</Badge>
+                    <Badge variant="outline">
+                      {suscripcion?.stripe_customer_id ? 'Configurado' : 'No configurado'}
+                    </Badge>
                   </div>
 
                   <Separator />
 
-                  <Button className="w-full">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Agregar Método de Pago
-                  </Button>
+                  {suscripcion?.status === 'active' ? (
+                    <Button 
+                      onClick={() => abrirPortalCliente()}
+                      disabled={isOpeningPortal}
+                      className="w-full"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      {isOpeningPortal ? 'Abriendo...' : 'Gestionar Suscripción'}
+                    </Button>
+                  ) : (
+                    <Button className="w-full">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Agregar Método de Pago
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
