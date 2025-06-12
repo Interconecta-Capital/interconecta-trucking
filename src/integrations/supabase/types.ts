@@ -947,6 +947,50 @@ export type Database = {
           },
         ]
       }
+      eventos_viaje: {
+        Row: {
+          automatico: boolean
+          coordenadas: Json | null
+          descripcion: string
+          id: string
+          metadata: Json | null
+          timestamp: string
+          tipo_evento: string
+          ubicacion: string | null
+          viaje_id: string
+        }
+        Insert: {
+          automatico?: boolean
+          coordenadas?: Json | null
+          descripcion: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          tipo_evento: string
+          ubicacion?: string | null
+          viaje_id: string
+        }
+        Update: {
+          automatico?: boolean
+          coordenadas?: Json | null
+          descripcion?: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          tipo_evento?: string
+          ubicacion?: string | null
+          viaje_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_viaje_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       figuras_frecuentes: {
         Row: {
           created_at: string | null
@@ -1965,6 +2009,78 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      viajes: {
+        Row: {
+          carta_porte_id: string
+          conductor_id: string | null
+          created_at: string
+          destino: string
+          estado: string
+          fecha_fin_programada: string
+          fecha_fin_real: string | null
+          fecha_inicio_programada: string
+          fecha_inicio_real: string | null
+          id: string
+          observaciones: string | null
+          origen: string
+          tracking_data: Json | null
+          updated_at: string
+          user_id: string
+          vehiculo_id: string | null
+        }
+        Insert: {
+          carta_porte_id: string
+          conductor_id?: string | null
+          created_at?: string
+          destino: string
+          estado?: string
+          fecha_fin_programada: string
+          fecha_fin_real?: string | null
+          fecha_inicio_programada: string
+          fecha_inicio_real?: string | null
+          id?: string
+          observaciones?: string | null
+          origen: string
+          tracking_data?: Json | null
+          updated_at?: string
+          user_id: string
+          vehiculo_id?: string | null
+        }
+        Update: {
+          carta_porte_id?: string
+          conductor_id?: string | null
+          created_at?: string
+          destino?: string
+          estado?: string
+          fecha_fin_programada?: string
+          fecha_fin_real?: string | null
+          fecha_inicio_programada?: string
+          fecha_inicio_real?: string | null
+          id?: string
+          observaciones?: string | null
+          origen?: string
+          tracking_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          vehiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viajes_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viajes_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
             referencedColumns: ["id"]
           },
         ]

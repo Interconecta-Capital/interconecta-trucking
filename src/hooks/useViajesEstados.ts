@@ -47,34 +47,54 @@ export const useViajesEstados = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('viajes')
-        .select(`
-          *,
-          vehiculos(placa, marca, modelo),
-          conductores(nombre),
-          cartas_porte(folio, rfc_receptor)
-        `)
-        .eq('user_id', user.id)
-        .in('estado', ['programado', 'en_transito', 'retrasado'])
-        .order('fecha_inicio_programada', { ascending: true });
+      console.log('Fetching viajes for user:', user.id);
+      
+      try {
+        // First get the raw viajes data
+        const { data: viajesData, error: viajesError } = await supabase
+          .from('viajes' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .in('estado', ['programado', 'en_transito', 'retrasado'])
+          .order('fecha_inicio_programada', { ascending: true });
 
-      if (error) throw error;
-      return data || [];
+        if (viajesError) {
+          console.error('Error fetching viajes:', viajesError);
+          throw viajesError;
+        }
+
+        console.log('Raw viajes data:', viajesData);
+        return viajesData || [];
+      } catch (error) {
+        console.error('Error in viajes query:', error);
+        return [];
+      }
     },
     enabled: !!user?.id,
   });
 
   // Obtener historial de eventos de un viaje
   const obtenerEventosViaje = async (viajeId: string): Promise<EventoViaje[]> => {
-    const { data, error } = await supabase
-      .from('eventos_viaje')
-      .select('*')
-      .eq('viaje_id', viajeId)
-      .order('timestamp', { ascending: false });
+    console.log('Fetching eventos for viaje:', viajeId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('eventos_viaje' as any)
+        .select('*')
+        .eq('viaje_id', viajeId)
+        .order('timestamp', { ascending: false });
 
-    if (error) throw error;
-    return data || [];
+      if (error) {
+        console.error('Error fetching eventos:', error);
+        throw error;
+      }
+
+      console.log('Eventos data:', data);
+      return data || [];
+    } catch (error) {
+      console.error('Error in obtenerEventosViaje:', error);
+      return [];
+    }
   };
 
   // Cambiar estado de viaje
@@ -91,6 +111,7 @@ export const useViajesEstados = () => {
       ubicacionActual?: string;
     }) => {
       setIsLoading(true);
+      console.log('Changing viaje state:', { viajeId, nuevoEstado, observaciones });
 
       // Actualizar estado del viaje
       const updateData: any = {
@@ -99,7 +120,7 @@ export const useViajesEstados = () => {
       };
 
       // Agregar timestamps según el estado
-      if (nuevoEstado === 'en_transito' && !viajesActivos.find(v => v.id === viajeId)?.fecha_inicio_real) {
+      if (nuevoEstado === 'en_transito') {
         updateData.fecha_inicio_real = new Date().toISOString();
       } else if (nuevoEstado === 'completado') {
         updateData.fecha_fin_real = new Date().toISOString();
@@ -110,13 +131,18 @@ export const useViajesEstados = () => {
       }
 
       const { data: viaje, error: updateError } = await supabase
-        .from('viajes')
+        .from('viajes' as any)
         .update(updateData)
         .eq('id', viajeId)
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating viaje:', updateError);
+        throw updateError;
+      }
+
+      console.log('Updated viaje:', viaje);
 
       // Registrar evento
       await registrarEventoViaje({
@@ -161,20 +187,32 @@ export const useViajesEstados = () => {
     automatico?: boolean;
     metadata?: any;
   }) => {
-    const { error } = await supabase
-      .from('eventos_viaje')
-      .insert({
-        viaje_id: viajeId,
-        tipo_evento: tipoEvento,
-        descripcion,
-        ubicacion,
-        coordenadas,
-        timestamp: new Date().toISOString(),
-        automatico,
-        metadata
-      });
+    console.log('Registering evento:', { viajeId, tipoEvento, descripcion });
+    
+    try {
+      const { error } = await supabase
+        .from('eventos_viaje' as any)
+        .insert({
+          viaje_id: viajeId,
+          tipo_evento: tipoEvento,
+          descripcion,
+          ubicacion,
+          coordenadas,
+          timestamp: new Date().toISOString(),
+          automatico,
+          metadata
+        });
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error inserting evento:', error);
+        throw error;
+      }
+
+      console.log('Evento registered successfully');
+    } catch (error) {
+      console.error('Error in registrarEventoViaje:', error);
+      throw error;
+    }
   };
 
   // Iniciar viaje
@@ -218,18 +256,26 @@ export const useViajesEstados = () => {
     });
 
     // Actualizar tracking_data del viaje
-    const { error } = await supabase
-      .from('viajes')
-      .update({
-        tracking_data: {
-          ultima_ubicacion: coordenadas,
-          ultima_actualizacion: new Date().toISOString(),
-          direccion: direccion
-        }
-      })
-      .eq('id', viajeId);
+    try {
+      const { error } = await supabase
+        .from('viajes' as any)
+        .update({
+          tracking_data: {
+            ultima_ubicacion: coordenadas,
+            ultima_actualizacion: new Date().toISOString(),
+            direccion: direccion
+          }
+        })
+        .eq('id', viajeId);
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error updating tracking data:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in actualizarUbicacion:', error);
+      throw error;
+    }
   };
 
   return {

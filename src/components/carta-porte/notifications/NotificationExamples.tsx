@@ -16,7 +16,11 @@ export function NotificationExamples() {
   };
 
   const handleTestFloating = () => {
-    floatingNotifications.validation.materiaPeligrosaDetectada();
+    floatingNotifications.addNotification({
+      type: 'warning',
+      title: 'Material Peligroso Detectado',
+      message: 'Esta mercancía requiere documentación adicional según normativas SAT'
+    });
   };
 
   const handleTestError = () => {
@@ -24,7 +28,11 @@ export function NotificationExamples() {
   };
 
   const handleTestWarning = () => {
-    floatingNotifications.validation.pesoExcesivo(45000);
+    floatingNotifications.addNotification({
+      type: 'warning',
+      title: 'Peso Excesivo',
+      message: 'El peso de la carga excede los límites permitidos: 45000 kg'
+    });
   };
 
   return (

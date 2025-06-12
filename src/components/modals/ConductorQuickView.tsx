@@ -26,8 +26,10 @@ const ESTADOS_CONFIG = {
 export const ConductorQuickView = ({ conductor, open, onOpenChange, onEdit, onProgramar }: ConductorQuickViewProps) => {
   if (!conductor) return null;
 
-  const estadoConfig = ESTADOS_CONFIG[conductor.estado as keyof typeof ESTADOS_CONFIG] || 
-                      { label: conductor.estado || 'Sin estado', color: 'bg-gray-500 text-white' };
+  // Use the estado from conductor or default to 'disponible'
+  const conductorEstado = (conductor as any).estado || 'disponible';
+  const estadoConfig = ESTADOS_CONFIG[conductorEstado as keyof typeof ESTADOS_CONFIG] || 
+                      { label: conductorEstado || 'Sin estado', color: 'bg-gray-500 text-white' };
 
   const licenciaVencePronto = isDateCloseToExpiry(conductor.vigencia_licencia);
 
