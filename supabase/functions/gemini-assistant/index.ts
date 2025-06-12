@@ -1,196 +1,181 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface GeminiRequest {
-  action: 'suggest_description' | 'validate_mercancia' | 'improve_description' | 'parse_document';
-  data: {
-    clave_producto?: string;
-    descripcion_actual?: string;
-    cantidad?: number;
-    unidad?: string;
-    peso?: number;
-    valor?: number;
-    text?: string;
-    document_type?: string;
-  };
-}
-
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { verifyAuth, corsHeaders, rateLimitCheck, logSecurityEvent } from '../_shared/auth.ts';
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, data }: GeminiRequest = await req.json();
+    // Verify authentication
+    const { error: authError, user } = await verifyAuth(req);
+    if (authError) return authError;
 
-    let prompt = '';
+    // Rate limiting check
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    const canProceed = await rateLimitCheck(user!.id, 'gemini_request');
     
-    switch (action) {
-      case 'suggest_description':
-        prompt = `Eres un experto en Carta Porte mexicana y catálogos SAT. 
-        
-        Basándote en la clave de producto/servicio SAT: "${data.clave_producto}", 
-        sugiere una descripción detallada y profesional para la mercancía que cumpla con los requisitos fiscales mexicanos.
-        
-        La descripción debe:
-        - Ser específica y técnica
-        - Incluir características relevantes del producto
-        - Cumplir con normativas SAT
-        - Tener entre 20-100 palabras
-        
-        Responde SOLO con la descripción sugerida, sin explicaciones adicionales.`;
-        break;
-        
-      case 'validate_mercancia':
-        prompt = `Eres un experto en validación de mercancías para Carta Porte mexicana.
-        
-        Analiza esta mercancía:
-        - Clave producto: ${data.clave_producto}
-        - Descripción: ${data.descripcion_actual}
-        - Cantidad: ${data.cantidad}
-        - Unidad: ${data.unidad}
-        - Peso: ${data.peso} kg
-        - Valor: $${data.valor}
-        
-        Identifica posibles inconsistencias o errores y sugiere mejoras.
-        
-        Responde en formato JSON:
-        {
-          "is_valid": boolean,
-          "issues": ["lista de problemas encontrados"],
-          "suggestions": ["lista de sugerencias de mejora"],
-          "confidence": number (0-1)
-        }`;
-        break;
-        
-      case 'improve_description':
-        prompt = `Mejora esta descripción de mercancía para Carta Porte:
-        
-        Descripción actual: "${data.descripcion_actual}"
-        Clave producto: ${data.clave_producto}
-        
-        Haz la descripción más completa, técnica y conforme a normativas SAT.
-        Responde SOLO con la descripción mejorada.`;
-        break;
-
-      case 'parse_document':
-        prompt = `Eres un experto en extracción de datos de documentos fiscales mexicanos.
-        
-        Analiza el siguiente texto extraído de un documento ${data.document_type}:
-        
-        "${data.text}"
-        
-        Extrae información de mercancías y responde en formato JSON:
-        {
-          "mercancias": [
-            {
-              "bienes_transp": "clave SAT del producto",
-              "descripcion": "descripción de la mercancía",
-              "cantidad": numero,
-              "clave_unidad": "clave de unidad SAT",
-              "peso_kg": numero,
-              "valor_mercancia": numero,
-              "moneda": "MXN"
-            }
-          ],
-          "confidence": number (0-1),
-          "suggestions": ["sugerencias para mejorar los datos"]
+    if (!canProceed) {
+      await logSecurityEvent(
+        user!.id,
+        'rate_limit_exceeded',
+        { action: 'gemini_request', ip: clientIP },
+        clientIP,
+        req.headers.get('user-agent') || undefined
+      );
+      
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-        
-        Si no encuentras datos específicos, haz tu mejor estimación basada en el contexto.
-        Siempre incluye al menos una mercancía si hay indicios de productos/servicios.`;
-        break;
+      );
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const { message, context } = await req.json();
+
+    if (!message) {
+      return new Response(
+        JSON.stringify({ error: 'Message is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'AI service temporarily unavailable' }),
+        { 
+          status: 503, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Log the request
+    await logSecurityEvent(
+      user!.id,
+      'gemini_request',
+      { message_length: message.length, has_context: !!context },
+      clientIP,
+      req.headers.get('user-agent') || undefined
+    );
+
+    const systemPrompt = `Eres un asistente especializado en logística de transporte en México. 
+    Ayudas con cartas porte, regulaciones del SAT, y gestión de flota.
+    Responde de manera concisa y práctica.
+    
+    Contexto actual: ${context || 'No hay contexto específico'}`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: systemPrompt },
+              { text: `Usuario: ${message}` }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.1,
-            topK: 1,
-            topP: 1,
-            maxOutputTokens: 2000,
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
           },
-          safetySettings: [
-            {
-              category: "HARM_CATEGORY_HARASSMENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_HATE_SPEECH",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            }
-          ],
-        }),
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          }
+        ]
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Gemini API error:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Error details:', errorText);
+      
+      await logSecurityEvent(
+        user!.id,
+        'gemini_error',
+        { status: response.status, error: errorText },
+        clientIP,
+        req.headers.get('user-agent') || undefined
+      );
+      
+      return new Response(
+        JSON.stringify({ error: 'Error al procesar la consulta' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const data = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No se pudo generar una respuesta' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const aiResponse = data.candidates[0].content.parts[0].text;
+    
+    // Log successful response
+    await logSecurityEvent(
+      user!.id,
+      'gemini_success',
+      { response_length: aiResponse.length },
+      clientIP,
+      req.headers.get('user-agent') || undefined
+    );
+
+    return new Response(
+      JSON.stringify({ response: aiResponse }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
 
-    if (!response.ok) {
-      console.error('Gemini API error:', await response.text());
-      throw new Error('Error calling Gemini API');
-    }
-
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      throw new Error('No response from Gemini');
-    }
-
-    // Para validación y parse_document, intentar parsear como JSON
-    if (action === 'validate_mercancia' || action === 'parse_document') {
-      try {
-        const parsedResult = JSON.parse(text);
-        return new Response(JSON.stringify({ result: parsedResult }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } catch {
-        // Si no es JSON válido, devolver respuesta de texto con estructura por defecto
-        const fallbackResult = action === 'validate_mercancia' ? {
-          is_valid: false,
-          issues: ['Error en el análisis de validación'],
-          suggestions: [text],
-          confidence: 0.5
-        } : {
-          mercancias: [],
-          confidence: 0.3,
-          suggestions: [text]
-        };
-        
-        return new Response(JSON.stringify({ result: fallbackResult }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
-    return new Response(JSON.stringify({ result: text.trim() }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
   } catch (error) {
-    console.error('Error in gemini-assistant:', error);
+    console.error('Gemini assistant error:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      JSON.stringify({ error: 'Error interno del servidor' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }

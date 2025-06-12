@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecurePasswordReset } from '@/hooks/auth/useSecurePasswordReset';
 import { toast } from 'sonner';
 import { Mail, ArrowLeft, Lock } from 'lucide-react';
 
@@ -14,22 +14,15 @@ interface ForgotPasswordFormProps {
 
 export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { resetPassword } = useAuth();
+  const { requestPasswordReset, isLoading } = useSecurePasswordReset();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      await resetPassword(email);
+    
+    const success = await requestPasswordReset(email);
+    if (success) {
       setSent(true);
-      toast.success('¡Instrucciones enviadas! Revisa tu correo.');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al enviar las instrucciones');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -100,9 +93,9 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
             <Button 
               type="submit" 
               className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <Mail className="h-4 w-4 mr-2 animate-pulse" />
                   Enviando instrucciones...

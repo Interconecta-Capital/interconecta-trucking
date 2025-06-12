@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/auth/useSecureAuth';
+import { useAuthValidation } from '@/hooks/auth/useAuthValidation';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Calendar, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, Eye, EyeOff } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
@@ -32,11 +33,16 @@ export default function Trial() {
     rfc: '',
     telefono: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [showExistingUserAlert, setShowExistingUserAlert] = useState(false);
   const [existingUserEmail, setExistingUserEmail] = useState('');
-  const { signUp } = useAuth();
+  const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
+  
+  const { secureRegister } = useSecureAuth();
+  const { validateRFCFormat, sanitizeInput } = useAuthValidation();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,29 +53,35 @@ export default function Trial() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres');
+    if (formData.password.length < 8) {
+      toast.error('La contraseña debe tener al menos 8 caracteres');
       return;
+    }
+
+    // Validate RFC format if provided
+    if (formData.rfc) {
+      const rfcCheck = validateRFCFormat(formData.rfc);
+      if (!rfcCheck.isValid) {
+        toast.error(rfcCheck.message);
+        return;
+      }
     }
 
     setLoading(true);
     setShowExistingUserAlert(false);
 
     try {
-      const result = await signUp(formData.email, formData.password, {
-        nombre: formData.nombre,
-        empresa: formData.empresa,
-        rfc: formData.rfc,
-        telefono: formData.telefono,
-        isTrial: true
-      });
+      const success = await secureRegister(
+        formData.email,
+        formData.password,
+        formData.nombre,
+        formData.rfc,
+        formData.empresa,
+        formData.telefono
+      );
       
-      if (result.needsVerification) {
+      if (success) {
         setShowVerification(true);
-        toast.success('¡Tu prueba gratuita está lista! Revisa tu correo para verificar tu cuenta.');
-      } else {
-        toast.success('¡Tu prueba gratuita de 14 días ha comenzado!');
-        navigate('/dashboard');
       }
     } catch (error: any) {
       // Check if this is an existing user (repeated signup)
@@ -93,10 +105,20 @@ export default function Trial() {
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    
     // Clear alerts when user starts typing
     if (field === 'email' && showExistingUserAlert) {
       setShowExistingUserAlert(false);
+    }
+
+    // Real-time RFC validation
+    if (field === 'rfc' && sanitizedValue) {
+      const validation = validateRFCFormat(sanitizedValue);
+      setRfcValidation(validation);
+    } else if (field === 'rfc' && !sanitizedValue) {
+      setRfcValidation({ isValid: true, message: '' });
     }
   };
 
@@ -223,8 +245,13 @@ export default function Trial() {
                           onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
                           required
                           maxLength={13}
-                          className="border-interconecta-border-subtle"
+                          className={`border-interconecta-border-subtle ${
+                            !rfcValidation.isValid ? 'border-red-500' : ''
+                          }`}
                         />
+                        {!rfcValidation.isValid && (
+                          <p className="text-red-500 text-sm">{rfcValidation.message}</p>
+                        )}
                       </div>
                       
                       <div className="space-y-2">
@@ -241,33 +268,64 @@ export default function Trial() {
                       
                       <div className="space-y-2">
                         <Label htmlFor="password" className="font-inter">Contraseña</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={formData.password}
-                          onChange={(e) => handleChange('password', e.target.value)}
-                          required
-                          minLength={6}
-                          className="border-interconecta-border-subtle"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.password}
+                            onChange={(e) => handleChange('password', e.target.value)}
+                            required
+                            minLength={8}
+                            className="border-interconecta-border-subtle pr-10"
+                            placeholder="Mínimo 8 caracteres"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-interconecta-text-secondary" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
                         <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña</Label>
-                        <Input
-                          id="confirm-password"
-                          type="password"
-                          value={formData.confirmPassword}
-                          onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                          required
-                          className="border-interconecta-border-subtle"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="confirm-password"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            value={formData.confirmPassword}
+                            onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                            required
+                            className="border-interconecta-border-subtle pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-interconecta-text-secondary" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       
                       <Button 
                         type="submit" 
                         className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
-                        disabled={loading}
+                        disabled={loading || !rfcValidation.isValid}
                       >
                         {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
                       </Button>

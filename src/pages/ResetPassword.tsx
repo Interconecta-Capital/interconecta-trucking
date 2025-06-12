@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { useSecurePasswordReset } from '@/hooks/auth/useSecurePasswordReset';
 import { toast } from 'sonner';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -14,26 +14,44 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validToken, setValidToken] = useState(false);
+  const { updatePassword, validatePasswordStrength, isLoading } = useSecurePasswordReset();
 
   useEffect(() => {
-    // Verificar si hay un token de recuperación en la URL
+    // Verify token presence and exchange it securely
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     
-    if (accessToken && refreshToken) {
-      // Establecer la sesión con los tokens de la URL
+    if (!accessToken || !refreshToken) {
+      toast.error('Enlace de recuperación inválido o expirado');
+      navigate('/auth/login');
+      return;
+    }
+
+    // Clear tokens from URL immediately for security
+    const url = new URL(window.location.href);
+    url.searchParams.delete('access_token');
+    url.searchParams.delete('refresh_token');
+    url.searchParams.delete('type');
+    window.history.replaceState({}, document.title, url.pathname);
+
+    // Validate and set session with tokens
+    import('@/integrations/supabase/client').then(({ supabase }) => {
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Token validation error:', error);
+          toast.error('Enlace de recuperación inválido o expirado');
+          navigate('/auth/login');
+        } else {
+          setValidToken(true);
+        }
       });
-    } else {
-      // Si no hay tokens, redirigir al login
-      toast.error('Enlace de recuperación inválido o expirado');
-      navigate('/auth/login');
-    }
+    });
   }, [searchParams, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,28 +62,30 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres');
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      toast.error(passwordValidation.message);
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
-
-      if (error) throw error;
-
-      toast.success('¡Contraseña actualizada exitosamente!');
-      navigate('/dashboard');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar la contraseña');
-    } finally {
-      setLoading(false);
+    const success = await updatePassword(password);
+    if (success) {
+      // Clear form and redirect after successful update
+      setPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
     }
   };
+
+  if (!validToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-interconecta-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
@@ -111,8 +131,9 @@ export default function ResetPassword() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     className="border-interconecta-border-subtle pr-10"
+                    placeholder="Mínimo 8 caracteres con mayúsculas, minúsculas, números y símbolos"
                   />
                   <Button
                     type="button"
@@ -162,9 +183,9 @@ export default function ResetPassword() {
               <Button 
                 type="submit" 
                 className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-sm md:text-base" 
-                disabled={loading}
+                disabled={isLoading}
               >
-                {loading ? 'Actualizando contraseña...' : 'Actualizar Contraseña'}
+                {isLoading ? 'Actualizando contraseña...' : 'Actualizar Contraseña'}
               </Button>
             </form>
           </CardContent>
