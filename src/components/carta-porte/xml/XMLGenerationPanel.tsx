@@ -1,16 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { FileText } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
+import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { PDFPreviewDialog } from '../pdf/PDFPreviewDialog';
 import { XMLSection } from './sections/XMLSection';
 import { PDFSection } from './sections/PDFSection';
 import { TimbradoSection } from './sections/TimbradoSection';
+import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection';
+import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
 
 interface XMLGenerationPanelProps {
@@ -27,6 +30,7 @@ export function XMLGenerationPanel({
   onTimbrado 
 }: XMLGenerationPanelProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [autoTimbrado, setAutoTimbrado] = useState(true);
   
   const {
     isGenerating,
@@ -48,10 +52,41 @@ export function XMLGenerationPanel({
     limpiarPDF
   } = usePDFGeneration();
 
+  const {
+    eventos,
+    agregarEvento
+  } = useTrackingCartaPorte(cartaPorteId);
+
+  // Verificar si la carta porte está completa
+  const cartaPorteCompleta = !!(
+    cartaPorteData.rfcEmisor &&
+    cartaPorteData.rfcReceptor &&
+    cartaPorteData.ubicaciones?.length >= 2 &&
+    cartaPorteData.mercancias?.length > 0 &&
+    cartaPorteData.autotransporte?.placaVm &&
+    cartaPorteData.figuras?.length > 0
+  );
+
+  // Auto-timbrado cuando se completan los datos
+  useEffect(() => {
+    if (autoTimbrado && cartaPorteCompleta && xmlGenerado && !xmlTimbrado && !isTimbring) {
+      console.log('Iniciando auto-timbrado...');
+      handleTimbrar();
+    }
+  }, [autoTimbrado, cartaPorteCompleta, xmlGenerado, xmlTimbrado, isTimbring]);
+
   const handleGenerarXML = async () => {
     const resultado = await generarXML(cartaPorteData);
     if (resultado.success && resultado.xml && onXMLGenerated) {
       onXMLGenerated(resultado.xml);
+      
+      // Agregar evento de tracking
+      if (cartaPorteId) {
+        await agregarEvento({
+          evento: 'xml_generado',
+          descripcion: 'XML de Carta Porte generado correctamente'
+        });
+      }
     }
   };
 
@@ -64,6 +99,16 @@ export function XMLGenerationPanel({
     const resultado = await timbrarCartaPorte(cartaPorteData, cartaPorteId);
     if (resultado.success && onTimbrado) {
       onTimbrado(resultado);
+      
+      // Agregar evento de tracking
+      await agregarEvento({
+        evento: 'timbrado',
+        descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
+        metadata: {
+          uuid: resultado.uuid,
+          ambiente: 'test'
+        }
+      });
     }
   };
 
@@ -94,51 +139,73 @@ export function XMLGenerationPanel({
 
   return (
     <>
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Generación XML y PDF</span>
-            </CardTitle>
-            {getStatusBadge()}
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          <XMLSection
-            isGenerating={isGenerating}
-            xmlGenerado={xmlGenerado}
-            onGenerarXML={handleGenerarXML}
-            onDescargarXML={() => descargarXML('generado')}
-          />
+      <div className="space-y-6">
+        <Card className="w-full">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Generación XML y Timbrado FISCAL API</span>
+              </CardTitle>
+              {getStatusBadge()}
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <XMLSection
+              isGenerating={isGenerating}
+              xmlGenerado={xmlGenerado}
+              onGenerarXML={handleGenerarXML}
+              onDescargarXML={() => descargarXML('generado')}
+            />
 
-          <Separator />
+            <Separator />
 
-          <PDFSection
-            isGeneratingPDF={isGeneratingPDF}
-            pdfUrl={pdfUrl}
-            onGenerarPDF={handleGenerarPDF}
-            onVisualizarPDF={handleVisualizarPDF}
-            onDescargarPDF={() => descargarPDF(`carta-porte-${Date.now()}.pdf`)}
-          />
+            <TimbradoAutomaticoSection
+              cartaPorteCompleta={cartaPorteCompleta}
+              autoTimbrado={autoTimbrado}
+              onToggleAutoTimbrado={setAutoTimbrado}
+              onTimbrarManual={handleTimbrar}
+              isTimbring={isTimbring}
+              xmlTimbrado={xmlTimbrado}
+            />
 
-          <Separator />
+            <Separator />
 
-          <TimbradoSection
-            xmlGenerado={xmlGenerado}
-            xmlTimbrado={xmlTimbrado}
-            datosTimbre={datosTimbre}
-            isTimbring={isTimbring}
+            <TimbradoSection
+              xmlGenerado={xmlGenerado}
+              xmlTimbrado={xmlTimbrado}
+              datosTimbre={datosTimbre}
+              isTimbring={isTimbring}
+              cartaPorteId={cartaPorteId}
+              onValidarConexionPAC={validarConexionPAC}
+              onTimbrar={handleTimbrar}
+              onDescargarTimbrado={() => descargarXML('timbrado')}
+            />
+
+            <Separator />
+
+            <PDFSection
+              isGeneratingPDF={isGeneratingPDF}
+              pdfUrl={pdfUrl}
+              onGenerarPDF={handleGenerarPDF}
+              onVisualizarPDF={handleVisualizarPDF}
+              onDescargarPDF={() => descargarPDF(`carta-porte-${Date.now()}.pdf`)}
+            />
+
+            <XMLPreviewSection xmlGenerado={xmlGenerado} />
+          </CardContent>
+        </Card>
+
+        {/* Tracking Section */}
+        {cartaPorteId && (
+          <TrackingSection
             cartaPorteId={cartaPorteId}
-            onValidarConexionPAC={validarConexionPAC}
-            onTimbrar={handleTimbrar}
-            onDescargarTimbrado={() => descargarXML('timbrado')}
+            eventos={eventos}
+            uuidFiscal={datosTimbre?.uuid}
           />
-
-          <XMLPreviewSection xmlGenerado={xmlGenerado} />
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
       {pdfUrl && (
         <PDFPreviewDialog
