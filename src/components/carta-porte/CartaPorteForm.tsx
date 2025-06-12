@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +9,7 @@ import { UbicacionesSection } from './UbicacionesSection';
 import { MercanciasSection } from './MercanciasSection';
 import { AutotransporteSection } from './AutotransporteSection';
 import { FigurasTransporteSection } from './FigurasTransporteSection';
+import { XMLGenerationPanel } from './xml/XMLGenerationPanel';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { 
   FileText, 
@@ -18,7 +20,8 @@ import {
   CheckCircle,
   AlertCircle,
   Save,
-  Download
+  Download,
+  Stamp
 } from 'lucide-react';
 
 export interface CartaPorteData {
@@ -43,6 +46,14 @@ export interface CartaPorteData {
   
   // Figuras
   figuras: any[];
+
+  // Campos adicionales para transporte internacional
+  entrada_salida_merc?: string;
+  pais_origen_destino?: string;
+  via_entrada_salida?: string;
+
+  // ID para tracking
+  cartaPorteId?: string;
 }
 
 const steps = [
@@ -51,11 +62,13 @@ const steps = [
   { id: 'mercancias', label: 'Mercancías', icon: Package },
   { id: 'autotransporte', label: 'Transporte', icon: Truck },
   { id: 'figuras', label: 'Figuras', icon: Users },
+  { id: 'xml', label: 'XML/Timbrado', icon: Stamp },
 ];
 
 export function CartaPorteForm() {
   const [activeStep, setActiveStep] = useState('configuracion');
   const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
+  const [cartaPorteId, setCartaPorteId] = useState<string>();
   const [formData, setFormData] = useState<CartaPorteData>({
     tipoCreacion: 'manual',
     tipoCfdi: 'Traslado',
@@ -104,14 +117,16 @@ export function CartaPorteForm() {
         return formData.autotransporte.placaVm;
       case 'figuras':
         return formData.figuras.length > 0;
+      case 'xml':
+        return true; // Siempre disponible si los pasos anteriores están completos
       default:
         return false;
     }
   };
 
   const getTotalProgress = () => {
-    const completedSteps = steps.filter(step => isStepComplete(step.id)).length;
-    return (completedSteps / steps.length) * 100;
+    const completedSteps = steps.slice(0, -1).filter(step => isStepComplete(step.id)).length;
+    return (completedSteps / (steps.length - 1)) * 100;
   };
 
   const canSaveAsTemplate = () => {
@@ -119,9 +134,20 @@ export function CartaPorteForm() {
     return isStepComplete('configuracion') && formData.ubicaciones.length > 0;
   };
 
-  const handleGenerateXML = () => {
-    console.log('Generar XML', formData);
-    // Aquí iría la lógica para generar el XML
+  const canGenerateXML = () => {
+    // Verificar que todos los pasos obligatorios estén completos
+    return ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras']
+      .every(step => isStepComplete(step));
+  };
+
+  const handleXMLGenerated = (xml: string) => {
+    console.log('XML generado exitosamente', xml.length, 'caracteres');
+    // Aquí puedes manejar el XML generado si necesitas hacer algo específico
+  };
+
+  const handleTimbrado = (datos: any) => {
+    console.log('Carta Porte timbrada exitosamente:', datos);
+    // Aquí puedes manejar los datos del timbrado
   };
 
   return (
@@ -158,7 +184,7 @@ export function CartaPorteForm() {
       <Card>
         <CardContent className="p-0">
           <Tabs value={activeStep} onValueChange={setActiveStep} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols-6 h-auto">
               {steps.map((step) => {
                 const Icon = step.icon;
                 const isComplete = isStepComplete(step.id);
@@ -168,10 +194,11 @@ export function CartaPorteForm() {
                     key={step.id}
                     value={step.id}
                     className="flex flex-col items-center p-4 space-y-2"
+                    disabled={step.id === 'xml' && !canGenerateXML()}
                   >
                     <div className="flex items-center space-x-2">
                       <Icon className="h-5 w-5" />
-                      {isComplete && (
+                      {isComplete && step.id !== 'xml' && (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       )}
                     </div>
@@ -223,7 +250,16 @@ export function CartaPorteForm() {
                   data={formData.figuras}
                   onChange={(data) => updateFormData('figuras', data)}
                   onPrev={() => setActiveStep('autotransporte')}
-                  onFinish={handleGenerateXML}
+                  onFinish={() => setActiveStep('xml')}
+                />
+              </TabsContent>
+
+              <TabsContent value="xml">
+                <XMLGenerationPanel
+                  cartaPorteData={formData}
+                  cartaPorteId={cartaPorteId}
+                  onXMLGenerated={handleXMLGenerated}
+                  onTimbrado={handleTimbrado}
                 />
               </TabsContent>
             </div>
@@ -232,7 +268,7 @@ export function CartaPorteForm() {
       </Card>
 
       {/* Acciones finales cuando está completo */}
-      {getTotalProgress() === 100 && (
+      {canGenerateXML() && (
         <Card className="bg-green-50 border-green-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -240,7 +276,7 @@ export function CartaPorteForm() {
                 <CheckCircle className="h-6 w-6 text-green-600" />
                 <div>
                   <h3 className="font-semibold text-green-800">
-                    Carta Porte Lista para Timbrar
+                    Carta Porte Lista para Generar XML
                   </h3>
                   <p className="text-sm text-green-600">
                     Todos los datos requeridos han sido completados
@@ -257,11 +293,11 @@ export function CartaPorteForm() {
                   <span>Guardar Plantilla</span>
                 </Button>
                 <Button 
-                  onClick={handleGenerateXML}
+                  onClick={() => setActiveStep('xml')}
                   className="flex items-center space-x-2"
                 >
-                  <Download className="h-4 w-4" />
-                  <span>Generar XML</span>
+                  <Stamp className="h-4 w-4" />
+                  <span>Generar XML y Timbrar</span>
                 </Button>
               </div>
             </div>
