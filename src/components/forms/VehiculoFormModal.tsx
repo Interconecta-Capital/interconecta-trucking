@@ -12,6 +12,7 @@ import { X, Upload, User, FileText, CreditCard, Calendar } from 'lucide-react';
 import { DocumentUpload } from '@/components/forms/DocumentUpload';
 import { useConductores } from '@/hooks/useConductores';
 import { useVehiculoConductores } from '@/hooks/useVehiculoConductores';
+import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
 import { toast } from 'sonner';
 
 interface VehiculoFormModalProps {
@@ -39,8 +40,10 @@ export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo }: Ve
   });
 
   const [selectedConductores, setSelectedConductores] = useState<string[]>([]);
+  const [documentos, setDocumentos] = useState([]);
   const { conductores } = useConductores();
   const { asignarConductor, desasignarConductor } = useVehiculoConductores();
+  const { cargarDocumentos } = useDocumentosEntidades();
 
   useEffect(() => {
     if (vehiculo) {
@@ -59,6 +62,8 @@ export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo }: Ve
         acta_instalacion_gps: vehiculo.acta_instalacion_gps || '',
         estado: vehiculo.estado || 'disponible'
       });
+      // Cargar documentos existentes
+      loadDocumentos();
     } else {
       setFormData({
         placa: '',
@@ -76,8 +81,20 @@ export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo }: Ve
         estado: 'disponible'
       });
       setSelectedConductores([]);
+      setDocumentos([]);
     }
   }, [vehiculo, open]);
+
+  const loadDocumentos = async () => {
+    if (vehiculo?.id) {
+      try {
+        const docs = await cargarDocumentos('vehiculo', vehiculo.id);
+        setDocumentos(docs);
+      } catch (error) {
+        console.error('Error loading documentos:', error);
+      }
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -344,43 +361,12 @@ export function VehiculoFormModal({ open, onOpenChange, onSubmit, vehiculo }: Ve
                 Documentos del Vehículo
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tarjeta de Circulación</Label>
-                  <DocumentUpload
-                    tipoDocumento="tarjeta_circulacion"
-                    entidadTipo="vehiculo"
-                    entidadId={vehiculo?.id}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Póliza de Seguro</Label>
-                  <DocumentUpload
-                    tipoDocumento="poliza_seguro"
-                    entidadTipo="vehiculo"
-                    entidadId={vehiculo?.id}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Verificación Vehicular</Label>
-                  <DocumentUpload
-                    tipoDocumento="verificacion"
-                    entidadTipo="vehiculo"
-                    entidadId={vehiculo?.id}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Factura del Vehículo</Label>
-                  <DocumentUpload
-                    tipoDocumento="factura"
-                    entidadTipo="vehiculo"
-                    entidadId={vehiculo?.id}
-                  />
-                </div>
-              </div>
+              <DocumentUpload
+                entidadTipo="vehiculo"
+                entidadId={vehiculo.id}
+                documentos={documentos}
+                onDocumentosChange={loadDocumentos}
+              />
             </div>
           )}
 

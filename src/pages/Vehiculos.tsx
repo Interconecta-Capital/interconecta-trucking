@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useVehiculoConductores } from '@/hooks/useVehiculoConductores';
@@ -37,7 +38,7 @@ export default function Vehiculos() {
   const [showForm, setShowForm] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { vehiculos, crearVehiculo, actualizarVehiculo, eliminarVehiculo, isLoading } = useVehiculos();
+  const { vehiculos, crearVehiculo, actualizarVehiculo, eliminarVehiculo, loading } = useVehiculos();
 
   const handleCreate = async (data: any) => {
     try {
@@ -97,7 +98,9 @@ export default function Vehiculos() {
           resource="vehiculos"
           onAction={() => setShowForm(true)}
           buttonText="Registrar Vehículo"
-        />
+        >
+          <div />
+        </ProtectedActions>
       </div>
 
       {/* Buscador de vehículos */}
@@ -132,7 +135,9 @@ export default function Vehiculos() {
                 resource="vehiculos"
                 onAction={() => setShowForm(true)}
                 buttonText="Registrar Primer Vehículo"
-              />
+              >
+                <div />
+              </ProtectedActions>
             </div>
           ) : (
             <div className="overflow-x-auto">

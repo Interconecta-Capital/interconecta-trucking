@@ -42,16 +42,14 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const isMobile = useIsMobile();
 
-  // Mock metrics para RealtimeMetrics
+  // Mock metrics para RealtimeMetrics con la estructura correcta
   const mockMetrics = {
-    cartasPorteActivas: totalCartasPorte,
-    vehiculosEnRuta: vehiculosEnUso,
-    conductoresActivos: conductoresEnViaje,
-    ingresosMes: 0,
-    cambioCartasPorte: 0,
-    cambioVehiculos: 0,
-    cambioConductores: 0,
-    cambioIngresos: 0,
+    vehiculosActivos: vehiculosEnUso,
+    alertasActivas: vehiculosMantenimiento,
+    eficienciaPromedio: 85.5,
+    consumoCombustible: 15.2,
+    tiempoPromedioEntrega: 4.5,
+    satisfaccionCliente: 4.8,
   };
 
   return (
