@@ -17,10 +17,10 @@ export function ScheduleDropdown() {
   const { createEvent } = useCalendarEvents();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleScheduleEvent = async (tipo: string, titulo: string) => {
+  const handleScheduleEvent = async (tipo_evento: string, titulo: string) => {
     try {
       await createEvent({
-        tipo,
+        tipo_evento,
         titulo,
         descripcion: `${titulo} programado`,
         fecha_inicio: new Date(),
