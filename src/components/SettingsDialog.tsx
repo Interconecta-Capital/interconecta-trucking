@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTrialTracking } from '@/hooks/useTrialTracking';
 import {
   Dialog,
   DialogContent,
@@ -28,15 +29,8 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { user } = useAuth();
+  const { trialInfo, loading } = useTrialTracking();
   const [activeTab, setActiveTab] = useState('account');
-
-  // Mock data para el estado de la cuenta
-  const accountInfo = {
-    plan: 'Prueba Gratuita',
-    daysRemaining: 12,
-    nextBilling: '2024-01-25',
-    status: 'trial'
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,16 +90,16 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Plan Actual:</span>
-                      <Badge variant={accountInfo.status === 'trial' ? 'secondary' : 'default'}>
-                        {accountInfo.plan}
+                      <Badge variant={trialInfo.isTrialActive ? 'secondary' : 'default'}>
+                        {trialInfo.isTrialActive ? 'Prueba Gratuita' : 'Plan Premium'}
                       </Badge>
                     </div>
                     
-                    {accountInfo.status === 'trial' && (
+                    {trialInfo.isTrialActive && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Días Restantes:</span>
                         <span className="text-sm font-bold text-orange-600">
-                          {accountInfo.daysRemaining} días
+                          {trialInfo.daysRemaining} días
                         </span>
                       </div>
                     )}
@@ -163,7 +157,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Próxima Facturación:</span>
-                    <span className="text-sm">{accountInfo.nextBilling}</span>
+                    <span className="text-sm">
+                      {trialInfo.trialEndDate ? trialInfo.trialEndDate.toLocaleDateString() : 'N/A'}
+                    </span>
                   </div>
                   
                   <div className="flex items-center justify-between">

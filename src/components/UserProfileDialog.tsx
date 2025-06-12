@@ -24,18 +24,14 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
   const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    nombre: '',
-    empresa: '',
-    rfc: '',
+    email: '',
     telefono: '',
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
-        nombre: user.profile?.nombre || '',
-        empresa: user.profile?.empresa || '',
-        rfc: user.profile?.rfc || '',
+        email: user.email || '',
         telefono: user.profile?.telefono || '',
       });
     }
@@ -76,34 +72,44 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
           </Avatar>
         </div>
 
+        {/* Información no editable */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Nombre</Label>
+            <Input
+              value={user?.profile?.nombre || ''}
+              disabled
+              className="bg-gray-100"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Empresa</Label>
+            <Input
+              value={user?.profile?.empresa || ''}
+              disabled
+              className="bg-gray-100"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>RFC</Label>
+            <Input
+              value={user?.profile?.rfc || ''}
+              disabled
+              className="bg-gray-100"
+            />
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nombre">Nombre</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="nombre"
-              value={formData.nombre}
-              onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
-              placeholder="Tu nombre completo"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="empresa">Empresa</Label>
-            <Input
-              id="empresa"
-              value={formData.empresa}
-              onChange={(e) => setFormData(prev => ({ ...prev, empresa: e.target.value }))}
-              placeholder="Nombre de tu empresa"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rfc">RFC</Label>
-            <Input
-              id="rfc"
-              value={formData.rfc}
-              onChange={(e) => setFormData(prev => ({ ...prev, rfc: e.target.value }))}
-              placeholder="RFC de tu empresa"
+              id="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="Tu email"
             />
           </div>
 
