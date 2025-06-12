@@ -42,15 +42,12 @@ export default function Dashboard() {
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
-      {/* Saludo personalizado */}
-      <PersonalizedGreeting />
-
-      <DashboardLayout>
-        {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
-        <WelcomeCard show={showWelcomeCard} />
-
-        {/* Métricas principales */}
-        <DashboardMetricsGrid
+      {/* Mostrar tarjeta de bienvenida si no hay datos */}
+      {showWelcomeCard && <WelcomeCard show={showWelcomeCard} />}
+      
+      {/* Dashboard con métricas */}
+      {!showWelcomeCard && (
+        <DashboardLayout
           isLoading={isLoading}
           totalCartasPorte={totalCartasPorte}
           cartasPendientes={cartasPendientes}
@@ -65,7 +62,7 @@ export default function Dashboard() {
           totalSocios={totalSocios}
           sociosActivos={sociosActivos}
         />
-      </DashboardLayout>
+      )}
     </div>
   );
 }
