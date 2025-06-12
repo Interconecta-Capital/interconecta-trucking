@@ -21,9 +21,9 @@ import { Plus, Truck } from 'lucide-react';
 
 const vehiculoSchema = z.object({
   placa: z.string().min(1, 'La placa es requerida').max(10, 'Máximo 10 caracteres'),
-  marca: z.string().min(1, 'La marca es requerida'),
-  modelo: z.string().min(1, 'El modelo es requerido'),
-  anio: z.number().min(1900, 'Año inválido').max(new Date().getFullYear() + 1, 'Año inválido'),
+  marca: z.string().optional(),
+  modelo: z.string().optional(),
+  anio: z.number().optional(),
   num_serie: z.string().optional(),
   config_vehicular: z.string().optional(),
   poliza_seguro: z.string().optional(),
@@ -45,7 +45,7 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
   const form = useForm<VehiculoFormData>({
     resolver: zodResolver(vehiculoSchema),
     defaultValues: vehiculo ? {
-      placa: vehiculo.placa,
+      placa: vehiculo.placa || '',
       marca: vehiculo.marca || '',
       modelo: vehiculo.modelo || '',
       anio: vehiculo.anio || new Date().getFullYear(),
@@ -67,10 +67,22 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
 
   const onSubmit = async (data: VehiculoFormData) => {
     try {
+      // Ensure required fields are present and convert to proper format
+      const vehiculoData = {
+        placa: data.placa,
+        marca: data.marca || undefined,
+        modelo: data.modelo || undefined,
+        anio: data.anio || undefined,
+        num_serie: data.num_serie || undefined,
+        config_vehicular: data.config_vehicular || undefined,
+        poliza_seguro: data.poliza_seguro || undefined,
+        vigencia_seguro: data.vigencia_seguro || undefined,
+      };
+
       if (vehiculo) {
-        await updateVehiculo({ id: vehiculo.id, ...data });
+        await updateVehiculo({ id: vehiculo.id, ...vehiculoData });
       } else {
-        await crearVehiculo(data);
+        await crearVehiculo(vehiculoData);
       }
       setOpen(false);
       form.reset();
@@ -129,31 +141,25 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="marca">Marca *</Label>
+              <Label htmlFor="marca">Marca</Label>
               <Input
                 id="marca"
                 {...form.register('marca')}
                 placeholder="Ej: Volvo, Mercedes, Kenworth"
               />
-              {form.formState.errors.marca && (
-                <p className="text-sm text-red-500">{form.formState.errors.marca.message}</p>
-              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="modelo">Modelo *</Label>
+              <Label htmlFor="modelo">Modelo</Label>
               <Input
                 id="modelo"
                 {...form.register('modelo')}
                 placeholder="Ej: FH16, Actros, T680"
               />
-              {form.formState.errors.modelo && (
-                <p className="text-sm text-red-500">{form.formState.errors.modelo.message}</p>
-              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="anio">Año *</Label>
+              <Label htmlFor="anio">Año</Label>
               <Input
                 id="anio"
                 type="number"
@@ -161,9 +167,6 @@ export function VehiculoFormModal({ trigger, vehiculo, onSuccess }: VehiculoForm
                 min="1900"
                 max={new Date().getFullYear() + 1}
               />
-              {form.formState.errors.anio && (
-                <p className="text-sm text-red-500">{form.formState.errors.anio.message}</p>
-              )}
             </div>
           </div>
 

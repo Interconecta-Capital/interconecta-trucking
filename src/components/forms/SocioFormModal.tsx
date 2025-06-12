@@ -25,8 +25,8 @@ const socioSchema = z.object({
   tipo_persona: z.enum(['fisica', 'moral'], {
     required_error: 'Selecciona el tipo de persona',
   }),
-  telefono: z.string().min(1, 'El teléfono es requerido'),
-  email: z.string().email('Email inválido').optional(),
+  telefono: z.string().optional(),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
 });
 
 type SocioFormData = z.infer<typeof socioSchema>;
@@ -44,8 +44,8 @@ export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProp
   const form = useForm<SocioFormData>({
     resolver: zodResolver(socioSchema),
     defaultValues: socio ? {
-      nombre_razon_social: socio.nombre_razon_social,
-      rfc: socio.rfc,
+      nombre_razon_social: socio.nombre_razon_social || '',
+      rfc: socio.rfc || '',
       tipo_persona: socio.tipo_persona || 'moral',
       telefono: socio.telefono || '',
       email: socio.email || '',
@@ -60,10 +60,19 @@ export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProp
 
   const onSubmit = async (data: SocioFormData) => {
     try {
+      // Ensure required fields are present and convert to proper format
+      const socioData = {
+        nombre_razon_social: data.nombre_razon_social,
+        rfc: data.rfc,
+        tipo_persona: data.tipo_persona,
+        telefono: data.telefono || undefined,
+        email: data.email || undefined,
+      };
+
       if (socio) {
-        await updateSocio({ id: socio.id, ...data });
+        await updateSocio({ id: socio.id, ...socioData });
       } else {
-        await crearSocio(data);
+        await crearSocio(socioData);
       }
       setOpen(false);
       form.reset();
@@ -146,15 +155,12 @@ export function SocioFormModal({ trigger, socio, onSuccess }: SocioFormModalProp
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono *</Label>
+              <Label htmlFor="telefono">Teléfono</Label>
               <Input
                 id="telefono"
                 {...form.register('telefono')}
                 placeholder="Número de teléfono"
               />
-              {form.formState.errors.telefono && (
-                <p className="text-sm text-red-500">{form.formState.errors.telefono.message}</p>
-              )}
             </div>
 
             <div className="space-y-2">

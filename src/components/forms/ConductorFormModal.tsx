@@ -23,11 +23,11 @@ const conductorSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   rfc: z.string().optional(),
   curp: z.string().optional(),
-  num_licencia: z.string().min(1, 'El número de licencia es requerido'),
-  tipo_licencia: z.string().min(1, 'El tipo de licencia es requerido'),
-  vigencia_licencia: z.string().min(1, 'La vigencia de licencia es requerida'),
-  telefono: z.string().min(1, 'El teléfono es requerido'),
-  email: z.string().email('Email inválido').optional(),
+  num_licencia: z.string().optional(),
+  tipo_licencia: z.string().optional(),
+  vigencia_licencia: z.string().optional(),
+  telefono: z.string().optional(),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
 });
 
 type ConductorFormData = z.infer<typeof conductorSchema>;
@@ -45,7 +45,7 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
   const form = useForm<ConductorFormData>({
     resolver: zodResolver(conductorSchema),
     defaultValues: conductor ? {
-      nombre: conductor.nombre,
+      nombre: conductor.nombre || '',
       rfc: conductor.rfc || '',
       curp: conductor.curp || '',
       num_licencia: conductor.num_licencia || '',
@@ -67,10 +67,22 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
 
   const onSubmit = async (data: ConductorFormData) => {
     try {
+      // Ensure required fields are present and convert to proper format
+      const conductorData = {
+        nombre: data.nombre,
+        rfc: data.rfc || undefined,
+        curp: data.curp || undefined,
+        num_licencia: data.num_licencia || undefined,
+        tipo_licencia: data.tipo_licencia || undefined,
+        vigencia_licencia: data.vigencia_licencia || undefined,
+        telefono: data.telefono || undefined,
+        email: data.email || undefined,
+      };
+
       if (conductor) {
-        await actualizarConductor({ id: conductor.id, ...data });
+        await actualizarConductor({ id: conductor.id, ...conductorData });
       } else {
-        await crearConductor(data);
+        await crearConductor(conductorData);
       }
       setOpen(false);
       form.reset();
@@ -152,19 +164,16 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="num_licencia">Número de Licencia *</Label>
+              <Label htmlFor="num_licencia">Número de Licencia</Label>
               <Input
                 id="num_licencia"
                 {...form.register('num_licencia')}
                 placeholder="Número de licencia"
               />
-              {form.formState.errors.num_licencia && (
-                <p className="text-sm text-red-500">{form.formState.errors.num_licencia.message}</p>
-              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tipo_licencia">Tipo de Licencia *</Label>
+              <Label htmlFor="tipo_licencia">Tipo de Licencia</Label>
               <Select 
                 value={form.watch('tipo_licencia')} 
                 onValueChange={(value) => form.setValue('tipo_licencia', value)}
@@ -180,35 +189,26 @@ export function ConductorFormModal({ trigger, conductor, onSuccess }: ConductorF
                   ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.tipo_licencia && (
-                <p className="text-sm text-red-500">{form.formState.errors.tipo_licencia.message}</p>
-              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="vigencia_licencia">Vigencia de Licencia *</Label>
+            <Label htmlFor="vigencia_licencia">Vigencia de Licencia</Label>
             <Input
               id="vigencia_licencia"
               type="date"
               {...form.register('vigencia_licencia')}
             />
-            {form.formState.errors.vigencia_licencia && (
-              <p className="text-sm text-red-500">{form.formState.errors.vigencia_licencia.message}</p>
-            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono *</Label>
+              <Label htmlFor="telefono">Teléfono</Label>
               <Input
                 id="telefono"
                 {...form.register('telefono')}
                 placeholder="Número de teléfono"
               />
-              {form.formState.errors.telefono && (
-                <p className="text-sm text-red-500">{form.formState.errors.telefono.message}</p>
-              )}
             </div>
 
             <div className="space-y-2">
