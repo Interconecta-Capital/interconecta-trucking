@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,6 +14,8 @@ import Conductores from "./pages/Conductores";
 import Vehiculos from "./pages/Vehiculos";
 import Socios from "./pages/Socios";
 import NotFound from "./pages/NotFound";
+import { FloatingNotificationsContainer } from "@/components/ui/floating-notifications-container";
+import { useFloatingNotifications } from "@/hooks/useFloatingNotifications";
 
 const queryClient = new QueryClient();
 
@@ -50,16 +51,24 @@ function AppContent() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const { notifications, removeNotification } = useFloatingNotifications();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <FloatingNotificationsContainer 
+            notifications={notifications}
+            onDismiss={removeNotification}
+          />
+          <AppContent />
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
