@@ -1,51 +1,41 @@
 
 import { Badge } from '@/components/ui/badge';
-import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { Clock, Crown, Zap } from 'lucide-react';
+import { useTrialTracking } from '@/hooks/useTrialTracking';
+import { Calendar, Clock } from 'lucide-react';
 
 export function PlanBadge() {
-  const { suscripcion, enPeriodoPrueba, diasRestantesPrueba } = useSuscripcion();
+  const { trialInfo, loading } = useTrialTracking();
 
-  if (!suscripcion) return null;
+  if (loading) {
+    return (
+      <Badge variant="secondary" className="animate-pulse">
+        <Clock className="h-3 w-3 mr-1" />
+        Cargando...
+      </Badge>
+    );
+  }
 
-  const getPlanIcon = () => {
-    if (enPeriodoPrueba()) return <Clock className="h-3 w-3 mr-1" />;
-    
-    switch (suscripcion.plan?.nombre) {
-      case 'Básico':
-        return <Zap className="h-3 w-3 mr-1" />;
-      case 'Profesional':
-        return <Crown className="h-3 w-3 mr-1" />;
-      default:
-        return null;
-    }
-  };
+  if (trialInfo.isTrialExpired) {
+    return (
+      <Badge variant="destructive">
+        <Calendar className="h-3 w-3 mr-1" />
+        Trial Expirado
+      </Badge>
+    );
+  }
 
-  const getPlanText = () => {
-    if (enPeriodoPrueba()) {
-      const dias = diasRestantesPrueba();
-      return `Prueba (${dias}d)`;
-    }
-    return suscripcion.plan?.nombre || 'Plan';
-  };
-
-  const getBadgeVariant = () => {
-    if (enPeriodoPrueba()) return 'secondary';
-    
-    switch (suscripcion.plan?.nombre) {
-      case 'Básico':
-        return 'outline';
-      case 'Profesional':
-        return 'default';
-      default:
-        return 'outline';
-    }
-  };
+  if (trialInfo.isTrialActive) {
+    return (
+      <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+        <Calendar className="h-3 w-3 mr-1" />
+        Trial: {trialInfo.daysRemaining} días restantes
+      </Badge>
+    );
+  }
 
   return (
-    <Badge variant={getBadgeVariant()} className="flex items-center">
-      {getPlanIcon()}
-      {getPlanText()}
+    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+      Plan Premium
     </Badge>
   );
 }

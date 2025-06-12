@@ -59,6 +59,9 @@ function App() {
             {/* Rutas públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/login" element={<Auth />} />
+            <Route path="/auth/trial" element={<Trial />} />
+            <Route path="/trial" element={<Trial />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             
             {/* Rutas protegidas */}
@@ -118,16 +121,6 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <Planes />
-                  </AppLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/trial" 
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Trial />
                   </AppLayout>
                 </ProtectedRoute>
               } 
