@@ -23,11 +23,11 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-screen bg-background flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col w-full">
           <GlobalHeader />
-          <main className="flex-1">
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
         </div>

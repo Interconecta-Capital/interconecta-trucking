@@ -13,8 +13,10 @@ import Conductores from "./pages/Conductores";
 import Socios from "./pages/Socios";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import Auth from "./pages/Auth";
+import Trial from "./pages/Trial";
 import { BaseLayout } from "./components/layout/BaseLayout";
 import CartasPorte from "./pages/CartasPorte";
+import NewCartaPorte from "./pages/NewCartaPorte";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ function App() {
                   
                   {/* Rutas de autenticación */}
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth/login" element={<Auth />} />
+                  <Route path="/auth/trial" element={<Trial />} />
                   <Route path="/login" element={<Auth />} />
                   <Route path="/register" element={<Auth />} />
                   <Route path="/recover-password" element={<Auth />} />
@@ -50,6 +54,14 @@ function App() {
                     <AuthGuard>
                       <BaseLayout>
                         <CartasPorte />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/cartas-porte/nueva" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <NewCartaPorte />
                       </BaseLayout>
                     </AuthGuard>
                   } />
