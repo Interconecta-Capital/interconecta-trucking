@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MercanciaForm } from './mercancias/MercanciaForm';
-import { MercanciasList } from './mercancias/MercanciasList';
+import { MercanciasListWrapper } from './mercancias/MercanciasListWrapper';
 import { ImportDialog } from './mercancias/ImportDialog';
 import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { useMercancias, Mercancia } from '@/hooks/useMercancias';
-import { Package, Upload, ArrowRight, ArrowLeft, Plus, FileText, Sparkles } from 'lucide-react';
+import { Package, Upload, ArrowRight, ArrowLeft, Plus, Sparkles } from 'lucide-react';
 
 interface MercanciasSectionProps {
   data: any[];
@@ -111,7 +111,7 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
               isLoading={isLoading}
             />
           ) : (
-            <MercanciasList
+            <MercanciasListWrapper
               mercancias={mercancias}
               onEdit={handleEditMercancia}
               onDelete={eliminarMercancia}
@@ -121,7 +121,7 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
         </CardContent>
       </Card>
 
-      {/* Botones de navegación */}
+      {/* Navigation buttons */}
       {!showForm && (
         <div className="flex justify-between">
           <Button 
