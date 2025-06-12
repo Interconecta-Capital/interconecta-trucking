@@ -1,10 +1,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
-import { Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Settings } from 'lucide-react';
 
 export const EstadoSuscripcion = () => {
   const { 
@@ -12,7 +13,11 @@ export const EstadoSuscripcion = () => {
     enPeriodoPrueba, 
     diasRestantesPrueba, 
     suscripcionVencida,
-    estaBloqueado 
+    estaBloqueado,
+    verificarSuscripcion,
+    isVerifyingSubscription,
+    abrirPortalCliente,
+    isOpeningPortal
   } = useSuscripcion();
   
   const { obtenerUsoActual } = usePermisosSubscripcion();
@@ -84,6 +89,32 @@ export const EstadoSuscripcion = () => {
               </p>
             </div>
           )}
+
+          <div className="flex gap-2">
+            <Button
+              onClick={verificarSuscripcion}
+              disabled={isVerifyingSubscription}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isVerifyingSubscription ? 'animate-spin' : ''}`} />
+              {isVerifyingSubscription ? 'Verificando...' : 'Verificar Estado'}
+            </Button>
+
+            {suscripcion.status === 'active' && (
+              <Button
+                onClick={abrirPortalCliente}
+                disabled={isOpeningPortal}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {isOpeningPortal ? 'Abriendo...' : 'Gestionar'}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

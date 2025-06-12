@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,11 +7,48 @@ import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { PlanesCard } from '@/components/suscripcion/PlanesCard';
 import { EstadoSuscripcion } from '@/components/suscripcion/EstadoSuscripcion';
 import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Planes() {
   const navigate = useNavigate();
-  const { planes, suscripcion, cambiarPlan, isChangingPlan } = useSuscripcion();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const { 
+    planes, 
+    suscripcion, 
+    cambiarPlan, 
+    isChangingPlan, 
+    verificarSuscripcion 
+  } = useSuscripcion();
+
+  // Verificar estado después de un pago exitoso
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const canceled = searchParams.get('canceled');
+    
+    if (success === 'true') {
+      toast({
+        title: "¡Pago exitoso!",
+        description: "Su suscripción ha sido activada correctamente.",
+      });
+      // Verificar el estado de la suscripción
+      setTimeout(() => {
+        verificarSuscripcion();
+      }, 2000);
+    } else if (canceled === 'true') {
+      toast({
+        title: "Pago cancelado",
+        description: "El proceso de pago fue cancelado.",
+        variant: "destructive",
+      });
+    }
+    
+    // Limpiar parámetros de la URL
+    if (success || canceled) {
+      navigate('/planes', { replace: true });
+    }
+  }, [searchParams, toast, verificarSuscripcion, navigate]);
 
   const handleSelectPlan = (planId: string) => {
     cambiarPlan(planId);

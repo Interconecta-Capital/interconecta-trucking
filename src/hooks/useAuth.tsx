@@ -1,9 +1,10 @@
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { useAuthActions } from './auth/useAuthActions';
 import { checkUserAccess } from './auth/useAuthUtils';
+import { useSuscripcion } from './useSuscripcion';
 
 /**
  * Contexto de autenticación
@@ -21,12 +22,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Hook para manejar las acciones de autenticación
   const authActions = useAuthActions();
 
+  // Hook para manejar suscripciones
+  const { verificarSuscripcion } = useSuscripcion();
+
   /**
    * Verifica si el usuario tiene acceso a un recurso específico
    */
   const hasAccess = (resource: string) => {
     return checkUserAccess(user?.usuario?.rol, resource);
   };
+
+  // Verificar suscripción cuando el usuario se autentica
+  useEffect(() => {
+    if (user && !loading) {
+      // Verificar el estado de la suscripción
+      verificarSuscripcion();
+    }
+  }, [user, loading, verificarSuscripcion]);
 
   // Valor del contexto que incluye estado y todas las acciones
   const contextValue: AuthContextType = {

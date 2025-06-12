@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -106,6 +105,68 @@ export const useSuscripcion = () => {
     },
   });
 
+  // Verificar suscripción con Stripe
+  const verificarSuscripcion = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suscripcion-usuario'] });
+    },
+    onError: (error: any) => {
+      console.error('Error verificando suscripción:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo verificar el estado de la suscripción",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Crear sesión de checkout
+  const crearCheckout = useMutation({
+    mutationFn: async (planId: string) => {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { planId }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      // Abrir Stripe checkout en una nueva pestaña
+      window.open(data.url, '_blank');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo crear la sesión de pago",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Abrir portal del cliente
+  const abrirPortalCliente = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      // Abrir portal en nueva pestaña
+      window.open(data.url, '_blank');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo abrir el portal de gestión",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Función para verificar permisos
   const tienePermiso = (permiso: keyof PlanSuscripcion): boolean => {
     if (!suscripcion?.plan) return false;
@@ -151,36 +212,21 @@ export const useSuscripcion = () => {
     return fechaVencimiento <= new Date() && suscripcion.status === 'past_due';
   };
 
-  // Cambiar plan de suscripción
+  // Cambiar plan de suscripción (actualizado para usar Stripe)
   const cambiarPlan = useMutation({
     mutationFn: async (planId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
-
-      const { data, error } = await supabase
-        .from('suscripciones')
-        .update({ 
-          plan_id: planId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['suscripcion-usuario'] });
-      toast({
-        title: "Plan actualizado",
-        description: "Su plan de suscripción ha sido actualizado correctamente",
-      });
+      // Si no tiene suscripción activa, crear checkout
+      if (!suscripcion || suscripcion.status === 'trial') {
+        return crearCheckout.mutateAsync(planId);
+      }
+      
+      // Si ya tiene suscripción, redirigir al portal del cliente
+      return abrirPortalCliente.mutateAsync();
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el plan",
+        description: error.message || "No se pudo procesar el cambio de plan",
         variant: "destructive",
       });
     },
@@ -200,6 +246,12 @@ export const useSuscripcion = () => {
     suscripcionVencida,
     cambiarPlan: cambiarPlan.mutate,
     isChangingPlan: cambiarPlan.isPending,
+    verificarSuscripcion: verificarSuscripcion.mutate,
+    isVerifyingSubscription: verificarSuscripcion.isPending,
+    crearCheckout: crearCheckout.mutate,
+    isCreatingCheckout: crearCheckout.isPending,
+    abrirPortalCliente: abrirPortalCliente.mutate,
+    isOpeningPortal: abrirPortalCliente.isPending,
     estaBloqueado: Boolean(bloqueo?.activo),
   };
 };

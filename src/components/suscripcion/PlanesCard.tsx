@@ -57,6 +57,12 @@ export const PlanesCard = ({ plan, isCurrentPlan, onSelectPlan, isChanging }: Pl
 
   const isPopular = plan.nombre === 'Profesional';
 
+  const getButtonText = () => {
+    if (isCurrentPlan) return 'Plan Actual';
+    if (plan.precio_mensual === 0) return 'Seleccionar Gratis';
+    return 'Suscribirse';
+  };
+
   return (
     <Card className={`relative ${isCurrentPlan ? 'ring-2 ring-blue-500' : ''} ${isPopular ? 'border-orange-200' : ''}`}>
       {isPopular && (
@@ -90,9 +96,11 @@ export const PlanesCard = ({ plan, isCurrentPlan, onSelectPlan, isChanging }: Pl
           )}
         </div>
 
-        <div className="text-sm text-blue-600 mt-2">
-          Prueba gratis por {plan.dias_prueba} días
-        </div>
+        {plan.dias_prueba > 0 && !isCurrentPlan && (
+          <div className="text-sm text-blue-600 mt-2">
+            Prueba gratis por {plan.dias_prueba} días
+          </div>
+        )}
       </CardHeader>
 
       <CardContent>
@@ -111,7 +119,7 @@ export const PlanesCard = ({ plan, isCurrentPlan, onSelectPlan, isChanging }: Pl
           className="w-full"
           variant={isCurrentPlan ? 'outline' : 'default'}
         >
-          {isCurrentPlan ? 'Plan Actual' : 'Seleccionar Plan'}
+          {getButtonText()}
         </Button>
       </CardContent>
     </Card>
