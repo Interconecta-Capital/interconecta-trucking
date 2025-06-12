@@ -1410,9 +1410,11 @@ export type Database = {
           empresa: string | null
           id: string
           nombre: string
+          plan_type: string | null
           rfc: string | null
           telefono: string | null
           timezone: string | null
+          trial_end_date: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1423,9 +1425,11 @@ export type Database = {
           empresa?: string | null
           id: string
           nombre: string
+          plan_type?: string | null
           rfc?: string | null
           telefono?: string | null
           timezone?: string | null
+          trial_end_date?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1436,9 +1440,11 @@ export type Database = {
           empresa?: string | null
           id?: string
           nombre?: string
+          plan_type?: string | null
           rfc?: string | null
           telefono?: string | null
           timezone?: string | null
+          trial_end_date?: string | null
           updated_at?: string | null
         }
         Relationships: []

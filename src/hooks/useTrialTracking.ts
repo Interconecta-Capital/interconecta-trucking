@@ -35,29 +35,40 @@ export const useTrialTracking = () => {
 
     const fetchTrialInfo = async () => {
       try {
-        // Obtener información del perfil/suscripción del usuario
+        // Obtener información del perfil del usuario
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('created_at, trial_end_date, plan_type')
           .eq('id', user.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error fetching trial info:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (!profile) {
+          setLoading(false);
           return;
         }
 
         const now = new Date();
-        const createdAt = profile?.created_at ? parseISO(profile.created_at) : new Date();
+        const createdAt = profile.created_at ? parseISO(profile.created_at) : new Date();
         
-        // Calcular fecha de fin del trial (14 días desde la creación)
-        const trialEndDate = new Date(createdAt);
-        trialEndDate.setDate(trialEndDate.getDate() + 14);
+        // Usar trial_end_date si existe, sino calcular basado en created_at
+        let trialEndDate: Date;
+        if (profile.trial_end_date) {
+          trialEndDate = parseISO(profile.trial_end_date);
+        } else {
+          trialEndDate = new Date(createdAt);
+          trialEndDate.setDate(trialEndDate.getDate() + 14);
+        }
 
         const daysUsed = Math.max(0, differenceInDays(now, createdAt));
         const daysRemaining = Math.max(0, differenceInDays(trialEndDate, now));
         const isTrialExpired = now > trialEndDate;
-        const isTrialActive = !isTrialExpired && (!profile?.plan_type || profile.plan_type === 'trial');
+        const isTrialActive = !isTrialExpired && (!profile.plan_type || profile.plan_type === 'trial');
 
         setTrialInfo({
           daysUsed,
@@ -69,8 +80,8 @@ export const useTrialTracking = () => {
           isTrialActive
         });
 
-        // Actualizar la fecha de fin del trial en la base de datos si no existe
-        if (profile && !profile.trial_end_date) {
+        // Actualizar trial_end_date si no existe
+        if (!profile.trial_end_date) {
           await supabase
             .from('profiles')
             .update({ trial_end_date: trialEndDate.toISOString() })
@@ -92,12 +103,14 @@ export const useTrialTracking = () => {
     return () => clearInterval(interval);
   }, [user]);
 
+  const refreshTrialInfo = () => {
+    setLoading(true);
+    // El useEffect se encargará de refrescar cuando loading cambie
+  };
+
   return {
     trialInfo,
     loading,
-    refreshTrialInfo: () => {
-      setLoading(true);
-      // El useEffect se encargará de refrescar
-    }
+    refreshTrialInfo
   };
 };
