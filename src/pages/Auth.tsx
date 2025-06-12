@@ -11,12 +11,83 @@ import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
+import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'login';
   const navigate = useNavigate();
+  const [currentView, setCurrentView] = useState<'main' | 'magic-link' | 'forgot-password'>('main');
   
+  if (currentView === 'magic-link') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <Link 
+              to="/" 
+              className="inline-flex items-center text-interconecta-text-secondary hover:text-interconecta-primary transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al inicio
+            </Link>
+            
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+                alt="Interconecta Trucking Logo"
+                className="h-16 w-16 rounded-xl"
+              />
+            </div>
+            <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+              Interconecta Trucking
+            </h1>
+            <p className="font-inter text-interconecta-text-secondary">
+              Sistema de Gestión de Cartas Porte
+            </p>
+          </div>
+          
+          <MagicLinkForm onBack={() => setCurrentView('main')} />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'forgot-password') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <Link 
+              to="/" 
+              className="inline-flex items-center text-interconecta-text-secondary hover:text-interconecta-primary transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al inicio
+            </Link>
+            
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+                alt="Interconecta Trucking Logo"
+                className="h-16 w-16 rounded-xl"
+              />
+            </div>
+            <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+              Interconecta Trucking
+            </h1>
+            <p className="font-inter text-interconecta-text-secondary">
+              Sistema de Gestión de Cartas Porte
+            </p>
+          </div>
+          
+          <ForgotPasswordForm onBack={() => setCurrentView('main')} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
       <div className="w-full max-w-md">
@@ -60,7 +131,7 @@ export default function Auth() {
               </TabsList>
               
               <TabsContent value="login">
-                <LoginForm />
+                <LoginForm onShowMagicLink={() => setCurrentView('magic-link')} onShowForgotPassword={() => setCurrentView('forgot-password')} />
               </TabsContent>
               
               <TabsContent value="register">
@@ -86,7 +157,12 @@ export default function Auth() {
   );
 }
 
-function LoginForm() {
+interface LoginFormProps {
+  onShowMagicLink: () => void;
+  onShowForgotPassword: () => void;
+}
+
+function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -111,6 +187,27 @@ function LoginForm() {
   return (
     <div className="space-y-6">
       <SocialAuthButtons mode="login" />
+      
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-interconecta-border-subtle" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
+            O accede con
+          </span>
+        </div>
+      </div>
+      
+      <div className="space-y-3">
+        <Button
+          onClick={onShowMagicLink}
+          variant="outline"
+          className="w-full border-interconecta-border-subtle text-interconecta-text-primary hover:bg-interconecta-bg-alternate font-inter"
+        >
+          Link Mágico (Sin contraseña)
+        </Button>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -140,6 +237,17 @@ function LoginForm() {
             className="border-interconecta-border-subtle"
           />
         </div>
+        
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={onShowForgotPassword}
+            className="text-sm text-interconecta-primary hover:text-interconecta-accent font-inter underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
+        
         <Button 
           type="submit" 
           className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
@@ -220,6 +328,17 @@ function RegisterForm() {
   return (
     <div className="space-y-6">
       <SocialAuthButtons mode="register" />
+      
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-interconecta-border-subtle" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
+            O regístrate con email
+          </span>
+        </div>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">

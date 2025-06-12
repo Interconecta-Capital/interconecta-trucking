@@ -22,7 +22,10 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: any) => Promise<{ needsVerification?: boolean }>;
   signInWithGoogle: () => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateEmail: (newEmail: string) => Promise<void>;
   hasAccess: (resource: string) => boolean;
   resendConfirmation: (email: string) => Promise<void>;
 }
@@ -163,6 +166,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithMagicLink = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+    
+    if (error) throw error;
+  };
+
   const signUp = async (email: string, password: string, userData: any) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
     
@@ -233,6 +249,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const resetPassword = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/auth/reset-password`;
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+    
+    if (error) throw error;
+  };
+
+  const updateEmail = async (newEmail: string) => {
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail,
+    }, {
+      emailRedirectTo: redirectUrl,
+    });
+    
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -268,7 +306,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signInWithGoogle,
+      signInWithMagicLink,
       signOut,
+      resetPassword,
+      updateEmail,
       hasAccess,
       resendConfirmation,
     }}>

@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Trial from "./pages/Trial";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import CartasPorte from "./pages/CartasPorte";
 import Conductores from "./pages/Conductores";
@@ -31,6 +32,7 @@ function AppContent() {
         <Route path="/auth/login" element={<Auth />} />
         <Route path="/auth/register" element={<Auth />} />
         <Route path="/auth/trial" element={<Trial />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
         
         {/* Rutas protegidas */}
         <Route path="/dashboard" element={
