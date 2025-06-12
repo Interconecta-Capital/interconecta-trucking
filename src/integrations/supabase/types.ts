@@ -992,6 +992,50 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_carta_porte: {
+        Row: {
+          carta_porte_id: string
+          created_at: string
+          descripcion: string
+          evento: string
+          id: string
+          metadata: Json | null
+          ubicacion: string | null
+          updated_at: string
+          uuid_fiscal: string | null
+        }
+        Insert: {
+          carta_porte_id: string
+          created_at?: string
+          descripcion: string
+          evento: string
+          id?: string
+          metadata?: Json | null
+          ubicacion?: string | null
+          updated_at?: string
+          uuid_fiscal?: string | null
+        }
+        Update: {
+          carta_porte_id?: string
+          created_at?: string
+          descripcion?: string
+          evento?: string
+          id?: string
+          metadata?: Json | null
+          ubicacion?: string | null
+          updated_at?: string
+          uuid_fiscal?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_carta_porte_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ubicaciones: {
         Row: {
           carta_porte_id: string | null

@@ -24,9 +24,12 @@ export const useTrackingCartaPorte = (cartaPorteId?: string) => {
         .eq('carta_porte_id', cartaPorteId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching tracking events:', error);
+        throw error;
+      }
       
-      return data.map(event => ({
+      return (data || []).map(event => ({
         id: event.id,
         evento: event.evento,
         descripcion: event.descripcion,
@@ -44,13 +47,21 @@ export const useTrackingCartaPorte = (cartaPorteId?: string) => {
     ubicacion?: string;
     metadata?: any;
   }) => {
-    if (!cartaPorteId) return;
+    if (!cartaPorteId) {
+      console.error('cartaPorteId is required to add tracking event');
+      return;
+    }
+
+    console.log('Adding tracking event:', { cartaPorteId, evento });
 
     const { error } = await supabase
       .from('tracking_carta_porte')
       .insert({
         carta_porte_id: cartaPorteId,
-        ...evento
+        evento: evento.evento,
+        descripcion: evento.descripcion,
+        ubicacion: evento.ubicacion,
+        metadata: evento.metadata
       });
 
     if (error) {
@@ -58,6 +69,7 @@ export const useTrackingCartaPorte = (cartaPorteId?: string) => {
       throw error;
     }
 
+    console.log('Tracking event added successfully');
     // Refrescar datos
     refetch();
   };
