@@ -799,6 +799,7 @@ export type Database = {
           curp: string | null
           direccion: Json | null
           email: string | null
+          estado: string
           id: string
           nombre: string
           num_licencia: string | null
@@ -815,6 +816,7 @@ export type Database = {
           curp?: string | null
           direccion?: Json | null
           email?: string | null
+          estado?: string
           id?: string
           nombre: string
           num_licencia?: string | null
@@ -831,6 +833,7 @@ export type Database = {
           curp?: string | null
           direccion?: Json | null
           email?: string | null
+          estado?: string
           id?: string
           nombre?: string
           num_licencia?: string | null
@@ -840,6 +843,48 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           vigencia_licencia?: string | null
+        }
+        Relationships: []
+      }
+      documentos_entidades: {
+        Row: {
+          activo: boolean
+          created_at: string
+          entidad_id: string
+          entidad_tipo: string
+          fecha_vencimiento: string | null
+          id: string
+          nombre_archivo: string
+          ruta_archivo: string
+          tipo_documento: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          entidad_id: string
+          entidad_tipo: string
+          fecha_vencimiento?: string | null
+          id?: string
+          nombre_archivo: string
+          ruta_archivo: string
+          tipo_documento: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          entidad_id?: string
+          entidad_tipo?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          nombre_archivo?: string
+          ruta_archivo?: string
+          tipo_documento?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -998,6 +1043,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      historial_estados: {
+        Row: {
+          automatico: boolean
+          cambiado_por: string | null
+          entidad_id: string
+          entidad_tipo: string
+          estado_anterior: string | null
+          estado_nuevo: string
+          fecha_cambio: string
+          id: string
+          motivo: string | null
+          observaciones: string | null
+          user_id: string
+        }
+        Insert: {
+          automatico?: boolean
+          cambiado_por?: string | null
+          entidad_id: string
+          entidad_tipo: string
+          estado_anterior?: string | null
+          estado_nuevo: string
+          fecha_cambio?: string
+          id?: string
+          motivo?: string | null
+          observaciones?: string | null
+          user_id: string
+        }
+        Update: {
+          automatico?: boolean
+          cambiado_por?: string | null
+          entidad_id?: string
+          entidad_tipo?: string
+          estado_anterior?: string | null
+          estado_nuevo?: string
+          fecha_cambio?: string
+          id?: string
+          motivo?: string | null
+          observaciones?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       mercancias: {
         Row: {
@@ -1312,6 +1399,60 @@ export type Database = {
         }
         Relationships: []
       }
+      programaciones: {
+        Row: {
+          costo: number | null
+          created_at: string
+          descripcion: string
+          entidad_id: string
+          entidad_tipo: string
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string
+          id: string
+          observaciones: string | null
+          proveedor: string | null
+          sin_fecha_fin: boolean
+          tipo_programacion: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          costo?: number | null
+          created_at?: string
+          descripcion: string
+          entidad_id: string
+          entidad_tipo: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio: string
+          id?: string
+          observaciones?: string | null
+          proveedor?: string | null
+          sin_fecha_fin?: boolean
+          tipo_programacion: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          costo?: number | null
+          created_at?: string
+          descripcion?: string
+          entidad_id?: string
+          entidad_tipo?: string
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id?: string
+          observaciones?: string | null
+          proveedor?: string | null
+          sin_fecha_fin?: boolean
+          tipo_programacion?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rate_limit_log: {
         Row: {
           action_type: string
@@ -1404,6 +1545,7 @@ export type Database = {
           created_at: string | null
           direccion: Json | null
           email: string | null
+          estado: string
           id: string
           nombre_razon_social: string
           rfc: string
@@ -1417,6 +1559,7 @@ export type Database = {
           created_at?: string | null
           direccion?: Json | null
           email?: string | null
+          estado?: string
           id?: string
           nombre_razon_social: string
           rfc: string
@@ -1430,6 +1573,7 @@ export type Database = {
           created_at?: string | null
           direccion?: Json | null
           email?: string | null
+          estado?: string
           id?: string
           nombre_razon_social?: string
           rfc?: string
@@ -1720,11 +1864,15 @@ export type Database = {
       }
       vehiculos: {
         Row: {
+          acta_instalacion_gps: string | null
           activo: boolean | null
           anio: number | null
           config_vehicular: string | null
           created_at: string | null
+          estado: string
+          fecha_instalacion_gps: string | null
           id: string
+          id_equipo_gps: string | null
           marca: string | null
           modelo: string | null
           num_serie: string | null
@@ -1736,11 +1884,15 @@ export type Database = {
           vigencia_seguro: string | null
         }
         Insert: {
+          acta_instalacion_gps?: string | null
           activo?: boolean | null
           anio?: number | null
           config_vehicular?: string | null
           created_at?: string | null
+          estado?: string
+          fecha_instalacion_gps?: string | null
           id?: string
+          id_equipo_gps?: string | null
           marca?: string | null
           modelo?: string | null
           num_serie?: string | null
@@ -1752,11 +1904,15 @@ export type Database = {
           vigencia_seguro?: string | null
         }
         Update: {
+          acta_instalacion_gps?: string | null
           activo?: boolean | null
           anio?: number | null
           config_vehicular?: string | null
           created_at?: string | null
+          estado?: string
+          fecha_instalacion_gps?: string | null
           id?: string
+          id_equipo_gps?: string | null
           marca?: string | null
           modelo?: string | null
           num_serie?: string | null
