@@ -58,11 +58,11 @@ export const useUbicaciones = (cartaPorteId?: string) => {
     setRutaCalculada(ruta);
   }, [ubicaciones, calcularRutaCompletaBase]);
 
-  const calcularDistanciaTotal = useCallback(() => {
+  const calcularDistanciaTotalCallback = useCallback(() => {
     return calcularDistanciaTotal(ubicaciones);
   }, [ubicaciones]);
 
-  const validarSecuenciaUbicaciones = useCallback(() => {
+  const validarSecuenciaUbicacionesCallback = useCallback(() => {
     return validarSecuenciaUbicaciones(ubicaciones);
   }, [ubicaciones]);
 
@@ -80,8 +80,8 @@ export const useUbicaciones = (cartaPorteId?: string) => {
     actualizarUbicacion,
     eliminarUbicacion,
     reordenarUbicaciones,
-    calcularDistanciaTotal,
-    validarSecuenciaUbicaciones,
+    calcularDistanciaTotal: calcularDistanciaTotalCallback,
+    validarSecuenciaUbicaciones: validarSecuenciaUbicacionesCallback,
     generarIdUbicacion: generarIdUbicacionCallback,
     guardarUbicacionFrecuente,
     isGuardando,

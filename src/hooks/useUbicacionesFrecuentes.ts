@@ -25,7 +25,7 @@ export const useUbicacionesFrecuentes = () => {
         nombreUbicacion: item.nombre_ubicacion,
         rfcAsociado: item.rfc_asociado,
         domicilio: item.domicilio,
-        coordenadas: (item as any).coordenadas || undefined,
+        coordenadas: undefined, // Database doesn't store coordinates, will be geocoded when needed
         usoCount: item.uso_count
       })) as UbicacionFrecuente[];
     },
@@ -40,7 +40,6 @@ export const useUbicacionesFrecuentes = () => {
           nombre_ubicacion: ubicacion.nombreUbicacion,
           rfc_asociado: ubicacion.rfcAsociado,
           domicilio: ubicacion.domicilio,
-          coordenadas: ubicacion.coordenadas,
           uso_count: 1
         }, {
           onConflict: 'rfc_asociado,domicilio'
