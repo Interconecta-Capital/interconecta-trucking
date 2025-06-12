@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useTrialTracking } from '@/hooks/useTrialTracking';
 import {
   Dialog,
   DialogContent,
@@ -33,13 +33,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { 
     suscripcion, 
     enPeriodoPrueba, 
-    diasRestantesPrueba,
     suscripcionVencida,
     estaBloqueado,
     abrirPortalCliente,
     isOpeningPortal
   } = useSuscripcion();
   const { obtenerUsoActual } = usePermisosSubscripcion();
+  const { trialInfo } = useTrialTracking();
   const [activeTab, setActiveTab] = useState('account');
 
   const usoActual = obtenerUsoActual();
@@ -111,7 +111,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Días Restantes:</span>
                         <span className="text-sm font-bold text-orange-600">
-                          {diasRestantesPrueba()} días
+                          {trialInfo.daysRemaining} días
                         </span>
                       </div>
                     )}

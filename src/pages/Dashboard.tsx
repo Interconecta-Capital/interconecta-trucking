@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RealtimeMetrics } from '@/components/dashboard/RealtimeMetrics';
@@ -8,6 +7,7 @@ import { NotificationsPanel } from '@/components/dashboard/NotificationsPanel';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, Users, Truck, BarChart3 } from 'lucide-react';
+import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 
 export default function Dashboard() {
   const { dashboardMetrics, realtimeMetrics, isLoadingDashboard, isLoadingRealtime } = useAnalytics();
@@ -57,47 +57,7 @@ export default function Dashboard() {
         {/* Panel lateral con acciones rápidas y notificaciones */}
         <div className="space-y-4">
           {/* Acciones Rápidas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link to="/cartas-porte" className="block">
-                <Button 
-                  className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Carta Porte
-                </Button>
-              </Link>
-              
-              <Link to="/cartas-porte" className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Ver Documentos
-                </Button>
-              </Link>
-              
-              <Link to="/conductores" className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="h-4 w-4 mr-2" />
-                  Gestionar Conductores
-                </Button>
-              </Link>
-              
-              <Link to="/vehiculos" className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  <Truck className="h-4 w-4 mr-2" />
-                  Gestionar Vehículos
-                </Button>
-              </Link>
-              
-              <Button variant="outline" className="w-full justify-start">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Reportes
-              </Button>
-            </CardContent>
-          </Card>
+          <QuickActionsCard />
 
           {/* Notificaciones */}
           <NotificationsPanel />

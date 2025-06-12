@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
@@ -74,16 +75,19 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center space-x-3">
-          <img 
-            src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-            alt="Interconecta Trucking Logo"
-            className="h-8 w-8 rounded-lg"
-          />
-          <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
-            <p className="text-xs text-sidebar-foreground/60 font-inter">Transportes ABC S.A.</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+              alt="Interconecta Trucking Logo"
+              className="h-8 w-8 rounded-lg"
+            />
+            <div className="group-data-[collapsible=icon]:hidden">
+              <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
+              <p className="text-sm text-sidebar-foreground font-inter">Capital</p>
+            </div>
           </div>
+          <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
         </div>
       </SidebarHeader>
       
@@ -97,10 +101,11 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className="w-full"
+                    className="w-full h-12 text-base"
+                    size="lg"
                   >
                     <Link to={item.url} className="flex items-center space-x-3">
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -113,9 +118,14 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="space-y-2">
-          <Button variant="ghost" size="sm" className="w-full justify-start text-red-400 hover:text-red-300" onClick={handleSignOut}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full justify-start text-red-400 hover:text-red-300 h-10" 
+            onClick={handleSignOut}
+          >
             <LogOut className="h-4 w-4 mr-2" />
-            Cerrar Sesión
+            <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
           </Button>
         </div>
       </SidebarFooter>
