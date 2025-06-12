@@ -34,7 +34,7 @@ export const ModalBloqueoFaltaPago = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="max-w-md mx-auto" hideCloseButton>
+      <DialogContent className="max-w-md mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />

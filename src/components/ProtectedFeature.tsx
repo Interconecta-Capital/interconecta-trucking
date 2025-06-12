@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Lock, Upgrade } from 'lucide-react';
+import { Lock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ProtectedFeatureProps {
@@ -36,7 +36,7 @@ export const ProtectedFeature = ({ children, feature, fallback }: ProtectedFeatu
           onClick={() => navigate('/planes')}
           className="ml-4"
         >
-          <Upgrade className="w-3 h-3 mr-1" />
+          <TrendingUp className="w-3 h-3 mr-1" />
           Actualizar Plan
         </Button>
       </AlertDescription>
