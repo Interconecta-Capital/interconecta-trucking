@@ -19,18 +19,18 @@ export const useMercanciasPersistence = (cartaPorteId?: string) => {
         .from('mercancias')
         .insert({
           carta_porte_id: cartaPorteId,
-          bienes_transp: mercancia.bienesTransp,
+          bienes_transp: mercancia.bienes_transp,
           descripcion: mercancia.descripcion,
           cantidad: mercancia.cantidad,
-          clave_unidad: mercancia.claveUnidad,
-          peso_kg: mercancia.pesoKg,
-          valor_mercancia: mercancia.valorMercancia,
+          clave_unidad: mercancia.clave_unidad,
+          peso_kg: mercancia.peso_kg,
+          valor_mercancia: mercancia.valor_mercancia,
           moneda: mercancia.moneda || 'MXN',
-          fraccion_arancelaria: mercancia.fraccionArancelaria,
-          material_peligroso: mercancia.materialPeligroso || false,
-          cve_material_peligroso: mercancia.cveMaterialPeligroso,
+          fraccion_arancelaria: mercancia.fraccion_arancelaria,
+          material_peligroso: mercancia.material_peligroso || false,
+          cve_material_peligroso: mercancia.cve_material_peligroso,
           embalaje: mercancia.embalaje,
-          uuid_comercio_ext: mercancia.uuidComercioExt,
+          uuid_comercio_ext: mercancia.uuid_comercio_ext,
         })
         .select()
         .single();
@@ -61,18 +61,18 @@ export const useMercanciasPersistence = (cartaPorteId?: string) => {
       const { data, error } = await supabase
         .from('mercancias')
         .update({
-          bienes_transp: mercancia.bienesTransp,
+          bienes_transp: mercancia.bienes_transp,
           descripcion: mercancia.descripcion,
           cantidad: mercancia.cantidad,
-          clave_unidad: mercancia.claveUnidad,
-          peso_kg: mercancia.pesoKg,
-          valor_mercancia: mercancia.valorMercancia,
+          clave_unidad: mercancia.clave_unidad,
+          peso_kg: mercancia.peso_kg,
+          valor_mercancia: mercancia.valor_mercancia,
           moneda: mercancia.moneda || 'MXN',
-          fraccion_arancelaria: mercancia.fraccionArancelaria,
-          material_peligroso: mercancia.materialPeligroso || false,
-          cve_material_peligroso: mercancia.cveMaterialPeligroso,
+          fraccion_arancelaria: mercancia.fraccion_arancelaria,
+          material_peligroso: mercancia.material_peligroso || false,
+          cve_material_peligroso: mercancia.cve_material_peligroso,
           embalaje: mercancia.embalaje,
-          uuid_comercio_ext: mercancia.uuidComercioExt,
+          uuid_comercio_ext: mercancia.uuid_comercio_ext,
         })
         .eq('id', id)
         .select()
@@ -124,18 +124,18 @@ export const useMercanciasPersistence = (cartaPorteId?: string) => {
       // Luego insertar las nuevas
       const mercanciasParaInsertar = mercancias.map(mercancia => ({
         carta_porte_id: cartaPorteId,
-        bienes_transp: mercancia.bienesTransp,
+        bienes_transp: mercancia.bienes_transp,
         descripcion: mercancia.descripcion,
         cantidad: mercancia.cantidad,
-        clave_unidad: mercancia.claveUnidad,
-        peso_kg: mercancia.pesoKg,
-        valor_mercancia: mercancia.valorMercancia,
+        clave_unidad: mercancia.clave_unidad,
+        peso_kg: mercancia.peso_kg,
+        valor_mercancia: mercancia.valor_mercancia,
         moneda: mercancia.moneda || 'MXN',
-        fraccion_arancelaria: mercancia.fraccionArancelaria,
-        material_peligroso: mercancia.materialPeligroso || false,
-        cve_material_peligroso: mercancia.cveMaterialPeligroso,
+        fraccion_arancelaria: mercancia.fraccion_arancelaria,
+        material_peligroso: mercancia.material_peligroso || false,
+        cve_material_peligroso: mercancia.cve_material_peligroso,
         embalaje: mercancia.embalaje,
-        uuid_comercio_ext: mercancia.uuidComercioExt,
+        uuid_comercio_ext: mercancia.uuid_comercio_ext,
       }));
 
       if (mercanciasParaInsertar.length > 0) {

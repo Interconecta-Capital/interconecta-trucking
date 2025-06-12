@@ -22,6 +22,30 @@ export interface RealtimeMetrics {
   satisfaccionCliente: number;
 }
 
+// Add missing interfaces for dashboard components
+export interface PerformanceMetrics {
+  mes: string;
+  eficiencia: number;
+  combustible: number;
+  mantenimiento: number;
+  entregas: number;
+}
+
+export interface RouteMetrics {
+  ruta: string;
+  frecuencia: number;
+  ingresoPromedio: number;
+  satisfaccion: number;
+  tiempoPromedio: number;
+}
+
+export interface TrendData {
+  fecha: string;
+  cartasPorte: number;
+  ingresos: number;
+  entregas: number;
+}
+
 export const useAnalytics = () => {
   const { data: dashboardMetrics, isLoading: isLoadingDashboard } = useQuery({
     queryKey: ['dashboard-metrics'],
