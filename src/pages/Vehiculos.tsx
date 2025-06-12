@@ -1,9 +1,11 @@
+
 import { AppSidebar } from "@/components/AppSidebar";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Plus,
   Search,
@@ -15,42 +17,28 @@ import {
   Wrench,
   MapPin
 } from "lucide-react";
+import { useVehiculos } from "@/hooks/useVehiculos";
 
 const Vehiculos = () => {
-  const vehiculos = [
-    {
-      id: "1",
-      placa: "ABC-123-45",
-      marca: "Freightliner",
-      modelo: "Cascadia",
-      año: 2020,
-      tipo: "Tractocamión",
-      status: "Activo",
-      statusColor: "bg-green-100 text-green-800",
-      conductor: "Juan Pérez",
-      ubicacion: "En ruta - CDMX → Guadalajara",
-      ultimoMantenimiento: "2024-01-10",
-      proximoMantenimiento: "2024-04-10",
-      kilometraje: 245000,
-      combustible: 85
-    },
-    {
-      id: "2", 
-      placa: "DEF-678-90",
-      marca: "Kenworth",
-      modelo: "T680",
-      año: 2019,
-      tipo: "Tractocamión",
-      status: "Disponible",
-      statusColor: "bg-blue-100 text-blue-800",
-      conductor: "No asignado",
-      ubicacion: "Base Monterrey",
-      ultimoMantenimiento: "2024-01-05",
-      proximoMantenimiento: "2024-04-05",
-      kilometraje: 198000,
-      combustible: 92
-    }
-  ];
+  const { vehiculos, isLoading } = useVehiculos();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <AppSidebar />
+        <main className="flex-1 w-full">
+          <GlobalHeader />
+          <div className="p-3 md:p-6">
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
@@ -76,6 +64,10 @@ const Vehiculos = () => {
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
                 </Button>
+                <Button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Vehículo
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -85,7 +77,7 @@ const Vehiculos = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-gray-900">24</div>
+                  <div className="text-lg md:text-2xl font-bold text-gray-900">{vehiculos.length}</div>
                   <div className="text-xs md:text-sm text-gray-600">Total Vehículos</div>
                 </div>
               </CardContent>
@@ -93,7 +85,7 @@ const Vehiculos = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-green-600">18</div>
+                  <div className="text-lg md:text-2xl font-bold text-green-600">{vehiculos.length}</div>
                   <div className="text-xs md:text-sm text-gray-600">Activos</div>
                 </div>
               </CardContent>
@@ -101,7 +93,7 @@ const Vehiculos = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-blue-600">6</div>
+                  <div className="text-lg md:text-2xl font-bold text-blue-600">0</div>
                   <div className="text-xs md:text-sm text-gray-600">Disponibles</div>
                 </div>
               </CardContent>
@@ -109,85 +101,78 @@ const Vehiculos = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-orange-600">3</div>
+                  <div className="text-lg md:text-2xl font-bold text-orange-600">0</div>
                   <div className="text-xs md:text-sm text-gray-600">Mantenimiento</div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Vehiculos Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {vehiculos.map((vehiculo) => (
-              <Card key={vehiculo.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3 md:pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-trucking-blue-100 p-3 rounded-lg">
-                        <Truck className="h-6 w-6 text-trucking-blue-600" />
+          {/* Empty State o Lista de Vehículos */}
+          {vehiculos.length === 0 ? (
+            <Card className="p-8 text-center">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="bg-gray-100 rounded-full p-6">
+                  <Truck className="h-12 w-12 text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">No hay vehículos registrados</h3>
+                  <p className="text-gray-600 mt-1">Comienza agregando tu primer vehículo</p>
+                </div>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Primer Vehículo
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              {vehiculos.map((vehiculo) => (
+                <Card key={vehiculo.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3 md:pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-trucking-blue-100 p-3 rounded-lg">
+                          <Truck className="h-6 w-6 text-trucking-blue-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base md:text-lg">{vehiculo.placa}</CardTitle>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {vehiculo.marca} {vehiculo.modelo} {vehiculo.anio}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">
+                        Activo
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-xs md:text-sm">
+                      <div>
+                        <p className="text-gray-600">Configuración</p>
+                        <p className="font-medium">{vehiculo.config_vehicular || 'No especificada'}</p>
                       </div>
                       <div>
-                        <CardTitle className="text-base md:text-lg">{vehiculo.placa}</CardTitle>
-                        <p className="text-xs md:text-sm text-gray-600">
-                          {vehiculo.marca} {vehiculo.modelo} {vehiculo.año}
-                        </p>
+                        <p className="text-gray-600">Serie</p>
+                        <p className="font-medium">{vehiculo.num_serie || 'No especificado'}</p>
                       </div>
                     </div>
-                    <Badge className={vehiculo.statusColor}>
-                      {vehiculo.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-xs md:text-sm">
-                    <div>
-                      <p className="text-gray-600">Conductor</p>
-                      <p className="font-medium">{vehiculo.conductor}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Tipo</p>
-                      <p className="font-medium">{vehiculo.tipo}</p>
-                    </div>
-                  </div>
 
-                  <div className="border-t pt-4">
-                    <p className="text-xs md:text-sm text-gray-600 mb-2">Ubicación actual</p>
-                    <p className="font-medium text-sm md:text-base flex items-center">
-                      <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                      {vehiculo.ubicacion}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <Fuel className="h-4 w-4 mr-1 text-blue-500" />
-                        <span className="text-sm font-medium">{vehiculo.combustible}%</span>
-                      </div>
-                      <p className="text-xs text-gray-600">Combustible</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        Ver Detalles
+                      </Button>
+                      <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white flex-1 text-xs">
+                        Asignar Viaje
+                      </Button>
                     </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <Wrench className="h-4 w-4 mr-1 text-orange-500" />
-                        <span className="text-sm font-medium">15 días</span>
-                      </div>
-                      <p className="text-xs text-gray-600">Próx. Mant.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 text-xs">
-                      Ver Detalles
-                    </Button>
-                    <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white flex-1 text-xs">
-                      Asignar Viaje
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

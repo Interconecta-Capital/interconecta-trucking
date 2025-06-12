@@ -717,6 +717,57 @@ export type Database = {
           },
         ]
       }
+      conductores: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          curp: string | null
+          direccion: Json | null
+          email: string | null
+          id: string
+          nombre: string
+          num_licencia: string | null
+          rfc: string | null
+          telefono: string | null
+          tipo_licencia: string | null
+          updated_at: string | null
+          user_id: string
+          vigencia_licencia: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          curp?: string | null
+          direccion?: Json | null
+          email?: string | null
+          id?: string
+          nombre: string
+          num_licencia?: string | null
+          rfc?: string | null
+          telefono?: string | null
+          tipo_licencia?: string | null
+          updated_at?: string | null
+          user_id: string
+          vigencia_licencia?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          curp?: string | null
+          direccion?: Json | null
+          email?: string | null
+          id?: string
+          nombre?: string
+          num_licencia?: string | null
+          rfc?: string | null
+          telefono?: string | null
+          tipo_licencia?: string | null
+          updated_at?: string | null
+          user_id?: string
+          vigencia_licencia?: string | null
+        }
+        Relationships: []
+      }
       eventos_calendario: {
         Row: {
           carta_porte_id: string | null
@@ -1153,6 +1204,48 @@ export type Database = {
         }
         Relationships: []
       }
+      socios: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          direccion: Json | null
+          email: string | null
+          id: string
+          nombre_razon_social: string
+          rfc: string
+          telefono: string | null
+          tipo_persona: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          direccion?: Json | null
+          email?: string | null
+          id?: string
+          nombre_razon_social: string
+          rfc: string
+          telefono?: string | null
+          tipo_persona?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          direccion?: Json | null
+          email?: string | null
+          id?: string
+          nombre_razon_social?: string
+          rfc?: string
+          telefono?: string | null
+          tipo_persona?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           activo: boolean | null
@@ -1371,6 +1464,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vehiculos: {
+        Row: {
+          activo: boolean | null
+          anio: number | null
+          config_vehicular: string | null
+          created_at: string | null
+          id: string
+          marca: string | null
+          modelo: string | null
+          num_serie: string | null
+          placa: string
+          poliza_seguro: string | null
+          updated_at: string | null
+          user_id: string
+          verificacion_vigencia: string | null
+          vigencia_seguro: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          anio?: number | null
+          config_vehicular?: string | null
+          created_at?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          num_serie?: string | null
+          placa: string
+          poliza_seguro?: string | null
+          updated_at?: string | null
+          user_id: string
+          verificacion_vigencia?: string | null
+          vigencia_seguro?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          anio?: number | null
+          config_vehicular?: string | null
+          created_at?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          num_serie?: string | null
+          placa?: string
+          poliza_seguro?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verificacion_vigencia?: string | null
+          vigencia_seguro?: string | null
+        }
+        Relationships: []
       }
       vehiculos_guardados: {
         Row: {

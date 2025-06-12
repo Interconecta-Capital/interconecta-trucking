@@ -1,3 +1,4 @@
+
 import { AppSidebar } from "@/components/AppSidebar";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Plus,
   Search,
@@ -17,82 +19,32 @@ import {
   Calendar,
   DollarSign
 } from "lucide-react";
+import { useSocios } from "@/hooks/useSocios";
 
 const Socios = () => {
-  const socios = [
-    {
-      id: "1",
-      nombre: "Distribuidora Central S.A. de C.V.",
-      contacto: "Roberto Mendoza",
-      telefono: "+52 55 9876 5432",
-      email: "roberto@distribuidora.com",
-      direccion: "Av. Insurgentes Sur 1234, CDMX",
-      rfc: "DCE120101ABC",
-      tipo: "Cliente Premium",
-      tipoColor: "bg-purple-100 text-purple-800",
-      viajes: 45,
-      facturacion: "$2,340,500",
-      ultimoViaje: "2024-01-15",
-      rating: 4.8,
-      status: "Activo"
-    },
-    {
-      id: "2",
-      nombre: "Comercial del Norte S.A.",
-      contacto: "Patricia Silva",
-      telefono: "+52 81 5555 1234",
-      email: "patricia@comercialnorte.com",
-      direccion: "Blvd. Díaz Ordaz 567, Monterrey, N.L.",
-      rfc: "CDN890505DEF",
-      tipo: "Cliente Regular",
-      tipoColor: "bg-blue-100 text-blue-800",
-      viajes: 23,
-      facturacion: "$890,200",
-      ultimoViaje: "2024-01-12",
-      rating: 4.5,
-      status: "Activo"
-    },
-    {
-      id: "3",
-      nombre: "Turística del Caribe S.A.",
-      contacto: "Miguel Herrera",
-      telefono: "+52 998 7777 8888",
-      email: "miguel@turisticacaribe.com",
-      direccion: "Zona Hotelera Km 12, Cancún, Q.R.",
-      rfc: "TDC031225GHI",
-      tipo: "Cliente Estacional",
-      tipoColor: "bg-green-100 text-green-800",
-      viajes: 18,
-      facturacion: "$650,800",
-      ultimoViaje: "2024-01-08",
-      rating: 4.2,
-      status: "Activo"
-    },
-    {
-      id: "4",
-      nombre: "Industrial Bajío S.A.",
-      contacto: "Fernando Castro",
-      telefono: "+52 477 3333 4444",
-      email: "fernando@industrialbajio.com",
-      direccion: "Parque Industrial Norte, León, GTO",
-      rfc: "IBJ150815JKL",
-      tipo: "Cliente Nuevo",
-      tipoColor: "bg-yellow-100 text-yellow-800",
-      viajes: 5,
-      facturacion: "$125,000",
-      ultimoViaje: "2024-01-05",
-      rating: 4.0,
-      status: "En Evaluación"
-    }
-  ];
+  const { socios, isLoading } = useSocios();
 
   const getInitials = (nombre: string) => {
     return nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const getRatingStars = (rating: number) => {
-    return "⭐".repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? "⭐" : "");
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <AppSidebar />
+        <main className="flex-1 w-full">
+          <GlobalHeader />
+          <div className="p-3 md:p-6">
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
@@ -101,7 +53,7 @@ const Socios = () => {
         <GlobalHeader />
 
         <div className="p-3 md:p-6">
-          {/* Filters - Mobile optimized */}
+          {/* Filters */}
           <Card className="mb-4 md:mb-6">
             <CardContent className="p-3 md:p-4">
               <div className="flex flex-col md:flex-row gap-3 md:gap-4">
@@ -118,16 +70,20 @@ const Socios = () => {
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
                 </Button>
+                <Button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Socio
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Stats Cards - Mobile optimized grid */}
+          {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-6">
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-gray-900">156</div>
+                  <div className="text-lg md:text-2xl font-bold text-gray-900">{socios.length}</div>
                   <div className="text-xs md:text-sm text-gray-600">Total Socios</div>
                 </div>
               </CardContent>
@@ -135,7 +91,7 @@ const Socios = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-green-600">142</div>
+                  <div className="text-lg md:text-2xl font-bold text-green-600">{socios.length}</div>
                   <div className="text-xs md:text-sm text-gray-600">Activos</div>
                 </div>
               </CardContent>
@@ -143,7 +99,7 @@ const Socios = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-purple-600">28</div>
+                  <div className="text-lg md:text-2xl font-bold text-purple-600">0</div>
                   <div className="text-xs md:text-sm text-gray-600">Premium</div>
                 </div>
               </CardContent>
@@ -151,93 +107,89 @@ const Socios = () => {
             <Card>
               <CardContent className="p-3 md:p-4">
                 <div className="text-center">
-                  <div className="text-lg md:text-2xl font-bold text-trucking-orange-600">$5.2M</div>
+                  <div className="text-lg md:text-2xl font-bold text-trucking-orange-600">$0</div>
                   <div className="text-xs md:text-sm text-gray-600">Facturación</div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Socios Grid - Mobile optimized */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {socios.map((socio) => (
-              <Card key={socio.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3 md:pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                      <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
-                        <AvatarFallback className="bg-trucking-blue-100 text-trucking-blue-600 font-semibold text-xs md:text-sm">
-                          {getInitials(socio.nombre)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base md:text-lg leading-tight truncate">{socio.nombre}</CardTitle>
-                        <p className="text-xs md:text-sm text-gray-600 truncate">{socio.contacto}</p>
-                        <p className="text-xs text-gray-500">{socio.rfc}</p>
+          {/* Empty State o Lista de Socios */}
+          {socios.length === 0 ? (
+            <Card className="p-8 text-center">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="bg-gray-100 rounded-full p-6">
+                  <Building className="h-12 w-12 text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">No hay socios registrados</h3>
+                  <p className="text-gray-600 mt-1">Comienza agregando tu primer socio comercial</p>
+                </div>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Primer Socio
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              {socios.map((socio) => (
+                <Card key={socio.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3 md:pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
+                          <AvatarFallback className="bg-trucking-blue-100 text-trucking-blue-600 font-semibold text-xs md:text-sm">
+                            {getInitials(socio.nombre_razon_social)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-base md:text-lg leading-tight truncate">{socio.nombre_razon_social}</CardTitle>
+                          <p className="text-xs md:text-sm text-gray-600 truncate">{socio.rfc}</p>
+                          <p className="text-xs text-gray-500">{socio.tipo_persona === 'fisica' ? 'Persona Física' : 'Persona Moral'}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <Badge className={`${socio.tipoColor} text-xs`}>
-                        {socio.tipo}
+                      <Badge className="bg-green-100 text-green-800 text-xs">
+                        Activo
                       </Badge>
-                      <div className="text-xs text-gray-600">
-                        {getRatingStars(socio.rating)} {socio.rating}
-                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-3 md:space-y-4">
-                  <div className="grid grid-cols-1 gap-2 md:gap-3 text-xs md:text-sm">
-                    <div className="flex items-center min-w-0">
-                      <Phone className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{socio.telefono}</span>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-3 md:space-y-4">
+                    <div className="grid grid-cols-1 gap-2 md:gap-3 text-xs md:text-sm">
+                      {socio.telefono && (
+                        <div className="flex items-center min-w-0">
+                          <Phone className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{socio.telefono}</span>
+                        </div>
+                      )}
+                      {socio.email && (
+                        <div className="flex items-center min-w-0">
+                          <Mail className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{socio.email}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center min-w-0">
-                      <Mail className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{socio.email}</span>
-                    </div>
-                    <div className="flex items-start min-w-0">
-                      <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs md:text-sm break-words">{socio.direccion}</span>
-                    </div>
-                  </div>
 
-                  <div className="border-t pt-3 md:pt-4">
-                    <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
-                      <div>
-                        <div className="text-base md:text-xl font-bold text-trucking-blue-600">{socio.viajes}</div>
-                        <div className="text-xs text-gray-600">Viajes</div>
-                      </div>
-                      <div>
-                        <div className="text-base md:text-xl font-bold text-green-600">{socio.facturacion}</div>
-                        <div className="text-xs text-gray-600">Facturación</div>
-                      </div>
-                      <div>
-                        <div className="text-xs md:text-sm font-medium text-gray-900">{socio.ultimoViaje}</div>
-                        <div className="text-xs text-gray-600">Último Viaje</div>
-                      </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        <Building className="h-3 w-3 mr-1" />
+                        Ver Perfil
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Historial
+                      </Button>
+                      <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white flex-1 text-xs">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Cotizar
+                      </Button>
                     </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 text-xs">
-                      <Building className="h-3 w-3 mr-1" />
-                      Ver Perfil
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      Historial
-                    </Button>
-                    <Button size="sm" className="bg-trucking-orange-500 hover:bg-trucking-orange-600 text-white flex-1 text-xs">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Cotizar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
