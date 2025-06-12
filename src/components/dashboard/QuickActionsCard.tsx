@@ -145,26 +145,26 @@ export function QuickActionsCard() {
           </CardContent>
         </Card>
 
-        {/* Próximos Eventos */}
+        {/* Próximos Eventos - Movido al final como resumen */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Próximos Eventos
+              Resumen de Próximos Eventos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {mockEventos.slice(0, 5).map((evento, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    {evento.tipo === 'viaje' && <Truck className="h-4 w-4 text-green-600" />}
-                    {evento.tipo === 'mantenimiento' && <Wrench className="h-4 w-4 text-red-600" />}
-                    {evento.tipo === 'entrega' && <MapPin className="h-4 w-4 text-orange-600" />}
-                    {evento.tipo === 'revision_gps' && <MapPin className="h-4 w-4 text-purple-600" />}
-                    {evento.tipo === 'verificacion' && <CheckCircle className="h-4 w-4 text-orange-600" />}
+              {mockEventos.slice(0, 3).map((evento, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    {evento.tipo === 'viaje' && <Truck className="h-3 w-3 text-green-600" />}
+                    {evento.tipo === 'mantenimiento' && <Wrench className="h-3 w-3 text-red-600" />}
+                    {evento.tipo === 'entrega' && <MapPin className="h-3 w-3 text-orange-600" />}
+                    {evento.tipo === 'revision_gps' && <MapPin className="h-3 w-3 text-purple-600" />}
+                    {evento.tipo === 'verificacion' && <CheckCircle className="h-3 w-3 text-orange-600" />}
                     <div>
-                      <p className="text-sm font-medium">{evento.titulo}</p>
+                      <p className="text-xs font-medium">{evento.titulo}</p>
                       <p className="text-xs text-muted-foreground">
                         {evento.fecha.toLocaleDateString('es-ES', { 
                           weekday: 'short', 
@@ -174,12 +174,15 @@ export function QuickActionsCard() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className={evento.color}>
+                  <Badge variant="outline" className={`${evento.color} text-xs`}>
                     {evento.tipo.replace('_', ' ')}
                   </Badge>
                 </div>
               ))}
             </div>
+            <Button variant="outline" className="w-full text-xs mt-2">
+              Ver todos los eventos
+            </Button>
           </CardContent>
         </Card>
       </div>

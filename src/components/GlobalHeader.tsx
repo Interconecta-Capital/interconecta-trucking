@@ -6,6 +6,7 @@ import { UserMenu } from './UserMenu';
 import { SettingsDialog } from './SettingsDialog';
 import { PlanBadge } from './PlanBadge';
 import { ScheduleDropdown } from './ScheduleDropdown';
+import { NotificationsPopover } from './dashboard/NotificationsPopover';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LimitUsageIndicator } from './LimitUsageIndicator';
@@ -86,10 +87,8 @@ export function GlobalHeader() {
         {/* ScheduleDropdown - Ahora visible en móvil también */}
         <ScheduleDropdown />
         
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Bell className="h-4 w-4" />
-          <span className="sr-only">Notificaciones</span>
-        </Button>
+        {/* Notificaciones */}
+        <NotificationsPopover />
         
         {!isMobile && (
           <Button 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,7 +22,9 @@ interface MantenimientoFormModalProps {
 }
 
 export function MantenimientoFormModal({ open, onOpenChange }: MantenimientoFormModalProps) {
-  const [fecha, setFecha] = useState<Date>();
+  const [fechaInicio, setFechaInicio] = useState<Date>();
+  const [fechaFin, setFechaFin] = useState<Date>();
+  const [sinFechaFin, setSinFechaFin] = useState(false);
   const [vehiculoId, setVehiculoId] = useState('');
   const [tipoMantenimiento, setTipoMantenimiento] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -33,7 +36,7 @@ export function MantenimientoFormModal({ open, onOpenChange }: MantenimientoForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fecha || !vehiculoId || !tipoMantenimiento) {
+    if (!fechaInicio || !vehiculoId || !tipoMantenimiento) {
       toast.error('Por favor complete los campos requeridos');
       return;
     }
@@ -47,7 +50,9 @@ export function MantenimientoFormModal({ open, onOpenChange }: MantenimientoForm
       onOpenChange(false);
       
       // Limpiar formulario
-      setFecha(undefined);
+      setFechaInicio(undefined);
+      setFechaFin(undefined);
+      setSinFechaFin(false);
       setVehiculoId('');
       setTipoMantenimiento('');
       setDescripcion('');
@@ -58,6 +63,13 @@ export function MantenimientoFormModal({ open, onOpenChange }: MantenimientoForm
       console.error('Error:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSinFechaFinChange = (checked: boolean) => {
+    setSinFechaFin(checked);
+    if (checked) {
+      setFechaFin(undefined);
     }
   };
 
@@ -89,31 +101,74 @@ export function MantenimientoFormModal({ open, onOpenChange }: MantenimientoForm
           </div>
 
           <div className="space-y-2">
-            <Label>Fecha programada *</Label>
+            <Label>Fecha de inicio *</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !fecha && "text-muted-foreground"
+                    !fechaInicio && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {fecha ? format(fecha, "PPP", { locale: es }) : "Seleccionar fecha"}
+                  {fechaInicio ? format(fechaInicio, "PPP", { locale: es }) : "Seleccionar fecha de inicio"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={fecha}
-                  onSelect={setFecha}
+                  selected={fechaInicio}
+                  onSelect={setFechaInicio}
                   initialFocus
                   className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
           </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="sin-fecha-fin"
+                checked={sinFechaFin}
+                onCheckedChange={handleSinFechaFinChange}
+              />
+              <Label htmlFor="sin-fecha-fin" className="text-sm">
+                Sin fecha de fin definida
+              </Label>
+            </div>
+          </div>
+
+          {!sinFechaFin && (
+            <div className="space-y-2">
+              <Label>Fecha de fin estimada</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !fechaFin && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {fechaFin ? format(fechaFin, "PPP", { locale: es }) : "Seleccionar fecha de fin"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={fechaFin}
+                    onSelect={setFechaFin}
+                    initialFocus
+                    disabled={(date) => fechaInicio ? date < fechaInicio : false}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="tipo">Tipo de mantenimiento *</Label>
