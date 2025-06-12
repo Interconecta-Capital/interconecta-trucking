@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserMenu } from './UserMenu';
 import { SettingsDialog } from './SettingsDialog';
+import { PlanBadge } from './PlanBadge';
+import { ScheduleDropdown } from './ScheduleDropdown';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -26,6 +28,8 @@ export function GlobalHeader() {
       </div>
       
       <div className="flex items-center gap-3">
+        <PlanBadge />
+        
         <Link to="/cartas-porte">
           <Button 
             size="sm" 
@@ -35,6 +39,8 @@ export function GlobalHeader() {
             <span className="hidden sm:inline">Nuevo Viaje</span>
           </Button>
         </Link>
+        
+        <ScheduleDropdown />
         
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Bell className="h-4 w-4" />

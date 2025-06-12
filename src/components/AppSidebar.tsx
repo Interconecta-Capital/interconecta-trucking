@@ -18,7 +18,7 @@ import {
   Truck, 
   UserCheck,
   LogOut,
-  Settings
+  CreditCard
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,11 @@ const menuItems = [
     title: "Socios",
     url: "/socios",
     icon: Users,
+  },
+  {
+    title: "Planes",
+    url: "/planes",
+    icon: CreditCard,
   },
 ];
 
