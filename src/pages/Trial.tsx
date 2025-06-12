@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Calendar } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, AlertCircle } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
+import { ContextualAlert } from '@/components/ui/contextual-alert';
 
 export default function Trial() {
   const {
@@ -32,6 +34,8 @@ export default function Trial() {
   });
   const [loading, setLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
+  const [showExistingUserAlert, setShowExistingUserAlert] = useState(false);
+  const [existingUserEmail, setExistingUserEmail] = useState('');
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -49,6 +53,7 @@ export default function Trial() {
     }
 
     setLoading(true);
+    setShowExistingUserAlert(false);
 
     try {
       const result = await signUp(formData.email, formData.password, {
@@ -67,6 +72,15 @@ export default function Trial() {
         navigate('/dashboard');
       }
     } catch (error: any) {
+      // Check if this is an existing user (repeated signup)
+      if (error.message?.includes('User already registered') || 
+          error.message?.includes('already registered') ||
+          error.message?.includes('user_repeated_signup')) {
+        setExistingUserEmail(formData.email);
+        setShowExistingUserAlert(true);
+        return;
+      }
+
       // Check if this might be an existing unconfirmed user
       const isUnconfirmed = await checkIfUserIsUnconfirmed(formData.email, error);
       
@@ -80,6 +94,14 @@ export default function Trial() {
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear alerts when user starts typing
+    if (field === 'email' && showExistingUserAlert) {
+      setShowExistingUserAlert(false);
+    }
+  };
+
+  const goToLogin = () => {
+    navigate('/auth/login');
   };
 
   return (
@@ -142,6 +164,21 @@ export default function Trial() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
+                    {/* Alert for existing user */}
+                    {showExistingUserAlert && (
+                      <ContextualAlert
+                        type="warning"
+                        title="Cuenta existente encontrada"
+                        message={`Ya tienes una cuenta registrada con ${existingUserEmail}. Inicia sesión para continuar.`}
+                        action={{
+                          label: 'Ir a iniciar sesión',
+                          onClick: goToLogin
+                        }}
+                        dismissible
+                        onDismiss={() => setShowExistingUserAlert(false)}
+                      />
+                    )}
+
                     <SocialAuthButtons mode="register" />
                     
                     <form onSubmit={handleSubmit} className="space-y-4">

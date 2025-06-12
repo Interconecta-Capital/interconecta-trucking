@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -191,7 +192,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     
-    if (error) throw error;
+    if (error) {
+      // Detectar si el usuario ya existe y lanzar error específico
+      if (error.message?.includes('User already registered')) {
+        throw new Error('El correo electrónico ya está registrado. Por favor inicia sesión.');
+      }
+      throw error;
+    }
     
     // Si el usuario se registró exitosamente pero necesita confirmar email
     if (data.user && !data.user.email_confirmed_at) {
