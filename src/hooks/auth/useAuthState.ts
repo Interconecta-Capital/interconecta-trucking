@@ -15,7 +15,7 @@ export const useAuthState = () => {
   const queryClient = useQueryClient();
 
   // Obtener datos del perfil y tenant desde la base de datos
-  const { data: profileData, refetch: refetchProfile } = useQuery({
+  const { data: profileData, refetch: refetchProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -47,11 +47,14 @@ export const useAuthState = () => {
       return profile;
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000, // 1 minuto
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Obtener datos del usuario y tenant desde la tabla usuarios
-  const { data: userData } = useQuery({
+  const { data: userData, isLoading: userDataLoading } = useQuery({
     queryKey: ['user-data', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -86,7 +89,10 @@ export const useAuthState = () => {
       return usuario;
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000, // 1 minuto
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Configurar listeners de autenticación
@@ -117,7 +123,7 @@ export const useAuthState = () => {
             await handleOAuthUser(session.user);
             // Refetch profile data después de manejar usuario OAuth
             refetchProfile();
-          }, 0);
+          }, 100);
         }
       }
     );
@@ -125,11 +131,9 @@ export const useAuthState = () => {
     return () => subscription.unsubscribe();
   }, [queryClient, refetchProfile]);
 
-  // Actualizar usuario con datos del perfil y tenant cuando estén disponibles
+  // Mantener los datos del usuario actualizados de forma más eficiente
   useEffect(() => {
-    if (user) {
-      console.log('Updating user with profile and user data:', { profileData, userData });
-      
+    if (user && (profileData !== undefined || userData !== undefined)) {
       const updatedUser: AuthUser = {
         ...user,
         profile: profileData || {
@@ -152,10 +156,16 @@ export const useAuthState = () => {
     }
   }, [user?.id, profileData, userData]);
 
+  // Función para refrescar datos manualmente
+  const refreshUserData = async () => {
+    await Promise.all([refetchProfile()]);
+  };
+
   return {
     user,
-    loading,
+    loading: loading || profileLoading || userDataLoading,
     setUser,
-    queryClient
+    queryClient,
+    refreshUserData
   };
 };

@@ -32,18 +32,18 @@ export const AppSidebar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Truck className="size-4" />
+                <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Truck className="size-6" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">TransportePro</span>
-                  <span className="truncate text-xs">Sistema de Gestión</span>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate font-semibold text-base">Interconecta</span>
+                  <span className="truncate text-sm">Sistema de Gestión</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -52,31 +52,31 @@ export const AppSidebar = () => {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegación Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sm font-medium">Navegación Principal</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/dashboard')}>
+              <SidebarMenuButton asChild isActive={isActive('/dashboard')} size="default" tooltip="Dashboard">
                 <Link to="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span>Dashboard</span>
+                  <LayoutDashboard className="h-5 w-5" />
+                  <span className="text-sm">Dashboard</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/cartas-porte')}>
+              <SidebarMenuButton asChild isActive={isActive('/cartas-porte')} size="default" tooltip="Cartas Porte">
                 <Link to="/cartas-porte">
-                  <FileText className="h-4 w-4" />
-                  <span>Cartas Porte</span>
+                  <FileText className="h-5 w-5" />
+                  <span className="text-sm">Cartas Porte</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/viajes')}>
+              <SidebarMenuButton asChild isActive={isActive('/viajes')} size="default" tooltip="Viajes">
                 <Link to="/viajes">
-                  <Truck className="h-4 w-4" />
-                  <span>Viajes</span>
+                  <Truck className="h-5 w-5" />
+                  <span className="text-sm">Viajes</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -84,31 +84,31 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Gestión de Recursos</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sm font-medium">Gestión de Recursos</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/vehiculos')}>
+              <SidebarMenuButton asChild isActive={isActive('/vehiculos')} size="default" tooltip="Vehículos">
                 <Link to="/vehiculos">
-                  <Car className="h-4 w-4" />
-                  <span>Vehículos</span>
+                  <Car className="h-5 w-5" />
+                  <span className="text-sm">Vehículos</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/conductores')}>
+              <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
                 <Link to="/conductores">
-                  <Users className="h-4 w-4" />
-                  <span>Conductores</span>
+                  <Users className="h-5 w-5" />
+                  <span className="text-sm">Conductores</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/socios')}>
+              <SidebarMenuButton asChild isActive={isActive('/socios')} size="default" tooltip="Socios">
                 <Link to="/socios">
-                  <Building2 className="h-4 w-4" />
-                  <span>Socios</span>
+                  <Building2 className="h-5 w-5" />
+                  <span className="text-sm">Socios</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -117,13 +117,13 @@ export const AppSidebar = () => {
 
         {puedeAccederAdministracion().puede && (
           <SidebarGroup>
-            <SidebarGroupLabel>Administración</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm font-medium">Administración</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive('/administracion')}>
+                <SidebarMenuButton asChild isActive={isActive('/administracion')} size="default" tooltip="Administración">
                   <Link to="/administracion">
-                    <Shield className="h-4 w-4" />
-                    <span>Administración</span>
+                    <Shield className="h-5 w-5" />
+                    <span className="text-sm">Administración</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -132,13 +132,13 @@ export const AppSidebar = () => {
         )}
 
         <SidebarGroup>
-          <SidebarGroupLabel>Configuración</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sm font-medium">Configuración</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/planes')}>
+              <SidebarMenuButton asChild isActive={isActive('/planes')} size="default" tooltip="Planes">
                 <Link to="/planes">
-                  <CreditCard className="h-4 w-4" />
-                  <span>Planes</span>
+                  <CreditCard className="h-5 w-5" />
+                  <span className="text-sm">Planes</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
