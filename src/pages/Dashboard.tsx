@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { CalendarView } from "@/components/dashboard/CalendarView";
+import { SimpleCalendarView } from "@/components/dashboard/SimpleCalendarView";
 import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { AnalyticsPanel } from "@/components/dashboard/AnalyticsPanel";
 
@@ -173,7 +173,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Calendario principal */}
             <div className="lg:col-span-3">
-              <CalendarView />
+              <SimpleCalendarView />
             </div>
 
             {/* Panel lateral */}
