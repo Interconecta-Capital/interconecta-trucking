@@ -1,130 +1,160 @@
+import {
+  Building2,
+  Car,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  Shield,
+  Truck,
+  Users,
+} from "lucide-react"
+import { Link, useLocation } from "react-router-dom"
 
+import { UserMenu } from "@/components/UserMenu"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Truck, 
-  UserCheck,
-  LogOut,
-  CreditCard
-} from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from 'sonner';
+  SidebarProvider,
+} from "@/components/ui/sidebar"
+import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { ProtectedFeature } from '@/components/ProtectedFeature';
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Cartas Porte",
-    url: "/cartas-porte",
-    icon: FileText,
-  },
-  {
-    title: "Conductores",
-    url: "/conductores",
-    icon: UserCheck,
-  },
-  {
-    title: "Vehículos",
-    url: "/vehiculos",
-    icon: Truck,
-  },
-  {
-    title: "Socios",
-    url: "/socios",
-    icon: Users,
-  },
-  {
-    title: "Planes",
-    url: "/planes",
-    icon: CreditCard,
-  },
-];
-
-export function AppSidebar() {
+export const AppSidebar = () => {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { puedeAccederAdministracion } = usePermisosSubscripcion();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('Sesión cerrada exitosamente');
-    } catch (error: any) {
-      toast.error('Error al cerrar sesión: ' + error.message);
-    }
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center space-x-3">
-          <img 
-            src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-            alt="Interconecta Capital Logo"
-            className="h-10 w-10 rounded-lg flex-shrink-0"
-          />
-          <div className="group-data-[collapsible=icon]:hidden">
-            <h2 className="text-lg font-bold text-sidebar-foreground font-sora">Interconecta</h2>
-            <p className="text-sm text-sidebar-foreground font-inter">Capital</p>
-          </div>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Gestión</SidebarGroupLabel>
-          <SidebarGroupContent>
+    <SidebarProvider defaultOpen={true}>
+      <Sidebar variant="inset">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link to="/dashboard">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Truck className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">TransportePro</span>
+                    <span className="truncate text-xs">Sistema de Gestión</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Navegación Principal</SidebarGroupLabel>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full h-14 text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    size="lg"
-                  >
-                    <Link to={item.url} className="flex items-center space-x-3">
-                      <item.icon className="h-6 w-6 flex-shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/dashboard')}>
+                  <Link to="/dashboard">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/cartas-porte')}>
+                  <Link to="/cartas-porte">
+                    <FileText className="h-4 w-4" />
+                    <span>Cartas Porte</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/viajes')}>
+                  <Link to="/viajes">
+                    <Truck className="h-4 w-4" />
+                    <span>Viajes</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Gestión de Recursos</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/vehiculos')}>
+                  <Link to="/vehiculos">
+                    <Car className="h-4 w-4" />
+                    <span>Vehículos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/conductores')}>
+                  <Link to="/conductores">
+                    <Users className="h-4 w-4" />
+                    <span>Conductores</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/socios')}>
+                  <Link to="/socios">
+                    <Building2 className="h-4 w-4" />
+                    <span>Socios</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          {puedeAccederAdministracion().puede && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Administración</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive('/administracion')}>
+                    <Link to="/administracion">
+                      <Shield className="h-4 w-4" />
+                      <span>Administración</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="space-y-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full justify-start text-red-400 hover:text-red-300 h-12" 
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-5 w-5 mr-2 flex-shrink-0" />
-            <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
-          </Button>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+          <SidebarGroup>
+            <SidebarGroupLabel>Configuración</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive('/planes')}>
+                  <Link to="/planes">
+                    <CreditCard className="h-4 w-4" />
+                    <span>Planes</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <UserMenu />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+    </SidebarProvider>
   );
-}
+};

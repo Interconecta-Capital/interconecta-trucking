@@ -12,6 +12,7 @@ import Vehiculos from "./pages/Vehiculos";
 import Conductores from "./pages/Conductores";
 import Socios from "./pages/Socios";
 import Viajes from "./pages/Viajes";
+import Administracion from "./pages/Administracion";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import Auth from "./pages/Auth";
 import Trial from "./pages/Trial";
@@ -71,6 +72,14 @@ function App() {
                     <AuthGuard>
                       <BaseLayout>
                         <Viajes />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/administracion" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Administracion />
                       </BaseLayout>
                     </AuthGuard>
                   } />

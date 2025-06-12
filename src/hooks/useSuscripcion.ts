@@ -17,6 +17,9 @@ export interface PlanSuscripcion {
   puede_generar_xml: boolean;
   puede_timbrar: boolean;
   puede_tracking: boolean;
+  puede_acceder_administracion: boolean;
+  puede_acceder_funciones_avanzadas: boolean;
+  puede_acceder_enterprise: boolean;
   activo: boolean;
 }
 
@@ -135,7 +138,6 @@ export const useSuscripcion = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Abrir Stripe checkout en una nueva pestaña
       window.open(data.url, '_blank');
     },
     onError: (error: any) => {
@@ -155,7 +157,6 @@ export const useSuscripcion = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Abrir portal en nueva pestaña
       window.open(data.url, '_blank');
     },
     onError: (error: any) => {
@@ -215,12 +216,10 @@ export const useSuscripcion = () => {
   // Cambiar plan de suscripción (actualizado para usar Stripe)
   const cambiarPlan = useMutation({
     mutationFn: async (planId: string) => {
-      // Si no tiene suscripción activa, crear checkout
       if (!suscripcion || suscripcion.status === 'trial') {
         return crearCheckout.mutateAsync(planId);
       }
       
-      // Si ya tiene suscripción, redirigir al portal del cliente
       return abrirPortalCliente.mutateAsync();
     },
     onError: (error: any) => {

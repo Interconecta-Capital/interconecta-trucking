@@ -1,4 +1,3 @@
-
 import { useSuscripcion } from './useSuscripcion';
 import { useConductores } from './useConductores';
 import { useVehiculos } from './useVehiculos';
@@ -59,10 +58,41 @@ export const usePermisosSubscripcion = () => {
           puede: tienePermiso('puede_tracking'),
           razon: !tienePermiso('puede_tracking') ? 'Esta función no está disponible en su plan actual' : undefined
         };
+
+      case 'administracion':
+        return { 
+          puede: tienePermiso('puede_acceder_administracion'),
+          razon: !tienePermiso('puede_acceder_administracion') ? 'Módulo de administración disponible desde Plan Gestión IA' : undefined
+        };
+
+      case 'funciones_avanzadas':
+        return { 
+          puede: tienePermiso('puede_acceder_funciones_avanzadas'),
+          razon: !tienePermiso('puede_acceder_funciones_avanzadas') ? 'Funciones avanzadas disponibles desde Plan Automatización Total' : undefined
+        };
+
+      case 'enterprise':
+        return { 
+          puede: tienePermiso('puede_acceder_enterprise'),
+          razon: !tienePermiso('puede_acceder_enterprise') ? 'Funciones enterprise disponibles solo en Plan Enterprise Sin Límites' : undefined
+        };
       
       default:
         return { puede: true };
     }
+  };
+
+  // Nuevas funciones específicas para módulos
+  const puedeAccederAdministracion = (): { puede: boolean; razon?: string } => {
+    return puedeAcceder('administracion');
+  };
+
+  const puedeAccederFuncionesAvanzadas = (): { puede: boolean; razon?: string } => {
+    return puedeAcceder('funciones_avanzadas');
+  };
+
+  const puedeAccederEnterprise = (): { puede: boolean; razon?: string } => {
+    return puedeAcceder('enterprise');
   };
 
   // Verificar si puede crear nuevos registros
@@ -145,5 +175,9 @@ export const usePermisosSubscripcion = () => {
     estaBloqueado,
     suscripcionVencida: suscripcionVencida(),
     planActual: suscripcion?.plan?.nombre || 'Sin plan',
+    // Nuevas funciones específicas
+    puedeAccederAdministracion,
+    puedeAccederFuncionesAvanzadas,
+    puedeAccederEnterprise,
   };
 };

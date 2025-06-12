@@ -1301,6 +1301,9 @@ export type Database = {
           nombre: string
           precio_anual: number | null
           precio_mensual: number
+          puede_acceder_administracion: boolean | null
+          puede_acceder_enterprise: boolean | null
+          puede_acceder_funciones_avanzadas: boolean | null
           puede_cancelar_cfdi: boolean | null
           puede_generar_xml: boolean | null
           puede_timbrar: boolean | null
@@ -1320,6 +1323,9 @@ export type Database = {
           nombre: string
           precio_anual?: number | null
           precio_mensual: number
+          puede_acceder_administracion?: boolean | null
+          puede_acceder_enterprise?: boolean | null
+          puede_acceder_funciones_avanzadas?: boolean | null
           puede_cancelar_cfdi?: boolean | null
           puede_generar_xml?: boolean | null
           puede_timbrar?: boolean | null
@@ -1339,6 +1345,9 @@ export type Database = {
           nombre?: string
           precio_anual?: number | null
           precio_mensual?: number
+          puede_acceder_administracion?: boolean | null
+          puede_acceder_enterprise?: boolean | null
+          puede_acceder_funciones_avanzadas?: boolean | null
           puede_cancelar_cfdi?: boolean | null
           puede_generar_xml?: boolean | null
           puede_timbrar?: boolean | null

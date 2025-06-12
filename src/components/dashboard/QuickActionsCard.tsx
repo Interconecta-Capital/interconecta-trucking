@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,7 +57,7 @@ export function QuickActionsCard() {
   const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
 
   const handleVerDocumentos = () => {
-    navigate('/viajes?tab=documentos');
+    navigate('/cartas-porte');
   };
 
   return (
