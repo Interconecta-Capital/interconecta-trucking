@@ -4,48 +4,29 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  FileText, 
-  Truck, 
-  Users, 
-  TrendingUp, 
   Plus,
   Calendar,
   MapPin,
-  DollarSign
+  RefreshCw
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { MetricsCards } from "@/components/dashboard/MetricsCards";
+import { TrendChart } from "@/components/dashboard/TrendChart";
+import { RoutePerformanceChart } from "@/components/dashboard/RoutePerformanceChart";
+import { RealtimeMetrics } from "@/components/dashboard/RealtimeMetrics";
+import { PerformanceRadar } from "@/components/dashboard/PerformanceRadar";
 
 const Dashboard = () => {
-  const stats = [
-    {
-      title: "Cartas Porte Activas",
-      value: "127",
-      change: "+12%",
-      icon: FileText,
-      color: "text-blue-600"
-    },
-    {
-      title: "Vehículos en Ruta",
-      value: "23",
-      change: "+5%",
-      icon: Truck,
-      color: "text-green-600"
-    },
-    {
-      title: "Conductores Activos",
-      value: "45",
-      change: "+8%",
-      icon: Users,
-      color: "text-purple-600"
-    },
-    {
-      title: "Ingresos del Mes",
-      value: "$2,340,500",
-      change: "+15%",
-      icon: DollarSign,
-      color: "text-orange-600"
-    }
-  ];
+  const { 
+    metrics, 
+    chartData, 
+    realtimeMetrics,
+    dateRange,
+    updateDateRange,
+    isLoading,
+    isRealtimeLoading
+  } = useAnalytics();
 
   const recentDeliveries = [
     {
@@ -85,10 +66,14 @@ const Dashboard = () => {
               <SidebarTrigger />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600">Bienvenido de nuevo, administrador</p>
+                <p className="text-gray-600">Analytics y métricas de operación en tiempo real</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <Button variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
               <Button className="bg-trucking-orange-500 hover:bg-trucking-orange-600">
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Carta Porte
@@ -98,28 +83,42 @@ const Dashboard = () => {
         </header>
 
         <div className="p-6 space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    {stat.title}
-                  </CardTitle>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                  <p className="text-xs text-green-600 font-medium">
-                    {stat.change} vs mes anterior
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          {/* Métricas principales */}
+          <MetricsCards metrics={metrics} isLoading={isLoading} />
+
+          {/* Gráficos y análisis */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Gráfico de tendencias */}
+            <TrendChart 
+              data={chartData?.trendData || []}
+              dateRange={dateRange}
+              onDateRangeChange={updateDateRange}
+              isLoading={isLoading}
+            />
+
+            {/* Métricas en tiempo real */}
+            <RealtimeMetrics 
+              metrics={realtimeMetrics}
+              isLoading={isRealtimeLoading}
+            />
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Rendimiento por ruta */}
+            <RoutePerformanceChart 
+              data={chartData?.routeMetrics || []}
+              isLoading={isLoading}
+            />
+
+            {/* Radar de rendimiento */}
+            <PerformanceRadar 
+              data={chartData?.performanceData || []}
+              isLoading={isLoading}
+            />
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Recent Deliveries */}
+            {/* Entregas recientes */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
@@ -136,7 +135,7 @@ const Dashboard = () => {
                       <div key={delivery.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center space-x-4">
                           <div className="bg-trucking-blue-100 p-2 rounded-lg">
-                            <FileText className="h-5 w-5 text-trucking-blue-600" />
+                            <MapPin className="h-5 w-5 text-trucking-blue-600" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{delivery.id}</p>
@@ -157,7 +156,7 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* Quick Actions */}
+            {/* Acciones rápidas y próximos vencimientos */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -166,19 +165,19 @@ const Dashboard = () => {
                 <CardContent className="space-y-3">
                   <Link to="/cartas-porte">
                     <Button className="w-full justify-start bg-trucking-blue-500 hover:bg-trucking-blue-600">
-                      <FileText className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4 mr-2" />
                       Nueva Carta Porte
                     </Button>
                   </Link>
                   <Link to="/conductores">
                     <Button variant="outline" className="w-full justify-start">
-                      <Users className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4 mr-2" />
                       Agregar Conductor
                     </Button>
                   </Link>
                   <Link to="/vehiculos">
                     <Button variant="outline" className="w-full justify-start">
-                      <Truck className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4 mr-2" />
                       Registrar Vehículo
                     </Button>
                   </Link>
