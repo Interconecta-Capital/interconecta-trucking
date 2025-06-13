@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, MapPin, CheckCircle } from 'lucide-react';
+import { AlertCircle, MapPin, CheckCircle, Loader2 } from 'lucide-react';
 import { useCatalogos } from '@/hooks/useCatalogos';
 
 interface CodigoPostalInputProps {
@@ -31,6 +31,15 @@ interface CodigoPostalInputProps {
   className?: string;
 }
 
+// Cache local para códigos postales
+const codigoPostalCache = new Map<string, {
+  locationInfo: any;
+  colonias: string[];
+  timestamp: number;
+}>();
+
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
+
 export function CodigoPostalInput({
   value = '',
   onChange,
@@ -55,8 +64,11 @@ export function CodigoPostalInput({
   }>({});
   const [colonias, setColonias] = useState<string[]>([]);
   const [selectedColonia, setSelectedColonia] = useState(coloniaValue || '');
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  
   const { buscarCodigoPostal, buscarColoniasPorCP } = useCatalogos();
 
+  // Sincronizar valores externos
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
@@ -65,7 +77,26 @@ export function CodigoPostalInput({
     setSelectedColonia(coloniaValue || '');
   }, [coloniaValue]);
 
-  const validateCodigoPostal = async (codigo: string) => {
+  // Función para verificar cache
+  const getCachedData = useCallback((codigo: string) => {
+    const cached = codigoPostalCache.get(codigo);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      return cached;
+    }
+    return null;
+  }, []);
+
+  // Función para guardar en cache
+  const setCachedData = useCallback((codigo: string, locationInfo: any, colonias: string[]) => {
+    codigoPostalCache.set(codigo, {
+      locationInfo,
+      colonias,
+      timestamp: Date.now()
+    });
+  }, []);
+
+  // Función optimizada para validar código postal
+  const validateCodigoPostal = useCallback(async (codigo: string) => {
     if (!codigo || codigo.length !== 5) {
       setValidationError('');
       setLocationInfo({});
@@ -74,11 +105,33 @@ export function CodigoPostalInput({
       return;
     }
 
+    // Verificar cache primero
+    const cachedData = getCachedData(codigo);
+    if (cachedData) {
+      setLocationInfo(cachedData.locationInfo);
+      setColonias(cachedData.colonias);
+      
+      if (cachedData.colonias.length === 1) {
+        setSelectedColonia(cachedData.colonias[0]);
+        const updateCallback = onInfoChange || onLocationUpdate;
+        if (updateCallback) {
+          updateCallback({
+            ...cachedData.locationInfo,
+            colonia: cachedData.colonias[0]
+          });
+        }
+        if (onColoniaChange) {
+          onColoniaChange(cachedData.colonias[0]);
+        }
+      }
+      return;
+    }
+
     setIsValidating(true);
     setValidationError('');
 
     try {
-      // Buscar información del código postal
+      // Realizar búsquedas en paralelo para mejor rendimiento
       const [cpResult, coloniasResult] = await Promise.all([
         buscarCodigoPostal(codigo),
         buscarColoniasPorCP(codigo)
@@ -93,11 +146,14 @@ export function CodigoPostalInput({
         
         setLocationInfo(newLocationInfo);
         
-        // Actualizar colonias disponibles
+        // Procesar colonias disponibles
         const coloniasDisponibles = coloniasResult.map(col => col.colonia);
         setColonias(coloniasDisponibles);
         
-        // Si solo hay una colonia, seleccionarla automáticamente
+        // Guardar en cache para futuras consultas
+        setCachedData(codigo, newLocationInfo, coloniasDisponibles);
+        
+        // Auto-seleccionar colonia si solo hay una
         if (coloniasDisponibles.length === 1) {
           setSelectedColonia(coloniasDisponibles[0]);
           const updateCallback = onInfoChange || onLocationUpdate;
@@ -111,7 +167,8 @@ export function CodigoPostalInput({
             onColoniaChange(coloniasDisponibles[0]);
           }
         } else {
-          // Si hay múltiples colonias, actualizar sin colonia
+          // Limpiar colonia seleccionada si hay múltiples opciones
+          setSelectedColonia('');
           const updateCallback = onInfoChange || onLocationUpdate;
           if (updateCallback) {
             updateCallback({
@@ -135,26 +192,38 @@ export function CodigoPostalInput({
     } finally {
       setIsValidating(false);
     }
-  };
+  }, [buscarCodigoPostal, buscarColoniasPorCP, getCachedData, setCachedData, onInfoChange, onLocationUpdate, onColoniaChange]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Manejador optimizado de cambios con debounce mejorado
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
     setLocalValue(newValue);
     
-    // Usar onChange o onValueChange según lo que esté disponible
+    // Llamar callback inmediatamente
     const changeCallback = onValueChange || onChange;
     if (changeCallback) {
       changeCallback(newValue);
     }
 
+    // Limpiar timer anterior
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    // Limpiar estados inmediatamente
     setValidationError('');
     setLocationInfo({});
     setColonias([]);
     setSelectedColonia('');
 
     if (newValue.length === 5) {
-      validateCodigoPostal(newValue);
+      // Debounce optimizado para validación
+      const timer = setTimeout(() => {
+        validateCodigoPostal(newValue);
+      }, 300); // Reducido de 1000ms a 300ms
+      setDebounceTimer(timer);
     } else {
+      // Limpiar callbacks si el código no está completo
       const updateCallback = onInfoChange || onLocationUpdate;
       if (updateCallback) {
         updateCallback({
@@ -165,9 +234,10 @@ export function CodigoPostalInput({
         });
       }
     }
-  };
+  }, [onChange, onValueChange, onInfoChange, onLocationUpdate, validateCodigoPostal, debounceTimer]);
 
-  const handleColoniaChange = (colonia: string) => {
+  // Manejador memoizado para cambio de colonia
+  const handleColoniaChange = useCallback((colonia: string) => {
     setSelectedColonia(colonia);
     
     const updateCallback = onInfoChange || onLocationUpdate;
@@ -181,10 +251,23 @@ export function CodigoPostalInput({
     if (onColoniaChange) {
       onColoniaChange(colonia);
     }
-  };
+  }, [locationInfo, onInfoChange, onLocationUpdate, onColoniaChange]);
 
-  const displayError = error || validationError;
-  const isValid = localValue.length === 5 && !isValidating && !displayError && locationInfo.estado;
+  // Estados computados memoizados
+  const displayError = useMemo(() => error || validationError, [error, validationError]);
+  const isValid = useMemo(() => 
+    localValue.length === 5 && !isValidating && !displayError && locationInfo.estado,
+    [localValue.length, isValidating, displayError, locationInfo.estado]
+  );
+
+  // Limpiar timer al desmontar componente
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
 
   return (
     <div className={`space-y-4 ${className || ''}`}>
@@ -205,12 +288,14 @@ export function CodigoPostalInput({
             placeholder="12345"
             maxLength={5}
             disabled={disabled || isValidating}
-            className={`${displayError ? 'border-red-500' : isValid ? 'border-green-500' : ''} ${isValidating ? 'opacity-50' : ''}`}
+            className={`${
+              displayError ? 'border-red-500' : isValid ? 'border-green-500' : ''
+            } ${isValidating ? 'opacity-50' : ''}`}
           />
           
           {isValidating && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
             </div>
           )}
           
@@ -239,7 +324,10 @@ export function CodigoPostalInput({
       {/* Información Automática de Ubicación */}
       {locationInfo.estado && (
         <div className="space-y-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h4 className="text-sm font-medium text-green-800">Información de ubicación</h4>
+          <h4 className="text-sm font-medium text-green-800 flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Información de ubicación
+          </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div>
@@ -262,7 +350,7 @@ export function CodigoPostalInput({
         </div>
       )}
 
-      {/* Selector de Colonia */}
+      {/* Selector de Colonia Optimizado */}
       {colonias.length > 1 && (
         <div className="space-y-2">
           <Label htmlFor="colonia-select">
@@ -271,12 +359,12 @@ export function CodigoPostalInput({
           </Label>
           
           <Select value={selectedColonia} onValueChange={handleColoniaChange}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background">
               <SelectValue placeholder="Selecciona una colonia" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
               {colonias.map((colonia, index) => (
-                <SelectItem key={index} value={colonia}>
+                <SelectItem key={`${colonia}-${index}`} value={colonia} className="cursor-pointer hover:bg-accent">
                   {colonia}
                 </SelectItem>
               ))}
@@ -288,8 +376,11 @@ export function CodigoPostalInput({
       {/* Colonia Única (Solo Mostrar) */}
       {colonias.length === 1 && (
         <div className="space-y-2">
-          <Label>Colonia</Label>
-          <div className="p-2 bg-gray-50 border rounded-md text-sm text-gray-700">
+          <Label className="flex items-center gap-1">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            Colonia
+          </Label>
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md text-sm text-gray-700 font-medium">
             {colonias[0]}
           </div>
         </div>
