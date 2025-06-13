@@ -127,9 +127,9 @@ const EnhancedHeroSection = () => {
           <div className="mt-12 text-center animate-fade-in" style={{ animationDelay: '1s' }}>
             <div className="inline-flex items-center bg-gradient-to-r from-white/80 to-gray-50/80 backdrop-blur-sm border border-gray-200 rounded-full px-8 py-4 shadow-lg">
               <div className="mr-4">
-                {rotatingStats[currentStat].icon && (
-                  <rotatingStats[currentStat].icon className={`h-8 w-8 ${rotatingStats[currentStat].color} animate-pulse`} />
-                )}
+                {React.createElement(rotatingStats[currentStat].icon, {
+                  className: `h-8 w-8 ${rotatingStats[currentStat].color} animate-pulse`
+                })}
               </div>
               <div className="text-left">
                 <div className={`text-2xl font-bold font-sora ${rotatingStats[currentStat].color}`}>
