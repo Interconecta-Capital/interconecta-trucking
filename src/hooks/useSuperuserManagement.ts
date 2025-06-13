@@ -12,6 +12,7 @@ interface UserData {
   rol_especial?: string;
   created_at: string;
   activo: boolean;
+  tenant_id?: string;
 }
 
 export const useSuperuserManagement = () => {
@@ -94,7 +95,7 @@ export const useSuperuserManagement = () => {
       if (usuarioError) throw usuarioError;
 
       toast.success('Usuario creado exitosamente');
-      await getAllUsers(); // Refresh list
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error creating user:', error);
@@ -121,7 +122,7 @@ export const useSuperuserManagement = () => {
       if (error) throw error;
 
       toast.success('Rol actualizado exitosamente');
-      await getAllUsers(); // Refresh list
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -141,7 +142,7 @@ export const useSuperuserManagement = () => {
       if (error) throw error;
 
       toast.success('Usuario desactivado exitosamente');
-      await getAllUsers(); // Refresh list
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error deactivating user:', error);
@@ -161,7 +162,7 @@ export const useSuperuserManagement = () => {
       if (error) throw error;
 
       toast.success('Usuario activado exitosamente');
-      await getAllUsers(); // Refresh list
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error activating user:', error);

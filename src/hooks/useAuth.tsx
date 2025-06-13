@@ -1,67 +1,30 @@
 
-import { createContext, useContext, ReactNode, useEffect } from 'react';
-import { AuthContextType } from './auth/types';
-import { useAuthState } from './auth/useAuthState';
-import { useAuthActions } from './auth/useAuthActions';
-import { checkUserAccess } from './auth/useAuthUtils';
-import { useSuscripcion } from './useSuscripcion';
-import { supabase } from '@/integrations/supabase/client';
+import { createContext, useContext, ReactNode } from 'react';
+import { useAuthState, AuthUser } from './auth/useAuthState';
 
-/**
- * Contexto de autenticación
- */
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextValue {
+  user: AuthUser | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+}
 
-/**
- * Provider de autenticación que combina estado y acciones
- * Proporciona toda la funcionalidad de autenticación a la aplicación
- */
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Hook para manejar el estado de autenticación
   const { user, loading } = useAuthState();
-  
-  // Hook para manejar las acciones de autenticación
-  const authActions = useAuthActions();
 
-  // Hook para manejar suscripciones
-  const { verificarSuscripcion } = useSuscripcion();
-
-  /**
-   * Verifica si el usuario tiene acceso a un recurso específico
-   * Ahora incluye verificación de superusuario
-   */
-  const hasAccess = (resource: string): boolean => {
-    // For now, use basic role check until superuser functionality is fully implemented
-    return checkUserAccess(user?.usuario?.rol, resource);
-  };
-
-  // Verificar suscripción cuando el usuario se autentica
-  useEffect(() => {
-    if (user && !loading) {
-      // Verificar el estado de la suscripción
-      verificarSuscripcion();
-    }
-  }, [user, loading, verificarSuscripcion]);
-
-  // Valor del contexto que incluye estado y todas las acciones
-  const contextValue: AuthContextType = {
-    user,
-    loading,
-    hasAccess,
-    ...authActions,
+  const signOut = async () => {
+    // Implement sign out logic here if needed
+    console.log('Sign out logic');
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ user, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-/**
- * Hook para usar el contexto de autenticación
- * Debe ser usado dentro de un AuthProvider
- */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

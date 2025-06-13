@@ -8,13 +8,12 @@ export const useBuscarProductosServicios = (busqueda: string, enabled = true) =>
     queryKey: ['catalogos', 'productos', busqueda],
     queryFn: async () => {
       if (busqueda.length === 0) {
-        // Cargar productos más comunes inicialmente
         return CatalogosSATService.buscarProductosServicios('transporte');
       }
       return CatalogosSATService.buscarProductosServicios(busqueda);
     },
     enabled: enabled && (busqueda.length >= 2 || busqueda.length === 0),
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -24,7 +23,6 @@ export const useBuscarClaveUnidad = (busqueda: string, enabled = true) => {
     queryKey: ['catalogos', 'unidades', busqueda],
     queryFn: async () => {
       if (busqueda.length === 0) {
-        // Cargar unidades más comunes inicialmente
         return CatalogosSATService.buscarClaveUnidad('');
       }
       return CatalogosSATService.buscarClaveUnidad(busqueda);
@@ -39,7 +37,7 @@ export const useTiposPermiso = (busqueda?: string) => {
   return useQuery({
     queryKey: ['catalogos', 'permisos', busqueda],
     queryFn: () => CatalogosSATService.buscarTiposPermiso(busqueda),
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 10 * 60 * 1000,
   });
 };
 
@@ -97,10 +95,9 @@ export const useCodigoPostal = (codigoPostal: string, enabled = true) => {
       return result;
     },
     enabled: enabled && CatalogosSATService.validarFormatoCodigoPostal(codigoPostal),
-    staleTime: 30 * 60 * 1000, // 30 minutos
-    retry: 1, // Reducir reintentos para evitar spam de logs
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
     retryDelay: 500,
-    // No considerar como error cuando no se encuentra el CP
     throwOnError: false,
   });
 };
@@ -123,7 +120,7 @@ export const useEstados = (busqueda?: string) => {
   return useQuery({
     queryKey: ['catalogos', 'estados', busqueda],
     queryFn: () => CatalogosSATService.buscarEstados(busqueda),
-    staleTime: 60 * 60 * 1000, // 1 hora
+    staleTime: 60 * 60 * 1000,
   });
 };
 
@@ -136,4 +133,37 @@ export const useValidarClave = (catalogo: string, clave: string, enabled = true)
     staleTime: 10 * 60 * 1000,
     throwOnError: false,
   });
+};
+
+// Hook principal que agrupa todas las funciones de catálogos
+export const useCatalogos = () => {
+  return {
+    buscarCodigoPostal: async (codigo: string) => {
+      return await CatalogosSATService.buscarCodigoPostal(codigo);
+    },
+    buscarColoniasPorCP: async (codigo: string) => {
+      return await CatalogosSATService.buscarColoniasPorCP(codigo);
+    },
+    obtenerUnidades: async () => {
+      return await CatalogosSATService.buscarClaveUnidad('');
+    },
+    obtenerProductosServicios: async () => {
+      return await CatalogosSATService.buscarProductosServicios('');
+    },
+    obtenerTiposEmbalaje: async () => {
+      return await CatalogosSATService.buscarTiposPermiso();
+    },
+    obtenerMaterialesPeligrosos: async () => {
+      return await CatalogosSATService.buscarMaterialesPeligrosos('');
+    },
+    obtenerFigurasTransporte: async () => {
+      return await CatalogosSATService.buscarFigurasTransporte();
+    },
+    obtenerTiposPermiso: async () => {
+      return await CatalogosSATService.buscarTiposPermiso();
+    },
+    obtenerConfiguracionesVehiculares: async () => {
+      return await CatalogosSATService.buscarConfiguracionesVehiculo();
+    }
+  };
 };

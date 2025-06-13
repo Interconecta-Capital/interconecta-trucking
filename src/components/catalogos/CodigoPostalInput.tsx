@@ -8,26 +8,41 @@ import { useCatalogos } from '@/hooks/useCatalogos';
 interface CodigoPostalInputProps {
   value?: string;
   onChange?: (value: string) => void;
+  onValueChange?: (value: string) => void;
   onLocationUpdate?: (location: {
     estado?: string;
     municipio?: string;
     localidad?: string;
     colonia?: string;
   }) => void;
+  onInfoChange?: (info: {
+    estado?: string;
+    municipio?: string;
+    localidad?: string;
+    colonia?: string;
+  }) => void;
+  onColoniaChange?: (colonia: string) => void;
+  coloniaValue?: string;
   label?: string;
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 export function CodigoPostalInput({
   value = '',
   onChange,
+  onValueChange,
   onLocationUpdate,
+  onInfoChange,
+  onColoniaChange,
+  coloniaValue,
   label = 'Código Postal',
   required = false,
   error,
-  disabled = false
+  disabled = false,
+  className
 }: CodigoPostalInputProps) {
   const [localValue, setLocalValue] = useState(value);
   const [isValidating, setIsValidating] = useState(false);
@@ -50,16 +65,15 @@ export function CodigoPostalInput({
     try {
       const result = await buscarCodigoPostal(codigo);
       
-      if (result && result.length > 0) {
-        const codigoData = result[0];
-        
-        // Only update location data if callback is provided
-        if (onLocationUpdate) {
-          onLocationUpdate({
-            estado: codigoData.estado || '',
-            municipio: codigoData.municipio || '',
-            localidad: codigoData.localidad || '',
-            colonia: codigoData.colonias?.[0] || ''
+      if (result) {
+        // Usar onInfoChange si está disponible (nueva interfaz)
+        const updateCallback = onInfoChange || onLocationUpdate;
+        if (updateCallback) {
+          updateCallback({
+            estado: result.estado_descripcion || '',
+            municipio: result.municipio_clave || '',
+            localidad: result.localidad_clave || '',
+            colonia: ''
           });
         }
       } else {
@@ -77,31 +91,33 @@ export function CodigoPostalInput({
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
     setLocalValue(newValue);
     
-    if (onChange) {
-      onChange(newValue);
+    // Usar onChange o onValueChange según lo que esté disponible
+    const changeCallback = onValueChange || onChange;
+    if (changeCallback) {
+      changeCallback(newValue);
     }
 
-    // Clear previous validation error
     setValidationError('');
 
-    // Validate when complete
     if (newValue.length === 5) {
       validateCodigoPostal(newValue);
-    } else if (onLocationUpdate) {
-      // Clear location data when postal code is incomplete
-      onLocationUpdate({
-        estado: '',
-        municipio: '',
-        localidad: '',
-        colonia: ''
-      });
+    } else {
+      const updateCallback = onInfoChange || onLocationUpdate;
+      if (updateCallback) {
+        updateCallback({
+          estado: '',
+          municipio: '',
+          localidad: '',
+          colonia: ''
+        });
+      }
     }
   };
 
   const displayError = error || validationError;
 
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${className || ''}`}>
       <Label htmlFor="codigo-postal" className="flex items-center gap-1">
         <MapPin className="h-4 w-4" />
         {label}

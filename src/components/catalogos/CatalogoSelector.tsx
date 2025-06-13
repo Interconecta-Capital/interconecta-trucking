@@ -5,36 +5,52 @@ import { Label } from '@/components/ui/label';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useCatalogos } from '@/hooks/useCatalogos';
 
-interface CatalogoOption {
+interface CatalogItem {
   value: string;
   label: string;
   descripcion?: string;
+  id?: string;
+  clave?: string;
 }
 
 interface CatalogoSelectorProps {
-  tipo: 'unidades' | 'productos' | 'embalajes' | 'materiales_peligrosos' | 'figuras_transporte' | 'tipos_permiso' | 'configuraciones_vehiculares';
+  tipo?: 'unidades' | 'productos' | 'embalajes' | 'materiales_peligrosos' | 'figuras_transporte' | 'tipos_permiso' | 'configuraciones_vehiculares';
+  items?: CatalogItem[];
+  loading?: boolean;
   value?: string;
   onChange?: (value: string) => void;
+  onValueChange?: (value: string) => void;
+  onSearchChange?: (search: string) => void;
+  searchValue?: string;
   label?: string;
   placeholder?: string;
   required?: boolean;
   error?: string;
   disabled?: boolean;
   onSelectionData?: (data: any) => void;
+  allowManualInput?: boolean;
+  manualInputPlaceholder?: string;
 }
 
 export function CatalogoSelector({
   tipo,
+  items: externalItems,
+  loading: externalLoading = false,
   value,
   onChange,
+  onValueChange,
+  onSearchChange,
+  searchValue,
   label,
   placeholder = 'Selecciona una opción',
   required = false,
   error,
   disabled = false,
-  onSelectionData
+  onSelectionData,
+  allowManualInput = false,
+  manualInputPlaceholder
 }: CatalogoSelectorProps) {
-  const [options, setOptions] = useState<CatalogoOption[]>([]);
+  const [options, setOptions] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string>('');
   
@@ -49,10 +65,23 @@ export function CatalogoSelector({
   } = useCatalogos();
 
   useEffect(() => {
+    // Si se proporcionan items externos, usarlos
+    if (externalItems) {
+      setOptions(externalItems);
+      return;
+    }
+
+    // Si no hay tipo definido, no cargar datos
+    if (!tipo) {
+      return;
+    }
+
     loadCatalogData();
-  }, [tipo]);
+  }, [tipo, externalItems]);
 
   const loadCatalogData = async () => {
+    if (!tipo) return;
+
     setLoading(true);
     setLoadError('');
 
@@ -63,8 +92,8 @@ export function CatalogoSelector({
         case 'unidades':
           data = await obtenerUnidades();
           setOptions(data.map(item => ({
-            value: item.clave_unidad,
-            label: `${item.clave_unidad} - ${item.nombre}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.nombre || item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -72,8 +101,8 @@ export function CatalogoSelector({
         case 'productos':
           data = await obtenerProductosServicios();
           setOptions(data.map(item => ({
-            value: item.clave_prod_serv,
-            label: `${item.clave_prod_serv} - ${item.descripcion}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -81,8 +110,8 @@ export function CatalogoSelector({
         case 'embalajes':
           data = await obtenerTiposEmbalaje();
           setOptions(data.map(item => ({
-            value: item.clave_embalaje,
-            label: `${item.clave_embalaje} - ${item.descripcion}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -90,8 +119,8 @@ export function CatalogoSelector({
         case 'materiales_peligrosos':
           data = await obtenerMaterialesPeligrosos();
           setOptions(data.map(item => ({
-            value: item.clave_material,
-            label: `${item.clave_material} - ${item.descripcion}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -99,8 +128,8 @@ export function CatalogoSelector({
         case 'figuras_transporte':
           data = await obtenerFigurasTransporte();
           setOptions(data.map(item => ({
-            value: item.clave_figura,
-            label: `${item.clave_figura} - ${item.descripcion}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -108,8 +137,8 @@ export function CatalogoSelector({
         case 'tipos_permiso':
           data = await obtenerTiposPermiso();
           setOptions(data.map(item => ({
-            value: item.clave_permiso,
-            label: `${item.clave_permiso} - ${item.descripcion}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -117,8 +146,8 @@ export function CatalogoSelector({
         case 'configuraciones_vehiculares':
           data = await obtenerConfiguracionesVehiculares();
           setOptions(data.map(item => ({
-            value: item.clave_config,
-            label: `${item.clave_config} - ${item.descripcion}`,
+            value: item.clave || item.value,
+            label: `${item.clave || item.value} - ${item.descripcion}`,
             descripcion: item.descripcion
           })));
           break;
@@ -137,8 +166,10 @@ export function CatalogoSelector({
   };
 
   const handleValueChange = (selectedValue: string) => {
-    if (onChange) {
-      onChange(selectedValue);
+    // Usar onChange o onValueChange según lo que esté disponible
+    const changeCallback = onValueChange || onChange;
+    if (changeCallback) {
+      changeCallback(selectedValue);
     }
 
     // Pass additional data if callback provided
@@ -154,6 +185,7 @@ export function CatalogoSelector({
     }
   };
 
+  const isLoading = loading || externalLoading;
   const displayError = error || loadError;
 
   return (
@@ -168,13 +200,13 @@ export function CatalogoSelector({
       <Select 
         value={value} 
         onValueChange={handleValueChange}
-        disabled={disabled || loading}
+        disabled={disabled || isLoading}
       >
         <SelectTrigger className={displayError ? 'border-red-500' : ''}>
           <SelectValue placeholder={
-            loading ? 'Cargando...' : placeholder
+            isLoading ? 'Cargando...' : placeholder
           } />
-          {loading && (
+          {isLoading && (
             <Loader2 className="h-4 w-4 animate-spin ml-2" />
           )}
         </SelectTrigger>
@@ -191,7 +223,7 @@ export function CatalogoSelector({
               </div>
             </SelectItem>
           ))}
-          {options.length === 0 && !loading && (
+          {options.length === 0 && !isLoading && (
             <SelectItem value="no-data" disabled>
               No hay datos disponibles
             </SelectItem>
