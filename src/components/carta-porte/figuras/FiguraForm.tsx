@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CodigoPostalInput } from '@/components/catalogos/CodigoPostalInput';
+import { CodigoPostalInputOptimizado } from '@/components/catalogos/CodigoPostalInputOptimizado';
 import { FiguraTransporte } from '@/hooks/useFigurasTransporte';
 import { User, Trash2 } from 'lucide-react';
 
@@ -147,13 +147,14 @@ export function FiguraForm({ figura, onUpdate, onRemove, index }: FiguraFormProp
               />
             </div>
 
-            <CodigoPostalInput
+            <CodigoPostalInputOptimizado
               value={formData.domicilio?.codigo_postal || ''}
-              onValueChange={handleCodigoPostalChange}
-              onInfoChange={handleInfoChange}
-              onColoniaChange={handleColoniaChange}
+              onChange={handleCodigoPostalChange}
+              onLocationUpdate={handleInfoChange}
               coloniaValue={formData.domicilio?.colonia || ''}
+              onColoniaChange={handleColoniaChange}
               className="w-full"
+              soloCodigoPostal={true}
             />
           </div>
 

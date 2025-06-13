@@ -7,7 +7,7 @@ import { UbicacionFormHeader } from './UbicacionFormHeader';
 import { UbicacionesFrecuentesCard } from './UbicacionesFrecuentesCard';
 import { UbicacionBasicInfo } from './UbicacionBasicInfo';
 import { UbicacionRFCSection } from './UbicacionRFCSection';
-import { UbicacionDomicilioForm } from './UbicacionDomicilioForm';
+import { UbicacionDomicilioFormOptimizado } from './UbicacionDomicilioFormOptimizado';
 import { UbicacionFormActions } from './UbicacionFormActions';
 
 interface UbicacionFormProps {
@@ -100,7 +100,7 @@ export function UbicacionForm({
             canSaveToFavorites={canSaveToFavorites}
           />
 
-          <UbicacionDomicilioForm
+          <UbicacionDomicilioFormOptimizado
             formData={formData}
             onFieldChange={handleFieldChange}
             onLocationUpdate={handleLocationUpdate}
