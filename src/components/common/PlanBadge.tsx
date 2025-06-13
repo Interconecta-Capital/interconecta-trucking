@@ -1,7 +1,8 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Crown, Shield, Star, Zap } from 'lucide-react';
+import { Crown, Shield, Star, Zap, Gift, AlertTriangle } from 'lucide-react';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
 
 interface PlanBadgeProps {
   size?: 'sm' | 'md' | 'lg';
@@ -11,28 +12,33 @@ interface PlanBadgeProps {
 
 export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadgeProps) {
   const { planActual, isSuperuser, estaBloqueado, suscripcionVencida } = useEnhancedPermissions();
+  const { isInActiveTrial, isTrialExpired, daysRemaining } = useTrialManager();
   
   const getPlanIcon = () => {
     if (isSuperuser) return Crown;
+    if (isInActiveTrial) return Gift;
+    if (isTrialExpired) return AlertTriangle;
     if (planActual.includes('Enterprise')) return Shield;
-    if (planActual.includes('Automatización')) return Zap;
-    if (planActual.includes('Gestión')) return Star;
+    if (planActual.includes('Automatización') || planActual.includes('Profesional')) return Zap;
+    if (planActual.includes('Gestión') || planActual.includes('Básico')) return Star;
     return null;
   };
 
   const getPlanVariant = () => {
-    if (estaBloqueado || suscripcionVencida) return 'destructive';
+    if (estaBloqueado || suscripcionVencida || isTrialExpired) return 'destructive';
     if (isSuperuser) return 'default';
+    if (isInActiveTrial) return 'default';
     if (planActual.includes('Enterprise')) return 'default';
-    if (planActual.includes('Automatización')) return 'secondary';
+    if (planActual.includes('Automatización') || planActual.includes('Profesional')) return 'secondary';
     return 'outline';
   };
 
   const getPlanColor = () => {
-    if (estaBloqueado || suscripcionVencida) return 'bg-red-50 text-red-700 border-red-200';
+    if (estaBloqueado || suscripcionVencida || isTrialExpired) return 'bg-red-50 text-red-700 border-red-200';
     if (isSuperuser) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    if (isInActiveTrial) return 'bg-green-50 text-green-700 border-green-200';
     if (planActual.includes('Enterprise')) return 'bg-purple-50 text-purple-700 border-purple-200';
-    if (planActual.includes('Automatización')) return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (planActual.includes('Automatización') || planActual.includes('Profesional')) return 'bg-blue-50 text-blue-700 border-blue-200';
     return 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
@@ -46,7 +52,8 @@ export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadge
   
   const displayText = () => {
     if (estaBloqueado) return 'Cuenta Bloqueada';
-    if (suscripcionVencida) return 'Suscripción Vencida';
+    if (suscripcionVencida || isTrialExpired) return 'Trial Expirado';
+    if (isInActiveTrial) return `Trial: ${daysRemaining} días`;
     return planActual;
   };
 

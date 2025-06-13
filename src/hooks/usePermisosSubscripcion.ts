@@ -1,8 +1,10 @@
+
 import { useSuscripcion } from './useSuscripcion';
 import { useConductores } from './useConductores';
 import { useVehiculos } from './useVehiculos';
 import { useSocios } from './useSocios';
 import { useCartasPorte } from './useCartasPorte';
+import { useTrialManager } from './useTrialManager';
 
 export const usePermisosSubscripcion = () => {
   const { 
@@ -17,9 +19,15 @@ export const usePermisosSubscripcion = () => {
   const { vehiculos } = useVehiculos();
   const { socios } = useSocios();
   const { cartasPorte } = useCartasPorte();
+  const { isInActiveTrial, isTrialExpired, hasFullAccess, canPerformAction } = useTrialManager();
 
   // Verificar si puede acceder a una funcionalidad
   const puedeAcceder = (funcionalidad: string): { puede: boolean; razon?: string } => {
+    // Durante trial activo, acceso completo a todas las funcionalidades
+    if (isInActiveTrial) {
+      return { puede: true, razon: undefined };
+    }
+
     if (estaBloqueado) {
       return { 
         puede: false, 
@@ -27,13 +35,14 @@ export const usePermisosSubscripcion = () => {
       };
     }
 
-    if (suscripcionVencida()) {
+    if (suscripcionVencida() || isTrialExpired) {
       return { 
         puede: false, 
-        razon: 'Su suscripción ha vencido' 
+        razon: 'Su período de prueba ha vencido o suscripción expirada' 
       };
     }
 
+    // Lógica existente para usuarios con plan pagado
     switch (funcionalidad) {
       case 'cancelar_cfdi':
         return { 
@@ -97,6 +106,11 @@ export const usePermisosSubscripcion = () => {
 
   // Verificar si puede crear nuevos registros
   const puedeCrear = (tipo: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte'): { puede: boolean; razon?: string } => {
+    // Durante trial activo, sin límites
+    if (isInActiveTrial) {
+      return { puede: true, razon: undefined };
+    }
+
     if (estaBloqueado) {
       return { 
         puede: false, 
@@ -104,6 +118,14 @@ export const usePermisosSubscripcion = () => {
       };
     }
 
+    if (isTrialExpired && !suscripcion?.plan) {
+      return {
+        puede: false,
+        razon: 'Su período de prueba ha vencido. Actualice su plan para continuar creando registros.'
+      };
+    }
+
+    // Lógica existente para usuarios con plan pagado
     let cantidad = 0;
     switch (tipo) {
       case 'conductores':
@@ -135,6 +157,16 @@ export const usePermisosSubscripcion = () => {
 
   // Obtener límites del plan actual
   const obtenerLimites = () => {
+    // Durante trial activo, sin límites
+    if (isInActiveTrial) {
+      return {
+        cartas_porte: null,
+        conductores: null,
+        vehiculos: null,
+        socios: null,
+      };
+    }
+
     if (!suscripcion?.plan) return {};
 
     return {
@@ -147,24 +179,39 @@ export const usePermisosSubscripcion = () => {
 
   // Obtener uso actual vs límites
   const obtenerUsoActual = () => {
+    const limites = obtenerLimites();
+    
     return {
       cartas_porte: {
         usado: cartasPorte?.length || 0,
-        limite: suscripcion?.plan?.limite_cartas_porte || null
+        limite: limites.cartas_porte || null
       },
       conductores: {
         usado: conductores?.length || 0,
-        limite: suscripcion?.plan?.limite_conductores || null
+        limite: limites.conductores || null
       },
       vehiculos: {
         usado: vehiculos?.length || 0,
-        limite: suscripcion?.plan?.limite_vehiculos || null
+        limite: limites.vehiculos || null
       },
       socios: {
         usado: socios?.length || 0,
-        limite: suscripcion?.plan?.limite_socios || null
+        limite: limites.socios || null
       },
     };
+  };
+
+  // Determinar el nombre del plan actual
+  const getPlanActual = () => {
+    if (isInActiveTrial) {
+      return 'Trial Completo (14 días)';
+    }
+    
+    if (isTrialExpired && !suscripcion?.plan) {
+      return 'Sin Plan';
+    }
+    
+    return suscripcion?.plan?.nombre || 'Sin plan';
   };
 
   return {
@@ -173,11 +220,16 @@ export const usePermisosSubscripcion = () => {
     obtenerLimites,
     obtenerUsoActual,
     estaBloqueado,
-    suscripcionVencida: suscripcionVencida(),
-    planActual: suscripcion?.plan?.nombre || 'Sin plan',
+    suscripcionVencida: suscripcionVencida() || isTrialExpired,
+    planActual: getPlanActual(),
     // Nuevas funciones específicas
     puedeAccederAdministracion,
     puedeAccederFuncionesAvanzadas,
     puedeAccederEnterprise,
+    // Nuevas propiedades del trial
+    isInActiveTrial,
+    isTrialExpired,
+    hasFullAccess,
+    canPerformAction
   };
 };

@@ -1,9 +1,11 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { UpgradeModal } from '@/components/common/UpgradeModal';
 
 interface ProtectedActionsProps {
   children?: ReactNode;
@@ -23,6 +25,8 @@ export const ProtectedActions = ({
   variant = 'default'
 }: ProtectedActionsProps) => {
   const { puedeCrear, isSuperuser } = useEnhancedPermissions();
+  const { canPerformAction, isTrialExpired } = useTrialManager();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
     // Superusers can always create
@@ -30,6 +34,12 @@ export const ProtectedActions = ({
       if (onAction) {
         onAction();
       }
+      return;
+    }
+
+    // Verificar si puede realizar la acción
+    if (!canPerformAction('create')) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -50,10 +60,20 @@ export const ProtectedActions = ({
   // Si no hay children, renderizar como botón
   if (!children && action === 'create') {
     return (
-      <Button onClick={handleAction} variant={variant} className="flex items-center gap-2">
-        <Plus className="h-4 w-4" />
-        {buttonText}
-      </Button>
+      <>
+        <Button onClick={handleAction} variant={variant} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          {buttonText}
+        </Button>
+        
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          title="Actualiza tu Plan"
+          description="Tu período de prueba ha expirado. Selecciona un plan para continuar creando registros."
+          blockedAction={`Crear ${resource.replace('_', ' ')}`}
+        />
+      </>
     );
   }
 
