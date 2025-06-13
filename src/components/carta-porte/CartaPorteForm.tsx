@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -85,7 +86,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   } = useCartaPorteForm({ cartaPorteId });
 
   // Usar hook optimizado para navegación de pestañas
-  const { activeStep, handleTabChange } = useTabNavigation({
+  const { activeTab, handleTabChange } = useTabNavigation({
     initialTab: 'configuracion',
     persistInURL: false,
   });
@@ -197,7 +198,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       {/* Navegación por pasos */}
       <Card>
         <CardContent className="p-0">
-          <Tabs value={activeStep} onValueChange={handleTabChange} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-6 h-auto">
               {tabTriggers}
             </TabsList>
