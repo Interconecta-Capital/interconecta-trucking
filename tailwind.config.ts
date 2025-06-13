@@ -20,8 +20,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sora': ['Sora', 'system-ui', 'sans-serif'],
-				'inter': ['Inter', 'system-ui', 'sans-serif'],
+				'sora': ['Sora', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+				'inter': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

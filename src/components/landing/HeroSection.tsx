@@ -13,13 +13,13 @@ const HeroSection = () => {
           </span>
         </div>
         
-        <h2 className="text-5xl md:text-6xl font-bold font-sora text-interconecta-text-primary mb-6 leading-tight">
+        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold font-sora text-interconecta-text-primary mb-6 leading-tight">
           La Plataforma Completa para
           <br />
           <span className="gradient-text">Transportistas Mexicanos</span>
         </h2>
         
-        <p className="text-xl font-inter text-interconecta-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-xl font-inter text-interconecta-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
           Gestiona cartas porte con inteligencia artificial, importa datos masivamente y automatiza procesos. 
           Cumple con todas las regulaciones SAT de manera fácil y eficiente.
         </p>
