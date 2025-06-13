@@ -55,11 +55,10 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
 
   const handleSaveUbicacion = (ubicacion: any) => {
     try {
-      // Validar ubicación antes de guardar
       const errors = validateUbicacion(ubicacion);
       if (errors.length > 0) {
         setFormErrors(errors);
-        return; // No cerrar el formulario si hay errores
+        return;
       }
 
       setFormErrors([]);

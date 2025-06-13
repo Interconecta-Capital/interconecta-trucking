@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, MapPin, CheckCircle, Loader2 } from 'lucide-react';
-import { useCatalogos } from '@/hooks/useCatalogos';
+import { codigosPostalesService, DireccionCompleta } from '@/services/codigosPostalesService';
 
 interface CodigoPostalInputProps {
   value?: string;
@@ -48,23 +48,15 @@ export function CodigoPostalInput({
   const [localValue, setLocalValue] = useState(value);
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
-  const [locationInfo, setLocationInfo] = useState<{
-    estado?: string;
-    municipio?: string;
-    localidad?: string;
-  }>({});
-  const [colonias, setColonias] = useState<string[]>([]);
+  const [direccionInfo, setDireccionInfo] = useState<DireccionCompleta | null>(null);
   const [selectedColonia, setSelectedColonia] = useState(coloniaValue || '');
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
-  
-  const { buscarCodigoPostal, buscarColoniasPorCP } = useCatalogos();
 
-  // Función para validar código postal con datos reales
+  // Función para validar código postal con API real
   const validateCodigoPostal = useCallback(async (codigo: string) => {
     if (!codigo || codigo.length !== 5) {
       setValidationError('');
-      setLocationInfo({});
-      setColonias([]);
+      setDireccionInfo(null);
       setSelectedColonia('');
       return;
     }
@@ -73,80 +65,47 @@ export function CodigoPostalInput({
     setValidationError('');
 
     try {
-      // Simular datos reales basados en códigos postales mexicanos conocidos
-      const codigosPostalesDB: { [key: string]: { estado: string; municipio: string; localidad: string; colonias: string[] } } = {
-        '62574': {
-          estado: 'Morelos',
-          municipio: 'Jiutepec',
-          localidad: 'Jiutepec',
-          colonias: ['Centro', 'Progreso', 'Las Flores', 'El Paraíso']
-        },
-        '06700': {
-          estado: 'Ciudad de México',
-          municipio: 'Benito Juárez',
-          localidad: 'Ciudad de México',
-          colonias: ['Del Valle Centro']
-        },
-        '11000': {
-          estado: 'Ciudad de México',
-          municipio: 'Miguel Hidalgo',
-          localidad: 'Ciudad de México',
-          colonias: ['Escandón I Sección', 'Escandón II Sección']
-        },
-        '64000': {
-          estado: 'Nuevo León',
-          municipio: 'Monterrey',
-          localidad: 'Monterrey',
-          colonias: ['Centro', 'Barrio Antiguo']
-        }
-      };
-
-      const cpData = codigosPostalesDB[codigo];
+      const direccion = await codigosPostalesService.buscarDireccionPorCP(codigo);
       
-      if (cpData) {
-        const newLocationInfo = {
-          estado: cpData.estado,
-          municipio: cpData.municipio,
-          localidad: cpData.localidad,
-        };
-        
-        setLocationInfo(newLocationInfo);
-        setColonias(cpData.colonias);
+      if (direccion) {
+        setDireccionInfo(direccion);
         
         // Auto-seleccionar colonia si solo hay una
-        if (cpData.colonias.length === 1) {
-          setSelectedColonia(cpData.colonias[0]);
+        if (direccion.colonias.length === 1) {
+          setSelectedColonia(direccion.colonias[0]);
           const updateCallback = onInfoChange || onLocationUpdate;
           if (updateCallback) {
             updateCallback({
-              ...newLocationInfo,
-              colonia: cpData.colonias[0]
+              estado: direccion.estado,
+              municipio: direccion.municipio,
+              localidad: direccion.localidad,
+              colonia: direccion.colonias[0]
             });
           }
           if (onColoniaChange) {
-            onColoniaChange(cpData.colonias[0]);
+            onColoniaChange(direccion.colonias[0]);
           }
         } else {
           setSelectedColonia('');
           const updateCallback = onInfoChange || onLocationUpdate;
           if (updateCallback) {
             updateCallback({
-              ...newLocationInfo,
+              estado: direccion.estado,
+              municipio: direccion.municipio,
+              localidad: direccion.localidad,
               colonia: ''
             });
           }
         }
       } else {
-        setValidationError('Código postal no encontrado en la base de datos');
-        setLocationInfo({});
-        setColonias([]);
+        setValidationError('Código postal no encontrado');
+        setDireccionInfo(null);
         setSelectedColonia('');
       }
     } catch (error) {
       console.error('Error validating postal code:', error);
-      setValidationError('Error al validar código postal');
-      setLocationInfo({});
-      setColonias([]);
+      setValidationError('Error al consultar código postal');
+      setDireccionInfo(null);
       setSelectedColonia('');
     } finally {
       setIsValidating(false);
@@ -180,8 +139,7 @@ export function CodigoPostalInput({
 
     // Limpiar estados inmediatamente
     setValidationError('');
-    setLocationInfo({});
-    setColonias([]);
+    setDireccionInfo(null);
     setSelectedColonia('');
 
     if (newValue.length === 5) {
@@ -207,9 +165,11 @@ export function CodigoPostalInput({
     setSelectedColonia(colonia);
     
     const updateCallback = onInfoChange || onLocationUpdate;
-    if (updateCallback) {
+    if (updateCallback && direccionInfo) {
       updateCallback({
-        ...locationInfo,
+        estado: direccionInfo.estado,
+        municipio: direccionInfo.municipio,
+        localidad: direccionInfo.localidad,
         colonia
       });
     }
@@ -217,13 +177,13 @@ export function CodigoPostalInput({
     if (onColoniaChange) {
       onColoniaChange(colonia);
     }
-  }, [locationInfo, onInfoChange, onLocationUpdate, onColoniaChange]);
+  }, [direccionInfo, onInfoChange, onLocationUpdate, onColoniaChange]);
 
   // Estados computados
   const displayError = useMemo(() => error || validationError, [error, validationError]);
   const isValid = useMemo(() => 
-    localValue.length === 5 && !isValidating && !displayError && locationInfo.estado,
-    [localValue.length, isValidating, displayError, locationInfo.estado]
+    localValue.length === 5 && !isValidating && !displayError && direccionInfo,
+    [localValue.length, isValidating, displayError, direccionInfo]
   );
 
   // Limpiar timer al desmontar
@@ -279,16 +239,16 @@ export function CodigoPostalInput({
           </div>
         )}
         
-        {isValid && (
+        {isValid && direccionInfo && (
           <div className="flex items-center gap-1 text-sm text-green-600">
             <CheckCircle className="h-4 w-4" />
-            <span>Código postal válido - {locationInfo.estado}</span>
+            <span>✓ {direccionInfo.municipio}, {direccionInfo.estado}</span>
           </div>
         )}
       </div>
 
       {/* Selector de Colonia (solo si hay múltiples) */}
-      {colonias.length > 1 && (
+      {direccionInfo && direccionInfo.colonias.length > 1 && (
         <div className="space-y-2">
           <Label htmlFor="colonia-select">
             Colonia
@@ -300,7 +260,7 @@ export function CodigoPostalInput({
               <SelectValue placeholder="Selecciona una colonia" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
-              {colonias.map((colonia, index) => (
+              {direccionInfo.colonias.map((colonia, index) => (
                 <SelectItem key={`${colonia}-${index}`} value={colonia} className="cursor-pointer hover:bg-accent">
                   {colonia}
                 </SelectItem>

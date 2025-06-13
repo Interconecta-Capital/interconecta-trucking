@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -94,6 +95,26 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   const { guardarUbicaciones } = useUbicacionesPersistence(currentCartaPorteId);
   const { guardarMercancias } = useMercanciasPersistence(currentCartaPorteId);
 
+  // Persistir estado en localStorage para evitar pérdidas
+  useEffect(() => {
+    const savedFormData = localStorage.getItem(`cartaporte-form-${currentCartaPorteId || 'new'}`);
+    if (savedFormData && !cartaPorteId) {
+      try {
+        const parsed = JSON.parse(savedFormData);
+        setFormData(prev => ({ ...prev, ...parsed }));
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
+    }
+  }, [currentCartaPorteId, cartaPorteId]);
+
+  // Auto-guardar en localStorage
+  useEffect(() => {
+    if (formData.rfcEmisor || formData.rfcReceptor) {
+      localStorage.setItem(`cartaporte-form-${currentCartaPorteId || 'new'}`, JSON.stringify(formData));
+    }
+  }, [formData, currentCartaPorteId]);
+
   // Cargar datos existentes si estamos editando
   useEffect(() => {
     if (cartaPorteId && cartasPorte.length > 0) {
@@ -121,10 +142,9 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     }
   }, [cartaPorteId, cartasPorte]);
 
-  // Auto-guardar cuando se completa la configuración inicial (solo para nuevas cartas)
+  // Auto-guardar cuando se completa la configuración inicial
   useEffect(() => {
     if (formData.rfcEmisor && formData.rfcReceptor && !currentCartaPorteId && !cartaPorteId) {
-      // Transform CartaPorteData to match expected type
       const cartaPortePayload = {
         tipo_cfdi: formData.tipoCfdi,
         rfc_emisor: formData.rfcEmisor,
@@ -154,7 +174,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     if (currentCartaPorteId && formData.ubicaciones.length > 0) {
       const timer = setTimeout(() => {
         guardarUbicaciones(formData.ubicaciones);
-      }, 1000); // Debounce de 1 segundo
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
@@ -165,7 +185,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     if (currentCartaPorteId && formData.mercancias.length > 0) {
       const timer = setTimeout(() => {
         guardarMercancias(formData.mercancias);
-      }, 1000); // Debounce de 1 segundo
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
@@ -200,6 +220,19 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    // Prevenir navegación automática, solo cambiar si el usuario hace clic
+    setActiveStep(value);
+  };
+
+  const handleNextStep = (targetStep: string) => {
+    setActiveStep(targetStep);
+  };
+
+  const handlePrevStep = (targetStep: string) => {
+    setActiveStep(targetStep);
+  };
+
   const getStepProgress = () => {
     const currentIndex = steps.findIndex(step => step.id === activeStep);
     return ((currentIndex + 1) / steps.length) * 100;
@@ -210,7 +243,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       case 'configuracion':
         return formData.rfcEmisor && formData.rfcReceptor;
       case 'ubicaciones':
-        return formData.ubicaciones.length >= 2; // Al menos origen y destino
+        return formData.ubicaciones.length >= 2;
       case 'mercancias':
         return formData.mercancias.length > 0;
       case 'autotransporte':
@@ -218,7 +251,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       case 'figuras':
         return formData.figuras.length > 0;
       case 'xml':
-        return true; // Siempre disponible si los pasos anteriores están completos
+        return true;
       default:
         return false;
     }
@@ -230,24 +263,26 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   };
 
   const canSaveAsTemplate = () => {
-    // Debe tener al menos configuración básica y una ubicación
     return isStepComplete('configuracion') && formData.ubicaciones.length > 0;
   };
 
   const canGenerateXML = () => {
-    // Verificar que todos los pasos obligatorios estén completos
     return ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras']
       .every(step => isStepComplete(step));
   };
 
   const handleXMLGenerated = (xml: string) => {
     console.log('XML generado exitosamente', xml.length, 'caracteres');
-    // Aquí puedes manejar el XML generado si necesitas hacer algo específico
   };
 
   const handleTimbrado = (datos: any) => {
     console.log('Carta Porte timbrada exitosamente:', datos);
-    // Aquí puedes manejar los datos del timbrado
+  };
+
+  const handleSaveTemplate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowGuardarPlantilla(true);
   };
 
   if (isLoading) {
@@ -276,9 +311,10 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
             <div className="flex items-center space-x-4">
               {canSaveAsTemplate() && (
                 <Button 
+                  type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowGuardarPlantilla(true)}
+                  onClick={handleSaveTemplate}
                   className="flex items-center space-x-2"
                 >
                   <Save className="h-4 w-4" />
@@ -297,7 +333,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       {/* Navegación por pasos */}
       <Card>
         <CardContent className="p-0">
-          <Tabs value={activeStep} onValueChange={setActiveStep} className="w-full">
+          <Tabs value={activeStep} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-6 h-auto">
               {steps.map((step) => {
                 const Icon = step.icon;
@@ -327,7 +363,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
                 <ConfiguracionInicial
                   data={formData}
                   onChange={(data) => updateFormData('configuracion', data)}
-                  onNext={() => setActiveStep('ubicaciones')}
+                  onNext={() => handleNextStep('ubicaciones')}
                 />
               </TabsContent>
 
@@ -335,8 +371,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
                 <UbicacionesSection
                   data={formData.ubicaciones}
                   onChange={(data) => updateFormData('ubicaciones', data)}
-                  onNext={() => setActiveStep('mercancias')}
-                  onPrev={() => setActiveStep('configuracion')}
+                  onNext={() => handleNextStep('mercancias')}
+                  onPrev={() => handlePrevStep('configuracion')}
                 />
               </TabsContent>
 
@@ -345,8 +381,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
                   data={formData.mercancias}
                   ubicaciones={formData.ubicaciones}
                   onChange={(data) => updateFormData('mercancias', data)}
-                  onNext={() => setActiveStep('autotransporte')}
-                  onPrev={() => setActiveStep('ubicaciones')}
+                  onNext={() => handleNextStep('autotransporte')}
+                  onPrev={() => handlePrevStep('ubicaciones')}
                 />
               </TabsContent>
 
@@ -354,8 +390,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
                 <AutotransporteSection
                   data={formData.autotransporte}
                   onChange={(data) => updateFormData('autotransporte', data)}
-                  onNext={() => setActiveStep('figuras')}
-                  onPrev={() => setActiveStep('mercancias')}
+                  onNext={() => handleNextStep('figuras')}
+                  onPrev={() => handlePrevStep('mercancias')}
                 />
               </TabsContent>
 
@@ -363,8 +399,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
                 <FigurasTransporteSection
                   data={formData.figuras}
                   onChange={(data) => updateFormData('figuras', data)}
-                  onPrev={() => setActiveStep('autotransporte')}
-                  onFinish={() => setActiveStep('xml')}
+                  onPrev={() => handlePrevStep('autotransporte')}
+                  onFinish={() => handleNextStep('xml')}
                 />
               </TabsContent>
 
@@ -399,15 +435,17 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
               </div>
               <div className="flex space-x-2">
                 <Button 
+                  type="button"
                   variant="outline"
-                  onClick={() => setShowGuardarPlantilla(true)}
+                  onClick={handleSaveTemplate}
                   className="flex items-center space-x-2"
                 >
                   <Save className="h-4 w-4" />
                   <span>Guardar Plantilla</span>
                 </Button>
                 <Button 
-                  onClick={() => setActiveStep('xml')}
+                  type="button"
+                  onClick={() => handleNextStep('xml')}
                   className="flex items-center space-x-2"
                 >
                   <Stamp className="h-4 w-4" />

@@ -139,7 +139,16 @@ export function UbicacionForm({
     }
   };
 
-  const handleSaveToFavorites = () => {
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onCancel();
+  };
+
+  const handleSaveToFavorites = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (onSaveToFavorites && formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario) {
       onSaveToFavorites({
         nombreUbicacion: formData.nombreRemitenteDestinatario,
@@ -203,7 +212,7 @@ export function UbicacionForm({
             canSaveToFavorites={!!(formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario)}
           />
 
-          {/* Domicilio Section Simplificado */}
+          {/* Domicilio Section con Autocompletado Inteligente */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Domicilio</h3>
             
@@ -217,7 +226,7 @@ export function UbicacionForm({
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border shadow-lg z-50">
                     <SelectItem value="México">México</SelectItem>
                     <SelectItem value="Estados Unidos">Estados Unidos</SelectItem>
                     <SelectItem value="Canadá">Canadá</SelectItem>
@@ -229,9 +238,36 @@ export function UbicacionForm({
                 value={formData.domicilio.codigoPostal}
                 onChange={(cp) => handleFieldChange('domicilio.codigoPostal', cp)}
                 onLocationUpdate={handleLocationUpdate}
+                coloniaValue={formData.domicilio.colonia}
+                onColoniaChange={(colonia) => handleFieldChange('domicilio.colonia', colonia)}
                 required
               />
             </div>
+
+            {/* Campos auto-completados (solo lectura si se llenaron automáticamente) */}
+            {formData.domicilio.estado && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Estado *</Label>
+                  <Input
+                    value={formData.domicilio.estado}
+                    onChange={(e) => handleFieldChange('domicilio.estado', e.target.value)}
+                    placeholder="Estado"
+                    className="bg-gray-50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Municipio *</Label>
+                  <Input
+                    value={formData.domicilio.municipio}
+                    onChange={(e) => handleFieldChange('domicilio.municipio', e.target.value)}
+                    placeholder="Municipio"
+                    className="bg-gray-50"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -289,7 +325,7 @@ export function UbicacionForm({
           </div>
 
           <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={handleCancel}>
               Cancelar
             </Button>
             <Button type="submit" disabled={!isFormValid()}>

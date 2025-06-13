@@ -46,7 +46,6 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
         await agregarMercancia(mercancia);
       }
       
-      // Cerrar formulario después de guardar exitosamente
       setShowForm(false);
       setEditingMercancia(undefined);
       setEditingIndex(-1);
@@ -81,6 +80,18 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
     e.preventDefault();
     e.stopPropagation();
     setShowForm(true);
+  };
+
+  const handleShowImport = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowImportDialog(true);
+  };
+
+  const handleShowDocuments = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDocumentDialog(true);
   };
 
   const handleDocumentProcessed = async (extractedMercancias: Mercancia[]) => {
@@ -123,10 +134,7 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
                 <Button 
                   type="button"
                   variant="outline" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowDocumentDialog(true);
-                  }}
+                  onClick={handleShowDocuments}
                   className="flex items-center space-x-2"
                 >
                   <Sparkles className="h-4 w-4" />
@@ -135,10 +143,7 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
                 <Button 
                   type="button"
                   variant="outline" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowImportDialog(true);
-                  }}
+                  onClick={handleShowImport}
                   className="flex items-center space-x-2"
                 >
                   <Upload className="h-4 w-4" />
