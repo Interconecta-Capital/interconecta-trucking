@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,11 +43,21 @@ export function useSimpleAuth() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('[SimpleAuth] Auth state change:', event, !!session?.user);
         setAuthState({
           user: session?.user ?? null,
           session,
           loading: false
         });
+
+        // Handle successful login/register with immediate redirect
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Pequeño delay para asegurar que el estado se actualice
+          setTimeout(() => {
+            console.log('[SimpleAuth] Redirecting to dashboard after sign in');
+            window.location.href = '/dashboard';
+          }, 100);
+        }
       }
     );
 
@@ -57,12 +66,15 @@ export function useSimpleAuth() {
 
   const signIn = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase().trim(),
         password
       });
 
       if (error) {
+        setAuthState(prev => ({ ...prev, loading: false }));
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Credenciales inválidas. Verifica tu correo y contraseña.');
         } else if (error.message.includes('Email not confirmed')) {
@@ -75,12 +87,15 @@ export function useSimpleAuth() {
 
       if (data.user) {
         toast.success('Inicio de sesión exitoso');
+        // El onAuthStateChange manejará la redirección
         return true;
       }
 
+      setAuthState(prev => ({ ...prev, loading: false }));
       return false;
     } catch (error) {
       console.error('Login error:', error);
+      setAuthState(prev => ({ ...prev, loading: false }));
       toast.error('Error inesperado. Intenta nuevamente.');
       return false;
     }
@@ -120,16 +135,19 @@ export function useSimpleAuth() {
     userData: { nombre: string; empresa?: string; rfc?: string; telefono?: string }
   ): Promise<boolean> => {
     try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+
       const { data, error } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: userData
         }
       });
 
       if (error) {
+        setAuthState(prev => ({ ...prev, loading: false }));
         if (error.message.includes('already registered')) {
           toast.error('Este correo ya está registrado. Inicia sesión en su lugar.');
         } else {
@@ -140,16 +158,20 @@ export function useSimpleAuth() {
 
       if (data.user) {
         if (!data.user.email_confirmed_at) {
+          setAuthState(prev => ({ ...prev, loading: false }));
           toast.success('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
         } else {
           toast.success('Registro exitoso');
+          // El onAuthStateChange manejará la redirección
         }
         return true;
       }
 
+      setAuthState(prev => ({ ...prev, loading: false }));
       return false;
     } catch (error) {
       console.error('Registration error:', error);
+      setAuthState(prev => ({ ...prev, loading: false }));
       toast.error('Error inesperado. Intenta nuevamente.');
       return false;
     }
