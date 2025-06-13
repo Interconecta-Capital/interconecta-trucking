@@ -1,286 +1,210 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, ChevronDown, Search, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useCatalogos } from '@/hooks/useCatalogos';
 
-export interface CatalogItem {
-  id: string;
-  clave: string;
-  descripcion: string;
-  nombre?: string;
-  simbolo?: string;
+interface CatalogoOption {
+  value: string;
+  label: string;
+  descripcion?: string;
 }
 
 interface CatalogoSelectorProps {
-  items: CatalogItem[];
-  loading?: boolean;
-  placeholder?: string;
-  label?: string;
-  required?: boolean;
+  tipo: 'unidades' | 'productos' | 'embalajes' | 'materiales_peligrosos' | 'figuras_transporte' | 'tipos_permiso' | 'configuraciones_vehiculares';
   value?: string;
-  onValueChange?: (value: string) => void;
-  onSearchChange?: (search: string) => void;
-  searchValue?: string;
-  className?: string;
+  onChange?: (value: string) => void;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  error?: string;
   disabled?: boolean;
-  allowManualInput?: boolean;
-  manualInputPlaceholder?: string;
+  onSelectionData?: (data: any) => void;
 }
 
 export function CatalogoSelector({
-  items = [],
-  loading = false,
-  placeholder = "Seleccionar...",
-  label,
-  required = false,
+  tipo,
   value,
-  onValueChange,
-  onSearchChange,
-  searchValue = "",
-  className,
+  onChange,
+  label,
+  placeholder = 'Selecciona una opción',
+  required = false,
+  error,
   disabled = false,
-  allowManualInput = false,
-  manualInputPlaceholder = "Escribir manualmente"
+  onSelectionData
 }: CatalogoSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [internalSearch, setInternalSearch] = useState("");
-  const [showManualInput, setShowManualInput] = useState(false);
-  const [manualValue, setManualValue] = useState("");
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Prevent navigation on button click
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-  };
-
-  const handleSearchChange = (search: string) => {
-    setInternalSearch(search);
-    
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // Debounce search
-    searchTimeoutRef.current = setTimeout(() => {
-      if (onSearchChange) {
-        onSearchChange(search);
-      }
-    }, 300);
-  };
-
-  const handleSelect = (item: CatalogItem) => {
-    const selectedValue = `${item.clave} - ${item.descripcion}`;
-    if (onValueChange) {
-      onValueChange(selectedValue);
-    }
-    setOpen(false);
-    setShowManualInput(false);
-  };
-
-  const handleManualInput = () => {
-    setShowManualInput(true);
-    setOpen(false);
-  };
-
-  const handleManualSave = () => {
-    if (manualValue.trim() && onValueChange) {
-      onValueChange(manualValue.trim());
-      setShowManualInput(false);
-      setManualValue("");
-    }
-  };
-
-  // Get display value
-  const getDisplayValue = () => {
-    if (!value) return "";
-    
-    // Try to find exact match first
-    const exactMatch = items.find(item => 
-      `${item.clave} - ${item.descripcion}` === value ||
-      item.clave === value ||
-      item.descripcion === value
-    );
-    
-    if (exactMatch) {
-      return `${exactMatch.clave} - ${exactMatch.descripcion}`;
-    }
-    
-    return value;
-  };
+  const [options, setOptions] = useState<CatalogoOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string>('');
+  
+  const { 
+    obtenerUnidades,
+    obtenerProductosServicios, 
+    obtenerTiposEmbalaje,
+    obtenerMaterialesPeligrosos,
+    obtenerFigurasTransporte,
+    obtenerTiposPermiso,
+    obtenerConfiguracionesVehiculares
+  } = useCatalogos();
 
   useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
+    loadCatalogData();
+  }, [tipo]);
 
-  if (showManualInput) {
-    return (
-      <div className={cn("grid w-full gap-1.5", className)}>
-        {label && (
-          <Label htmlFor="manual-input">
-            {label} {required && "*"}
-          </Label>
-        )}
-        <div className="flex gap-2">
-          <Input
-            id="manual-input"
-            placeholder={manualInputPlaceholder}
-            value={manualValue}
-            onChange={(e) => setManualValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleManualSave();
-              }
-              if (e.key === 'Escape') {
-                setShowManualInput(false);
-                setManualValue("");
-              }
-            }}
-            autoFocus
-          />
-          <Button 
-            type="button"
-            onClick={handleManualSave}
-            size="sm"
-            disabled={!manualValue.trim()}
-          >
-            Guardar
-          </Button>
-          <Button 
-            type="button"
-            variant="outline" 
-            onClick={() => {
-              setShowManualInput(false);
-              setManualValue("");
-            }}
-            size="sm"
-          >
-            Cancelar
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const loadCatalogData = async () => {
+    setLoading(true);
+    setLoadError('');
+
+    try {
+      let data: any[] = [];
+
+      switch (tipo) {
+        case 'unidades':
+          data = await obtenerUnidades();
+          setOptions(data.map(item => ({
+            value: item.clave_unidad,
+            label: `${item.clave_unidad} - ${item.nombre}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        case 'productos':
+          data = await obtenerProductosServicios();
+          setOptions(data.map(item => ({
+            value: item.clave_prod_serv,
+            label: `${item.clave_prod_serv} - ${item.descripcion}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        case 'embalajes':
+          data = await obtenerTiposEmbalaje();
+          setOptions(data.map(item => ({
+            value: item.clave_embalaje,
+            label: `${item.clave_embalaje} - ${item.descripcion}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        case 'materiales_peligrosos':
+          data = await obtenerMaterialesPeligrosos();
+          setOptions(data.map(item => ({
+            value: item.clave_material,
+            label: `${item.clave_material} - ${item.descripcion}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        case 'figuras_transporte':
+          data = await obtenerFigurasTransporte();
+          setOptions(data.map(item => ({
+            value: item.clave_figura,
+            label: `${item.clave_figura} - ${item.descripcion}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        case 'tipos_permiso':
+          data = await obtenerTiposPermiso();
+          setOptions(data.map(item => ({
+            value: item.clave_permiso,
+            label: `${item.clave_permiso} - ${item.descripcion}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        case 'configuraciones_vehiculares':
+          data = await obtenerConfiguracionesVehiculares();
+          setOptions(data.map(item => ({
+            value: item.clave_config,
+            label: `${item.clave_config} - ${item.descripcion}`,
+            descripcion: item.descripcion
+          })));
+          break;
+
+        default:
+          setLoadError('Tipo de catálogo no soportado');
+          return;
+      }
+
+    } catch (error) {
+      console.error(`Error loading catalog ${tipo}:`, error);
+      setLoadError('Error al cargar el catálogo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleValueChange = (selectedValue: string) => {
+    if (onChange) {
+      onChange(selectedValue);
+    }
+
+    // Pass additional data if callback provided
+    if (onSelectionData) {
+      const selectedOption = options.find(opt => opt.value === selectedValue);
+      if (selectedOption) {
+        onSelectionData({
+          value: selectedValue,
+          label: selectedOption.label,
+          descripcion: selectedOption.descripcion
+        });
+      }
+    }
+  };
+
+  const displayError = error || loadError;
 
   return (
-    <div className={cn("grid w-full gap-1.5", className)}>
+    <div className="space-y-2">
       {label && (
-        <Label htmlFor="catalog-selector">
-          {label} {required && "*"}
+        <Label className="flex items-center gap-1">
+          {label}
+          {required && <span className="text-red-500">*</span>}
         </Label>
       )}
-      <Popover open={open} onOpenChange={handleOpenChange}>
-        <PopoverTrigger asChild>
-          <Button
-            id="catalog-selector"
-            type="button"
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="justify-between text-left font-normal"
-            disabled={disabled}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleOpenChange(!open);
-            }}
-          >
-            <span className="truncate">
-              {getDisplayValue() || placeholder}
-            </span>
-            {loading ? (
-              <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin" />
-            ) : (
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0" align="start">
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Buscar..."
-              value={internalSearch}
-              onValueChange={handleSearchChange}
-            />
-            <CommandList>
-              {loading ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="ml-2">Cargando...</span>
-                </div>
-              ) : items.length === 0 ? (
-                <CommandEmpty>
-                  <div className="text-center py-6">
-                    <p>No se encontraron resultados</p>
-                    {allowManualInput && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={handleManualInput}
-                      >
-                        Escribir manualmente
-                      </Button>
-                    )}
-                  </div>
-                </CommandEmpty>
-              ) : (
-                <CommandGroup>
-                  {items.map((item) => (
-                    <CommandItem
-                      key={item.id}
-                      value={`${item.clave} ${item.descripcion}`}
-                      onSelect={() => handleSelect(item)}
-                      className="cursor-pointer"
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          getDisplayValue() === `${item.clave} - ${item.descripcion}` 
-                            ? "opacity-100" 
-                            : "opacity-0"
-                        )}
-                      />
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm bg-muted px-1 rounded">
-                            {item.clave}
-                          </span>
-                          {item.simbolo && (
-                            <span className="text-xs text-muted-foreground">
-                              ({item.simbolo})
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm text-muted-foreground truncate">
-                          {item.nombre || item.descripcion}
-                        </span>
-                      </div>
-                    </CommandItem>
-                  ))}
-                  {allowManualInput && items.length > 0 && (
-                    <CommandItem onSelect={handleManualInput}>
-                      <Search className="mr-2 h-4 w-4" />
-                      <span>Escribir manualmente</span>
-                    </CommandItem>
-                  )}
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      
+      <Select 
+        value={value} 
+        onValueChange={handleValueChange}
+        disabled={disabled || loading}
+      >
+        <SelectTrigger className={displayError ? 'border-red-500' : ''}>
+          <SelectValue placeholder={
+            loading ? 'Cargando...' : placeholder
+          } />
+          {loading && (
+            <Loader2 className="h-4 w-4 animate-spin ml-2" />
+          )}
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              <div className="flex flex-col">
+                <span className="font-medium">{option.label}</span>
+                {option.descripcion && (
+                  <span className="text-sm text-muted-foreground truncate max-w-[300px]">
+                    {option.descripcion}
+                  </span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+          {options.length === 0 && !loading && (
+            <SelectItem value="no-data" disabled>
+              No hay datos disponibles
+            </SelectItem>
+          )}
+        </SelectContent>
+      </Select>
+
+      {displayError && (
+        <div className="flex items-center gap-1 text-sm text-red-600">
+          <AlertCircle className="h-4 w-4" />
+          <span>{displayError}</span>
+        </div>
+      )}
     </div>
   );
 }

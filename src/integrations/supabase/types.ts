@@ -1867,6 +1867,33 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          assigned_by: string | null
+          created_at: string | null
+          id: string
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          role: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           activo: boolean | null
@@ -2172,12 +2199,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      get_current_user_tenant_id: {
-        Args: Record<PropertyKey, never>
+      get_user_tenant_id: {
+        Args: { user_uuid: string }
         Returns: string
       }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
+      is_superuser: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
+      is_user_admin: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       log_security_event: {

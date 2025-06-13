@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -19,6 +18,7 @@ import Trial from "./pages/Trial";
 import { BaseLayout } from "./components/layout/BaseLayout";
 import CartasPorte from "./pages/CartasPorte";
 import NewCartaPorte from "./pages/NewCartaPorte";
+import SuperuserManagement from "./pages/SuperuserManagement";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +112,15 @@ function App() {
                     <AuthGuard>
                       <BaseLayout>
                         <Socios />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  {/* Nueva ruta para gestión de usuarios */}
+                  <Route path="/administracion/usuarios" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <SuperuserManagement />
                       </BaseLayout>
                     </AuthGuard>
                   } />

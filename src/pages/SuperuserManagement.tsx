@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { SuperuserAdmin } from '@/components/SuperuserAdmin';
+import { UserManagementPanel } from '@/components/administracion/UserManagementPanel';
 import { useSuperuser } from '@/hooks/useSuperuser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Lock } from 'lucide-react';
+import { Shield, Lock, Crown } from 'lucide-react';
 
 export default function SuperuserManagement() {
   const { isSuperuser, loading } = useSuperuser();
@@ -44,15 +44,15 @@ export default function SuperuserManagement() {
     <div className="container mx-auto py-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Shield className="h-6 w-6 text-yellow-600" />
-          Gestión de Superusuarios
+          <Crown className="h-6 w-6 text-yellow-600" />
+          Gestión de Usuarios del Sistema
         </h1>
         <p className="text-muted-foreground">
-          Administra usuarios con privilegios de superusuario
+          Administra usuarios, roles y permisos del sistema
         </p>
       </div>
       
-      <SuperuserAdmin />
+      <UserManagementPanel />
     </div>
   );
 }
