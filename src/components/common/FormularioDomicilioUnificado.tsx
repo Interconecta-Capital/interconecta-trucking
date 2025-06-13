@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,7 +80,7 @@ export function FormularioDomicilioUnificado({
       onDomicilioChange('estado', direccionInfo.estado);
       onDomicilioChange('municipio', direccionInfo.municipio);
       if (direccionInfo.localidad) onDomicilioChange('localidad', direccionInfo.localidad);
-      if (direccionInfo.ciudad) onDomicilioChange('ciudad', direccionInfo.ciudad);
+      if (direccionInfo.localidad) onDomicilioChange('ciudad', direccionInfo.localidad);
       
       // Resetear colonia para que usuario seleccione
       setColoniaSeleccionada('');
@@ -275,7 +274,6 @@ export function FormularioDomicilioUnificado({
           </div>
         )}
 
-        {/* Selector de Colonia */}
         {direccionInfo && direccionInfo.colonias.length > 0 && (
           <div className="space-y-2">
             <Label>
