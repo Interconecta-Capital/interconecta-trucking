@@ -1,192 +1,232 @@
 
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserSignUpData, UserProfile } from './types';
-import { createTenantAndUser, getRedirectUrl } from './useAuthUtils';
+import { toast } from 'sonner';
+import { UserProfile } from './types';
 
-/**
- * Hook personalizado para manejar todas las acciones de autenticación
- * Incluye login, signup, logout, reset de contraseña, etc.
- */
-export const useAuthActions = () => {
-  
-  /**
-   * Iniciar sesión con email y contraseña
-   * Verifica que el email esté confirmado antes de permitir el acceso
-   */
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) throw error;
-    
-    // Verificar si el usuario ha confirmado su email
-    if (data.user && !data.user.email_confirmed_at) {
-      throw new Error('Por favor verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.');
-    }
-  };
+export function useAuthActions() {
+  const signIn = useCallback(async (email: string, password: string) => {
+    try {
+      // Clean up existing auth state before login
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
 
-  /**
-   * Registrar nuevo usuario con email y contraseña
-   * Maneja la creación del tenant y usuario asociado
-   */
-  const signUp = async (email: string, password: string, userData: UserSignUpData) => {
-    const redirectUrl = getRedirectUrl();
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: userData,
-      },
-    });
-    
-    if (error) {
-      // Detectar si el usuario ya existe y lanzar error específico
-      if (error.message?.includes('User already registered')) {
-        throw new Error('El correo electrónico ya está registrado. Por favor inicia sesión.');
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw error;
       }
+
+      toast.success('Inicio de sesión exitoso');
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      toast.error(error.message || 'Error al iniciar sesión');
       throw error;
     }
-    
-    // Si el usuario se registró exitosamente pero necesita confirmar email
-    if (data.user && !data.user.email_confirmed_at) {
-      console.log('Usuario creado, necesita confirmación por email');
-      return { needsVerification: true };
-    }
-    
-    // Si el usuario se registró exitosamente y ya está confirmado
-    if (data.user && data.user.email_confirmed_at) {
-      await createTenantAndUser(data.user.id, email, userData);
-    }
-    
-    return {};
-  };
+  }, []);
 
-  /**
-   * Iniciar sesión con Google OAuth
-   */
-  const signInWithGoogle = async () => {
-    const redirectUrl = getRedirectUrl();
-    
-    console.log('Google OAuth redirect URL:', redirectUrl);
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
-    
-    if (error) {
-      console.error('Google OAuth error:', error);
+  const signUp = useCallback(async (email: string, password: string, userData: any) => {
+    try {
+      // Clean up existing auth state before registration
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: userData
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user && !data.user.email_confirmed_at) {
+        toast.success('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
+        return { needsVerification: true };
+      }
+
+      toast.success('Registro exitoso');
+      return {};
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      toast.error(error.message || 'Error al registrarse');
       throw error;
     }
-  };
+  }, []);
 
-  /**
-   * Enviar magic link por email
-   */
-  const signInWithMagicLink = async (email: string) => {
-    const redirectUrl = getRedirectUrl();
-    
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-    
-    if (error) throw error;
-  };
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
 
-  /**
-   * Restablecer contraseña
-   */
-  const resetPassword = async (email: string) => {
-    const redirectUrl = getRedirectUrl('/auth/reset-password');
-    
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
-    
-    if (error) throw error;
-  };
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('Google sign in error:', error);
+      toast.error(error.message || 'Error al iniciar sesión con Google');
+      throw error;
+    }
+  }, []);
 
-  /**
-   * Actualizar email del usuario
-   */
-  const updateEmail = async (newEmail: string) => {
-    const redirectUrl = getRedirectUrl();
-    
-    const { error } = await supabase.auth.updateUser({
-      email: newEmail,
-    }, {
-      emailRedirectTo: redirectUrl,
-    });
-    
-    if (error) throw error;
-  };
+  const signInWithMagicLink = useCallback(async (email: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
 
-  /**
-   * Actualizar perfil del usuario
-   */
-  const updateProfile = async (profileData: Partial<UserProfile>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Usuario no autenticado');
+      if (error) {
+        throw error;
+      }
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        ...profileData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
+      toast.success('Link mágico enviado a tu correo');
+    } catch (error: any) {
+      console.error('Magic link error:', error);
+      toast.error(error.message || 'Error al enviar link mágico');
+      throw error;
+    }
+  }, []);
 
-    if (error) throw error;
-  };
+  const signOut = useCallback(async () => {
+    try {
+      // Clean up auth state first
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
 
-  /**
-   * Cerrar sesión y redirigir a /auth
-   */
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    // Redirigir a la página de autenticación
-    window.location.href = '/auth';
-  };
+      toast.success('Sesión cerrada exitosamente');
+      
+      // Force page reload for clean state
+      window.location.href = '/auth';
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      toast.error(error.message || 'Error al cerrar sesión');
+    }
+  }, []);
 
-  /**
-   * Reenviar email de confirmación
-   */
-  const resendConfirmation = async (email: string) => {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: email,
-      options: {
-        emailRedirectTo: getRedirectUrl(),
-      },
-    });
-    
-    if (error) throw error;
-  };
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Correo de recuperación enviado');
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      toast.error(error.message || 'Error al enviar correo de recuperación');
+      throw error;
+    }
+  }, []);
+
+  const updateEmail = useCallback(async (newEmail: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Email actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Update email error:', error);
+      toast.error(error.message || 'Error al actualizar email');
+      throw error;
+    }
+  }, []);
+
+  const updateProfile = useCallback(async (profileData: Partial<UserProfile>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          ...profileData,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Perfil actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      toast.error(error.message || 'Error al actualizar perfil');
+      throw error;
+    }
+  }, []);
+
+  const resendConfirmation = useCallback(async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Correo de confirmación reenviado');
+    } catch (error: any) {
+      console.error('Resend confirmation error:', error);
+      toast.error(error.message || 'Error al reenviar confirmación');
+      throw error;
+    }
+  }, []);
 
   return {
     signIn,
     signUp,
     signInWithGoogle,
     signInWithMagicLink,
+    signOut,
     resetPassword,
     updateEmail,
     updateProfile,
-    signOut,
-    resendConfirmation,
+    resendConfirmation
   };
-};
+}
