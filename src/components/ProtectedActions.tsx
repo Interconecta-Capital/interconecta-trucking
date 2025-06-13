@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProtectedActionsProps {
-  children: ReactNode;
+  children?: ReactNode;
   action: 'create';
   resource: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte';
   onAction?: () => void;
@@ -47,7 +47,8 @@ export const ProtectedActions = ({
     }
   };
 
-  if (action === 'create') {
+  // Si no hay children, renderizar como botón
+  if (!children && action === 'create') {
     return (
       <Button onClick={handleAction} variant={variant} className="flex items-center gap-2">
         <Plus className="h-4 w-4" />
@@ -56,5 +57,6 @@ export const ProtectedActions = ({
     );
   }
 
+  // Si hay children, renderizar como wrapper
   return <>{children}</>;
 };
