@@ -36,7 +36,7 @@ const Header = () => {
           </a>
         </nav>
         <div className="flex items-center space-x-3">
-          <Link to="/auth/login">
+          <Link to="/auth">
             <Button variant="outline" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light font-sora font-medium">
               Iniciar Sesión
             </Button>

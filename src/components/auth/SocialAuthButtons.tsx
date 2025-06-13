@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 
@@ -11,7 +11,7 @@ interface SocialAuthButtonsProps {
 
 export function SocialAuthButtons({ mode = 'login' }: SocialAuthButtonsProps) {
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle } = useSimpleAuth();
 
   const handleGoogleAuth = async () => {
     setGoogleLoading(true);

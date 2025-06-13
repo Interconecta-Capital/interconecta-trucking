@@ -86,6 +86,34 @@ export function useSimpleAuth() {
     }
   }, []);
 
+  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Google auth error:', error);
+        toast.error('Error al autenticar con Google');
+        return false;
+      }
+
+      // OAuth redirect is handled by Supabase
+      return true;
+    } catch (error) {
+      console.error('Google auth error:', error);
+      toast.error('Error inesperado con Google auth');
+      return false;
+    }
+  }, []);
+
   const signUp = useCallback(async (
     email: string, 
     password: string, 
@@ -200,6 +228,7 @@ export function useSimpleAuth() {
   return {
     ...authState,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
     resendConfirmation,

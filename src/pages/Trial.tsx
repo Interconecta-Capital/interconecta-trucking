@@ -1,28 +1,16 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSecureAuth } from '@/hooks/auth/useSecureAuth';
-import { useAuthValidation } from '@/hooks/auth/useAuthValidation';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, Calendar, Eye, EyeOff } from 'lucide-react';
-import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
-import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
-import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
-import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
-import { ContextualAlert } from '@/components/ui/contextual-alert';
 
 export default function Trial() {
-  const {
-    unconfirmedEmail,
-    showUnconfirmedDialog,
-    checkIfUserIsUnconfirmed,
-    closeUnconfirmedDialog,
-    handleVerificationSent,
-  } = useUnconfirmedUserDetection();
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -36,13 +24,25 @@ export default function Trial() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
-  const [showExistingUserAlert, setShowExistingUserAlert] = useState(false);
-  const [existingUserEmail, setExistingUserEmail] = useState('');
   const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
   
-  const { secureRegister } = useSecureAuth();
-  const { validateRFCFormat, sanitizeInput } = useAuthValidation();
+  const { signUp, validateEmail, validatePassword, sanitizeInput } = useSimpleAuth();
   const navigate = useNavigate();
+
+  const validateRFCFormat = (rfc: string) => {
+    if (!rfc) return { isValid: true, message: '' };
+    
+    if (rfc.length < 12 || rfc.length > 13) {
+      return { isValid: false, message: 'RFC debe tener 12 o 13 caracteres' };
+    }
+    
+    const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
+    if (!rfcRegex.test(rfc.toUpperCase())) {
+      return { isValid: false, message: 'Formato de RFC inválido' };
+    }
+    
+    return { isValid: true, message: '' };
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,38 +66,32 @@ export default function Trial() {
       }
     }
 
+    // Validate required fields
+    if (!formData.nombre || !formData.empresa || !formData.email) {
+      toast.error('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
     setLoading(true);
-    setShowExistingUserAlert(false);
 
     try {
-      const success = await secureRegister(
+      const success = await signUp(
         formData.email,
         formData.password,
-        formData.nombre,
-        formData.rfc,
-        formData.empresa,
-        formData.telefono
+        {
+          nombre: formData.nombre,
+          empresa: formData.empresa,
+          rfc: formData.rfc || undefined,
+          telefono: formData.telefono || undefined
+        }
       );
       
       if (success) {
         setShowVerification(true);
       }
     } catch (error: any) {
-      // Check if this is an existing user (repeated signup)
-      if (error.message?.includes('User already registered') || 
-          error.message?.includes('already registered') ||
-          error.message?.includes('user_repeated_signup')) {
-        setExistingUserEmail(formData.email);
-        setShowExistingUserAlert(true);
-        return;
-      }
-
-      // Check if this might be an existing unconfirmed user
-      const isUnconfirmed = checkIfUserIsUnconfirmed(formData.email, error);
-      
-      if (!isUnconfirmed) {
-        toast.error(error.message || 'Error al iniciar la prueba gratuita');
-      }
+      console.error('Trial registration error:', error);
+      toast.error(error.message || 'Error al iniciar la prueba gratuita');
     } finally {
       setLoading(false);
     }
@@ -106,11 +100,6 @@ export default function Trial() {
   const handleChange = (field: string, value: string) => {
     const sanitizedValue = sanitizeInput(value);
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
-    
-    // Clear alerts when user starts typing
-    if (field === 'email' && showExistingUserAlert) {
-      setShowExistingUserAlert(false);
-    }
 
     // Real-time RFC validation
     if (field === 'rfc' && sanitizedValue) {
@@ -125,8 +114,43 @@ export default function Trial() {
   };
 
   const goToLogin = () => {
-    navigate('/auth/login');
+    navigate('/auth');
   };
+
+  if (showVerification) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-interconecta-border-subtle">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="interconecta-gradient p-3 rounded-xl">
+                <Check className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold font-sora text-interconecta-text-primary">
+              ¡Registro Exitoso!
+            </CardTitle>
+            <CardDescription className="font-inter text-interconecta-text-secondary">
+              Revisa tu correo para verificar tu cuenta
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-sm text-interconecta-text-body">
+              Hemos enviado un correo de verificación a <strong>{formData.email}</strong>. 
+              Haz clic en el enlace del correo para activar tu cuenta.
+            </p>
+            <Button
+              onClick={() => setShowVerification(false)}
+              variant="outline"
+              className="w-full"
+            >
+              Volver al registro
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white">
@@ -173,173 +197,150 @@ export default function Trial() {
 
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Formulario */}
-            {showVerification ? (
-              <EmailVerificationMessage 
-                email={formData.email}
-                onBack={() => setShowVerification(false)}
-              />
-            ) : (
-              <Card className="border-interconecta-border-subtle">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-sora">Crear cuenta de prueba</CardTitle>
-                  <CardDescription className="font-inter">
-                    Completa el formulario para comenzar tu prueba gratuita
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {/* Alert for existing user */}
-                    {showExistingUserAlert && (
-                      <ContextualAlert
-                        type="warning"
-                        title="Cuenta existente encontrada"
-                        message={`Ya tienes una cuenta registrada con ${existingUserEmail}. Inicia sesión para continuar.`}
-                        action={{
-                          label: 'Ir a iniciar sesión',
-                          onClick: goToLogin
-                        }}
-                        dismissible
-                        onDismiss={() => setShowExistingUserAlert(false)}
-                      />
-                    )}
-
-                    <SocialAuthButtons mode="register" />
+            <Card className="border-interconecta-border-subtle">
+              <CardHeader>
+                <CardTitle className="text-2xl font-sora">Crear cuenta de prueba</CardTitle>
+                <CardDescription className="font-inter">
+                  Completa el formulario para comenzar tu prueba gratuita
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <SocialAuthButtons mode="register" />
+                  
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="nombre" className="font-inter">Nombre Completo *</Label>
+                        <Input
+                          id="nombre"
+                          value={formData.nombre}
+                          onChange={(e) => handleChange('nombre', e.target.value)}
+                          required
+                          className="border-interconecta-border-subtle"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
+                        <Input
+                          id="telefono"
+                          value={formData.telefono}
+                          onChange={(e) => handleChange('telefono', e.target.value)}
+                          className="border-interconecta-border-subtle"
+                        />
+                      </div>
+                    </div>
                     
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="nombre" className="font-inter">Nombre Completo</Label>
-                          <Input
-                            id="nombre"
-                            value={formData.nombre}
-                            onChange={(e) => handleChange('nombre', e.target.value)}
-                            required
-                            className="border-interconecta-border-subtle"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
-                          <Input
-                            id="telefono"
-                            value={formData.telefono}
-                            onChange={(e) => handleChange('telefono', e.target.value)}
-                            className="border-interconecta-border-subtle"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="empresa" className="font-inter">Nombre de la Empresa</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="empresa" className="font-inter">Nombre de la Empresa *</Label>
+                      <Input
+                        id="empresa"
+                        value={formData.empresa}
+                        onChange={(e) => handleChange('empresa', e.target.value)}
+                        required
+                        className="border-interconecta-border-subtle"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
+                      <Input
+                        id="rfc"
+                        value={formData.rfc}
+                        onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
+                        maxLength={13}
+                        className={`border-interconecta-border-subtle ${
+                          !rfcValidation.isValid ? 'border-red-500' : ''
+                        }`}
+                      />
+                      {!rfcValidation.isValid && (
+                        <p className="text-red-500 text-sm">{rfcValidation.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="font-inter">Correo Electrónico *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleChange('email', e.target.value)}
+                        required
+                        className="border-interconecta-border-subtle"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="font-inter">Contraseña *</Label>
+                      <div className="relative">
                         <Input
-                          id="empresa"
-                          value={formData.empresa}
-                          onChange={(e) => handleChange('empresa', e.target.value)}
+                          id="password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={formData.password}
+                          onChange={(e) => handleChange('password', e.target.value)}
                           required
-                          className="border-interconecta-border-subtle"
+                          minLength={8}
+                          className="border-interconecta-border-subtle pr-10"
+                          placeholder="Mínimo 8 caracteres"
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-interconecta-text-secondary" />
+                          )}
+                        </Button>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña *</Label>
+                      <div className="relative">
                         <Input
-                          id="rfc"
-                          value={formData.rfc}
-                          onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
+                          id="confirm-password"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={formData.confirmPassword}
+                          onChange={(e) => handleChange('confirmPassword', e.target.value)}
                           required
-                          maxLength={13}
-                          className={`border-interconecta-border-subtle ${
-                            !rfcValidation.isValid ? 'border-red-500' : ''
-                          }`}
+                          className="border-interconecta-border-subtle pr-10"
                         />
-                        {!rfcValidation.isValid && (
-                          <p className="text-red-500 text-sm">{rfcValidation.message}</p>
-                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-interconecta-text-secondary" />
+                          )}
+                        </Button>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="font-inter">Correo Electrónico</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => handleChange('email', e.target.value)}
-                          required
-                          className="border-interconecta-border-subtle"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="password" className="font-inter">Contraseña</Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={formData.password}
-                            onChange={(e) => handleChange('password', e.target.value)}
-                            required
-                            minLength={8}
-                            className="border-interconecta-border-subtle pr-10"
-                            placeholder="Mínimo 8 caracteres"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-interconecta-text-secondary" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña</Label>
-                        <div className="relative">
-                          <Input
-                            id="confirm-password"
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            value={formData.confirmPassword}
-                            onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                            required
-                            className="border-interconecta-border-subtle pr-10"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-interconecta-text-secondary" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
-                        disabled={loading || !rfcValidation.isValid}
-                      >
-                        {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
-                      </Button>
-                      
-                      <p className="text-xs text-interconecta-text-secondary text-center font-inter">
-                        Al registrarte, aceptas nuestros términos de servicio y política de privacidad
-                      </p>
-                    </form>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
+                      disabled={loading || !rfcValidation.isValid}
+                    >
+                      {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
+                    </Button>
+                    
+                    <p className="text-xs text-interconecta-text-secondary text-center font-inter">
+                      Al registrarte, aceptas nuestros términos de servicio y política de privacidad
+                    </p>
+                  </form>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Beneficios */}
             <div className="space-y-6">
@@ -370,28 +371,18 @@ export default function Trial() {
                 <p className="text-sm font-inter text-interconecta-text-secondary mb-4">
                   Si ya tienes una cuenta, puedes iniciar sesión directamente
                 </p>
-                <Link to="/auth/login">
-                  <Button variant="outline" className="w-full border-interconecta-primary text-interconecta-primary">
-                    Iniciar Sesión
-                  </Button>
-                </Link>
+                <Button
+                  onClick={goToLogin}
+                  variant="outline" 
+                  className="w-full border-interconecta-primary text-interconecta-primary"
+                >
+                  Iniciar Sesión
+                </Button>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Unconfirmed User Dialog */}
-      {showUnconfirmedDialog && unconfirmedEmail && (
-        <UnconfirmedUserDialog
-          email={unconfirmedEmail}
-          onClose={closeUnconfirmedDialog}
-          onVerificationSent={() => {
-            handleVerificationSent();
-            setShowVerification(true);
-          }}
-        />
-      )}
     </div>
   );
 }

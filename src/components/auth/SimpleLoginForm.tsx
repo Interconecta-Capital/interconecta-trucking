@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { SocialAuthButtons } from './SocialAuthButtons';
 import { toast } from 'sonner';
 import { Truck, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -75,6 +76,8 @@ export function SimpleLoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <SocialAuthButtons mode="login" />
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="font-inter text-interconecta-text-body">
