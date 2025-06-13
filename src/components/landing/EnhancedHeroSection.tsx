@@ -91,7 +91,7 @@ const EnhancedHeroSection = () => {
             <Link to="/auth/login">
               <Button size="lg" variant="outline" className="border-2 border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary hover:text-white px-10 py-6 text-lg font-sora font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group backdrop-blur-sm bg-white/80">
                 <Play className="mr-3 h-6 w-6 group-hover:animate-pulse" />
-                Ver Demo en Vivo
+                Iniciar sesión
               </Button>
             </Link>
           </div>
