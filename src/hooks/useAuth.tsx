@@ -47,4 +47,4 @@ export function useAuth() {
   return context;
 }
 
-export { AuthUser };
+export type { AuthUser };
