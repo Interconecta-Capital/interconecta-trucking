@@ -1,4 +1,4 @@
-import { buscarCodigoPostalLocal, validarFormatoCP } from '@/data/codigosPostalesMexico';
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DireccionCompleta {
@@ -6,31 +6,47 @@ export interface DireccionCompleta {
   estado: string;
   municipio: string;
   localidad?: string;
-  colonias: string[];
-  fuente?: 'local' | 'api_interna' | 'legacy_api';
+  colonias: Array<{
+    nombre: string;
+    tipo: string;
+  }>;
+  fuente: 'database_nacional';
 }
 
-class CodigosPostalesService {
-  private cache = new Map<string, DireccionCompleta>();
+interface SugerenciaCP {
+  codigo_postal: string;
+  ubicacion: string;
+}
 
-  async buscarDireccionPorCP(codigoPostal: string): Promise<DireccionCompleta | null> {
+class CodigosPostalesServiceOptimizado {
+  private cache = new Map<string, DireccionCompleta>();
+  private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutos
+
+  async buscarDireccionPorCP(codigoPostal: string): Promise<{
+    data: DireccionCompleta | null;
+    error?: string;
+    sugerencias?: SugerenciaCP[];
+  }> {
     // Validar formato
-    if (!validarFormatoCP(codigoPostal)) {
-      console.warn('[CP_SERVICE] Formato inválido:', codigoPostal);
-      return null;
+    if (!this.validarFormatoCP(codigoPostal)) {
+      return { 
+        data: null, 
+        error: 'Formato de código postal inválido' 
+      };
     }
 
     // Verificar cache
-    if (this.cache.has(codigoPostal)) {
-      console.log('[CP_SERVICE] Usando cache para:', codigoPostal);
-      return this.cache.get(codigoPostal)!;
+    const cached = this.cache.get(codigoPostal);
+    if (cached) {
+      console.log('[CP_SERVICE_OPT] Usando cache para:', codigoPostal);
+      return { data: cached };
     }
 
     try {
-      // 1. Primero consultar nueva base de datos via Edge Function
-      console.log('[CP_SERVICE] Consultando nueva base de datos para:', codigoPostal);
+      console.log('[CP_SERVICE_OPT] Consultando edge function para:', codigoPostal);
       
-      const { data, error } = await supabase.functions.invoke('codigo-postal', {
+      // Usar edge function optimizada como fuente principal
+      const { data, error } = await supabase.functions.invoke('codigo-postal-mexico', {
         body: { codigoPostal }
       });
 
@@ -40,80 +56,57 @@ class CodigosPostalesService {
           estado: data.estado,
           municipio: data.municipio,
           localidad: data.localidad || data.ciudad,
-          colonias: data.colonias?.map((c: any) => c.colonia) || [],
-          fuente: data.fuente
+          colonias: data.colonias || [],
+          fuente: 'database_nacional'
         };
 
+        // Guardar en cache
         this.cache.set(codigoPostal, resultado);
-        return resultado;
-      }
-
-      // 2. Fallback a datos locales si no está en la nueva base
-      const datosLocales = buscarCodigoPostalLocal(codigoPostal);
-      if (datosLocales) {
-        console.log('[CP_SERVICE] Encontrado en datos locales:', codigoPostal);
         
-        const resultado: DireccionCompleta = {
-          codigoPostal,
-          estado: datosLocales.estado,
-          municipio: datosLocales.municipio,
-          localidad: datosLocales.localidad,
-          colonias: datosLocales.colonias,
-          fuente: 'local'
+        // Limpiar cache antiguo
+        this.limpiarCacheAntiguo();
+
+        return { data: resultado };
+      }
+
+      // Si hay error con sugerencias
+      if (data?.error && data?.sugerencias) {
+        return {
+          data: null,
+          error: data.error,
+          sugerencias: data.sugerencias
         };
-
-        this.cache.set(codigoPostal, resultado);
-        return resultado;
       }
 
-      // 3. Último recurso: API legacy
-      console.log('[CP_SERVICE] Intentando API legacy para:', codigoPostal);
-      return await this.buscarLegacyAPI(codigoPostal);
-
-    } catch (error) {
-      console.error('[CP_SERVICE] Error en búsqueda:', error);
-      return null;
-    }
-  }
-
-  private async buscarLegacyAPI(codigoPostal: string): Promise<DireccionCompleta | null> {
-    try {
-      // Intentar API legacy solo como último recurso
-      const response = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`);
-      
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = await response.json();
-
-      if (data.error || !data.response || data.response.length === 0) {
-        return null;
-      }
-
-      const primeraRespuesta = data.response[0];
-      // Fix: Add proper type assertion for the colonias array
-      const colonias = [...new Set(data.response.map((item: any) => String(item.d_asenta)))].sort() as string[];
-
-      const resultado: DireccionCompleta = {
-        codigoPostal,
-        estado: primeraRespuesta.d_estado,
-        municipio: primeraRespuesta.d_mnp,
-        localidad: primeraRespuesta.d_ciudad,
-        colonias,
-        fuente: 'legacy_api'
+      return {
+        data: null,
+        error: data?.error || 'Código postal no encontrado'
       };
 
-      this.cache.set(codigoPostal, resultado);
-      return resultado;
-
     } catch (error) {
-      console.error('[CP_SERVICE] Error en API legacy:', error);
-      return null;
+      console.error('[CP_SERVICE_OPT] Error:', error);
+      return {
+        data: null,
+        error: 'Error al consultar código postal'
+      };
     }
   }
 
-  // Mantener métodos existentes para compatibilidad
+  private validarFormatoCP(cp: string): boolean {
+    return /^\d{5}$/.test(cp?.trim() || '');
+  }
+
+  private limpiarCacheAntiguo(): void {
+    // Mantener máximo 100 entradas en cache
+    if (this.cache.size > 100) {
+      const entries = Array.from(this.cache.entries());
+      // Eliminar las primeras 20 entradas (más antiguas)
+      for (let i = 0; i < 20; i++) {
+        this.cache.delete(entries[i][0]);
+      }
+    }
+  }
+
   limpiarCache(): void {
     this.cache.clear();
   }
@@ -123,4 +116,4 @@ class CodigosPostalesService {
   }
 }
 
-export const codigosPostalesService = new CodigosPostalesService();
+export const codigosPostalesService = new CodigosPostalesServiceOptimizado();

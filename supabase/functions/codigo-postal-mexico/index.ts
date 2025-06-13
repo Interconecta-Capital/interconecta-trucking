@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     const { codigoPostal }: CodigoPostalRequest = await req.json();
 
-    console.log('[CP_MEXICO] Buscando código postal:', codigoPostal);
+    console.log('[CP_OPTIMIZED] Procesando código postal:', codigoPostal);
 
     // Validar formato del código postal
     if (!codigoPostal || !/^\d{5}$/.test(codigoPostal)) {
@@ -66,19 +66,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Buscar en la base de datos nacional
+    // Buscar en la base de datos nacional con función optimizada
     const { data: dbResult, error: dbError } = await supabase
       .rpc('buscar_codigo_postal_completo', { cp_input: codigoPostal });
 
     if (dbError) {
-      console.error('[CP_MEXICO] Error en consulta DB:', dbError);
+      console.error('[CP_OPTIMIZED] Error en consulta DB:', dbError);
+      
+      // Generar sugerencias si no se encuentra
+      const { data: sugerenciasResult } = await supabase
+        .rpc('sugerir_codigos_similares', { cp_input: codigoPostal });
+
       return new Response(
         JSON.stringify({ 
-          error: 'Error interno al consultar código postal',
-          details: dbError.message 
+          error: `Código postal ${codigoPostal} no encontrado`,
+          sugerencias: sugerenciasResult?.slice(0, 5) || []
         }),
         { 
-          status: 500, 
+          status: 404, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -86,10 +91,9 @@ Deno.serve(async (req) => {
 
     if (dbResult && dbResult.length > 0) {
       const resultado = dbResult[0];
-      console.log('[CP_MEXICO] Encontrado en DB nacional:', {
+      console.log('[CP_OPTIMIZED] Encontrado:', {
         cp: resultado.codigo_postal,
-        totalColonias: resultado.total_colonias,
-        estado: resultado.estado
+        totalColonias: resultado.total_colonias
       });
 
       const response: CodigoPostalResponse = {
@@ -114,21 +118,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Si no se encuentra, generar sugerencias similares
-    console.log('[CP_MEXICO] CP no encontrado, generando sugerencias...');
-    
-    const { data: sugerenciasResult, error: sugerenciasError } = await supabase
+    // Si no se encuentra, generar sugerencias
+    const { data: sugerenciasResult } = await supabase
       .rpc('sugerir_codigos_similares', { cp_input: codigoPostal });
-
-    let sugerencias: Array<{codigo_postal: string, ubicacion: string}> = [];
-    if (!sugerenciasError && sugerenciasResult) {
-      sugerencias = sugerenciasResult;
-    }
 
     return new Response(
       JSON.stringify({ 
-        error: `Código postal ${codigoPostal} no encontrado en la base de datos nacional`,
-        sugerencias: sugerencias.slice(0, 5)
+        error: `Código postal ${codigoPostal} no encontrado`,
+        sugerencias: sugerenciasResult?.slice(0, 5) || []
       }),
       { 
         status: 404, 
@@ -137,7 +134,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[CP_MEXICO] Error general:', error);
+    console.error('[CP_OPTIMIZED] Error general:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Error interno del servidor',

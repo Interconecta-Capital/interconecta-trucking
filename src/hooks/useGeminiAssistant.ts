@@ -24,39 +24,37 @@ export const useGeminiAssistant = () => {
   const generateSuggestion = async (prompt: string, context: string) => {
     setIsLoading(true);
     try {
-      console.log('Calling Gemini assistant with:', { prompt, context });
+      console.log('[GEMINI_HOOK] Generando sugerencia:', { prompt, context });
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
+          action: 'generate_carta_porte_data',
           prompt,
-          context,
-          action: 'generate_carta_porte_data'
+          context
         },
       });
 
       if (error) {
-        console.error('Gemini assistant error:', error);
+        console.error('[GEMINI_HOOK] Error:', error);
         throw error;
       }
 
-      console.log('Gemini assistant response:', data);
+      console.log('[GEMINI_HOOK] Respuesta recibida:', data);
 
       if (data?.suggestions) {
         setSuggestions(data.suggestions);
-      } else if (data?.data) {
-        // Convert single response to suggestion format
+      } else if (data?.response) {
         setSuggestions([{
-          title: data.title || 'Sugerencia IA',
-          description: data.description || 'Datos generados por IA',
-          data: data.data,
-          confidence: data.confidence || 0.8
+          title: 'Sugerencia IA',
+          description: data.response,
+          confidence: 0.8
         }]);
       } else {
         throw new Error('No se pudieron generar sugerencias');
       }
     } catch (error) {
-      console.error('Error generating suggestion:', error);
-      toast.error('Error al generar sugerencia');
+      console.error('[GEMINI_HOOK] Error generating suggestion:', error);
+      toast.error('Error al generar sugerencia con IA');
       throw error;
     } finally {
       setIsLoading(false);
@@ -68,16 +66,15 @@ export const useGeminiAssistant = () => {
     try {
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          prompt: `Genera una descripción detallada para el producto con clave: ${claveProducto}`,
-          context: 'mercancias',
-          action: 'suggest_description'
+          action: 'suggest_description',
+          prompt: claveProducto
         },
       });
 
       if (error) throw error;
       return data?.description || null;
     } catch (error) {
-      console.error('Error suggesting description:', error);
+      console.error('[GEMINI_HOOK] Error suggesting description:', error);
       toast.error('Error al generar descripción');
       return null;
     } finally {
@@ -90,16 +87,15 @@ export const useGeminiAssistant = () => {
     try {
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          prompt: `Valida esta mercancía: ${JSON.stringify(mercanciaData)}`,
-          context: 'mercancias',
-          action: 'validate_mercancia'
+          action: 'validate_mercancia',
+          data: mercanciaData
         },
       });
 
       if (error) throw error;
       return data as ValidationResult;
     } catch (error) {
-      console.error('Error validating mercancia:', error);
+      console.error('[GEMINI_HOOK] Error validating mercancia:', error);
       toast.error('Error al validar mercancía');
       return null;
     } finally {
@@ -107,22 +103,46 @@ export const useGeminiAssistant = () => {
     }
   };
 
-  const improveDescription = async (currentDescription: string, claveProducto: string): Promise<string | null> => {
+  const improveDescription = async (currentDescription: string, claveProducto?: string): Promise<string | null> => {
     setIsLoading(true);
     try {
+      const prompt = claveProducto 
+        ? `Mejora esta descripción: "${currentDescription}" para el producto ${claveProducto}`
+        : currentDescription;
+
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          prompt: `Mejora esta descripción: "${currentDescription}" para el producto ${claveProducto}`,
-          context: 'mercancias',
-          action: 'improve_description'
+          action: 'improve_description',
+          prompt
         },
       });
 
       if (error) throw error;
       return data?.description || null;
     } catch (error) {
-      console.error('Error improving description:', error);
+      console.error('[GEMINI_HOOK] Error improving description:', error);
       toast.error('Error al mejorar descripción');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const parseDocument = async (documentText: string, documentType: string): Promise<any> => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('gemini-assistant', {
+        body: {
+          action: 'parse_document',
+          data: { text: documentText, document_type: documentType }
+        },
+      });
+
+      if (error) throw error;
+      return data?.result || null;
+    } catch (error) {
+      console.error('[GEMINI_HOOK] Error parsing document:', error);
+      toast.error('Error al procesar documento');
       return null;
     } finally {
       setIsLoading(false);
@@ -138,6 +158,7 @@ export const useGeminiAssistant = () => {
     suggestDescription,
     validateMercancia,
     improveDescription,
+    parseDocument,
     clearSuggestions,
     isLoading,
     suggestions,

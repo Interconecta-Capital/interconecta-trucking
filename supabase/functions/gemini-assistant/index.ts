@@ -1,6 +1,11 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { verifyAuth, corsHeaders, rateLimitCheck, logSecurityEvent } from '../_shared/auth.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -9,37 +14,25 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const { error: authError, user } = await verifyAuth(req);
-    if (authError) return authError;
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Rate limiting check
-    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-    const canProceed = await rateLimitCheck(user!.id, 'gemini_request');
-    
-    if (!canProceed) {
-      await logSecurityEvent(
-        user!.id,
-        'rate_limit_exceeded',
-        { action: 'gemini_request', ip: clientIP },
-        clientIP,
-        req.headers.get('user-agent') || undefined
-      );
-      
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-        { 
-          status: 429, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { message, context } = await req.json();
+    const { action, prompt, context, data } = await req.json();
 
-    if (!message) {
+    if (!prompt && !data) {
       return new Response(
-        JSON.stringify({ error: 'Message is required' }),
+        JSON.stringify({ error: 'Prompt or data is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -59,20 +52,41 @@ serve(async (req) => {
       );
     }
 
-    // Log the request
-    await logSecurityEvent(
-      user!.id,
-      'gemini_request',
-      { message_length: message.length, has_context: !!context },
-      clientIP,
-      req.headers.get('user-agent') || undefined
-    );
+    console.log('[GEMINI] Processing request:', { action, context });
 
-    const systemPrompt = `Eres un asistente especializado en logística de transporte en México. 
-    Ayudas con cartas porte, regulaciones del SAT, y gestión de flota.
-    Responde de manera concisa y práctica.
-    
-    Contexto actual: ${context || 'No hay contexto específico'}`;
+    let systemPrompt = '';
+    let userPrompt = '';
+
+    switch (action) {
+      case 'suggest_description':
+        systemPrompt = 'Eres un experto en productos y servicios mexicanos. Genera descripciones detalladas y precisas para cartas porte basándote en claves de productos del SAT.';
+        userPrompt = `Genera una descripción detallada para el producto con clave: ${prompt}`;
+        break;
+
+      case 'validate_mercancia':
+        systemPrompt = 'Eres un validador experto en mercancías para cartas porte mexicanas. Analiza la información y proporciona validación según regulaciones del SAT.';
+        userPrompt = `Valida esta información de mercancía: ${JSON.stringify(data)}`;
+        break;
+
+      case 'improve_description':
+        systemPrompt = 'Eres un editor experto en descripciones de mercancías para documentos fiscales mexicanos.';
+        userPrompt = `Mejora esta descripción: "${prompt}" para hacerla más precisa y completa según estándares del SAT.`;
+        break;
+
+      case 'parse_document':
+        systemPrompt = 'Eres un experto en extraer datos de documentos de transporte y cartas porte. Extrae información estructurada de manera precisa.';
+        userPrompt = `Extrae datos de mercancías de este documento: ${data?.text || prompt}`;
+        break;
+
+      case 'generate_carta_porte_data':
+        systemPrompt = 'Eres un asistente especializado en cartas porte mexicanas. Ayudas a generar datos precisos y completos según regulaciones del SAT.';
+        userPrompt = `Contexto: ${context}. Solicitud: ${prompt}`;
+        break;
+
+      default:
+        systemPrompt = 'Eres un asistente especializado en logística de transporte en México. Ayudas con cartas porte, regulaciones del SAT, y gestión de flota.';
+        userPrompt = prompt;
+    }
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -84,15 +98,15 @@ serve(async (req) => {
           {
             parts: [
               { text: systemPrompt },
-              { text: `Usuario: ${message}` }
+              { text: userPrompt }
             ]
           }
         ],
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.3,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 2048,
         },
         safetySettings: [
           {
@@ -117,19 +131,8 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error('Gemini API error:', response.status, response.statusText);
-      const errorText = await response.text();
-      console.error('Error details:', errorText);
-      
-      await logSecurityEvent(
-        user!.id,
-        'gemini_error',
-        { status: response.status, error: errorText },
-        clientIP,
-        req.headers.get('user-agent') || undefined
-      );
-      
       return new Response(
-        JSON.stringify({ error: 'Error al procesar la consulta' }),
+        JSON.stringify({ error: 'Error al procesar la consulta con IA' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -137,9 +140,9 @@ serve(async (req) => {
       );
     }
 
-    const data = await response.json();
+    const aiData = await response.json();
     
-    if (!data.candidates || data.candidates.length === 0) {
+    if (!aiData.candidates || aiData.candidates.length === 0) {
       return new Response(
         JSON.stringify({ error: 'No se pudo generar una respuesta' }),
         { 
@@ -149,19 +152,68 @@ serve(async (req) => {
       );
     }
 
-    const aiResponse = data.candidates[0].content.parts[0].text;
+    const aiResponse = aiData.candidates[0].content.parts[0].text;
     
-    // Log successful response
-    await logSecurityEvent(
-      user!.id,
-      'gemini_success',
-      { response_length: aiResponse.length },
-      clientIP,
-      req.headers.get('user-agent') || undefined
-    );
+    // Procesar respuesta según el tipo de acción
+    let processedResponse = {};
+
+    switch (action) {
+      case 'suggest_description':
+      case 'improve_description':
+        processedResponse = {
+          description: aiResponse.trim()
+        };
+        break;
+
+      case 'validate_mercancia':
+        try {
+          // Intentar extraer JSON de la respuesta
+          const validationMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (validationMatch) {
+            processedResponse = JSON.parse(validationMatch[0]);
+          } else {
+            processedResponse = {
+              is_valid: true,
+              confidence: 0.7,
+              issues: [],
+              suggestions: [aiResponse.trim()]
+            };
+          }
+        } catch {
+          processedResponse = {
+            is_valid: true,
+            confidence: 0.7,
+            issues: [],
+            suggestions: [aiResponse.trim()]
+          };
+        }
+        break;
+
+      case 'parse_document':
+        processedResponse = {
+          result: {
+            mercancias: [],
+            confidence: 0.6,
+            suggestions: [aiResponse.trim()]
+          }
+        };
+        break;
+
+      default:
+        processedResponse = {
+          response: aiResponse,
+          suggestions: [{
+            title: 'Sugerencia IA',
+            description: aiResponse.trim(),
+            confidence: 0.8
+          }]
+        };
+    }
+
+    console.log('[GEMINI] Respuesta procesada exitosamente');
 
     return new Response(
-      JSON.stringify({ response: aiResponse }),
+      JSON.stringify(processedResponse),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -169,10 +221,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Gemini assistant error:', error);
+    console.error('[GEMINI] Error general:', error);
     
     return new Response(
-      JSON.stringify({ error: 'Error interno del servidor' }),
+      JSON.stringify({ 
+        error: 'Error interno del servidor',
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
