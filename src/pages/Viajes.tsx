@@ -8,7 +8,7 @@ import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { ProgramacionViajes } from '@/components/viajes/ProgramacionViajes';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
-import { useStatePersistence } from '@/hooks/useStatePeristence';
+import { useStatePersistence } from '@/hooks/useStatePersistence';
 
 const TABS_CONFIG = [
   { 
