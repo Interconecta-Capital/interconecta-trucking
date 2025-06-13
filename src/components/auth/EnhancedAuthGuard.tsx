@@ -1,6 +1,6 @@
 
 import { ReactNode, useEffect } from 'react';
-import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface EnhancedAuthGuardProps {
@@ -9,12 +9,12 @@ interface EnhancedAuthGuardProps {
 }
 
 export function EnhancedAuthGuard({ children, requireAuth = true }: EnhancedAuthGuardProps) {
-  const { user, loading, initialized } = useEnhancedAuth();
+  const { user, loading } = useSimpleAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!initialized || loading) return;
+    if (loading) return;
 
     console.log('[EnhancedAuthGuard] Checking auth state:', { 
       user: !!user, 
@@ -31,9 +31,9 @@ export function EnhancedAuthGuard({ children, requireAuth = true }: EnhancedAuth
       console.log('[EnhancedAuthGuard] Redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, initialized, requireAuth, navigate, location.pathname]);
+  }, [user, loading, requireAuth, navigate, location.pathname]);
 
-  if (loading || !initialized) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-interconecta-primary"></div>

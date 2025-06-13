@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { ImprovedAuthCard } from './ImprovedAuthCard';
 import { ImprovedFormField } from './ImprovedFormField';
 import { ImprovedSocialButton } from './ImprovedSocialButton';
@@ -22,7 +22,7 @@ export function EnhancedRegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { enhancedRegister } = useEnhancedAuth();
+  const { signUp, signInWithGoogle } = useSimpleAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export function EnhancedRegisterForm() {
     setIsLoading(true);
     
     try {
-      const success = await enhancedRegister(
+      const success = await signUp(
         formData.email, 
         formData.password, 
         {
@@ -73,7 +73,7 @@ export function EnhancedRegisterForm() {
 
   const handleGoogleRegister = async () => {
     try {
-      toast.info('Funcionalidad de Google próximamente');
+      await signInWithGoogle();
     } catch (error) {
       console.error('Google register error:', error);
       toast.error('Error al registrarse con Google');

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { ImprovedAuthCard } from './ImprovedAuthCard';
 import { ImprovedFormField } from './ImprovedFormField';
 import { ImprovedSocialButton } from './ImprovedSocialButton';
@@ -16,7 +16,7 @@ export function EnhancedLoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { enhancedLogin } = useEnhancedAuth();
+  const { signIn, signInWithGoogle } = useSimpleAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +29,7 @@ export function EnhancedLoginForm() {
     setIsLoading(true);
     
     try {
-      const success = await enhancedLogin(formData.email, formData.password);
+      const success = await signIn(formData.email, formData.password);
       
       if (success) {
         console.log('Login successful, redirect will happen automatically');
@@ -48,7 +48,7 @@ export function EnhancedLoginForm() {
 
   const handleGoogleLogin = async () => {
     try {
-      toast.info('Funcionalidad de Google próximamente');
+      await signInWithGoogle();
     } catch (error) {
       console.error('Google login error:', error);
       toast.error('Error al iniciar sesión con Google');
