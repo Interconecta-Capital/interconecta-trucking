@@ -70,13 +70,20 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const sessionAge = Date.now() - new Date(session.issued_at).getTime();
-      const maxSessionAge = maxSessionDurationHours * 60 * 60 * 1000;
-
-      if (sessionAge > maxSessionAge) {
-        await supabase.auth.signOut();
-        toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
-        window.location.href = '/auth';
+      // Use expires_at instead of issued_at for session age validation
+      const expiresAt = new Date(session.expires_at * 1000).getTime();
+      const now = Date.now();
+      
+      // Check if session is close to expiring (within 1 hour)
+      const oneHour = 60 * 60 * 1000;
+      if (expiresAt - now < oneHour) {
+        // Try to refresh the session
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          await supabase.auth.signOut();
+          toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+          window.location.href = '/auth';
+        }
       }
     } catch (error) {
       console.error('Error checking session age:', error);
