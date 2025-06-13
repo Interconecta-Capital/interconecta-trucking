@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { LoginForm } from '@/components/auth/LoginForm';
-import { RegisterForm } from '@/components/auth/RegisterForm';
+import { SimpleLoginForm } from '@/components/auth/SimpleLoginForm';
+import { SimpleRegisterForm } from '@/components/auth/SimpleRegisterForm';
 import { Button } from '@/components/ui/button';
 
 export default function Auth() {
@@ -10,7 +10,7 @@ export default function Auth() {
   if (isLogin) {
     return (
       <div>
-        <LoginForm />
+        <SimpleLoginForm />
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2">
           <Button
             variant="outline"
@@ -26,7 +26,7 @@ export default function Auth() {
 
   return (
     <div>
-      <RegisterForm />
+      <SimpleRegisterForm />
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2">
         <Button
           variant="outline"
