@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { useStatePersistence } from '@/hooks/useStatePeristence';
+import { useStatePersistence } from '@/hooks/useStatePersistence';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 interface UseCartaPorteFormStateOptions {
