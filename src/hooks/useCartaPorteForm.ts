@@ -4,6 +4,7 @@ import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useUbicacionesPersistence } from '@/hooks/useUbicacionesPersistence';
 import { useMercanciasPersistence } from '@/hooks/useMercanciasPersistence';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useStatePersistence } from '@/hooks/useStatePeristence';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 interface UseCartaPorteFormOptions {
@@ -13,7 +14,9 @@ interface UseCartaPorteFormOptions {
 export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {}) {
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<CartaPorteData>({
+  
+  // Usar persistencia mejorada para mantener estado del formulario
+  const [formData, setFormData] = useStatePersistence({
     tipoCreacion: 'manual',
     tipoCfdi: 'Traslado',
     rfcEmisor: '',
@@ -26,6 +29,9 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     mercancias: [],
     autotransporte: {},
     figuras: [],
+  } as CartaPorteData, {
+    key: `cartaporte-form-${currentCartaPorteId || 'new'}`,
+    storage: 'sessionStorage'
   });
 
   const { crearCartaPorte, actualizarCartaPorte, isCreating, isUpdating, cartasPorte } = useCartasPorte();
@@ -36,25 +42,10 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
   const { loadSavedData, clearSavedData } = useAutoSave({
     data: formData,
     key: `cartaporte-form-${currentCartaPorteId || 'new'}`,
-    delay: 10000, // Aumentado a 10 segundos
+    delay: 5000, // Reducido para mejor UX
     enabled: !!(formData.rfcEmisor && formData.rfcReceptor && !isLoading && !isCreating && !isUpdating),
     useSessionStorage: true,
   });
-
-  // Cargar datos guardados solo una vez al inicializar
-  useEffect(() => {
-    if (!cartaPorteId) {
-      try {
-        const savedFormData = loadSavedData();
-        if (savedFormData && typeof savedFormData === 'object' && Object.keys(savedFormData).length > 0) {
-          console.log('[CartaPorteForm] Loading saved form data');
-          setFormData(prev => ({ ...prev, ...savedFormData }));
-        }
-      } catch (error) {
-        console.error('[CartaPorteForm] Error loading saved data:', error);
-      }
-    }
-  }, [cartaPorteId]); // Solo depender del cartaPorteId
 
   // Cargar datos existentes si estamos editando
   useEffect(() => {
@@ -65,20 +56,24 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         
         if (cartaExistente) {
           console.log('[CartaPorteForm] Loading existing carta porte:', cartaPorteId);
-          setFormData(prev => ({
-            ...prev,
+          setFormData({
+            tipoCreacion: 'manual',
+            tipoCfdi: cartaExistente.tipo_cfdi as 'Ingreso' | 'Traslado' || 'Traslado',
             rfcEmisor: cartaExistente.rfc_emisor || '',
             nombreEmisor: cartaExistente.nombre_emisor || '',
             rfcReceptor: cartaExistente.rfc_receptor || '',
             nombreReceptor: cartaExistente.nombre_receptor || '',
-            tipoCfdi: cartaExistente.tipo_cfdi as 'Ingreso' | 'Traslado' || 'Traslado',
             transporteInternacional: cartaExistente.transporte_internacional || false,
             registroIstmo: cartaExistente.registro_istmo || false,
             entrada_salida_merc: cartaExistente.entrada_salida_merc || '',
             pais_origen_destino: cartaExistente.pais_origen_destino || '',
             via_entrada_salida: cartaExistente.via_entrada_salida || '',
+            ubicaciones: [],
+            mercancias: [],
+            autotransporte: {},
+            figuras: [],
             cartaPorteId: cartaExistente.id,
-          }));
+          });
           setCurrentCartaPorteId(cartaExistente.id);
         }
       } catch (error) {
@@ -87,7 +82,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         setIsLoading(false);
       }
     }
-  }, [cartaPorteId, cartasPorte]);
+  }, [cartaPorteId, cartasPorte, setFormData]);
 
   // Debounced creation con manejo de errores mejorado
   const createCartaPorteDebounced = useCallback(() => {
@@ -120,10 +115,10 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
       }
     };
 
-    timeoutId = setTimeout(createFn, 5000); // 5 segundos de debounce
+    timeoutId = setTimeout(createFn, 3000); // Reducido para mejor UX
 
     return () => clearTimeout(timeoutId);
-  }, [formData.rfcEmisor, formData.rfcReceptor, currentCartaPorteId, cartaPorteId, isCreating, crearCartaPorte]);
+  }, [formData.rfcEmisor, formData.rfcReceptor, currentCartaPorteId, cartaPorteId, isCreating, crearCartaPorte, setFormData]);
 
   useEffect(() => {
     const cleanup = createCartaPorteDebounced();
@@ -137,7 +132,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
       const newData = { ...formData, ...data };
       setFormData(newData);
       
-      // Actualizar carta porte existente con debounce más largo
+      // Actualizar carta porte existente con debounce más corto
       if (currentCartaPorteId && !isUpdating) {
         const updateTimer = setTimeout(async () => {
           try {
@@ -159,7 +154,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
           } catch (error) {
             console.error('[CartaPorteForm] Error updating carta porte:', error);
           }
-        }, 8000); // 8 segundos de debounce
+        }, 3000); // Reducido para mejor UX
 
         return () => clearTimeout(updateTimer);
       }
@@ -169,7 +164,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         [section]: data,
       }));
     }
-  }, [formData, currentCartaPorteId, actualizarCartaPorte, isUpdating]);
+  }, [formData, currentCartaPorteId, actualizarCartaPorte, isUpdating, setFormData]);
 
   // Auto-guardar ubicaciones y mercancías con mejor control
   useEffect(() => {
@@ -181,7 +176,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         } catch (error) {
           console.error('[CartaPorteForm] Error saving ubicaciones:', error);
         }
-      }, 6000); // 6 segundos
+      }, 3000); // Reducido
 
       return () => clearTimeout(timer);
     }
@@ -196,7 +191,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         } catch (error) {
           console.error('[CartaPorteForm] Error saving mercancias:', error);
         }
-      }, 6000); // 6 segundos
+      }, 3000); // Reducido
 
       return () => clearTimeout(timer);
     }

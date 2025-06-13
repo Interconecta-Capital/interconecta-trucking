@@ -9,6 +9,7 @@ import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { ProgramacionViajes } from '@/components/viajes/ProgramacionViajes';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useStatePersistence } from '@/hooks/useStatePeristence';
 
 const TABS_CONFIG = [
   { 
@@ -41,13 +42,26 @@ export default function Viajes() {
   const [searchParams] = useSearchParams();
   const urlTab = searchParams.get('tab');
   
+  // Usar persistencia mejorada para mantener estado
+  const [persistedTab, setPersistedTab] = useStatePersistence(
+    urlTab || 'activos',
+    { key: 'viajes-active-tab', storage: 'sessionStorage' }
+  );
+
   const { activeTab, handleTabChange } = useTabNavigation({
-    initialTab: urlTab || 'activos',
+    initialTab: persistedTab,
     persistInURL: false, // NO persistir en URL para evitar recargas
     storageKey: 'viajes' // Usar sessionStorage en su lugar
   });
 
   console.log('[Viajes] Current active tab:', activeTab);
+
+  // Sincronizar cambios de tab con persistencia
+  useEffect(() => {
+    if (activeTab !== persistedTab) {
+      setPersistedTab(activeTab);
+    }
+  }, [activeTab, persistedTab, setPersistedTab]);
 
   // Prevenir re-renders innecesarios con useCallback
   const handleTabChangeOptimized = useCallback((tab: string) => {

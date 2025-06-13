@@ -1,11 +1,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
+import { useOptimizedAuth } from '../useOptimizedAuth';
 import { Viaje, EventoViaje } from './types';
 
 export const useViajesData = () => {
-  const { user } = useAuth();
+  const { user } = useOptimizedAuth();
 
   console.log('[ViajesData] Hook initialized with user:', user?.id);
 

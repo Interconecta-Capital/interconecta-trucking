@@ -65,25 +65,29 @@ export function CodigoPostalInput({
     setValidationError('');
 
     try {
+      console.log('[CodigoPostalInput] Validating postal code:', codigo);
       const direccion = await codigosPostalesService.buscarDireccionPorCP(codigo);
       
       if (direccion) {
+        console.log('[CodigoPostalInput] Validation successful:', direccion);
         setDireccionInfo(direccion);
         
         // Auto-seleccionar colonia si solo hay una
         if (direccion.colonias.length === 1) {
-          setSelectedColonia(direccion.colonias[0]);
+          const colonia = direccion.colonias[0];
+          setSelectedColonia(colonia);
+          
           const updateCallback = onInfoChange || onLocationUpdate;
           if (updateCallback) {
             updateCallback({
               estado: direccion.estado,
               municipio: direccion.municipio,
               localidad: direccion.localidad,
-              colonia: direccion.colonias[0]
+              colonia: colonia
             });
           }
           if (onColoniaChange) {
-            onColoniaChange(direccion.colonias[0]);
+            onColoniaChange(colonia);
           }
         } else {
           setSelectedColonia('');
@@ -98,12 +102,13 @@ export function CodigoPostalInput({
           }
         }
       } else {
+        console.warn('[CodigoPostalInput] Postal code not found:', codigo);
         setValidationError('Código postal no encontrado');
         setDireccionInfo(null);
         setSelectedColonia('');
       }
     } catch (error) {
-      console.error('Error validating postal code:', error);
+      console.error('[CodigoPostalInput] Error validating postal code:', error);
       setValidationError('Error al consultar código postal');
       setDireccionInfo(null);
       setSelectedColonia('');
@@ -114,11 +119,15 @@ export function CodigoPostalInput({
 
   // Sincronizar valores externos
   useEffect(() => {
-    setLocalValue(value);
+    if (value !== localValue) {
+      setLocalValue(value);
+    }
   }, [value]);
 
   useEffect(() => {
-    setSelectedColonia(coloniaValue || '');
+    if (coloniaValue !== selectedColonia) {
+      setSelectedColonia(coloniaValue || '');
+    }
   }, [coloniaValue]);
 
   // Manejador de cambios con debounce

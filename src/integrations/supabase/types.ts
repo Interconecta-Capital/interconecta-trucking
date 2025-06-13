@@ -1779,6 +1779,7 @@ export type Database = {
       ubicaciones: {
         Row: {
           carta_porte_id: string | null
+          codigo_postal: string | null
           created_at: string | null
           distancia_recorrida: number | null
           domicilio: Json | null
@@ -1792,6 +1793,7 @@ export type Database = {
         }
         Insert: {
           carta_porte_id?: string | null
+          codigo_postal?: string | null
           created_at?: string | null
           distancia_recorrida?: number | null
           domicilio?: Json | null
@@ -1805,6 +1807,7 @@ export type Database = {
         }
         Update: {
           carta_porte_id?: string | null
+          codigo_postal?: string | null
           created_at?: string | null
           distancia_recorrida?: number | null
           domicilio?: Json | null
@@ -1828,6 +1831,7 @@ export type Database = {
       }
       ubicaciones_frecuentes: {
         Row: {
+          codigo_postal: string | null
           created_at: string | null
           domicilio: Json | null
           id: string
@@ -1838,6 +1842,7 @@ export type Database = {
           uso_count: number | null
         }
         Insert: {
+          codigo_postal?: string | null
           created_at?: string | null
           domicilio?: Json | null
           id?: string
@@ -1848,6 +1853,7 @@ export type Database = {
           uso_count?: number | null
         }
         Update: {
+          codigo_postal?: string | null
           created_at?: string | null
           domicilio?: Json | null
           id?: string

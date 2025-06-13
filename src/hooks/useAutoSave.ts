@@ -13,10 +13,10 @@ interface UseAutoSaveOptions {
 export const useAutoSave = ({
   data,
   key,
-  delay = 8000, // Aumentado para reducir frecuencia
+  delay = 5000, // Reducido para mejor UX
   onSave,
   enabled = true,
-  useSessionStorage = false
+  useSessionStorage = true // Cambiado a true por defecto
 }: UseAutoSaveOptions) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
