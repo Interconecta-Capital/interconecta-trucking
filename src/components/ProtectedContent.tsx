@@ -1,9 +1,9 @@
-
 import { ReactNode } from 'react';
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Lock, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Lock, TrendingUp, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ProtectedContentProps {
@@ -21,9 +21,29 @@ export const ProtectedContent = ({
   fallback,
   showUpgrade = true
 }: ProtectedContentProps) => {
-  const { puedeAcceder, planActual, estaBloqueado, suscripcionVencida } = usePermisosSubscripcion();
+  const { puedeAcceder, planActual, estaBloqueado, suscripcionVencida, isSuperuser } = useEnhancedPermissions();
   const navigate = useNavigate();
   
+  // Superusers bypass all restrictions
+  if (isSuperuser) {
+    return (
+      <div className="space-y-4">
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <Crown className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-yellow-800 flex items-center gap-2">
+              <Badge variant="outline" className="border-yellow-600 text-yellow-800">
+                SUPERUSER
+              </Badge>
+              Acceso completo sin restricciones
+            </span>
+          </AlertDescription>
+        </Alert>
+        {children}
+      </div>
+    );
+  }
+
   // Verificar bloqueos primero
   if (estaBloqueado) {
     return (

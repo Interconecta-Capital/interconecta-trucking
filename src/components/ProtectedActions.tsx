@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,9 +22,17 @@ export const ProtectedActions = ({
   buttonText = 'Crear',
   variant = 'default'
 }: ProtectedActionsProps) => {
-  const { puedeCrear } = usePermisosSubscripcion();
+  const { puedeCrear, isSuperuser } = useEnhancedPermissions();
   
   const handleAction = () => {
+    // Superusers can always create
+    if (isSuperuser) {
+      if (onAction) {
+        onAction();
+      }
+      return;
+    }
+
     const { puede, razon } = puedeCrear(resource);
     
     if (!puede) {
