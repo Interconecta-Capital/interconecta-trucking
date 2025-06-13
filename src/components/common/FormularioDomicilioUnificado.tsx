@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -5,9 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, MapPin, CheckCircle, Loader2, Info } from 'lucide-react';
-import { useCodigoPostalUnificado } from '@/hooks/useCodigoPostalUnificado';
-import { CodigoPostalMexicanoOptimizado } from '@/components/catalogos/CodigoPostalMexicanoOptimizado';
-import { DatosDomicilio } from '@/hooks/useCodigoPostalMexicano';
+import { useCodigoPostalMexicanoNacional } from '@/hooks/useCodigoPostalMexicanoNacional';
 
 export interface DomicilioUnificado {
   pais: string;
@@ -33,7 +32,7 @@ interface FormularioDomicilioUnificadoProps {
   camposOpcionales?: Array<keyof DomicilioUnificado>;
   readonly?: boolean;
   className?: string;
-  usarAPIMexicana?: boolean; // Nueva opción para usar APIs reales mexicanas
+  usarAPIMexicana?: boolean;
 }
 
 export function FormularioDomicilioUnificado({
@@ -49,32 +48,51 @@ export function FormularioDomicilioUnificado({
   usarAPIMexicana = false
 }: FormularioDomicilioUnificadoProps) {
   const [coloniaSeleccionada, setColoniaSeleccionada] = useState(domicilio.colonia);
-  const [sugerenciasCP, setSugerenciasCP] = useState<Array<{codigo_postal: string, ubicacion: string}>>([]);
+  const [sugerenciasCP, setSugerenciasCP] = useState<Array<{codigo: string, ubicacion: string}>>([]);
 
   const {
-    isLoading,
-    error,
     direccionInfo,
-    buscarConDebounce
-  } = useCodigoPostalUnificado({
-    onSuccess: (info) => {
-      console.log('[FORM_DOMICILIO] Dirección encontrada:', info);
+    loading: isLoading,
+    error,
+    sugerencias,
+    buscarConDebounce,
+    usarSugerencia
+  } = useCodigoPostalMexicanoNacional();
+
+  // Usar las sugerencias del hook nacional
+  React.useEffect(() => {
+    if (sugerencias && sugerencias.length > 0) {
+      const sugerenciasFormateadas = sugerencias.map(s => ({
+        codigo: s.codigo,
+        ubicacion: s.ubicacion
+      }));
+      setSugerenciasCP(sugerenciasFormateadas);
+    } else {
+      setSugerenciasCP([]);
+    }
+  }, [sugerencias]);
+
+  // Manejar éxito en la búsqueda
+  React.useEffect(() => {
+    if (direccionInfo && !isLoading && !error) {
+      console.log('[FORM_DOMICILIO] Dirección encontrada:', direccionInfo);
       
       // Llenar automáticamente todos los campos
-      onDomicilioChange('estado', info.estado);
-      onDomicilioChange('municipio', info.municipio);
-      if (info.localidad) onDomicilioChange('localidad', info.localidad);
-      if (info.ciudad) onDomicilioChange('ciudad', info.ciudad);
+      onDomicilioChange('estado', direccionInfo.estado);
+      onDomicilioChange('municipio', direccionInfo.municipio);
+      if (direccionInfo.localidad) onDomicilioChange('localidad', direccionInfo.localidad);
+      if (direccionInfo.ciudad) onDomicilioChange('ciudad', direccionInfo.ciudad);
       
       // Resetear colonia para que usuario seleccione
       setColoniaSeleccionada('');
       onDomicilioChange('colonia', '');
-      
-      setSugerenciasCP([]);
-    },
-    onError: (errorMsg, sugerencias = []) => {
-      console.log('[FORM_DOMICILIO] Error:', errorMsg);
-      setSugerenciasCP(sugerencias);
+    }
+  }, [direccionInfo, isLoading, error, onDomicilioChange]);
+
+  // Manejar error
+  React.useEffect(() => {
+    if (error) {
+      console.log('[FORM_DOMICILIO] Error:', error);
       
       // Limpiar campos al fallar
       setColoniaSeleccionada('');
@@ -83,95 +101,7 @@ export function FormularioDomicilioUnificado({
       onDomicilioChange('localidad', '');
       onDomicilioChange('colonia', '');
     }
-  });
-
-  // Manejar domicilio completo desde el componente mexicano
-  const handleDomicilioMexicanoCompleto = useCallback((datosMexicanos: DatosDomicilio) => {
-    console.log('[DOMICILIO_MEXICANO_INTEGRADO]', datosMexicanos);
-    
-    // Mapear datos mexicanos al formato unificado
-    const domicilioUnificado: DomicilioUnificado = {
-      pais: domicilio.pais,
-      codigoPostal: datosMexicanos.codigoPostal,
-      estado: datosMexicanos.estado,
-      municipio: datosMexicanos.municipio,
-      localidad: datosMexicanos.localidad,
-      colonia: datosMexicanos.colonia,
-      calle: datosMexicanos.calle,
-      numExterior: datosMexicanos.numeroExterior,
-      numInterior: datosMexicanos.numeroInterior,
-      referencia: datosMexicanos.referencia
-    };
-    
-    onDireccionCompleta?.(domicilioUnificado);
-  }, [domicilio.pais, onDireccionCompleta]);
-
-  // Si se está usando la API mexicana y el país es México
-  if (usarAPIMexicana && domicilio.pais === 'México') {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        {/* País */}
-        <div className="space-y-2">
-          <Label>País *</Label>
-          <Select 
-            value={domicilio.pais} 
-            onValueChange={(value) => onDomicilioChange('pais', value)}
-            disabled={readonly}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              <SelectItem value="México">México</SelectItem>
-              <SelectItem value="Estados Unidos">Estados Unidos</SelectItem>
-              <SelectItem value="Canadá">Canadá</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Componente mexicano optimizado */}
-        <CodigoPostalMexicanoOptimizado
-          value={domicilio.codigoPostal}
-          onChange={(cp) => onDomicilioChange('codigoPostal', cp)}
-          onLocationUpdate={(location) => {
-            if (location.estado) onDomicilioChange('estado', location.estado);
-            if (location.municipio) onDomicilioChange('municipio', location.municipio);
-            if (location.localidad) onDomicilioChange('localidad', location.localidad);
-            if (location.colonia) onDomicilioChange('colonia', location.colonia);
-          }}
-          onDomicilioCompleto={handleDomicilioMexicanoCompleto}
-          valorInicial={{
-            codigoPostal: domicilio.codigoPostal,
-            estado: domicilio.estado,
-            municipio: domicilio.municipio,
-            localidad: domicilio.localidad,
-            colonia: domicilio.colonia,
-            calle: domicilio.calle,
-            numeroExterior: domicilio.numExterior,
-            numeroInterior: domicilio.numInterior,
-            referencia: domicilio.referencia
-          }}
-          mostrarPreview={true}
-        />
-
-        {/* Distancia Recorrida */}
-        {mostrarDistancia && (
-          <div className="space-y-2">
-            <Label>Distancia Recorrida (km)</Label>
-            <Input
-              type="number"
-              value={distanciaRecorrida}
-              onChange={(e) => onDistanciaChange?.(parseFloat(e.target.value) || 0)}
-              placeholder="0"
-              min="0"
-              step="0.1"
-              disabled={readonly}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
+  }, [error, onDomicilioChange]);
 
   const handleCPChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
@@ -197,8 +127,8 @@ export function FormularioDomicilioUnificado({
 
   const handleSugerenciaClick = useCallback((cp: string) => {
     onDomicilioChange('codigoPostal', cp);
-    buscarConDebounce(cp);
-  }, [onDomicilioChange, buscarConDebounce]);
+    usarSugerencia(cp);
+  }, [onDomicilioChange, usarSugerencia]);
 
   const isValid = useMemo(() => 
     domicilio.codigoPostal.length === 5 && !isLoading && !error && direccionInfo,
@@ -263,16 +193,6 @@ export function FormularioDomicilioUnificado({
             )}
           </div>
 
-          {/* Sugerencia para usar API mexicana */}
-          {domicilio.pais === 'México' && !usarAPIMexicana && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                💡 Para direcciones mexicanas, considera usar el modo avanzado con APIs oficiales SEPOMEX
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Error con sugerencias */}
           {error && (
             <Alert variant="destructive">
@@ -286,13 +206,13 @@ export function FormularioDomicilioUnificado({
                       <div className="flex flex-wrap gap-1">
                         {sugerenciasCP.map((sugerencia) => (
                           <button
-                            key={sugerencia.codigo_postal}
+                            key={sugerencia.codigo}
                             type="button"
-                            onClick={() => handleSugerenciaClick(sugerencia.codigo_postal)}
+                            onClick={() => handleSugerenciaClick(sugerencia.codigo)}
                             className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
                             title={sugerencia.ubicacion}
                           >
-                            {sugerencia.codigo_postal}
+                            {sugerencia.codigo}
                           </button>
                         ))}
                       </div>
@@ -372,15 +292,15 @@ export function FormularioDomicilioUnificado({
               <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
                 {direccionInfo.colonias.map((coloniaObj, index) => (
                   <SelectItem 
-                    key={`${coloniaObj.colonia}-${index}`} 
-                    value={coloniaObj.colonia} 
+                    key={`${coloniaObj.nombre}-${index}`} 
+                    value={coloniaObj.nombre} 
                     className="cursor-pointer hover:bg-accent"
                   >
                     <div className="flex flex-col">
-                      <span>{coloniaObj.colonia}</span>
-                      {coloniaObj.tipo_asentamiento && (
+                      <span>{coloniaObj.nombre}</span>
+                      {coloniaObj.tipo && (
                         <span className="text-xs text-muted-foreground">
-                          {coloniaObj.tipo_asentamiento}
+                          {coloniaObj.tipo}
                         </span>
                       )}
                     </div>
