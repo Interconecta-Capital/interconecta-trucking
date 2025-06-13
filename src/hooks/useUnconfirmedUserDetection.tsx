@@ -1,109 +1,139 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
+import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { AuthError, ValidationResult } from './auth/types';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useUnconfirmedUserDetection = () => {
-  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string>('');
-  const [showUnconfirmedDialog, setShowUnconfirmedDialog] = useState(false);
+  const { user } = useAuth();
   const [needsCompletion, setNeedsCompletion] = useState(false);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [showUnconfirmedDialog, setShowUnconfirmedDialog] = useState(false);
 
-  const checkIfUserIsUnconfirmed = useCallback(async (email: string, error: AuthError): Promise<boolean> => {
-    // Check if error indicates unconfirmed email
-    const isUnconfirmedError = 
-      error.message?.toLowerCase().includes('email not confirmed') ||
-      error.message?.toLowerCase().includes('confirm') ||
-      error.message?.toLowerCase().includes('verification');
+  useEffect(() => {
+    if (user) {
+      // Verificar si el usuario está autenticado y tiene profile
+      const checkProfile = async () => {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
 
-    if (isUnconfirmedError || error.message?.toLowerCase().includes('invalid')) {
-      // Try to check if user exists but is unconfirmed
-      try {
-        // This will tell us if the user exists but is unconfirmed
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: 'dummy-password-for-check' // Won't be used
-        });
+          if (error && error.code !== 'PGRST116') {
+            console.error('Error fetching profile:', error);
+            return;
+          }
 
-        if (signUpError?.message.includes('already registered')) {
-          // User exists but might be unconfirmed
-          setUnconfirmedEmail(email);
-          setShowUnconfirmedDialog(true);
-          return true;
+          // Si no hay profile o faltan campos críticos
+          const isIncomplete = !profile || 
+            !profile.rfc || 
+            !profile.telefono || 
+            !profile.empresa ||
+            !profile.nombre ||
+            profile.rfc === '' ||
+            profile.telefono === '' ||
+            profile.empresa === '' ||
+            profile.nombre === '';
+          
+          console.log('Profile check:', {
+            hasProfile: !!profile,
+            rfc: profile?.rfc,
+            telefono: profile?.telefono,
+            empresa: profile?.empresa,
+            nombre: profile?.nombre,
+            isIncomplete
+          });
+          
+          setNeedsCompletion(isIncomplete);
+        } catch (error) {
+          console.error('Error checking profile completion:', error);
         }
-      } catch (checkError) {
-        console.error('Error checking user status:', checkError);
-      }
-    }
-    
-    return false;
-  }, []);
+      };
 
-  const resendConfirmationEmail = useCallback(async (email: string): Promise<boolean> => {
+      checkProfile();
+    } else {
+      setNeedsCompletion(false);
+    }
+  }, [user]);
+
+  const checkIfUserIsUnconfirmed = (email: string, error?: any): boolean => {
+    // Check if error indicates unconfirmed user
+    if (error && (
+      error.message?.includes('Email not confirmed') ||
+      error.message?.includes('email_not_confirmed') ||
+      error.message?.includes('signup_not_found')
+    )) {
+      setUnconfirmedEmail(email);
+      setShowUnconfirmedDialog(true);
+      return true;
+    }
+    return false;
+  };
+
+  const closeUnconfirmedDialog = () => {
+    setShowUnconfirmedDialog(false);
+    setUnconfirmedEmail(null);
+  };
+
+  const handleVerificationSent = async () => {
+    if (!unconfirmedEmail) return;
+
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: email,
+        email: unconfirmedEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/auth`
         }
       });
 
-      if (error) {
-        console.error('Error resending confirmation:', error);
-        toast.error('Error al reenviar el correo de confirmación');
-        return false;
-      }
+      if (error) throw error;
 
-      toast.success('Correo de confirmación reenviado');
-      return true;
-    } catch (error) {
-      console.error('Error resending confirmation:', error);
-      toast.error('Error inesperado al reenviar confirmación');
-      return false;
+      toast.success('Email de verificación enviado');
+      closeUnconfirmedDialog();
+    } catch (error: any) {
+      toast.error('Error al enviar email de verificación: ' + error.message);
     }
-  }, []);
+  };
 
-  const closeUnconfirmedDialog = useCallback(() => {
-    setShowUnconfirmedDialog(false);
-    setUnconfirmedEmail('');
-  }, []);
+  // Función para validar RFC único
+  const validateUniqueRFC = async (rfc: string): Promise<{ isValid: boolean; message?: string }> => {
+    if (!rfc || !user) return { isValid: false, message: 'RFC requerido' };
 
-  const handleVerificationSent = useCallback(() => {
-    setShowUnconfirmedDialog(false);
-    toast.success('Correo de verificación enviado. Revisa tu bandeja de entrada.');
-  }, []);
-
-  const validateUniqueRFC = useCallback(async (rfc: string): Promise<ValidationResult> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, email')
         .eq('rfc', rfc.toUpperCase())
-        .limit(1);
+        .neq('id', user.id) // Excluir el usuario actual
+        .maybeSingle();
 
       if (error) {
-        console.error('RFC validation error:', error);
-        return { isValid: false, message: 'Error validating RFC' };
+        console.error('Error validating RFC:', error);
+        return { isValid: false, message: 'Error al validar RFC' };
       }
 
-      if (data.length > 0) {
-        return { isValid: false, message: 'RFC already registered' };
+      if (data) {
+        return { 
+          isValid: false, 
+          message: `Este RFC ya está registrado por otro usuario (${data.email})` 
+        };
       }
 
       return { isValid: true };
     } catch (error) {
-      console.error('RFC validation error:', error);
-      return { isValid: false, message: 'Error validating RFC' };
+      console.error('Error validating RFC:', error);
+      return { isValid: false, message: 'Error al validar RFC' };
     }
-  }, []);
+  };
 
-  return {
+  return { 
+    needsCompletion,
     unconfirmedEmail,
     showUnconfirmedDialog,
-    needsCompletion,
     checkIfUserIsUnconfirmed,
-    resendConfirmationEmail,
     closeUnconfirmedDialog,
     handleVerificationSent,
     validateUniqueRFC

@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { AuthUser, Usuario, UserProfile, Tenant } from './types';
+import { AuthUser } from './types';
 
-type UsuarioRow = Database['public']['Tables']['usuarios']['Row'];
-type ProfileRow = Database['public']['Tables']['profiles']['Row'];
-type TenantRow = Database['public']['Tables']['tenants']['Row'];
+type Usuario = Database['public']['Tables']['usuarios']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Tenant = Database['public']['Tables']['tenants']['Row'];
 
 export function useAuthState() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -31,7 +31,7 @@ export function useAuthState() {
         .maybeSingle();
 
       // Load tenant data if usuario has tenant_id
-      let tenant: TenantRow | null = null;
+      let tenant: Tenant | null = null;
       if (usuario?.tenant_id) {
         const { data: tenantData } = await supabase
           .from('tenants')
@@ -43,9 +43,9 @@ export function useAuthState() {
 
       const userData: AuthUser = {
         ...authUser,
-        profile: profile as UserProfile,
-        usuario: usuario as Usuario,
-        tenant: tenant as Tenant
+        profile,
+        usuario,
+        tenant
       };
 
       setUser(userData);
@@ -54,9 +54,9 @@ export function useAuthState() {
       // Set basic user data even if extended data fails
       setUser({
         ...authUser,
-        profile: undefined,
-        usuario: undefined,
-        tenant: undefined
+        profile: null,
+        usuario: null,
+        tenant: null
       });
     }
   };
@@ -108,12 +108,8 @@ export function useAuthState() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { 
-    user, 
-    loading, 
-    session, 
-    setUser, 
-    setSession, 
-    setLoading 
-  };
+  return { user, loading, session };
 }
+
+// Export AuthUser type for use in other modules
+export type { AuthUser } from './types';
