@@ -1,16 +1,13 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
-import { useInputSanitization } from '@/hooks/useInputSanitization';
-import { useCSRFProtection } from '@/hooks/useCSRFProtection';
-import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
-import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { ImprovedAuthCard } from './ImprovedAuthCard';
+import { ImprovedSocialButton } from './ImprovedSocialButton';
+import { ImprovedFormField } from './ImprovedFormField';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Truck, AlertCircle, Eye, EyeOff, Shield } from 'lucide-react';
+import { Mail, Lock, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function EnhancedLoginForm() {
@@ -18,30 +15,19 @@ export function EnhancedLoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
   
-  const { enhancedLogin, isAccountLocked, lockoutEndTime, getRecentAttempts } = useEnhancedAuth();
-  const { sanitizeInput, validateEmail } = useInputSanitization();
-  const { csrfToken } = useCSRFProtection();
-  
-  const {
-    unconfirmedEmail,
-    showUnconfirmedDialog,
-    checkIfUserIsUnconfirmed,
-    closeUnconfirmedDialog,
-    handleVerificationSent,
-  } = useUnconfirmedUserDetection();
+  const { signIn, signInWithGoogle, resendConfirmation, validateEmail } = useSimpleAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Sanitize and validate inputs
-      const sanitizedEmail = sanitizeInput(email, 'email');
-      const emailValidation = validateEmail(sanitizedEmail);
+      const emailValidation = validateEmail(email);
       
       if (!emailValidation.isValid) {
-        toast.error(emailValidation.error);
+        toast.error(emailValidation.message);
         return;
       }
 
@@ -50,17 +36,9 @@ export function EnhancedLoginForm() {
         return;
       }
 
-      // Check account lockout
-      if (isAccountLocked && lockoutEndTime) {
-        const remainingMinutes = Math.ceil((lockoutEndTime - Date.now()) / (60 * 1000));
-        toast.error(`Cuenta bloqueada. Intente nuevamente en ${remainingMinutes} minutos.`);
-        return;
-      }
-
-      const success = await enhancedLogin(sanitizedEmail, password);
+      const success = await signIn(email, password);
       if (!success) {
-        // Check if this is an unconfirmed user
-        checkIfUserIsUnconfirmed(sanitizedEmail, { message: 'Invalid login credentials' });
+        setShowResendOption(true);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -70,165 +48,114 @@ export function EnhancedLoginForm() {
     }
   };
 
-  const getFailedAttemptCount = () => {
-    if (!email) return 0;
-    const attempts = getRecentAttempts(email.toLowerCase());
-    return attempts.filter(attempt => !attempt.success).length;
+  const handleGoogleAuth = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      toast.error('Error al autenticar con Google');
+    }
   };
 
-  const getRemainingLockoutTime = () => {
-    if (!lockoutEndTime) return null;
-    const remaining = Math.ceil((lockoutEndTime - Date.now()) / (60 * 1000));
-    return remaining > 0 ? remaining : null;
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error('Por favor ingresa tu correo electrónico primero');
+      return;
+    }
+    
+    await resendConfirmation(email);
+    setShowResendOption(false);
   };
 
   return (
-    <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
-        <Card className="w-full max-w-md border-interconecta-border-subtle">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="interconecta-gradient p-3 rounded-xl">
-                <Truck className="h-8 w-8 text-white" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl font-bold font-sora text-interconecta-text-primary">
-              Interconecta Trucking
-            </CardTitle>
-            <CardDescription className="font-inter text-interconecta-text-secondary">
-              Sistema de Gestión de Cartas Porte
-            </CardDescription>
-            <div className="flex items-center justify-center mt-2 text-xs text-green-600">
-              <Shield className="h-3 w-3 mr-1" />
-              <span>Autenticación Segura</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Security Warnings */}
-            {isAccountLocked && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Cuenta bloqueada por seguridad. Tiempo restante: {getRemainingLockoutTime()} minutos.
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {!isAccountLocked && getFailedAttemptCount() > 2 && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {getFailedAttemptCount()} intentos fallidos. La cuenta se bloqueará después de 5 intentos.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="hidden" name="csrf_token" value={csrfToken} />
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="font-inter text-interconecta-text-body">
-                  Correo Electrónico
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@empresa.com"
-                  value={email}
-                  onChange={(e) => setEmail(sanitizeInput(e.target.value, 'email'))}
-                  required
-                  maxLength={254}
-                  className="border-interconecta-border-subtle focus:ring-interconecta-primary"
-                  disabled={isAccountLocked}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" className="font-inter text-interconecta-text-body">
-                  Contraseña
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    maxLength={128}
-                    className="border-interconecta-border-subtle focus:ring-interconecta-primary pr-10"
-                    disabled={isAccountLocked}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isAccountLocked}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-interconecta-text-secondary" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora font-medium" 
-                disabled={isLoading || isAccountLocked}
-              >
-                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-              </Button>
-            </form>
-            
-            {/* Additional auth options */}
-            <div className="mt-6 pt-4 border-t border-interconecta-border-subtle">
-              <div className="text-center space-y-3">
-                <Link 
-                  to="/auth/forgot-password"
-                  className="inline-flex items-center text-sm text-interconecta-primary hover:text-interconecta-accent font-inter underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-                
-                <div className="text-center space-y-2">
-                  <p className="text-xs text-interconecta-text-secondary font-inter">
-                    ¿Problemas para acceder?
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (email) {
-                        checkIfUserIsUnconfirmed(email, { message: 'Email not confirmed' });
-                      } else {
-                        toast.error('Por favor ingresa tu correo electrónico primero');
-                      }
-                    }}
-                    className="inline-flex items-center text-xs text-interconecta-primary hover:text-interconecta-accent font-inter underline"
-                    disabled={isAccountLocked}
-                  >
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    ¿No verificaste tu correo?
-                  </button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Unconfirmed User Dialog */}
-      {showUnconfirmedDialog && unconfirmedEmail && (
-        <UnconfirmedUserDialog
-          email={unconfirmedEmail}
-          onClose={closeUnconfirmedDialog}
-          onVerificationSent={handleVerificationSent}
+    <ImprovedAuthCard
+      title="Interconecta Trucking"
+      description="Sistema de Gestión de Cartas Porte"
+    >
+      <div className="space-y-6">
+        <ImprovedSocialButton
+          provider="google"
+          actionText="Continuar con Google"
+          onClick={handleGoogleAuth}
         />
-      )}
-    </>
+        
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <Separator className="w-full" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-3 text-gray-500 font-inter font-medium">
+              O continúa con email
+            </span>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <ImprovedFormField
+            id="email"
+            label="Correo Electrónico"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="tu@empresa.com"
+            required
+            icon={<Mail className="h-4 w-4 text-gray-500" />}
+          />
+          
+          <ImprovedFormField
+            id="password"
+            label="Contraseña"
+            value={password}
+            onChange={setPassword}
+            required
+            showPasswordToggle
+            showPassword={showPassword}
+            onTogglePassword={() => setShowPassword(!showPassword)}
+            icon={<Lock className="h-4 w-4 text-gray-500" />}
+          />
+          
+          <Button 
+            type="submit" 
+            className="w-full h-12 bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary font-sora font-semibold text-lg transition-all duration-200 hover:shadow-lg hover:scale-[1.02]" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Iniciando sesión...
+              </div>
+            ) : (
+              'Iniciar Sesión'
+            )}
+          </Button>
+        </form>
+        
+        {showResendOption && (
+          <div className="mt-4 p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg">
+            <p className="text-sm text-orange-800 mb-3 font-inter">
+              ¿Problemas para acceder? Es posible que necesites verificar tu correo.
+            </p>
+            <Button
+              onClick={handleResendConfirmation}
+              variant="outline"
+              size="sm"
+              className="w-full text-orange-700 border-orange-300 hover:bg-orange-100 font-inter"
+            >
+              Reenviar correo de verificación
+            </Button>
+          </div>
+        )}
+        
+        <div className="pt-4 border-t border-gray-200">
+          <div className="text-center space-y-3">
+            <Link 
+              to="/auth/forgot-password"
+              className="text-sm text-interconecta-primary hover:text-interconecta-accent font-inter font-medium underline decoration-2 underline-offset-2 hover:decoration-interconecta-accent transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+        </div>
+      </div>
+    </ImprovedAuthCard>
   );
 }

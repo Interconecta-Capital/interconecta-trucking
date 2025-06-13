@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSimpleAuth } from '@/hooks/useSimpleAuth';
-import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { useCustomEmails } from '@/hooks/useCustomEmails';
+import { ImprovedSocialButton } from '@/components/auth/ImprovedSocialButton';
+import { ImprovedFormField } from '@/components/auth/ImprovedFormField';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Calendar, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Check, Calendar, User, Building, Mail, Lock, Phone, Hash, RefreshCw, Star } from 'lucide-react';
 
 export default function Trial() {
   const [formData, setFormData] = useState({
@@ -26,7 +26,8 @@ export default function Trial() {
   const [showVerification, setShowVerification] = useState(false);
   const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
   
-  const { signUp, validateEmail, validatePassword, sanitizeInput } = useSimpleAuth();
+  const { signUp, signInWithGoogle, validateEmail, validatePassword, sanitizeInput } = useSimpleAuth();
+  const { sendWelcomeEmail } = useCustomEmails();
   const navigate = useNavigate();
 
   const validateRFCFormat = (rfc: string) => {
@@ -57,7 +58,6 @@ export default function Trial() {
       return;
     }
 
-    // Validate RFC format if provided
     if (formData.rfc) {
       const rfcCheck = validateRFCFormat(formData.rfc);
       if (!rfcCheck.isValid) {
@@ -66,7 +66,6 @@ export default function Trial() {
       }
     }
 
-    // Validate required fields
     if (!formData.nombre || !formData.empresa || !formData.email) {
       toast.error('Por favor completa todos los campos obligatorios');
       return;
@@ -87,6 +86,7 @@ export default function Trial() {
       );
       
       if (success) {
+        await sendWelcomeEmail(formData.email, formData.nombre);
         setShowVerification(true);
       }
     } catch (error: any) {
@@ -98,10 +98,9 @@ export default function Trial() {
   };
 
   const handleChange = (field: string, value: string) => {
-    const sanitizedValue = sanitizeInput(value);
+    const sanitizedValue = field === 'rfc' ? value.toUpperCase() : sanitizeInput(value);
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
 
-    // Real-time RFC validation
     if (field === 'rfc' && sanitizedValue) {
       const validation = validateRFCFormat(sanitizedValue);
       setRfcValidation({ 
@@ -113,36 +112,45 @@ export default function Trial() {
     }
   };
 
-  const goToLogin = () => {
-    navigate('/auth');
+  const handleGoogleAuth = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      toast.error('Error al autenticar con Google');
+    }
   };
 
   if (showVerification) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-interconecta-border-subtle">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="interconecta-gradient p-3 rounded-xl">
-                <Check className="h-8 w-8 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate via-white to-green-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
+          <CardHeader className="text-center pb-8">
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur-lg opacity-30"></div>
+                <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-2xl">
+                  <Check className="h-10 w-10 text-white" />
+                </div>
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold font-sora text-interconecta-text-primary">
+            <CardTitle className="text-3xl font-bold font-sora bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
               ¡Registro Exitoso!
             </CardTitle>
-            <CardDescription className="font-inter text-interconecta-text-secondary">
+            <CardDescription className="font-inter text-gray-600 text-lg mt-2">
               Revisa tu correo para verificar tu cuenta
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-sm text-interconecta-text-body">
-              Hemos enviado un correo de verificación a <strong>{formData.email}</strong>. 
-              Haz clic en el enlace del correo para activar tu cuenta.
-            </p>
+          <CardContent className="text-center space-y-6 px-8 pb-8">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm text-green-800 font-inter">
+                Hemos enviado un correo de verificación a <strong>{formData.email}</strong>. 
+                Haz clic en el enlace del correo para activar tu cuenta y comenzar tu prueba gratuita.
+              </p>
+            </div>
             <Button
               onClick={() => setShowVerification(false)}
               variant="outline"
-              className="w-full"
+              className="w-full border-green-500 text-green-600 hover:bg-green-50"
             >
               Volver al registro
             </Button>
@@ -153,22 +161,25 @@ export default function Trial() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-interconecta-border-subtle">
+    <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate via-white to-blue-50">
+      {/* Header mejorado */}
+      <header className="bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-              alt="Interconecta Trucking Logo"
-              className="h-8 w-8 rounded-lg"
-            />
-            <span className="text-xl font-bold font-sora text-interconecta-text-primary">
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-interconecta-primary to-interconecta-accent rounded-lg blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+              <img 
+                src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+                alt="Interconecta Trucking Logo"
+                className="relative h-10 w-10 rounded-lg"
+              />
+            </div>
+            <span className="text-xl font-bold font-sora bg-gradient-to-r from-interconecta-primary to-interconecta-accent bg-clip-text text-transparent">
               Interconecta Trucking
             </span>
           </Link>
           <Link to="/">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary hover:text-white">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
@@ -177,208 +188,192 @@ export default function Trial() {
       </header>
 
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
+          {/* Hero section mejorado */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center bg-interconecta-primary-light border border-interconecta-border-subtle rounded-full px-4 py-2 mb-6">
-              <Calendar className="h-4 w-4 text-interconecta-primary mr-2" />
-              <span className="text-sm font-inter font-medium text-interconecta-text-body">
+            <div className="inline-flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full px-6 py-3 mb-8 shadow-sm">
+              <Calendar className="h-5 w-5 text-blue-600 mr-2" />
+              <span className="text-sm font-inter font-semibold text-blue-700">
                 Prueba Gratuita por 14 Días
               </span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold font-sora text-interconecta-text-primary mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold font-sora bg-gradient-to-r from-interconecta-primary via-blue-600 to-interconecta-accent bg-clip-text text-transparent mb-6 leading-tight">
               Comienza tu prueba gratuita
             </h1>
-            <p className="text-xl font-inter text-interconecta-text-secondary max-w-2xl mx-auto">
+            <p className="text-xl font-inter text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Accede a todas las funciones de Interconecta Trucking sin costo por 14 días. 
               No se requiere tarjeta de crédito.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Formulario */}
-            <Card className="border-interconecta-border-subtle">
-              <CardHeader>
-                <CardTitle className="text-2xl font-sora">Crear cuenta de prueba</CardTitle>
-                <CardDescription className="font-inter">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Formulario mejorado */}
+            <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
+              <CardHeader className="pb-6">
+                <CardTitle className="text-2xl font-sora bg-gradient-to-r from-interconecta-primary to-interconecta-accent bg-clip-text text-transparent">
+                  Crear cuenta de prueba
+                </CardTitle>
+                <CardDescription className="font-inter text-gray-600">
                   Completa el formulario para comenzar tu prueba gratuita
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <SocialAuthButtons mode="register" />
-                  
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="nombre" className="font-inter">Nombre Completo *</Label>
-                        <Input
-                          id="nombre"
-                          value={formData.nombre}
-                          onChange={(e) => handleChange('nombre', e.target.value)}
-                          required
-                          className="border-interconecta-border-subtle"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
-                        <Input
-                          id="telefono"
-                          value={formData.telefono}
-                          onChange={(e) => handleChange('telefono', e.target.value)}
-                          className="border-interconecta-border-subtle"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="empresa" className="font-inter">Nombre de la Empresa *</Label>
-                      <Input
-                        id="empresa"
-                        value={formData.empresa}
-                        onChange={(e) => handleChange('empresa', e.target.value)}
-                        required
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
-                      <Input
-                        id="rfc"
-                        value={formData.rfc}
-                        onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
-                        maxLength={13}
-                        className={`border-interconecta-border-subtle ${
-                          !rfcValidation.isValid ? 'border-red-500' : ''
-                        }`}
-                      />
-                      {!rfcValidation.isValid && (
-                        <p className="text-red-500 text-sm">{rfcValidation.message}</p>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="font-inter">Correo Electrónico *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleChange('email', e.target.value)}
-                        required
-                        className="border-interconecta-border-subtle"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="font-inter">Contraseña *</Label>
-                      <div className="relative">
-                        <Input
-                          id="password"
-                          type={showPassword ? 'text' : 'password'}
-                          value={formData.password}
-                          onChange={(e) => handleChange('password', e.target.value)}
-                          required
-                          minLength={8}
-                          className="border-interconecta-border-subtle pr-10"
-                          placeholder="Mínimo 8 caracteres"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-interconecta-text-secondary" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña *</Label>
-                      <div className="relative">
-                        <Input
-                          id="confirm-password"
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          value={formData.confirmPassword}
-                          onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                          required
-                          className="border-interconecta-border-subtle pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4 text-interconecta-text-secondary" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-interconecta-text-secondary" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
-                      disabled={loading || !rfcValidation.isValid}
-                    >
-                      {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
-                    </Button>
-                    
-                    <p className="text-xs text-interconecta-text-secondary text-center font-inter">
-                      Al registrarte, aceptas nuestros términos de servicio y política de privacidad
-                    </p>
-                  </form>
+              <CardContent className="space-y-6">
+                <ImprovedSocialButton
+                  provider="google"
+                  actionText="Registrarse con Google"
+                  onClick={handleGoogleAuth}
+                />
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-3 text-gray-500 font-inter font-medium">
+                      O regístrate con email
+                    </span>
+                  </div>
                 </div>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <ImprovedFormField
+                      id="nombre"
+                      label="Nombre Completo"
+                      value={formData.nombre}
+                      onChange={(value) => handleChange('nombre', value)}
+                      required
+                      icon={<User className="h-4 w-4 text-gray-500" />}
+                    />
+                    <ImprovedFormField
+                      id="telefono"
+                      label="Teléfono"
+                      value={formData.telefono}
+                      onChange={(value) => handleChange('telefono', value)}
+                      icon={<Phone className="h-4 w-4 text-gray-500" />}
+                    />
+                  </div>
+                  
+                  <ImprovedFormField
+                    id="empresa"
+                    label="Nombre de la Empresa"
+                    value={formData.empresa}
+                    onChange={(value) => handleChange('empresa', value)}
+                    required
+                    icon={<Building className="h-4 w-4 text-gray-500" />}
+                  />
+                  
+                  <ImprovedFormField
+                    id="rfc"
+                    label="RFC de la Empresa"
+                    value={formData.rfc}
+                    onChange={(value) => handleChange('rfc', value)}
+                    maxLength={13}
+                    error={!rfcValidation.isValid ? rfcValidation.message : undefined}
+                    icon={<Hash className="h-4 w-4 text-gray-500" />}
+                  />
+                  
+                  <ImprovedFormField
+                    id="email"
+                    label="Correo Electrónico"
+                    type="email"
+                    value={formData.email}
+                    onChange={(value) => handleChange('email', value)}
+                    required
+                    icon={<Mail className="h-4 w-4 text-gray-500" />}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <ImprovedFormField
+                      id="password"
+                      label="Contraseña"
+                      value={formData.password}
+                      onChange={(value) => handleChange('password', value)}
+                      required
+                      showPasswordToggle
+                      showPassword={showPassword}
+                      onTogglePassword={() => setShowPassword(!showPassword)}
+                      icon={<Lock className="h-4 w-4 text-gray-500" />}
+                    />
+                    
+                    <ImprovedFormField
+                      id="confirm-password"
+                      label="Confirmar"
+                      value={formData.confirmPassword}
+                      onChange={(value) => handleChange('confirmPassword', value)}
+                      required
+                      showPasswordToggle
+                      showPassword={showConfirmPassword}
+                      onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
+                      icon={<Lock className="h-4 w-4 text-gray-500" />}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary font-sora font-semibold text-lg transition-all duration-200 hover:shadow-lg hover:scale-[1.02]" 
+                    disabled={loading || !rfcValidation.isValid}
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Creando cuenta...
+                      </div>
+                    ) : (
+                      'Comenzar Prueba Gratuita'
+                    )}
+                  </Button>
+                  
+                  <p className="text-xs text-gray-500 text-center font-inter">
+                    Al registrarte, aceptas nuestros términos de servicio y política de privacidad
+                  </p>
+                </form>
               </CardContent>
             </Card>
 
-            {/* Beneficios */}
-            <div className="space-y-6">
-              <h3 className="text-2xl font-bold font-sora text-interconecta-text-primary">
-                ¿Qué incluye tu prueba gratuita?
-              </h3>
-              
-              <div className="space-y-4">
-                {[
-                  'Cartas porte ilimitadas por 14 días',
-                  'Gestión completa de flota y conductores',
-                  'Dashboard con analytics en tiempo real',
-                  'Soporte técnico completo',
-                  'Todas las funciones premium',
-                  'Sin límites de usuarios'
-                ].map((benefit, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <span className="font-inter text-interconecta-text-body">{benefit}</span>
-                  </div>
-                ))}
+            {/* Beneficios mejorados */}
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-3xl font-bold font-sora bg-gradient-to-r from-interconecta-primary to-interconecta-accent bg-clip-text text-transparent mb-6">
+                  ¿Qué incluye tu prueba gratuita?
+                </h3>
+                
+                <div className="space-y-4">
+                  {[
+                    { icon: '📋', text: 'Cartas porte ilimitadas por 14 días' },
+                    { icon: '🚛', text: 'Gestión completa de flota y conductores' },
+                    { icon: '📊', text: 'Dashboard con analytics en tiempo real' },
+                    { icon: '🎯', text: 'Soporte técnico completo' },
+                    { icon: '⭐', text: 'Todas las funciones premium' },
+                    { icon: '👥', text: 'Sin límites de usuarios' }
+                  ].map((benefit, index) => (
+                    <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-white/50 backdrop-blur-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+                      <div className="text-2xl">{benefit.icon}</div>
+                      <span className="font-inter text-gray-700 font-medium">{benefit.text}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
               
-              <div className="bg-interconecta-primary-light p-6 rounded-lg border border-interconecta-border-subtle">
-                <h4 className="font-semibold font-sora text-interconecta-text-primary mb-2">
-                  ¿Ya tienes una cuenta?
-                </h4>
-                <p className="text-sm font-inter text-interconecta-text-secondary mb-4">
-                  Si ya tienes una cuenta, puedes iniciar sesión directamente
-                </p>
-                <Button
-                  onClick={goToLogin}
-                  variant="outline" 
-                  className="w-full border-interconecta-primary text-interconecta-primary"
-                >
-                  Iniciar Sesión
-                </Button>
-              </div>
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
+                <CardContent className="p-6">
+                  <h4 className="font-semibold font-sora text-blue-900 mb-3 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-blue-600" />
+                    ¿Ya tienes una cuenta?
+                  </h4>
+                  <p className="text-sm font-inter text-blue-700 mb-4">
+                    Si ya tienes una cuenta, puedes iniciar sesión directamente
+                  </p>
+                  <Button
+                    onClick={() => navigate('/auth')}
+                    variant="outline" 
+                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100 font-inter"
+                  >
+                    Iniciar Sesión
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
