@@ -1877,6 +1877,7 @@ export type Database = {
           nombre: string
           profile_id: string | null
           rol: string | null
+          rol_especial: string | null
           tenant_id: string
           updated_at: string | null
         }
@@ -1889,6 +1890,7 @@ export type Database = {
           nombre: string
           profile_id?: string | null
           rol?: string | null
+          rol_especial?: string | null
           tenant_id: string
           updated_at?: string | null
         }
@@ -1901,6 +1903,7 @@ export type Database = {
           nombre?: string
           profile_id?: string | null
           rol?: string | null
+          rol_especial?: string | null
           tenant_id?: string
           updated_at?: string | null
         }
