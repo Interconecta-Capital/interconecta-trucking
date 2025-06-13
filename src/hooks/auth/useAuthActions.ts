@@ -2,7 +2,6 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { UserProfile } from './types';
 
 export function useAuthActions() {
   const signIn = useCallback(async (email: string, password: string) => {
@@ -168,34 +167,6 @@ export function useAuthActions() {
     }
   }, []);
 
-  const updateProfile = useCallback(async (profileData: Partial<UserProfile>) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...profileData,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success('Perfil actualizado exitosamente');
-    } catch (error: any) {
-      console.error('Update profile error:', error);
-      toast.error(error.message || 'Error al actualizar perfil');
-      throw error;
-    }
-  }, []);
-
   const resendConfirmation = useCallback(async (email: string) => {
     try {
       const { error } = await supabase.auth.resend({
@@ -226,7 +197,6 @@ export function useAuthActions() {
     signOut,
     resetPassword,
     updateEmail,
-    updateProfile,
     resendConfirmation
   };
 }

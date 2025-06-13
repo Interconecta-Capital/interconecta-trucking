@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 interface SanitizationOptions {
   maxLength?: number;
@@ -14,9 +14,15 @@ interface ValidationResult {
 }
 
 export const useInputSanitization = () => {
+  const [sanitizationErrors, setSanitizationErrors] = useState<Record<string, string>>({});
+
+  const clearErrors = useCallback(() => {
+    setSanitizationErrors({});
+  }, []);
+
   const sanitizeInput = useCallback((
     input: string, 
-    type: 'text' | 'email' | 'rfc' | 'phone' = 'text',
+    type: 'text' | 'email' | 'rfc' | 'phone' | 'nombre' | 'empresa' = 'text',
     options: SanitizationOptions = {}
   ): string => {
     if (!input || typeof input !== 'string') return '';
@@ -50,6 +56,11 @@ export const useInputSanitization = () => {
         break;
       case 'phone':
         sanitized = sanitized.replace(/[^0-9+()-\s]/g, '');
+        break;
+      case 'nombre':
+      case 'empresa':
+        // Allow letters, numbers, spaces, and basic punctuation
+        sanitized = sanitized.replace(/[<>"'&]/g, '');
         break;
       case 'text':
       default:
@@ -132,6 +143,8 @@ export const useInputSanitization = () => {
     sanitizeInput,
     validateEmail,
     validateRFC,
-    validatePassword
+    validatePassword,
+    sanitizationErrors,
+    clearErrors
   };
 };

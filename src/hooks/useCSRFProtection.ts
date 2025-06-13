@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export const useCSRFProtection = () => {
   const [csrfToken, setCsrfToken] = useState<string>('');
@@ -24,8 +24,22 @@ export const useCSRFProtection = () => {
     return storedToken === token;
   };
 
+  const protectedRequest = useCallback(async (url: string, options: RequestInit = {}) => {
+    const headers = {
+      ...options.headers,
+      'X-CSRF-Token': csrfToken,
+      'Content-Type': 'application/json'
+    };
+
+    return fetch(url, {
+      ...options,
+      headers
+    });
+  }, [csrfToken]);
+
   return {
     csrfToken,
-    validateCSRFToken
+    validateCSRFToken,
+    protectedRequest
   };
 };
