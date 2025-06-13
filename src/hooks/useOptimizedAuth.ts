@@ -55,12 +55,6 @@ export const useOptimizedAuth = () => {
           console.log('[OptimizedAuth] Cleaning auth tokens from URL');
           const cleanUrl = window.location.pathname + window.location.search;
           window.history.replaceState({}, document.title, cleanUrl);
-          
-          // If user just logged in and is on landing page, redirect to dashboard
-          if (session?.user && window.location.pathname === '/') {
-            console.log('[OptimizedAuth] Redirecting authenticated user to dashboard');
-            navigate('/dashboard', { replace: true });
-          }
         }
       }
     } catch (error) {
@@ -71,13 +65,13 @@ export const useOptimizedAuth = () => {
     } finally {
       initializingRef.current = false;
     }
-  }, [navigate]);
+  }, []);
 
   // Initialize auth state
   useEffect(() => {
     fetchSession();
 
-    // Set up auth state change listener with minimal debouncing
+    // Set up auth state change listener
     let debounceTimeout: NodeJS.Timeout;
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -98,18 +92,9 @@ export const useOptimizedAuth = () => {
               loading: false,
               initialized: true,
             });
-
-            // Handle successful sign in
-            if (event === 'SIGNED_IN' && session?.user) {
-              console.log('[OptimizedAuth] User signed in, redirecting to dashboard');
-              // If on landing page, redirect to dashboard
-              if (window.location.pathname === '/' || window.location.pathname === '/auth') {
-                navigate('/dashboard', { replace: true });
-              }
-            }
           }
 
-          // Handle specific auth events
+          // Handle specific auth events without navigation interference
           if (event === 'SIGNED_OUT') {
             // Clear any cached data
             sessionStorage.clear();
@@ -120,8 +105,6 @@ export const useOptimizedAuth = () => {
               }
             });
             console.log('[OptimizedAuth] Cleaned up auth data after signout');
-            // Redirect to auth page
-            navigate('/auth', { replace: true });
           }
           
           // Clean URL for all auth events
@@ -129,7 +112,7 @@ export const useOptimizedAuth = () => {
             const cleanUrl = window.location.pathname + window.location.search;
             window.history.replaceState({}, document.title, cleanUrl);
           }
-        }, 50);
+        }, 100);
       }
     );
 
@@ -140,7 +123,7 @@ export const useOptimizedAuth = () => {
         clearTimeout(debounceTimeout);
       }
     };
-  }, [fetchSession, navigate]);
+  }, [fetchSession]);
 
   // Cleanup on unmount
   useEffect(() => {

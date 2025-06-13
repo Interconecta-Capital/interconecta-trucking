@@ -23,18 +23,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
     });
   }, [user, loading, logEvent]);
 
-  // Add timeout to prevent infinite loading - reduced to 5 seconds
+  // Timeout más corto para AuthGuard - 8 segundos
   useEffect(() => {
     if (loading) {
       const timeout = setTimeout(() => {
         console.warn('[AuthGuard] Authentication timeout reached');
         logEvent('auth_guard_timeout', { 
           timestamp: Date.now(),
-          timeoutDuration: 5000,
+          timeoutDuration: 8000,
           currentPath: window.location.pathname
         });
         setTimeoutReached(true);
-      }, 5000); // Reduced to 5 second timeout
+      }, 8000);
 
       return () => clearTimeout(timeout);
     } else {
@@ -42,17 +42,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [loading, logEvent]);
 
-  // Show loading state with timeout handling
+  // Loading state más específico
   if (loading && !timeoutReached) {
     logEvent('auth_guard_loading', { 
       timestamp: Date.now(),
       currentPath: window.location.pathname 
     });
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Verificando autenticación...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Verificando autenticación...</p>
+            <div className="w-48 bg-secondary rounded-full h-1 mx-auto">
+              <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -65,7 +70,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       currentUrl: window.location.href 
     });
     
-    // Use React Router navigation instead of window.location.href
     navigate('/auth', { replace: true });
     return null;
   }
@@ -77,7 +81,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       currentUrl: window.location.href 
     });
     
-    // Use React Router navigation
     navigate('/auth', { replace: true });
     return null;
   }

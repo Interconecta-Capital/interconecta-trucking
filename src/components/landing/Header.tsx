@@ -6,8 +6,10 @@ import { useLocation } from "react-router-dom";
 const Header = () => {
   const location = useLocation();
   
-  // Solo mostrar en la página de inicio y auth
-  if (location.pathname !== '/' && !location.pathname.startsWith('/auth')) {
+  // Mostrar en todas las páginas que no sean protegidas
+  const showHeader = location.pathname === '/' || location.pathname.startsWith('/auth');
+  
+  if (!showHeader) {
     return null;
   }
 
