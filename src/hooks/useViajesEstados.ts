@@ -6,10 +6,10 @@ import { useViajesErrors } from './viajes/useViajesErrors';
 import { useViajesDebug } from './viajes/useViajesDebug';
 
 export const useViajesEstados = () => {
-  const { logInfo, logError, ...debugUtils } = useViajesDebug();
+  const debugHook = useViajesDebug();
   const { error, handleError, clearError } = useViajesErrors();
 
-  logInfo('ViajesEstados', 'Hook initialized');
+  debugHook.logInfo('ViajesEstados', 'Hook initialized');
 
   // Hook de datos
   const dataHook = useViajesData();
@@ -22,18 +22,18 @@ export const useViajesEstados = () => {
 
   // Verificar si hay errores en los hooks
   if (dataHook.error) {
-    logError('ViajesEstados', 'Data hook error detected', dataHook.error);
+    debugHook.logError('ViajesEstados', 'Data hook error detected', dataHook.error);
     handleError('data', dataHook.error, 'useViajesData');
   }
 
   // Calcular estado general de loading
   const isLoading = dataHook.isLoading || mutationsHook.isLoading;
 
-  logInfo('ViajesEstados', 'Hook state', {
+  debugHook.logInfo('ViajesEstados', 'Hook state', {
     viajesActivosCount: dataHook.viajesActivos?.length || 0,
     isLoading,
     hasError: !!error,
-    debugMode: debugUtils.debugMode
+    debugMode: debugHook.debugMode
   });
 
   return {
@@ -50,10 +50,15 @@ export const useViajesEstados = () => {
     reportarRetraso: actionsHook.reportarRetraso,
     actualizarUbicacion: actionsHook.actualizarUbicacion,
     
-    // Manejo de errores y debugging
+    // Manejo de errores y debugging - exportar todas las funciones
     error,
     clearError,
-    ...debugUtils
+    debugMode: debugHook.debugMode,
+    logDebug: debugHook.logDebug,
+    logInfo: debugHook.logInfo,
+    logError: debugHook.logError,
+    enableDebugMode: debugHook.enableDebugMode,
+    disableDebugMode: debugHook.disableDebugMode
   };
 };
 
