@@ -266,6 +266,7 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
           value={coloniaValue || ''}
           onValueChange={handleColoniaSelect}
           items={colonias.map(c => ({
+            id: c.clave_colonia,
             clave: c.clave_colonia,
             descripcion: c.descripcion
           }))}

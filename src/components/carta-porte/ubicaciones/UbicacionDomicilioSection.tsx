@@ -8,19 +8,6 @@ import { CodigoPostalInput } from '@/components/catalogos/CodigoPostalInput';
 import { useFormContext } from 'react-hook-form';
 import { useColoniasPorCP } from '@/hooks/useCatalogos';
 
-interface DomicilioData {
-  pais: string;
-  codigoPostal: string;
-  estado: string;
-  municipio: string;
-  localidad?: string;
-  colonia: string;
-  calle: string;
-  numExterior: string;
-  numInterior?: string;
-  referencia?: string;
-}
-
 interface UbicacionDomicilioSectionProps {
   index: number;
 }
@@ -34,23 +21,34 @@ export function UbicacionDomicilioSection({ index }: UbicacionDomicilioSectionPr
     !!codigoPostalValue && codigoPostalValue.length === 5
   );
 
-  const handleCodigoPostalChange = (cpData: { 
-    codigo_postal: string; 
-    estado?: string; 
-    municipio?: string; 
-  } | null) => {
-    if (cpData) {
-      // Solo actualizar los campos si vienen del catálogo
-      form.setValue(`ubicaciones.${index}.domicilio.codigoPostal`, cpData.codigo_postal);
-      if (cpData.estado) {
-        form.setValue(`ubicaciones.${index}.domicilio.estado`, cpData.estado);
-      }
-      if (cpData.municipio) {
-        form.setValue(`ubicaciones.${index}.domicilio.municipio`, cpData.municipio);
-      }
-      // Limpiar colonia cuando cambia el CP
-      form.setValue(`ubicaciones.${index}.domicilio.colonia`, '');
+  const handleCodigoPostalChange = (codigoPostal: string) => {
+    form.setValue(`ubicaciones.${index}.domicilio.codigoPostal`, codigoPostal);
+    // Clear colonia when CP changes
+    form.setValue(`ubicaciones.${index}.domicilio.colonia`, '');
+  };
+
+  const handleInfoChange = (info: {
+    estado?: string;
+    municipio?: string;
+    localidad?: string;
+    colonia?: string;
+  }) => {
+    if (info.estado) {
+      form.setValue(`ubicaciones.${index}.domicilio.estado`, info.estado);
     }
+    if (info.municipio) {
+      form.setValue(`ubicaciones.${index}.domicilio.municipio`, info.municipio);
+    }
+    if (info.localidad) {
+      form.setValue(`ubicaciones.${index}.domicilio.localidad`, info.localidad);
+    }
+    if (info.colonia) {
+      form.setValue(`ubicaciones.${index}.domicilio.colonia`, info.colonia);
+    }
+  };
+
+  const handleColoniaChange = (colonia: string) => {
+    form.setValue(`ubicaciones.${index}.domicilio.colonia`, colonia);
   };
 
   return (
@@ -76,11 +74,10 @@ export function UbicacionDomicilioSection({ index }: UbicacionDomicilioSectionPr
 
           <CodigoPostalInput
             value={codigoPostalValue || ''}
-            onChange={handleCodigoPostalChange}
-            onManualChange={(value) => {
-              form.setValue(`ubicaciones.${index}.domicilio.codigoPostal`, value);
-            }}
-            placeholder="Código postal"
+            onValueChange={handleCodigoPostalChange}
+            onInfoChange={handleInfoChange}
+            onColoniaChange={handleColoniaChange}
+            coloniaValue={form.watch(`ubicaciones.${index}.domicilio.colonia`)}
             className="w-full"
           />
         </div>
@@ -142,6 +139,7 @@ export function UbicacionDomicilioSection({ index }: UbicacionDomicilioSectionPr
                       value={field.value || ''}
                       onValueChange={(value) => {
                         field.onChange(value);
+                        handleColoniaChange(value);
                       }}
                       disabled={loadingColonias}
                     >

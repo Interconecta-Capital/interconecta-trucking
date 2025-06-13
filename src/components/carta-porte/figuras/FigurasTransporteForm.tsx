@@ -20,7 +20,7 @@ export function FigurasTransporteForm({ data, onChange }: FigurasTransporteFormP
       num_licencia: '',
       domicilio: {
         pais: 'México',
-        codigoPostal: '',
+        codigo_postal: '',
         estado: '',
         municipio: '',
         colonia: '',
@@ -51,7 +51,7 @@ export function FigurasTransporteForm({ data, onChange }: FigurasTransporteFormP
         num_licencia: suggestion.data.num_licencia || '',
         domicilio: suggestion.data.domicilio || {
           pais: 'México',
-          codigoPostal: '',
+          codigo_postal: '',
           estado: '',
           municipio: '',
           colonia: '',
@@ -95,7 +95,7 @@ export function FigurasTransporteForm({ data, onChange }: FigurasTransporteFormP
             <FiguraForm
               key={index}
               figura={figura}
-              onChange={(updatedFigura) => updateFigura(index, updatedFigura)}
+              onUpdate={(updatedFigura) => updateFigura(index, updatedFigura)}
               onRemove={() => removeFigura(index)}
               index={index}
             />

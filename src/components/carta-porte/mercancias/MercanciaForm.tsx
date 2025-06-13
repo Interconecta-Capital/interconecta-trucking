@@ -9,13 +9,18 @@ import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
 import { AIAssistantButton } from './AIAssistantButton';
 import { useBuscarProductosServicios, useBuscarClaveUnidad, useBuscarMaterialesPeligrosos } from '@/hooks/useCatalogos';
 import { useFormContext } from 'react-hook-form';
+import { Mercancia } from '@/hooks/useMercancias';
 
 interface MercanciaFormProps {
   index: number;
   onRemove: () => void;
+  mercancia?: Mercancia;
+  onSave?: (mercancia: Mercancia) => void;
+  onCancel?: () => void;
+  isLoading?: boolean;
 }
 
-export function MercanciaForm({ index, onRemove }: MercanciaFormProps) {
+export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, isLoading }: MercanciaFormProps) {
   const form = useFormContext();
   
   const [productoSearch, setProductoSearch] = React.useState('');
