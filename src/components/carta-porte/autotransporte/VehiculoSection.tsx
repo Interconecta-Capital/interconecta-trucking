@@ -1,95 +1,172 @@
 
-import React, { useState } from 'react';
-import { Label } from '@/components/ui/label';
+import React from 'react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
-import { useConfiguracionesVehiculo } from '@/hooks/useCatalogos';
-import { VehicleValidator } from '@/utils/vehicleValidation';
-import { AutotransporteData } from '@/hooks/useAutotransporte';
+import { AIAssistantButton } from '../mercancias/AIAssistantButton';
+import { useConfiguracionesVehiculo, useTiposPermiso } from '@/hooks/useCatalogos';
+import { useFormContext } from 'react-hook-form';
 
-interface VehiculoSectionProps {
-  data: AutotransporteData;
-  onChange: (data: Partial<AutotransporteData>) => void;
-}
+export function VehiculoSection() {
+  const form = useFormContext();
+  
+  const [configSearch, setConfigSearch] = React.useState('');
+  const [permisoSearch, setPermisoSearch] = React.useState('');
+  
+  const { data: configuraciones = [], isLoading: loadingConfig } = useConfiguracionesVehiculo(configSearch);
+  const { data: permisos = [], isLoading: loadingPermisos } = useTiposPermiso(permisoSearch);
 
-export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
-  const [erroresValidacion, setErroresValidacion] = useState<Record<string, string[]>>({});
-  const { data: configuraciones } = useConfiguracionesVehiculo();
-
-  const handlePlacaChange = (value: string) => {
-    const placaFormateada = VehicleValidator.formatearPlaca(value);
-    const validacion = VehicleValidator.validarPlaca(placaFormateada);
-    
-    setErroresValidacion(prev => ({
-      ...prev,
-      placa_vm: validacion.errores
-    }));
-
-    onChange({ placa_vm: placaFormateada });
-  };
-
-  const handleAnioChange = (value: string) => {
-    const anio = parseInt(value, 10);
-    const validacion = VehicleValidator.validarAnioModelo(anio);
-    
-    setErroresValidacion(prev => ({
-      ...prev,
-      anio_modelo_vm: validacion.errores
-    }));
-
-    onChange({ anio_modelo_vm: anio });
-  };
-
-  const handleConfiguracionChange = (clave: string) => {
-    onChange({ config_vehicular: clave });
+  const handleAISuggestion = (suggestion: any) => {
+    if (suggestion.data) {
+      // Apply AI suggestion to autotransporte form
+      Object.entries(suggestion.data).forEach(([key, value]) => {
+        if (key === 'config_vehicular' || key === 'perm_sct' || key === 'num_permiso_sct' ||
+            key === 'placa_vm' || key === 'anio_modelo_vm') {
+          form.setValue(`autotransporte.${key}`, value);
+        }
+      });
+    }
   };
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Datos del Vehículo Motor</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="placa_vm">Placa del Vehículo Motor *</Label>
-          <Input
-            id="placa_vm"
-            value={data.placa_vm || ''}
-            onChange={(e) => handlePlacaChange(e.target.value)}
-            placeholder="ABC-1234"
-            className={erroresValidacion.placa_vm?.length ? 'border-red-500' : ''}
-          />
-          {erroresValidacion.placa_vm?.map((error, index) => (
-            <p key={index} className="text-sm text-red-600 mt-1">{error}</p>
-          ))}
-        </div>
-
-        <div>
-          <Label htmlFor="anio_modelo_vm">Año del Modelo *</Label>
-          <Input
-            id="anio_modelo_vm"
-            type="number"
-            value={data.anio_modelo_vm || ''}
-            onChange={(e) => handleAnioChange(e.target.value)}
-            placeholder="2024"
-            min="1990"
-            max={new Date().getFullYear() + 1}
-            className={erroresValidacion.anio_modelo_vm?.length ? 'border-red-500' : ''}
-          />
-          {erroresValidacion.anio_modelo_vm?.map((error, index) => (
-            <p key={index} className="text-sm text-red-600 mt-1">{error}</p>
-          ))}
-        </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Información del Vehículo</h3>
+        <AIAssistantButton 
+          context="autotransporte"
+          onSuggestionApply={handleAISuggestion}
+        />
       </div>
 
-      <div>
-        <CatalogoSelector
-          label="Configuración Vehicular"
-          items={configuraciones || []}
-          value={data.config_vehicular}
-          onValueChange={handleConfiguracionChange}
-          placeholder="Seleccionar configuración vehicular..."
-          required
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="autotransporte.placa_vm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Placa del Vehículo *</FormLabel>
+              <FormControl>
+                <Input placeholder="ABC-123" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
+
+        <FormField
+          control={form.control}
+          name="autotransporte.anio_modelo_vm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Año Modelo *</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="2023"
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || '')}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="autotransporte.config_vehicular"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Configuración Vehicular *</FormLabel>
+            <FormControl>
+              <CatalogoSelector
+                items={configuraciones}
+                loading={loadingConfig}
+                placeholder="Seleccionar configuración vehicular..."
+                value={field.value}
+                onValueChange={field.onChange}
+                onSearchChange={setConfigSearch}
+                searchValue={configSearch}
+                allowManualInput={true}
+                manualInputPlaceholder="Escribir configuración manualmente"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className="space-y-4">
+        <h4 className="font-medium">Permisos y Seguros</h4>
+        
+        <FormField
+          control={form.control}
+          name="autotransporte.perm_sct"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Permiso SCT *</FormLabel>
+              <FormControl>
+                <CatalogoSelector
+                  items={permisos}
+                  loading={loadingPermisos}
+                  placeholder="Seleccionar tipo de permiso..."
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onSearchChange={setPermisoSearch}
+                  searchValue={permisoSearch}
+                  allowManualInput={true}
+                  manualInputPlaceholder="Escribir permiso manualmente"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="autotransporte.num_permiso_sct"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número de Permiso SCT *</FormLabel>
+              <FormControl>
+                <Input placeholder="Número de permiso" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="autotransporte.asegura_resp_civil"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Aseguradora Responsabilidad Civil *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nombre de la aseguradora" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="autotransporte.poliza_resp_civil"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Póliza Responsabilidad Civil *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Número de póliza" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
     </div>
   );

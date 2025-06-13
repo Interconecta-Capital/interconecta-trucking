@@ -1,12 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, Star } from 'lucide-react';
-import { FigurasList } from './FigurasList';
+import { Plus } from 'lucide-react';
 import { FiguraForm } from './FiguraForm';
-import { FigurasFrecuentes } from './FigurasFrecuentes';
-import { useFigurasTransporte, FiguraTransporte } from '@/hooks/useFigurasTransporte';
+import { AIAssistantButton } from '../mercancias/AIAssistantButton';
+import { FiguraTransporte } from '@/hooks/useFigurasTransporte';
 
 interface FigurasTransporteFormProps {
   data: FiguraTransporte[];
@@ -14,139 +12,96 @@ interface FigurasTransporteFormProps {
 }
 
 export function FigurasTransporteForm({ data, onChange }: FigurasTransporteFormProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [showFrecuentes, setShowFrecuentes] = useState(false);
-  const { figurasFrecuentes, cargarFigurasFrecuentes, guardarFiguraFrecuente } = useFigurasTransporte();
-
-  useEffect(() => {
-    cargarFigurasFrecuentes();
-  }, [cargarFigurasFrecuentes]);
-
-  const handleAddFigura = (figura: FiguraTransporte) => {
-    const newFiguras = [...data, { ...figura, id: Date.now().toString() }];
-    onChange(newFiguras);
-    setShowForm(false);
-    
-    // Guardar como figura frecuente
-    guardarFiguraFrecuente(figura);
+  const addFigura = () => {
+    const newFigura: FiguraTransporte = {
+      tipo_figura: '01',
+      rfc_figura: '',
+      nombre_figura: '',
+      num_licencia: '',
+      domicilio: {
+        pais: 'México',
+        codigoPostal: '',
+        estado: '',
+        municipio: '',
+        colonia: '',
+        calle: '',
+        numExterior: ''
+      }
+    };
+    onChange([...data, newFigura]);
   };
 
-  const handleEditFigura = (figura: FiguraTransporte) => {
-    if (editingIndex !== null) {
-      const newFiguras = [...data];
-      newFiguras[editingIndex] = figura;
-      onChange(newFiguras);
-      setEditingIndex(null);
-      setShowForm(false);
-      
-      // Actualizar figura frecuente
-      guardarFiguraFrecuente(figura);
+  const removeFigura = (index: number) => {
+    onChange(data.filter((_, i) => i !== index));
+  };
+
+  const updateFigura = (index: number, figura: FiguraTransporte) => {
+    const newData = [...data];
+    newData[index] = figura;
+    onChange(newData);
+  };
+
+  const handleAISuggestion = (suggestion: any) => {
+    if (suggestion.data) {
+      // Create new figura with AI suggestion
+      const newFigura: FiguraTransporte = {
+        tipo_figura: suggestion.data.tipo_figura || '01',
+        rfc_figura: suggestion.data.rfc_figura || '',
+        nombre_figura: suggestion.data.nombre_figura || '',
+        num_licencia: suggestion.data.num_licencia || '',
+        domicilio: suggestion.data.domicilio || {
+          pais: 'México',
+          codigoPostal: '',
+          estado: '',
+          municipio: '',
+          colonia: '',
+          calle: '',
+          numExterior: ''
+        }
+      };
+      onChange([...data, newFigura]);
     }
   };
 
-  const handleDeleteFigura = (index: number) => {
-    const newFiguras = data.filter((_, i) => i !== index);
-    onChange(newFiguras);
-  };
-
-  const startEdit = (index: number) => {
-    setEditingIndex(index);
-    setShowForm(true);
-  };
-
-  const cancelEdit = () => {
-    setEditingIndex(null);
-    setShowForm(false);
-  };
-
-  const handleCargarFiguraFrecuente = (figuraFrecuente: any) => {
-    const figura: FiguraTransporte = {
-      tipo_figura: figuraFrecuente.tipo_figura,
-      rfc_figura: figuraFrecuente.rfc_figura,
-      nombre_figura: figuraFrecuente.nombre_figura,
-      num_licencia: figuraFrecuente.num_licencia,
-      domicilio: figuraFrecuente.domicilio,
-      residencia_fiscal_figura: figuraFrecuente.datos_adicionales?.residencia_fiscal_figura,
-      num_reg_id_trib_figura: figuraFrecuente.datos_adicionales?.num_reg_id_trib_figura,
-    };
-
-    const newFiguras = [...data, { ...figura, id: Date.now().toString() }];
-    onChange(newFiguras);
-    setShowFrecuentes(false);
-  };
-
-  // Verificar si hay al menos un operador
-  const tieneOperador = data.some(figura => figura.tipo_figura === '01');
-
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5" />
-              <span>Figuras del Transporte</span>
-            </CardTitle>
-            
-            <div className="flex space-x-2">
-              {figurasFrecuentes.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFrecuentes(!showFrecuentes)}
-                >
-                  <Star className="h-4 w-4 mr-2" />
-                  Frecuentes
-                </Button>
-              )}
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowForm(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Figura
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {!tieneOperador && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Requerido:</strong> Debe agregar al menos un operador (Figura 01)
-              </p>
-            </div>
-          )}
-
-          {showFrecuentes && (
-            <FigurasFrecuentes
-              figuras={figurasFrecuentes}
-              onCargarFigura={handleCargarFiguraFrecuente}
-              onCerrar={() => setShowFrecuentes(false)}
-            />
-          )}
-
-          <FigurasList
-            figuras={data}
-            onEdit={startEdit}
-            onDelete={handleDeleteFigura}
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-medium">Figuras de Transporte</h3>
+          <p className="text-sm text-muted-foreground">
+            Agrega las personas involucradas en el transporte (operador, propietario, etc.)
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <AIAssistantButton 
+            context="figuras"
+            onSuggestionApply={handleAISuggestion}
           />
+          <Button type="button" onClick={addFigura} className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>Agregar Figura</span>
+          </Button>
+        </div>
+      </div>
 
-          {showForm && (
+      {data.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No hay figuras de transporte agregadas</p>
+          <p className="text-sm">Se requiere al menos un operador</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {data.map((figura, index) => (
             <FiguraForm
-              figura={editingIndex !== null ? data[editingIndex] : undefined}
-              onSave={editingIndex !== null ? handleEditFigura : handleAddFigura}
-              onCancel={cancelEdit}
+              key={index}
+              figura={figura}
+              onChange={(updatedFigura) => updateFigura(index, updatedFigura)}
+              onRemove={() => removeFigura(index)}
+              index={index}
             />
-          )}
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
