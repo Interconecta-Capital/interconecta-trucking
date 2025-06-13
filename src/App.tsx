@@ -49,10 +49,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SecurityProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <div className="min-h-screen bg-background font-sans antialiased">
-              <Router>
+        <TooltipProvider>
+          <div className="min-h-screen bg-background font-sans antialiased">
+            <Router>
+              <AuthProvider>
                 <Routes>
                   {/* Landing page - sin autenticación */}
                   <Route path="/" element={<Index />} />
@@ -155,11 +155,11 @@ function App() {
                     </AuthGuard>
                   } />
                 </Routes>
-              </Router>
-              <Toaster />
-            </div>
-          </TooltipProvider>
-        </AuthProvider>
+              </AuthProvider>
+            </Router>
+            <Toaster />
+          </div>
+        </TooltipProvider>
       </SecurityProvider>
     </QueryClientProvider>
   );
