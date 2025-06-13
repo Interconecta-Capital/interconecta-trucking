@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Calendar, LogIn, Play, CheckCircle, Truck, Users, Clock, Shield } from "lucide-react";
+import { Calendar, Play, CheckCircle, Truck, Users, Clock, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 

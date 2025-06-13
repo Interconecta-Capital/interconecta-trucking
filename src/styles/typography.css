@@ -1,0 +1,35 @@
+
+/* Typography and Responsive Font Scaling */
+@layer base {
+  /* Mobile-first responsive typography */
+  html {
+    font-size: 14px;
+  }
+
+  @screen sm {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @screen md {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  /* Improve text readability on mobile */
+  @media (max-width: 768px) {
+    body {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+  }
+}
+
+/* Text utilities */
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-interconecta-primary to-interconecta-accent bg-clip-text text-transparent;
+  }
+}

@@ -1,302 +1,264 @@
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Play, 
-  FileText, 
-  Brain, 
-  CheckCircle, 
-  Clock, 
-  Zap,
-  ArrowRight,
-  Sparkles,
-  FileSpreadsheet,
-  Bot
-} from "lucide-react";
-import { Link } from "react-router-dom";
+import { Play, FileText, Truck, Clock, CheckCircle, ArrowRight, Monitor, Smartphone, Users } from "lucide-react";
+import { useState } from "react";
 
 const InteractiveDemoSection = () => {
-  const [activeDemo, setActiveDemo] = useState('ai-assistant');
+  const [activeDemo, setActiveDemo] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const demoSteps = {
-    'ai-assistant': {
-      title: 'Asistente IA en Acción',
-      description: 'Ve cómo la IA genera descripciones automáticamente',
-      icon: Brain,
-      color: 'from-purple-500 to-indigo-600',
-      steps: [
-        { text: 'Usuario sube factura con OCR', time: '2 seg', status: 'completed' },
-        { text: 'IA lee y procesa datos automáticamente', time: '3 seg', status: 'completed' },
-        { text: 'Genera descripción SAT perfecta', time: '1 seg', status: 'active' },
-        { text: 'Valida cumplimiento automático', time: '1 seg', status: 'pending' }
-      ]
+  const demoSteps = [
+    {
+      title: "Carga de Datos",
+      description: "Carga automática de información del transportista y mercancía",
+      icon: FileText,
+      duration: "30 segundos",
+      color: "bg-blue-500"
     },
-    'bulk-import': {
-      title: 'Importación Masiva',
-      description: 'Procesa cientos de documentos en minutos',
-      icon: FileSpreadsheet,
-      color: 'from-green-500 to-emerald-600',
-      steps: [
-        { text: 'Arrastra archivo Excel/PDF', time: '1 seg', status: 'completed' },
-        { text: 'OCR extrae datos de 500 documentos', time: '30 seg', status: 'completed' },
-        { text: 'IA valida y corrige automáticamente', time: '10 seg', status: 'active' },
-        { text: 'Genera 500 cartas porte listas', time: '5 seg', status: 'pending' }
-      ]
+    {
+      title: "Validación IA",
+      description: "Inteligencia artificial valida cumplimiento con regulaciones SAT",
+      icon: CheckCircle,
+      duration: "15 segundos",
+      color: "bg-green-500"
     },
-    'automation': {
-      title: 'Automatización Total',
-      description: 'De inicio a fin sin intervención manual',
-      icon: Bot,
-      color: 'from-blue-500 to-cyan-600',
-      steps: [
-        { text: 'Recibe orden de transporte', time: '0 seg', status: 'completed' },
-        { text: 'IA crea carta porte automáticamente', time: '15 seg', status: 'completed' },
-        { text: 'Timbra con PAC integrado', time: '5 seg', status: 'completed' },
-        { text: 'Envía por email y almacena', time: '2 seg', status: 'active' }
-      ]
+    {
+      title: "Generación XML",
+      description: "Creación automática del XML de carta porte certificado",
+      icon: Truck,
+      duration: "10 segundos",
+      color: "bg-purple-500"
+    },
+    {
+      title: "Carta Porte Lista",
+      description: "Documento listo para imprimir y presentar ante autoridades",
+      icon: Clock,
+      duration: "5 segundos",
+      color: "bg-orange-500"
     }
-  };
+  ];
 
-  const beforeAfterComparison = {
-    before: {
-      title: 'Proceso Manual Tradicional',
-      time: '2-3 horas por carta porte',
-      steps: [
-        'Buscar facturas en folders físicos',
-        'Escribir manualmente cada descripción',
-        'Verificar códigos SAT uno por uno',
-        'Corregir errores múltiples veces',
-        'Enviar a timbrar y esperar respuesta'
-      ],
-      errors: '15-20% de errores',
-      stress: 'Alto estrés y frustración'
+  const testimonialData = [
+    {
+      name: "Carlos Mendoza",
+      company: "Transportes del Norte",
+      quote: "Reducimos el tiempo de 3 horas a 15 minutos por carta porte",
+      savings: "$45,000 MXN/mes",
+      image: "👨‍💼"
     },
-    after: {
-      title: 'Con Interconecta IA',
-      time: '10-15 minutos automático',
-      steps: [
-        'Sube documento con un click',
-        'IA lee y procesa automáticamente',
-        'Genera descripciones SAT perfectas',
-        'Validación automática 99.9%',
-        'Timbrado automático instantáneo'
-      ],
-      errors: '0.1% de errores',
-      stress: 'Operación relajada y eficiente'
+    {
+      name: "Ana García",
+      company: "Logística Moderna",
+      quote: "Cero multas desde que implementamos la plataforma",
+      savings: "100% cumplimiento",
+      image: "👩‍💼"
+    },
+    {
+      name: "Roberto Silva",
+      company: "Carga Segura",
+      quote: "La IA detecta errores que antes pasábamos por alto",
+      savings: "$80,000 MXN evitados",
+      image: "👨‍🔧"
     }
+  ];
+
+  const handlePlayDemo = () => {
+    setIsPlaying(true);
+    // Simulate demo progression
+    demoSteps.forEach((_, index) => {
+      setTimeout(() => {
+        setActiveDemo(index);
+        if (index === demoSteps.length - 1) {
+          setTimeout(() => setIsPlaying(false), 2000);
+        }
+      }, index * 2000);
+    });
   };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-white to-gray-50">
+    <section id="demo" className="py-20 bg-gradient-to-br from-gray-50 to-white overflow-hidden">
       <div className="container mx-auto px-4">
+        
+        {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center bg-gradient-to-r from-purple-100 to-indigo-100 border border-purple-200 rounded-full px-4 py-2 mb-6">
-            <Play className="h-4 w-4 text-purple-600 mr-2" />
-            <span className="text-sm font-inter font-medium text-purple-700">
-              Demo Interactivo
-            </span>
-          </div>
-          <h3 className="text-4xl md:text-5xl font-bold font-sora text-interconecta-text-primary mb-4">
+          <h3 className="text-4xl md:text-5xl font-bold font-sora text-interconecta-text-primary mb-6">
             Ve la Plataforma en Acción
           </h3>
-          <p className="text-xl font-inter text-interconecta-text-secondary max-w-2xl mx-auto">
-            Descubre cómo la inteligencia artificial transforma tu operación en tiempo real
+          <p className="text-xl font-inter text-interconecta-text-secondary max-w-3xl mx-auto mb-8">
+            Observa cómo nuestra IA transforma el proceso de generación de cartas porte de horas a minutos
           </p>
+          
+          <Button 
+            onClick={handlePlayDemo}
+            disabled={isPlaying}
+            size="lg" 
+            className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white px-8 py-4 text-lg font-sora font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <Play className="mr-3 h-6 w-6" />
+            {isPlaying ? 'Demo en Progreso...' : 'Iniciar Demo Interactivo'}
+          </Button>
         </div>
 
-        {/* Demo Selector */}
-        <div className="max-w-4xl mx-auto mb-12">
-          <div className="grid md:grid-cols-3 gap-4">
-            {Object.entries(demoSteps).map(([key, demo]) => (
-              <Button
-                key={key}
-                variant={activeDemo === key ? "default" : "outline"}
-                onClick={() => setActiveDemo(key)}
-                className={`p-6 h-auto flex flex-col items-center gap-3 transition-all duration-300 ${
-                  activeDemo === key 
-                    ? 'bg-gradient-to-r from-interconecta-primary to-interconecta-accent text-white shadow-lg scale-105' 
-                    : 'hover:shadow-md hover:scale-102'
-                }`}
-              >
-                <demo.icon className="h-8 w-8" />
-                <div className="text-center">
-                  <div className="font-sora font-semibold">{demo.title}</div>
-                  <div className="text-sm opacity-80">{demo.description}</div>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Active Demo Display */}
+        {/* Interactive Demo Visualization */}
         <div className="max-w-6xl mx-auto mb-16">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-2xl overflow-hidden">
-            <CardHeader className={`bg-gradient-to-r ${demoSteps[activeDemo].color} text-white p-8`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <demoSteps[activeDemo].icon className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl font-sora text-white">
-                      {demoSteps[activeDemo].title}
-                    </CardTitle>
-                    <p className="text-white/90 font-inter">
-                      {demoSteps[activeDemo].description}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="secondary"
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                >
-                  {isPlaying ? 'Pausar' : 'Reproducir'}
-                  <Play className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            
+          <Card className="bg-gradient-to-br from-white to-gray-50 border-2 border-interconecta-border-subtle shadow-2xl">
             <CardContent className="p-8">
-              <div className="space-y-4">
-                {demoSteps[activeDemo].steps.map((step, index) => (
-                  <div 
-                    key={index} 
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-500 ${
-                      step.status === 'completed' 
-                        ? 'bg-green-50 border-green-200' 
-                        : step.status === 'active'
-                        ? 'bg-blue-50 border-blue-300 shadow-md scale-102'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {step.status === 'completed' ? (
-                        <CheckCircle className="h-6 w-6 text-green-600" />
-                      ) : step.status === 'active' ? (
-                        <Clock className="h-6 w-6 text-blue-600 animate-pulse" />
-                      ) : (
-                        <div className="h-6 w-6 border-2 border-gray-300 rounded-full"></div>
-                      )}
-                      <span className="font-inter font-medium text-gray-800">
-                        {step.text}
-                      </span>
+              
+              {/* Demo Steps Progress */}
+              <div className="flex flex-col lg:flex-row justify-between items-center mb-8">
+                {demoSteps.map((step, index) => (
+                  <div key={index} className="flex flex-col items-center text-center max-w-xs mb-6 lg:mb-0">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all duration-500 ${
+                      index <= activeDemo && isPlaying 
+                        ? `${step.color} text-white scale-110 shadow-lg` 
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      <step.icon className="h-8 w-8" />
                     </div>
-                    <Badge variant={step.status === 'completed' ? 'default' : 'secondary'}>
-                      {step.time}
-                    </Badge>
+                    <h4 className="font-sora font-semibold text-interconecta-text-primary mb-2">
+                      {step.title}
+                    </h4>
+                    <p className="text-sm font-inter text-interconecta-text-secondary mb-2">
+                      {step.description}
+                    </p>
+                    <span className="text-xs font-inter text-interconecta-primary font-medium">
+                      {step.duration}
+                    </span>
+                    
+                    {/* Progress connector */}
+                    {index < demoSteps.length - 1 && (
+                      <div className="hidden lg:block absolute top-8 left-full w-24 h-0.5 bg-gray-300">
+                        <div 
+                          className={`h-full transition-all duration-1000 ${
+                            index < activeDemo && isPlaying ? 'bg-interconecta-primary w-full' : 'bg-gray-300 w-0'
+                          }`}
+                        ></div>
+                      </div>
+                    )}
                   </div>
                 ))}
+              </div>
+
+              {/* Mock Interface */}
+              <div className="bg-gray-900 rounded-lg p-6 text-green-400 font-mono text-sm">
+                <div className="flex items-center mb-4">
+                  <div className="flex space-x-2 mr-4">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <span className="text-gray-400">Interconecta Trucking Terminal</span>
+                </div>
+                
+                {isPlaying && (
+                  <div className="space-y-2">
+                    {demoSteps.slice(0, activeDemo + 1).map((step, index) => (
+                      <div key={index} className="flex items-center">
+                        <span className="text-green-400 mr-2">✓</span>
+                        <span>{step.title}: {step.description}</span>
+                      </div>
+                    ))}
+                    {activeDemo < demoSteps.length - 1 && isPlaying && (
+                      <div className="flex items-center">
+                        <span className="text-yellow-400 mr-2 animate-spin">⟳</span>
+                        <span>Procesando...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {!isPlaying && (
+                  <div className="text-gray-500">
+                    Sistema listo. Presiona "Iniciar Demo" para ver el proceso completo.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Before/After Comparison */}
-        <div className="max-w-6xl mx-auto">
-          <h4 className="text-3xl font-bold font-sora text-center text-interconecta-text-primary mb-12">
-            Transformación Completa de tu Proceso
+        {/* Platform Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          {[
+            {
+              icon: Monitor,
+              title: "Interfaz Intuitiva",
+              description: "Dashboard moderno y fácil de usar, diseñado específicamente para transportistas mexicanos",
+              features: ["Navegación simple", "Atajos de teclado", "Modo oscuro"]
+            },
+            {
+              icon: Smartphone,
+              title: "100% Responsive",
+              description: "Accede desde cualquier dispositivo - computadora, tablet o móvil",
+              features: ["App móvil nativa", "Sync en tiempo real", "Offline mode"]
+            },
+            {
+              icon: Users,
+              title: "Multi-usuario",
+              description: "Gestiona permisos por usuario y mantén control total de tu equipo",
+              features: ["Roles personalizados", "Auditoria completa", "Notificaciones"]
+            }
+          ].map((feature, index) => (
+            <Card key={index} className="border-interconecta-border-subtle hover:border-interconecta-primary transition-all duration-300 hover:shadow-lg group">
+              <CardContent className="p-6 text-center">
+                <div className="bg-gradient-to-br from-interconecta-primary to-interconecta-accent p-4 rounded-full w-16 h-16 mx-auto mb-4 group-hover:scale-110 transition-transform">
+                  <feature.icon className="h-8 w-8 text-white" />
+                </div>
+                <h4 className="text-xl font-sora font-semibold text-interconecta-text-primary mb-3">
+                  {feature.title}
+                </h4>
+                <p className="font-inter text-interconecta-text-secondary mb-4">
+                  {feature.description}
+                </p>
+                <ul className="text-sm space-y-1">
+                  {feature.features.map((item, i) => (
+                    <li key={i} className="flex items-center justify-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span className="font-inter text-interconecta-text-body">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Customer Success Stories */}
+        <div className="max-w-5xl mx-auto">
+          <h4 className="text-3xl font-bold font-sora text-interconecta-text-primary text-center mb-12">
+            Casos de Éxito Reales
           </h4>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Before */}
-            <Card className="border-2 border-red-200 bg-red-50/50">
-              <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-                <CardTitle className="font-sora flex items-center gap-3">
-                  <FileText className="h-6 w-6" />
-                  {beforeAfterComparison.before.title}
-                </CardTitle>
-                <p className="text-red-100 font-inter text-lg">
-                  ⏱️ {beforeAfterComparison.before.time}
-                </p>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-3 mb-6">
-                  {beforeAfterComparison.before.steps.map((step, index) => (
-                    <div key={index} className="flex items-center gap-3 text-gray-700">
-                      <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                      <span className="font-inter">{step}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-3 bg-red-100 rounded-lg">
-                    <span className="font-inter font-medium">Tasa de Errores:</span>
-                    <span className="font-sora font-bold text-red-600">
-                      {beforeAfterComparison.before.errors}
-                    </span>
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonialData.map((testimonial, index) => (
+              <Card key={index} className="bg-gradient-to-br from-white to-interconecta-bg-alternate border-interconecta-border-subtle hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-4">{testimonial.image}</div>
+                  <h5 className="font-sora font-semibold text-interconecta-text-primary mb-1">
+                    {testimonial.name}
+                  </h5>
+                  <p className="text-sm font-inter text-interconecta-text-secondary mb-4">
+                    {testimonial.company}
+                  </p>
+                  <blockquote className="font-inter text-interconecta-text-body italic mb-4">
+                    "{testimonial.quote}"
+                  </blockquote>
+                  <div className="bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm font-medium">
+                    {testimonial.savings}
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-red-100 rounded-lg">
-                    <span className="font-inter font-medium">Experiencia:</span>
-                    <span className="font-sora font-bold text-red-600">
-                      {beforeAfterComparison.before.stress}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* After */}
-            <Card className="border-2 border-green-200 bg-green-50/50 relative overflow-hidden">
-              <div className="absolute top-4 right-4">
-                <Sparkles className="h-8 w-8 text-yellow-500 animate-pulse" />
-              </div>
-              <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                <CardTitle className="font-sora flex items-center gap-3">
-                  <Zap className="h-6 w-6" />
-                  {beforeAfterComparison.after.title}
-                </CardTitle>
-                <p className="text-green-100 font-inter text-lg">
-                  ⚡ {beforeAfterComparison.after.time}
-                </p>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-3 mb-6">
-                  {beforeAfterComparison.after.steps.map((step, index) => (
-                    <div key={index} className="flex items-center gap-3 text-gray-700">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="font-inter">{step}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg">
-                    <span className="font-inter font-medium">Tasa de Errores:</span>
-                    <span className="font-sora font-bold text-green-600">
-                      {beforeAfterComparison.after.errors}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg">
-                    <span className="font-inter font-medium">Experiencia:</span>
-                    <span className="font-sora font-bold text-green-600">
-                      {beforeAfterComparison.after.stress}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* CTA */}
+        {/* CTA Final */}
         <div className="text-center mt-16">
-          <div className="max-w-2xl mx-auto">
-            <h4 className="text-2xl font-bold font-sora text-interconecta-text-primary mb-4">
-              ¿Listo para experimentar esta transformación?
-            </h4>
-            <p className="text-lg font-inter text-interconecta-text-secondary mb-8">
-              Prueba gratis por 14 días y descubre por qué somos líderes en automatización
-            </p>
-            <Link to="/auth/trial">
-              <Button size="lg" className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white px-8 py-4 text-lg font-sora font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                Comenzar Prueba Gratuita
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
+          <Button size="lg" className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white px-8 py-4 text-lg font-sora font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            Comenzar Mi Prueba Gratuita
+            <ArrowRight className="ml-3 h-6 w-6" />
+          </Button>
         </div>
       </div>
     </section>

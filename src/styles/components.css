@@ -1,0 +1,38 @@
+
+/* Reusable Component Styles */
+@layer components {
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .interconecta-gradient {
+    @apply bg-gradient-to-r from-interconecta-primary to-interconecta-accent;
+  }
+
+  /* Mobile-optimized scrollbars */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  /* Mobile-optimized cards */
+  @media (max-width: 768px) {
+    .card {
+      @apply rounded-lg shadow-sm;
+    }
+  }
+}
