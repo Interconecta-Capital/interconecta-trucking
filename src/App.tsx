@@ -18,6 +18,7 @@ import Trial from "./pages/Trial";
 import { BaseLayout } from "./components/layout/BaseLayout";
 import CartasPorte from "./pages/CartasPorte";
 import NewCartaPorte from "./pages/NewCartaPorte";
+import EditCartaPorte from "./pages/EditCartaPorte";
 import SuperuserManagement from "./pages/SuperuserManagement";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,14 @@ function App() {
                     <AuthGuard>
                       <BaseLayout>
                         <NewCartaPorte />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/cartas-porte/editar/:id" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <EditCartaPorte />
                       </BaseLayout>
                     </AuthGuard>
                   } />
@@ -116,7 +125,6 @@ function App() {
                     </AuthGuard>
                   } />
 
-                  {/* Nueva ruta para gestión de usuarios */}
                   <Route path="/administracion/usuarios" element={
                     <AuthGuard>
                       <BaseLayout>

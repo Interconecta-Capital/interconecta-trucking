@@ -1,9 +1,8 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FileText, Plus, Search, Edit, Eye, Trash2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
@@ -19,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function CartasPorte() {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
   
   const { 
     cartasPorte, 
@@ -27,8 +27,17 @@ export default function CartasPorte() {
     isDeleting
   } = useCartasPorte();
 
-  const handleDeleteCartaPorte = async (id) => {
+  const handleDeleteCartaPorte = async (id: string) => {
     await eliminarCartaPorte(id);
+  };
+
+  const handleEditCartaPorte = (id: string) => {
+    navigate(`/cartas-porte/editar/${id}`);
+  };
+
+  const handleViewCartaPorte = (id: string) => {
+    // Por ahora redirigir a editar, más tarde se puede crear una vista de solo lectura
+    navigate(`/cartas-porte/editar/${id}`);
   };
 
   const filteredCartasPorte = cartasPorte.filter(carta =>
@@ -39,14 +48,13 @@ export default function CartasPorte() {
     carta.nombre_receptor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Estadísticas dinámicas
   const totalCartas = cartasPorte.length;
   const pendientes = cartasPorte.filter(c => c.status === 'borrador' || c.status === 'pendiente').length;
   const completadas = cartasPorte.filter(c => c.status === 'timbrada' || c.status === 'completada').length;
   const canceladas = cartasPorte.filter(c => c.status === 'cancelada').length;
 
-  const getStatusBadge = (status) => {
-    const variants = {
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, any> = {
       'borrador': 'outline',
       'pendiente': 'secondary',
       'timbrada': 'default',
@@ -54,7 +62,7 @@ export default function CartasPorte() {
       'cancelada': 'destructive'
     };
     
-    const labels = {
+    const labels: Record<string, string> = {
       'borrador': 'Borrador',
       'pendiente': 'Pendiente',
       'timbrada': 'Timbrada',
@@ -62,7 +70,7 @@ export default function CartasPorte() {
       'cancelada': 'Cancelada'
     };
 
-    const icons = {
+    const icons: Record<string, JSX.Element> = {
       'borrador': <Edit className="h-3 w-3 mr-1" />,
       'pendiente': <Clock className="h-3 w-3 mr-1" />,
       'timbrada': <CheckCircle className="h-3 w-3 mr-1" />,
@@ -224,7 +232,7 @@ export default function CartasPorte() {
                         <div className="text-sm text-muted-foreground font-mono">{carta.rfc_receptor}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(carta.status)}</TableCell>
+                    <TableCell>{getStatusBadge(carta.status || 'borrador')}</TableCell>
                     <TableCell>
                       <div className="text-sm">
                         {new Date(carta.created_at).toLocaleDateString('es-MX')}
@@ -235,15 +243,30 @@ export default function CartasPorte() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewCartaPorte(carta.id)}
+                          title="Ver carta porte"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditCartaPorte(carta.id)}
+                          title="Editar carta porte"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" disabled={isDeleting}>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              disabled={isDeleting}
+                              title="Eliminar carta porte"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>

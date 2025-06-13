@@ -65,10 +65,15 @@ const steps = [
   { id: 'xml', label: 'XML/Timbrado', icon: Stamp },
 ];
 
-export function CartaPorteForm() {
+interface CartaPorteFormProps {
+  cartaPorteId?: string;
+}
+
+export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   const [activeStep, setActiveStep] = useState('configuracion');
   const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
-  const [cartaPorteId, setCartaPorteId] = useState<string>();
+  const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CartaPorteData>({
     tipoCreacion: 'manual',
     tipoCfdi: 'Traslado',
@@ -85,13 +90,40 @@ export function CartaPorteForm() {
   });
 
   // Hooks de persistencia
-  const { crearCartaPorte, actualizarCartaPorte, isCreating, isUpdating } = useCartasPorte();
-  const { guardarUbicaciones } = useUbicacionesPersistence(cartaPorteId);
-  const { guardarMercancias } = useMercanciasPersistence(cartaPorteId);
+  const { crearCartaPorte, actualizarCartaPorte, isCreating, isUpdating, cartasPorte } = useCartasPorte();
+  const { guardarUbicaciones } = useUbicacionesPersistence(currentCartaPorteId);
+  const { guardarMercancias } = useMercanciasPersistence(currentCartaPorteId);
 
-  // Auto-guardar cuando se completa la configuración inicial
+  // Cargar datos existentes si estamos editando
   useEffect(() => {
-    if (formData.rfcEmisor && formData.rfcReceptor && !cartaPorteId) {
+    if (cartaPorteId && cartasPorte.length > 0) {
+      setIsLoading(true);
+      const cartaExistente = cartasPorte.find(carta => carta.id === cartaPorteId);
+      
+      if (cartaExistente) {
+        setFormData(prev => ({
+          ...prev,
+          rfcEmisor: cartaExistente.rfc_emisor || '',
+          nombreEmisor: cartaExistente.nombre_emisor || '',
+          rfcReceptor: cartaExistente.rfc_receptor || '',
+          nombreReceptor: cartaExistente.nombre_receptor || '',
+          tipoCfdi: cartaExistente.tipo_cfdi as 'Ingreso' | 'Traslado' || 'Traslado',
+          transporteInternacional: cartaExistente.transporte_internacional || false,
+          registroIstmo: cartaExistente.registro_istmo || false,
+          entrada_salida_merc: cartaExistente.entrada_salida_merc || '',
+          pais_origen_destino: cartaExistente.pais_origen_destino || '',
+          via_entrada_salida: cartaExistente.via_entrada_salida || '',
+          cartaPorteId: cartaExistente.id,
+        }));
+        setCurrentCartaPorteId(cartaExistente.id);
+      }
+      setIsLoading(false);
+    }
+  }, [cartaPorteId, cartasPorte]);
+
+  // Auto-guardar cuando se completa la configuración inicial (solo para nuevas cartas)
+  useEffect(() => {
+    if (formData.rfcEmisor && formData.rfcReceptor && !currentCartaPorteId && !cartaPorteId) {
       // Transform CartaPorteData to match expected type
       const cartaPortePayload = {
         tipo_cfdi: formData.tipoCfdi,
@@ -108,36 +140,36 @@ export function CartaPorteForm() {
 
       crearCartaPorte(cartaPortePayload)
         .then((nuevaCartaPorte) => {
-          setCartaPorteId(nuevaCartaPorte.id);
+          setCurrentCartaPorteId(nuevaCartaPorte.id);
           setFormData(prev => ({ ...prev, cartaPorteId: nuevaCartaPorte.id }));
         })
         .catch((error) => {
           console.error('Error al crear carta porte:', error);
         });
     }
-  }, [formData.rfcEmisor, formData.rfcReceptor, cartaPorteId, crearCartaPorte]);
+  }, [formData.rfcEmisor, formData.rfcReceptor, currentCartaPorteId, cartaPorteId, crearCartaPorte]);
 
   // Auto-guardar ubicaciones cuando cambian
   useEffect(() => {
-    if (cartaPorteId && formData.ubicaciones.length > 0) {
+    if (currentCartaPorteId && formData.ubicaciones.length > 0) {
       const timer = setTimeout(() => {
         guardarUbicaciones(formData.ubicaciones);
       }, 1000); // Debounce de 1 segundo
 
       return () => clearTimeout(timer);
     }
-  }, [formData.ubicaciones, cartaPorteId, guardarUbicaciones]);
+  }, [formData.ubicaciones, currentCartaPorteId, guardarUbicaciones]);
 
   // Auto-guardar mercancías cuando cambian
   useEffect(() => {
-    if (cartaPorteId && formData.mercancias.length > 0) {
+    if (currentCartaPorteId && formData.mercancias.length > 0) {
       const timer = setTimeout(() => {
         guardarMercancias(formData.mercancias);
       }, 1000); // Debounce de 1 segundo
 
       return () => clearTimeout(timer);
     }
-  }, [formData.mercancias, cartaPorteId, guardarMercancias]);
+  }, [formData.mercancias, currentCartaPorteId, guardarMercancias]);
 
   const updateFormData = (section: string, data: any) => {
     if (section === 'configuracion') {
@@ -145,7 +177,7 @@ export function CartaPorteForm() {
       setFormData(newData);
       
       // Actualizar carta porte si ya existe
-      if (cartaPorteId) {
+      if (currentCartaPorteId) {
         const updatePayload = {
           tipo_cfdi: newData.tipoCfdi,
           rfc_emisor: newData.rfcEmisor,
@@ -158,7 +190,7 @@ export function CartaPorteForm() {
           pais_origen_destino: newData.pais_origen_destino,
           via_entrada_salida: newData.via_entrada_salida,
         };
-        actualizarCartaPorte({ id: cartaPorteId, data: updatePayload });
+        actualizarCartaPorte({ id: currentCartaPorteId, data: updatePayload });
       }
     } else {
       setFormData(prev => ({
@@ -218,6 +250,15 @@ export function CartaPorteForm() {
     // Aquí puedes manejar los datos del timbrado
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p className="ml-2">Cargando carta porte...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header con progreso */}
@@ -225,8 +266,8 @@ export function CartaPorteForm() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">
-              Nueva Carta Porte 3.1
-              {cartaPorteId && (
+              {cartaPorteId ? 'Editar Carta Porte 3.1' : 'Nueva Carta Porte 3.1'}
+              {currentCartaPorteId && (
                 <span className="text-sm font-normal text-green-600 ml-2">
                   ✓ Guardando automáticamente
                 </span>
@@ -330,7 +371,7 @@ export function CartaPorteForm() {
               <TabsContent value="xml">
                 <XMLGenerationPanel
                   cartaPorteData={formData}
-                  cartaPorteId={cartaPorteId}
+                  cartaPorteId={currentCartaPorteId}
                   onXMLGenerated={handleXMLGenerated}
                   onTimbrado={handleTimbrado}
                 />
