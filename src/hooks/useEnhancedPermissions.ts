@@ -12,11 +12,11 @@ export const useEnhancedPermissions = () => {
     if (isSuperuser) {
       return {
         ...subscriptionPermissions,
-        puedeAcceder: () => ({ puede: true }),
-        puedeCrear: () => ({ puede: true }),
-        puedeAccederAdministracion: () => ({ puede: true }),
-        puedeAccederFuncionesAvanzadas: () => ({ puede: true }),
-        puedeAccederEnterprise: () => ({ puede: true }),
+        puedeAcceder: () => ({ puede: true, razon: undefined }),
+        puedeCrear: () => ({ puede: true, razon: undefined }),
+        puedeAccederAdministracion: () => ({ puede: true, razon: undefined }),
+        puedeAccederFuncionesAvanzadas: () => ({ puede: true, razon: undefined }),
+        puedeAccederEnterprise: () => ({ puede: true, razon: undefined }),
         estaBloqueado: false,
         suscripcionVencida: false,
         planActual: 'Enterprise Sin Límites (Superuser)',

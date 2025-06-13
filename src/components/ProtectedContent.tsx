@@ -1,3 +1,4 @@
+
 import { ReactNode } from 'react';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -89,7 +90,10 @@ export const ProtectedContent = ({
 
   // Verificar funcionalidad específica
   if (requiredFeature) {
-    const { puede, razon } = puedeAcceder(requiredFeature);
+    const result = puedeAcceder(requiredFeature);
+    const puede = result?.puede ?? false;
+    const razon = result?.razon;
+    
     if (!puede) {
       if (fallback) return <>{fallback}</>;
       
@@ -97,7 +101,7 @@ export const ProtectedContent = ({
         <Alert className="border-blue-200 bg-blue-50">
           <Lock className="h-4 w-4 text-blue-600" />
           <AlertDescription className="flex items-center justify-between">
-            <span className="text-blue-800">{razon}</span>
+            <span className="text-blue-800">{razon || 'Funcionalidad no disponible'}</span>
             {showUpgrade && (
               <Button 
                 size="sm" 

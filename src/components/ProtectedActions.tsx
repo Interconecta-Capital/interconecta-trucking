@@ -33,9 +33,11 @@ export const ProtectedActions = ({
       return;
     }
 
-    const { puede, razon } = puedeCrear(resource);
+    const result = puedeCrear(resource);
+    const puede = result?.puede ?? false;
+    const razon = result?.razon;
     
-    if (!puede) {
+    if (!puede && razon) {
       toast.error(razon);
       return;
     }

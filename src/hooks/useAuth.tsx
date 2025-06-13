@@ -1,10 +1,11 @@
+
 import { createContext, useContext, ReactNode, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { useAuthActions } from './auth/useAuthActions';
 import { checkUserAccess } from './auth/useAuthUtils';
 import { useSuscripcion } from './useSuscripcion';
-import { supabase } from './supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Contexto de autenticación
@@ -29,24 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Verifica si el usuario tiene acceso a un recurso específico
    * Ahora incluye verificación de superusuario
    */
-  const hasAccess = async (resource: string) => {
-    // Check if user is superuser first
-    if (user?.id) {
-      try {
-        const { data } = await supabase
-          .from('usuarios')
-          .select('rol_especial')
-          .eq('auth_user_id', user.id)
-          .single();
-        
-        if (data?.rol_especial === 'superuser') {
-          return true; // Superusers have access to everything
-        }
-      } catch (error) {
-        console.error('Error checking superuser status:', error);
-      }
-    }
-
+  const hasAccess = (resource: string): boolean => {
+    // For now, use basic role check until superuser functionality is fully implemented
     return checkUserAccess(user?.usuario?.rol, resource);
   };
 
