@@ -3,16 +3,11 @@ import { useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { AuthUser } from './types';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
-
-export interface AuthUser {
-  id: string;
-  email?: string;
-  usuario?: Usuario;
-  profile?: Profile;
-}
+type Tenant = Database['public']['Tables']['tenants']['Row'];
 
 export function useAuthState() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -35,11 +30,22 @@ export function useAuthState() {
         .eq('auth_user_id', authUser.id)
         .maybeSingle();
 
+      // Load tenant data if usuario has tenant_id
+      let tenant: Tenant | null = null;
+      if (usuario?.tenant_id) {
+        const { data: tenantData } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('id', usuario.tenant_id)
+          .maybeSingle();
+        tenant = tenantData;
+      }
+
       const userData: AuthUser = {
-        id: authUser.id,
-        email: authUser.email,
+        ...authUser,
         profile,
-        usuario
+        usuario,
+        tenant
       };
 
       setUser(userData);
@@ -47,8 +53,10 @@ export function useAuthState() {
       console.error('Error loading user data:', error);
       // Set basic user data even if extended data fails
       setUser({
-        id: authUser.id,
-        email: authUser.email
+        ...authUser,
+        profile: null,
+        usuario: null,
+        tenant: null
       });
     }
   };

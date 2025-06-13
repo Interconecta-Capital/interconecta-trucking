@@ -19,29 +19,32 @@ export interface UserProfile {
 }
 
 /**
+ * Interfaz del tenant
+ */
+export interface UserTenant {
+  id: string;
+  nombre_empresa: string;
+  rfc_empresa: string;
+}
+
+/**
+ * Interfaz del usuario
+ */
+export interface UserUsuario {
+  id: string;
+  nombre: string;
+  rol: string;
+  rol_especial?: string;
+  tenant_id?: string;
+}
+
+/**
  * Interfaz extendida del usuario que incluye información del tenant, usuario y perfil
  */
 export interface AuthUser extends User {
-  profile?: UserProfile;
-  tenant?: {
-    id: string;
-    nombre_empresa: string;
-    rfc_empresa: string;
-  };
-  usuario?: {
-    id: string;
-    nombre: string;
-    rol: string;
-    rol_especial?: string;
-    tenant_id?: string;
-  };
-  user_metadata?: {
-    nombre?: string;
-    empresa?: string;
-    rfc?: string;
-    telefono?: string;
-    name?: string;
-  };
+  profile?: UserProfile | null;
+  tenant?: UserTenant | null;
+  usuario?: UserUsuario | null;
 }
 
 /**

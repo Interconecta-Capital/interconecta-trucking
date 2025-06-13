@@ -2,23 +2,9 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useAuthState, AuthUser } from './auth/useAuthState';
 import { useAuthActions } from './auth/useAuthActions';
+import { AuthContextType } from './auth/types';
 
-interface AuthContextValue {
-  user: AuthUser | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<{ needsVerification?: boolean }>;
-  signInWithGoogle: () => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateEmail: (newEmail: string) => Promise<void>;
-  updateProfile: (profileData: any) => Promise<void>;
-  hasAccess: (resource: string) => boolean;
-  resendConfirmation: (email: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuthState();
@@ -60,3 +46,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export { AuthUser };
