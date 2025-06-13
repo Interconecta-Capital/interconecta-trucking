@@ -119,13 +119,15 @@ export function useUbicacionForm(
     setShowFrecuentes(false);
   };
 
-  const isFormValid = () => {
-    const hasValidType = formData.tipoUbicacion != null && formData.tipoUbicacion !== undefined;
-    const hasValidRFC = formData.rfcRemitenteDestinatario === '' || rfcValidation.esValido;
-    const hasValidData = formData.nombreRemitenteDestinatario && 
-                        formData.domicilio.codigoPostal &&
-                        formData.domicilio.estado &&
-                        formData.domicilio.calle;
+  const isFormValid = (): boolean => {
+    const hasValidType = Boolean(formData.tipoUbicacion != null && formData.tipoUbicacion !== undefined);
+    const hasValidRFC = Boolean(formData.rfcRemitenteDestinatario === '' || rfcValidation.esValido);
+    const hasValidData = Boolean(
+      formData.nombreRemitenteDestinatario && 
+      formData.domicilio.codigoPostal &&
+      formData.domicilio.estado &&
+      formData.domicilio.calle
+    );
     
     return hasValidType && hasValidRFC && hasValidData;
   };
