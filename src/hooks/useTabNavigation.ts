@@ -14,21 +14,14 @@ export function useTabNavigation({
   const isInitialMount = useRef(true);
 
   const handleTabChange = useCallback((value: string) => {
-    // Solo cambiar el tab sin actualizar la URL inmediatamente
+    // Solo cambiar el tab localmente, sin URL
     setActiveTab(value);
     
-    // Solo actualizar URL si es absolutamente necesario y después del primer render
-    if (persistInURL && !isInitialMount.current) {
-      // Usar replaceState en lugar de pushState para evitar entradas en el historial
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', value);
-      window.history.replaceState({}, '', url.toString());
-    }
-    
+    // Marcar que ya no es el primer montaje
     if (isInitialMount.current) {
       isInitialMount.current = false;
     }
-  }, [persistInURL]);
+  }, []);
 
   const setTabSilently = useCallback((value: string) => {
     // Cambiar tab sin efectos secundarios

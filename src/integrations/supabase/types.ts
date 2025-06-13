@@ -2199,7 +2199,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_superuser_safe: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       get_user_tenant_id: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
+      get_user_tenant_safe: {
         Args: { user_uuid: string }
         Returns: string
       }

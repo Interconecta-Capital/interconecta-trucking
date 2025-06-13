@@ -1,6 +1,5 @@
 
 import { useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
 
 interface UseAutoSaveOptions {
   data: any;
@@ -14,17 +13,22 @@ interface UseAutoSaveOptions {
 export const useAutoSave = ({
   data,
   key,
-  delay = 3000, // Aumentado de 2000 a 3000ms para reducir frecuencia
+  delay = 5000, // Aumentado a 5 segundos para reducir frecuencia
   onSave,
   enabled = true,
-  useSessionStorage = false // Nueva opción para usar sessionStorage
+  useSessionStorage = false
 }: UseAutoSaveOptions) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
   const isInitialLoadRef = useRef(true);
+  const saveInProgressRef = useRef(false);
 
   const saveData = useCallback(async () => {
+    if (saveInProgressRef.current) return;
+    
     try {
+      saveInProgressRef.current = true;
+      
       if (onSave) {
         await onSave(data);
       } else {
@@ -34,11 +38,14 @@ export const useAutoSave = ({
       lastSavedRef.current = JSON.stringify(data);
     } catch (error) {
       console.error('Auto-save failed:', error);
+      // No rethrow - solo log para evitar interrupciones
+    } finally {
+      saveInProgressRef.current = false;
     }
   }, [data, key, onSave, useSessionStorage]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || saveInProgressRef.current) return;
 
     const currentData = JSON.stringify(data);
     
@@ -49,10 +56,13 @@ export const useAutoSave = ({
       return;
     }
     
-    // Solo guardar si los datos realmente cambiaron y tienen contenido
+    // Solo guardar si los datos realmente cambiaron y son válidos
     if (currentData !== lastSavedRef.current && 
+        data && 
+        typeof data === 'object' &&
         Object.keys(data).length > 0 && 
-        currentData !== '{}') {
+        currentData !== '{}' &&
+        currentData !== 'null') {
       
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -82,8 +92,12 @@ export const useAutoSave = ({
   }, [key, useSessionStorage]);
 
   const clearSavedData = useCallback(() => {
-    const storage = useSessionStorage ? sessionStorage : localStorage;
-    storage.removeItem(`autosave_${key}`);
+    try {
+      const storage = useSessionStorage ? sessionStorage : localStorage;
+      storage.removeItem(`autosave_${key}`);
+    } catch (error) {
+      console.error('Failed to clear saved data:', error);
+    }
   }, [key, useSessionStorage]);
 
   const forceSave = useCallback(() => {

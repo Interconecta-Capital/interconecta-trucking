@@ -9,7 +9,7 @@ export const useViajesData = () => {
 
   console.log('[ViajesData] Hook initialized with user:', user?.id);
 
-  // Obtener viajes activos con mejor manejo de errores
+  // Obtener viajes activos con mejor manejo de errores y menos frecuencia
   const { 
     data: viajesActivos = [], 
     isLoading: loadingViajes,
@@ -37,7 +37,8 @@ export const useViajesData = () => {
 
         if (error) {
           console.error('[ViajesData] Supabase query error:', error);
-          throw new Error(`Error fetching viajes: ${error.message}`);
+          // Retornar array vacío en lugar de lanzar error para evitar crashes
+          return [];
         }
 
         console.log('[ViajesData] Query successful, found viajes:', data?.length || 0);
@@ -46,18 +47,16 @@ export const useViajesData = () => {
         return (data || []) as Viaje[];
       } catch (error) {
         console.error('[ViajesData] Error in viajes query:', error);
-        
-        // Re-throw with more context
-        if (error instanceof Error) {
-          throw new Error(`Failed to load viajes: ${error.message}`);
-        }
-        throw new Error('Failed to load viajes: Unknown error');
+        // Retornar array vacío en lugar de lanzar error
+        return [];
       }
     },
     enabled: !!user?.id,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 2, // Reducido de 3 a 2
+    retryDelay: attemptIndex => Math.min(2000 * 2 ** attemptIndex, 10000), // Reducido delay máximo
+    staleTime: 10 * 60 * 1000, // Aumentado a 10 minutos
+    refetchOnWindowFocus: false, // Evitar refetch automático
+    refetchOnReconnect: false, // Evitar refetch en reconexión
     meta: {
       errorMessage: 'Error loading active trips'
     }
@@ -91,7 +90,7 @@ export const useViajesData = () => {
 
       if (error) {
         console.error('[ViajesData] Error fetching eventos:', error);
-        throw new Error(`Error fetching eventos: ${error.message}`);
+        return []; // Retornar array vacío en lugar de lanzar
       }
 
       console.log('[ViajesData] Eventos query successful, found:', data?.length || 0);
@@ -100,17 +99,11 @@ export const useViajesData = () => {
       return (data || []) as EventoViaje[];
     } catch (error) {
       console.error('[ViajesData] Error in obtenerEventosViaje:', error);
-      
-      // Return empty array instead of throwing to avoid breaking UI
-      if (error instanceof Error) {
-        console.error('[ViajesData] Eventos error details:', error.message);
-      }
-      
       return [];
     }
   };
 
-  // Log errores si existen
+  // Log errores si existen pero no los propagues para evitar crashes
   if (viajesError) {
     console.error('[ViajesData] Query error detected:', viajesError);
   }

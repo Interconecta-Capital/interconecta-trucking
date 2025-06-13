@@ -43,16 +43,16 @@ export default function Viajes() {
   
   const { activeTab, setTabSilently, handleTabChange } = useTabNavigation({
     initialTab: tabInicial,
-    persistInURL: false // Deshabilitamos la persistencia automática en URL
+    persistInURL: false, // Completamente deshabilitado
   });
 
-  // Solo actualizar el tab si cambia el parámetro de URL externamente
+  // Solo leer URL al cargar la página, no sincronizar después
   useEffect(() => {
     const urlTab = searchParams.get('tab') || 'activos';
     if (urlTab !== activeTab) {
       setTabSilently(urlTab);
     }
-  }, [searchParams, activeTab, setTabSilently]);
+  }, []); // Solo ejecutar una vez al montar
 
   // Memoizar los componentes de contenido para evitar re-renders innecesarios
   const tabContent = useMemo(() => {
