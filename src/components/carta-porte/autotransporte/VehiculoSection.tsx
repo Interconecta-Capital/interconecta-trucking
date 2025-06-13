@@ -26,7 +26,10 @@ export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
     permisoSearch
   );
 
-  const handleFieldChange = (field: string, value: any) => {
+  const handleFieldChange = <K extends keyof AutotransporteData>(
+    field: K, 
+    value: AutotransporteData[K]
+  ) => {
     onChange({ [field]: value });
   };
 
