@@ -63,10 +63,6 @@ export const useViajesData = () => {
     staleTime: 30 * 60 * 1000, // 30 minutos para evitar requests frecuentes
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    // Manejar errores sin romper la UI
-    onError: (error) => {
-      console.error('[ViajesData] Query failed, but continuing with empty state:', error);
-    },
     meta: {
       errorMessage: 'Error loading active trips'
     }
