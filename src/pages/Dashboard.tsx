@@ -3,6 +3,10 @@ import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreetin
 import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { DashboardMetricsGrid } from '@/components/dashboard/DashboardMetricsGrid';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { ProtectedContent } from '@/components/ProtectedContent';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
+import { PlanBadge } from '@/components/common/PlanBadge';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
@@ -41,31 +45,47 @@ export default function Dashboard() {
     totalSocios === 0;
 
   return (
-    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
-      {/* Saludo personalizado */}
-      <PersonalizedGreeting />
+    <ProtectedContent requiredFeature="dashboard">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+        {/* Notificaciones de plan */}
+        <PlanNotifications />
 
-      <DashboardLayout>
-        {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
-        <WelcomeCard show={showWelcomeCard} />
+        {/* Header con badge de plan */}
+        <div className="flex items-center justify-between">
+          <PersonalizedGreeting />
+          <PlanBadge size="md" />
+        </div>
 
-        {/* Métricas principales */}
-        <DashboardMetricsGrid
-          isLoading={isLoading}
-          totalCartasPorte={totalCartasPorte}
-          cartasPendientes={cartasPendientes}
-          cartasCompletadas={cartasCompletadas}
-          totalVehiculos={totalVehiculos}
-          vehiculosDisponibles={vehiculosDisponibles}
-          vehiculosEnUso={vehiculosEnUso}
-          vehiculosMantenimiento={vehiculosMantenimiento}
-          totalConductores={totalConductores}
-          conductoresDisponibles={conductoresDisponibles}
-          conductoresEnViaje={conductoresEnViaje}
-          totalSocios={totalSocios}
-          sociosActivos={sociosActivos}
-        />
-      </DashboardLayout>
-    </div>
+        <DashboardLayout>
+          {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
+          <WelcomeCard show={showWelcomeCard} />
+
+          {/* Métricas principales */}
+          <DashboardMetricsGrid
+            isLoading={isLoading}
+            totalCartasPorte={totalCartasPorte}
+            cartasPendientes={cartasPendientes}
+            cartasCompletadas={cartasCompletadas}
+            totalVehiculos={totalVehiculos}
+            vehiculosDisponibles={vehiculosDisponibles}
+            vehiculosEnUso={vehiculosEnUso}
+            vehiculosMantenimiento={vehiculosMantenimiento}
+            totalConductores={totalConductores}
+            conductoresDisponibles={conductoresDisponibles}
+            conductoresEnViaje={conductoresEnViaje}
+            totalSocios={totalSocios}
+            sociosActivos={sociosActivos}
+          />
+
+          {/* Indicadores de límites */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <LimitUsageIndicator resourceType="cartas_porte" />
+            <LimitUsageIndicator resourceType="vehiculos" />
+            <LimitUsageIndicator resourceType="conductores" />
+            <LimitUsageIndicator resourceType="socios" />
+          </div>
+        </DashboardLayout>
+      </div>
+    </ProtectedContent>
   );
 }

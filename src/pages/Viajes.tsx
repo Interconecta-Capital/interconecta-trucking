@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,9 @@ import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { ProgramacionViajes } from '@/components/viajes/ProgramacionViajes';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useStatePersistence } from '@/hooks/useStatePersistence';
+import { ProtectedContent } from '@/components/ProtectedContent';
+import { ProtectedFeature } from '@/components/ProtectedFeature';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
 
 const TABS_CONFIG = [
   { 
@@ -33,7 +37,8 @@ const TABS_CONFIG = [
     id: 'programacion', 
     label: 'Programación', 
     icon: Calendar, 
-    component: ProgramacionViajes 
+    component: ProgramacionViajes,
+    requiresFeature: 'funciones_avanzadas'
   },
 ];
 
@@ -73,7 +78,15 @@ export default function Viajes() {
     console.log('[Viajes] Memoizing tab content for tabs:', TABS_CONFIG.map(t => t.id));
     return TABS_CONFIG.reduce((acc, tab) => {
       const Component = tab.component;
-      acc[tab.id] = <Component key={`${tab.id}-content`} />;
+      if (tab.requiresFeature) {
+        acc[tab.id] = (
+          <ProtectedFeature feature={tab.requiresFeature} key={`${tab.id}-content`}>
+            <Component />
+          </ProtectedFeature>
+        );
+      } else {
+        acc[tab.id] = <Component key={`${tab.id}-content`} />;
+      }
       return acc;
     }, {} as Record<string, JSX.Element>);
   }, []); // Dependencias vacías para evitar re-creación
@@ -98,21 +111,26 @@ export default function Viajes() {
   ), []);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Truck className="h-6 w-6 text-blue-600" />
-        <h1 className="text-3xl font-bold">Gestión de Viajes</h1>
+    <ProtectedContent requiredFeature="viajes">
+      <div className="container mx-auto py-6 space-y-6">
+        {/* Notificaciones de plan */}
+        <PlanNotifications />
+
+        <div className="flex items-center gap-3">
+          <Truck className="h-6 w-6 text-blue-600" />
+          <h1 className="text-3xl font-bold">Gestión de Viajes</h1>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={handleTabChangeOptimized} className="w-full">
+          {tabsList}
+
+          {TABS_CONFIG.map((tab) => (
+            <TabsContent key={tab.id} value={tab.id} className="mt-6">
+              {tabContent[tab.id]}
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
-
-      <Tabs value={activeTab} onValueChange={handleTabChangeOptimized} className="w-full">
-        {tabsList}
-
-        {TABS_CONFIG.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-6">
-            {tabContent[tab.id]}
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
+    </ProtectedContent>
   );
 }
