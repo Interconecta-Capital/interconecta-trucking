@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,8 +12,17 @@ import { useStatePersistence } from '@/hooks/useStatePersistence';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedFeature } from '@/components/ProtectedFeature';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { FunctionalityType } from '@/types/permissions';
 
-const TABS_CONFIG = [
+interface TabConfig {
+  id: string;
+  label: string;
+  icon: any;
+  component: React.ComponentType;
+  requiresFeature?: FunctionalityType;
+}
+
+const TABS_CONFIG: TabConfig[] = [
   { 
     id: 'activos', 
     label: 'Viajes Activos', 
@@ -38,7 +46,7 @@ const TABS_CONFIG = [
     label: 'Programación', 
     icon: Calendar, 
     component: ProgramacionViajes,
-    requiresFeature: 'funciones_avanzadas'
+    requiresFeature: 'funciones_avanzadas' as FunctionalityType
   },
 ];
 
