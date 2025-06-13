@@ -25,7 +25,7 @@ export function FigurasTransporteForm({ data, onChange }: FigurasTransporteFormP
         municipio: '',
         colonia: '',
         calle: '',
-        numExterior: ''
+        numero_exterior: ''
       }
     };
     onChange([...data, newFigura]);
@@ -56,7 +56,7 @@ export function FigurasTransporteForm({ data, onChange }: FigurasTransporteFormP
           municipio: '',
           colonia: '',
           calle: '',
-          numExterior: ''
+          numero_exterior: ''
         }
       };
       onChange([...data, newFigura]);

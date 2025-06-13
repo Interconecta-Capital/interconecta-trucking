@@ -270,7 +270,7 @@ export const CodigoPostalInput: React.FC<CodigoPostalInputProps> = ({
             clave: c.clave_colonia,
             descripcion: c.descripcion
           }))}
-          isLoading={loadingColonias}
+          loading={loadingColonias}
         />
       )}
     </div>

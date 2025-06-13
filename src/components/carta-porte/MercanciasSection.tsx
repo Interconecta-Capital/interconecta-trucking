@@ -29,6 +29,7 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
 
   const [showForm, setShowForm] = useState(false);
   const [editingMercancia, setEditingMercancia] = useState<Mercancia | undefined>();
+  const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
 
@@ -45,14 +46,23 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
     }
   };
 
-  const handleEditMercancia = (mercancia: Mercancia) => {
+  const handleEditMercancia = (mercancia: Mercancia, index: number) => {
     setEditingMercancia(mercancia);
+    setEditingIndex(index);
     setShowForm(true);
+  };
+
+  const handleRemoveMercancia = (index: number) => {
+    const mercancia = mercancias[index];
+    if (mercancia?.id) {
+      eliminarMercancia(mercancia.id);
+    }
   };
 
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingMercancia(undefined);
+    setEditingIndex(-1);
   };
 
   const handleDocumentProcessed = async (extractedMercancias: Mercancia[]) => {
@@ -105,9 +115,11 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
         <CardContent>
           {showForm ? (
             <MercanciaForm
+              index={editingIndex >= 0 ? editingIndex : mercancias.length}
               mercancia={editingMercancia}
               onSave={handleSaveMercancia}
               onCancel={handleCancelForm}
+              onRemove={() => editingIndex >= 0 ? handleRemoveMercancia(editingIndex) : undefined}
               isLoading={isLoading}
             />
           ) : (
