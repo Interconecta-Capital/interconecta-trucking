@@ -110,3 +110,6 @@ export function useAuthState() {
 
   return { user, loading, session };
 }
+
+// Export AuthUser type for use in other modules
+export type { AuthUser } from './types';
