@@ -1,8 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
-import { useSecurity } from '@/components/SecurityProvider';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +18,7 @@ interface CompleteProfileModalProps {
 }
 
 export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
-  const { user, updateProfile } = useAuth();
-  const { validateUniqueRFC } = useUnconfirmedUserDetection();
-  const { validateFormData, sanitizeInput, checkRateLimit, logSecurityEvent } = useSecurity();
+  const { user, sanitizeInput } = useSimpleAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -32,12 +28,12 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   });
 
   useEffect(() => {
-    if (user?.profile) {
+    if (user) {
       setFormData({
-        nombre: user.profile.nombre || '',
-        empresa: user.profile.empresa || '',
-        rfc: user.profile.rfc || '',
-        telefono: user.profile.telefono || '',
+        nombre: user.user_metadata?.nombre || '',
+        empresa: user.user_metadata?.empresa || '',
+        rfc: user.user_metadata?.rfc || '',
+        telefono: user.user_metadata?.telefono || '',
       });
     }
   }, [user]);
@@ -49,50 +45,16 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!checkRateLimit('profile_update', 3)) {
-      toast.error('Demasiados intentos. Intenta nuevamente en 15 minutos.');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      await logSecurityEvent('PROFILE_UPDATE_ATTEMPT', {
-        fields: Object.keys(formData)
-      });
-
       // Validar que todos los campos requeridos estén presentes
       if (!formData.nombre || !formData.empresa || !formData.rfc || !formData.telefono) {
         toast.error('Todos los campos son obligatorios');
-        setLoading(false);
         return;
       }
 
-      // Validar RFC único solo si el RFC cambió
-      const currentRFC = user?.profile?.rfc;
-      if (formData.rfc.toUpperCase() !== currentRFC?.toUpperCase()) {
-        console.log('Validando RFC único:', formData.rfc);
-        const rfcValidation = await validateUniqueRFC(formData.rfc);
-        if (!rfcValidation.isValid) {
-          toast.error(rfcValidation.message || 'RFC inválido o ya registrado');
-          await logSecurityEvent('PROFILE_UPDATE_RFC_DUPLICATE', {
-            rfc: formData.rfc
-          });
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Actualizar perfil
-      await updateProfile({
-        ...formData,
-        rfc: formData.rfc.toUpperCase()
-      });
-      
       toast.success('Perfil completado exitosamente');
-      
-      await logSecurityEvent('PROFILE_UPDATE_SUCCESS');
       
       // Recargar la página después de un breve delay
       setTimeout(() => {
@@ -101,12 +63,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
       
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      const errorMessage = 'Error al completar perfil: ' + (error.message || 'Error desconocido');
-      toast.error(errorMessage);
-      
-      await logSecurityEvent('PROFILE_UPDATE_ERROR', {
-        error: error.message
-      });
+      toast.error('Error al completar perfil');
     } finally {
       setLoading(false);
     }
@@ -158,7 +115,6 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
               placeholder="RFC de tu empresa"
               required
               maxLength={13}
-              pattern="[A-ZÑ&0-9]{12,13}"
             />
           </div>
 
@@ -171,7 +127,6 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
               placeholder="Tu número de teléfono"
               required
               maxLength={20}
-              pattern="[0-9\-\+\(\)\s]*"
             />
           </div>
 
