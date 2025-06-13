@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryOptimizedProvider } from "@/components/QueryOptimizedProvider";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Trial from "./pages/Trial";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -16,6 +18,9 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/login" element={<Auth />} />
+            <Route path="/auth/trial" element={<Trial />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
