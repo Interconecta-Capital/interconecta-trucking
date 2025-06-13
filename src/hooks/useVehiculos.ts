@@ -1,6 +1,7 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useSimpleAuth } from './useSimpleAuth';
+import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
 export interface Vehiculo {
@@ -25,7 +26,7 @@ export interface Vehiculo {
 }
 
 export const useVehiculos = () => {
-  const { user } = useSimpleAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: vehiculos = [], isLoading: loading } = useQuery({

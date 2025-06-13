@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Mail, RefreshCw } from 'lucide-react';
 
@@ -13,7 +13,7 @@ interface EmailVerificationMessageProps {
 
 export function EmailVerificationMessage({ email, onBack }: EmailVerificationMessageProps) {
   const [resending, setResending] = useState(false);
-  const { resendConfirmation } = useSimpleAuth();
+  const { resendConfirmation } = useAuth();
 
   const handleResendEmail = async () => {
     setResending(true);

@@ -24,27 +24,17 @@ export function useSimpleAuth() {
 
   // Initialize auth state
   useEffect(() => {
-    console.log('[SimpleAuth] Initializing auth state...');
-    
     // Get initial session
     const getSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('[SimpleAuth] Session error:', error);
-          setAuthState({ user: null, session: null, loading: false });
-          return;
-        }
-
-        console.log('[SimpleAuth] Initial session:', !!session?.user);
+        const { data: { session } } = await supabase.auth.getSession();
         setAuthState({
           user: session?.user ?? null,
           session,
           loading: false
         });
       } catch (error) {
-        console.error('[SimpleAuth] Error getting session:', error);
+        console.error('Error getting session:', error);
         setAuthState({ user: null, session: null, loading: false });
       }
     };
@@ -54,26 +44,11 @@ export function useSimpleAuth() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('[SimpleAuth] Auth state change:', event, !!session?.user);
-        
         setAuthState({
           user: session?.user ?? null,
           session,
           loading: false
         });
-
-        // Handle successful login with redirect
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('[SimpleAuth] User signed in, redirecting to dashboard');
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 100);
-        } else if (event === 'SIGNED_OUT') {
-          console.log('[SimpleAuth] User signed out');
-          setTimeout(() => {
-            window.location.href = '/auth';
-          }, 100);
-        }
       }
     );
 
@@ -82,25 +57,12 @@ export function useSimpleAuth() {
 
   const signIn = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      console.log('[SimpleAuth] Signing in user...');
-      setAuthState(prev => ({ ...prev, loading: true }));
-
-      // Clean up any existing auth state
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase().trim(),
         password
       });
 
       if (error) {
-        console.error('[SimpleAuth] Sign in error:', error);
-        setAuthState(prev => ({ ...prev, loading: false }));
-        
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Credenciales inválidas. Verifica tu correo y contraseña.');
         } else if (error.message.includes('Email not confirmed')) {
@@ -112,46 +74,14 @@ export function useSimpleAuth() {
       }
 
       if (data.user) {
-        console.log('[SimpleAuth] Sign in successful');
         toast.success('Inicio de sesión exitoso');
         return true;
       }
 
-      setAuthState(prev => ({ ...prev, loading: false }));
       return false;
     } catch (error) {
-      console.error('[SimpleAuth] Sign in error:', error);
-      setAuthState(prev => ({ ...prev, loading: false }));
+      console.error('Login error:', error);
       toast.error('Error inesperado. Intenta nuevamente.');
-      return false;
-    }
-  }, []);
-
-  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
-    try {
-      console.log('[SimpleAuth] Signing in with Google...');
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) {
-        console.error('[SimpleAuth] Google auth error:', error);
-        toast.error('Error al autenticar con Google');
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('[SimpleAuth] Google auth error:', error);
-      toast.error('Error inesperado con Google auth');
       return false;
     }
   }, []);
@@ -162,29 +92,16 @@ export function useSimpleAuth() {
     userData: { nombre: string; empresa?: string; rfc?: string; telefono?: string }
   ): Promise<boolean> => {
     try {
-      console.log('[SimpleAuth] Signing up user...');
-      setAuthState(prev => ({ ...prev, loading: true }));
-
-      // Clean up any existing auth state
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-
       const { data, error } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: userData
         }
       });
 
       if (error) {
-        console.error('[SimpleAuth] Sign up error:', error);
-        setAuthState(prev => ({ ...prev, loading: false }));
-        
         if (error.message.includes('already registered')) {
           toast.error('Este correo ya está registrado. Inicia sesión en su lugar.');
         } else {
@@ -194,9 +111,7 @@ export function useSimpleAuth() {
       }
 
       if (data.user) {
-        console.log('[SimpleAuth] Sign up successful');
         if (!data.user.email_confirmed_at) {
-          setAuthState(prev => ({ ...prev, loading: false }));
           toast.success('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
         } else {
           toast.success('Registro exitoso');
@@ -204,11 +119,9 @@ export function useSimpleAuth() {
         return true;
       }
 
-      setAuthState(prev => ({ ...prev, loading: false }));
       return false;
     } catch (error) {
-      console.error('[SimpleAuth] Sign up error:', error);
-      setAuthState(prev => ({ ...prev, loading: false }));
+      console.error('Registration error:', error);
       toast.error('Error inesperado. Intenta nuevamente.');
       return false;
     }
@@ -216,53 +129,19 @@ export function useSimpleAuth() {
 
   const signOut = useCallback(async () => {
     try {
-      console.log('[SimpleAuth] Signing out...');
-      
-      // Clean up auth state first
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('[SimpleAuth] Sign out error:', error);
-        toast.error('Error al cerrar sesión');
-        return;
-      }
-
-      console.log('[SimpleAuth] Sign out successful');
-      toast.success('Sesión cerrada exitosamente');
-    } catch (error) {
-      console.error('[SimpleAuth] Sign out error:', error);
-      toast.error('Error al cerrar sesión');
-    }
-  }, []);
-
-  const updateProfile = useCallback(async (updates: { telefono?: string; nombre?: string; empresa?: string }) => {
-    if (!authState.user) {
-      throw new Error('Usuario no autenticado');
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        data: updates
-      });
-
-      if (error) {
-        console.error('[SimpleAuth] Update profile error:', error);
         throw error;
       }
 
-      console.log('[SimpleAuth] Profile updated successfully');
-      return true;
-    } catch (error) {
-      console.error('[SimpleAuth] Update profile error:', error);
-      throw error;
+      toast.success('Sesión cerrada exitosamente');
+      window.location.href = '/auth';
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      toast.error('Error al cerrar sesión');
     }
-  }, [authState.user]);
+  }, []);
 
   const resendConfirmation = useCallback(async (email: string): Promise<boolean> => {
     try {
@@ -270,12 +149,11 @@ export function useSimpleAuth() {
         type: 'signup',
         email: email.toLowerCase().trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
       if (error) {
-        console.error('[SimpleAuth] Resend confirmation error:', error);
         toast.error('Error al reenviar confirmación');
         return false;
       }
@@ -283,7 +161,7 @@ export function useSimpleAuth() {
       toast.success('Correo de confirmación reenviado');
       return true;
     } catch (error) {
-      console.error('[SimpleAuth] Resend confirmation error:', error);
+      console.error('Resend confirmation error:', error);
       toast.error('Error inesperado al reenviar confirmación');
       return false;
     }
@@ -322,10 +200,8 @@ export function useSimpleAuth() {
   return {
     ...authState,
     signIn,
-    signInWithGoogle,
     signUp,
     signOut,
-    updateProfile,
     resendConfirmation,
     validateEmail,
     validatePassword,

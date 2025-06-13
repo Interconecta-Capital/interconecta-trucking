@@ -1,15 +1,17 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useSecureAuth } from '@/hooks/auth/useSecureAuth';
+import { useInputSanitization } from '@/hooks/useInputSanitization';
+import { useCSRFProtection } from '@/hooks/useCSRFProtection';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Truck, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Truck, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export function SimpleRegisterForm() {
+export function RegisterForm() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,13 +23,31 @@ export function SimpleRegisterForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const { signUp, validateEmail, validatePassword, sanitizeInput } = useSimpleAuth();
+  const { secureRegister, isLoading } = useSecureAuth();
+  const { sanitizeInput, validateEmail, validateRFC, validatePassword } = useInputSanitization();
+  const { csrfToken } = useCSRFProtection();
 
   const handleInputChange = (field: string, value: string) => {
-    const sanitizedValue = sanitizeInput(value);
+    let sanitizedValue = value;
+    
+    // Apply field-specific sanitization
+    switch (field) {
+      case 'email':
+        sanitizedValue = sanitizeInput(value, 'email');
+        break;
+      case 'rfc':
+        sanitizedValue = sanitizeInput(value, 'rfc');
+        break;
+      case 'telefono':
+        sanitizedValue = sanitizeInput(value, 'phone');
+        break;
+      default:
+        sanitizedValue = sanitizeInput(value, 'text');
+        break;
+    }
+    
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
     
     // Clear field error when user starts typing
@@ -36,34 +56,19 @@ export function SimpleRegisterForm() {
     }
   };
 
-  const validateRFC = (rfc: string) => {
-    if (!rfc) return { isValid: true }; // RFC is optional
-    
-    if (rfc.length < 12 || rfc.length > 13) {
-      return { isValid: false, message: 'RFC debe tener 12 o 13 caracteres' };
-    }
-    
-    const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
-    if (!rfcRegex.test(rfc.toUpperCase())) {
-      return { isValid: false, message: 'Formato de RFC inválido' };
-    }
-    
-    return { isValid: true };
-  };
-
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     
     // Email validation
     const emailValidation = validateEmail(formData.email);
     if (!emailValidation.isValid) {
-      errors.email = emailValidation.message || 'Email inválido';
+      errors.email = emailValidation.error || 'Email inválido';
     }
     
     // Password validation
     const passwordValidation = validatePassword(formData.password);
     if (!passwordValidation.isValid) {
-      errors.password = passwordValidation.message || 'Contraseña inválida';
+      errors.password = passwordValidation.error || 'Contraseña inválida';
     }
     
     // Confirm password
@@ -80,7 +85,7 @@ export function SimpleRegisterForm() {
     if (formData.rfc.trim()) {
       const rfcValidation = validateRFC(formData.rfc);
       if (!rfcValidation.isValid) {
-        errors.rfc = rfcValidation.message || 'RFC inválido';
+        errors.rfc = rfcValidation.error || 'RFC inválido';
       }
     }
     
@@ -96,18 +101,14 @@ export function SimpleRegisterForm() {
       return;
     }
     
-    setIsLoading(true);
-    
     try {
-      const success = await signUp(
+      const success = await secureRegister(
         formData.email,
         formData.password,
-        {
-          nombre: formData.nombre,
-          empresa: formData.empresa || undefined,
-          rfc: formData.rfc.toUpperCase() || undefined,
-          telefono: formData.telefono || undefined
-        }
+        formData.nombre,
+        formData.rfc || undefined,
+        formData.empresa || undefined,
+        formData.telefono || undefined
       );
       
       if (success) {
@@ -120,8 +121,6 @@ export function SimpleRegisterForm() {
     } catch (error) {
       console.error('Registration error:', error);
       toast.error('Error inesperado durante el registro');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -140,9 +139,15 @@ export function SimpleRegisterForm() {
           <CardDescription className="font-inter text-interconecta-text-secondary">
             Únete a Interconecta Trucking
           </CardDescription>
+          <div className="flex items-center justify-center mt-2 text-xs text-green-600">
+            <Shield className="h-3 w-3 mr-1" />
+            <span>Registro Seguro</span>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Correo Electrónico *</Label>
@@ -262,7 +267,7 @@ export function SimpleRegisterForm() {
                 id="rfc"
                 type="text"
                 value={formData.rfc}
-                onChange={(e) => handleInputChange('rfc', e.target.value.toUpperCase())}
+                onChange={(e) => handleInputChange('rfc', e.target.value)}
                 placeholder="XAXX010101000"
                 maxLength={13}
                 className={fieldErrors.rfc ? 'border-red-500' : ''}

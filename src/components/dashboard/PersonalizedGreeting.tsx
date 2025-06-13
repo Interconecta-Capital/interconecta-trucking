@@ -1,8 +1,8 @@
 
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 export function PersonalizedGreeting() {
-  const { user } = useSimpleAuth();
+  const { user } = useAuth();
   
   const getTimeBasedGreeting = () => {
     const now = new Date();
@@ -17,17 +17,14 @@ export function PersonalizedGreeting() {
     }
   };
 
-  const userName = user?.user_metadata?.nombre || 
-                   user?.user_metadata?.name || 
-                   user?.email?.split('@')[0] || 
-                   'Usuario';
+  const userName = user?.profile?.nombre || user?.usuario?.nombre || user?.email?.split('@')[0] || 'Usuario';
   const greeting = getTimeBasedGreeting();
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">
-          {greeting}, {userName}
+          Hola {userName}, {greeting}
         </h1>
         <p className="text-muted-foreground">
           Bienvenido a tu panel de control

@@ -4,32 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecurePasswordReset } from '@/hooks/auth/useSecurePasswordReset';
 import { toast } from 'sonner';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, Lock } from 'lucide-react';
 
-interface MagicLinkFormProps {
+interface ForgotPasswordFormProps {
   onBack: () => void;
 }
 
-export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
+export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { signInWithMagicLink } = useAuth();
+  const { requestPasswordReset, isLoading } = useSecurePasswordReset();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      await signInWithMagicLink(email);
+    
+    const success = await requestPasswordReset(email);
+    if (success) {
       setSent(true);
-      toast.success('¡Link mágico enviado! Revisa tu correo.');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al enviar el link mágico');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -39,12 +32,12 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 bg-interconecta-primary-light rounded-full flex items-center justify-center">
-              <Mail className="h-6 w-6 text-interconecta-primary" />
+              <Lock className="h-6 w-6 text-interconecta-primary" />
             </div>
           </div>
-          <CardTitle className="text-xl font-sora">Link Mágico Enviado</CardTitle>
+          <CardTitle className="text-xl font-sora">Instrucciones Enviadas</CardTitle>
           <CardDescription className="font-inter">
-            Te hemos enviado un link mágico a:
+            Te hemos enviado las instrucciones para restablecer tu contraseña a:
           </CardDescription>
           <p className="font-medium text-interconecta-text-primary font-inter">
             {email}
@@ -53,7 +46,7 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
         <CardContent className="space-y-4">
           <div className="text-center space-y-4">
             <p className="text-sm text-interconecta-text-secondary font-inter">
-              Haz clic en el enlace del correo para acceder a tu cuenta. 
+              Haz clic en el enlace del correo para restablecer tu contraseña. 
               El enlace es válido por 1 hora.
             </p>
             
@@ -74,19 +67,19 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
   return (
     <Card className="border-interconecta-border-subtle">
       <CardHeader className="text-center pb-4">
-        <CardTitle className="text-xl font-sora">Acceso con Link Mágico</CardTitle>
+        <CardTitle className="text-xl font-sora">Recuperar Contraseña</CardTitle>
         <CardDescription className="font-inter">
-          Te enviaremos un enlace seguro para acceder sin contraseña
+          Ingresa tu correo para recibir instrucciones de recuperación
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="magic-email" className="font-inter">
+            <Label htmlFor="reset-email" className="font-inter">
               Correo Electrónico
             </Label>
             <Input
-              id="magic-email"
+              id="reset-email"
               type="email"
               placeholder="tu@empresa.com"
               value={email}
@@ -100,17 +93,17 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
             <Button 
               type="submit" 
               className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <Mail className="h-4 w-4 mr-2 animate-pulse" />
-                  Enviando link...
+                  Enviando instrucciones...
                 </>
               ) : (
                 <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Enviar Link Mágico
+                  <Lock className="h-4 w-4 mr-2" />
+                  Enviar Instrucciones
                 </>
               )}
             </Button>
@@ -122,7 +115,7 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
               className="w-full font-inter"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              Volver al inicio de sesión
             </Button>
           </div>
         </form>

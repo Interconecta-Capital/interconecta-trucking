@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Mail, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -14,7 +14,7 @@ interface UnconfirmedUserDialogProps {
 
 export function UnconfirmedUserDialog({ email, onClose, onVerificationSent }: UnconfirmedUserDialogProps) {
   const [resending, setResending] = useState(false);
-  const { resendConfirmation } = useSimpleAuth();
+  const { resendConfirmation } = useAuth();
 
   const handleResendEmail = async () => {
     setResending(true);

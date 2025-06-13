@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -37,11 +36,11 @@ function App() {
                 {/* Rutas de autenticación */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/login" element={<Auth />} />
-                <Route path="/auth/register" element={<Auth />} />
                 <Route path="/auth/trial" element={<Trial />} />
-                <Route path="/trial" element={<Trial />} />
-                <Route path="/login" element={<Navigate to="/auth" replace />} />
-                <Route path="/register" element={<Navigate to="/auth" replace />} />
+                <Route path="/login" element={<Auth />} />
+                <Route path="/register" element={<Auth />} />
+                <Route path="/recover-password" element={<Auth />} />
+                <Route path="/new-password" element={<Auth />} />
 
                 {/* Rutas protegidas - todas con BaseLayout */}
                 <Route path="/dashboard" element={

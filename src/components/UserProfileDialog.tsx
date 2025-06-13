@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,7 @@ interface UserProfileDialogProps {
 }
 
 export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps) {
-  const { user, updateProfile } = useSimpleAuth();
+  const { user, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -33,7 +34,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
       
       setFormData({
         email: user.email || '',
-        telefono: user.user_metadata?.telefono || '',
+        telefono: user.profile?.telefono || '',
       });
     }
   }, [user]);
@@ -56,13 +57,22 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
   };
 
   // Datos del usuario con fallbacks mejorados
-  const userName = user?.user_metadata?.nombre || 
+  const userName = user?.profile?.nombre || 
+                   user?.user_metadata?.nombre || 
                    user?.user_metadata?.name || 
                    user?.email?.split('@')[0] || 
                    'Usuario';
   
-  const userCompany = user?.user_metadata?.empresa || '';
-  const userRFC = user?.user_metadata?.rfc || '';
+  const userCompany = user?.profile?.empresa || 
+                      user?.user_metadata?.empresa || 
+                      user?.tenant?.nombre_empresa || 
+                      '';
+  
+  const userRFC = user?.profile?.rfc || 
+                  user?.user_metadata?.rfc || 
+                  user?.tenant?.rfc_empresa || 
+                  '';
+
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
@@ -77,7 +87,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
         
         <div className="flex justify-center mb-4">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={user?.user_metadata?.avatar_url} alt={userName} />
+            <AvatarImage src={user?.profile?.avatar_url} alt={userName} />
             <AvatarFallback className="text-lg">{userInitials}</AvatarFallback>
           </Avatar>
         </div>

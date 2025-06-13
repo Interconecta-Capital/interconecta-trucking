@@ -1,16 +1,11 @@
 
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Users, Lock, Activity } from 'lucide-react';
 
 export function SecurityDashboard() {
-  const { user } = useSimpleAuth();
-
-  // For now, we'll assume everyone has access since we're using SimpleAuth
-  const hasAccess = (requiredRole?: string) => {
-    return !!user; // Simple check - user is logged in
-  };
+  const { user, hasAccess } = useAuth();
 
   if (!hasAccess('security')) {
     return (
@@ -53,7 +48,7 @@ export function SecurityDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">
               <Badge variant="outline">
-                Usuario
+                {user?.usuario?.rol || 'Usuario'}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">

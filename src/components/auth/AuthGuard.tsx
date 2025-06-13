@@ -1,13 +1,16 @@
 
 import { ReactNode } from 'react';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
+import { CompleteProfileModal } from './CompleteProfileModal';
 
 interface AuthGuardProps {
   children: ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading } = useSimpleAuth();
+  const { user, loading } = useAuth();
+  const { needsCompletion } = useUnconfirmedUserDetection();
 
   if (loading) {
     return (
@@ -21,5 +24,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return null; // El router se encarga de la redirección
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <CompleteProfileModal open={needsCompletion} />
+    </>
+  );
 }

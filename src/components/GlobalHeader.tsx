@@ -6,6 +6,7 @@ import { UserMenu } from './UserMenu';
 import { SettingsDialog } from './SettingsDialog';
 import { PlanBadge } from './PlanBadge';
 import { ScheduleDropdown } from './ScheduleDropdown';
+import { NotificationsPopover } from './dashboard/NotificationsPopover';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LimitUsageIndicator } from './LimitUsageIndicator';
@@ -19,16 +20,6 @@ import { CartaPorteFormModal } from './dashboard/CartaPorteFormModal';
 export function GlobalHeader() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
-  const [notifications] = useState([
-    {
-      id: 1,
-      title: 'Nuevo viaje programado',
-      message: 'Se ha programado un viaje para mañana',
-      time: '2 min ago',
-      read: false
-    }
-  ]);
-  
   const isMobile = useIsMobile();
   const { trialInfo } = useTrialTracking();
   const { suscripcion, enPeriodoPrueba } = useSuscripcion();
@@ -36,8 +27,6 @@ export function GlobalHeader() {
   // En móvil, ocultar PlanBadge si está en período de prueba
   const shouldShowPlanBadge = !isMobile || 
     (!trialInfo.isTrialActive && !enPeriodoPrueba() && suscripcion?.status !== 'trial');
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <>
@@ -100,52 +89,8 @@ export function GlobalHeader() {
           {/* ScheduleDropdown - Ahora visible en móvil también */}
           <ScheduleDropdown />
           
-          {/* Notificaciones - Inline version */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-8 w-8">
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold">Notificaciones</h4>
-                  <span className="text-sm text-muted-foreground">{unreadCount} nuevas</span>
-                </div>
-                
-                <div className="space-y-2">
-                  {notifications.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No hay notificaciones
-                    </p>
-                  ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-3 rounded-lg border ${
-                          !notification.read ? 'bg-blue-50 border-blue-200' : 'bg-white'
-                        }`}
-                      >
-                        <div className="font-medium text-sm">{notification.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {notification.message}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {notification.time}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Notificaciones */}
+          <NotificationsPopover />
           
           {!isMobile && (
             <Button 

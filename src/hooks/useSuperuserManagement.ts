@@ -1,117 +1,179 @@
 
-import { useState } from 'react';
-import { useSimpleAuth } from './useSimpleAuth';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
 interface UserData {
   id: string;
   email: string;
   nombre: string;
-  empresa?: string;
-  rfc?: string;
-  telefono?: string;
   rol: string;
-  activo: boolean;
+  rol_especial?: string;
   created_at: string;
+  activo: boolean;
+  tenant_id?: string;
 }
 
 export const useSuperuserManagement = () => {
-  const { user } = useSimpleAuth();
-  const [users, setUsers] = useState<UserData[]>([]);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<UserData[]>([]);
 
-  const getAllUsers = async () => {
+  // Get all users (superuser only)
+  const getAllUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('usuarios')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Map the data to match our interface
-      const mappedUsers: UserData[] = (data || []).map(profile => ({
-        id: profile.id,
-        email: profile.email || '',
-        nombre: profile.nombre || '',
-        empresa: profile.empresa,
-        rfc: profile.rfc,
-        telefono: profile.telefono,
-        rol: 'user', // Default role since column doesn't exist
-        activo: true, // Default active since column doesn't exist
-        created_at: profile.created_at || ''
-      }));
-
-      setUsers(mappedUsers);
+      setUsers(data || []);
+      return data;
     } catch (error) {
-      console.error('Error getting users:', error);
+      console.error('Error fetching users:', error);
       toast.error('Error al cargar usuarios');
+      return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createUser = async (userData: {
+  // Create new user
+  const createUser = useCallback(async (userData: {
     email: string;
     password: string;
     nombre: string;
     empresa?: string;
     rfc?: string;
     telefono?: string;
-    rol: string;
+    rol?: string;
   }) => {
     try {
-      // This would need admin API access
-      toast.info('Funcionalidad de creación de usuarios no disponible en el cliente');
-      return false;
+      // First create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true,
+        user_metadata: {
+          nombre: userData.nombre,
+          empresa: userData.empresa,
+          rfc: userData.rfc,
+          telefono: userData.telefono
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Then create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          nombre: userData.nombre,
+          email: userData.email,
+          empresa: userData.empresa,
+          rfc: userData.rfc,
+          telefono: userData.telefono
+        });
+
+      if (profileError) throw profileError;
+
+      // Create usuario record
+      const { error: usuarioError } = await supabase
+        .from('usuarios')
+        .insert({
+          auth_user_id: authData.user.id,
+          email: userData.email,
+          nombre: userData.nombre,
+          rol: userData.rol || 'usuario',
+          tenant_id: user?.usuario?.tenant_id || '00000000-0000-0000-0000-000000000000'
+        });
+
+      if (usuarioError) throw usuarioError;
+
+      toast.success('Usuario creado exitosamente');
+      await getAllUsers();
+      return true;
     } catch (error) {
       console.error('Error creating user:', error);
       toast.error('Error al crear usuario');
       return false;
     }
-  };
+  }, [user?.usuario?.tenant_id, getAllUsers]);
 
-  const updateUserRole = async (userId: string, rol: string, isSuperuser: boolean = false) => {
+  // Update user role
+  const updateUserRole = useCallback(async (userId: string, newRole: string, isSpecial = false) => {
     try {
-      // For now just show success since we can't update roles
-      toast.success('Rol actualizado exitosamente (funcionalidad limitada)');
+      const updateData: any = { rol: newRole };
+      if (isSpecial) {
+        updateData.rol_especial = 'superuser';
+      } else {
+        updateData.rol_especial = null;
+      }
+
+      const { error } = await supabase
+        .from('usuarios')
+        .update(updateData)
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
+
+      toast.success('Rol actualizado exitosamente');
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error updating user role:', error);
       toast.error('Error al actualizar rol');
       return false;
     }
-  };
+  }, [getAllUsers]);
 
-  const deactivateUser = async (userId: string) => {
+  // Deactivate user
+  const deactivateUser = useCallback(async (userId: string) => {
     try {
-      // For now just show success since we can't update activo field
-      toast.success('Usuario desactivado exitosamente (funcionalidad limitada)');
+      const { error } = await supabase
+        .from('usuarios')
+        .update({ activo: false })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
+
+      toast.success('Usuario desactivado exitosamente');
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error deactivating user:', error);
       toast.error('Error al desactivar usuario');
       return false;
     }
-  };
+  }, [getAllUsers]);
 
-  const activateUser = async (userId: string) => {
+  // Activate user
+  const activateUser = useCallback(async (userId: string) => {
     try {
-      // For now just show success since we can't update activo field
-      toast.success('Usuario activado exitosamente (funcionalidad limitada)');
+      const { error } = await supabase
+        .from('usuarios')
+        .update({ activo: true })
+        .eq('auth_user_id', userId);
+
+      if (error) throw error;
+
+      toast.success('Usuario activado exitosamente');
+      await getAllUsers();
       return true;
     } catch (error) {
       console.error('Error activating user:', error);
       toast.error('Error al activar usuario');
       return false;
     }
-  };
+  }, [getAllUsers]);
 
   return {
-    users,
     loading,
+    users,
     getAllUsers,
     createUser,
     updateUserRole,

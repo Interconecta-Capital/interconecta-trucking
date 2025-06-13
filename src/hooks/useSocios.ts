@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from 'react';
-import { useSimpleAuth } from './useSimpleAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
 export interface Socio {
@@ -9,32 +9,25 @@ export interface Socio {
   user_id: string;
   nombre_razon_social: string;
   rfc: string;
-  tipo_persona: string; // Changed from union type to string to match database
+  tipo_persona?: string;
   telefono?: string;
   email?: string;
   direccion?: any;
+  estado: string;
   activo: boolean;
-  estado?: string; // Added optional estado field
   created_at: string;
   updated_at: string;
 }
 
 export const useSocios = () => {
-  const { user } = useSimpleAuth();
-  const [socios, setSocios] = useState<Socio[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user?.id) {
-      cargarSocios();
-    }
-  }, [user?.id]);
-
-  const cargarSocios = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
+  const { data: socios = [], isLoading: loading } = useQuery({
+    queryKey: ['socios', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
       const { data, error } = await supabase
         .from('socios')
         .select('*')
@@ -43,60 +36,85 @@ export const useSocios = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSocios(data || []);
-    } catch (error) {
-      console.error('Error loading socios:', error);
-      toast.error('Error al cargar socios');
-    } finally {
-      setLoading(false);
+      return data || [];
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: Omit<Socio, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+      
+      const { data: result, error } = await supabase
+        .from('socios')
+        .insert({
+          ...data,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['socios'] });
+      toast.success('Socio creado exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(`Error al crear socio: ${error.message}`);
     }
-  };
+  });
 
-  const crearSocio = async (data: Omit<Socio, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user?.id) throw new Error('Usuario no autenticado');
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Socio> }) => {
+      const { data: result, error } = await supabase
+        .from('socios')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
 
-    const { error } = await supabase
-      .from('socios')
-      .insert({
-        ...data,
-        user_id: user.id
-      });
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['socios'] });
+      toast.success('Socio actualizado exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(`Error al actualizar socio: ${error.message}`);
+    }
+  });
 
-    if (error) throw error;
-    
-    cargarSocios();
-    toast.success('Socio creado exitosamente');
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('socios')
+        .update({ activo: false })
+        .eq('id', id);
 
-  const actualizarSocio = async (id: string, data: Partial<Socio>) => {
-    const { error } = await supabase
-      .from('socios')
-      .update(data)
-      .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['socios'] });
+      toast.success('Socio eliminado exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(`Error al eliminar socio: ${error.message}`);
+    }
+  });
 
-    if (error) throw error;
-    
-    cargarSocios();
-    toast.success('Socio actualizado exitosamente');
-  };
-
-  const eliminarSocio = async (id: string) => {
-    const { error } = await supabase
-      .from('socios')
-      .update({ activo: false })
-      .eq('id', id);
-
-    if (error) throw error;
-    
-    cargarSocios();
-    toast.success('Socio eliminado exitosamente');
-  };
-
-  return {
-    socios,
+  return { 
+    socios, 
     loading,
-    crearSocio,
-    actualizarSocio,
-    eliminarSocio
+    crearSocio: createMutation.mutateAsync,
+    actualizarSocio: updateMutation.mutateAsync,
+    eliminarSocio: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };

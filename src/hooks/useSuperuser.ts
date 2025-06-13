@@ -1,79 +1,151 @@
 
-import { useState, useEffect } from 'react';
-import { useSimpleAuth } from './useSimpleAuth';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
 export const useSuperuser = () => {
-  const { user } = useSimpleAuth();
+  const { user } = useAuth();
   const [isSuperuser, setIsSuperuser] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkSuperuserStatus = async () => {
-      if (!user?.id) {
-        setIsSuperuser(false);
-        setLoading(false);
-        return;
-      }
+  // Check if current user is a superuser
+  const checkSuperuserStatus = useCallback(async () => {
+    if (!user?.id) {
+      setIsSuperuser(false);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        // Check if user has superuser role in metadata or email
-        const isSuperuserEmail = user.email === 'superuser@trucking.dev';
-        setIsSuperuser(isSuperuserEmail);
-      } catch (error) {
+    try {
+      // Query using a safer approach - check if column exists first
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (error) {
         console.error('Error checking superuser status:', error);
         setIsSuperuser(false);
-      } finally {
-        setLoading(false);
+      } else {
+        // Check if the user has superuser role (when the column exists)
+        const hasSpecialRole = (data as any)?.rol_especial === 'superuser';
+        setIsSuperuser(hasSpecialRole);
       }
-    };
-
-    checkSuperuserStatus();
+    } catch (error) {
+      console.error('Error in superuser check:', error);
+      setIsSuperuser(false);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
-  const convertToSuperuser = async (email: string) => {
+  // Convert existing user to superuser (admin function)
+  const convertToSuperuser = useCallback(async (email: string) => {
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
+      // Get Enterprise plan
+      const { data: plan, error: planError } = await supabase
+        .from('planes_suscripcion')
         .select('id')
+        .eq('nombre', 'Enterprise Sin Límites')
+        .single();
+
+      if (planError) {
+        throw new Error('Enterprise plan not found');
+      }
+
+      // Update usuario to superuser using generic update
+      const { error: userError } = await supabase
+        .from('usuarios')
+        .update({ rol_especial: 'superuser' } as any)
+        .eq('email', email);
+
+      if (userError) throw userError;
+
+      // Get user for subscription update
+      const { data: usuario, error: usuarioError } = await supabase
+        .from('usuarios')
+        .select('auth_user_id')
         .eq('email', email)
         .single();
 
-      if (!profile) {
-        toast.error('Usuario no encontrado');
-        return false;
-      }
+      if (usuarioError) throw usuarioError;
 
-      // For now, we'll just show success since we can't update the rol_especial column
-      toast.success('Usuario marcado como superusuario (funcionalidad limitada)');
+      // Update or create subscription
+      const { error: subscriptionError } = await supabase
+        .from('suscripciones')
+        .upsert({
+          user_id: usuario.auth_user_id,
+          plan_id: plan.id,
+          status: 'active',
+          fecha_inicio: new Date().toISOString(),
+          fecha_vencimiento: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 100 years
+          fecha_fin_prueba: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // Yesterday
+        });
+
+      if (subscriptionError) throw subscriptionError;
+
+      toast.success(`Usuario ${email} convertido a superusuario exitosamente`);
       return true;
     } catch (error) {
       console.error('Error converting to superuser:', error);
-      toast.error('Error al convertir usuario');
+      toast.error('Error al convertir usuario a superusuario');
       return false;
     }
-  };
+  }, []);
 
-  const createSuperuserAccount = async () => {
+  // Create superuser account (requires manual registration first)
+  const createSuperuserAccount = useCallback(async () => {
     try {
       const email = 'superuser@trucking.dev';
       const password = 'SuperUser2024!';
 
-      // This would need to be done through admin API
-      toast.info('Funcionalidad de creación de superusuario no disponible en el cliente');
+      // First, register the user normally
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nombre: 'Super Usuario Admin',
+            empresa: 'Super Admin Company',
+            rfc: 'SUPERADMIN001'
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          // User already exists, just convert to superuser
+          const success = await convertToSuperuser(email);
+          return success ? email : null;
+        }
+        throw error;
+      }
+
+      // Wait a moment for user creation to complete
+      setTimeout(async () => {
+        await convertToSuperuser(email);
+      }, 2000);
+
+      toast.success('Superusuario creado exitosamente');
       return email;
     } catch (error) {
       console.error('Error creating superuser:', error);
       toast.error('Error al crear superusuario');
       return null;
     }
-  };
+  }, [convertToSuperuser]);
+
+  useEffect(() => {
+    checkSuperuserStatus();
+  }, [checkSuperuserStatus]);
 
   return {
     isSuperuser,
     loading,
     convertToSuperuser,
-    createSuperuserAccount
+    createSuperuserAccount,
+    checkSuperuserStatus
   };
 };

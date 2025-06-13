@@ -26,7 +26,10 @@ export default function Socios() {
     loading, 
     crearSocio, 
     actualizarSocio, 
-    eliminarSocio
+    eliminarSocio,
+    isCreating,
+    isUpdating,
+    isDeleting
   } = useSocios();
 
   const handleCreateSocio = async (data) => {
@@ -100,6 +103,7 @@ export default function Socios() {
             setIsFormOpen(true);
           }}
           className="bg-blue-600 hover:bg-blue-700"
+          disabled={isCreating}
         >
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Socio
@@ -243,6 +247,7 @@ export default function Socios() {
                             setEditingSocio(socio);
                             setIsFormOpen(true);
                           }}
+                          disabled={isUpdating}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -285,7 +290,7 @@ export default function Socios() {
         onOpenChange={setIsFormOpen}
         onSubmit={editingSocio ? handleUpdateSocio : handleCreateSocio}
         socio={editingSocio}
-        loading={false}
+        loading={isCreating || isUpdating}
       />
     </div>
   );
