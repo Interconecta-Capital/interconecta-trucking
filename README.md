@@ -23,6 +23,9 @@ npm install
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
 # Editar .env con tus configuraciones de APIs y base de datos
+# Define las siguientes variables:
+# VITE_SUPABASE_URL=<tu URL de Supabase>
+# VITE_SUPABASE_KEY=<tu clave pública de Supabase>
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
