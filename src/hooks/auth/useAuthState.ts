@@ -4,6 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { AuthUser } from './types';
+import { handleOAuthUser } from './useAuthUtils';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -90,8 +91,19 @@ export function useAuthState() {
         
         if (event === 'SIGNED_IN' && session?.user) {
           setLoading(true);
-          // Defer data loading to avoid potential deadlocks
+          // On sign in, ensure the usuario row exists before loading extra data
+          // If missing, handleOAuthUser will create the database entry
           setTimeout(async () => {
+            const { data: existingUser } = await supabase
+              .from('usuarios')
+              .select('id')
+              .eq('auth_user_id', session.user.id)
+              .maybeSingle();
+
+            if (!existingUser) {
+              await handleOAuthUser(session.user);
+            }
+
             await loadUserData(session.user);
             setLoading(false);
           }, 100);
