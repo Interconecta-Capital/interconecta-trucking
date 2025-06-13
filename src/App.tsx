@@ -1,111 +1,145 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryOptimizedProvider } from "@/components/QueryOptimizedProvider";
+import { SecurityProvider } from "@/components/SecurityProvider";
 import { AuthProvider } from "@/hooks/useAuth";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Trial from "./pages/Trial";
 import Dashboard from "./pages/Dashboard";
-import CartasPorte from "./pages/CartasPorte";
-import NewCartaPorte from "./pages/NewCartaPorte";
-import EditCartaPorte from "./pages/EditCartaPorte";
+import Index from "./pages/Index";
+import Planes from "./pages/Planes";
 import Vehiculos from "./pages/Vehiculos";
 import Conductores from "./pages/Conductores";
 import Socios from "./pages/Socios";
 import Viajes from "./pages/Viajes";
 import Administracion from "./pages/Administracion";
-import Planes from "./pages/Planes";
+import { AuthGuard } from "./components/auth/AuthGuard";
+import Auth from "./pages/Auth";
+import Trial from "./pages/Trial";
+import { BaseLayout } from "./components/layout/BaseLayout";
+import CartasPorte from "./pages/CartasPorte";
+import NewCartaPorte from "./pages/NewCartaPorte";
+import EditCartaPorte from "./pages/EditCartaPorte";
 import SuperuserManagement from "./pages/SuperuserManagement";
-import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryOptimizedProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Rutas públicas */}
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/login" element={<Auth />} />
-              <Route path="/auth/trial" element={<Trial />} />
-              <Route path="/planes" element={<Planes />} />
-              
-              {/* Rutas protegidas */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/cartas-porte" element={
-                <ProtectedRoute>
-                  <CartasPorte />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/cartas-porte/nueva" element={
-                <ProtectedRoute>
-                  <NewCartaPorte />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/cartas-porte/editar/:id" element={
-                <ProtectedRoute>
-                  <EditCartaPorte />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/vehiculos" element={
-                <ProtectedRoute>
-                  <Vehiculos />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/conductores" element={
-                <ProtectedRoute>
-                  <Conductores />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/socios" element={
-                <ProtectedRoute>
-                  <Socios />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/viajes" element={
-                <ProtectedRoute>
-                  <Viajes />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/administracion" element={
-                <ProtectedRoute>
-                  <Administracion />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/superuser" element={
-                <ProtectedRoute>
-                  <SuperuserManagement />
-                </ProtectedRoute>
-              } />
-              
-              {/* Ruta catch-all para 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryOptimizedProvider>
+    <QueryClientProvider client={queryClient}>
+      <SecurityProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <div className="min-h-screen bg-background font-sans antialiased">
+              <Router>
+                <Routes>
+                  {/* Landing page - sin autenticación */}
+                  <Route path="/" element={<Index />} />
+                  
+                  {/* Rutas de autenticación */}
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth/login" element={<Auth />} />
+                  <Route path="/auth/trial" element={<Trial />} />
+                  <Route path="/login" element={<Auth />} />
+                  <Route path="/register" element={<Auth />} />
+                  <Route path="/recover-password" element={<Auth />} />
+                  <Route path="/new-password" element={<Auth />} />
+
+                  {/* Rutas protegidas - todas con BaseLayout */}
+                  <Route path="/dashboard" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Dashboard />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/cartas-porte" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <CartasPorte />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/cartas-porte/nueva" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <NewCartaPorte />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/cartas-porte/editar/:id" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <EditCartaPorte />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/viajes" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Viajes />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/administracion" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Administracion />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/planes" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Planes />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/vehiculos" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Vehiculos />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/conductores" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Conductores />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/socios" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <Socios />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+
+                  <Route path="/administracion/usuarios" element={
+                    <AuthGuard>
+                      <BaseLayout>
+                        <SuperuserManagement />
+                      </BaseLayout>
+                    </AuthGuard>
+                  } />
+                </Routes>
+              </Router>
+              <Toaster />
+            </div>
+          </TooltipProvider>
+        </AuthProvider>
+      </SecurityProvider>
+    </QueryClientProvider>
   );
 }
 

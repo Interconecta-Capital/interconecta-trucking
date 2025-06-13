@@ -2286,10 +2286,6 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
-      check_superuser_safe_v2: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
       get_current_user_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2299,10 +2295,6 @@ export type Database = {
         Returns: string
       }
       get_user_tenant_safe: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
-      get_user_tenant_safe_v2: {
         Args: { user_uuid: string }
         Returns: string
       }

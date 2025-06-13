@@ -23,9 +23,6 @@ npm install
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
 # Editar .env con tus configuraciones de APIs y base de datos
-# Define las siguientes variables:
-# VITE_SUPABASE_URL=<tu URL de Supabase>
-# VITE_SUPABASE_KEY=<tu clave pública de Supabase>
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
@@ -115,9 +112,6 @@ GOOGLE_CLIENT_ID=tu_client_id
 # Entorno
 NODE_ENV=production
 PORT=8091
-
-# Tiempo de inactividad para cierre de sesión (minutos)
-VITE_INACTIVITY_TIMEOUT_MINUTES=30
 ¿Puedo conectar un dominio personalizado?
 ¡Sí, por supuesto!
 Interconecta Trucking ya opera bajo el dominio empresarial:

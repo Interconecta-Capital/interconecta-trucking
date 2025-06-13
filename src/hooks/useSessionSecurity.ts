@@ -1,6 +1,5 @@
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
@@ -11,19 +10,13 @@ interface SessionSecurityConfig {
   maxSessionDurationHours?: number;
 }
 
-const DEFAULT_INACTIVITY_TIMEOUT_MINUTES = parseInt(
-  import.meta.env.VITE_INACTIVITY_TIMEOUT_MINUTES || '30',
-  10
-);
-
 export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const {
-    inactivityTimeoutMinutes = DEFAULT_INACTIVITY_TIMEOUT_MINUTES,
+    inactivityTimeoutMinutes = 30,
     warningMinutesBeforeTimeout = 5,
     maxSessionDurationHours = 8
   } = config;
 
-  const navigate = useNavigate();
   const { user } = useAuth();
   const lastActivityRef = useRef<number>(Date.now());
   const warningShownRef = useRef<boolean>(false);
@@ -66,11 +59,11 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     try {
       await supabase.auth.signOut();
       toast.error('Sesión cerrada por inactividad');
-      navigate('/auth');
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Error during inactivity logout:', error);
     }
-  }, [navigate]);
+  }, []);
 
   const checkSessionAge = useCallback(async () => {
     try {
@@ -89,13 +82,13 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
         if (error) {
           await supabase.auth.signOut();
           toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
-          navigate('/auth');
+          window.location.href = '/auth';
         }
       }
     } catch (error) {
       console.error('Error checking session age:', error);
     }
-  }, [navigate, maxSessionDurationHours]);
+  }, [maxSessionDurationHours]);
 
   const handleUserActivity = useCallback(() => {
     if (user) {
