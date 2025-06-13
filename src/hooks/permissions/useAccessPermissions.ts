@@ -78,6 +78,15 @@ export const useAccessPermissions = () => {
           puede: tienePermiso('puede_acceder_enterprise'),
           razon: !tienePermiso('puede_acceder_enterprise') ? 'Funciones enterprise disponibles solo en Plan Enterprise Sin Límites' : undefined
         };
+
+      // Módulos básicos - generalmente disponibles en todos los planes
+      case 'cartas_porte':
+      case 'conductores':
+      case 'vehiculos':
+      case 'socios':
+      case 'dashboard':
+      case 'viajes':
+        return { puede: true };
       
       default:
         return { puede: true };

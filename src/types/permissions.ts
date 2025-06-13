@@ -24,4 +24,17 @@ export interface PermissionResult {
 }
 
 export type ResourceType = 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte';
-export type FunctionalityType = 'cancelar_cfdi' | 'generar_xml' | 'timbrar' | 'tracking' | 'administracion' | 'funciones_avanzadas' | 'enterprise';
+export type FunctionalityType = 
+  | 'cancelar_cfdi' 
+  | 'generar_xml' 
+  | 'timbrar' 
+  | 'tracking' 
+  | 'administracion' 
+  | 'funciones_avanzadas' 
+  | 'enterprise'
+  | 'cartas_porte'
+  | 'conductores'
+  | 'vehiculos'
+  | 'socios'
+  | 'dashboard'
+  | 'viajes';
