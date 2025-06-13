@@ -9,7 +9,7 @@ export const useViajesData = () => {
 
   console.log('[ViajesData] Hook initialized with user:', user?.id);
 
-  // Obtener viajes activos con mejor manejo de errores y menos frecuencia
+  // Obtener viajes activos con manejo robusto de errores
   const { 
     data: viajesActivos = [], 
     isLoading: loadingViajes,
@@ -42,7 +42,6 @@ export const useViajesData = () => {
         }
 
         console.log('[ViajesData] Query successful, found viajes:', data?.length || 0);
-        console.log('[ViajesData] Viajes data:', data);
         
         return (data || []) as Viaje[];
       } catch (error) {
@@ -52,22 +51,25 @@ export const useViajesData = () => {
       }
     },
     enabled: !!user?.id,
-    retry: 2, // Reducido de 3 a 2
-    retryDelay: attemptIndex => Math.min(2000 * 2 ** attemptIndex, 10000), // Reducido delay máximo
-    staleTime: 10 * 60 * 1000, // Aumentado a 10 minutos
-    refetchOnWindowFocus: false, // Evitar refetch automático
-    refetchOnReconnect: false, // Evitar refetch en reconexión
+    retry: (failureCount, error) => {
+      // Solo reintentar para errores de red, no para errores 500
+      if (error && 'status' in error && error.status === 500) {
+        console.warn('[ViajesData] Server error 500, not retrying');
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000),
+    staleTime: 30 * 60 * 1000, // 30 minutos para evitar requests frecuentes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    // Manejar errores sin romper la UI
+    onError: (error) => {
+      console.error('[ViajesData] Query failed, but continuing with empty state:', error);
+    },
     meta: {
       errorMessage: 'Error loading active trips'
     }
-  });
-
-  // Log del estado actual
-  console.log('[ViajesData] Current state:', {
-    viajesCount: viajesActivos.length,
-    loading: loadingViajes,
-    hasError: !!viajesError,
-    userId: user?.id
   });
 
   // Obtener historial de eventos de un viaje con mejor manejo de errores
@@ -90,11 +92,10 @@ export const useViajesData = () => {
 
       if (error) {
         console.error('[ViajesData] Error fetching eventos:', error);
-        return []; // Retornar array vacío en lugar de lanzar
+        return [];
       }
 
       console.log('[ViajesData] Eventos query successful, found:', data?.length || 0);
-      console.log('[ViajesData] Eventos data:', data);
       
       return (data || []) as EventoViaje[];
     } catch (error) {
@@ -103,9 +104,9 @@ export const useViajesData = () => {
     }
   };
 
-  // Log errores si existen pero no los propagues para evitar crashes
+  // Log errores pero no los propagues para evitar crashes
   if (viajesError) {
-    console.error('[ViajesData] Query error detected:', viajesError);
+    console.error('[ViajesData] Query error detected but handled gracefully:', viajesError);
   }
 
   return {

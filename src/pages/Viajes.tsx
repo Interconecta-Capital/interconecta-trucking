@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,29 +39,50 @@ const TABS_CONFIG = [
 
 export default function Viajes() {
   const [searchParams] = useSearchParams();
-  const tabInicial = searchParams.get('tab') || 'activos';
+  const urlTab = searchParams.get('tab');
   
-  const { activeTab, setTabSilently, handleTabChange } = useTabNavigation({
-    initialTab: tabInicial,
-    persistInURL: false, // Completamente deshabilitado
+  const { activeTab, handleTabChange } = useTabNavigation({
+    initialTab: urlTab || 'activos',
+    persistInURL: false, // NO persistir en URL para evitar recargas
+    storageKey: 'viajes' // Usar sessionStorage en su lugar
   });
 
-  // Solo leer URL al cargar la página, no sincronizar después
-  useEffect(() => {
-    const urlTab = searchParams.get('tab') || 'activos';
-    if (urlTab !== activeTab) {
-      setTabSilently(urlTab);
-    }
-  }, []); // Solo ejecutar una vez al montar
+  console.log('[Viajes] Current active tab:', activeTab);
 
-  // Memoizar los componentes de contenido para evitar re-renders innecesarios
+  // Prevenir re-renders innecesarios con useCallback
+  const handleTabChangeOptimized = useCallback((tab: string) => {
+    console.log('[Viajes] Tab change requested:', tab);
+    handleTabChange(tab);
+  }, [handleTabChange]);
+
+  // Memoizar los componentes de contenido para evitar re-renders
   const tabContent = useMemo(() => {
+    console.log('[Viajes] Memoizing tab content for tabs:', TABS_CONFIG.map(t => t.id));
     return TABS_CONFIG.reduce((acc, tab) => {
       const Component = tab.component;
-      acc[tab.id] = <Component key={tab.id} />;
+      acc[tab.id] = <Component key={`${tab.id}-content`} />;
       return acc;
     }, {} as Record<string, JSX.Element>);
-  }, []);
+  }, []); // Dependencias vacías para evitar re-creación
+
+  // Memoizar la lista de tabs para evitar re-renders
+  const tabsList = useMemo(() => (
+    <TabsList className="grid w-full grid-cols-4">
+      {TABS_CONFIG.map((tab) => {
+        const Icon = tab.icon;
+        return (
+          <TabsTrigger 
+            key={tab.id} 
+            value={tab.id} 
+            className="flex items-center gap-2"
+          >
+            <Icon className="h-4 w-4" />
+            {tab.label}
+          </TabsTrigger>
+        );
+      })}
+    </TabsList>
+  ), []);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -70,25 +91,11 @@ export default function Viajes() {
         <h1 className="text-3xl font-bold">Gestión de Viajes</h1>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          {TABS_CONFIG.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger 
-                key={tab.id} 
-                value={tab.id} 
-                className="flex items-center gap-2"
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChangeOptimized} className="w-full">
+        {tabsList}
 
         {TABS_CONFIG.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id}>
+          <TabsContent key={tab.id} value={tab.id} className="mt-6">
             {tabContent[tab.id]}
           </TabsContent>
         ))}

@@ -13,7 +13,7 @@ interface UseAutoSaveOptions {
 export const useAutoSave = ({
   data,
   key,
-  delay = 5000, // Aumentado a 5 segundos para reducir frecuencia
+  delay = 8000, // Aumentado para reducir frecuencia
   onSave,
   enabled = true,
   useSessionStorage = false
@@ -24,10 +24,14 @@ export const useAutoSave = ({
   const saveInProgressRef = useRef(false);
 
   const saveData = useCallback(async () => {
-    if (saveInProgressRef.current) return;
+    if (saveInProgressRef.current) {
+      console.log('[AutoSave] Save already in progress, skipping');
+      return;
+    }
     
     try {
       saveInProgressRef.current = true;
+      console.log('[AutoSave] Starting save for key:', key);
       
       if (onSave) {
         await onSave(data);
@@ -36,8 +40,9 @@ export const useAutoSave = ({
         storage.setItem(`autosave_${key}`, JSON.stringify(data));
       }
       lastSavedRef.current = JSON.stringify(data);
+      console.log('[AutoSave] Save completed for key:', key);
     } catch (error) {
-      console.error('Auto-save failed:', error);
+      console.error('[AutoSave] Save failed for key:', key, error);
       // No rethrow - solo log para evitar interrupciones
     } finally {
       saveInProgressRef.current = false;
@@ -45,7 +50,10 @@ export const useAutoSave = ({
   }, [data, key, onSave, useSessionStorage]);
 
   useEffect(() => {
-    if (!enabled || saveInProgressRef.current) return;
+    if (!enabled || saveInProgressRef.current) {
+      console.log('[AutoSave] Skipping save - enabled:', enabled, 'inProgress:', saveInProgressRef.current);
+      return;
+    }
 
     const currentData = JSON.stringify(data);
     
@@ -53,6 +61,7 @@ export const useAutoSave = ({
     if (isInitialLoadRef.current) {
       lastSavedRef.current = currentData;
       isInitialLoadRef.current = false;
+      console.log('[AutoSave] Initial load, setting baseline for key:', key);
       return;
     }
     
@@ -63,6 +72,8 @@ export const useAutoSave = ({
         Object.keys(data).length > 0 && 
         currentData !== '{}' &&
         currentData !== 'null') {
+      
+      console.log('[AutoSave] Data changed for key:', key, 'scheduling save in', delay, 'ms');
       
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -84,9 +95,10 @@ export const useAutoSave = ({
     try {
       const storage = useSessionStorage ? sessionStorage : localStorage;
       const saved = storage.getItem(`autosave_${key}`);
+      console.log('[AutoSave] Loading saved data for key:', key, 'found:', !!saved);
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
-      console.error('Failed to load saved data:', error);
+      console.error('[AutoSave] Failed to load saved data for key:', key, error);
       return null;
     }
   }, [key, useSessionStorage]);
@@ -95,12 +107,14 @@ export const useAutoSave = ({
     try {
       const storage = useSessionStorage ? sessionStorage : localStorage;
       storage.removeItem(`autosave_${key}`);
+      console.log('[AutoSave] Cleared saved data for key:', key);
     } catch (error) {
-      console.error('Failed to clear saved data:', error);
+      console.error('[AutoSave] Failed to clear saved data for key:', key, error);
     }
   }, [key, useSessionStorage]);
 
   const forceSave = useCallback(() => {
+    console.log('[AutoSave] Force save requested for key:', key);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }

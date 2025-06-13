@@ -32,12 +32,12 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
   const { guardarUbicaciones } = useUbicacionesPersistence(currentCartaPorteId);
   const { guardarMercancias } = useMercanciasPersistence(currentCartaPorteId);
 
-  // Auto-guardado más conservador
+  // Auto-guardado más conservador con mejor control
   const { loadSavedData, clearSavedData } = useAutoSave({
     data: formData,
     key: `cartaporte-form-${currentCartaPorteId || 'new'}`,
-    delay: 8000, // Aumentado a 8 segundos
-    enabled: !!(formData.rfcEmisor && formData.rfcReceptor && !isLoading),
+    delay: 10000, // Aumentado a 10 segundos
+    enabled: !!(formData.rfcEmisor && formData.rfcReceptor && !isLoading && !isCreating && !isUpdating),
     useSessionStorage: true,
   });
 
@@ -47,13 +47,14 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
       try {
         const savedFormData = loadSavedData();
         if (savedFormData && typeof savedFormData === 'object' && Object.keys(savedFormData).length > 0) {
+          console.log('[CartaPorteForm] Loading saved form data');
           setFormData(prev => ({ ...prev, ...savedFormData }));
         }
       } catch (error) {
-        console.error('Error loading saved data:', error);
+        console.error('[CartaPorteForm] Error loading saved data:', error);
       }
     }
-  }, [cartaPorteId]); // Removido loadSavedData de deps para evitar re-renders
+  }, [cartaPorteId]); // Solo depender del cartaPorteId
 
   // Cargar datos existentes si estamos editando
   useEffect(() => {
@@ -63,6 +64,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         const cartaExistente = cartasPorte.find(carta => carta.id === cartaPorteId);
         
         if (cartaExistente) {
+          console.log('[CartaPorteForm] Loading existing carta porte:', cartaPorteId);
           setFormData(prev => ({
             ...prev,
             rfcEmisor: cartaExistente.rfc_emisor || '',
@@ -80,18 +82,21 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
           setCurrentCartaPorteId(cartaExistente.id);
         }
       } catch (error) {
-        console.error('Error loading existing carta porte:', error);
+        console.error('[CartaPorteForm] Error loading existing carta porte:', error);
       } finally {
         setIsLoading(false);
       }
     }
   }, [cartaPorteId, cartasPorte]);
 
-  // Debounced creation - solo crear cuando realmente sea necesario
+  // Debounced creation con manejo de errores mejorado
   const createCartaPorteDebounced = useCallback(() => {
-    const timer = setTimeout(async () => {
-      if (formData.rfcEmisor && formData.rfcReceptor && !currentCartaPorteId && !cartaPorteId) {
+    let timeoutId: NodeJS.Timeout;
+    
+    const createFn = async () => {
+      if (formData.rfcEmisor && formData.rfcReceptor && !currentCartaPorteId && !cartaPorteId && !isCreating) {
         try {
+          console.log('[CartaPorteForm] Creating new carta porte');
           const cartaPortePayload = {
             tipo_cfdi: formData.tipoCfdi,
             rfc_emisor: formData.rfcEmisor,
@@ -108,14 +113,17 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
           const nuevaCartaPorte = await crearCartaPorte(cartaPortePayload);
           setCurrentCartaPorteId(nuevaCartaPorte.id);
           setFormData(prev => ({ ...prev, cartaPorteId: nuevaCartaPorte.id }));
+          console.log('[CartaPorteForm] Carta porte created successfully:', nuevaCartaPorte.id);
         } catch (error) {
-          console.error('Error al crear carta porte:', error);
+          console.error('[CartaPorteForm] Error creating carta porte:', error);
         }
       }
-    }, 3000); // 3 segundos de debounce
+    };
 
-    return () => clearTimeout(timer);
-  }, [formData.rfcEmisor, formData.rfcReceptor, currentCartaPorteId, cartaPorteId, crearCartaPorte]);
+    timeoutId = setTimeout(createFn, 5000); // 5 segundos de debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.rfcEmisor, formData.rfcReceptor, currentCartaPorteId, cartaPorteId, isCreating, crearCartaPorte]);
 
   useEffect(() => {
     const cleanup = createCartaPorteDebounced();
@@ -123,14 +131,17 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
   }, [createCartaPorteDebounced]);
 
   const updateFormData = useCallback((section: string, data: any) => {
+    console.log('[CartaPorteForm] Updating section:', section);
+    
     if (section === 'configuracion') {
       const newData = { ...formData, ...data };
       setFormData(newData);
       
-      // Actualizar carta porte existente con menos frecuencia
-      if (currentCartaPorteId) {
+      // Actualizar carta porte existente con debounce más largo
+      if (currentCartaPorteId && !isUpdating) {
         const updateTimer = setTimeout(async () => {
           try {
+            console.log('[CartaPorteForm] Updating existing carta porte:', currentCartaPorteId);
             const updatePayload = {
               tipo_cfdi: newData.tipoCfdi,
               rfc_emisor: newData.rfcEmisor,
@@ -146,9 +157,9 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
             
             await actualizarCartaPorte({ id: currentCartaPorteId, data: updatePayload });
           } catch (error) {
-            console.error('Error updating carta porte:', error);
+            console.error('[CartaPorteForm] Error updating carta porte:', error);
           }
-        }, 5000); // 5 segundos de debounce
+        }, 8000); // 8 segundos de debounce
 
         return () => clearTimeout(updateTimer);
       }
@@ -158,36 +169,38 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
         [section]: data,
       }));
     }
-  }, [formData, currentCartaPorteId, actualizarCartaPorte]);
+  }, [formData, currentCartaPorteId, actualizarCartaPorte, isUpdating]);
 
-  // Auto-guardar ubicaciones y mercancías con menos frecuencia y mejor manejo de errores
+  // Auto-guardar ubicaciones y mercancías con mejor control
   useEffect(() => {
-    if (currentCartaPorteId && formData.ubicaciones.length > 0) {
+    if (currentCartaPorteId && formData.ubicaciones.length > 0 && !isLoading) {
       const timer = setTimeout(async () => {
         try {
+          console.log('[CartaPorteForm] Saving ubicaciones for carta porte:', currentCartaPorteId);
           await guardarUbicaciones(formData.ubicaciones);
         } catch (error) {
-          console.error('Error saving ubicaciones:', error);
+          console.error('[CartaPorteForm] Error saving ubicaciones:', error);
         }
-      }, 4000); // Aumentado a 4 segundos
+      }, 6000); // 6 segundos
 
       return () => clearTimeout(timer);
     }
-  }, [formData.ubicaciones, currentCartaPorteId, guardarUbicaciones]);
+  }, [formData.ubicaciones, currentCartaPorteId, guardarUbicaciones, isLoading]);
 
   useEffect(() => {
-    if (currentCartaPorteId && formData.mercancias.length > 0) {
+    if (currentCartaPorteId && formData.mercancias.length > 0 && !isLoading) {
       const timer = setTimeout(async () => {
         try {
+          console.log('[CartaPorteForm] Saving mercancias for carta porte:', currentCartaPorteId);
           await guardarMercancias(formData.mercancias);
         } catch (error) {
-          console.error('Error saving mercancias:', error);
+          console.error('[CartaPorteForm] Error saving mercancias:', error);
         }
-      }, 4000); // Aumentado a 4 segundos
+      }, 6000); // 6 segundos
 
       return () => clearTimeout(timer);
     }
-  }, [formData.mercancias, currentCartaPorteId, guardarMercancias]);
+  }, [formData.mercancias, currentCartaPorteId, guardarMercancias, isLoading]);
 
   // Memoizar validaciones para evitar cálculos innecesarios
   const stepValidations = useMemo(() => ({
