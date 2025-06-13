@@ -26,7 +26,7 @@ class CodigosPostalesServiceOptimizado {
     codigoPostal: string
   ): Promise<DireccionCompleta | null> {
     try {
-      console.log('[CP_SERVICE_OPT] Consultando SEPOMEX para:', codigoPostal);
+      console.log('[CP_SERVICE_OPT] Consultando SEPOMEX API para:', codigoPostal);
       const response = await fetch(
         `https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`
       );
@@ -47,7 +47,31 @@ class CodigosPostalesServiceOptimizado {
         };
       }
     } catch (e) {
-      console.error('[CP_SERVICE_OPT] Error SEPOMEX:', e);
+      console.error('[CP_SERVICE_OPT] Error SEPOMEX API:', e);
+    }
+    return null;
+  }
+
+  private async consultarBaseDatos(codigoPostal: string): Promise<DireccionCompleta | null> {
+    try {
+      console.log('[CP_SERVICE_OPT] Consultando base de datos para:', codigoPostal);
+      
+      const { data, error } = await supabase.functions.invoke('codigo-postal-mexico', {
+        body: { codigoPostal }
+      });
+
+      if (!error && data && !data.error) {
+        return {
+          codigoPostal: data.codigoPostal,
+          estado: data.estado,
+          municipio: data.municipio,
+          localidad: data.localidad || data.ciudad,
+          colonias: data.colonias || [],
+          fuente: 'database_nacional'
+        };
+      }
+    } catch (error) {
+      console.error('[CP_SERVICE_OPT] Error consultando base de datos:', error);
     }
     return null;
   }
@@ -72,68 +96,46 @@ class CodigosPostalesServiceOptimizado {
       return { data: cached };
     }
 
+    // PASO 1: Intentar SEPOMEX API primero
+    const sepomexResult = await this.consultarSepomex(codigoPostal);
+    if (sepomexResult) {
+      console.log('[CP_SERVICE_OPT] Encontrado en SEPOMEX API');
+      this.cache.set(codigoPostal, sepomexResult);
+      this.limpiarCacheAntiguo();
+      return { data: sepomexResult };
+    }
+
+    // PASO 2: Fallback a base de datos local
+    const dbResult = await this.consultarBaseDatos(codigoPostal);
+    if (dbResult) {
+      console.log('[CP_SERVICE_OPT] Encontrado en base de datos local');
+      this.cache.set(codigoPostal, dbResult);
+      this.limpiarCacheAntiguo();
+      return { data: dbResult };
+    }
+
+    // PASO 3: Generar sugerencias si no se encuentra
     try {
-      console.log('[CP_SERVICE_OPT] Consultando edge function para:', codigoPostal);
-      
-      // Usar edge function optimizada como fuente principal
-      const { data, error } = await supabase.functions.invoke('codigo-postal-mexico', {
+      console.log('[CP_SERVICE_OPT] No encontrado, generando sugerencias');
+      const { data } = await supabase.functions.invoke('codigo-postal-mexico', {
         body: { codigoPostal }
       });
 
-      if (!error && data && !data.error) {
-        const resultado: DireccionCompleta = {
-          codigoPostal: data.codigoPostal,
-          estado: data.estado,
-          municipio: data.municipio,
-          localidad: data.localidad || data.ciudad,
-          colonias: data.colonias || [],
-          fuente: 'database_nacional'
-        };
-
-        // Guardar en cache
-        this.cache.set(codigoPostal, resultado);
-        
-        // Limpiar cache antiguo
-        this.limpiarCacheAntiguo();
-
-        return { data: resultado };
-      }
-
-      // Si hay error con sugerencias
-      if (data?.error && data?.sugerencias) {
+      if (data?.sugerencias) {
         return {
           data: null,
-          error: data.error,
+          error: `Código postal ${codigoPostal} no encontrado`,
           sugerencias: data.sugerencias
         };
       }
-
-      // Fallback a la API de SEPOMEX si no se encuentra en la base
-      const sepomex = await this.consultarSepomex(codigoPostal);
-      if (sepomex) {
-        this.cache.set(codigoPostal, sepomex);
-        this.limpiarCacheAntiguo();
-        return { data: sepomex };
-      }
-
-      return {
-        data: null,
-        error: data?.error || 'Código postal no encontrado'
-      };
-
     } catch (error) {
-      console.error('[CP_SERVICE_OPT] Error:', error);
-      const sepomex = await this.consultarSepomex(codigoPostal);
-      if (sepomex) {
-        this.cache.set(codigoPostal, sepomex);
-        this.limpiarCacheAntiguo();
-        return { data: sepomex };
-      }
-      return {
-        data: null,
-        error: 'Error al consultar código postal'
-      };
+      console.error('[CP_SERVICE_OPT] Error obteniendo sugerencias:', error);
     }
+
+    return {
+      data: null,
+      error: 'Código postal no encontrado'
+    };
   }
 
   private validarFormatoCP(cp: string): boolean {

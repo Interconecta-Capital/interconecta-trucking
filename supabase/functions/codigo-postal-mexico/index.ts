@@ -24,7 +24,44 @@ interface CodigoPostalResponse {
     nombre: string;
     tipo: string;
   }>;
-  fuente: 'database_nacional';
+  fuente: 'database_nacional' | 'sepomex_api';
+}
+
+// Función para consultar SEPOMEX API
+async function consultarSepomex(codigoPostal: string): Promise<CodigoPostalResponse | null> {
+  try {
+    console.log('[CP_EDGE] Consultando SEPOMEX API para:', codigoPostal);
+    const response = await fetch(
+      `https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`
+    );
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    if (!data.error && data.response) {
+      const colonias = (data.response.asentamiento || []).map((a: any) => ({
+        nombre: a.d_asenta,
+        tipo: a.d_tipo_asenta
+      }));
+      
+      return {
+        codigoPostal: data.response.cp,
+        estado: data.response.estado,
+        estadoClave: data.response.cve_edo || '',
+        municipio: data.response.municipio,
+        municipioClave: data.response.cve_mun || '',
+        localidad: data.response.ciudad || data.response.municipio,
+        ciudad: data.response.ciudad,
+        zona: data.response.zona || '',
+        totalColonias: colonias.length,
+        colonias,
+        fuente: 'sepomex_api'
+      };
+    }
+  } catch (error) {
+    console.error('[CP_EDGE] Error consultando SEPOMEX:', error);
+  }
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -51,7 +88,7 @@ Deno.serve(async (req) => {
 
     const { codigoPostal }: CodigoPostalRequest = await req.json();
 
-    console.log('[CP_OPTIMIZED] Procesando código postal:', codigoPostal);
+    console.log('[CP_EDGE] Procesando código postal:', codigoPostal);
 
     // Validar formato del código postal
     if (!codigoPostal || !/^\d{5}$/.test(codigoPostal)) {
@@ -66,32 +103,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Buscar en la base de datos nacional con función optimizada
-    const { data: dbResult, error: dbError } = await supabase
-      .rpc('buscar_codigo_postal_completo', { cp_input: codigoPostal });
-
-    if (dbError) {
-      console.error('[CP_OPTIMIZED] Error en consulta DB:', dbError);
-      
-      // Generar sugerencias si no se encuentra
-      const { data: sugerenciasResult } = await supabase
-        .rpc('sugerir_codigos_similares', { cp_input: codigoPostal });
+    // PASO 1: Intentar SEPOMEX API primero
+    const sepomexResult = await consultarSepomex(codigoPostal);
+    if (sepomexResult) {
+      console.log('[CP_EDGE] Encontrado en SEPOMEX API:', {
+        cp: sepomexResult.codigoPostal,
+        totalColonias: sepomexResult.totalColonias
+      });
 
       return new Response(
-        JSON.stringify({ 
-          error: `Código postal ${codigoPostal} no encontrado`,
-          sugerencias: sugerenciasResult?.slice(0, 5) || []
-        }),
+        JSON.stringify(sepomexResult),
         { 
-          status: 404, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
-    if (dbResult && dbResult.length > 0) {
+    // PASO 2: Fallback a la base de datos nacional
+    const { data: dbResult, error: dbError } = await supabase
+      .rpc('buscar_codigo_postal_completo', { cp_input: codigoPostal });
+
+    if (!dbError && dbResult && dbResult.length > 0) {
       const resultado = dbResult[0];
-      console.log('[CP_OPTIMIZED] Encontrado:', {
+      console.log('[CP_EDGE] Encontrado en base de datos:', {
         cp: resultado.codigo_postal,
         totalColonias: resultado.total_colonias
       });
@@ -118,7 +152,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Si no se encuentra, generar sugerencias
+    // PASO 3: Si no se encuentra, generar sugerencias
+    console.log('[CP_EDGE] No encontrado en ninguna fuente, generando sugerencias');
     const { data: sugerenciasResult } = await supabase
       .rpc('sugerir_codigos_similares', { cp_input: codigoPostal });
 
@@ -134,7 +169,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[CP_OPTIMIZED] Error general:', error);
+    console.error('[CP_EDGE] Error general:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Error interno del servidor',
