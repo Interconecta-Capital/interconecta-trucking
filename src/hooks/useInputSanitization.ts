@@ -1,137 +1,137 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 
 interface SanitizationOptions {
   maxLength?: number;
-  allowHtml?: boolean;
-  removeScripts?: boolean;
-  trimWhitespace?: boolean;
+  allowSpecialChars?: boolean;
+  allowHTML?: boolean;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+  sanitizedValue?: string;
 }
 
 export const useInputSanitization = () => {
-  const [sanitizationErrors, setSanitizationErrors] = useState<Record<string, string>>({});
-
   const sanitizeInput = useCallback((
     input: string, 
-    fieldName: string,
+    type: 'text' | 'email' | 'rfc' | 'phone' = 'text',
     options: SanitizationOptions = {}
   ): string => {
-    const {
-      maxLength = 1000,
-      allowHtml = false,
-      removeScripts = true,
-      trimWhitespace = true
-    } = options;
-
     if (!input || typeof input !== 'string') return '';
-
-    let sanitized = input;
-
-    // Trim whitespace if enabled
-    if (trimWhitespace) {
-      sanitized = sanitized.trim();
+    
+    const { maxLength = 255, allowSpecialChars = false, allowHTML = false } = options;
+    
+    let sanitized = input.trim();
+    
+    // Basic length limit
+    sanitized = sanitized.slice(0, maxLength);
+    
+    // Remove HTML if not allowed
+    if (!allowHTML) {
+      sanitized = sanitized.replace(/<[^>]*>/g, '');
     }
-
-    // Check length limits
-    if (sanitized.length > maxLength) {
-      setSanitizationErrors(prev => ({
-        ...prev,
-        [fieldName]: `Texto demasiado largo (máximo ${maxLength} caracteres)`
-      }));
-      sanitized = sanitized.slice(0, maxLength);
-    } else {
-      setSanitizationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
-    }
-
-    // Remove or escape HTML tags
-    if (!allowHtml) {
-      sanitized = sanitized
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
-    }
-
-    // Remove script tags and event handlers
-    if (removeScripts) {
-      sanitized = sanitized
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+\s*=/gi, '')
-        .replace(/expression\s*\(/gi, '');
-    }
-
-    // Remove potential SQL injection patterns
+    
+    // Remove dangerous patterns
     sanitized = sanitized
-      .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi, '')
-      .replace(/(-{2}|\/\*|\*\/)/g, '');
-
-    // Remove potential XSS patterns
-    sanitized = sanitized
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+=/gi, '')
       .replace(/data:/gi, '')
-      .replace(/vbscript:/gi, '')
-      .replace(/onload=/gi, '')
-      .replace(/onerror=/gi, '');
-
+      .replace(/vbscript:/gi, '');
+    
+    // Type-specific sanitization
+    switch (type) {
+      case 'email':
+        sanitized = sanitized.toLowerCase();
+        break;
+      case 'rfc':
+        sanitized = sanitized.toUpperCase().replace(/[^A-ZÑ&0-9]/g, '');
+        break;
+      case 'phone':
+        sanitized = sanitized.replace(/[^0-9+()-\s]/g, '');
+        break;
+      case 'text':
+      default:
+        if (!allowSpecialChars) {
+          sanitized = sanitized.replace(/[<>"'&]/g, '');
+        }
+        break;
+    }
+    
     return sanitized;
   }, []);
 
-  const validateRFC = useCallback((rfc: string): { isValid: boolean; error?: string } => {
-    if (!rfc) return { isValid: false, error: 'RFC es requerido' };
+  const validateEmail = useCallback((email: string): ValidationResult => {
+    const sanitized = sanitizeInput(email, 'email');
     
-    const cleanRFC = rfc.trim().toUpperCase().replace(/[^A-ZÑ&0-9]/g, '');
-    
-    if (cleanRFC.length < 12 || cleanRFC.length > 13) {
-      return { isValid: false, error: 'RFC debe tener entre 12 y 13 caracteres' };
+    if (!sanitized) {
+      return { isValid: false, error: 'Email es requerido' };
     }
     
-    if (!/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(cleanRFC)) {
-      return { isValid: false, error: 'Formato de RFC inválido' };
+    if (sanitized.length > 254) {
+      return { isValid: false, error: 'Email demasiado largo' };
     }
     
-    // Check for test/demo patterns
-    if (/^(XXXX|TEST|DEMO|AAAA)/.test(cleanRFC)) {
-      return { isValid: false, error: 'RFC contiene patrones no válidos' };
-    }
-    
-    return { isValid: true };
-  }, []);
-
-  const validateEmail = useCallback((email: string): { isValid: boolean; error?: string } => {
-    if (!email) return { isValid: false, error: 'Email es requerido' };
-    
-    const cleanEmail = email.trim().toLowerCase();
-    
-    if (cleanEmail.length > 254) {
-      return { isValid: false, error: 'Email es demasiado largo' };
-    }
-    
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanEmail)) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(sanitized)) {
       return { isValid: false, error: 'Formato de email inválido' };
     }
     
-    // Check for dangerous patterns
-    if (/(script|javascript|vbscript|onload|onerror)/i.test(cleanEmail)) {
-      return { isValid: false, error: 'Email contiene caracteres no permitidos' };
+    return { isValid: true, sanitizedValue: sanitized };
+  }, [sanitizeInput]);
+
+  const validateRFC = useCallback((rfc: string): ValidationResult => {
+    const sanitized = sanitizeInput(rfc, 'rfc');
+    
+    if (!sanitized) {
+      return { isValid: false, error: 'RFC es requerido' };
+    }
+    
+    if (sanitized.length < 12 || sanitized.length > 13) {
+      return { isValid: false, error: 'RFC debe tener 12 o 13 caracteres' };
+    }
+    
+    const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
+    if (!rfcRegex.test(sanitized)) {
+      return { isValid: false, error: 'Formato de RFC inválido' };
+    }
+    
+    return { isValid: true, sanitizedValue: sanitized };
+  }, [sanitizeInput]);
+
+  const validatePassword = useCallback((password: string): ValidationResult => {
+    if (!password) {
+      return { isValid: false, error: 'Contraseña es requerida' };
+    }
+    
+    if (password.length < 8) {
+      return { isValid: false, error: 'Contraseña debe tener al menos 8 caracteres' };
+    }
+    
+    if (!/(?=.*[a-z])/.test(password)) {
+      return { isValid: false, error: 'Debe incluir al menos una letra minúscula' };
+    }
+    
+    if (!/(?=.*[A-Z])/.test(password)) {
+      return { isValid: false, error: 'Debe incluir al menos una letra mayúscula' };
+    }
+    
+    if (!/(?=.*\d)/.test(password)) {
+      return { isValid: false, error: 'Debe incluir al menos un número' };
+    }
+    
+    if (!/(?=.*[@$!%*?&])/.test(password)) {
+      return { isValid: false, error: 'Debe incluir al menos un carácter especial' };
     }
     
     return { isValid: true };
-  }, []);
-
-  const clearErrors = useCallback(() => {
-    setSanitizationErrors({});
   }, []);
 
   return {
     sanitizeInput,
-    validateRFC,
     validateEmail,
-    sanitizationErrors,
-    clearErrors
+    validateRFC,
+    validatePassword
   };
 };

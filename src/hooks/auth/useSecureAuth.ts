@@ -30,6 +30,13 @@ export const useSecureAuth = () => {
       // Record the login attempt
       await recordRateLimitAttempt(sanitizedEmail, 'login_attempt');
 
+      // Clean up existing auth state before login
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
         password: password
@@ -126,10 +133,18 @@ export const useSecureAuth = () => {
       // Record the registration attempt
       await recordRateLimitAttempt(sanitizedEmail, 'registration_attempt');
 
+      // Clean up existing auth state before registration
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
       const { data, error } = await supabase.auth.signUp({
         email: sanitizedEmail,
         password: password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             nombre: sanitizedNombre,
             rfc: sanitizedRFC,
@@ -195,6 +210,13 @@ export const useSecureAuth = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Clean up auth state first
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -215,6 +237,9 @@ export const useSecureAuth = () => {
       }
 
       toast.success('Sesión cerrada exitosamente.');
+      
+      // Force page reload for clean state
+      window.location.href = '/auth';
 
     } catch (error) {
       console.error('Logout failed:', error);
