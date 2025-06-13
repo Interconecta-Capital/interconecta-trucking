@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
 import { useTrialManager } from '@/hooks/useTrialManager';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, TrendingUp, X, Crown, Gift, Clock } from 'lucide-react';
+import { AlertTriangle, TrendingUp, X, Crown, Gift, Clock, Trash2 } from 'lucide-react';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 
 export function PlanNotifications() {
@@ -17,11 +17,15 @@ export function PlanNotifications() {
   } = useEnhancedPermissions();
   const { 
     isInActiveTrial, 
-    isTrialExpired, 
+    isTrialExpired,
+    isInGracePeriod,
     daysRemaining, 
-    getContextualMessage 
+    graceDaysRemaining,
+    dataWillBeDeleted,
+    getContextualMessage,
+    getUrgencyLevel
   } = useTrialManager();
-  const { enPeriodoPrueba, diasRestantesPrueba } = useSuscripcion();
+  const { enPeriodoPrueba, diasRestantesPrueba, enPeriodoGracia, diasRestantesGracia } = useSuscripcion();
   const navigate = useNavigate();
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 
@@ -40,7 +44,30 @@ export function PlanNotifications() {
   const usoActual = obtenerUsoActual();
   const alerts = [];
 
-  // Alertas críticas
+  // Alertas críticas de período de gracia
+  if (isInGracePeriod && dataWillBeDeleted) {
+    alerts.push({
+      id: 'grace-critical',
+      type: 'critical',
+      title: `¡DATOS SERÁN ELIMINADOS EN ${graceDaysRemaining} ${graceDaysRemaining === 1 ? 'DÍA' : 'DÍAS'}!`,
+      message: 'Tus datos serán eliminados permanentemente. Adquiere un plan ahora para conservar toda tu información.',
+      action: 'Comprar Plan AHORA',
+      priority: 1,
+      icon: Trash2
+    });
+  } else if (isInGracePeriod) {
+    alerts.push({
+      id: 'grace-period',
+      type: 'warning',
+      title: `Período de gracia: ${graceDaysRemaining} días restantes`,
+      message: 'Estás en modo solo lectura. Adquiere un plan para recuperar todas las funciones y mantener tus datos.',
+      action: 'Ver Planes',
+      priority: 2,
+      icon: Clock
+    });
+  }
+
+  // Alertas críticas de bloqueo
   if (estaBloqueado) {
     alerts.push({
       id: 'blocked',
@@ -50,7 +77,7 @@ export function PlanNotifications() {
       action: 'Renovar Suscripción',
       priority: 1
     });
-  } else if (suscripcionVencida || isTrialExpired) {
+  } else if (suscripcionVencida || (isTrialExpired && !isInGracePeriod)) {
     alerts.push({
       id: 'expired',
       type: 'critical',
@@ -68,7 +95,7 @@ export function PlanNotifications() {
         id: 'trial-ending',
         type: 'warning',
         title: `Trial termina en ${daysRemaining} ${daysRemaining === 1 ? 'día' : 'días'}`,
-        message: 'Está disfrutando de acceso completo durante su prueba. Elija un plan para continuar.',
+        message: 'Está disfrutando de acceso completo durante su prueba. Elija un plan para continuar sin interrupción.',
         action: 'Ver Planes',
         priority: 3
       });
@@ -85,7 +112,7 @@ export function PlanNotifications() {
   }
 
   // Alertas de límites (solo para usuarios con plan pagado)
-  if (!isInActiveTrial && !isTrialExpired) {
+  if (!isInActiveTrial && !isTrialExpired && !isInGracePeriod) {
     Object.entries(usoActual).forEach(([resource, data]) => {
       if (data.limite !== null && data.limite !== undefined) {
         const porcentaje = (data.usado / data.limite) * 100;
@@ -126,7 +153,7 @@ export function PlanNotifications() {
   const getAlertStyle = (type: string) => {
     switch (type) {
       case 'critical':
-        return 'border-red-200 bg-red-50';
+        return 'border-red-200 bg-red-50 animate-pulse';
       case 'error':
         return 'border-red-200 bg-red-50';
       case 'warning':
@@ -138,8 +165,10 @@ export function PlanNotifications() {
     }
   };
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
+  const getAlertIcon = (alert: any) => {
+    if (alert.icon) return alert.icon;
+    
+    switch (alert.type) {
       case 'critical':
       case 'error':
       case 'warning':
@@ -151,12 +180,25 @@ export function PlanNotifications() {
     }
   };
 
+  const getButtonStyle = (type: string) => {
+    switch (type) {
+      case 'critical':
+        return 'bg-red-600 hover:bg-red-700 text-white animate-pulse';
+      case 'error':
+        return 'bg-red-600 hover:bg-red-700 text-white';
+      case 'warning':
+        return 'bg-orange-600 hover:bg-orange-700 text-white';
+      default:
+        return '';
+    }
+  };
+
   // Mostrar notificación de bienvenida al trial si es nuevo usuario
   if (isInActiveTrial && daysRemaining >= 10 && !dismissedAlerts.has('trial-welcome')) {
     visibleAlerts.unshift({
       id: 'trial-welcome',
       type: 'info',
-      title: '¡Bienvenido a su Trial Completo!',
+      title: '¡Bienvenido a su Trial Completo de 14 días!',
       message: `Tiene acceso completo a todas las funciones por ${daysRemaining} días. Explore sin límites.`,
       action: 'Explorar Funciones',
       priority: 0
@@ -168,32 +210,38 @@ export function PlanNotifications() {
   return (
     <div className="space-y-3 mb-6">
       {visibleAlerts.map((alert) => {
-        const Icon = getAlertIcon(alert.type);
+        const Icon = getAlertIcon(alert);
         return (
           <Alert key={alert.id} className={getAlertStyle(alert.type)}>
             <Icon className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <div className="flex-1">
-                <div className="font-medium">{alert.title}</div>
-                <div className="text-sm">{alert.message}</div>
+                <div className={`font-medium ${alert.type === 'critical' ? 'text-red-900' : ''}`}>
+                  {alert.title}
+                </div>
+                <div className={`text-sm ${alert.type === 'critical' ? 'text-red-800' : ''}`}>
+                  {alert.message}
+                </div>
               </div>
               <div className="flex items-center gap-2 ml-4">
                 <Button 
                   size="sm" 
                   onClick={() => navigate('/planes')}
-                  className="shrink-0"
+                  className={`shrink-0 ${getButtonStyle(alert.type)}`}
                 >
                   <TrendingUp className="w-3 h-3 mr-1" />
                   {alert.action}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => dismissAlert(alert.id)}
-                  className="h-6 w-6 p-0"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                {alert.type !== 'critical' && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => dismissAlert(alert.id)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             </AlertDescription>
           </Alert>

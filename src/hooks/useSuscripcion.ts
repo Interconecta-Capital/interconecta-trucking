@@ -29,10 +29,14 @@ export interface Suscripcion {
   plan_id: string;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
-  status: 'trial' | 'active' | 'past_due' | 'canceled' | 'suspended';
+  status: 'trial' | 'active' | 'past_due' | 'canceled' | 'suspended' | 'grace_period';
   fecha_inicio: string;
   fecha_vencimiento?: string;
   fecha_fin_prueba?: string;
+  grace_period_start?: string;
+  grace_period_end?: string;
+  cleanup_warning_sent?: boolean;
+  final_warning_sent?: boolean;
   dias_gracia: number;
   ultimo_pago?: string;
   proximo_pago?: string;
@@ -193,6 +197,11 @@ export const useSuscripcion = () => {
     return fechaFinPrueba > new Date();
   };
 
+  // Verificar si está en período de gracia
+  const enPeriodoGracia = (): boolean => {
+    return suscripcion?.status === 'grace_period';
+  };
+
   // Calcular días restantes de prueba
   const diasRestantesPrueba = (): number => {
     if (!suscripcion || suscripcion.status !== 'trial') return 0;
@@ -205,9 +214,24 @@ export const useSuscripcion = () => {
     return Math.max(0, dias);
   };
 
+  // Calcular días restantes de período de gracia
+  const diasRestantesGracia = (): number => {
+    if (!suscripcion || suscripcion.status !== 'grace_period' || !suscripcion.grace_period_end) return 0;
+    
+    const fechaFinGracia = new Date(suscripcion.grace_period_end);
+    const ahora = new Date();
+    const diferencia = fechaFinGracia.getTime() - ahora.getTime();
+    const dias = Math.ceil(diferencia / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, dias);
+  };
+
   // Verificar si la suscripción está vencida
   const suscripcionVencida = (): boolean => {
     if (!suscripcion) return false;
+    
+    // Si está en período de gracia, no está "vencida" en el sentido tradicional
+    if (suscripcion.status === 'grace_period') return false;
     
     const fechaVencimiento = new Date(suscripcion.fecha_vencimiento || '');
     return fechaVencimiento <= new Date() && suscripcion.status === 'past_due';
@@ -216,7 +240,7 @@ export const useSuscripcion = () => {
   // Cambiar plan de suscripción (actualizado para usar Stripe)
   const cambiarPlan = useMutation({
     mutationFn: async (planId: string) => {
-      if (!suscripcion || suscripcion.status === 'trial') {
+      if (!suscripcion || suscripcion.status === 'trial' || suscripcion.status === 'grace_period') {
         return crearCheckout.mutateAsync(planId);
       }
       
@@ -241,7 +265,9 @@ export const useSuscripcion = () => {
     tienePermiso,
     verificarLimite,
     enPeriodoPrueba,
+    enPeriodoGracia,
     diasRestantesPrueba,
+    diasRestantesGracia,
     suscripcionVencida,
     cambiarPlan: cambiarPlan.mutate,
     isChangingPlan: cambiarPlan.isPending,

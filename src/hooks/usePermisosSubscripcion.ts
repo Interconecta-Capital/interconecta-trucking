@@ -1,4 +1,3 @@
-
 import { useSuscripcion } from './useSuscripcion';
 import { useConductores } from './useConductores';
 import { useVehiculos } from './useVehiculos';
@@ -12,20 +11,35 @@ export const usePermisosSubscripcion = () => {
     tienePermiso, 
     verificarLimite, 
     estaBloqueado,
-    suscripcionVencida 
+    suscripcionVencida,
+    enPeriodoGracia
   } = useSuscripcion();
   
   const { conductores } = useConductores();
   const { vehiculos } = useVehiculos();
   const { socios } = useSocios();
   const { cartasPorte } = useCartasPorte();
-  const { isInActiveTrial, isTrialExpired, hasFullAccess, canPerformAction } = useTrialManager();
+  const { 
+    isInActiveTrial, 
+    isTrialExpired, 
+    isInGracePeriod,
+    hasFullAccess, 
+    canPerformAction 
+  } = useTrialManager();
 
   // Verificar si puede acceder a una funcionalidad
   const puedeAcceder = (funcionalidad: string): { puede: boolean; razon?: string } => {
     // Durante trial activo, acceso completo a todas las funcionalidades
     if (isInActiveTrial) {
       return { puede: true, razon: undefined };
+    }
+
+    // Durante período de gracia, solo lectura
+    if (isInGracePeriod) {
+      return { 
+        puede: false, 
+        razon: 'Durante el período de gracia solo puede ver datos. Adquiera un plan para recuperar todas las funciones.' 
+      };
     }
 
     if (estaBloqueado) {
@@ -109,6 +123,14 @@ export const usePermisosSubscripcion = () => {
     // Durante trial activo, sin límites
     if (isInActiveTrial) {
       return { puede: true, razon: undefined };
+    }
+
+    // Durante período de gracia, solo lectura
+    if (isInGracePeriod) {
+      return { 
+        puede: false, 
+        razon: 'Durante el período de gracia no puede crear nuevos registros. Adquiera un plan para recuperar todas las funciones.' 
+      };
     }
 
     if (estaBloqueado) {
@@ -207,6 +229,10 @@ export const usePermisosSubscripcion = () => {
       return 'Trial Completo (14 días)';
     }
     
+    if (isInGracePeriod) {
+      return 'Período de Gracia (Solo Lectura)';
+    }
+    
     if (isTrialExpired && !suscripcion?.plan) {
       return 'Sin Plan';
     }
@@ -220,15 +246,16 @@ export const usePermisosSubscripcion = () => {
     obtenerLimites,
     obtenerUsoActual,
     estaBloqueado,
-    suscripcionVencida: suscripcionVencida() || isTrialExpired,
+    suscripcionVencida: suscripcionVencida() || (isTrialExpired && !isInGracePeriod),
     planActual: getPlanActual(),
     // Nuevas funciones específicas
     puedeAccederAdministracion,
     puedeAccederFuncionesAvanzadas,
     puedeAccederEnterprise,
-    // Nuevas propiedades del trial
+    // Nuevas propiedades del trial y período de gracia
     isInActiveTrial,
     isTrialExpired,
+    isInGracePeriod,
     hasFullAccess,
     canPerformAction
   };

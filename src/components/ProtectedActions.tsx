@@ -3,7 +3,7 @@ import { ReactNode, useState } from 'react';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
 import { useTrialManager } from '@/hooks/useTrialManager';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Lock, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeModal } from '@/components/common/UpgradeModal';
 
@@ -25,7 +25,7 @@ export const ProtectedActions = ({
   variant = 'default'
 }: ProtectedActionsProps) => {
   const { puedeCrear, isSuperuser } = useEnhancedPermissions();
-  const { canPerformAction, isTrialExpired } = useTrialManager();
+  const { canPerformAction, isInGracePeriod, isTrialExpired } = useTrialManager();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
@@ -39,7 +39,11 @@ export const ProtectedActions = ({
 
     // Verificar si puede realizar la acción
     if (!canPerformAction('create')) {
-      setShowUpgradeModal(true);
+      if (isInGracePeriod) {
+        toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
+      } else {
+        setShowUpgradeModal(true);
+      }
       return;
     }
 
@@ -59,6 +63,21 @@ export const ProtectedActions = ({
 
   // Si no hay children, renderizar como botón
   if (!children && action === 'create') {
+    // Durante período de gracia, mostrar botón bloqueado
+    if (isInGracePeriod) {
+      return (
+        <Button 
+          disabled 
+          variant="outline" 
+          className="flex items-center gap-2 opacity-50"
+          onClick={handleAction}
+        >
+          <Lock className="h-4 w-4" />
+          Solo lectura
+        </Button>
+      );
+    }
+
     return (
       <>
         <Button onClick={handleAction} variant={variant} className="flex items-center gap-2">
@@ -70,7 +89,11 @@ export const ProtectedActions = ({
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
           title="Actualiza tu Plan"
-          description="Tu período de prueba ha expirado. Selecciona un plan para continuar creando registros."
+          description={
+            isTrialExpired 
+              ? "Tu período de prueba ha expirado. Selecciona un plan para continuar creando registros."
+              : "Necesitas un plan activo para crear nuevos registros."
+          }
           blockedAction={`Crear ${resource.replace('_', ' ')}`}
         />
       </>

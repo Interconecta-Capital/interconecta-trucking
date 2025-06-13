@@ -1693,15 +1693,19 @@ export type Database = {
       }
       suscripciones: {
         Row: {
+          cleanup_warning_sent: boolean | null
           created_at: string | null
           dias_gracia: number | null
           fecha_fin_prueba: string | null
           fecha_inicio: string | null
           fecha_vencimiento: string | null
+          final_warning_sent: boolean | null
+          grace_period_end: string | null
+          grace_period_start: string | null
           id: string
           plan_id: string
           proximo_pago: string | null
-          status: string
+          status: Database["public"]["Enums"]["subscription_status_enum"]
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           ultimo_pago: string | null
@@ -1709,15 +1713,19 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cleanup_warning_sent?: boolean | null
           created_at?: string | null
           dias_gracia?: number | null
           fecha_fin_prueba?: string | null
           fecha_inicio?: string | null
           fecha_vencimiento?: string | null
+          final_warning_sent?: boolean | null
+          grace_period_end?: string | null
+          grace_period_start?: string | null
           id?: string
           plan_id: string
           proximo_pago?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["subscription_status_enum"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           ultimo_pago?: string | null
@@ -1725,15 +1733,19 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cleanup_warning_sent?: boolean | null
           created_at?: string | null
           dias_gracia?: number | null
           fecha_fin_prueba?: string | null
           fecha_inicio?: string | null
           fecha_vencimiento?: string | null
+          final_warning_sent?: boolean | null
+          grace_period_end?: string | null
+          grace_period_start?: string | null
           id?: string
           plan_id?: string
           proximo_pago?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["subscription_status_enum"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           ultimo_pago?: string | null
@@ -2290,6 +2302,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      cleanup_expired_grace_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_current_user_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2336,6 +2352,10 @@ export type Database = {
         Args: { p_identifier: string; p_action_type: string; p_metadata?: Json }
         Returns: undefined
       }
+      send_cleanup_warnings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       sugerir_codigos_similares: {
         Args: { cp_input: string }
         Returns: {
@@ -2349,7 +2369,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      subscription_status_enum:
+        | "trial"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "suspended"
+        | "grace_period"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2464,6 +2490,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_status_enum: [
+        "trial",
+        "active",
+        "past_due",
+        "canceled",
+        "suspended",
+        "grace_period",
+      ],
+    },
   },
 } as const
