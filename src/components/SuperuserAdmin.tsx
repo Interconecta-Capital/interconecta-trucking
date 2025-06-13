@@ -6,19 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSuperuser } from '@/hooks/useSuperuser';
-import { Crown, Shield, UserPlus, Key, Copy, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { Crown, Shield, UserPlus, Key } from 'lucide-react';
 
 export function SuperuserAdmin() {
   const { isSuperuser, convertToSuperuser, createSuperuserAccount } = useSuperuser();
   const [email, setEmail] = useState('');
   const [isConverting, setIsConverting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [showCredentials, setShowCredentials] = useState(false);
-  const [credentials, setCredentials] = useState<{email: string; password: string} | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleConvertUser = async () => {
     if (!email.trim()) return;
@@ -31,18 +26,13 @@ export function SuperuserAdmin() {
 
   const handleCreateSuperuser = async () => {
     setIsCreating(true);
-    const result = await createSuperuserAccount();
+    const createdEmail = await createSuperuserAccount();
     setIsCreating(false);
     
-    if (result && typeof result === 'object' && 'email' in result) {
-      setCredentials(result);
-      setShowCredentials(true);
+    if (createdEmail) {
+      // Show credentials
+      alert(`Superusuario creado:\nEmail: ${createdEmail}\nPassword: SuperUser2024!`);
     }
-  };
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copiado al portapapeles`);
   };
 
   if (!isSuperuser) {
@@ -116,7 +106,7 @@ export function SuperuserAdmin() {
                 <div className="space-y-2">
                   <Badge variant="outline">superuser@trucking.dev</Badge>
                   <p className="text-sm text-muted-foreground">
-                    Crea un usuario de prueba con credenciales seguras
+                    Crea un usuario de prueba con credenciales predefinidas
                   </p>
                 </div>
                 <Button 
@@ -164,85 +154,6 @@ export function SuperuserAdmin() {
           </Card>
         </CardContent>
       </Card>
-
-      {/* Secure Credentials Dialog */}
-      <Dialog open={showCredentials} onOpenChange={setShowCredentials}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-green-600" />
-              Credenciales de Superusuario
-            </DialogTitle>
-          </DialogHeader>
-          
-          {credentials && (
-            <div className="space-y-4">
-              <Alert>
-                <Shield className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>¡IMPORTANTE!</strong> Guarda estas credenciales de forma segura. 
-                  No se mostrarán nuevamente por razones de seguridad.
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <div className="flex gap-2">
-                    <Input value={credentials.email} readOnly />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(credentials.email, 'Email')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Contraseña</Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input 
-                        type={showPassword ? 'text' : 'password'}
-                        value={credentials.password} 
-                        readOnly 
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(credentials.password, 'Contraseña')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => {
-                  setShowCredentials(false);
-                  setCredentials(null);
-                }}
-                className="w-full"
-              >
-                Entendido, he guardado las credenciales
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

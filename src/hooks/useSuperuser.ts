@@ -95,26 +95,16 @@ export const useSuperuser = () => {
     }
   }, []);
 
-  // Generate secure random password
-  const generateSecurePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 16; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
-
-  // Create superuser account with secure credentials
+  // Create superuser account (requires manual registration first)
   const createSuperuserAccount = useCallback(async () => {
     try {
       const email = 'superuser@trucking.dev';
-      const securePassword = generateSecurePassword();
+      const password = 'SuperUser2024!';
 
       // First, register the user normally
       const { data, error } = await supabase.auth.signUp({
         email,
-        password: securePassword,
+        password,
         options: {
           data: {
             nombre: 'Super Usuario Admin',
@@ -139,8 +129,7 @@ export const useSuperuser = () => {
       }, 2000);
 
       toast.success('Superusuario creado exitosamente');
-      // Return both email and password for one-time display
-      return { email, password: securePassword };
+      return email;
     } catch (error) {
       console.error('Error creating superuser:', error);
       toast.error('Error al crear superusuario');
