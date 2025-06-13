@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +8,10 @@ import { UbicacionFormHeader } from './UbicacionFormHeader';
 import { UbicacionesFrecuentesCard } from './UbicacionesFrecuentesCard';
 import { UbicacionBasicInfo } from './UbicacionBasicInfo';
 import { UbicacionRFCSection } from './UbicacionRFCSection';
-import { UbicacionDomicilioSection } from './UbicacionDomicilioSection';
+import { CodigoPostalInput } from '@/components/catalogos/CodigoPostalInput';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UbicacionFormProps {
   ubicacion?: Ubicacion;
@@ -35,7 +39,7 @@ export function UbicacionForm({
     distanciaRecorrida: 0,
     ordenSecuencia: 1,
     domicilio: {
-      pais: 'MEX',
+      pais: 'México',
       codigoPostal: '',
       estado: '',
       municipio: '',
@@ -62,9 +66,7 @@ export function UbicacionForm({
   }, [ubicacion]);
 
   const handleTipoChange = (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => {
-    console.log('Changing type to:', tipo);
     const newId = generarId(tipo);
-    console.log('Generated ID:', newId);
     
     setFormData(prev => ({
       ...prev,
@@ -92,76 +94,42 @@ export function UbicacionForm({
     }
   };
 
-  const handleNombreChange = (nombre: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      nombreRemitenteDestinatario: nombre 
-    }));
-  };
-
-  const handleFechaChange = (fecha: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      fechaHoraSalidaLlegada: fecha 
-    }));
-  };
-
-  const handleDomicilioChange = (field: string, value: string) => {
+  const handleLocationUpdate = (locationData: any) => {
     setFormData(prev => ({
       ...prev,
       domicilio: {
         ...prev.domicilio,
-        [field]: value
+        estado: locationData.estado || '',
+        municipio: locationData.municipio || '',
+        localidad: locationData.localidad || '',
+        colonia: locationData.colonia || '',
       }
     }));
   };
 
-  const handleDistanciaChange = (distancia: number) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      distanciaRecorrida: distancia 
-    }));
-  };
-
-  const handleCodigoPostalChange = (codigoPostal: string) => {
-    setFormData(prev => ({
-      ...prev,
-      domicilio: {
-        ...prev.domicilio,
-        codigoPostal,
-      },
-    }));
-  };
-
-  const handleInfoChange = (info: {
-    estado?: string;
-    municipio?: string;
-    localidad?: string;
-    colonia?: string;
-  }) => {
-    setFormData(prev => ({
-      ...prev,
-      domicilio: {
-        ...prev.domicilio,
-        ...info,
-      },
-    }));
-  };
-
-  const handleColoniaChange = (colonia: string) => {
-    setFormData(prev => ({
-      ...prev,
-      domicilio: {
-        ...prev.domicilio,
-        colonia,
-      },
-    }));
+  const handleFieldChange = (field: string, value: any) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent as keyof Ubicacion],
+          [child]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     if (isFormValid()) {
-      console.log('Saving ubicacion:', formData);
       onSave(formData);
     }
   };
@@ -194,14 +162,6 @@ export function UbicacionForm({
                         formData.domicilio.estado &&
                         formData.domicilio.calle;
     
-    console.log('Form validation:', {
-      hasValidType,
-      hasValidRFC,
-      hasValidData,
-      tipoUbicacion: formData.tipoUbicacion,
-      idUbicacion: formData.idUbicacion
-    });
-    
     return hasValidType && hasValidRFC && hasValidData;
   };
 
@@ -225,7 +185,7 @@ export function UbicacionForm({
           <UbicacionBasicInfo
             formData={formData}
             onTipoChange={handleTipoChange}
-            onFechaChange={handleFechaChange}
+            onFechaChange={(fecha) => handleFieldChange('fechaHoraSalidaLlegada', fecha)}
           />
 
           <UbicacionRFCSection
@@ -233,20 +193,95 @@ export function UbicacionForm({
             nombre={formData.nombreRemitenteDestinatario}
             rfcValidation={rfcValidation}
             onRFCChange={handleRFCChange}
-            onNombreChange={handleNombreChange}
+            onNombreChange={(nombre) => handleFieldChange('nombreRemitenteDestinatario', nombre)}
             onSaveToFavorites={handleSaveToFavorites}
             canSaveToFavorites={!!(formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario)}
           />
 
-          <UbicacionDomicilioSection
-            domicilio={formData.domicilio}
-            distanciaRecorrida={formData.distanciaRecorrida || 0}
-            onDomicilioChange={handleDomicilioChange}
-            onDistanciaChange={handleDistanciaChange}
-            onCodigoPostalChange={handleCodigoPostalChange}
-            onInfoChange={handleInfoChange}
-            onColoniaChange={handleColoniaChange}
-          />
+          {/* Domicilio Section Simplificado */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Domicilio</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>País *</Label>
+                <Select 
+                  value={formData.domicilio.pais} 
+                  onValueChange={(value) => handleFieldChange('domicilio.pais', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="México">México</SelectItem>
+                    <SelectItem value="Estados Unidos">Estados Unidos</SelectItem>
+                    <SelectItem value="Canadá">Canadá</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <CodigoPostalInput
+                value={formData.domicilio.codigoPostal}
+                onChange={(cp) => handleFieldChange('domicilio.codigoPostal', cp)}
+                onLocationUpdate={handleLocationUpdate}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Calle *</Label>
+                <Input
+                  value={formData.domicilio.calle}
+                  onChange={(e) => handleFieldChange('domicilio.calle', e.target.value)}
+                  placeholder="Nombre de la calle"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Número Exterior *</Label>
+                <Input
+                  value={formData.domicilio.numExterior}
+                  onChange={(e) => handleFieldChange('domicilio.numExterior', e.target.value)}
+                  placeholder="123"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Número Interior</Label>
+                <Input
+                  value={formData.domicilio.numInterior}
+                  onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
+                  placeholder="A, B, 1, 2..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Referencia</Label>
+                <Input
+                  value={formData.domicilio.referencia}
+                  onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
+                  placeholder="Entre calles, cerca de..."
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Distancia Recorrida (km)</Label>
+              <Input
+                type="number"
+                value={formData.distanciaRecorrida}
+                onChange={(e) => handleFieldChange('distanciaRecorrida', parseFloat(e.target.value) || 0)}
+                placeholder="0"
+                min="0"
+                step="0.1"
+              />
+            </div>
+          </div>
 
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" onClick={onCancel}>

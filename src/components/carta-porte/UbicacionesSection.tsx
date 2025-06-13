@@ -121,7 +121,16 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
     setFormErrors([]);
   };
 
-  const handleCalcularDistancias = async () => {
+  const handleAddUbicacion = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFormErrors([]);
+    setShowForm(true);
+  };
+
+  const handleCalcularDistancias = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await calcularDistanciasAutomaticas();
     } catch (error) {
@@ -129,7 +138,9 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
     }
   };
 
-  const handleCalcularRuta = async () => {
+  const handleCalcularRuta = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await calcularRutaCompleta();
       setShowMap(true);
@@ -138,15 +149,23 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
     }
   };
 
-  const validation = validarSecuenciaUbicaciones();
-  const distanciaTotal = calcularDistanciaTotal();
-
-  const handleNext = () => {
-    // Solo permitir continuar si la validación es exitosa
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const validation = validarSecuenciaUbicaciones();
     if (validation.esValido) {
       onNext();
     }
   };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onPrev();
+  };
+
+  const validation = validarSecuenciaUbicaciones();
+  const distanciaTotal = calcularDistanciaTotal();
 
   return (
     <div className="space-y-6">
@@ -163,6 +182,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
                 {ubicaciones.length >= 2 && (
                   <>
                     <Button 
+                      type="button"
                       variant="outline"
                       onClick={handleCalcularDistancias}
                       className="flex items-center space-x-2"
@@ -172,6 +192,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
                     </Button>
                     
                     <Button 
+                      type="button"
                       variant="outline"
                       onClick={handleCalcularRuta}
                       className="flex items-center space-x-2"
@@ -183,10 +204,8 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
                 )}
                 
                 <Button 
-                  onClick={() => {
-                    setFormErrors([]);
-                    setShowForm(true);
-                  }} 
+                  type="button"
+                  onClick={handleAddUbicacion} 
                   className="flex items-center space-x-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -282,6 +301,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
                   <span className="font-medium">{rutaCalculada.duration} min</span>
                 </div>
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setShowMap(!showMap)}
@@ -298,8 +318,9 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
       {!showForm && (
         <div className="flex justify-between">
           <Button 
+            type="button"
             variant="outline" 
-            onClick={onPrev} 
+            onClick={handlePrev} 
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -307,6 +328,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
           </Button>
           
           <Button 
+            type="button"
             onClick={handleNext} 
             disabled={!validation.esValido}
             className="flex items-center space-x-2"

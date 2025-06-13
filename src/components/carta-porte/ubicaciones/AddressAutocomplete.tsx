@@ -63,6 +63,8 @@ export function AddressAutocomplete({
   }, [value, buscarDirecciones]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     onChange(e.target.value);
   };
 
@@ -108,9 +110,14 @@ export function AddressAutocomplete({
             {suggestions.map((suggestion, index) => (
               <Button
                 key={index}
+                type="button"
                 variant="ghost"
                 className="w-full text-left justify-start h-auto p-3 rounded-none border-b last:border-b-0"
-                onClick={() => handleSuggestionSelect(suggestion)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSuggestionSelect(suggestion);
+                }}
               >
                 <div className="flex items-start space-x-3 w-full">
                   <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />

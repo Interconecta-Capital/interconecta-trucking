@@ -39,10 +39,22 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
   }, [mercancias, onChange]);
 
   const handleSaveMercancia = async (mercancia: Mercancia) => {
-    if (editingMercancia) {
-      return await actualizarMercancia(editingMercancia.id!, mercancia);
-    } else {
-      return await agregarMercancia(mercancia);
+    try {
+      if (editingMercancia) {
+        await actualizarMercancia(editingMercancia.id!, mercancia);
+      } else {
+        await agregarMercancia(mercancia);
+      }
+      
+      // Cerrar formulario después de guardar exitosamente
+      setShowForm(false);
+      setEditingMercancia(undefined);
+      setEditingIndex(-1);
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving mercancia:', error);
+      return false;
     }
   };
 
@@ -65,9 +77,33 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
     setEditingIndex(-1);
   };
 
+  const handleAddManually = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowForm(true);
+  };
+
   const handleDocumentProcessed = async (extractedMercancias: Mercancia[]) => {
-    // Import the extracted mercancías
-    await importarMercancias(extractedMercancias);
+    try {
+      await importarMercancias(extractedMercancias);
+      setShowDocumentDialog(false);
+    } catch (error) {
+      console.error('Error processing document:', error);
+    }
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (mercancias.length > 0) {
+      onNext();
+    }
+  };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onPrev();
   };
 
   const canContinue = mercancias.length > 0;
@@ -85,23 +121,32 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
             {!showForm && (
               <div className="flex flex-wrap gap-2">
                 <Button 
+                  type="button"
                   variant="outline" 
-                  onClick={() => setShowDocumentDialog(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowDocumentDialog(true);
+                  }}
                   className="flex items-center space-x-2"
                 >
                   <Sparkles className="h-4 w-4" />
                   <span>IA: PDF/XML/OCR</span>
                 </Button>
                 <Button 
+                  type="button"
                   variant="outline" 
-                  onClick={() => setShowImportDialog(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowImportDialog(true);
+                  }}
                   className="flex items-center space-x-2"
                 >
                   <Upload className="h-4 w-4" />
                   <span>Excel/CSV</span>
                 </Button>
                 <Button 
-                  onClick={() => setShowForm(true)}
+                  type="button"
+                  onClick={handleAddManually}
                   className="flex items-center space-x-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -140,8 +185,9 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
       {!showForm && (
         <div className="flex justify-between">
           <Button 
+            type="button"
             variant="outline" 
-            onClick={onPrev} 
+            onClick={handlePrev} 
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -149,7 +195,8 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
           </Button>
           
           <Button 
-            onClick={onNext} 
+            type="button"
+            onClick={handleNext} 
             disabled={!canContinue}
             className="flex items-center space-x-2"
           >
