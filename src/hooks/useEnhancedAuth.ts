@@ -1,145 +1,224 @@
 
 import { useState, useEffect, useCallback } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useSecureAuth } from './auth/useSecureAuth';
 import { useSessionSecurity } from './useSessionSecurity';
+import { multiTenancyService } from '@/services/multiTenancyService';
 import { toast } from 'sonner';
 
-interface LoginAttempt {
-  email: string;
-  timestamp: number;
-  success: boolean;
+interface EnhancedAuthState {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  initialized: boolean;
+  tenant: any | null;
 }
 
 export const useEnhancedAuth = () => {
-  const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
-  const [isAccountLocked, setIsAccountLocked] = useState(false);
-  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
-  
-  const { secureLogin, secureLogout } = useSecureAuth();
+  const [authState, setAuthState] = useState<EnhancedAuthState>({
+    user: null,
+    session: null,
+    loading: true,
+    initialized: false,
+    tenant: null
+  });
+
+  const { secureLogin, secureRegister, secureLogout } = useSecureAuth();
   const { resetActivityTimer } = useSessionSecurity();
 
-  const MAX_FAILED_ATTEMPTS = 5;
-  const LOCKOUT_DURATION_MINUTES = 15;
-  const ATTEMPT_WINDOW_MINUTES = 30;
-
-  const getRecentAttempts = useCallback((email: string): LoginAttempt[] => {
-    const windowStart = Date.now() - (ATTEMPT_WINDOW_MINUTES * 60 * 1000);
-    return loginAttempts.filter(
-      attempt => attempt.email === email && attempt.timestamp > windowStart
-    );
-  }, [loginAttempts]);
-
-  const checkAccountLockout = useCallback((email: string): boolean => {
-    const recentAttempts = getRecentAttempts(email);
-    const failedAttempts = recentAttempts.filter(attempt => !attempt.success);
-    
-    if (failedAttempts.length >= MAX_FAILED_ATTEMPTS) {
-      const lockoutEnd = Date.now() + (LOCKOUT_DURATION_MINUTES * 60 * 1000);
-      setIsAccountLocked(true);
-      setLockoutEndTime(lockoutEnd);
-      
-      toast.error(
-        `Cuenta bloqueada por ${LOCKOUT_DURATION_MINUTES} minutos debido a múltiples intentos fallidos.`
-      );
-      return true;
+  const loadTenantData = useCallback(async (userId: string) => {
+    try {
+      const tenant = await multiTenancyService.getCurrentTenant(userId);
+      setAuthState(prev => ({ ...prev, tenant }));
+      return tenant;
+    } catch (error) {
+      console.error('Error loading tenant data:', error);
+      return null;
     }
-    
-    return false;
-  }, [getRecentAttempts]);
-
-  const recordLoginAttempt = useCallback((email: string, success: boolean) => {
-    const attempt: LoginAttempt = {
-      email: email.toLowerCase(),
-      timestamp: Date.now(),
-      success
-    };
-    
-    setLoginAttempts(prev => [...prev.slice(-50), attempt]); // Keep last 50 attempts
   }, []);
 
-  const enhancedLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const normalizedEmail = email.toLowerCase();
-    
-    // Check if account is currently locked
-    if (lockoutEndTime && Date.now() < lockoutEndTime) {
-      const remainingMinutes = Math.ceil((lockoutEndTime - Date.now()) / (60 * 1000));
-      toast.error(`Cuenta bloqueada. Intente nuevamente en ${remainingMinutes} minutos.`);
-      return false;
-    }
-    
-    // Check if this attempt would trigger lockout
-    if (checkAccountLockout(normalizedEmail)) {
-      return false;
-    }
-    
+  const initializeAuth = useCallback(async () => {
     try {
-      const success = await secureLogin(email, password);
-      recordLoginAttempt(normalizedEmail, success);
+      console.log('[EnhancedAuth] Initializing...');
       
-      if (success) {
-        // Clear lockout state on successful login
-        setIsAccountLocked(false);
-        setLockoutEndTime(null);
-        resetActivityTimer();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('[EnhancedAuth] Session error:', error);
+        setAuthState({
+          user: null,
+          session: null,
+          loading: false,
+          initialized: true,
+          tenant: null
+        });
+        return;
+      }
+
+      if (session?.user) {
+        console.log('[EnhancedAuth] Session found, loading tenant...');
+        const tenant = await loadTenantData(session.user.id);
         
-        // Log successful login for security monitoring
-        await supabase.rpc('log_security_event', {
-          p_user_id: null,
-          p_event_type: 'successful_login_after_attempts',
-          p_event_data: {
-            email: normalizedEmail,
-            previous_attempts: getRecentAttempts(normalizedEmail).length
-          }
+        setAuthState({
+          user: session.user,
+          session,
+          loading: false,
+          initialized: true,
+          tenant
         });
       } else {
-        // Check if this failed attempt triggers lockout
-        checkAccountLockout(normalizedEmail);
+        console.log('[EnhancedAuth] No session found');
+        setAuthState({
+          user: null,
+          session: null,
+          loading: false,
+          initialized: true,
+          tenant: null
+        });
+      }
+    } catch (error) {
+      console.error('[EnhancedAuth] Initialization error:', error);
+      setAuthState({
+        user: null,
+        session: null,
+        loading: false,
+        initialized: true,
+        tenant: null
+      });
+    }
+  }, [loadTenantData]);
+
+  useEffect(() => {
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[EnhancedAuth] Auth state change:', event);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          setAuthState(prev => ({ ...prev, loading: true }));
+          
+          // Defer tenant loading to avoid deadlocks
+          setTimeout(async () => {
+            const tenant = await loadTenantData(session.user.id);
+            setAuthState({
+              user: session.user,
+              session,
+              loading: false,
+              initialized: true,
+              tenant
+            });
+            
+            // Redirect to dashboard after successful login
+            if (window.location.pathname === '/auth' || window.location.pathname === '/') {
+              window.location.href = '/dashboard';
+            }
+          }, 100);
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            user: null,
+            session: null,
+            loading: false,
+            initialized: true,
+            tenant: null
+          });
+        } else {
+          setAuthState(prev => ({
+            ...prev,
+            user: session?.user || null,
+            session,
+            loading: false,
+            initialized: true
+          }));
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [initializeAuth, loadTenantData]);
+
+  const enhancedLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+      
+      const success = await secureLogin(email, password);
+      
+      if (success) {
+        resetActivityTimer();
+        toast.success('Inicio de sesión exitoso');
+        return true;
       }
       
+      setAuthState(prev => ({ ...prev, loading: false }));
+      return false;
+    } catch (error) {
+      console.error('Enhanced login error:', error);
+      setAuthState(prev => ({ ...prev, loading: false }));
+      toast.error('Error al iniciar sesión');
+      return false;
+    }
+  }, [secureLogin, resetActivityTimer]);
+
+  const enhancedRegister = useCallback(async (
+    email: string, 
+    password: string, 
+    userData: { nombre: string; empresa?: string; rfc?: string; telefono?: string }
+  ): Promise<boolean> => {
+    try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+      
+      const success = await secureRegister(
+        email, 
+        password, 
+        userData.nombre, 
+        userData.rfc,
+        userData.empresa,
+        userData.telefono
+      );
+      
+      setAuthState(prev => ({ ...prev, loading: false }));
       return success;
     } catch (error) {
-      recordLoginAttempt(normalizedEmail, false);
-      checkAccountLockout(normalizedEmail);
-      throw error;
+      console.error('Enhanced register error:', error);
+      setAuthState(prev => ({ ...prev, loading: false }));
+      toast.error('Error en el registro');
+      return false;
     }
-  }, [secureLogin, recordLoginAttempt, checkAccountLockout, getRecentAttempts, resetActivityTimer, lockoutEndTime]);
+  }, [secureRegister]);
 
   const enhancedLogout = useCallback(async () => {
     try {
       await secureLogout();
       
-      // Clear local security state
-      setLoginAttempts([]);
-      setIsAccountLocked(false);
-      setLockoutEndTime(null);
+      setAuthState({
+        user: null,
+        session: null,
+        loading: false,
+        initialized: true,
+        tenant: null
+      });
     } catch (error) {
       console.error('Enhanced logout error:', error);
       throw error;
     }
   }, [secureLogout]);
 
-  // Clean up old attempts periodically
-  useEffect(() => {
-    const cleanup = setInterval(() => {
-      const cutoff = Date.now() - (ATTEMPT_WINDOW_MINUTES * 60 * 1000);
-      setLoginAttempts(prev => prev.filter(attempt => attempt.timestamp > cutoff));
-      
-      // Clear lockout if expired
-      if (lockoutEndTime && Date.now() > lockoutEndTime) {
-        setIsAccountLocked(false);
-        setLockoutEndTime(null);
-      }
-    }, 60000); // Check every minute
-    
-    return () => clearInterval(cleanup);
-  }, [lockoutEndTime]);
-
   return {
+    user: authState.user,
+    session: authState.session,
+    loading: authState.loading,
+    initialized: authState.initialized,
+    tenant: authState.tenant,
     enhancedLogin,
+    enhancedRegister,
     enhancedLogout,
-    isAccountLocked,
-    lockoutEndTime,
-    getRecentAttempts
+    hasAccess: (requiredRole?: string) => {
+      if (!authState.user) return false;
+      if (!requiredRole) return true;
+      
+      // Basic role checking - can be enhanced based on tenant data
+      return authState.tenant?.rol === requiredRole || authState.tenant?.rol === 'admin';
+    }
   };
 };

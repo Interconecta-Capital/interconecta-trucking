@@ -1,161 +1,107 @@
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
+import React, { useState } from 'react';
+import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
 import { ImprovedAuthCard } from './ImprovedAuthCard';
-import { ImprovedSocialButton } from './ImprovedSocialButton';
 import { ImprovedFormField } from './ImprovedFormField';
-import { Separator } from '@/components/ui/separator';
+import { ImprovedSocialButton } from './ImprovedSocialButton';
+import { Button } from '@/components/ui/button';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { Mail, Lock, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export function EnhancedLoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showResendOption, setShowResendOption] = useState(false);
   
-  const { signIn, signInWithGoogle, resendConfirmation, validateEmail } = useSimpleAuth();
+  const { enhancedLogin } = useEnhancedAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.email || !formData.password) {
+      toast.error('Por favor completa todos los campos');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      const emailValidation = validateEmail(email);
+      const success = await enhancedLogin(formData.email, formData.password);
       
-      if (!emailValidation.isValid) {
-        toast.error(emailValidation.message);
-        return;
-      }
-
-      if (!password || password.length < 6) {
-        toast.error('La contraseña debe tener al menos 6 caracteres');
-        return;
-      }
-
-      const success = await signIn(email, password);
-      if (!success) {
-        setShowResendOption(true);
+      if (success) {
+        // Redirect is handled by the auth state change
+        console.log('Login successful, redirect will happen automatically');
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Error inesperado. Intente nuevamente.');
+      toast.error('Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleAuth = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error: any) {
-      toast.error('Error al autenticar con Google');
-    }
-  };
-
-  const handleResendConfirmation = async () => {
-    if (!email) {
-      toast.error('Por favor ingresa tu correo electrónico primero');
-      return;
-    }
-    
-    await resendConfirmation(email);
-    setShowResendOption(false);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <ImprovedAuthCard
-      title="Interconecta Trucking"
-      description="Sistema de Gestión de Cartas Porte"
+      title="Iniciar Sesión"
+      subtitle="Accede a tu plataforma de gestión de transporte"
     >
-      <div className="space-y-6">
-        <ImprovedSocialButton
-          provider="google"
-          actionText="Continuar con Google"
-          onClick={handleGoogleAuth}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <ImprovedFormField
+          id="email"
+          label="Correo Electrónico"
+          type="email"
+          value={formData.email}
+          onChange={(value) => handleInputChange('email', value)}
+          placeholder="tu@empresa.com"
+          required
+          icon={<Mail className="h-4 w-4 text-gray-500" />}
         />
-        
+
+        <ImprovedFormField
+          id="password"
+          label="Contraseña"
+          value={formData.password}
+          onChange={(value) => handleInputChange('password', value)}
+          required
+          showPasswordToggle
+          showPassword={showPassword}
+          onTogglePassword={() => setShowPassword(!showPassword)}
+          icon={<Lock className="h-4 w-4 text-gray-500" />}
+        />
+
+        <Button
+          type="submit"
+          className="w-full bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white font-sora font-semibold py-6 text-lg shadow-lg transition-all duration-200"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Iniciando sesión...
+            </div>
+          ) : (
+            'Iniciar Sesión'
+          )}
+        </Button>
+
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <Separator className="w-full" />
+            <span className="w-full border-t border-gray-200" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-3 text-gray-500 font-inter font-medium">
-              O continúa con email
-            </span>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500 font-inter">O continúa con</span>
           </div>
         </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <ImprovedFormField
-            id="email"
-            label="Correo Electrónico"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            placeholder="tu@empresa.com"
-            required
-            icon={<Mail className="h-4 w-4 text-gray-500" />}
-          />
-          
-          <ImprovedFormField
-            id="password"
-            label="Contraseña"
-            value={password}
-            onChange={setPassword}
-            required
-            showPasswordToggle
-            showPassword={showPassword}
-            onTogglePassword={() => setShowPassword(!showPassword)}
-            icon={<Lock className="h-4 w-4 text-gray-500" />}
-          />
-          
-          <Button 
-            type="submit" 
-            className="w-full h-12 bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary font-sora font-semibold text-lg transition-all duration-200 hover:shadow-lg hover:scale-[1.02]" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Iniciando sesión...
-              </div>
-            ) : (
-              'Iniciar Sesión'
-            )}
-          </Button>
-        </form>
-        
-        {showResendOption && (
-          <div className="mt-4 p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg">
-            <p className="text-sm text-orange-800 mb-3 font-inter">
-              ¿Problemas para acceder? Es posible que necesites verificar tu correo.
-            </p>
-            <Button
-              onClick={handleResendConfirmation}
-              variant="outline"
-              size="sm"
-              className="w-full text-orange-700 border-orange-300 hover:bg-orange-100 font-inter"
-            >
-              Reenviar correo de verificación
-            </Button>
-          </div>
-        )}
-        
-        <div className="pt-4 border-t border-gray-200">
-          <div className="text-center space-y-3">
-            <Link 
-              to="/auth/forgot-password"
-              className="text-sm text-interconecta-primary hover:text-interconecta-accent font-inter font-medium underline decoration-2 underline-offset-2 hover:decoration-interconecta-accent transition-colors"
-            >
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-        </div>
-      </div>
+
+        <ImprovedSocialButton provider="google" />
+      </form>
     </ImprovedAuthCard>
   );
 }

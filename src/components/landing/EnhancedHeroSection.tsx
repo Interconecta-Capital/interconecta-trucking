@@ -79,18 +79,17 @@ const EnhancedHeroSection = () => {
             </div>
           </div>
           
-          {/* Botones CTA Mejorados */}
+          {/* Botones CTA Mejorados - ANIMACIÓN ARREGLADA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <Link to="/auth/trial">
-              <Button size="lg" className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white px-10 py-6 text-lg font-sora font-semibold shadow-2xl hover:shadow-interconecta-primary/50 transition-all duration-300 hover:scale-105 group">
-                <Calendar className="mr-3 h-6 w-6 group-hover:animate-bounce" />
+            <Link to="/auth">
+              <Button size="lg" className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white px-10 py-6 text-lg font-sora font-semibold shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden">
+                <Calendar className="mr-3 h-6 w-6" />
                 Prueba 14 días GRATIS
-                <div className="absolute inset-0 bg-white/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </Button>
             </Link>
-            <Link to="/auth/login">
-              <Button size="lg" variant="outline" className="border-2 border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary hover:text-white px-10 py-6 text-lg font-sora font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group backdrop-blur-sm bg-white/80">
-                <Play className="mr-3 h-6 w-6 group-hover:animate-pulse" />
+            <Link to="/auth">
+              <Button size="lg" variant="outline" className="border-2 border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary hover:text-white px-10 py-6 text-lg font-sora font-medium shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm bg-white/80">
+                <Play className="mr-3 h-6 w-6" />
                 Iniciar sesión
               </Button>
             </Link>
