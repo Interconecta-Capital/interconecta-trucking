@@ -50,7 +50,7 @@ export function CodigoPostalInput({
   const [selectedColonia, setSelectedColonia] = useState(coloniaValue || '');
   const [sugerencias, setSugerencias] = useState<string[]>([]);
 
-  // Hook optimizado para código postal
+  // Hook optimizado para código postal con debounce de 300ms
   const {
     isLoading,
     error: hookError,
@@ -58,45 +58,29 @@ export function CodigoPostalInput({
     buscarConDebounce,
     resetear
   } = useCodigoPostalOptimizado({
+    debounceMs: 300, // Optimización de performance
     onSuccess: (info) => {
-      console.log('[CP_INPUT] Éxito:', info);
+      console.log('[CP_INPUT] Información encontrada:', info);
       
-      // Auto-seleccionar colonia si solo hay una
-      if (info.colonias.length === 1) {
-        const colonia = info.colonias[0];
-        setSelectedColonia(colonia);
-        
-        const updateCallback = onInfoChange || onLocationUpdate;
-        if (updateCallback) {
-          updateCallback({
-            estado: info.estado,
-            municipio: info.municipio,
-            localidad: info.localidad,
-            colonia: colonia
-          });
-        }
-        if (onColoniaChange) {
-          onColoniaChange(colonia);
-        }
-      } else {
-        // Múltiples colonias, resetear selección
-        setSelectedColonia('');
-        const updateCallback = onInfoChange || onLocationUpdate;
-        if (updateCallback) {
-          updateCallback({
-            estado: info.estado,
-            municipio: info.municipio,
-            localidad: info.localidad,
-            colonia: ''
-          });
-        }
+      // CAMBIO: No auto-seleccionar colonia, siempre mostrar dropdown
+      setSelectedColonia(''); // Resetear siempre para que usuario seleccione
+      
+      // Llenar TODOS los campos del domicilio
+      const updateCallback = onInfoChange || onLocationUpdate;
+      if (updateCallback) {
+        updateCallback({
+          estado: info.estado,
+          municipio: info.municipio,
+          localidad: info.localidad || info.municipio, // Usar municipio si no hay localidad
+          colonia: '' // No asignar automáticamente
+        });
       }
       
       // Limpiar sugerencias en éxito
       setSugerencias([]);
     },
     onError: (errorMsg, sugerenciasList = []) => {
-      console.log('[CP_INPUT] Error:', errorMsg);
+      console.log('[CP_INPUT] Error mejorado:', errorMsg);
       setSugerencias(sugerenciasList);
       
       // Limpiar datos al fallar
@@ -113,23 +97,33 @@ export function CodigoPostalInput({
     }
   });
 
-  // Sincronizar valores externos
-  useEffect(() => {
-    if (value !== localValue) {
-      setLocalValue(value);
-    }
-  }, [value]);
+  // Memoizar sincronización de valores para evitar re-renders
+  const syncValues = useMemo(() => ({
+    externalValue: value,
+    externalColonia: coloniaValue
+  }), [value, coloniaValue]);
 
   useEffect(() => {
-    if (coloniaValue !== selectedColonia) {
-      setSelectedColonia(coloniaValue || '');
+    if (syncValues.externalValue !== localValue) {
+      setLocalValue(syncValues.externalValue);
     }
-  }, [coloniaValue]);
+  }, [syncValues.externalValue, localValue]);
 
-  // Manejador de cambios con validación inmediata
+  useEffect(() => {
+    if (syncValues.externalColonia !== selectedColonia && syncValues.externalColonia) {
+      setSelectedColonia(syncValues.externalColonia);
+    }
+  }, [syncValues.externalColonia, selectedColonia]);
+
+  // Manejador optimizado de cambios con debounce
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
+    
+    // Evitar updates innecesarios
+    if (newValue === localValue) return;
+    
     setLocalValue(newValue);
+    console.log(`[CP_INPUT] Valor cambiado a: ${newValue}`);
     
     // Llamar callback inmediatamente
     const changeCallback = onValueChange || onChange;
@@ -142,7 +136,7 @@ export function CodigoPostalInput({
     setSelectedColonia('');
 
     if (newValue.length === 5) {
-      // Buscar con debounce
+      // Buscar con debounce optimizado (300ms)
       buscarConDebounce(newValue);
     } else {
       // Limpiar si no son 5 dígitos
@@ -157,10 +151,12 @@ export function CodigoPostalInput({
         });
       }
     }
-  }, [onChange, onValueChange, onInfoChange, onLocationUpdate, buscarConDebounce, resetear]);
+  }, [localValue, onChange, onValueChange, onInfoChange, onLocationUpdate, buscarConDebounce, resetear]);
 
-  // Manejador para cambio de colonia
+  // Manejador optimizado para cambio de colonia
   const handleColoniaChange = useCallback((colonia: string) => {
+    if (colonia === selectedColonia) return; // Evitar updates innecesarios
+    
     setSelectedColonia(colonia);
     
     const updateCallback = onInfoChange || onLocationUpdate;
@@ -168,7 +164,7 @@ export function CodigoPostalInput({
       updateCallback({
         estado: codigoPostalInfo.estado,
         municipio: codigoPostalInfo.municipio,
-        localidad: codigoPostalInfo.localidad,
+        localidad: codigoPostalInfo.localidad || codigoPostalInfo.municipio,
         colonia
       });
     }
@@ -176,14 +172,25 @@ export function CodigoPostalInput({
     if (onColoniaChange) {
       onColoniaChange(colonia);
     }
-  }, [codigoPostalInfo, onInfoChange, onLocationUpdate, onColoniaChange]);
+  }, [selectedColonia, codigoPostalInfo, onInfoChange, onLocationUpdate, onColoniaChange]);
 
-  // Estados computados
+  // Estados computados memoizados
   const displayError = useMemo(() => error || hookError, [error, hookError]);
   const isValid = useMemo(() => 
     localValue.length === 5 && !isLoading && !displayError && codigoPostalInfo,
     [localValue.length, isLoading, displayError, codigoPostalInfo]
   );
+
+  // Manejador optimizado para sugerencias
+  const handleSugerenciaClick = useCallback((cp: string) => {
+    console.log(`[CP_INPUT] Sugerencia seleccionada: ${cp}`);
+    setLocalValue(cp);
+    const changeCallback = onValueChange || onChange;
+    if (changeCallback) {
+      changeCallback(cp);
+    }
+    buscarConDebounce(cp);
+  }, [onChange, onValueChange, buscarConDebounce]);
 
   return (
     <div className={`space-y-4 ${className || ''}`}>
@@ -222,7 +229,7 @@ export function CodigoPostalInput({
           )}
         </div>
 
-        {/* Error con sugerencias */}
+        {/* Error mejorado con sugerencias */}
         {displayError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -231,20 +238,12 @@ export function CodigoPostalInput({
                 <span>{displayError}</span>
                 {sugerencias.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium">Códigos postales similares:</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex flex-wrap gap-1 mt-2">
                       {sugerencias.map((cp) => (
                         <button
                           key={cp}
                           type="button"
-                          onClick={() => {
-                            setLocalValue(cp);
-                            const changeCallback = onValueChange || onChange;
-                            if (changeCallback) {
-                              changeCallback(cp);
-                            }
-                            buscarConDebounce(cp);
-                          }}
+                          onClick={() => handleSugerenciaClick(cp)}
                           className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
                         >
                           {cp}
@@ -258,7 +257,7 @@ export function CodigoPostalInput({
           </Alert>
         )}
         
-        {/* Información de éxito */}
+        {/* Información de éxito mejorada */}
         {isValid && codigoPostalInfo && (
           <Alert>
             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -270,17 +269,21 @@ export function CodigoPostalInput({
                    codigoPostalInfo.fuente === 'api_interna' ? '🌐 API' : '💾 Cache'}
                 </span>
               </div>
+              {codigoPostalInfo.localidad && codigoPostalInfo.localidad !== codigoPostalInfo.municipio && (
+                <div className="text-xs mt-1">
+                  Localidad: {codigoPostalInfo.localidad}
+                </div>
+              )}
             </AlertDescription>
           </Alert>
         )}
       </div>
 
-      {/* Selector de Colonia */}
-      {codigoPostalInfo && codigoPostalInfo.colonias.length > 1 && (
+      {/* CAMBIO: Selector de Colonia SIEMPRE visible cuando hay colonias (sin auto-selección) */}
+      {codigoPostalInfo && codigoPostalInfo.colonias.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="colonia-select">
-            Colonia
-            {required && <span className="text-red-500">*</span>}
+            Colonia *
           </Label>
           
           <Select value={selectedColonia} onValueChange={handleColoniaChange}>
@@ -299,17 +302,16 @@ export function CodigoPostalInput({
               ))}
             </SelectContent>
           </Select>
+          
+          {codigoPostalInfo.colonias.length === 1 && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-sm text-muted-foreground">
+                Solo hay una colonia disponible para este código postal
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
-      )}
-
-      {/* Información adicional si hay una sola colonia */}
-      {codigoPostalInfo && codigoPostalInfo.colonias.length === 1 && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Colonia asignada automáticamente: <strong>{codigoPostalInfo.colonias[0]}</strong>
-          </AlertDescription>
-        </Alert>
       )}
     </div>
   );

@@ -19,7 +19,7 @@ interface UseCodigoPostalOptions {
 }
 
 export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) {
-  const { onSuccess, onError, debounceMs = 500 } = options;
+  const { onSuccess, onError, debounceMs = 300 } = options; // Reducido de 500ms a 300ms
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -28,21 +28,27 @@ export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) 
   // Cache en memoria para evitar consultas repetidas
   const cacheRef = useRef<Map<string, CodigoPostalInfo>>(new Map());
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const abortControllerRef = useRef<AbortController>();
 
   const limpiarTimeout = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
   }, []);
 
   const buscarCodigoPostal = useCallback(async (codigoPostal: string) => {
+    console.log(`[CP_HOOK] Iniciando búsqueda para: ${codigoPostal}`);
+    
     // Limpiar estado anterior
     setError('');
     setCodigoPostalInfo(null);
 
     // Validar formato
     if (!validarFormatoCP(codigoPostal)) {
-      const errorMsg = 'Código postal debe tener 5 dígitos';
+      const errorMsg = 'El código postal debe tener exactamente 5 dígitos';
       setError(errorMsg);
       onError?.(errorMsg);
       return;
@@ -50,8 +56,14 @@ export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) 
 
     setIsLoading(true);
 
+    // Cancelar petición anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
-      // 1. Verificar cache en memoria
+      // 1. Verificar cache en memoria primero
       const cached = cacheRef.current.get(codigoPostal);
       if (cached) {
         console.log(`[CP_HOOK] Usando cache para ${codigoPostal}`);
@@ -60,7 +72,7 @@ export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) 
         return;
       }
 
-      // 2. Buscar en datos locales primero (más rápido)
+      // 2. Buscar en datos locales (más rápido)
       const datosLocales = buscarCodigoPostalLocal(codigoPostal);
       if (datosLocales) {
         console.log(`[CP_HOOK] Encontrado en datos locales: ${codigoPostal}`);
@@ -81,7 +93,7 @@ export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) 
         return;
       }
 
-      // 3. Si no está en datos locales, consultar API interna
+      // 3. Consultar API interna con timeout
       console.log(`[CP_HOOK] Consultando API interna para ${codigoPostal}`);
       
       const { data, error: apiError } = await supabase.functions.invoke('codigo-postal', {
@@ -109,18 +121,23 @@ export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) 
         return;
       }
 
-      // 4. Si no se encuentra, mostrar error con sugerencias
+      // 4. Si no se encuentra, mostrar error amigable con sugerencias
       const sugerencias = sugerirCodigosPostalesSimilares(codigoPostal);
-      const errorMsg = `Código postal ${codigoPostal} no encontrado`;
+      const errorMsg = `Código postal ${codigoPostal} no encontrado. Te mostramos códigos postales similares:`;
       
       setError(errorMsg);
       onError?.(errorMsg, sugerencias);
 
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('[CP_HOOK] Búsqueda cancelada');
+        return;
+      }
+      
       console.error('[CP_HOOK] Error en búsqueda:', error);
       
-      const errorMsg = error instanceof Error ? error.message : 'Error al consultar código postal';
       const sugerencias = sugerirCodigosPostalesSimilares(codigoPostal);
+      const errorMsg = 'Error al consultar código postal. Te mostramos códigos postales similares:';
       
       setError(errorMsg);
       onError?.(errorMsg, sugerencias);
@@ -139,6 +156,7 @@ export function useCodigoPostalOptimizado(options: UseCodigoPostalOptions = {}) 
       return;
     }
 
+    console.log(`[CP_HOOK] Programando búsqueda con debounce para: ${codigoPostal}`);
     timeoutRef.current = setTimeout(() => {
       buscarCodigoPostal(codigoPostal);
     }, debounceMs);
