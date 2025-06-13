@@ -46,7 +46,7 @@ export function VehiculoSection() {
             <span>Vehículo Motor</span>
           </CardTitle>
           <AIAssistantButton 
-            context="vehiculo"
+            context="autotransporte"
             onSuggestionApply={handleAISuggestion}
           />
         </div>

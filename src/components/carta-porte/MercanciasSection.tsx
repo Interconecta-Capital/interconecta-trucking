@@ -119,13 +119,16 @@ export function MercanciasSection({ data, ubicaciones, onChange, onNext, onPrev 
               mercancia={editingMercancia}
               onSave={handleSaveMercancia}
               onCancel={handleCancelForm}
-              onRemove={() => editingIndex >= 0 ? handleRemoveMercancia(editingIndex) : undefined}
+              onRemove={editingIndex >= 0 ? () => handleRemoveMercancia(editingIndex) : undefined}
               isLoading={isLoading}
             />
           ) : (
             <MercanciasListWrapper
               mercancias={mercancias}
-              onEdit={handleEditMercancia}
+              onEdit={(mercancia: Mercancia) => {
+                const index = mercancias.findIndex(m => m.id === mercancia.id);
+                handleEditMercancia(mercancia, index);
+              }}
               onDelete={eliminarMercancia}
               isLoading={isLoading}
             />

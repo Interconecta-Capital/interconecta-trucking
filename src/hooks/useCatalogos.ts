@@ -43,6 +43,9 @@ export const useTiposPermiso = (busqueda?: string) => {
   });
 };
 
+// Alias for backward compatibility
+export const useBuscarTipoPermiso = useTiposPermiso;
+
 // Hook para obtener configuraciones de vehículo
 export const useConfiguracionesVehiculo = (busqueda?: string) => {
   return useQuery({
@@ -51,6 +54,9 @@ export const useConfiguracionesVehiculo = (busqueda?: string) => {
     staleTime: 10 * 60 * 1000,
   });
 };
+
+// Alias for backward compatibility
+export const useBuscarConfigVehicular = useConfiguracionesVehiculo;
 
 // Hook para obtener figuras de transporte
 export const useFigurasTransporte = (busqueda?: string) => {

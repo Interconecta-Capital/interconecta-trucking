@@ -5,325 +5,218 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CodigoPostalInput } from '@/components/catalogos/CodigoPostalInput';
-import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
-import { useEstados, useFigurasTransporte } from '@/hooks/useCatalogos';
-import { RFCValidator } from '@/utils/rfcValidation';
 import { FiguraTransporte } from '@/hooks/useFigurasTransporte';
-import { Users, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, Trash2 } from 'lucide-react';
 
-interface FiguraFormProps {
-  figura?: FiguraTransporte;
-  onSave: (figura: FiguraTransporte) => void;
-  onCancel: () => void;
+export interface FiguraFormProps {
+  figura: FiguraTransporte;
+  onUpdate: (figura: FiguraTransporte) => void;
+  onRemove: () => void;
+  index: number;
 }
 
-const TIPOS_FIGURA = [
-  { clave: '01', descripcion: 'Operador' },
-  { clave: '02', descripcion: 'Propietario' },
-  { clave: '03', descripcion: 'Arrendador' },
-  { clave: '04', descripcion: 'Notificado' }
+const tiposFigura = [
+  { value: '01', label: '01 - Operador' },
+  { value: '02', label: '02 - Propietario' },
+  { value: '03', label: '03 - Arrendador' },
+  { value: '04', label: '04 - Notificado' },
 ];
 
-export function FiguraForm({ figura, onSave, onCancel }: FiguraFormProps) {
-  const [formData, setFormData] = useState<FiguraTransporte>({
-    tipo_figura: '',
-    rfc_figura: '',
-    nombre_figura: '',
-    num_licencia: '',
-    residencia_fiscal_figura: '',
-    num_reg_id_trib_figura: '',
-    domicilio: {
-      calle: '',
-      numero_exterior: '',
-      numero_interior: '',
-      colonia: '',
-      localidad: '',
-      municipio: '',
-      estado: '',
-      pais: 'MEX',
-      codigo_postal: '',
-    },
-  });
-
-  const [rfcValidation, setRfcValidation] = useState<ReturnType<typeof RFCValidator.validarRFC>>({
-    esValido: true,
-    errores: []
-  });
-
-  const { data: estados = [] } = useEstados();
+export function FiguraForm({ figura, onUpdate, onRemove, index }: FiguraFormProps) {
+  const [formData, setFormData] = useState<FiguraTransporte>(figura);
 
   useEffect(() => {
-    if (figura) {
-      setFormData(figura);
-    }
+    setFormData(figura);
   }, [figura]);
 
-  const handleTipoFiguraChange = (value: string) => {
-    if (value) {
-      setFormData(prev => ({ ...prev, tipo_figura: value }));
-    }
-  };
-
-  const handleRFCChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rfc = e.target.value.toUpperCase();
-    setFormData(prev => ({ ...prev, rfc_figura: rfc }));
-    
-    if (rfc.length > 0) {
-      const validation = RFCValidator.validarRFC(rfc);
-      setRfcValidation(validation);
-    } else {
-      setRfcValidation({ esValido: true, errores: [] });
-    }
+  const handleChange = (field: string, value: any) => {
+    const updatedFigura = { ...formData, [field]: value };
+    setFormData(updatedFigura);
+    onUpdate(updatedFigura);
   };
 
   const handleDomicilioChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      domicilio: {
-        ...prev.domicilio!,
-        [field]: value
-      }
-    }));
+    const updatedDomicilio = { ...formData.domicilio, [field]: value };
+    const updatedFigura = { ...formData, domicilio: updatedDomicilio };
+    setFormData(updatedFigura);
+    onUpdate(updatedFigura);
   };
 
   const handleCodigoPostalChange = (codigoPostal: string) => {
-    setFormData(prev => ({
-      ...prev,
-      domicilio: {
-        ...prev.domicilio!,
-        codigo_postal: codigoPostal
-      }
-    }));
+    handleDomicilioChange('codigo_postal', codigoPostal);
   };
 
-  const handleInfoChange = (info: any) => {
-    if (info.estado) {
-      handleDomicilioChange('estado', info.estado);
-    }
-    if (info.municipio) {
-      handleDomicilioChange('municipio', info.municipio);
-    }
-    if (info.localidad) {
-      handleDomicilioChange('localidad', info.localidad);
-    }
+  const handleInfoChange = (info: {
+    estado?: string;
+    municipio?: string;
+    localidad?: string;
+    colonia?: string;
+  }) => {
+    if (info.estado) handleDomicilioChange('estado', info.estado);
+    if (info.municipio) handleDomicilioChange('municipio', info.municipio);
+    if (info.colonia) handleDomicilioChange('colonia', info.colonia);
   };
 
   const handleColoniaChange = (colonia: string) => {
     handleDomicilioChange('colonia', colonia);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isFormValid()) {
-      onSave(formData);
-    }
-  };
-
-  const isFormValid = () => {
-    return (
-      formData.tipo_figura &&
-      formData.rfc_figura &&
-      formData.nombre_figura &&
-      formData.domicilio?.codigo_postal &&
-      formData.domicilio?.calle &&
-      formData.domicilio?.numero_exterior &&
-      (formData.rfc_figura === '' || rfcValidation.esValido)
-    );
-  };
-
-  const tipoSeleccionado = TIPOS_FIGURA.find(t => t.clave === formData.tipo_figura);
-
   return (
-    <Card>
+    <Card className="mb-4">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Users className="h-5 w-5" />
-          <span>{figura ? 'Editar' : 'Agregar'} Figura del Transporte</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <User className="h-4 w-4" />
+            <span>Figura {index + 1}</span>
+          </CardTitle>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información básica */}
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Tipo de Figura *</Label>
+            <Select
+              value={formData.tipo_figura}
+              onValueChange={(value) => handleChange('tipo_figura', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiposFigura.map((tipo) => (
+                  <SelectItem key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>RFC *</Label>
+            <Input
+              value={formData.rfc_figura}
+              onChange={(e) => handleChange('rfc_figura', e.target.value.toUpperCase())}
+              placeholder="RFC de la figura"
+              maxLength={13}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Nombre Completo *</Label>
+            <Input
+              value={formData.nombre_figura}
+              onChange={(e) => handleChange('nombre_figura', e.target.value)}
+              placeholder="Nombre completo"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Número de Licencia</Label>
+            <Input
+              value={formData.num_licencia || ''}
+              onChange={(e) => handleChange('num_licencia', e.target.value)}
+              placeholder="Número de licencia"
+            />
+          </div>
+        </div>
+
+        {/* Domicilio */}
+        <div className="border-t pt-4">
+          <h4 className="font-medium mb-3">Domicilio</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>País</Label>
+              <Input
+                value={formData.domicilio?.pais || 'México'}
+                onChange={(e) => handleDomicilioChange('pais', e.target.value)}
+                placeholder="País"
+              />
+            </div>
+
+            <CodigoPostalInput
+              value={formData.domicilio?.codigo_postal || ''}
+              onValueChange={handleCodigoPostalChange}
+              onInfoChange={handleInfoChange}
+              onColoniaChange={handleColoniaChange}
+              coloniaValue={formData.domicilio?.colonia || ''}
+              className="w-full"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Input
+                value={formData.domicilio?.estado || ''}
+                onChange={(e) => handleDomicilioChange('estado', e.target.value)}
+                placeholder="Estado"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Municipio</Label>
+              <Input
+                value={formData.domicilio?.municipio || ''}
+                onChange={(e) => handleDomicilioChange('municipio', e.target.value)}
+                placeholder="Municipio"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>Colonia</Label>
+              <Input
+                value={formData.domicilio?.colonia || ''}
+                onChange={(e) => handleDomicilioChange('colonia', e.target.value)}
+                placeholder="Colonia"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Calle</Label>
+              <Input
+                value={formData.domicilio?.calle || ''}
+                onChange={(e) => handleDomicilioChange('calle', e.target.value)}
+                placeholder="Nombre de la calle"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Tipo de Figura *</Label>
-              <Select 
-                value={formData.tipo_figura} 
-                onValueChange={handleTipoFiguraChange}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccionar tipo de figura..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIPOS_FIGURA.map((tipo) => (
-                    <SelectItem key={tipo.clave} value={tipo.clave}>
-                      {tipo.clave} - {tipo.descripcion}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {tipoSeleccionado && (
-                <Badge variant="secondary" className="mt-1">
-                  {tipoSeleccionado.descripcion}
-                </Badge>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>RFC *</Label>
-              <div className="relative">
-                <Input
-                  value={formData.rfc_figura}
-                  onChange={handleRFCChange}
-                  placeholder="RFC de la figura"
-                  className={
-                    formData.rfc_figura && !rfcValidation.esValido ? 'border-red-500' : 
-                    formData.rfc_figura && rfcValidation.esValido ? 'border-green-500' : ''
-                  }
-                />
-                {formData.rfc_figura && rfcValidation.esValido && (
-                  <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-green-500" />
-                )}
-              </div>
-              
-              {formData.rfc_figura && !rfcValidation.esValido && rfcValidation.errores.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {rfcValidation.errores[0]}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Nombre/Razón Social *</Label>
+              <Label>Número Exterior</Label>
               <Input
-                value={formData.nombre_figura}
-                onChange={(e) => setFormData(prev => ({ ...prev, nombre_figura: e.target.value }))}
-                placeholder="Nombre completo o razón social"
+                value={formData.domicilio?.numero_exterior || ''}
+                onChange={(e) => handleDomicilioChange('numero_exterior', e.target.value)}
+                placeholder="No. Exterior"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Número de Licencia</Label>
+              <Label>Número Interior</Label>
               <Input
-                value={formData.num_licencia || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, num_licencia: e.target.value }))}
-                placeholder="Número de licencia (solo para operadores)"
+                value={formData.domicilio?.numero_interior || ''}
+                onChange={(e) => handleDomicilioChange('numero_interior', e.target.value)}
+                placeholder="No. Interior"
               />
             </div>
           </div>
-
-          {/* Domicilio */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Domicilio</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>País</Label>
-                <Select 
-                  value={formData.domicilio?.pais || 'MEX'} 
-                  onValueChange={(value) => handleDomicilioChange('pais', value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MEX">México</SelectItem>
-                    <SelectItem value="USA">Estados Unidos</SelectItem>
-                    <SelectItem value="CAN">Canadá</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <CodigoPostalInput
-                value={formData.domicilio?.codigo_postal || ''}
-                onValueChange={handleCodigoPostalChange}
-                onInfoChange={handleInfoChange}
-                coloniaValue={formData.domicilio?.colonia}
-                onColoniaChange={handleColoniaChange}
-                required
-              />
-
-              <div className="space-y-2">
-                <Label>Estado *</Label>
-                <Select 
-                  value={formData.domicilio?.estado || ''} 
-                  onValueChange={(value) => handleDomicilioChange('estado', value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar estado..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estados.map((estado) => (
-                      <SelectItem key={estado.clave} value={estado.clave}>
-                        {estado.clave} - {estado.descripcion}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Calle *</Label>
-                <Input
-                  value={formData.domicilio?.calle || ''}
-                  onChange={(e) => handleDomicilioChange('calle', e.target.value)}
-                  placeholder="Nombre de la calle"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Municipio</Label>
-                <Input
-                  value={formData.domicilio?.municipio || ''}
-                  onChange={(e) => handleDomicilioChange('municipio', e.target.value)}
-                  placeholder="Municipio"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Número Exterior *</Label>
-                <Input
-                  value={formData.domicilio?.numero_exterior || ''}
-                  onChange={(e) => handleDomicilioChange('numero_exterior', e.target.value)}
-                  placeholder="123"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Número Interior</Label>
-                <Input
-                  value={formData.domicilio?.numero_interior || ''}
-                  onChange={(e) => handleDomicilioChange('numero_interior', e.target.value)}
-                  placeholder="A"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!isFormValid()}>
-              {figura ? 'Actualizar' : 'Agregar'} Figura
-            </Button>
-          </div>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );
