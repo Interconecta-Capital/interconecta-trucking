@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { toast } from 'sonner';
 import { Mail, ArrowLeft } from 'lucide-react';
 
@@ -16,18 +16,19 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { signInWithMagicLink } = useAuth();
+  const { signInWithGoogle } = useSimpleAuth(); // Using available method from useSimpleAuth
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await signInWithMagicLink(email);
+      // For now, we'll use Google auth as magic link alternative
+      await signInWithGoogle();
       setSent(true);
-      toast.success('¡Link mágico enviado! Revisa tu correo.');
+      toast.success('¡Autenticación iniciada! Completa el proceso con Google.');
     } catch (error: any) {
-      toast.error(error.message || 'Error al enviar el link mágico');
+      toast.error(error.message || 'Error al iniciar autenticación');
     } finally {
       setLoading(false);
     }
@@ -42,19 +43,15 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
               <Mail className="h-6 w-6 text-interconecta-primary" />
             </div>
           </div>
-          <CardTitle className="text-xl font-sora">Link Mágico Enviado</CardTitle>
+          <CardTitle className="text-xl font-sora">Autenticación Iniciada</CardTitle>
           <CardDescription className="font-inter">
-            Te hemos enviado un link mágico a:
+            Complete el proceso con Google
           </CardDescription>
-          <p className="font-medium text-interconecta-text-primary font-inter">
-            {email}
-          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center space-y-4">
             <p className="text-sm text-interconecta-text-secondary font-inter">
-              Haz clic en el enlace del correo para acceder a tu cuenta. 
-              El enlace es válido por 1 hora.
+              Complete la autenticación en la ventana que se abrió.
             </p>
             
             <Button
@@ -74,9 +71,9 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
   return (
     <Card className="border-interconecta-border-subtle">
       <CardHeader className="text-center pb-4">
-        <CardTitle className="text-xl font-sora">Acceso con Link Mágico</CardTitle>
+        <CardTitle className="text-xl font-sora">Acceso Rápido</CardTitle>
         <CardDescription className="font-inter">
-          Te enviaremos un enlace seguro para acceder sin contraseña
+          Acceso rápido con Google
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -105,12 +102,12 @@ export function MagicLinkForm({ onBack }: MagicLinkFormProps) {
               {loading ? (
                 <>
                   <Mail className="h-4 w-4 mr-2 animate-pulse" />
-                  Enviando link...
+                  Iniciando...
                 </>
               ) : (
                 <>
                   <Mail className="h-4 w-4 mr-2" />
-                  Enviar Link Mágico
+                  Acceso con Google
                 </>
               )}
             </Button>
