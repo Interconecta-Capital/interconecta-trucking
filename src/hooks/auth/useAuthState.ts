@@ -4,6 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { AuthUser } from './types';
+import { useNavigate } from 'react-router-dom';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -13,6 +14,7 @@ export function useAuthState() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
+  const navigate = useNavigate();
 
   const loadUserData = async (authUser: User) => {
     try {
@@ -75,6 +77,12 @@ export function useAuthState() {
         if (currentSession?.user) {
           console.log('[AuthState] Session found, loading user data');
           await loadUserData(currentSession.user);
+          
+          // If user is authenticated and on landing page, redirect to dashboard
+          if (window.location.pathname === '/') {
+            console.log('[AuthState] Redirecting authenticated user from landing to dashboard');
+            navigate('/dashboard', { replace: true });
+          }
         } else {
           console.log('[AuthState] No session found');
           setUser(null);
@@ -97,14 +105,22 @@ export function useAuthState() {
         
         if (event === 'SIGNED_IN' && session?.user) {
           setLoading(true);
-          // Minimal delay to avoid potential issues, reduced from 100ms to 25ms
+          // Reduced delay and added redirect logic
           setTimeout(async () => {
             await loadUserData(session.user);
             setLoading(false);
-          }, 25);
+            
+            // Redirect to dashboard after successful login
+            if (window.location.pathname === '/' || window.location.pathname === '/auth') {
+              console.log('[AuthState] Redirecting after sign in to dashboard');
+              navigate('/dashboard', { replace: true });
+            }
+          }, 10); // Reduced from 25ms to 10ms
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
+          // Redirect to auth page after logout
+          navigate('/auth', { replace: true });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           // Refresh user data on token refresh
           await loadUserData(session.user);
@@ -113,7 +129,7 @@ export function useAuthState() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   return { user, loading, session };
 }

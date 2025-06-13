@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthState {
   user: User | null;
@@ -20,8 +21,9 @@ export const useOptimizedAuth = () => {
   
   const initializingRef = useRef(false);
   const mountedRef = useRef(true);
+  const navigate = useNavigate();
 
-  // Optimized session fetcher without excessive rate limiting
+  // Optimized session fetcher
   const fetchSession = useCallback(async () => {
     if (initializingRef.current) return;
     
@@ -53,6 +55,12 @@ export const useOptimizedAuth = () => {
           console.log('[OptimizedAuth] Cleaning auth tokens from URL');
           const cleanUrl = window.location.pathname + window.location.search;
           window.history.replaceState({}, document.title, cleanUrl);
+          
+          // If user just logged in and is on landing page, redirect to dashboard
+          if (session?.user && window.location.pathname === '/') {
+            console.log('[OptimizedAuth] Redirecting authenticated user to dashboard');
+            navigate('/dashboard', { replace: true });
+          }
         }
       }
     } catch (error) {
@@ -63,7 +71,7 @@ export const useOptimizedAuth = () => {
     } finally {
       initializingRef.current = false;
     }
-  }, []);
+  }, [navigate]);
 
   // Initialize auth state
   useEffect(() => {
@@ -90,6 +98,15 @@ export const useOptimizedAuth = () => {
               loading: false,
               initialized: true,
             });
+
+            // Handle successful sign in
+            if (event === 'SIGNED_IN' && session?.user) {
+              console.log('[OptimizedAuth] User signed in, redirecting to dashboard');
+              // If on landing page, redirect to dashboard
+              if (window.location.pathname === '/' || window.location.pathname === '/auth') {
+                navigate('/dashboard', { replace: true });
+              }
+            }
           }
 
           // Handle specific auth events
@@ -103,6 +120,8 @@ export const useOptimizedAuth = () => {
               }
             });
             console.log('[OptimizedAuth] Cleaned up auth data after signout');
+            // Redirect to auth page
+            navigate('/auth', { replace: true });
           }
           
           // Clean URL for all auth events
@@ -110,7 +129,7 @@ export const useOptimizedAuth = () => {
             const cleanUrl = window.location.pathname + window.location.search;
             window.history.replaceState({}, document.title, cleanUrl);
           }
-        }, 50); // Reduced debounce to 50ms
+        }, 50);
       }
     );
 
@@ -121,7 +140,7 @@ export const useOptimizedAuth = () => {
         clearTimeout(debounceTimeout);
       }
     };
-  }, [fetchSession]);
+  }, [fetchSession, navigate]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -138,11 +157,7 @@ export const useOptimizedAuth = () => {
     signOut: async () => {
       try {
         await supabase.auth.signOut();
-        // Use programmatic navigation instead of window.location.href
-        if (typeof window !== 'undefined') {
-          const event = new CustomEvent('auth-logout', { detail: { reason: 'manual' } });
-          window.dispatchEvent(event);
-        }
+        navigate('/auth', { replace: true });
       } catch (error) {
         console.error('[OptimizedAuth] Signout error:', error);
       }

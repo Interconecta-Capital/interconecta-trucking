@@ -2,6 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useDebugMonitor } from '@/hooks/useDebugMonitor';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
   const { logEvent } = useDebugMonitor();
+  const navigate = useNavigate();
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   useEffect(() => {
@@ -17,20 +19,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
       hasUser: !!user,
       loading,
       userId: user?.id,
+      currentPath: window.location.pathname,
     });
   }, [user, loading, logEvent]);
 
-  // Add timeout to prevent infinite loading
+  // Add timeout to prevent infinite loading - reduced to 5 seconds
   useEffect(() => {
     if (loading) {
       const timeout = setTimeout(() => {
         console.warn('[AuthGuard] Authentication timeout reached');
         logEvent('auth_guard_timeout', { 
           timestamp: Date.now(),
-          timeoutDuration: 10000 
+          timeoutDuration: 5000,
+          currentPath: window.location.pathname
         });
         setTimeoutReached(true);
-      }, 10000); // 10 second timeout
+      }, 5000); // Reduced to 5 second timeout
 
       return () => clearTimeout(timeout);
     } else {
@@ -40,7 +44,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // Show loading state with timeout handling
   if (loading && !timeoutReached) {
-    logEvent('auth_guard_loading', { timestamp: Date.now() });
+    logEvent('auth_guard_loading', { 
+      timestamp: Date.now(),
+      currentPath: window.location.pathname 
+    });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -58,10 +65,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
       currentUrl: window.location.href 
     });
     
-    // Force redirect after timeout
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth';
-    }
+    // Use React Router navigation instead of window.location.href
+    navigate('/auth', { replace: true });
     return null;
   }
 
@@ -72,16 +77,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
       currentUrl: window.location.href 
     });
     
-    // Use programmatic navigation instead of window.location.href
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth';
-    }
+    // Use React Router navigation
+    navigate('/auth', { replace: true });
     return null;
   }
 
   logEvent('auth_guard_allowed', { 
     userId: user?.id,
-    userEmail: user?.email 
+    userEmail: user?.email,
+    currentPath: window.location.pathname
   });
 
   return <>{children}</>;
