@@ -35,14 +35,25 @@ export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
 
   const handleAISuggestion = (suggestion: any) => {
     if (suggestion.data) {
-      // Apply AI suggestion to form
+      // Apply AI suggestion to form with proper type checking
       const updates: Partial<AutotransporteData> = {};
-      Object.entries(suggestion.data).forEach(([key, value]) => {
-        if (key === 'placa_vm' || key === 'anio_modelo_vm' || key === 'config_vehicular' || 
-            key === 'perm_sct' || key === 'num_permiso_sct') {
-          updates[key as keyof AutotransporteData] = value as any;
-        }
-      });
+      
+      if (suggestion.data.placa_vm && typeof suggestion.data.placa_vm === 'string') {
+        updates.placa_vm = suggestion.data.placa_vm;
+      }
+      if (suggestion.data.anio_modelo_vm && typeof suggestion.data.anio_modelo_vm === 'number') {
+        updates.anio_modelo_vm = suggestion.data.anio_modelo_vm;
+      }
+      if (suggestion.data.config_vehicular && typeof suggestion.data.config_vehicular === 'string') {
+        updates.config_vehicular = suggestion.data.config_vehicular;
+      }
+      if (suggestion.data.perm_sct && typeof suggestion.data.perm_sct === 'string') {
+        updates.perm_sct = suggestion.data.perm_sct;
+      }
+      if (suggestion.data.num_permiso_sct && typeof suggestion.data.num_permiso_sct === 'string') {
+        updates.num_permiso_sct = suggestion.data.num_permiso_sct;
+      }
+      
       onChange(updates);
     }
   };
@@ -80,7 +91,11 @@ export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
               type="number" 
               placeholder="2023"
               value={data.anio_modelo_vm || ''}
-              onChange={(e) => handleFieldChange('anio_modelo_vm', parseInt(e.target.value) || '')}
+              onChange={(e) => {
+                const value = e.target.value;
+                const numericValue = value === '' ? 0 : parseInt(value) || 0;
+                handleFieldChange('anio_modelo_vm', numericValue);
+              }}
             />
           </div>
         </div>
