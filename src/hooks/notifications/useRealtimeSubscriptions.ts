@@ -1,13 +1,12 @@
-
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
+import { useSimpleAuth } from '../useSimpleAuth';
 import { RealtimeNotification } from './types';
 import { useVehicleNotifications } from './useVehicleNotifications';
 import { useTripNotifications } from './useTripNotifications';
 
 export const useRealtimeSubscriptions = (createContextualNotification: (tipo: string, titulo: string, mensaje: string, urgente?: boolean) => void) => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { vehicleNotifications } = useVehicleNotifications();
   const { tripNotifications } = useTripNotifications();
 

@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,7 +18,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export function UserMenu() {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useSimpleAuth();
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const isMobile = useIsMobile();
@@ -35,10 +34,10 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const userName = user.profile?.nombre || user.usuario?.nombre || user.email?.split('@')[0] || 'Usuario';
+  const userName = user.user_metadata?.nombre || user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario';
   const userEmail = user.email || '';
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
-  const userRole = user.profile?.empresa || 'Transportista';
+  const userRole = user.user_metadata?.empresa || 'Transportista';
 
   return (
     <>
@@ -47,7 +46,7 @@ export function UserMenu() {
           <Button variant="ghost" className="relative h-10 w-auto px-3 rounded-full">
             <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.profile?.avatar_url} alt={userName} />
+                <AvatarImage src={user.user_metadata?.avatar_url} alt={userName} />
                 <AvatarFallback className="bg-trucking-blue-100 text-trucking-blue-600 font-semibold text-sm">
                   {userInitials}
                 </AvatarFallback>
@@ -66,7 +65,7 @@ export function UserMenu() {
             <div className="flex flex-col space-y-2">
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={user.profile?.avatar_url} alt={userName} />
+                  <AvatarImage src={user.user_metadata?.avatar_url} alt={userName} />
                   <AvatarFallback className="bg-trucking-blue-100 text-trucking-blue-600 font-semibold">
                     {userInitials}
                   </AvatarFallback>

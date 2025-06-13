@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, parseISO } from 'date-fns';
 
@@ -15,7 +14,7 @@ interface TrialInfo {
 }
 
 export const useTrialTracking = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const [trialInfo, setTrialInfo] = useState<TrialInfo>({
     daysUsed: 0,
     daysRemaining: 14,

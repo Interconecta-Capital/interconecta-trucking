@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +13,7 @@ import 'moment/locale/es';
 moment.locale('es');
 
 export function NotificationsPanel() {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
 
   const { data: notificaciones = [], isLoading } = useQuery({
     queryKey: ['notificaciones', user?.id],

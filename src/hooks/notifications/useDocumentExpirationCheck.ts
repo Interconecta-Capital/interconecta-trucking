@@ -1,11 +1,10 @@
-
 import { useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
+import { useSimpleAuth } from '../useSimpleAuth';
 import { useVehicleNotifications } from './useVehicleNotifications';
 
 export const useDocumentExpirationCheck = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { vehicleNotifications } = useVehicleNotifications();
 
   const checkDocumentExpirations = useCallback(async () => {

@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { useSimpleAuth } from './useSimpleAuth';
 import { webhookService } from '@/services/webhookService';
 import { multiTenancyService } from '@/services/multiTenancyService';
 import { mapService } from '@/services/mapService';
 
 export const useIntegraciones = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const [tenantConfig, setTenantConfig] = useState(null);
   const [loading, setLoading] = useState(true);
 
