@@ -46,10 +46,11 @@ export function UbicacionDomicilioForm({
           coloniaValue={formData.domicilio.colonia}
           onColoniaChange={(colonia) => onFieldChange('domicilio.colonia', colonia)}
           required
+          label="Código Postal"
         />
       </div>
 
-      {/* Campos auto-completados */}
+      {/* Campos auto-completados (solo lectura cuando vienen de CP) */}
       {formData.domicilio.estado && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -59,6 +60,7 @@ export function UbicacionDomicilioForm({
               onChange={(e) => onFieldChange('domicilio.estado', e.target.value)}
               placeholder="Estado"
               className="bg-gray-50"
+              readOnly
             />
           </div>
 
@@ -69,6 +71,7 @@ export function UbicacionDomicilioForm({
               onChange={(e) => onFieldChange('domicilio.municipio', e.target.value)}
               placeholder="Municipio"
               className="bg-gray-50"
+              readOnly
             />
           </div>
         </div>

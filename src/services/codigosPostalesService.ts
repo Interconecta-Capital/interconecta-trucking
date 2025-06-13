@@ -1,105 +1,123 @@
 
+import { buscarCodigoPostalLocal, validarFormatoCP } from '@/data/codigosPostalesMexico';
+import { supabase } from '@/integrations/supabase/client';
+
 export interface DireccionCompleta {
   codigoPostal: string;
   estado: string;
   municipio: string;
   localidad?: string;
   colonias: string[];
-}
-
-export interface RespuestaSEPOMEX {
-  error: boolean;
-  code_zip: string;
-  zip_code: string;
-  municipality: string;
-  state: string;
-  city: string;
-  d_city: string;
-  d_state: string;
-  d_mnp: string;
-  d_CP: string;
-  d_asenta: string;
-  d_tipo_asenta: string;
-  d_codigo: string;
-  c_estado: string;
-  c_oficina: string;
-  c_CP: string;
-  c_tipo_asenta: string;
-  c_mnp: string;
-  id_asenta_cpcons: string;
-  response: Array<{
-    d_asenta: string;
-    d_tipo_asenta: string;
-    d_mnp: string;
-    d_estado: string;
-    d_ciudad: string;
-    d_CP: string;
-    c_estado: string;
-    c_oficina: string;
-    c_CP: string;
-    c_tipo_asenta: string;
-    c_mnp: string;
-    id_asenta_cpcons: string;
-  }>;
+  fuente?: 'local' | 'api_interna' | 'legacy_api';
 }
 
 class CodigosPostalesService {
-  private readonly baseURL = 'https://api-sepomex.hckdrk.mx/query/info_cp';
   private cache = new Map<string, DireccionCompleta>();
 
   async buscarDireccionPorCP(codigoPostal: string): Promise<DireccionCompleta | null> {
     // Validar formato
-    if (!/^\d{5}$/.test(codigoPostal)) {
+    if (!validarFormatoCP(codigoPostal)) {
+      console.warn('[CP_SERVICE] Formato inválido:', codigoPostal);
       return null;
     }
 
     // Verificar cache
     if (this.cache.has(codigoPostal)) {
+      console.log('[CP_SERVICE] Usando cache para:', codigoPostal);
       return this.cache.get(codigoPostal)!;
     }
 
     try {
-      const response = await fetch(`${this.baseURL}/${codigoPostal}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // 1. Primero intentar datos locales (más rápido)
+      const datosLocales = buscarCodigoPostalLocal(codigoPostal);
+      if (datosLocales) {
+        console.log('[CP_SERVICE] Encontrado en datos locales:', codigoPostal);
+        
+        const resultado: DireccionCompleta = {
+          codigoPostal,
+          estado: datosLocales.estado,
+          municipio: datosLocales.municipio,
+          localidad: datosLocales.localidad,
+          colonias: datosLocales.colonias,
+          fuente: 'local'
+        };
+
+        this.cache.set(codigoPostal, resultado);
+        return resultado;
       }
 
-      const data: RespuestaSEPOMEX = await response.json();
+      // 2. Si no está local, usar API interna (Edge Function)
+      console.log('[CP_SERVICE] Consultando API interna para:', codigoPostal);
+      
+      const { data, error } = await supabase.functions.invoke('codigo-postal', {
+        body: { codigoPostal }
+      });
+
+      if (!error && data && !data.error) {
+        const resultado: DireccionCompleta = {
+          codigoPostal: data.codigoPostal,
+          estado: data.estado,
+          municipio: data.municipio,
+          localidad: data.localidad,
+          colonias: data.colonias,
+          fuente: 'api_interna'
+        };
+
+        this.cache.set(codigoPostal, resultado);
+        return resultado;
+      }
+
+      // 3. Fallback a API legacy (con manejo de CORS)
+      console.log('[CP_SERVICE] APIs anteriores fallaron, intentando legacy...');
+      return await this.buscarLegacyAPI(codigoPostal);
+
+    } catch (error) {
+      console.error('[CP_SERVICE] Error en búsqueda:', error);
+      return null;
+    }
+  }
+
+  private async buscarLegacyAPI(codigoPostal: string): Promise<DireccionCompleta | null> {
+    try {
+      // Intentar API legacy solo como último recurso
+      const response = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`);
+      
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
 
       if (data.error || !data.response || data.response.length === 0) {
         return null;
       }
 
-      // Procesar respuesta
       const primeraRespuesta = data.response[0];
-      const todasLasColonias = data.response.map(item => item.d_asenta);
-      const coloniasUnicas = [...new Set(todasLasColonias)].sort();
+      const colonias = [...new Set(data.response.map((item: any) => item.d_asenta))].sort();
 
-      const direccionCompleta: DireccionCompleta = {
-        codigoPostal: codigoPostal,
+      const resultado: DireccionCompleta = {
+        codigoPostal,
         estado: primeraRespuesta.d_estado,
         municipio: primeraRespuesta.d_mnp,
         localidad: primeraRespuesta.d_ciudad,
-        colonias: coloniasUnicas
+        colonias,
+        fuente: 'legacy_api'
       };
 
-      // Guardar en cache
-      this.cache.set(codigoPostal, direccionCompleta);
+      this.cache.set(codigoPostal, resultado);
+      return resultado;
 
-      return direccionCompleta;
     } catch (error) {
-      console.error('Error al consultar código postal:', error);
+      console.error('[CP_SERVICE] Error en API legacy:', error);
       return null;
     }
   }
 
-  // Limpiar cache si es necesario
+  // Mantener métodos existentes para compatibilidad
   limpiarCache(): void {
     this.cache.clear();
   }
 
-  // Obtener datos del cache
   obtenerDelCache(codigoPostal: string): DireccionCompleta | null {
     return this.cache.get(codigoPostal) || null;
   }
