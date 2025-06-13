@@ -112,6 +112,9 @@ GOOGLE_CLIENT_ID=tu_client_id
 # Entorno
 NODE_ENV=production
 PORT=8091
+
+# Tiempo de inactividad para cierre de sesión (minutos)
+VITE_INACTIVITY_TIMEOUT_MINUTES=30
 ¿Puedo conectar un dominio personalizado?
 ¡Sí, por supuesto!
 Interconecta Trucking ya opera bajo el dominio empresarial:
