@@ -66,8 +66,8 @@ export const createTenantAndUser = async (
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .insert({
-        nombre_empresa: userData.empresa,
-        rfc_empresa: userData.rfc,
+        nombre_empresa: userData.empresa || `${userData.nombre} - Empresa`,
+        rfc_empresa: userData.rfc || 'TEMP000000000',
       })
       .select()
       .single();

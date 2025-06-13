@@ -1,6 +1,6 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthState } from './auth/useAuthState';
 import { useAuthActions } from './auth/useAuthActions';
@@ -21,30 +21,27 @@ interface AuthContextType {
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
   resendConfirmation: (email: string) => Promise<void>;
   hasAccess: (requiredRole?: string) => boolean;
-  validateUniqueRFC: (rfc: string) => Promise<boolean>;
+  validateUniqueRFC: (rfc: string) => Promise<ValidationResult>;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  message?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, session, loading, setUser, setSession, setLoading } = useAuthState();
+  const { user, session, loading, setUser } = useAuthState();
   const authActions = useAuthActions();
   const { validateRFCFormat } = useAuthValidation();
 
-  // Convert base User to ExtendedUser
-  const extendedUser: ExtendedUser | null = user ? {
-    ...user,
-    profile: user.user_metadata || {},
-    usuario: user.user_metadata || {},
-    tenant: user.user_metadata?.tenant || null
-  } : null;
-
   const hasAccess = (requiredRole?: string): boolean => {
-    if (!extendedUser) return false;
+    if (!user) return false;
     if (!requiredRole) return true;
     
-    const userRole = extendedUser.profile?.rol || extendedUser.usuario?.rol || 'usuario';
-    const planType = extendedUser.profile?.plan_type || 'trial';
+    const userRole = user.profile?.rol || user.usuario?.rol || 'usuario';
+    const planType = user.profile?.plan_type || 'trial';
     
     switch (requiredRole) {
       case 'admin':
@@ -56,41 +53,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const validateUniqueRFC = async (rfc: string): Promise<boolean> => {
+  const validateUniqueRFC = async (rfc: string): Promise<ValidationResult> => {
     const validation = validateRFCFormat(rfc);
-    if (!validation.isValid) return false;
+    if (!validation.isValid) {
+      return { isValid: false, message: validation.error };
+    }
     
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('rfc', rfc.toUpperCase())
-        .neq('id', extendedUser?.id || '');
+        .neq('id', user?.id || '');
       
       if (error) {
         console.error('RFC validation error:', error);
-        return false;
+        return { isValid: false, message: 'Error validating RFC' };
       }
       
-      return data.length === 0;
+      if (data.length > 0) {
+        return { isValid: false, message: 'RFC already exists' };
+      }
+      
+      return { isValid: true };
     } catch (error) {
       console.error('RFC validation error:', error);
-      return false;
+      return { isValid: false, message: 'Error validating RFC' };
     }
   };
 
   const updateProfile = async (profileData: Partial<UserProfile>): Promise<void> => {
     try {
-      if (!extendedUser) {
+      if (!user) {
         throw new Error('Usuario no autenticado');
       }
 
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          id: extendedUser.id,
-          nombre: profileData.nombre || extendedUser.profile?.nombre || '',
-          email: profileData.email || extendedUser.email || '',
+          id: user.id,
+          nombre: profileData.nombre || user.profile?.nombre || '',
+          email: profileData.email || user.email || '',
           empresa: profileData.empresa,
           rfc: profileData.rfc,
           telefono: profileData.telefono,
@@ -107,8 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Update local user state
       setUser(prev => prev ? {
         ...prev,
-        user_metadata: {
-          ...prev.user_metadata,
+        profile: {
+          ...prev.profile,
           ...profileData
         }
       } : null);
@@ -120,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value: AuthContextType = {
-    user: extendedUser,
+    user,
     session,
     loading,
     signOut: authActions.signOut,

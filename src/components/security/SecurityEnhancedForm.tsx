@@ -1,103 +1,157 @@
 
-import React from 'react';
-import { useInputSanitization } from '@/hooks/useInputSanitization';
-import { useCSRFProtection } from '@/hooks/useCSRFProtection';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useInputSanitization } from '@/hooks/useInputSanitization';
+import { useCSRFProtection } from '@/hooks/useCSRFProtection';
+import { toast } from 'sonner';
 
-interface SecurityEnhancedFormProps {
-  children: React.ReactNode;
-  onSubmit: (formData: FormData, csrfToken: string) => Promise<void>;
-  className?: string;
-}
+export function SecurityEnhancedForm() {
+  const [formData, setFormData] = useState({
+    email: '',
+    name: '',
+    company: '',
+    rfc: '',
+    phone: ''
+  });
 
-export function SecurityEnhancedForm({ children, onSubmit, className }: SecurityEnhancedFormProps) {
-  const { sanitizeInput, sanitizationErrors, clearErrors } = useInputSanitization();
+  const { sanitizeInput, validateEmail, validateRFC, sanitizationErrors, clearErrors } = useInputSanitization();
   const { csrfToken, protectedRequest } = useCSRFProtection();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    clearErrors();
-
-    const formData = new FormData(e.currentTarget);
+  const handleInputChange = (field: string, value: string) => {
+    let sanitizedValue = value;
     
+    switch (field) {
+      case 'email':
+        sanitizedValue = sanitizeInput(value, 'email');
+        break;
+      case 'rfc':
+        sanitizedValue = sanitizeInput(value, 'rfc');
+        break;
+      case 'phone':
+        sanitizedValue = sanitizeInput(value, 'phone');
+        break;
+      case 'name':
+        sanitizedValue = sanitizeInput(value, 'nombre');
+        break;
+      case 'company':
+        sanitizedValue = sanitizeInput(value, 'empresa');
+        break;
+      default:
+        sanitizedValue = sanitizeInput(value, 'text');
+        break;
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    clearErrors();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate email
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.error || 'Email inválido');
+      return;
+    }
+
+    // Validate RFC if provided
+    if (formData.rfc) {
+      const rfcValidation = validateRFC(formData.rfc);
+      if (!rfcValidation.isValid) {
+        toast.error(rfcValidation.error || 'RFC inválido');
+        return;
+      }
+    }
+
     try {
-      await protectedRequest(() => onSubmit(formData, csrfToken));
+      const response = await protectedRequest('/api/secure-endpoint', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...formData,
+          csrfToken
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Formulario enviado de forma segura');
+        setFormData({ email: '', name: '', company: '', rfc: '', phone: '' });
+      } else {
+        toast.error('Error al enviar formulario');
+      }
     } catch (error) {
-      console.error('Protected request failed:', error);
+      toast.error('Error de red');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
-      <input type="hidden" name="csrf_token" value={csrfToken} />
-      
-      {Object.keys(sanitizationErrors).length > 0 && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {Object.values(sanitizationErrors).join(', ')}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {children}
-    </form>
-  );
-}
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Formulario Seguro</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={sanitizationErrors?.email ? 'border-red-500' : ''}
+            />
+            {sanitizationErrors?.email && (
+              <p className="text-sm text-red-600">{sanitizationErrors.email}</p>
+            )}
+          </div>
 
-interface SecureInputProps {
-  name: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  maxLength?: number;
-  required?: boolean;
-  className?: string;
-  value?: string;
-  onChange?: (value: string) => void;
-}
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+            />
+          </div>
 
-export function SecureInput({ 
-  name, 
-  label, 
-  type = 'text', 
-  placeholder, 
-  maxLength = 255,
-  required = false,
-  className,
-  value,
-  onChange
-}: SecureInputProps) {
-  const { sanitizeInput, sanitizationErrors } = useInputSanitization();
+          <div className="space-y-2">
+            <Label htmlFor="company">Empresa</Label>
+            <Input
+              id="company"
+              value={formData.company}
+              onChange={(e) => handleInputChange('company', e.target.value)}
+            />
+          </div>
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const sanitized = sanitizeInput(e.target.value, name, { maxLength });
-    if (onChange) {
-      onChange(sanitized);
-    }
-  };
+          <div className="space-y-2">
+            <Label htmlFor="rfc">RFC</Label>
+            <Input
+              id="rfc"
+              value={formData.rfc}
+              onChange={(e) => handleInputChange('rfc', e.target.value)}
+              maxLength={13}
+            />
+          </div>
 
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={name}>{label} {required && '*'}</Label>
-      <Input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={handleChange}
-        required={required}
-        className={className}
-        maxLength={maxLength}
-      />
-      {sanitizationErrors[name] && (
-        <p className="text-sm text-red-600">{sanitizationErrors[name]}</p>
-      )}
-    </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+            />
+          </div>
+
+          <Button type="submit" className="w-full">
+            Enviar de forma segura
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

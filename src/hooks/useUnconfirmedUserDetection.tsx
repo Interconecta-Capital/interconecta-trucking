@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { AuthError } from './auth/types';
+import { AuthError, ValidationResult } from './auth/types';
 
 export const useUnconfirmedUserDetection = () => {
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string>('');
@@ -74,7 +74,7 @@ export const useUnconfirmedUserDetection = () => {
     toast.success('Correo de verificación enviado. Revisa tu bandeja de entrada.');
   }, []);
 
-  const validateUniqueRFC = useCallback(async (rfc: string): Promise<boolean> => {
+  const validateUniqueRFC = useCallback(async (rfc: string): Promise<ValidationResult> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -84,13 +84,17 @@ export const useUnconfirmedUserDetection = () => {
 
       if (error) {
         console.error('RFC validation error:', error);
-        return false;
+        return { isValid: false, message: 'Error validating RFC' };
       }
 
-      return data.length === 0;
+      if (data.length > 0) {
+        return { isValid: false, message: 'RFC already registered' };
+      }
+
+      return { isValid: true };
     } catch (error) {
       console.error('RFC validation error:', error);
-      return false;
+      return { isValid: false, message: 'Error validating RFC' };
     }
   }, []);
 
