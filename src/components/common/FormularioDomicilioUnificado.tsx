@@ -1,13 +1,11 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, MapPin, CheckCircle, Loader2, Info } from 'lucide-react';
 import { useCodigoPostalUnificado } from '@/hooks/useCodigoPostalUnificado';
-import { CodigoPostalMexicanoOptimizado } from '@/components/catalogos/CodigoPostalMexicanoOptimizado';
-import { DatosDomicilio } from '@/hooks/useCodigoPostalMexicano';
 
 export interface DomicilioUnificado {
   pais: string;
@@ -33,7 +31,6 @@ interface FormularioDomicilioUnificadoProps {
   camposOpcionales?: Array<keyof DomicilioUnificado>;
   readonly?: boolean;
   className?: string;
-  usarAPIMexicana?: boolean; // Nueva opción para usar APIs reales mexicanas
 }
 
 export function FormularioDomicilioUnificado({
@@ -45,8 +42,7 @@ export function FormularioDomicilioUnificado({
   onDistanciaChange,
   camposOpcionales = ['numInterior', 'referencia', 'localidad'],
   readonly = false,
-  className = '',
-  usarAPIMexicana = false
+  className = ''
 }: FormularioDomicilioUnificadoProps) {
   const [coloniaSeleccionada, setColoniaSeleccionada] = useState(domicilio.colonia);
   const [sugerenciasCP, setSugerenciasCP] = useState<Array<{codigo_postal: string, ubicacion: string}>>([]);
@@ -84,94 +80,6 @@ export function FormularioDomicilioUnificado({
       onDomicilioChange('colonia', '');
     }
   });
-
-  // Manejar domicilio completo desde el componente mexicano
-  const handleDomicilioMexicanoCompleto = useCallback((datosMexicanos: DatosDomicilio) => {
-    console.log('[DOMICILIO_MEXICANO_INTEGRADO]', datosMexicanos);
-    
-    // Mapear datos mexicanos al formato unificado
-    const domicilioUnificado: DomicilioUnificado = {
-      pais: domicilio.pais,
-      codigoPostal: datosMexicanos.codigoPostal,
-      estado: datosMexicanos.estado,
-      municipio: datosMexicanos.municipio,
-      localidad: datosMexicanos.localidad,
-      colonia: datosMexicanos.colonia,
-      calle: datosMexicanos.calle,
-      numExterior: datosMexicanos.numeroExterior,
-      numInterior: datosMexicanos.numeroInterior,
-      referencia: datosMexicanos.referencia
-    };
-    
-    onDireccionCompleta?.(domicilioUnificado);
-  }, [domicilio.pais, onDireccionCompleta]);
-
-  // Si se está usando la API mexicana y el país es México
-  if (usarAPIMexicana && domicilio.pais === 'México') {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        {/* País */}
-        <div className="space-y-2">
-          <Label>País *</Label>
-          <Select 
-            value={domicilio.pais} 
-            onValueChange={(value) => onDomicilioChange('pais', value)}
-            disabled={readonly}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              <SelectItem value="México">México</SelectItem>
-              <SelectItem value="Estados Unidos">Estados Unidos</SelectItem>
-              <SelectItem value="Canadá">Canadá</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Componente mexicano optimizado */}
-        <CodigoPostalMexicanoOptimizado
-          value={domicilio.codigoPostal}
-          onChange={(cp) => onDomicilioChange('codigoPostal', cp)}
-          onLocationUpdate={(location) => {
-            if (location.estado) onDomicilioChange('estado', location.estado);
-            if (location.municipio) onDomicilioChange('municipio', location.municipio);
-            if (location.localidad) onDomicilioChange('localidad', location.localidad);
-            if (location.colonia) onDomicilioChange('colonia', location.colonia);
-          }}
-          onDomicilioCompleto={handleDomicilioMexicanoCompleto}
-          valorInicial={{
-            codigoPostal: domicilio.codigoPostal,
-            estado: domicilio.estado,
-            municipio: domicilio.municipio,
-            localidad: domicilio.localidad,
-            colonia: domicilio.colonia,
-            calle: domicilio.calle,
-            numeroExterior: domicilio.numExterior,
-            numeroInterior: domicilio.numInterior,
-            referencia: domicilio.referencia
-          }}
-          mostrarPreview={true}
-        />
-
-        {/* Distancia Recorrida */}
-        {mostrarDistancia && (
-          <div className="space-y-2">
-            <Label>Distancia Recorrida (km)</Label>
-            <Input
-              type="number"
-              value={distanciaRecorrida}
-              onChange={(e) => onDistanciaChange?.(parseFloat(e.target.value) || 0)}
-              placeholder="0"
-              min="0"
-              step="0.1"
-              disabled={readonly}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
 
   const handleCPChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
@@ -262,16 +170,6 @@ export function FormularioDomicilioUnificado({
               </div>
             )}
           </div>
-
-          {/* Sugerencia para usar API mexicana */}
-          {domicilio.pais === 'México' && !usarAPIMexicana && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                💡 Para direcciones mexicanas, considera usar el modo avanzado con APIs oficiales SEPOMEX
-              </AlertDescription>
-            </Alert>
-          )}
 
           {/* Error con sugerencias */}
           {error && (
