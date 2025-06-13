@@ -27,12 +27,13 @@ interface DireccionInfo {
 }
 
 interface APISepomexResponse {
-  estado: string;
-  municipio: string;
-  localidad: string;
-  asentamientos: Array<{
-    nombre: string;
-    tipo_asentamiento: string;
+  error?: boolean;
+  response?: Array<{
+    d_estado: string;
+    d_mnp: string;
+    d_ciudad: string;
+    d_asenta: string;
+    d_tipo_asenta: string;
   }>;
 }
 
@@ -95,7 +96,7 @@ export const useCodigoPostalMexicano = () => {
     return similares.slice(0, 6); // Limitar a 6 sugerencias
   }, []);
 
-  // Consultar API principal (SEPOMEX)
+  // Consultar API principal (SEPOMEX) - MEJORADO para capturar TODAS las colonias
   const consultarAPISepomex = async (cp: string): Promise<DireccionInfo | null> => {
     try {
       console.log(`[API_SEPOMEX] Consultando CP: ${cp}`);
@@ -114,21 +115,41 @@ export const useCodigoPostalMexicano = () => {
 
       const data: APISepomexResponse = await response.json();
       
-      if (!data.estado || !data.municipio) {
-        throw new Error('Datos incompletos');
+      if (data.error || !data.response || data.response.length === 0) {
+        throw new Error('Datos incompletos o error en respuesta');
       }
 
+      // Obtener datos de la primera respuesta para estado/municipio/localidad
+      const primeraRespuesta = data.response[0];
+      
+      // IMPORTANTE: Extraer TODAS las colonias únicas de la respuesta
+      const todasLasColonias: ColoniaData[] = [];
+      const coloniasUnicas = new Set<string>();
+      
+      data.response.forEach(item => {
+        const nombreColonia = item.d_asenta?.trim();
+        const tipoColonia = item.d_tipo_asenta?.trim() || 'Colonia';
+        
+        if (nombreColonia && !coloniasUnicas.has(nombreColonia)) {
+          coloniasUnicas.add(nombreColonia);
+          todasLasColonias.push({
+            nombre: nombreColonia,
+            tipo: tipoColonia
+          });
+        }
+      });
+
+      // Ordenar colonias alfabéticamente
+      todasLasColonias.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
       const direccionInfo: DireccionInfo = {
-        estado: data.estado,
-        municipio: data.municipio,
-        localidad: data.localidad || '',
-        colonias: data.asentamientos?.map(a => ({
-          nombre: a.nombre,
-          tipo: a.tipo_asentamiento || 'Colonia'
-        })) || []
+        estado: primeraRespuesta.d_estado,
+        municipio: primeraRespuesta.d_mnp,
+        localidad: primeraRespuesta.d_ciudad || primeraRespuesta.d_mnp,
+        colonias: todasLasColonias
       };
 
-      console.log(`[API_SEPOMEX] Éxito:`, direccionInfo);
+      console.log(`[API_SEPOMEX] Éxito - ${todasLasColonias.length} colonias encontradas:`, direccionInfo);
       return direccionInfo;
     } catch (error) {
       console.log(`[API_SEPOMEX] Error:`, error);
@@ -136,7 +157,7 @@ export const useCodigoPostalMexicano = () => {
     }
   };
 
-  // Consultar API respaldo (Tau)
+  // Consultar API respaldo (Tau) - MEJORADO para capturar TODAS las colonias
   const consultarAPITau = async (cp: string): Promise<DireccionInfo | null> => {
     try {
       console.log(`[API_TAU] Consultando CP: ${cp}`);
@@ -155,21 +176,29 @@ export const useCodigoPostalMexicano = () => {
 
       const data: APITauResponse = await response.json();
       
-      if (!data.data?.state || !data.data?.city) {
-        throw new Error('Datos incompletos');
+      if (!data.data?.state || !data.data?.city || !data.data?.settlements) {
+        throw new Error('Datos incompletos en respuesta TAU');
       }
+
+      // IMPORTANTE: Extraer TODAS las colonias del array settlements
+      const todasLasColonias: ColoniaData[] = data.data.settlements.map(settlement => ({
+        nombre: settlement.name,
+        tipo: settlement.type || 'Colonia'
+      }));
+
+      // Eliminar duplicados y ordenar
+      const coloniasUnicas = todasLasColonias.filter((colonia, index, self) =>
+        index === self.findIndex(c => c.nombre === colonia.nombre)
+      ).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
       const direccionInfo: DireccionInfo = {
         estado: data.data.state,
         municipio: data.data.city,
-        localidad: data.data.locality || '',
-        colonias: data.data.settlements?.map(s => ({
-          nombre: s.name,
-          tipo: s.type || 'Colonia'
-        })) || []
+        localidad: data.data.locality || data.data.city,
+        colonias: coloniasUnicas
       };
 
-      console.log(`[API_TAU] Éxito:`, direccionInfo);
+      console.log(`[API_TAU] Éxito - ${coloniasUnicas.length} colonias encontradas:`, direccionInfo);
       return direccionInfo;
     } catch (error) {
       console.log(`[API_TAU] Error:`, error);
@@ -177,7 +206,7 @@ export const useCodigoPostalMexicano = () => {
     }
   };
 
-  // Función principal de consulta con failover
+  // Función principal de consulta con failover mejorado
   const consultarCodigoPostal = useCallback(async (cp: string): Promise<void> => {
     if (!cp || cp.length !== 5 || !/^\d{5}$/.test(cp)) {
       setError('El código postal debe tener 5 dígitos');
@@ -189,7 +218,7 @@ export const useCodigoPostalMexicano = () => {
     // Verificar cache
     const cached = cache.get(cp);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`[CACHE] Usando datos en cache para CP: ${cp}`);
+      console.log(`[CACHE] Usando datos en cache para CP: ${cp} - ${cached.data.colonias.length} colonias`);
       setDireccionInfo(cached.data);
       setError('');
       setSugerencias([]);
@@ -205,20 +234,21 @@ export const useCodigoPostalMexicano = () => {
       // Intentar API principal (SEPOMEX)
       let resultado = await consultarAPISepomex(cp);
       
-      if (!resultado) {
-        console.log('[FAILOVER] Intentando API alternativa...');
+      if (!resultado || resultado.colonias.length === 0) {
+        console.log('[FAILOVER] API SEPOMEX sin colonias, intentando API alternativa...');
         // Failover a API secundaria (Tau)
         resultado = await consultarAPITau(cp);
       }
 
-      if (resultado) {
+      if (resultado && resultado.colonias.length > 0) {
         // Guardar en cache
         cache.set(cp, { data: resultado, timestamp: Date.now() });
         setDireccionInfo(resultado);
         setError('');
         setSugerencias([]);
+        console.log(`[ÉXITO] CP ${cp} procesado con ${resultado.colonias.length} colonias`);
       } else {
-        throw new Error('No se encontraron datos');
+        throw new Error('No se encontraron colonias');
       }
     } catch (error) {
       console.log('[ERROR_CONSULTA] Ambas APIs fallaron:', error);

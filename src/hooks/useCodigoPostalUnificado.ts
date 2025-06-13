@@ -1,200 +1,187 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
-export interface DireccionCompleta {
-  codigoPostal: string;
+interface ColoniaInfo {
+  colonia: string;
+  tipo_asentamiento?: string;
+}
+
+interface DireccionInfoUnificada {
   estado: string;
-  estadoClave?: string;
   municipio: string;
-  municipioClave?: string;
   localidad?: string;
   ciudad?: string;
-  zona?: string;
-  colonias: Array<{
-    colonia: string;
-    tipo_asentamiento?: string;
-  }>;
-  fuente: 'database' | 'api_externa' | 'cache';
+  colonias: ColoniaInfo[];
 }
 
-interface UseCodigoPostalOptions {
-  onSuccess?: (info: DireccionCompleta) => void;
+interface UseCodigoPostalUnificadoProps {
+  onSuccess?: (info: DireccionInfoUnificada) => void;
   onError?: (error: string, sugerencias?: Array<{codigo_postal: string, ubicacion: string}>) => void;
-  debounceMs?: number;
-  autoLimpiar?: boolean;
 }
 
-export function useCodigoPostalUnificado(options: UseCodigoPostalOptions = {}) {
-  const { onSuccess, onError, debounceMs = 300, autoLimpiar = true } = options;
-  
+export const useCodigoPostalUnificado = ({ onSuccess, onError }: UseCodigoPostalUnificadoProps = {}) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [direccionInfo, setDireccionInfo] = useState<DireccionCompleta | null>(null);
-  
-  // Cache optimizado con TTL
-  const cacheRef = useRef<Map<string, { data: DireccionCompleta; timestamp: number }>>(new Map());
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const abortControllerRef = useRef<AbortController>();
-  
-  // TTL del cache: 30 minutos
-  const CACHE_TTL = 30 * 60 * 1000;
+  const [error, setError] = useState('');
+  const [direccionInfo, setDireccionInfo] = useState<DireccionInfoUnificada | null>(null);
+  const debounceTimer = useRef<NodeJS.Timeout>();
 
-  const limpiarTimeout = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+  // Función para consultar SEPOMEX API
+  const consultarSEPOMEX = async (cp: string): Promise<DireccionInfoUnificada | null> => {
+    try {
+      console.log(`[SEPOMEX_UNIFICADO] Consultando CP: ${cp}`);
+      const response = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${cp}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error || !data.response || data.response.length === 0) {
+        throw new Error('Sin datos');
+      }
+
+      const primeraRespuesta = data.response[0];
+      
+      // Extraer TODAS las colonias de la respuesta
+      const todasLasColonias: ColoniaInfo[] = [];
+      const coloniasUnicas = new Set<string>();
+      
+      data.response.forEach((item: any) => {
+        const nombreColonia = item.d_asenta?.trim();
+        const tipoColonia = item.d_tipo_asenta?.trim() || 'Colonia';
+        
+        if (nombreColonia && !coloniasUnicas.has(nombreColonia)) {
+          coloniasUnicas.add(nombreColonia);
+          todasLasColonias.push({
+            colonia: nombreColonia,
+            tipo_asentamiento: tipoColonia
+          });
+        }
+      });
+
+      // Ordenar alfabéticamente
+      todasLasColonias.sort((a, b) => a.colonia.localeCompare(b.colonia));
+
+      const resultado: DireccionInfoUnificada = {
+        estado: primeraRespuesta.d_estado,
+        municipio: primeraRespuesta.d_mnp,
+        localidad: primeraRespuesta.d_ciudad,
+        ciudad: primeraRespuesta.d_ciudad,
+        colonias: todasLasColonias
+      };
+
+      console.log(`[SEPOMEX_UNIFICADO] ${todasLasColonias.length} colonias encontradas`);
+      return resultado;
+    } catch (error) {
+      console.log(`[SEPOMEX_UNIFICADO] Error:`, error);
+      throw error;
     }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  };
+
+  // Función para consultar API alternativa
+  const consultarAPIAlternativa = async (cp: string): Promise<DireccionInfoUnificada | null> => {
+    try {
+      console.log(`[API_ALT_UNIFICADO] Consultando CP: ${cp}`);
+      const response = await fetch(`https://api.tau.com.mx/dipomex/v1/cp/${cp}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.data?.settlements || data.data.settlements.length === 0) {
+        throw new Error('Sin colonias');
+      }
+
+      const colonias: ColoniaInfo[] = data.data.settlements.map((settlement: any) => ({
+        colonia: settlement.name,
+        tipo_asentamiento: settlement.type || 'Colonia'
+      })).sort((a: ColoniaInfo, b: ColoniaInfo) => a.colonia.localeCompare(b.colonia));
+
+      const resultado: DireccionInfoUnificada = {
+        estado: data.data.state,
+        municipio: data.data.city,
+        localidad: data.data.locality,
+        ciudad: data.data.city,
+        colonias: colonias
+      };
+
+      console.log(`[API_ALT_UNIFICADO] ${colonias.length} colonias encontradas`);
+      return resultado;
+    } catch (error) {
+      console.log(`[API_ALT_UNIFICADO] Error:`, error);
+      throw error;
     }
-  }, []);
+  };
 
-  const validarFormatoCP = useCallback((cp: string): boolean => {
-    return /^\d{5}$/.test(cp.trim());
-  }, []);
-
-  const obtenerDelCache = useCallback((cp: string): DireccionCompleta | null => {
-    const cached = cacheRef.current.get(cp);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      return { ...cached.data, fuente: 'cache' };
-    }
-    if (cached) {
-      cacheRef.current.delete(cp); // Eliminar cache expirado
-    }
-    return null;
-  }, []);
-
-  const guardarEnCache = useCallback((cp: string, data: DireccionCompleta) => {
-    cacheRef.current.set(cp, {
-      data,
-      timestamp: Date.now()
-    });
-  }, []);
-
-  const buscarCodigoPostal = useCallback(async (codigoPostal: string) => {
-    console.log(`[CP_UNIFICADO] Iniciando búsqueda para: ${codigoPostal}`);
-    
-    if (autoLimpiar) {
-      setError('');
-      setDireccionInfo(null);
-    }
-
-    if (!validarFormatoCP(codigoPostal)) {
-      const errorMsg = 'El código postal debe tener exactamente 5 dígitos';
+  // Función principal de búsqueda
+  const consultarCodigoPostal = useCallback(async (cp: string) => {
+    if (!cp || cp.length !== 5 || !/^\d{5}$/.test(cp)) {
+      const errorMsg = 'Formato de código postal inválido';
       setError(errorMsg);
+      setDireccionInfo(null);
       onError?.(errorMsg);
       return;
     }
 
     setIsLoading(true);
-
-    // Cancelar petición anterior
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
+    setError('');
+    setDireccionInfo(null);
 
     try {
-      // 1. Verificar cache
-      const cached = obtenerDelCache(codigoPostal);
-      if (cached) {
-        console.log(`[CP_UNIFICADO] Usando cache para ${codigoPostal}`);
-        setDireccionInfo(cached);
-        onSuccess?.(cached);
-        return;
-      }
-
-      // 2. Consultar Edge Function optimizada
-      console.log(`[CP_UNIFICADO] Consultando Edge Function para ${codigoPostal}`);
+      // Intentar API principal
+      let resultado = await consultarSEPOMEX(cp);
       
-      const { data, error: functionError } = await supabase.functions.invoke('codigo-postal', {
-        body: { codigoPostal }
-      });
-
-      if (functionError) {
-        throw new Error(functionError.message || 'Error en consulta');
+      // Si no hay resultado o pocas colonias, intentar API alternativa
+      if (!resultado || resultado.colonias.length === 0) {
+        console.log('[UNIFICADO] Fallback a API alternativa...');
+        resultado = await consultarAPIAlternativa(cp);
       }
 
-      if (data && !data.error) {
-        const info: DireccionCompleta = {
-          codigoPostal: data.codigoPostal,
-          estado: data.estado,
-          estadoClave: data.estadoClave,
-          municipio: data.municipio,
-          municipioClave: data.municipioClave,
-          localidad: data.localidad || data.ciudad,
-          ciudad: data.ciudad,
-          zona: data.zona,
-          colonias: data.colonias || [],
-          fuente: data.fuente
-        };
-
-        guardarEnCache(codigoPostal, info);
-        setDireccionInfo(info);
-        onSuccess?.(info);
-        return;
+      if (resultado && resultado.colonias.length > 0) {
+        setDireccionInfo(resultado);
+        setError('');
+        onSuccess?.(resultado);
+        console.log(`[UNIFICADO] Éxito: ${resultado.colonias.length} colonias para CP ${cp}`);
+      } else {
+        throw new Error('No se encontraron datos');
       }
-
-      // 3. Manejar error con sugerencias
-      const sugerencias = data?.sugerencias || [];
-      const errorMsg = `Código postal ${codigoPostal} no encontrado`;
-      
+    } catch (error) {
+      const errorMsg = `Código postal ${cp} no encontrado`;
       setError(errorMsg);
+      setDireccionInfo(null);
+      
+      // Generar sugerencias simples
+      const sugerencias = Array.from({length: 5}, (_, i) => ({
+        codigo_postal: (parseInt(cp) + i - 2).toString().padStart(5, '0'),
+        ubicacion: `Área cercana a ${cp}`
+      })).filter(s => /^\d{5}$/.test(s.codigo_postal));
+      
       onError?.(errorMsg, sugerencias);
-
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('[CP_UNIFICADO] Búsqueda cancelada');
-        return;
-      }
-      
-      console.error('[CP_UNIFICADO] Error en búsqueda:', error);
-      
-      const errorMsg = 'Error al consultar código postal';
-      setError(errorMsg);
-      onError?.(errorMsg, []);
-      
+      console.log(`[UNIFICADO] Error final para CP ${cp}`);
     } finally {
       setIsLoading(false);
     }
-  }, [onSuccess, onError, validarFormatoCP, obtenerDelCache, guardarEnCache, autoLimpiar]);
+  }, [onSuccess, onError]);
 
-  const buscarConDebounce = useCallback((codigoPostal: string) => {
-    limpiarTimeout();
-    
-    if (codigoPostal.length !== 5) {
-      if (autoLimpiar) {
-        setDireccionInfo(null);
-        setError('');
-      }
-      return;
+  // Función con debounce
+  const buscarConDebounce = useCallback((cp: string) => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
 
-    timeoutRef.current = setTimeout(() => {
-      buscarCodigoPostal(codigoPostal);
-    }, debounceMs);
-  }, [buscarCodigoPostal, debounceMs, limpiarTimeout, autoLimpiar]);
-
-  const limpiarCache = useCallback(() => {
-    cacheRef.current.clear();
-    console.log('[CP_UNIFICADO] Cache limpiado');
-  }, []);
-
-  const resetear = useCallback(() => {
-    limpiarTimeout();
-    setIsLoading(false);
-    setError('');
-    setDireccionInfo(null);
-  }, [limpiarTimeout]);
+    debounceTimer.current = setTimeout(() => {
+      consultarCodigoPostal(cp);
+    }, 500);
+  }, [consultarCodigoPostal]);
 
   return {
     isLoading,
     error,
     direccionInfo,
-    buscarCodigoPostal,
-    buscarConDebounce,
-    limpiarCache,
-    resetear,
-    validarFormatoCP
+    consultarCodigoPostal,
+    buscarConDebounce
   };
-}
+};

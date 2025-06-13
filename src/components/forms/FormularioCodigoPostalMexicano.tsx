@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, CheckCircle, Loader2, AlertCircle, Home } from 'lucide-react';
+import { MapPin, CheckCircle, Loader2, AlertCircle, Home, Search } from 'lucide-react';
 import { useCodigoPostalMexicano, DatosDomicilio } from '@/hooks/useCodigoPostalMexicano';
 
 interface FormularioCodigoPostalMexicanoProps {
@@ -46,6 +46,25 @@ export const FormularioCodigoPostalMexicano: React.FC<FormularioCodigoPostalMexi
     referencia: valorInicial.referencia || '',
     domicilioCompleto: ''
   });
+
+  // Estados para el filtro de colonias
+  const [filtroColonia, setFiltroColonia] = useState('');
+  const [coloniasFiltradas, setColoniasFiltradas] = useState(direccionInfo?.colonias || []);
+
+  // Filtrar colonias cuando cambie el filtro o la dirección
+  useEffect(() => {
+    if (direccionInfo?.colonias) {
+      if (filtroColonia.trim() === '') {
+        setColoniasFiltradas(direccionInfo.colonias);
+      } else {
+        const filtradas = direccionInfo.colonias.filter(colonia =>
+          colonia.nombre.toLowerCase().includes(filtroColonia.toLowerCase()) ||
+          colonia.tipo.toLowerCase().includes(filtroColonia.toLowerCase())
+        );
+        setColoniasFiltradas(filtradas);
+      }
+    }
+  }, [direccionInfo?.colonias, filtroColonia]);
 
   // Generar domicilio completo formateado
   const generarDomicilioCompleto = useCallback((datos: DatosDomicilio): string => {
@@ -95,6 +114,7 @@ export const FormularioCodigoPostalMexicano: React.FC<FormularioCodigoPostalMexi
       actualizarCampo('municipio', '');
       actualizarCampo('localidad', '');
       actualizarCampo('colonia', '');
+      setFiltroColonia('');
     }
   }, [actualizarCampo, buscarConDebounce]);
 
@@ -105,6 +125,7 @@ export const FormularioCodigoPostalMexicano: React.FC<FormularioCodigoPostalMexi
       actualizarCampo('municipio', direccionInfo.municipio);
       actualizarCampo('localidad', direccionInfo.localidad);
       actualizarCampo('colonia', ''); // Resetear colonia para que usuario seleccione
+      setFiltroColonia(''); // Resetear filtro
     }
   }, [direccionInfo, actualizarCampo]);
 
@@ -122,6 +143,12 @@ export const FormularioCodigoPostalMexicano: React.FC<FormularioCodigoPostalMexi
   const handleSugerencia = (cp: string) => {
     actualizarCampo('codigoPostal', cp);
     usarSugerencia(cp);
+  };
+
+  // Manejar selección de colonia
+  const handleColoniaChange = (coloniaNombre: string) => {
+    actualizarCampo('colonia', coloniaNombre);
+    setFiltroColonia('');
   };
 
   return (
@@ -204,7 +231,7 @@ export const FormularioCodigoPostalMexicano: React.FC<FormularioCodigoPostalMexi
               <Alert>
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-700">
-                  ✓ {direccionInfo.municipio}, {direccionInfo.estado}
+                  ✓ {direccionInfo.municipio}, {direccionInfo.estado} - {direccionInfo.colonias.length} colonias disponibles
                 </AlertDescription>
               </Alert>
             )}
@@ -245,40 +272,63 @@ export const FormularioCodigoPostalMexicano: React.FC<FormularioCodigoPostalMexi
               />
             </div>
 
-            {/* Selector de Colonia */}
+            {/* Selector de Colonia MEJORADO */}
             {direccionInfo && direccionInfo.colonias.length > 0 && (
               <div className="space-y-2">
                 <Label>
                   Colonia *
                   <span className="text-sm text-muted-foreground ml-2">
-                    ({direccionInfo.colonias.length} disponibles)
+                    ({coloniasFiltradas.length} de {direccionInfo.colonias.length} mostradas)
                   </span>
                 </Label>
                 
+                {/* Filtro de búsqueda para colonias */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar colonia..."
+                    value={filtroColonia}
+                    onChange={(e) => setFiltroColonia(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
                 <Select 
                   value={formData.colonia} 
-                  onValueChange={(value) => actualizarCampo('colonia', value)}
+                  onValueChange={handleColoniaChange}
                 >
                   <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Selecciona una colonia" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
-                    {direccionInfo.colonias.map((coloniaObj, index) => (
-                      <SelectItem 
-                        key={`${coloniaObj.nombre}-${index}`} 
-                        value={coloniaObj.nombre}
-                        className="cursor-pointer hover:bg-accent"
-                      >
-                        <div className="flex flex-col">
-                          <span>{coloniaObj.nombre}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {coloniaObj.tipo}
-                          </span>
-                        </div>
+                  <SelectContent className="bg-background border shadow-lg z-50 max-h-80">
+                    {coloniasFiltradas.length > 0 ? (
+                      coloniasFiltradas.map((coloniaObj, index) => (
+                        <SelectItem 
+                          key={`${coloniaObj.nombre}-${index}`} 
+                          value={coloniaObj.nombre}
+                          className="cursor-pointer hover:bg-accent"
+                        >
+                          <div className="flex flex-col py-1">
+                            <span className="font-medium">{coloniaObj.nombre}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {coloniaObj.tipo}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No se encontraron colonias con ese filtro
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
+                
+                {filtroColonia && (
+                  <p className="text-xs text-muted-foreground">
+                    Filtro activo: "{filtroColonia}" - {coloniasFiltradas.length} resultado(s)
+                  </p>
+                )}
               </div>
             )}
           </div>
