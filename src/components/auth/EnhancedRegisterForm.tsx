@@ -1,146 +1,200 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useSimpleAuth } from '@/hooks/useSimpleAuth';
-import { useCustomEmails } from '@/hooks/useCustomEmails';
+import React, { useState } from 'react';
+import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
 import { ImprovedAuthCard } from './ImprovedAuthCard';
+import { ImprovedFormField } from './ImprovedFormField';
 import { ImprovedSocialButton } from './ImprovedSocialButton';
-import { RegistrationFormFields } from './forms/RegistrationFormFields';
-import { useRegistrationFormState } from './forms/RegistrationFormState';
-import { useRegistrationValidation } from './forms/RegistrationFormValidation';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Mail, Lock, User, Building, Phone } from 'lucide-react';
 import { toast } from 'sonner';
-import { RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export function EnhancedRegisterForm() {
-  const {
-    formData,
-    showPassword,
-    showConfirmPassword,
-    isLoading,
-    fieldErrors,
-    setShowPassword,
-    setShowConfirmPassword,
-    setIsLoading,
-    setFieldErrors,
-    handleInputChange,
-    resetForm
-  } = useRegistrationFormState();
-
-  const { validateForm, sanitizeInput } = useRegistrationValidation();
-  const { signUp, signInWithGoogle } = useSimpleAuth();
-  const { sendWelcomeEmail } = useCustomEmails();
+  const [formData, setFormData] = useState({
+    nombre: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    empresa: '',
+    telefono: '',
+    rfc: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { enhancedRegister } = useEnhancedAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = validateForm(formData);
-    if (!validation.isValid) {
-      setFieldErrors(validation.errors);
-      toast.error('Por favor corrige los errores en el formulario');
+    if (!formData.nombre || !formData.email || !formData.password) {
+      toast.error('Por favor completa todos los campos obligatorios');
       return;
     }
-    
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      const success = await signUp(
-        formData.email,
-        formData.password,
+      const success = await enhancedRegister(
+        formData.email, 
+        formData.password, 
         {
           nombre: formData.nombre,
           empresa: formData.empresa || undefined,
-          rfc: formData.rfc.toUpperCase() || undefined,
+          rfc: formData.rfc || undefined,
           telefono: formData.telefono || undefined
         }
       );
       
       if (success) {
-        // Enviar email de bienvenida personalizado
-        await sendWelcomeEmail(formData.email, formData.nombre);
-        resetForm();
+        toast.success('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Error inesperado durante el registro');
+      console.error('Register error:', error);
+      toast.error('Error en el registro');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleGoogleRegister = async () => {
     try {
-      await signInWithGoogle();
-    } catch (error: any) {
-      toast.error('Error al autenticar con Google');
+      toast.info('Funcionalidad de Google próximamente');
+    } catch (error) {
+      console.error('Google register error:', error);
+      toast.error('Error al registrarse con Google');
     }
   };
 
   return (
     <ImprovedAuthCard
       title="Crear Cuenta"
-      description="Únete a Interconecta Trucking"
+      description="Únete a la plataforma de gestión de transporte más avanzada"
     >
-      <div className="space-y-6">
-        <ImprovedSocialButton
-          provider="google"
-          actionText="Registrarse con Google"
-          onClick={handleGoogleAuth}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <ImprovedFormField
+          id="nombre"
+          label="Nombre Completo"
+          type="text"
+          value={formData.nombre}
+          onChange={(value) => handleInputChange('nombre', value)}
+          placeholder="Tu nombre completo"
+          required
+          icon={<User className="h-4 w-4 text-gray-500" />}
         />
-        
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <Separator className="w-full" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-3 text-gray-500 font-inter font-medium">
-              O regístrate con email
-            </span>
-          </div>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <RegistrationFormFields
-            formData={formData}
-            fieldErrors={fieldErrors}
+
+        <ImprovedFormField
+          id="email"
+          label="Correo Electrónico"
+          type="email"
+          value={formData.email}
+          onChange={(value) => handleInputChange('email', value)}
+          placeholder="tu@empresa.com"
+          required
+          icon={<Mail className="h-4 w-4 text-gray-500" />}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ImprovedFormField
+            id="password"
+            label="Contraseña"
+            value={formData.password}
+            onChange={(value) => handleInputChange('password', value)}
+            required
+            showPasswordToggle
             showPassword={showPassword}
-            showConfirmPassword={showConfirmPassword}
-            onInputChange={(field, value) => handleInputChange(field, value, sanitizeInput)}
             onTogglePassword={() => setShowPassword(!showPassword)}
-            onToggleConfirmPassword={() => setShowConfirmPassword(!showConfirmPassword)}
+            icon={<Lock className="h-4 w-4 text-gray-500" />}
           />
 
-          <Button 
-            type="submit" 
-            className="w-full h-12 bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary font-sora font-semibold text-lg transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Creando cuenta...
-              </div>
-            ) : (
-              'Crear Cuenta'
-            )}
-          </Button>
-        </form>
+          <ImprovedFormField
+            id="confirmPassword"
+            label="Confirmar Contraseña"
+            value={formData.confirmPassword}
+            onChange={(value) => handleInputChange('confirmPassword', value)}
+            required
+            showPasswordToggle
+            showPassword={showConfirmPassword}
+            onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
+            icon={<Lock className="h-4 w-4 text-gray-500" />}
+          />
+        </div>
 
-        <div className="pt-4 border-t border-gray-200">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 font-inter">
-              ¿Ya tienes cuenta?{' '}
-              <Link 
-                to="/auth"
-                className="text-interconecta-primary hover:text-interconecta-accent font-medium underline decoration-2 underline-offset-2 hover:decoration-interconecta-accent transition-colors"
-              >
-                Inicia sesión
-              </Link>
-            </p>
+        <ImprovedFormField
+          id="empresa"
+          label="Empresa (Opcional)"
+          type="text"
+          value={formData.empresa}
+          onChange={(value) => handleInputChange('empresa', value)}
+          placeholder="Nombre de tu empresa"
+          icon={<Building className="h-4 w-4 text-gray-500" />}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ImprovedFormField
+            id="telefono"
+            label="Teléfono (Opcional)"
+            type="tel"
+            value={formData.telefono}
+            onChange={(value) => handleInputChange('telefono', value)}
+            placeholder="+52 55 1234 5678"
+            icon={<Phone className="h-4 w-4 text-gray-500" />}
+          />
+
+          <ImprovedFormField
+            id="rfc"
+            label="RFC (Opcional)"
+            type="text"
+            value={formData.rfc}
+            onChange={(value) => handleInputChange('rfc', value.toUpperCase())}
+            placeholder="XAXX010101000"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white font-sora font-semibold py-6 text-lg shadow-lg transition-all duration-200"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Creando cuenta...
+            </div>
+          ) : (
+            'Crear Cuenta'
+          )}
+        </Button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500 font-inter">O regístrate con</span>
           </div>
         </div>
-      </div>
+
+        <ImprovedSocialButton 
+          provider="google" 
+          onClick={handleGoogleRegister}
+          actionText="Registrarse con Google"
+        />
+      </form>
     </ImprovedAuthCard>
   );
 }

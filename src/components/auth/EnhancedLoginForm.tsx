@@ -5,7 +5,7 @@ import { ImprovedAuthCard } from './ImprovedAuthCard';
 import { ImprovedFormField } from './ImprovedFormField';
 import { ImprovedSocialButton } from './ImprovedSocialButton';
 import { Button } from '@/components/ui/button';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function EnhancedLoginForm() {
@@ -32,7 +32,6 @@ export function EnhancedLoginForm() {
       const success = await enhancedLogin(formData.email, formData.password);
       
       if (success) {
-        // Redirect is handled by the auth state change
         console.log('Login successful, redirect will happen automatically');
       }
     } catch (error) {
@@ -47,10 +46,19 @@ export function EnhancedLoginForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      toast.info('Funcionalidad de Google próximamente');
+    } catch (error) {
+      console.error('Google login error:', error);
+      toast.error('Error al iniciar sesión con Google');
+    }
+  };
+
   return (
     <ImprovedAuthCard
       title="Iniciar Sesión"
-      subtitle="Accede a tu plataforma de gestión de transporte"
+      description="Accede a tu plataforma de gestión de transporte"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <ImprovedFormField
@@ -100,7 +108,11 @@ export function EnhancedLoginForm() {
           </div>
         </div>
 
-        <ImprovedSocialButton provider="google" />
+        <ImprovedSocialButton 
+          provider="google" 
+          onClick={handleGoogleLogin}
+          actionText="Iniciar sesión con Google"
+        />
       </form>
     </ImprovedAuthCard>
   );

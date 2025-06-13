@@ -12,7 +12,7 @@ export default function Auth() {
 
   return (
     <EnhancedAuthGuard requireAuth={false}>
-      <div className="relative">
+      <div className="relative min-h-screen">
         {/* Botón de regresar */}
         <div className="absolute top-6 left-6 z-20">
           <Link to="/">
@@ -27,8 +27,12 @@ export default function Auth() {
           </Link>
         </div>
 
-        {isLogin ? <EnhancedLoginForm /> : <EnhancedRegisterForm />}
+        {/* Formulario principal */}
+        <div className="min-h-screen flex items-center justify-center">
+          {isLogin ? <EnhancedLoginForm /> : <EnhancedRegisterForm />}
+        </div>
         
+        {/* Botón para cambiar entre login y registro */}
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-10">
           <Button
             variant="outline"
