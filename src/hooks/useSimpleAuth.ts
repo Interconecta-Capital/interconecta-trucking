@@ -52,7 +52,7 @@ export function useSimpleAuth() {
 
         // Handle successful login/register with immediate redirect
         if (event === 'SIGNED_IN' && session?.user) {
-          // Pequeño delay para asegurar que el estado se actualice
+          // Small delay to ensure state updates
           setTimeout(() => {
             console.log('[SimpleAuth] Redirecting to dashboard after sign in');
             window.location.href = '/dashboard';
@@ -87,7 +87,7 @@ export function useSimpleAuth() {
 
       if (data.user) {
         toast.success('Inicio de sesión exitoso');
-        // El onAuthStateChange manejará la redirección
+        // The onAuthStateChange will handle the redirection
         return true;
       }
 
@@ -162,7 +162,7 @@ export function useSimpleAuth() {
           toast.success('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
         } else {
           toast.success('Registro exitoso');
-          // El onAuthStateChange manejará la redirección
+          // The onAuthStateChange will handle the redirection
         }
         return true;
       }
