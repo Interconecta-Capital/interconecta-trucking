@@ -2254,6 +2254,21 @@ export type Database = {
           colonias: Json
         }[]
       }
+      buscar_codigo_postal_completo: {
+        Args: { cp_input: string }
+        Returns: {
+          codigo_postal: string
+          estado: string
+          estado_clave: string
+          municipio: string
+          municipio_clave: string
+          localidad: string
+          ciudad: string
+          zona: string
+          total_colonias: number
+          colonias: Json
+        }[]
+      }
       check_rate_limit: {
         Args: {
           p_identifier: string
