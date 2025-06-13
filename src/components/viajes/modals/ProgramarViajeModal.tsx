@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, User, Truck, AlertCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Calendar, MapPin, User, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { FormField } from './components/FormField';
 
 interface ProgramarViajeModalProps {
   open: boolean;
@@ -70,7 +69,7 @@ export function ProgramarViajeModal({ open, onOpenChange }: ProgramarViajeModalP
     try {
       // Combinar fecha y hora
       const fechaInicio = new Date(`${formData.fechaProgramada}T${formData.horaProgramada}`);
-      const fechaFin = new Date(fechaInicio.getTime() + 24 * 60 * 60 * 1000); // +24 horas por defecto
+      const fechaFin = new Date(fechaInicio.getTime() + 24 * 60 * 60 * 1000);
 
       const viajeData = {
         carta_porte_id: formData.cartaPorte,
@@ -149,134 +148,80 @@ export function ProgramarViajeModal({ open, onOpenChange }: ProgramarViajeModalP
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cartaPorte">
-                Carta Porte *
-              </Label>
-              <Input
-                id="cartaPorte"
-                value={formData.cartaPorte}
-                onChange={(e) => handleInputChange('cartaPorte', e.target.value)}
-                placeholder="CP-001"
-                required
-                className={errors.cartaPorte ? 'border-red-500' : ''}
-              />
-              {errors.cartaPorte && (
-                <div className="flex items-center gap-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.cartaPorte}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="fechaProgramada">Fecha Programada *</Label>
-              <Input
-                id="fechaProgramada"
-                type="date"
-                value={formData.fechaProgramada}
-                onChange={(e) => handleInputChange('fechaProgramada', e.target.value)}
-                required
-                className={errors.fechaProgramada ? 'border-red-500' : ''}
-                min={new Date().toISOString().split('T')[0]}
-              />
-              {errors.fechaProgramada && (
-                <div className="flex items-center gap-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.fechaProgramada}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="origen" className="flex items-center gap-1">
-                <MapPin className="h-4 w-4 text-green-600" />
-                Origen *
-              </Label>
-              <Input
-                id="origen"
-                value={formData.origen}
-                onChange={(e) => handleInputChange('origen', e.target.value)}
-                placeholder="Ciudad de origen"
-                required
-                className={errors.origen ? 'border-red-500' : ''}
-              />
-              {errors.origen && (
-                <div className="flex items-center gap-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.origen}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="destino" className="flex items-center gap-1">
-                <MapPin className="h-4 w-4 text-red-600" />
-                Destino *
-              </Label>
-              <Input
-                id="destino"
-                value={formData.destino}
-                onChange={(e) => handleInputChange('destino', e.target.value)}
-                placeholder="Ciudad de destino"
-                required
-                className={errors.destino ? 'border-red-500' : ''}
-              />
-              {errors.destino && (
-                <div className="flex items-center gap-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.destino}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="horaProgramada">Hora Programada *</Label>
-            <Input
-              id="horaProgramada"
-              type="time"
-              value={formData.horaProgramada}
-              onChange={(e) => handleInputChange('horaProgramada', e.target.value)}
+            <FormField
+              id="cartaPorte"
+              label="Carta Porte"
+              value={formData.cartaPorte}
+              onChange={(value) => handleInputChange('cartaPorte', value)}
+              placeholder="CP-001"
               required
-              className={errors.horaProgramada ? 'border-red-500' : ''}
+              error={errors.cartaPorte}
             />
-            {errors.horaProgramada && (
-              <div className="flex items-center gap-1 text-sm text-red-600">
-                <AlertCircle className="h-3 w-3" />
-                {errors.horaProgramada}
-              </div>
-            )}
+
+            <FormField
+              id="fechaProgramada"
+              label="Fecha Programada"
+              type="date"
+              value={formData.fechaProgramada}
+              onChange={(value) => handleInputChange('fechaProgramada', value)}
+              required
+              error={errors.fechaProgramada}
+              min={new Date().toISOString().split('T')[0]}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="conductor" className="flex items-center gap-1">
-                <User className="h-4 w-4 text-purple-600" />
-                Conductor (Opcional)
-              </Label>
-              <Input
-                id="conductor"
-                value={formData.conductor}
-                onChange={(e) => handleInputChange('conductor', e.target.value)}
-                placeholder="ID del conductor"
-              />
-            </div>
+            <FormField
+              id="origen"
+              label="Origen"
+              value={formData.origen}
+              onChange={(value) => handleInputChange('origen', value)}
+              placeholder="Ciudad de origen"
+              required
+              error={errors.origen}
+              icon={MapPin}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="vehiculo" className="flex items-center gap-1">
-                <Truck className="h-4 w-4 text-green-600" />
-                Vehículo (Opcional)
-              </Label>
-              <Input
-                id="vehiculo"
-                value={formData.vehiculo}
-                onChange={(e) => handleInputChange('vehiculo', e.target.value)}
-                placeholder="ID del vehículo"
-              />
-            </div>
+            <FormField
+              id="destino"
+              label="Destino"
+              value={formData.destino}
+              onChange={(value) => handleInputChange('destino', value)}
+              placeholder="Ciudad de destino"
+              required
+              error={errors.destino}
+              icon={MapPin}
+            />
+          </div>
+
+          <FormField
+            id="horaProgramada"
+            label="Hora Programada"
+            type="time"
+            value={formData.horaProgramada}
+            onChange={(value) => handleInputChange('horaProgramada', value)}
+            required
+            error={errors.horaProgramada}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              id="conductor"
+              label="Conductor (Opcional)"
+              value={formData.conductor}
+              onChange={(value) => handleInputChange('conductor', value)}
+              placeholder="ID del conductor"
+              icon={User}
+            />
+
+            <FormField
+              id="vehiculo"
+              label="Vehículo (Opcional)"
+              value={formData.vehiculo}
+              onChange={(value) => handleInputChange('vehiculo', value)}
+              placeholder="ID del vehículo"
+              icon={Truck}
+            />
           </div>
 
           <div className="space-y-2">
