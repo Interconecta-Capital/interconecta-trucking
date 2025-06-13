@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,16 +8,60 @@ import { DocumentosVista } from '@/components/viajes/DocumentosVista';
 import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { ProgramacionViajes } from '@/components/viajes/ProgramacionViajes';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
+
+const TABS_CONFIG = [
+  { 
+    id: 'activos', 
+    label: 'Viajes Activos', 
+    icon: Truck, 
+    component: ViajesActivos 
+  },
+  { 
+    id: 'documentos', 
+    label: 'Documentos', 
+    icon: FileText, 
+    component: DocumentosVista 
+  },
+  { 
+    id: 'historial', 
+    label: 'Historial', 
+    icon: Clock, 
+    component: HistorialViajes 
+  },
+  { 
+    id: 'programacion', 
+    label: 'Programación', 
+    icon: Calendar, 
+    component: ProgramacionViajes 
+  },
+];
 
 export default function Viajes() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const tabInicial = searchParams.get('tab') || 'activos';
-  const [activeTab, setActiveTab] = useState(tabInicial);
+  
+  const { activeTab, setTabSilently, handleTabChange } = useTabNavigation({
+    initialTab: tabInicial,
+    persistInURL: false // Deshabilitamos la persistencia automática en URL
+  });
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setSearchParams({ tab: value });
-  };
+  // Solo actualizar el tab si cambia el parámetro de URL externamente
+  useEffect(() => {
+    const urlTab = searchParams.get('tab') || 'activos';
+    if (urlTab !== activeTab) {
+      setTabSilently(urlTab);
+    }
+  }, [searchParams, activeTab, setTabSilently]);
+
+  // Memoizar los componentes de contenido para evitar re-renders innecesarios
+  const tabContent = useMemo(() => {
+    return TABS_CONFIG.reduce((acc, tab) => {
+      const Component = tab.component;
+      acc[tab.id] = <Component key={tab.id} />;
+      return acc;
+    }, {} as Record<string, JSX.Element>);
+  }, []);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -28,39 +72,26 @@ export default function Viajes() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activos" className="flex items-center gap-2">
-            <Truck className="h-4 w-4" />
-            Viajes Activos
-          </TabsTrigger>
-          <TabsTrigger value="documentos" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Documentos
-          </TabsTrigger>
-          <TabsTrigger value="historial" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Historial
-          </TabsTrigger>
-          <TabsTrigger value="programacion" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Programación
-          </TabsTrigger>
+          {TABS_CONFIG.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger 
+                key={tab.id} 
+                value={tab.id} 
+                className="flex items-center gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
-        <TabsContent value="activos">
-          <ViajesActivos />
-        </TabsContent>
-
-        <TabsContent value="documentos">
-          <DocumentosVista />
-        </TabsContent>
-
-        <TabsContent value="historial">
-          <HistorialViajes />
-        </TabsContent>
-
-        <TabsContent value="programacion">
-          <ProgramacionViajes />
-        </TabsContent>
+        {TABS_CONFIG.map((tab) => (
+          <TabsContent key={tab.id} value={tab.id}>
+            {tabContent[tab.id]}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );

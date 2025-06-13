@@ -8,37 +8,52 @@ interface UseAutoSaveOptions {
   delay?: number;
   onSave?: (data: any) => Promise<void>;
   enabled?: boolean;
+  useSessionStorage?: boolean;
 }
 
 export const useAutoSave = ({
   data,
   key,
-  delay = 2000,
+  delay = 3000, // Aumentado de 2000 a 3000ms para reducir frecuencia
   onSave,
-  enabled = true
+  enabled = true,
+  useSessionStorage = false // Nueva opción para usar sessionStorage
 }: UseAutoSaveOptions) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
+  const isInitialLoadRef = useRef(true);
 
   const saveData = useCallback(async () => {
     try {
       if (onSave) {
         await onSave(data);
       } else {
-        localStorage.setItem(`autosave_${key}`, JSON.stringify(data));
+        const storage = useSessionStorage ? sessionStorage : localStorage;
+        storage.setItem(`autosave_${key}`, JSON.stringify(data));
       }
       lastSavedRef.current = JSON.stringify(data);
     } catch (error) {
       console.error('Auto-save failed:', error);
     }
-  }, [data, key, onSave]);
+  }, [data, key, onSave, useSessionStorage]);
 
   useEffect(() => {
     if (!enabled) return;
 
     const currentData = JSON.stringify(data);
     
-    if (currentData !== lastSavedRef.current && Object.keys(data).length > 0) {
+    // Evitar guardado en la carga inicial
+    if (isInitialLoadRef.current) {
+      lastSavedRef.current = currentData;
+      isInitialLoadRef.current = false;
+      return;
+    }
+    
+    // Solo guardar si los datos realmente cambiaron y tienen contenido
+    if (currentData !== lastSavedRef.current && 
+        Object.keys(data).length > 0 && 
+        currentData !== '{}') {
+      
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -57,21 +72,30 @@ export const useAutoSave = ({
 
   const loadSavedData = useCallback(() => {
     try {
-      const saved = localStorage.getItem(`autosave_${key}`);
+      const storage = useSessionStorage ? sessionStorage : localStorage;
+      const saved = storage.getItem(`autosave_${key}`);
       return saved ? JSON.parse(saved) : null;
     } catch (error) {
       console.error('Failed to load saved data:', error);
       return null;
     }
-  }, [key]);
+  }, [key, useSessionStorage]);
 
   const clearSavedData = useCallback(() => {
-    localStorage.removeItem(`autosave_${key}`);
-  }, [key]);
+    const storage = useSessionStorage ? sessionStorage : localStorage;
+    storage.removeItem(`autosave_${key}`);
+  }, [key, useSessionStorage]);
+
+  const forceSave = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    saveData();
+  }, [saveData]);
 
   return {
     loadSavedData,
     clearSavedData,
-    saveData
+    saveData: forceSave
   };
 };
