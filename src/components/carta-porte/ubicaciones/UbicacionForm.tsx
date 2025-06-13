@@ -59,6 +59,14 @@ export function UbicacionForm({
     }
   };
 
+  // Fix the boolean conversion issue
+  const canSaveToFavorites = Boolean(
+    formData.rfcRemitenteDestinatario && 
+    formData.rfcRemitenteDestinatario.trim() !== '' &&
+    formData.nombreRemitenteDestinatario && 
+    formData.nombreRemitenteDestinatario.trim() !== ''
+  );
+
   return (
     <Card className="w-full">
       <UbicacionFormHeader
@@ -89,7 +97,7 @@ export function UbicacionForm({
             onRFCChange={handleRFCChange}
             onNombreChange={(nombre) => handleFieldChange('nombreRemitenteDestinatario', nombre)}
             onSaveToFavorites={handleSaveToFavorites}
-            canSaveToFavorites={!!(formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario)}
+            canSaveToFavorites={canSaveToFavorites}
           />
 
           <UbicacionDomicilioForm
