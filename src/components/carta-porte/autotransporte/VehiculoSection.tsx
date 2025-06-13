@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
 import { AIAssistantButton } from '../mercancias/AIAssistantButton';
-import { useBuscarConfigVehicular, useBuscarTipoPermiso } from '@/hooks/useCatalogos';
+import { useConfiguracionesVehiculo, useTiposPermiso } from '@/hooks/useCatalogos';
 import { useFormContext } from 'react-hook-form';
 import { Truck } from 'lucide-react';
 
@@ -15,14 +15,12 @@ export function VehiculoSection() {
   const [configSearch, setConfigSearch] = React.useState('');
   const [permisoSearch, setPermisoSearch] = React.useState('');
   
-  const { data: configuraciones = [], isLoading: loadingConfigs } = useBuscarConfigVehicular(
-    configSearch,
-    true
+  const { data: configuraciones = [], isLoading: loadingConfigs } = useConfiguracionesVehiculo(
+    configSearch
   );
   
-  const { data: permisos = [], isLoading: loadingPermisos } = useBuscarTipoPermiso(
-    permisoSearch,
-    true
+  const { data: permisos = [], isLoading: loadingPermisos } = useTiposPermiso(
+    permisoSearch
   );
 
   const handleAISuggestion = (suggestion: any) => {
