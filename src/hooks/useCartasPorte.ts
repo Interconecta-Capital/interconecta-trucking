@@ -34,33 +34,33 @@ export const useCartasPorte = () => {
   const queryClient = useQueryClient();
 
   const { data: cartasPorte = [], isLoading: loading } = useQuery({
-    queryKey: ['cartas-porte', user?.id],
+    queryKey: ['cartas-porte', user?.usuario?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.usuario?.id) return [];
       
       const { data, error } = await supabase
         .from('cartas_porte')
         .select('*')
-        .eq('usuario_id', user.id)
+        .eq('usuario_id', user.usuario!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.usuario?.id,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: Omit<CartaPorte, 'id' | 'usuario_id' | 'created_at' | 'updated_at'>) => {
-      if (!user?.id) throw new Error('Usuario no autenticado');
+      if (!user?.usuario?.id) throw new Error('Usuario no autenticado');
       
       const { data: result, error } = await supabase
         .from('cartas_porte')
         .insert({
           ...data,
-          usuario_id: user.id,
+          usuario_id: user.usuario!.id,
         })
         .select()
         .single();
