@@ -241,6 +241,29 @@ export function useSimpleAuth() {
     }
   }, []);
 
+  const updateProfile = useCallback(async (updates: { telefono?: string; nombre?: string; empresa?: string }) => {
+    if (!authState.user) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: updates
+      });
+
+      if (error) {
+        console.error('[SimpleAuth] Update profile error:', error);
+        throw error;
+      }
+
+      console.log('[SimpleAuth] Profile updated successfully');
+      return true;
+    } catch (error) {
+      console.error('[SimpleAuth] Update profile error:', error);
+      throw error;
+    }
+  }, [authState.user]);
+
   const resendConfirmation = useCallback(async (email: string): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.resend({
@@ -302,6 +325,7 @@ export function useSimpleAuth() {
     signInWithGoogle,
     signUp,
     signOut,
+    updateProfile,
     resendConfirmation,
     validateEmail,
     validatePassword,
