@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Lock, TrendingUp, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { FunctionalityType } from '@/types/permissions';
 
 interface ProtectedContentProps {
   children: ReactNode;
-  requiredFeature?: string;
+  requiredFeature?: FunctionalityType;
   requiredPlan?: string;
   fallback?: ReactNode;
   showUpgrade?: boolean;

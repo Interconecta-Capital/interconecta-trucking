@@ -5,10 +5,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Lock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { FunctionalityType } from '@/types/permissions';
 
 interface ProtectedFeatureProps {
   children: ReactNode;
-  feature: string;
+  feature: FunctionalityType;
   fallback?: ReactNode;
   showUpgrade?: boolean;
 }
