@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +37,7 @@ export function EnhancedLoginForm() {
     
     try {
       // Sanitize and validate inputs
-      const sanitizedEmail = sanitizeInput(email, 'email', { maxLength: 254 });
+      const sanitizedEmail = sanitizeInput(email, 'email');
       const emailValidation = validateEmail(sanitizedEmail);
       
       if (!emailValidation.isValid) {
@@ -136,7 +135,7 @@ export function EnhancedLoginForm() {
                   type="email"
                   placeholder="tu@empresa.com"
                   value={email}
-                  onChange={(e) => setEmail(sanitizeInput(e.target.value, 'email', { maxLength: 254 }))}
+                  onChange={(e) => setEmail(sanitizeInput(e.target.value, 'email'))}
                   required
                   maxLength={254}
                   className="border-interconecta-border-subtle focus:ring-interconecta-primary"

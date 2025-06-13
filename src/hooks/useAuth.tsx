@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const validateUniqueRFC = async (rfc: string): Promise<ValidationResult> => {
     const validation = validateRFCFormat(rfc);
     if (!validation.isValid) {
-      return { isValid: false, message: validation.error };
+      return { isValid: false, message: validation.message };
     }
     
     try {

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +44,7 @@ export function RegisterForm() {
         sanitizedValue = sanitizeInput(value, 'phone');
         break;
       default:
-        sanitizedValue = sanitizeInput(value, 'text', { maxLength: 100 });
+        sanitizedValue = sanitizeInput(value, 'text');
         break;
     }
     
