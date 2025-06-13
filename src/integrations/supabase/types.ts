@@ -2271,6 +2271,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      get_current_user_tenant_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_tenant_id: {
         Args: { user_uuid: string }
         Returns: string
@@ -2279,8 +2283,16 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_superuser: {
         Args: { user_uuid: string }
+        Returns: boolean
+      }
+      is_superuser_safe: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_user_admin: {
