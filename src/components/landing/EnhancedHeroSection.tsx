@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar, Play, CheckCircle, Truck, Users, Clock, Shield } from "lucide-react";
@@ -81,13 +80,13 @@ const EnhancedHeroSection = () => {
           
           {/* Botones CTA Mejorados - ANIMACIÓN ARREGLADA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <Link to="/auth/trial">
+            <Link to="/trial">
               <Button size="lg" className="bg-gradient-to-r from-interconecta-primary to-interconecta-accent hover:from-interconecta-accent hover:to-interconecta-primary text-white px-10 py-6 text-lg font-sora font-semibold shadow-lg hover:shadow-xl transition-all duration-200 relative overflow-hidden">
                 <Calendar className="mr-3 h-6 w-6" />
                 Prueba 14 días GRATIS
               </Button>
             </Link>
-            <Link to="/auth/login">
+            <Link to="/auth">
               <Button size="lg" variant="outline" className="border-2 border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary hover:text-white px-10 py-6 text-lg font-sora font-medium shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm bg-white/80">
                 <Play className="mr-3 h-6 w-6" />
                 Iniciar sesión
