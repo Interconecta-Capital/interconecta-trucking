@@ -1,4 +1,3 @@
-
 import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreeting';
 import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { DashboardMetricsGrid } from '@/components/dashboard/DashboardMetricsGrid';
@@ -7,12 +6,25 @@ import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useSocios } from '@/hooks/useSocios';
+import { useSimpleAuth } from '@/hooks/useSimpleAuth';
 
 export default function Dashboard() {
+  const { user } = useSimpleAuth();
   const { cartasPorte, loading: loadingCartas } = useCartasPorte();
   const { vehiculos, loading: loadingVehiculos } = useVehiculos();
   const { conductores, loading: loadingConductores } = useConductores();
   const { socios, loading: loadingSocios } = useSocios();
+
+  const getMetrics = () => {
+    const sociosActivos = socios.filter(socio => socio.activo);
+    
+    return {
+      sociosActivos: sociosActivos.length,
+      viajesActivos: 0, // placeholder
+      documentosVigentes: 0, // placeholder
+      alertas: 0 // placeholder
+    };
+  };
 
   // Calcular métricas reales
   const totalCartasPorte = cartasPorte.length;

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 export interface PlantillaData {
   id: string;
-  user_id: string;
+  usuario_id: string; // Changed from user_id to match database
   nombre: string;
   descripcion?: string;
   template_data: any;
@@ -37,7 +37,7 @@ export const usePlantillas = () => {
       const { data, error } = await supabase
         .from('plantillas_carta_porte')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('usuario_id', user.id)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -75,7 +75,7 @@ export const usePlantillas = () => {
     const { error } = await supabase
       .from('plantillas_carta_porte')
       .insert({
-        user_id: user.id,
+        usuario_id: user.id,
         nombre,
         descripcion,
         template_data: templateData,
@@ -114,7 +114,7 @@ export const usePlantillas = () => {
     const { error } = await supabase
       .from('plantillas_carta_porte')
       .insert({
-        user_id: user.id,
+        usuario_id: user.id,
         nombre: nuevoNombre,
         descripcion: plantilla.descripcion,
         template_data: plantilla.template_data,

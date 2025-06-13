@@ -9,11 +9,12 @@ export interface Socio {
   user_id: string;
   nombre_razon_social: string;
   rfc: string;
-  tipo_persona: 'fisica' | 'moral';
+  tipo_persona: string; // Changed from union type to string to match database
   telefono?: string;
   email?: string;
   direccion?: any;
   activo: boolean;
+  estado?: string; // Added optional estado field
   created_at: string;
   updated_at: string;
 }
