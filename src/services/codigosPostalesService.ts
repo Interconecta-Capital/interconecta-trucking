@@ -1,4 +1,3 @@
-
 import { buscarCodigoPostalLocal, validarFormatoCP } from '@/data/codigosPostalesMexico';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,7 +27,28 @@ class CodigosPostalesService {
     }
 
     try {
-      // 1. Primero intentar datos locales (más rápido)
+      // 1. Primero consultar nueva base de datos via Edge Function
+      console.log('[CP_SERVICE] Consultando nueva base de datos para:', codigoPostal);
+      
+      const { data, error } = await supabase.functions.invoke('codigo-postal', {
+        body: { codigoPostal }
+      });
+
+      if (!error && data && !data.error) {
+        const resultado: DireccionCompleta = {
+          codigoPostal: data.codigoPostal,
+          estado: data.estado,
+          municipio: data.municipio,
+          localidad: data.localidad || data.ciudad,
+          colonias: data.colonias?.map((c: any) => c.colonia) || [],
+          fuente: data.fuente
+        };
+
+        this.cache.set(codigoPostal, resultado);
+        return resultado;
+      }
+
+      // 2. Fallback a datos locales si no está en la nueva base
       const datosLocales = buscarCodigoPostalLocal(codigoPostal);
       if (datosLocales) {
         console.log('[CP_SERVICE] Encontrado en datos locales:', codigoPostal);
@@ -46,29 +66,8 @@ class CodigosPostalesService {
         return resultado;
       }
 
-      // 2. Si no está local, usar API interna (Edge Function)
-      console.log('[CP_SERVICE] Consultando API interna para:', codigoPostal);
-      
-      const { data, error } = await supabase.functions.invoke('codigo-postal', {
-        body: { codigoPostal }
-      });
-
-      if (!error && data && !data.error) {
-        const resultado: DireccionCompleta = {
-          codigoPostal: data.codigoPostal,
-          estado: data.estado,
-          municipio: data.municipio,
-          localidad: data.localidad,
-          colonias: data.colonias,
-          fuente: 'api_interna'
-        };
-
-        this.cache.set(codigoPostal, resultado);
-        return resultado;
-      }
-
-      // 3. Fallback a API legacy (con manejo de CORS)
-      console.log('[CP_SERVICE] APIs anteriores fallaron, intentando legacy...');
+      // 3. Último recurso: API legacy
+      console.log('[CP_SERVICE] Intentando API legacy para:', codigoPostal);
       return await this.buscarLegacyAPI(codigoPostal);
 
     } catch (error) {

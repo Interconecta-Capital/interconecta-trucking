@@ -792,6 +792,54 @@ export type Database = {
           },
         ]
       }
+      codigos_postales_mexico: {
+        Row: {
+          ciudad: string | null
+          codigo_postal: string
+          colonia: string
+          created_at: string | null
+          estado: string
+          estado_clave: string
+          id: string
+          localidad: string | null
+          municipio: string
+          municipio_clave: string
+          tipo_asentamiento: string | null
+          updated_at: string | null
+          zona: string | null
+        }
+        Insert: {
+          ciudad?: string | null
+          codigo_postal: string
+          colonia: string
+          created_at?: string | null
+          estado: string
+          estado_clave: string
+          id?: string
+          localidad?: string | null
+          municipio: string
+          municipio_clave: string
+          tipo_asentamiento?: string | null
+          updated_at?: string | null
+          zona?: string | null
+        }
+        Update: {
+          ciudad?: string | null
+          codigo_postal?: string
+          colonia?: string
+          created_at?: string | null
+          estado?: string
+          estado_clave?: string
+          id?: string
+          localidad?: string | null
+          municipio?: string
+          municipio_clave?: string
+          tipo_asentamiento?: string | null
+          updated_at?: string | null
+          zona?: string | null
+        }
+        Relationships: []
+      }
       conductores: {
         Row: {
           activo: boolean | null
@@ -2192,6 +2240,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      buscar_codigo_postal: {
+        Args: { cp_input: string }
+        Returns: {
+          codigo_postal: string
+          estado: string
+          estado_clave: string
+          municipio: string
+          municipio_clave: string
+          localidad: string
+          ciudad: string
+          zona: string
+          colonias: Json
+        }[]
+      }
       check_rate_limit: {
         Args: {
           p_identifier: string
@@ -2238,6 +2300,13 @@ export type Database = {
       record_rate_limit_attempt: {
         Args: { p_identifier: string; p_action_type: string; p_metadata?: Json }
         Returns: undefined
+      }
+      sugerir_codigos_similares: {
+        Args: { cp_input: string }
+        Returns: {
+          codigo_postal: string
+          ubicacion: string
+        }[]
       }
       validate_rfc_format: {
         Args: { rfc_input: string }

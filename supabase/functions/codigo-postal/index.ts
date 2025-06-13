@@ -1,151 +1,70 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface CodigoPostalRequest {
+  codigoPostal: string;
+}
+
 interface CodigoPostalResponse {
   codigoPostal: string;
   estado: string;
+  estadoClave: string;
   municipio: string;
+  municipioClave: string;
   localidad?: string;
-  colonias: string[];
-  fuente: 'api_sepomex' | 'api_backup' | 'local_data';
+  ciudad?: string;
+  zona?: string;
+  colonias: Array<{
+    colonia: string;
+    tipo_asentamiento?: string;
+  }>;
+  fuente: 'database' | 'api_externa';
+  error?: string;
 }
 
-// Datos locales de respaldo (versión simplificada)
-const codigosPostalesBackup: Record<string, Omit<CodigoPostalResponse, 'fuente'>> = {
-  "62577": {
-    codigoPostal: "62577",
-    estado: "Morelos",
-    municipio: "Jiutepec",
-    localidad: "Jiutepec",
-    colonias: ["Ampliación Bugambilias"]
-  },
-  "03100": {
-    codigoPostal: "03100", 
-    estado: "Ciudad de México",
-    municipio: "Benito Juárez",
-    localidad: "Ciudad de México",
-    colonias: ["Del Valle Centro"]
-  },
-  "06600": {
-    codigoPostal: "06600",
-    estado: "Ciudad de México",
-    municipio: "Cuauhtémoc", 
-    localidad: "Ciudad de México",
-    colonias: ["Roma Norte"]
-  }
-};
-
-async function consultarSEPOMEX(codigoPostal: string): Promise<CodigoPostalResponse | null> {
-  try {
-    console.log(`[SEPOMEX] Consultando CP: ${codigoPostal}`);
-    
-    const response = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'InterconectaTrucking/1.0'
-      }
-    });
-
-    if (!response.ok) {
-      console.log(`[SEPOMEX] Error HTTP: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (data.error || !data.response || data.response.length === 0) {
-      console.log(`[SEPOMEX] No hay datos para CP: ${codigoPostal}`);
-      return null;
-    }
-
-    const primeraRespuesta = data.response[0];
-    const colonias = [...new Set(data.response.map((item: any) => item.d_asenta))].sort();
-
-    return {
-      codigoPostal,
-      estado: primeraRespuesta.d_estado,
-      municipio: primeraRespuesta.d_mnp,
-      localidad: primeraRespuesta.d_ciudad,
-      colonias,
-      fuente: 'api_sepomex'
-    };
-  } catch (error) {
-    console.error(`[SEPOMEX] Error en consulta:`, error);
-    return null;
-  }
+interface SugerenciasResponse {
+  sugerencias: Array<{
+    codigo_postal: string;
+    ubicacion: string;
+  }>;
 }
 
-async function consultarAPIBackup(codigoPostal: string): Promise<CodigoPostalResponse | null> {
-  try {
-    console.log(`[API_BACKUP] Consultando CP: ${codigoPostal}`);
-    
-    // API alternativa (puede usar otra fuente confiable)
-    const response = await fetch(`https://sepomex.icalialabs.com/api/v1/zip_codes?zip_code=${codigoPostal}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.log(`[API_BACKUP] Error HTTP: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (!data.zip_codes || data.zip_codes.length === 0) {
-      console.log(`[API_BACKUP] No hay datos para CP: ${codigoPostal}`);
-      return null;
-    }
-
-    const primero = data.zip_codes[0];
-    const colonias = [...new Set(data.zip_codes.map((item: any) => item.d_asenta))].sort();
-
-    return {
-      codigoPostal,
-      estado: primero.d_estado,
-      municipio: primero.d_mnp,
-      localidad: primero.d_ciudad || primero.d_mnp,
-      colonias,
-      fuente: 'api_backup'
-    };
-  } catch (error) {
-    console.error(`[API_BACKUP] Error en consulta:`, error);
-    return null;
-  }
-}
-
-function obtenerDatosLocales(codigoPostal: string): CodigoPostalResponse | null {
-  const datos = codigosPostalesBackup[codigoPostal];
-  if (!datos) return null;
-
-  return {
-    ...datos,
-    fuente: 'local_data'
-  };
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const url = new URL(req.url);
-    const codigoPostal = url.pathname.split('/').pop();
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Método no permitido' }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const { codigoPostal }: CodigoPostalRequest = await req.json();
+
+    console.log('[CP_FUNCTION] Buscando código postal:', codigoPostal);
+
+    // Validar formato del código postal
     if (!codigoPostal || !/^\d{5}$/.test(codigoPostal)) {
       return new Response(
         JSON.stringify({ 
-          error: 'Código postal inválido. Debe tener 5 dígitos.' 
+          error: 'Formato de código postal inválido. Debe ser de 5 dígitos numéricos.' 
         }),
         { 
           status: 400, 
@@ -154,49 +73,103 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[CP_PROXY] Buscando código postal: ${codigoPostal}`);
+    // 1. Buscar en la base de datos local primero
+    const { data: dbResult, error: dbError } = await supabase
+      .rpc('buscar_codigo_postal', { cp_input: codigoPostal });
 
-    // Estrategia de múltiples fuentes:
-    // 1. Intentar API SEPOMEX principal
-    let resultado = await consultarSEPOMEX(codigoPostal);
-    
-    // 2. Si falla, intentar API de respaldo
-    if (!resultado) {
-      console.log(`[CP_PROXY] SEPOMEX falló, intentando API backup...`);
-      resultado = await consultarAPIBackup(codigoPostal);
-    }
-    
-    // 3. Si ambas APIs fallan, usar datos locales
-    if (!resultado) {
-      console.log(`[CP_PROXY] APIs externas fallaron, usando datos locales...`);
-      resultado = obtenerDatosLocales(codigoPostal);
-    }
+    if (dbError) {
+      console.error('[CP_FUNCTION] Error en consulta DB:', dbError);
+    } else if (dbResult && dbResult.length > 0) {
+      const resultado = dbResult[0];
+      console.log('[CP_FUNCTION] Encontrado en DB:', resultado);
 
-    if (!resultado) {
+      const response: CodigoPostalResponse = {
+        codigoPostal: resultado.codigo_postal,
+        estado: resultado.estado,
+        estadoClave: resultado.estado_clave,
+        municipio: resultado.municipio,
+        municipioClave: resultado.municipio_clave,
+        localidad: resultado.localidad,
+        ciudad: resultado.ciudad,
+        zona: resultado.zona,
+        colonias: resultado.colonias || [],
+        fuente: 'database'
+      };
+
       return new Response(
-        JSON.stringify({ 
-          error: `Código postal ${codigoPostal} no encontrado en ninguna fuente.`,
-          sugerencias: []
-        }),
+        JSON.stringify(response),
         { 
-          status: 404, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
-    console.log(`[CP_PROXY] CP encontrado via: ${resultado.fuente}`);
+    // 2. Si no se encuentra en DB, intentar API externa como fallback
+    console.log('[CP_FUNCTION] No encontrado en DB, intentando API externa...');
+    
+    try {
+      const apiResponse = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`);
+      
+      if (apiResponse.ok) {
+        const apiData = await apiResponse.json();
+        
+        if (!apiData.error && apiData.response && apiData.response.length > 0) {
+          const primeraRespuesta = apiData.response[0];
+          const colonias = [...new Set(apiData.response.map((item: any) => ({
+            colonia: item.d_asenta,
+            tipo_asentamiento: item.d_tipo_asenta
+          })))];
+
+          const response: CodigoPostalResponse = {
+            codigoPostal,
+            estado: primeraRespuesta.d_estado,
+            estadoClave: primeraRespuesta.c_estado,
+            municipio: primeraRespuesta.d_mnp,
+            municipioClave: primeraRespuesta.c_mnp,
+            localidad: primeraRespuesta.d_ciudad,
+            ciudad: primeraRespuesta.d_ciudad,
+            zona: 'urbana', // Valor por defecto
+            colonias: colonias,
+            fuente: 'api_externa'
+          };
+
+          console.log('[CP_FUNCTION] Encontrado en API externa:', response);
+          return new Response(
+            JSON.stringify(response),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
+    } catch (apiError) {
+      console.error('[CP_FUNCTION] Error en API externa:', apiError);
+    }
+
+    // 3. Si no se encuentra, buscar sugerencias similares
+    console.log('[CP_FUNCTION] Generando sugerencias similares...');
+    
+    const { data: sugerenciasResult, error: sugerenciasError } = await supabase
+      .rpc('sugerir_codigos_similares', { cp_input: codigoPostal });
+
+    let sugerencias: SugerenciasResponse['sugerencias'] = [];
+    if (!sugerenciasError && sugerenciasResult) {
+      sugerencias = sugerenciasResult;
+    }
 
     return new Response(
-      JSON.stringify(resultado),
+      JSON.stringify({ 
+        error: `Código postal ${codigoPostal} no encontrado`,
+        sugerencias: sugerencias.slice(0, 5) // Máximo 5 sugerencias
+      }),
       { 
+        status: 404, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
 
   } catch (error) {
-    console.error('[CP_PROXY] Error interno:', error);
-    
+    console.error('[CP_FUNCTION] Error general:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Error interno del servidor',
