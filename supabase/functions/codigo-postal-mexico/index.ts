@@ -24,43 +24,104 @@ interface CodigoPostalResponse {
     nombre: string;
     tipo: string;
   }>;
-  fuente: 'database_nacional' | 'sepomex_api';
+  fuente: 'database_nacional' | 'api_externa';
 }
 
-// Función para consultar SEPOMEX API
-async function consultarSepomex(codigoPostal: string): Promise<CodigoPostalResponse | null> {
+// Función para consultar API externa de códigos postales
+async function consultarAPIExterna(codigoPostal: string): Promise<CodigoPostalResponse | null> {
   try {
-    console.log('[CP_EDGE] Consultando SEPOMEX API para:', codigoPostal);
+    console.log('[CP_EDGE] Consultando API externa para:', codigoPostal);
+    
+    // Usar API gratuita de códigos postales mexicanos
     const response = await fetch(
-      `https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`
+      `https://api.tau.com.mx/dipomex/v1/cp/${codigoPostal}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Agregar timeout
+        signal: AbortSignal.timeout(10000), // 10 segundos
+      }
     );
     
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.log('[CP_EDGE] API externa respondió con error:', response.status);
+      return null;
+    }
     
     const data = await response.json();
-    if (!data.error && data.response) {
-      const colonias = (data.response.asentamiento || []).map((a: any) => ({
-        nombre: a.d_asenta,
-        tipo: a.d_tipo_asenta
-      }));
+    console.log('[CP_EDGE] Respuesta de API externa:', data);
+    
+    if (data && data.cp_estado && data.cp_municipio) {
+      const colonias = data.cp_asentamientos ? data.cp_asentamientos.map((asentamiento: any) => ({
+        nombre: asentamiento.asentamiento || asentamiento.nombre || asentamiento,
+        tipo: asentamiento.tipo_asentamiento || 'Colonia'
+      })) : [];
       
       return {
-        codigoPostal: data.response.cp,
-        estado: data.response.estado,
-        estadoClave: data.response.cve_edo || '',
-        municipio: data.response.municipio,
-        municipioClave: data.response.cve_mun || '',
-        localidad: data.response.ciudad || data.response.municipio,
-        ciudad: data.response.ciudad,
-        zona: data.response.zona || '',
+        codigoPostal: data.cp || codigoPostal,
+        estado: data.cp_estado,
+        estadoClave: data.cp_cve_estado || '',
+        municipio: data.cp_municipio,
+        municipioClave: data.cp_cve_municipio || '',
+        localidad: data.cp_ciudad || data.cp_municipio,
+        ciudad: data.cp_ciudad,
+        zona: data.cp_zona || '',
         totalColonias: colonias.length,
         colonias,
-        fuente: 'sepomex_api'
+        fuente: 'api_externa'
       };
     }
   } catch (error) {
-    console.error('[CP_EDGE] Error consultando SEPOMEX:', error);
+    console.error('[CP_EDGE] Error consultando API externa:', error);
   }
+  
+  // Fallback: intentar con API de códigos postales de México (gratuita)
+  try {
+    console.log('[CP_EDGE] Intentando fallback API para:', codigoPostal);
+    
+    const fallbackResponse = await fetch(
+      `https://api.copomex.com/query/info_cp/${codigoPostal}?type=simplified`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    
+    if (fallbackResponse.ok) {
+      const fallbackData = await fallbackResponse.json();
+      console.log('[CP_EDGE] Respuesta de fallback API:', fallbackData);
+      
+      if (fallbackData && fallbackData.response && fallbackData.response.estado) {
+        const colonias = fallbackData.response.asentamiento ? 
+          fallbackData.response.asentamiento.map((a: any) => ({
+            nombre: a.asentamiento || a.nombre,
+            tipo: a.tipo || 'Colonia'
+          })) : [];
+        
+        return {
+          codigoPostal: fallbackData.response.cp || codigoPostal,
+          estado: fallbackData.response.estado,
+          estadoClave: fallbackData.response.cve_estado || '',
+          municipio: fallbackData.response.municipio,
+          municipioClave: fallbackData.response.cve_municipio || '',
+          localidad: fallbackData.response.ciudad || fallbackData.response.municipio,
+          ciudad: fallbackData.response.ciudad,
+          zona: fallbackData.response.zona || '',
+          totalColonias: colonias.length,
+          colonias,
+          fuente: 'api_externa'
+        };
+      }
+    }
+  } catch (fallbackError) {
+    console.error('[CP_EDGE] Error en fallback API:', fallbackError);
+  }
+  
   return null;
 }
 
@@ -103,16 +164,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // PASO 1: Intentar SEPOMEX API primero
-    const sepomexResult = await consultarSepomex(codigoPostal);
-    if (sepomexResult) {
-      console.log('[CP_EDGE] Encontrado en SEPOMEX API:', {
-        cp: sepomexResult.codigoPostal,
-        totalColonias: sepomexResult.totalColonias
+    // PASO 1: Intentar API externa primero
+    const apiResult = await consultarAPIExterna(codigoPostal);
+    if (apiResult && apiResult.colonias.length > 0) {
+      console.log('[CP_EDGE] Encontrado en API externa:', {
+        cp: apiResult.codigoPostal,
+        totalColonias: apiResult.totalColonias
       });
 
       return new Response(
-        JSON.stringify(sepomexResult),
+        JSON.stringify(apiResult),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
