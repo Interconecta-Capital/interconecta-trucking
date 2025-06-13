@@ -32,6 +32,15 @@ export interface AuthUser extends User {
     id: string;
     nombre: string;
     rol: string;
+    rol_especial?: string;
+    tenant_id?: string;
+  };
+  user_metadata?: {
+    nombre?: string;
+    empresa?: string;
+    rfc?: string;
+    telefono?: string;
+    name?: string;
   };
 }
 
