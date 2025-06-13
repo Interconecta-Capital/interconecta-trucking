@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -139,16 +138,11 @@ export function UbicacionForm({
     }
   };
 
-  const handleCancel = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleCancel = () => {
     onCancel();
   };
 
-  const handleSaveToFavorites = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleSaveToFavorites = () => {
     if (onSaveToFavorites && formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario) {
       onSaveToFavorites({
         nombreUbicacion: formData.nombreRemitenteDestinatario,
