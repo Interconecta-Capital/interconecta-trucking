@@ -26,9 +26,9 @@ export function EnhancedAuthGuard({ children, requireAuth = true }: EnhancedAuth
       // User needs to be authenticated but isn't
       console.log('[EnhancedAuthGuard] Redirecting to auth page');
       navigate('/auth', { replace: true });
-    } else if (!requireAuth && user) {
-      // User is authenticated but on a public page (like auth page)
-      console.log('[EnhancedAuthGuard] Redirecting to dashboard');
+    } else if (!requireAuth && user && location.pathname === '/auth') {
+      // User is authenticated and specifically on the auth page, redirect to dashboard
+      console.log('[EnhancedAuthGuard] User is authenticated on auth page, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
   }, [user, loading, requireAuth, navigate, location.pathname]);
@@ -46,8 +46,8 @@ export function EnhancedAuthGuard({ children, requireAuth = true }: EnhancedAuth
     return null;
   }
 
-  // If requireAuth is false and user exists, don't render children (will redirect)
-  if (!requireAuth && user) {
+  // If user is authenticated and specifically on /auth page, don't render children (will redirect)
+  if (!requireAuth && user && location.pathname === '/auth') {
     return null;
   }
 
