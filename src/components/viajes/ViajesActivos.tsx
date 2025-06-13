@@ -77,7 +77,7 @@ export function ViajesActivos() {
     return <ViajesLoadingState />;
   }
 
-  logInfo('ViajesActivos', 'Rendering viajes list with', viajesActivos.length, 'items');
+  logInfo('ViajesActivos', 'Rendering viajes list', { viajesCount: viajesActivos.length });
 
   return (
     <>
