@@ -1,45 +1,33 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-export const useCSRFProtection = () => {
+export function useCSRFProtection() {
   const [csrfToken, setCsrfToken] = useState<string>('');
 
-  const generateCSRFToken = () => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-  };
-
-  useEffect(() => {
-    // Generate a new CSRF token for this session
-    const token = generateCSRFToken();
-    setCsrfToken(token);
-    
-    // Store in session storage for validation
-    sessionStorage.setItem('csrf_token', token);
+  // Generate a simple CSRF token (in a real app, this would come from the server)
+  const generateToken = useCallback(() => {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }, []);
 
-  const validateCSRFToken = (token: string): boolean => {
-    const storedToken = sessionStorage.getItem('csrf_token');
-    return storedToken === token;
-  };
+  useEffect(() => {
+    setCsrfToken(generateToken());
+  }, [generateToken]);
 
   const protectedRequest = useCallback(async (url: string, options: RequestInit = {}) => {
     const headers = {
-      ...options.headers,
+      'Content-Type': 'application/json',
       'X-CSRF-Token': csrfToken,
-      'Content-Type': 'application/json'
+      ...options.headers,
     };
 
     return fetch(url, {
       ...options,
-      headers
+      headers,
     });
   }, [csrfToken]);
 
   return {
     csrfToken,
-    validateCSRFToken,
-    protectedRequest
+    protectedRequest,
   };
-};
+}
