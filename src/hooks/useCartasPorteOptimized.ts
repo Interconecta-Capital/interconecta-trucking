@@ -3,7 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthOptimized } from './useAuthOptimized';
 
-export function useCartasPorteOptimized(options = {}) {
+interface UseCartasPorteOptions {
+  enabled?: boolean;
+  limit?: number;
+}
+
+export function useCartasPorteOptimized(options: UseCartasPorteOptions = {}) {
   const { session } = useAuthOptimized();
   const { enabled = true, limit = 10 } = options;
 
