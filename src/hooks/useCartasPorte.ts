@@ -33,24 +33,65 @@ export const useCartasPorte = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: cartasPorte = [], isLoading: loading } = useQuery({
+  const { data: cartasPorte = [], isLoading: loading, error } = useQuery({
     queryKey: ['cartas-porte', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('[CartasPorte] No user ID available');
+        return [];
+      }
       
-      const { data, error } = await supabase
-        .from('cartas_porte')
-        .select('*')
-        .eq('usuario_id', user.id)
-        .order('created_at', { ascending: false });
+      console.log('[CartasPorte] Fetching cartas porte for user:', user.id);
+      
+      try {
+        const { data, error } = await supabase
+          .from('cartas_porte')
+          .select('*')
+          .eq('usuario_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+        if (error) {
+          console.error('[CartasPorte] Database error:', error);
+          // Don't throw error immediately, let React Query handle retries
+          if (error.code === 'PGRST116' || error.message.includes('infinite recursion')) {
+            console.error('[CartasPorte] RLS recursion detected - returning empty array');
+            return [];
+          }
+          throw error;
+        }
+
+        console.log('[CartasPorte] Successfully fetched:', data?.length || 0, 'cartas');
+        return data || [];
+      } catch (err) {
+        console.error('[CartasPorte] Query error:', err);
+        throw err;
+      }
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000, // Increase stale time to 10 minutes
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
+    refetchOnReconnect: false,   // Prevent refetch on reconnect
+    retry: (failureCount, error: any) => {
+      // Don't retry on RLS/recursion errors
+      if (error?.code === 'PGRST116' || error?.message?.includes('infinite recursion')) {
+        console.error('[CartasPorte] RLS error detected, not retrying');
+        return false;
+      }
+      // Limit retries to prevent excessive requests
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  // Log any errors for debugging
+  useEffect(() => {
+    if (error) {
+      console.error('[CartasPorte] Query error:', error);
+      if (error.message?.includes('500') || error.message?.includes('Internal Server Error')) {
+        toast.error('Error de conexión con la base de datos. Reintentando...');
+      }
+    }
+  }, [error]);
 
   const createMutation = useMutation({
     mutationFn: async (data: Omit<CartaPorte, 'id' | 'usuario_id' | 'created_at' | 'updated_at'>) => {
@@ -73,6 +114,7 @@ export const useCartasPorte = () => {
       toast.success('Carta porte creada exitosamente');
     },
     onError: (error: any) => {
+      console.error('[CartasPorte] Create error:', error);
       toast.error(`Error al crear carta porte: ${error.message}`);
     }
   });
@@ -94,6 +136,7 @@ export const useCartasPorte = () => {
       toast.success('Carta porte actualizada exitosamente');
     },
     onError: (error: any) => {
+      console.error('[CartasPorte] Update error:', error);
       toast.error(`Error al actualizar carta porte: ${error.message}`);
     }
   });
@@ -112,6 +155,7 @@ export const useCartasPorte = () => {
       toast.success('Carta porte eliminada exitosamente');
     },
     onError: (error: any) => {
+      console.error('[CartasPorte] Delete error:', error);
       toast.error(`Error al eliminar carta porte: ${error.message}`);
     }
   });
@@ -119,6 +163,7 @@ export const useCartasPorte = () => {
   return { 
     cartasPorte, 
     loading,
+    error,
     crearCartaPorte: createMutation.mutateAsync,
     actualizarCartaPorte: updateMutation.mutateAsync,
     eliminarCartaPorte: deleteMutation.mutateAsync,

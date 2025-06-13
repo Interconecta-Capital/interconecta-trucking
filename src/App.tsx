@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -21,7 +22,28 @@ import NewCartaPorte from "./pages/NewCartaPorte";
 import EditCartaPorte from "./pages/EditCartaPorte";
 import SuperuserManagement from "./pages/SuperuserManagement";
 
-const queryClient = new QueryClient();
+// Configure React Query with optimized settings to prevent auto-refresh issues
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false, // Disable auto-refetch on window focus
+      refetchOnReconnect: false,   // Disable auto-refetch on reconnect
+      refetchOnMount: false,       // Disable auto-refetch on mount
+      retry: (failureCount, error: any) => {
+        // Don't retry on authentication or RLS errors
+        if (error?.status === 401 || error?.code === 'PGRST116') {
+          return false;
+        }
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      retry: false, // Don't retry mutations by default
+    },
+  },
+});
 
 function App() {
   return (

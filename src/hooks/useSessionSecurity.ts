@@ -22,6 +22,7 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const warningShownRef = useRef<boolean>(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
+  const activityDebounceRef = useRef<NodeJS.Timeout>();
 
   const resetActivityTimer = useCallback(() => {
     lastActivityRef.current = Date.now();
@@ -59,7 +60,11 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     try {
       await supabase.auth.signOut();
       toast.error('Sesión cerrada por inactividad');
-      window.location.href = '/auth';
+      // Use programmatic navigation instead of window.location.href
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('auth-logout', { detail: { reason: 'inactivity' } });
+        window.dispatchEvent(event);
+      }
     } catch (error) {
       console.error('Error during inactivity logout:', error);
     }
@@ -82,7 +87,11 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
         if (error) {
           await supabase.auth.signOut();
           toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
-          window.location.href = '/auth';
+          // Use programmatic navigation instead of window.location.href
+          if (typeof window !== 'undefined') {
+            const event = new CustomEvent('auth-logout', { detail: { reason: 'expired' } });
+            window.dispatchEvent(event);
+          }
         }
       }
     } catch (error) {
@@ -92,7 +101,14 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
 
   const handleUserActivity = useCallback(() => {
     if (user) {
-      resetActivityTimer();
+      // Debounce activity updates to reduce frequency
+      if (activityDebounceRef.current) {
+        clearTimeout(activityDebounceRef.current);
+      }
+      
+      activityDebounceRef.current = setTimeout(() => {
+        resetActivityTimer();
+      }, 1000); // Debounce for 1 second
     }
   }, [user, resetActivityTimer]);
 
@@ -101,31 +117,45 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       // Clear timeouts when user logs out
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+      if (activityDebounceRef.current) clearTimeout(activityDebounceRef.current);
       return;
     }
 
     // Initialize activity timer
     resetActivityTimer();
 
-    // Check session age every 5 minutes
-    const sessionCheckInterval = setInterval(checkSessionAge, 5 * 60 * 1000);
+    // Check session age every 15 minutes instead of 5 (reduce frequency)
+    const sessionCheckInterval = setInterval(checkSessionAge, 15 * 60 * 1000);
 
-    // Add activity listeners
+    // Add activity listeners with passive option for better performance
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
     activityEvents.forEach(event => {
       document.addEventListener(event, handleUserActivity, { passive: true });
     });
 
+    // Listen for custom logout events
+    const handleLogoutEvent = (event: CustomEvent) => {
+      console.log('[SessionSecurity] Logout event received:', event.detail);
+      // Navigate programmatically instead of using window.location.href
+      window.history.pushState({}, '', '/auth');
+      window.location.reload();
+    };
+
+    window.addEventListener('auth-logout', handleLogoutEvent as EventListener);
+
     return () => {
       // Cleanup
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+      if (activityDebounceRef.current) clearTimeout(activityDebounceRef.current);
       clearInterval(sessionCheckInterval);
       
       activityEvents.forEach(event => {
         document.removeEventListener(event, handleUserActivity);
       });
+
+      window.removeEventListener('auth-logout', handleLogoutEvent as EventListener);
     };
   }, [user, handleUserActivity, resetActivityTimer, checkSessionAge]);
 

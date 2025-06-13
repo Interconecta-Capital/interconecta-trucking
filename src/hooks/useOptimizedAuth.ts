@@ -20,10 +20,19 @@ export const useOptimizedAuth = () => {
   
   const initializingRef = useRef(false);
   const mountedRef = useRef(true);
+  const lastSessionCheck = useRef<number>(0);
 
-  // Optimized session fetcher with caching
+  // Optimized session fetcher with caching and rate limiting
   const fetchSession = useCallback(async () => {
     if (initializingRef.current) return;
+    
+    // Rate limit session checks to once per 30 seconds
+    const now = Date.now();
+    if (now - lastSessionCheck.current < 30000) {
+      console.log('[OptimizedAuth] Skipping session check (rate limited)');
+      return;
+    }
+    lastSessionCheck.current = now;
     
     try {
       initializingRef.current = true;
@@ -62,32 +71,51 @@ export const useOptimizedAuth = () => {
   useEffect(() => {
     fetchSession();
 
-    // Set up auth state change listener
+    // Set up auth state change listener with debouncing
+    let debounceTimeout: NodeJS.Timeout;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[OptimizedAuth] Auth state change:', event);
         
-        if (mountedRef.current) {
-          setAuthState({
-            user: session?.user || null,
-            session,
-            loading: false,
-            initialized: true,
-          });
+        // Clear any pending debounced updates
+        if (debounceTimeout) {
+          clearTimeout(debounceTimeout);
         }
+        
+        // Debounce rapid auth state changes
+        debounceTimeout = setTimeout(() => {
+          if (mountedRef.current) {
+            setAuthState({
+              user: session?.user || null,
+              session,
+              loading: false,
+              initialized: true,
+            });
+          }
 
-        // Handle specific auth events
-        if (event === 'SIGNED_OUT') {
-          // Clear any cached data
-          sessionStorage.clear();
-          localStorage.removeItem('supabase.auth.token');
-        }
+          // Handle specific auth events without full page refresh
+          if (event === 'SIGNED_OUT') {
+            // Clear any cached data
+            sessionStorage.clear();
+            // Only clear auth-related localStorage items
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+                localStorage.removeItem(key);
+              }
+            });
+            console.log('[OptimizedAuth] Cleaned up auth data after signout');
+          }
+        }, 100); // 100ms debounce
       }
     );
 
     return () => {
       subscription.unsubscribe();
       mountedRef.current = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
     };
   }, [fetchSession]);
 
@@ -104,7 +132,16 @@ export const useOptimizedAuth = () => {
     loading: authState.loading,
     initialized: authState.initialized,
     signOut: async () => {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+        // Use programmatic navigation instead of window.location.href
+        if (typeof window !== 'undefined') {
+          const event = new CustomEvent('auth-logout', { detail: { reason: 'manual' } });
+          window.dispatchEvent(event);
+        }
+      } catch (error) {
+        console.error('[OptimizedAuth] Signout error:', error);
+      }
     },
   };
 };
