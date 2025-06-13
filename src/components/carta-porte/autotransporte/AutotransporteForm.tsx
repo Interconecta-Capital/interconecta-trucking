@@ -118,7 +118,10 @@ export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) 
             />
           )}
 
-          <VehiculoSection />
+          <VehiculoSection 
+            data={data}
+            onChange={handleVehiculoChange}
+          />
 
           <SegurosSection
             data={data}
