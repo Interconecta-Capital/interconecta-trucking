@@ -110,13 +110,18 @@ export function UbicacionForm({
   const handleFieldChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof Ubicacion],
-          [child]: value
+      setFormData(prev => {
+        if (parent === 'domicilio') {
+          return {
+            ...prev,
+            domicilio: {
+              ...prev.domicilio,
+              [child]: value
+            }
+          };
         }
-      }));
+        return prev;
+      });
     } else {
       setFormData(prev => ({
         ...prev,
