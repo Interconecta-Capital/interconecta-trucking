@@ -20,19 +20,10 @@ export const useOptimizedAuth = () => {
   
   const initializingRef = useRef(false);
   const mountedRef = useRef(true);
-  const lastSessionCheck = useRef<number>(0);
 
-  // Optimized session fetcher with caching and rate limiting
+  // Optimized session fetcher without excessive rate limiting
   const fetchSession = useCallback(async () => {
     if (initializingRef.current) return;
-    
-    // Rate limit session checks to once per 30 seconds
-    const now = Date.now();
-    if (now - lastSessionCheck.current < 30000) {
-      console.log('[OptimizedAuth] Skipping session check (rate limited)');
-      return;
-    }
-    lastSessionCheck.current = now;
     
     try {
       initializingRef.current = true;
@@ -56,6 +47,13 @@ export const useOptimizedAuth = () => {
           initialized: true,
         });
         console.log('[OptimizedAuth] Session loaded:', !!session);
+        
+        // Clean URL hash if it contains auth tokens
+        if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+          console.log('[OptimizedAuth] Cleaning auth tokens from URL');
+          const cleanUrl = window.location.pathname + window.location.search;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
       }
     } catch (error) {
       console.error('[OptimizedAuth] Unexpected error:', error);
@@ -71,19 +69,19 @@ export const useOptimizedAuth = () => {
   useEffect(() => {
     fetchSession();
 
-    // Set up auth state change listener with debouncing
+    // Set up auth state change listener with minimal debouncing
     let debounceTimeout: NodeJS.Timeout;
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('[OptimizedAuth] Auth state change:', event);
+        console.log('[OptimizedAuth] Auth state change:', event, !!session);
         
         // Clear any pending debounced updates
         if (debounceTimeout) {
           clearTimeout(debounceTimeout);
         }
         
-        // Debounce rapid auth state changes
+        // Minimal debounce for rapid auth state changes
         debounceTimeout = setTimeout(() => {
           if (mountedRef.current) {
             setAuthState({
@@ -94,7 +92,7 @@ export const useOptimizedAuth = () => {
             });
           }
 
-          // Handle specific auth events without full page refresh
+          // Handle specific auth events
           if (event === 'SIGNED_OUT') {
             // Clear any cached data
             sessionStorage.clear();
@@ -106,7 +104,13 @@ export const useOptimizedAuth = () => {
             });
             console.log('[OptimizedAuth] Cleaned up auth data after signout');
           }
-        }, 100); // 100ms debounce
+          
+          // Clean URL for all auth events
+          if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+            const cleanUrl = window.location.pathname + window.location.search;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        }, 50); // Reduced debounce to 50ms
       }
     );
 

@@ -16,6 +16,8 @@ export function useAuthState() {
 
   const loadUserData = async (authUser: User) => {
     try {
+      console.log('[AuthState] Loading user data for:', authUser.id);
+      
       // Load profile data first (no recursion risk)
       const { data: profile } = await supabase
         .from('profiles')
@@ -48,9 +50,10 @@ export function useAuthState() {
         tenant
       };
 
+      console.log('[AuthState] User data loaded successfully');
       setUser(userData);
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('[AuthState] Error loading user data:', error);
       // Set basic user data even if extended data fails
       setUser({
         ...authUser,
@@ -65,16 +68,19 @@ export function useAuthState() {
     // Get initial session
     const getSession = async () => {
       try {
+        console.log('[AuthState] Getting initial session...');
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         
         if (currentSession?.user) {
+          console.log('[AuthState] Session found, loading user data');
           await loadUserData(currentSession.user);
         } else {
+          console.log('[AuthState] No session found');
           setUser(null);
         }
       } catch (error) {
-        console.error('Error getting session:', error);
+        console.error('[AuthState] Error getting session:', error);
         setUser(null);
       } finally {
         setLoading(false);
@@ -86,15 +92,16 @@ export function useAuthState() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('[AuthState] Auth state change:', event, !!session);
         setSession(session);
         
         if (event === 'SIGNED_IN' && session?.user) {
           setLoading(true);
-          // Defer data loading to avoid potential deadlocks
+          // Minimal delay to avoid potential issues, reduced from 100ms to 25ms
           setTimeout(async () => {
             await loadUserData(session.user);
             setLoading(false);
-          }, 100);
+          }, 25);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
