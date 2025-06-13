@@ -93,7 +93,8 @@ class CodigosPostalesService {
       }
 
       const primeraRespuesta = data.response[0];
-      const colonias = [...new Set(data.response.map((item: any) => item.d_asenta))].sort();
+      // Fix: Add proper type assertion for the colonias array
+      const colonias = [...new Set(data.response.map((item: any) => String(item.d_asenta)))].sort() as string[];
 
       const resultado: DireccionCompleta = {
         codigoPostal,
