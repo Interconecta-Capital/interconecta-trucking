@@ -13,7 +13,7 @@ interface UseAutoSaveOptions {
 export const useAutoSave = ({
   data,
   key,
-  delay = 2000, // Aumentado de 5000ms a 2000ms para mejor UX
+  delay = 2000,
   onSave,
   enabled = true,
   useSessionStorage = true
@@ -21,16 +21,9 @@ export const useAutoSave = ({
   const timeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
   const isInitialLoadRef = useRef(true);
-  const saveInProgressRef = useRef(false);
 
   const saveData = useCallback(async () => {
-    if (saveInProgressRef.current) {
-      console.log('[AutoSave] Save already in progress, skipping');
-      return;
-    }
-    
     try {
-      saveInProgressRef.current = true;
       console.log('[AutoSave] Starting save for key:', key);
       
       if (onSave) {
@@ -43,26 +36,20 @@ export const useAutoSave = ({
       console.log('[AutoSave] Save completed for key:', key);
     } catch (error) {
       console.error('[AutoSave] Save failed for key:', key, error);
-    } finally {
-      saveInProgressRef.current = false;
     }
   }, [data, key, onSave, useSessionStorage]);
 
   useEffect(() => {
-    if (!enabled || saveInProgressRef.current) {
-      return;
-    }
+    if (!enabled) return;
 
     const currentData = JSON.stringify(data);
     
-    // Evitar guardado en la carga inicial
     if (isInitialLoadRef.current) {
       lastSavedRef.current = currentData;
       isInitialLoadRef.current = false;
       return;
     }
     
-    // Solo guardar si los datos realmente cambiaron
     if (currentData !== lastSavedRef.current && 
         data && 
         typeof data === 'object' &&
