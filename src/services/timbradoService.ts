@@ -33,7 +33,7 @@ export class TimbradoService {
 
       // Check cache first for recent timbrado attempts
       const cacheKey = `timbrado:${request.cartaPorteId}`;
-      const cachedResult = await smartCacheManager.get(cacheKey);
+      const cachedResult = await smartCacheManager.get(cacheKey) as TimbradoResponse | null;
       
       if (cachedResult && cachedResult.success) {
         console.log('Timbrado encontrado en cache');
@@ -41,7 +41,7 @@ export class TimbradoService {
       }
 
       // Validate XML before timbrado
-      const validation = this.validateXMLAntesDelTimbrado(request.xml);
+      const validation = this.validarXMLAntesDelTimbrado(request.xml);
       if (!validation.isValid) {
         const error = `XML inválido: ${validation.errors.join(', ')}`;
         monitoringService.createAlert('error', 'medium', 'XML Validation Failed', error, 'timbrado');

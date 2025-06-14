@@ -253,8 +253,8 @@ export class MonitoringService {
     };
   }
 
-  private checkCacheHealth(): HealthCheck {
-    const { smartCacheManager } = await import('@/services/cache/SmartCacheManager').then(m => ({ smartCacheManager: m.smartCacheManager }));
+  private async checkCacheHealth(): Promise<HealthCheck> {
+    const { smartCacheManager } = await import('@/services/cache/SmartCacheManager');
     const metrics = smartCacheManager.getMetrics();
     
     let status: 'healthy' | 'degraded' | 'down' = 'healthy';
