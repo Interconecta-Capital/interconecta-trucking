@@ -25,7 +25,7 @@ import {
   Route,
   Activity
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 
 interface KPI {
   titulo: string;
@@ -53,7 +53,7 @@ export function ExecutiveDashboard() {
 
   const { obtenerEstadisticasFlota, obtenerVehiculosProximosVencimiento } = useFlotaManager();
   const { clientes } = useClientesProveedores();
-  const { cartas } = useCartasPorte();
+  const { cartasPorte } = useCartasPorte();
 
   // Calcular KPIs principales
   useEffect(() => {
@@ -81,7 +81,7 @@ export function ExecutiveDashboard() {
         },
         {
           titulo: 'Cartas Porte (Mes)',
-          valor: cartas.filter(c => {
+          valor: cartasPorte.filter(c => {
             const fechaCreacion = new Date(c.created_at);
             const inicioMes = new Date();
             inicioMes.setDate(1);
@@ -136,7 +136,7 @@ export function ExecutiveDashboard() {
         ...vehiculosVencimiento.map(v => ({
           tipo: 'warning',
           titulo: 'Vencimiento Próximo',
-          descripcion: `${v.placas} - Documentos por vencer`,
+          descripcion: `${v.placa} - Documentos por vencer`,
           fecha: new Date()
         }))
       ];
@@ -145,7 +145,7 @@ export function ExecutiveDashboard() {
     };
 
     calcularKPIs();
-  }, [clientes, cartas, obtenerEstadisticasFlota, obtenerVehiculosProximosVencimiento]);
+  }, [clientes, cartasPorte, obtenerEstadisticasFlota, obtenerVehiculosProximosVencimiento]);
 
   // Datos para gráficos (simulados)
   const datosIngresos = [
@@ -385,7 +385,7 @@ export function ExecutiveDashboard() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsPieChart>
-                    <pie
+                    <Pie
                       data={datosFlota}
                       cx="50%"
                       cy="50%"
@@ -396,7 +396,7 @@ export function ExecutiveDashboard() {
                       {datosFlota.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
-                    </pie>
+                    </Pie>
                     <Tooltip />
                   </RechartsPieChart>
                 </ResponsiveContainer>

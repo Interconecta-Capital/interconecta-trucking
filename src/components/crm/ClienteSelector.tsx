@@ -5,19 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useClientesProveedores, ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
-import { SmartAddressInput } from '@/components/ai/SmartAddressInput';
 import { RFCValidator } from '@/utils/rfcValidation';
 import { 
   Search, 
   Plus, 
   Building2, 
   Phone, 
-  Mail, 
-  MapPin,
-  CreditCard,
-  Calendar,
+  Mail,
   Loader2,
   Check,
   X
@@ -52,11 +47,9 @@ export function ClienteSelector({
   const [buscando, setBuscando] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const resultadosRef = useRef<HTMLDivElement>(null);
 
   const { buscarClientes, crearCliente, obtenerClientePorRFC, loading } = useClientesProveedores();
 
-  // Auto-buscar cuando el usuario escribe
   useEffect(() => {
     const buscarConDelay = setTimeout(async () => {
       if (busqueda.length >= 2) {
@@ -84,7 +77,6 @@ export function ClienteSelector({
     return () => clearTimeout(buscarConDelay);
   }, [busqueda, buscarClientes, tipo]);
 
-  // Navegación con teclado
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showResultados || resultados.length === 0) return;
 
@@ -139,7 +131,6 @@ export function ClienteSelector({
     setShowResultados(false);
   };
 
-  // Validar RFC mientras escribe
   const validarRFC = (rfc: string) => {
     if (rfc.length < 10) return null;
     const validacion = RFCValidator.validarRFC(rfc);
@@ -243,13 +234,6 @@ export function ClienteSelector({
                       >
                         {cliente.estatus}
                       </Badge>
-                      
-                      {cliente.credito_limite && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <CreditCard className="h-3 w-3" />
-                          <span>${cliente.credito_limite.toLocaleString()}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -310,13 +294,6 @@ export function ClienteSelector({
                     <div className="flex items-center gap-1">
                       <Phone className="h-3 w-3" />
                       <span>{value.telefono}</span>
-                    </div>
-                  )}
-                  
-                  {value.credito_limite && (
-                    <div className="flex items-center gap-1">
-                      <CreditCard className="h-3 w-3" />
-                      <span>Límite: ${value.credito_limite.toLocaleString()}</span>
                     </div>
                   )}
                 </div>
@@ -394,19 +371,21 @@ function CrearClienteRapido({
         estatus: 'activo',
         credito_limite: 0,
         credito_disponible: 0,
-        dias_credito: 0
+        dias_credito: 0,
+        notas: '',
+        documentos: []
       });
 
       if (nuevoCliente) {
         const clienteFormateado: ClienteProveedor = {
           id: nuevoCliente.id,
-          tipo: nuevoCliente.tipo_socio,
+          tipo: nuevoCliente.tipo_persona || 'cliente',
           rfc: nuevoCliente.rfc,
           razon_social: nuevoCliente.nombre_razon_social,
-          email: nuevoCliente.email,
-          telefono: nuevoCliente.telefono,
+          email: nuevoCliente.email || '',
+          telefono: nuevoCliente.telefono || '',
           direccion_fiscal: nuevoCliente.direccion || {},
-          estatus: nuevoCliente.estado,
+          estatus: nuevoCliente.estado === 'activo' ? 'activo' : 'inactivo',
           fecha_registro: nuevoCliente.created_at,
           user_id: nuevoCliente.user_id,
           credito_limite: 0,
@@ -475,17 +454,6 @@ function CrearClienteRapido({
                 placeholder="55 1234 5678"
               />
             </div>
-          </div>
-
-          <div>
-            <Label>Dirección Fiscal</Label>
-            <SmartAddressInput
-              value=""
-              onChange={() => {}}
-              onAddressSelect={(direccion) => setFormData(prev => ({ ...prev, direccion }))}
-              placeholder="Ingrese la dirección fiscal..."
-              showValidation={false}
-            />
           </div>
 
           <div className="flex gap-2 justify-end">

@@ -34,14 +34,12 @@ export function ConfiguracionPrincipalMejorada({
     if (emisor) {
       onChange({
         rfcEmisor: emisor.rfc,
-        nombreEmisor: emisor.razon_social,
-        clienteEmisor: emisor
+        nombreEmisor: emisor.razon_social
       });
     } else {
       onChange({
         rfcEmisor: '',
-        nombreEmisor: '',
-        clienteEmisor: null
+        nombreEmisor: ''
       });
     }
   };
@@ -50,19 +48,17 @@ export function ConfiguracionPrincipalMejorada({
     if (receptor) {
       onChange({
         rfcReceptor: receptor.rfc,
-        nombreReceptor: receptor.razon_social,
-        clienteReceptor: receptor
+        nombreReceptor: receptor.razon_social
       });
     } else {
       onChange({
         rfcReceptor: '',
-        nombreReceptor: '',
-        clienteReceptor: null
+        nombreReceptor: ''
       });
     }
   };
 
-  // Validar si el formulario está completo con los nuevos campos
+  // Validar si el formulario está completo
   const isFormCompleto = () => {
     return (
       data.tipoCfdi &&
@@ -102,7 +98,7 @@ export function ConfiguracionPrincipalMejorada({
         <div className="space-y-2">
           <ClienteSelector
             label="Emisor"
-            value={(data as any).clienteEmisor || null}
+            value={null}
             onChange={handleEmisorChange}
             tipo="cliente"
             placeholder="Buscar empresa emisora por RFC, nombre o razón social..."
@@ -116,7 +112,7 @@ export function ConfiguracionPrincipalMejorada({
         <div className="space-y-2">
           <ClienteSelector
             label="Receptor"
-            value={(data as any).clienteReceptor || null}
+            value={null}
             onChange={handleReceptorChange}
             tipo="cliente"
             placeholder="Buscar empresa receptora por RFC, nombre o razón social..."

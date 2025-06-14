@@ -216,7 +216,6 @@ export function useCRMIntegration() {
         datos: { rfc: termino, accion: 'crear' },
         confidence: 0.9,
         accion: () => {
-          // Triggear creación rápida de cliente
           toast.info('Iniciando creación de cliente...');
         }
       });
@@ -226,8 +225,7 @@ export function useCRMIntegration() {
   };
 
   const seleccionarAsignacion = (asignacion: AsignacionInteligente) => {
-    toast.success(`Vehículo ${asignacion.vehiculo.placas} y conductor ${asignacion.conductor.nombre} seleccionados`);
-    // Aquí se actualizaría el formulario principal
+    toast.success(`Vehículo ${asignacion.vehiculo.placa} y conductor ${asignacion.conductor.nombre} seleccionados`);
   };
 
   // Obtener métricas del CRM
