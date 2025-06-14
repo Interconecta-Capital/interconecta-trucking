@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Upload, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { DocumentProcessor } from '@/services/documentProcessor';
+import { DocumentProcessor, type ProcessingProgress } from '@/services/documentProcessor';
+import { Progress } from '@/components/ui/progress';
 
 interface DocumentUploadDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ export function DocumentUploadDialog({
 }: DocumentUploadDialogProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [progressState, setProgressState] = useState<ProcessingProgress | null>(null);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -44,9 +46,10 @@ export function DocumentUploadDialog({
     }
 
     setUploading(true);
+    setProgressState({ stage: 'upload', progress: 0, message: 'Preparando archivo...' });
     
     try {
-      const result = await DocumentProcessor.processDocument(file);
+      const result = await DocumentProcessor.processDocument(file, (p) => setProgressState(p));
 
       if (result.success) {
         if (onDocumentProcessed) {
@@ -62,6 +65,7 @@ export function DocumentUploadDialog({
       toast.error('Error al procesar el documento');
     } finally {
       setUploading(false);
+      setProgressState(null);
     }
   };
 
@@ -122,8 +126,17 @@ export function DocumentUploadDialog({
               onClick={() => document.getElementById('file-upload')?.click()}
               disabled={uploading}
             >
-              {uploading ? 'Procesando...' : 'Seleccionar Archivo'}
+              Seleccionar Archivo
             </Button>
+
+            {uploading && progressState && (
+              <div className="mt-4 space-y-2">
+                <Progress value={progressState.progress} className="w-full" />
+                <p className="text-sm text-muted-foreground">
+                  {progressState.message} ({progressState.progress}%)
+                </p>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end gap-2">
