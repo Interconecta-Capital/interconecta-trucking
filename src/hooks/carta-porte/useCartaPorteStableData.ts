@@ -1,5 +1,5 @@
 
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef } from 'react';
 import { useCartaPorteDataConverters } from './useCartaPorteDataConverters';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
@@ -13,14 +13,11 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
   // Referencias para evitar re-renders
   const lastValidationDataRef = useRef<string>('');
   const lastCartaPorteDataRef = useRef<CartaPorteData | null>(null);
-  const convertersRef = useRef<any>(null);
 
   const { cartaPorteDataToFormData } = useCartaPorteMappers();
-
-  // Inicializar converters una sola vez
-  if (!convertersRef.current) {
-    convertersRef.current = useCartaPorteDataConverters();
-  }
+  
+  // Usar el hook directamente sin condicionales
+  const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
 
   // Crear datos estables para validación usando solo valores primitivos como dependencias
   const stableFormDataForValidation = useMemo((): CartaPorteData => {
@@ -50,7 +47,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     lastValidationDataRef.current = dataSignature;
 
     try {
-      const { convertExtendedToCartaPorteData } = convertersRef.current;
       const cartaPorteData = convertExtendedToCartaPorteData(formData);
       lastCartaPorteDataRef.current = cartaPorteData;
       return cartaPorteData;
@@ -94,6 +90,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     !!formData.autotransporte,
     formData.figuras?.length,
     formData.cartaPorteId,
+    convertExtendedToCartaPorteData, // Ahora es estable al venir directamente del hook
   ]);
 
   // Convertir a formato compatible con validación de forma estable
@@ -147,7 +144,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
   const cache = {
     lastValidationDataRef,
     lastCartaPorteDataRef,
-    convertersRef
   };
 
   return {

@@ -9,8 +9,15 @@ import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { UseCartaPorteFormOptions } from '@/hooks/carta-porte/types/useCartaPorteFormTypes';
 
 export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
+  console.log('[useCartaPorteForm] Hook called with:', { cartaPorteId, enableAI });
+  
   // Referencias para evitar bucles infinitos
   const lastSetDataRef = useRef<string>('');
+  const renderCountRef = useRef(0);
+  
+  // Incrementar contador de renders para debug
+  renderCountRef.current += 1;
+  console.log('[useCartaPorteForm] Render #', renderCountRef.current);
   
   // Estado del formulario con tipos extendidos
   const {
@@ -23,6 +30,12 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     updateFormData: updateFormDataBase,
   } = useCartaPorteFormState({ cartaPorteId });
 
+  console.log('[useCartaPorteForm] Form state:', {
+    hasFormData: !!formData,
+    currentCartaPorteId,
+    isLoading
+  });
+
   // Mappers estables
   const {
     formDataExtendidoToCartaPorteData,
@@ -34,14 +47,20 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     formData 
   });
 
+  console.log('[useCartaPorteForm] Stable data created');
+
   // Validaciones
   const validationData = useCartaPorteFormValidation({
     formDataForValidation,
     enableAI
   });
 
+  console.log('[useCartaPorteForm] Validation completed');
+
   // Función estable para actualizar datos sin causar loops
   const stableSetFormData = useCallback((data: CartaPorteData) => {
+    console.log('[useCartaPorteForm] stableSetFormData called');
+    
     try {
       // Crear signature para evitar updates circulares
       const newSignature = [
@@ -62,6 +81,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
       lastSetDataRef.current = newSignature;
       const extendedData = cartaPorteDataToFormDataExtendido(data);
       setFormData(extendedData);
+      console.log('[useCartaPorteForm] Data set successfully');
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data to extended format:', error);
     }
@@ -77,6 +97,8 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     setFormData: stableSetFormData,
     setCurrentCartaPorteId,
   });
+
+  console.log('[useCartaPorteForm] Integration completed');
 
   const {
     loadCartaPorte,
@@ -104,6 +126,8 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   const formFigurasToData = useCallback((figurasForm: any) => {
     return figurasForm || formData.figuras;
   }, [formData.figuras]);
+
+  console.log('[useCartaPorteForm] Hook completed successfully');
 
   return {
     // Estado del formulario (siempre extendido)
