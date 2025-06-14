@@ -24,13 +24,13 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
     return JSON.stringify(formData).slice(0, 100); // Hash simple basado en JSON
   }, []);
 
-  // Memoización inteligente con TTL
-  const memoizeWithTTL = useCallback(<T>(key: string, computeFn: () => T): T => {
+  // Memoización inteligente con TTL - removido generic problemático
+  const memoizeWithTTL = useCallback((key: string, computeFn: () => any): any => {
     const cached = memoCache.current.get(key);
     const now = Date.now();
     
     if (cached && (now - cached.timestamp) < finalConfig.memoizationTTL) {
-      return cached.data as T;
+      return cached.data;
     }
     
     const result = computeFn();
@@ -56,15 +56,15 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
     return throttle(validateFn, finalConfig.throttleDelay);
   }, [finalConfig.throttleDelay]);
 
-  // Optimización de re-renders con shallow comparison
-  const shallowMemo = useCallback(<T extends object>(obj: T, deps: any[]): T => {
+  // Optimización de re-renders con shallow comparison - removido generic problemático
+  const shallowMemo = useCallback((obj: object, deps: any[]): any => {
     return useMemo(() => obj, deps);
   }, []);
 
-  // Función para optimizar listas grandes
-  const optimizeListRendering = useCallback(<T>(
-    items: T[],
-    getKey: (item: T) => string,
+  // Función para optimizar listas grandes - simplificado sin generics
+  const optimizeListRendering = useCallback((
+    items: any[],
+    getKey: (item: any) => string,
     batchSize: number = 20
   ) => {
     const batches = [];
@@ -74,9 +74,9 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
     return { batches, totalItems: items.length };
   }, []);
 
-  // Función para lazy loading de componentes pesados
-  const createLazyLoader = useCallback(<T>(
-    loadFn: () => Promise<T>,
+  // Función para lazy loading de componentes pesados - simplificado sin generics
+  const createLazyLoader = useCallback((
+    loadFn: () => Promise<any>,
     fallback?: React.ComponentType
   ) => {
     return {
