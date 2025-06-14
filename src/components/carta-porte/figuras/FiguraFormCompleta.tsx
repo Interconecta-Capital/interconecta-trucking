@@ -7,10 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CodigoPostalInputOptimizado } from '@/components/catalogos/CodigoPostalInputOptimizado';
-import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 import { FiguraCompleta } from '@/types/cartaPorte';
 import { User, Trash2, AlertTriangle, Globe, FileText } from 'lucide-react';
-import { useTiposLicenciaExtendidos } from '@/hooks/useCatalogosExtendidos';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
 
 export interface FiguraFormCompletaProps {
@@ -38,9 +37,6 @@ const paisesList = [
 export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: FiguraFormCompletaProps) {
   const [formData, setFormData] = useState<FiguraCompleta>(figura);
   const [curpValidation, setCurpValidation] = useState<{ valido: boolean; mensaje?: string }>({ valido: true });
-  const [licenciaSearch, setLicenciaSearch] = useState('');
-
-  const { data: tiposLicencia = [] } = useTiposLicenciaExtendidos(licenciaSearch);
 
   useEffect(() => {
     setFormData(figura);
@@ -115,24 +111,14 @@ export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: Figura
           </h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Tipo de Figura *</Label>
-              <Select
-                value={formData.tipo_figura}
-                onValueChange={(value) => handleChange('tipo_figura', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposFigura.map((tipo) => (
-                    <SelectItem key={tipo.value} value={tipo.value}>
-                      {tipo.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <CatalogoSelectorMejorado
+              tipo="figuras_transporte"
+              label="Tipo de Figura"
+              value={formData.tipo_figura}
+              onValueChange={(value) => handleChange('tipo_figura', value)}
+              placeholder="Seleccionar tipo"
+              required
+            />
 
             <div className="space-y-2">
               <Label>RFC *</Label>
@@ -174,17 +160,21 @@ export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: Figura
 
             <div className="space-y-2">
               <Label>País de Residencia Fiscal</Label>
-              <CatalogoSelector
-                items={paisesList.map(p => ({ 
-                  value: p.value, 
-                  label: p.label,
-                  descripcion: p.label 
-                }))}
-                placeholder="Seleccionar país"
+              <Select
                 value={formData.residencia_fiscal_figura || 'MEX'}
                 onValueChange={(value) => handleChange('residencia_fiscal_figura', value)}
-                allowManualInput={false}
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar país" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paisesList.map((pais) => (
+                    <SelectItem key={pais.value} value={pais.value}>
+                      {pais.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -213,15 +203,10 @@ export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: Figura
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo de Licencia</Label>
-                <CatalogoSelector
-                  items={tiposLicencia}
-                  placeholder="Buscar tipo de licencia..."
+                <Input
                   value={formData.tipo_licencia || ''}
-                  onValueChange={(value) => handleChange('tipo_licencia', value)}
-                  onSearchChange={setLicenciaSearch}
-                  searchValue={licenciaSearch}
-                  allowManualInput={true}
-                  manualInputPlaceholder="Escribir tipo manualmente"
+                  onChange={(e) => handleChange('tipo_licencia', e.target.value)}
+                  placeholder="Ej: Federal, Estatal"
                 />
               </div>
 

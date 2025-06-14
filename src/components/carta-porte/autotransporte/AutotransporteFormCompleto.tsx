@@ -6,10 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Truck, Save, Star, Ruler, FileText, AlertTriangle } from 'lucide-react';
-import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 import { AIAssistantButton } from '../mercancias/AIAssistantButton';
-import { useConfiguracionesVehiculo, useTiposPermiso } from '@/hooks/useCatalogos';
-import { useTiposCarroceria } from '@/hooks/useCatalogosExtendidos';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
 import { VehiculosGuardados } from './VehiculosGuardados';
@@ -25,24 +23,9 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
   const [showVehiculosGuardados, setShowVehiculosGuardados] = useState(false);
   const [showGuardarModal, setShowGuardarModal] = useState(false);
   const [nombrePerfil, setNombrePerfil] = useState('');
-  const [configSearch, setConfigSearch] = useState('');
-  const [permisoSearch, setPermisoSearch] = useState('');
-  const [carroceriaSearch, setCarroceriaSearch] = useState('');
   const [vinValidation, setVinValidation] = useState<{ valido: boolean; mensaje?: string }>({ valido: true });
   
   const { toast } = useToast();
-
-  const { data: configuraciones = [], isLoading: loadingConfigs } = useConfiguracionesVehiculo(
-    configSearch
-  );
-  
-  const { data: permisos = [], isLoading: loadingPermisos } = useTiposPermiso(
-    permisoSearch
-  );
-
-  const { data: carrocerias = [], isLoading: loadingCarrocerias } = useTiposCarroceria(
-    carroceriaSearch
-  );
 
   const handleFieldChange = <K extends keyof AutotransporteCompleto>(
     field: K, 
@@ -206,33 +189,22 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
               Especificaciones Técnicas
             </h4>
 
-            <div className="space-y-2">
-              <Label>Configuración Vehicular *</Label>
-              <CatalogoSelector
-                items={configuraciones}
-                loading={loadingConfigs}
-                placeholder="Buscar configuración vehicular..."
-                value={data.config_vehicular || ''}
-                onValueChange={(value) => handleFieldChange('config_vehicular', value)}
-                onSearchChange={setConfigSearch}
-                searchValue={configSearch}
-                allowManualInput={true}
-                manualInputPlaceholder="Escribir configuración manualmente"
-              />
-            </div>
+            <CatalogoSelectorMejorado
+              tipo="configuraciones_vehiculares"
+              label="Configuración Vehicular"
+              value={data.config_vehicular || ''}
+              onValueChange={(value) => handleFieldChange('config_vehicular', value)}
+              placeholder="Buscar configuración vehicular..."
+              required
+            />
 
             <div className="space-y-2">
-              <Label>Tipo de Carrocería</Label>
-              <CatalogoSelector
-                items={carrocerias}
-                loading={loadingCarrocerias}
-                placeholder="Buscar tipo de carrocería..."
+              <Label htmlFor="tipo_carroceria">Tipo de Carrocería</Label>
+              <Input 
+                id="tipo_carroceria"
+                placeholder="Ej: Caja seca, Refrigerado, Tanque"
                 value={data.tipo_carroceria || ''}
-                onValueChange={(value) => handleFieldChange('tipo_carroceria', value)}
-                onSearchChange={setCarroceriaSearch}
-                searchValue={carroceriaSearch}
-                allowManualInput={true}
-                manualInputPlaceholder="Escribir tipo manualmente"
+                onChange={(e) => handleFieldChange('tipo_carroceria', e.target.value)}
               />
             </div>
 
@@ -341,20 +313,14 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Tipo de Permiso SCT *</Label>
-                <CatalogoSelector
-                  items={permisos}
-                  loading={loadingPermisos}
-                  placeholder="Buscar tipo de permiso..."
-                  value={data.perm_sct || ''}
-                  onValueChange={(value) => handleFieldChange('perm_sct', value)}
-                  onSearchChange={setPermisoSearch}
-                  searchValue={permisoSearch}
-                  allowManualInput={true}
-                  manualInputPlaceholder="Escribir permiso manualmente"
-                />
-              </div>
+              <CatalogoSelectorMejorado
+                tipo="tipos_permiso"
+                label="Tipo de Permiso SCT"
+                value={data.perm_sct || ''}
+                onValueChange={(value) => handleFieldChange('perm_sct', value)}
+                placeholder="Buscar tipo de permiso..."
+                required
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="num_permiso_sct">Número de Permiso SCT *</Label>

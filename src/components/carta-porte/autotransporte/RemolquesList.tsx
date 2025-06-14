@@ -1,118 +1,115 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, Edit } from 'lucide-react';
-import { RemolqueForm } from './RemolqueForm';
-import { RemolqueData } from '@/hooks/useAutotransporte';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Plus, Trash2, Truck } from 'lucide-react';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
+
+interface Remolque {
+  subtipo_rem: string;
+  placa: string;
+}
 
 interface RemolquesListProps {
-  remolques: RemolqueData[];
-  onChange: (remolques: RemolqueData[]) => void;
+  remolques: Remolque[];
+  onChange: (remolques: Remolque[]) => void;
 }
 
 export function RemolquesList({ remolques, onChange }: RemolquesListProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-
-  const handleAddRemolque = (remolque: RemolqueData) => {
-    const newRemolques = [...remolques, { ...remolque, id: Date.now().toString() }];
-    onChange(newRemolques);
-    setShowForm(false);
+  const addRemolque = () => {
+    const newRemolque: Remolque = {
+      subtipo_rem: '',
+      placa: ''
+    };
+    onChange([...remolques, newRemolque]);
   };
 
-  const handleEditRemolque = (remolque: RemolqueData) => {
-    if (editingIndex !== null) {
-      const newRemolques = [...remolques];
-      newRemolques[editingIndex] = remolque;
-      onChange(newRemolques);
-      setEditingIndex(null);
-    }
+  const removeRemolque = (index: number) => {
+    const updatedRemolques = remolques.filter((_, i) => i !== index);
+    onChange(updatedRemolques);
   };
 
-  const handleDeleteRemolque = (index: number) => {
-    const newRemolques = remolques.filter((_, i) => i !== index);
-    onChange(newRemolques);
-  };
-
-  const startEdit = (index: number) => {
-    setEditingIndex(index);
-    setShowForm(true);
-  };
-
-  const cancelEdit = () => {
-    setEditingIndex(null);
-    setShowForm(false);
+  const updateRemolque = (index: number, field: string, value: string) => {
+    const updatedRemolques = remolques.map((remolque, i) =>
+      i === index ? { ...remolque, [field]: value } : remolque
+    );
+    onChange(updatedRemolques);
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Remolques</h3>
+        <h4 className="font-medium flex items-center gap-2">
+          <Truck className="h-4 w-4" />
+          Remolques
+        </h4>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setShowForm(true)}
-          className="flex items-center space-x-2"
+          onClick={addRemolque}
         >
-          <Plus className="h-4 w-4" />
-          <span>Agregar Remolque</span>
+          <Plus className="h-4 w-4 mr-2" />
+          Agregar Remolque
         </Button>
       </div>
 
       {remolques.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center text-muted-foreground">
-            <p>No se han agregado remolques</p>
-            <p className="text-sm">Los remolques son opcionales</p>
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            No hay remolques agregados
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {remolques.map((remolque, index) => (
             <Card key={index}>
-              <CardContent className="p-4">
+              <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium">Placa: {remolque.placa}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Subtipo: {remolque.subtipo_rem}
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => startEdit(index)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteRemolque(index)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <CardTitle className="text-base">
+                    Remolque {index + 1}
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeRemolque(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CatalogoSelectorMejorado
+                    tipo="remolques"
+                    label="Subtipo de Remolque"
+                    value={remolque.subtipo_rem}
+                    onValueChange={(value) => updateRemolque(index, 'subtipo_rem', value)}
+                    placeholder="Seleccionar subtipo..."
+                    required
+                  />
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`placa_remolque_${index}`}>
+                      Placa del Remolque
+                    </Label>
+                    <Input
+                      id={`placa_remolque_${index}`}
+                      value={remolque.placa}
+                      onChange={(e) => updateRemolque(index, 'placa', e.target.value.toUpperCase())}
+                      placeholder="Ej: ABC-123"
+                    />
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      )}
-
-      {showForm && (
-        <RemolqueForm
-          remolque={editingIndex !== null ? remolques[editingIndex] : undefined}
-          onSave={editingIndex !== null ? handleEditRemolque : handleAddRemolque}
-          onCancel={cancelEdit}
-        />
       )}
     </div>
   );
