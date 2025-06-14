@@ -33,10 +33,9 @@ export const useTimbrado = () => {
 
       // Preparar datos para timbrado
       const timbradoRequest = {
-        xml: TimbradoService.formatearXMLParaTimbrado(xml),
+        xmlContent: TimbradoService.formatearXMLParaTimbrado(xml),
         cartaPorteId,
-        rfcEmisor: cartaPorteData.rfcEmisor,
-        rfcReceptor: cartaPorteData.rfcReceptor
+        rfcEmisor: cartaPorteData.rfcEmisor
       };
 
       console.log('Iniciando proceso de timbrado...');

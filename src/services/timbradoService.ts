@@ -13,12 +13,42 @@ export interface TimbradoResponse {
   fechaTimbrado?: string;
   xmlTimbrado?: string;
   pdf?: Blob;
+  qrCode?: string;
+  cadenaOriginal?: string;
+  selloDigital?: string;
+  folio?: string;
   error?: string;
   details?: any;
 }
 
 export class TimbradoService {
   private static readonly TIMBRADO_ENDPOINT = 'timbrar-carta-porte';
+
+  static validarXMLAntesDelTimbrado(xml: string): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!xml.trim()) {
+      errors.push('El contenido XML está vacío');
+    }
+
+    if (!xml.includes('CartaPorte')) {
+      errors.push('El XML no contiene el complemento CartaPorte');
+    }
+
+    if (!xml.includes('cfdi:Comprobante')) {
+      errors.push('El XML no tiene la estructura de comprobante fiscal válida');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  static formatearXMLParaTimbrado(xml: string): string {
+    // Formatear XML para timbrado, removiendo espacios innecesarios
+    return xml.trim().replace(/>\s+</g, '><');
+  }
 
   static async timbrarCartaPorte(request: TimbradoRequest): Promise<TimbradoResponse> {
     try {
@@ -65,7 +95,11 @@ export class TimbradoService {
         success: true,
         uuid: data.uuid,
         fechaTimbrado: data.fechaTimbrado,
-        xmlTimbrado: data.xmlTimbrado
+        xmlTimbrado: data.xmlTimbrado,
+        qrCode: data.qrCode,
+        cadenaOriginal: data.cadenaOriginal,
+        selloDigital: data.selloDigital,
+        folio: data.folio
       };
 
       // Convertir PDF base64 a Blob si existe
@@ -94,6 +128,31 @@ export class TimbradoService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido en el timbrado'
+      };
+    }
+  }
+
+  static async validarConexionPAC(): Promise<{ success: boolean; message: string }> {
+    try {
+      // Verificar conexión con el PAC
+      const { data, error } = await supabase.functions.invoke('validar-pac');
+
+      if (error) {
+        return {
+          success: false,
+          message: `Error de conexión: ${error.message}`
+        };
+      }
+
+      return {
+        success: data?.success || false,
+        message: data?.message || 'Conexión verificada'
+      };
+    } catch (error) {
+      console.error('Error verificando conexión PAC:', error);
+      return {
+        success: false,
+        message: 'Error interno verificando conexión'
       };
     }
   }
