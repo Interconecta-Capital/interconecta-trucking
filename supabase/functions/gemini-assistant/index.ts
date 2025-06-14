@@ -80,6 +80,19 @@ serve(async (req) => {
         `;
         break;
 
+      case 'parse_document':
+        prompt = `
+        Analiza el siguiente texto de un documento tipo ${data.document_type || 'desconocido'}
+        y extrae la lista de mercancías mencionadas.
+
+        Texto del documento:
+        ${data.text}
+
+        Responde SOLO un JSON válido:
+        {"result": {"mercancias": [{"descripcion": "desc", "cantidad": 1, "claveProdServ": "00000000", "claveUnidad": "H87", "peso_kg": 0, "valor_mercancia": 0, "moneda": "MXN"}], "confidence": 0.8, "suggestions": ["mejora"]}}
+        `;
+        break;
+
       default:
         throw new Error(`Operation ${op} not supported`);
     }

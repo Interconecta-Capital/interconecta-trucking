@@ -28,7 +28,7 @@ export const useGeminiAssistant = () => {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'generate_carta_porte_data',
+          operation: 'generate_carta_porte_data',
           prompt,
           context
         },
@@ -66,7 +66,7 @@ export const useGeminiAssistant = () => {
     try {
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'suggest_description',
+          operation: 'suggest_description',
           prompt: claveProducto
         },
       });
@@ -87,7 +87,7 @@ export const useGeminiAssistant = () => {
     try {
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'validate_mercancia',
+          operation: 'validate_mercancia',
           data: mercanciaData
         },
       });
@@ -112,7 +112,7 @@ export const useGeminiAssistant = () => {
 
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'improve_description',
+          operation: 'improve_description',
           prompt
         },
       });
@@ -133,7 +133,7 @@ export const useGeminiAssistant = () => {
     try {
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'parse_document',
+          operation: 'parse_document',
           data: { text: documentText, document_type: documentType }
         },
       });
