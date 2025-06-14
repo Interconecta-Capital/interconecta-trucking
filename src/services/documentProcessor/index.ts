@@ -6,7 +6,7 @@ import { XMLProcessor } from './xmlProcessor';
 import { ExcelProcessor } from './excelProcessor';
 import { ImageProcessor } from './imageProcessor';
 
-export { DocumentProcessingResult, ProcessingProgress, ProcessDocumentOptions };
+export type { DocumentProcessingResult, ProcessingProgress, ProcessDocumentOptions };
 
 export class DocumentProcessor {
   static async detectDocumentType(file: File) {
