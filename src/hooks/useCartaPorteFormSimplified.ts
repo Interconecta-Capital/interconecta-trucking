@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
@@ -19,10 +20,29 @@ const initialData: CartaPorteData = {
   figuras: [],
 };
 
+// Validaciones básicas y estables
+const getBasicStepValidations = (formData: CartaPorteData) => ({
+  configuracion: Boolean(formData.rfcEmisor && formData.nombreEmisor && formData.rfcReceptor && formData.nombreReceptor),
+  ubicaciones: Boolean(formData.ubicaciones && formData.ubicaciones.length > 0),
+  mercancias: Boolean(formData.mercancias && formData.mercancias.length > 0),
+  autotransporte: Boolean(formData.autotransporte && Object.keys(formData.autotransporte).length > 0),
+  figuras: Boolean(formData.figuras && formData.figuras.length > 0),
+});
+
+const calculateProgress = (validations: Record<string, boolean>) => {
+  const validCount = Object.values(validations).filter(Boolean).length;
+  const totalSteps = Object.keys(validations).length;
+  return Math.round((validCount / totalSteps) * 100);
+};
+
 export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormOptions = {}) {
   const [formData, setFormData] = useState<CartaPorteData>({ ...initialData, cartaPorteId });
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Validaciones estables
+  const stepValidations = getBasicStepValidations(formData);
+  const totalProgress = calculateProgress(stepValidations);
 
   const updateFormData = useCallback((section: keyof CartaPorteData, data: any) => {
     setFormData(prev => ({ ...prev, [section]: data }));
@@ -41,6 +61,8 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
         setFormData(data.datos_formulario as CartaPorteData);
         setCurrentCartaPorteId(id);
       }
+    } catch (error) {
+      console.error('Error loading carta porte:', error);
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +76,8 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
         .from('cartas_porte')
         .update({ datos_formulario: formData })
         .eq('id', currentCartaPorteId);
+    } catch (error) {
+      console.error('Error saving carta porte:', error);
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +93,11 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
     setCurrentCartaPorteId(undefined);
   }, []);
 
+  // Funciones estables que no cambian
+  const formDataToCartaPorteData = useCallback(() => formData, [formData]);
+  const formAutotransporteToData = useCallback((data: any) => data || formData.autotransporte, [formData.autotransporte]);
+  const formFigurasToData = useCallback((data: any) => data || formData.figuras, [formData.figuras]);
+
   return {
     formData,
     currentCartaPorteId,
@@ -78,20 +107,19 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
     saveCartaPorte,
     createNewCartaPorte,
     resetForm,
-    stepValidations: {},
-    totalProgress: 0,
+    stepValidations,
+    totalProgress,
     clearSavedData: () => {},
     isCreating: false,
     isUpdating: false,
     aiValidation: null,
     hasAIEnhancements: false,
-    validationMode: 'off',
-    overallScore: 0,
-    formDataToCartaPorteData: () => formData,
-    formAutotransporteToData: (data: any) => data || formData.autotransporte,
-    formFigurasToData: (data: any) => data || formData.figuras,
-    formDataExtendidoToCartaPorteData: (data: CartaPorteData) => data,
-    cartaPorteDataToFormDataExtendido: (data: CartaPorteData) => data,
+    validationMode: 'off' as const,
+    overallScore: totalProgress,
+    formDataToCartaPorteData,
+    formAutotransporteToData,
+    formFigurasToData,
+    formDataExtendidoToCartaPorteData: formDataToCartaPorteData,
+    cartaPorteDataToFormDataExtendido: formDataToCartaPorteData,
   };
 }
-
