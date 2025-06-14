@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
-import { UbicacionFormOptimizado } from './UbicacionFormOptimizado';
+import { UbicacionesHeader } from './UbicacionesHeader';
+import { UbicacionesFormSection } from './UbicacionesFormSection';
 import { UbicacionesList } from './UbicacionesList';
 import { MapVisualization } from './MapVisualization';
-import { Plus, MapPin, ArrowRight, ArrowLeft, AlertCircle, Route, Calculator } from 'lucide-react';
+import { UbicacionesValidation } from './UbicacionesValidation';
+import { UbicacionesRouteInfo } from './UbicacionesRouteInfo';
+import { UbicacionesNavigation } from './UbicacionesNavigation';
 
 interface UbicacionesSectionOptimizadaProps {
   data: any[];
@@ -167,80 +168,26 @@ export function UbicacionesSectionOptimizada({ data, onChange, onNext, onPrev }:
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2">
-              <MapPin className="h-5 w-5" />
-              <span>Gestión de Ubicaciones</span>
-            </CardTitle>
-            
-            {!showForm && (
-              <div className="flex flex-wrap gap-2">
-                {ubicaciones.length >= 2 && (
-                  <>
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      onClick={handleCalcularDistancias}
-                      className="flex items-center space-x-2"
-                    >
-                      <Calculator className="h-4 w-4" />
-                      <span>Calcular Distancias</span>
-                    </Button>
-                    
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      onClick={handleCalcularRuta}
-                      className="flex items-center space-x-2"
-                    >
-                      <Route className="h-4 w-4" />
-                      <span>Ver Ruta</span>
-                    </Button>
-                  </>
-                )}
-                
-                <Button 
-                  type="button"
-                  onClick={handleAddUbicacion} 
-                  className="flex items-center space-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Agregar Ubicación</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardHeader>
+        <UbicacionesHeader
+          showForm={showForm}
+          ubicacionesCount={ubicaciones.length}
+          onAddUbicacion={handleAddUbicacion}
+          onCalcularDistancias={handleCalcularDistancias}
+          onCalcularRuta={handleCalcularRuta}
+        />
         
         <CardContent>
           {showForm ? (
-            <div className="space-y-4">
-              {formErrors.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="space-y-1">
-                      <p className="font-medium">Corrija los siguientes errores:</p>
-                      <ul className="list-disc list-inside">
-                        {formErrors.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <UbicacionFormOptimizado
-                ubicacion={editingIndex !== null ? ubicaciones[editingIndex] : undefined}
-                onSave={handleSaveUbicacion}
-                onCancel={handleCancelForm}
-                onSaveToFavorites={guardarUbicacionFrecuente}
-                generarId={generarIdUbicacion}
-                ubicacionesFrecuentes={ubicacionesFrecuentes}
-              />
-            </div>
+            <UbicacionesFormSection
+              formErrors={formErrors}
+              editingIndex={editingIndex}
+              ubicaciones={ubicaciones}
+              onSave={handleSaveUbicacion}
+              onCancel={handleCancelForm}
+              onSaveToFavorites={guardarUbicacionFrecuente}
+              generarId={generarIdUbicacion}
+              ubicacionesFrecuentes={ubicacionesFrecuentes}
+            />
           ) : (
             <UbicacionesList
               ubicaciones={ubicaciones}
@@ -263,78 +210,26 @@ export function UbicacionesSectionOptimizada({ data, onChange, onNext, onPrev }:
       )}
 
       {/* Validaciones */}
-      {!showForm && !validation.esValido && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-1">
-              <p className="font-medium">Se requieren correcciones:</p>
-              <ul className="list-disc list-inside">
-                {validation.errores.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      <UbicacionesValidation 
+        validation={validation}
+        showForm={showForm}
+      />
 
       {/* Información de Ruta */}
-      {rutaCalculada && !showForm && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Route className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-800">Información de Ruta</span>
-              </div>
-              <div className="flex items-center space-x-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Distancia: </span>
-                  <span className="font-medium">{rutaCalculada.distance} km</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Tiempo: </span>
-                  <span className="font-medium">{rutaCalculada.duration} min</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowMap(!showMap)}
-                >
-                  {showMap ? 'Ocultar' : 'Ver'} Mapa
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <UbicacionesRouteInfo
+        rutaCalculada={rutaCalculada}
+        showForm={showForm}
+        showMap={showMap}
+        onToggleMap={() => setShowMap(!showMap)}
+      />
 
       {/* Botones de navegación */}
-      {!showForm && (
-        <div className="flex justify-between">
-          <Button 
-            type="button"
-            variant="outline" 
-            onClick={handlePrev} 
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Anterior</span>
-          </Button>
-          
-          <Button 
-            type="button"
-            onClick={handleNext} 
-            disabled={!validation.esValido}
-            className="flex items-center space-x-2"
-          >
-            <span>Continuar a Mercancías</span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      <UbicacionesNavigation
+        showForm={showForm}
+        isValid={validation.esValido}
+        onPrev={handlePrev}
+        onNext={handleNext}
+      />
     </div>
   );
 }

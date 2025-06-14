@@ -29,7 +29,7 @@ interface AutotransporteSectionOptimizadaProps {
 export function AutotransporteSectionOptimizada({ data, onChange, onNext, onPrev }: AutotransporteSectionOptimizadaProps) {
   // Validar que los datos mínimos estén completos
   const isDataComplete = () => {
-    return (
+    return Boolean(
       data.placa_vm &&
       data.anio_modelo_vm &&
       data.config_vehicular &&
