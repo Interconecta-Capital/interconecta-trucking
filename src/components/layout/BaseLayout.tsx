@@ -9,9 +9,16 @@ import { cn } from '@/lib/utils';
 interface BaseLayoutProps {
   children: ReactNode;
   showSidebar?: boolean;
+  fullWidth?: boolean;
+  className?: string;
 }
 
-export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
+export function BaseLayout({ 
+  children, 
+  showSidebar = true, 
+  fullWidth = false,
+  className 
+}: BaseLayoutProps) {
   const isMobile = useIsMobile();
 
   if (!showSidebar) {
@@ -19,11 +26,12 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
       <div className="min-h-screen bg-background">
         <GlobalHeader />
         <main className={cn(
-          "p-4",
+          fullWidth ? "p-0" : "p-4",
           // Espaciado específico para móvil
-          isMobile && "px-3 py-4",
+          !fullWidth && isMobile && "px-3 py-4",
           // Espaciado para desktop
-          !isMobile && "p-6"
+          !fullWidth && !isMobile && "p-6",
+          className
         )}>
           {children}
         </main>
@@ -39,10 +47,11 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
           <GlobalHeader />
           <main className={cn(
             "flex-1 overflow-auto",
-            // Espaciado específico para móvil
-            isMobile && "p-3",
-            // Espaciado para desktop
-            !isMobile && "p-6"
+            fullWidth ? "p-0" : (
+              // Espaciado específico para móvil
+              isMobile ? "p-3" : "p-6"
+            ),
+            className
           )}>
             {children}
           </main>

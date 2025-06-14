@@ -6,6 +6,7 @@ import { CartaPorteHeaderMejorado } from './CartaPorteHeaderMejorado';
 import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
+import { QuickStepNavigation } from '../navigation/QuickStepNavigation';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
 import { BorradorServiceExtendido } from '@/services/borradorServiceExtendido';
 
@@ -15,6 +16,7 @@ interface OptimizedCartaPorteFormProps {
 
 const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorteId }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [showQuickNav, setShowQuickNav] = useState(false);
   
   const {
     // State
@@ -56,7 +58,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     enableMemoization: true
   });
 
-  // Memoizar lista de pasos para evitar re-renders innecesarios
   const steps = useMemo(() => [
     'Configuración',
     'Ubicaciones', 
@@ -66,7 +67,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     'XML'
   ], []);
 
-  // Asegurar que autotransporte tenga valores por defecto
   const safeAutotransporte = useMemo(() => {
     return autotransporte || {
       placa_vm: '',
@@ -81,7 +81,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   }, [autotransporte]);
 
   const safeOptimizedAutotransporte = useMemo(() => {
-    // Ensure we always return a complete AutotransporteCompleto object
     const defaultAutotransporte: AutotransporteCompleto = {
       placa_vm: '',
       anio_modelo_vm: 2020,
@@ -93,19 +92,16 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
       remolques: []
     };
 
-    // If optimizedAutotransporte is empty or missing properties, use defaults
     if (!optimizedAutotransporte || Object.keys(optimizedAutotransporte).length === 0) {
       return defaultAutotransporte;
     }
 
-    // Merge optimized data with defaults to ensure all required properties exist
     return {
       ...defaultAutotransporte,
       ...optimizedAutotransporte
     };
   }, [optimizedAutotransporte]);
 
-  // Create a safe handler for autotransporte changes
   const handleAutotransporteChange = useCallback((data: AutotransporteCompleto) => {
     const safeData: AutotransporteCompleto = {
       placa_vm: data.placa_vm || '',
@@ -118,7 +114,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
       asegura_med_ambiente: data.asegura_med_ambiente,
       poliza_med_ambiente: data.poliza_med_ambiente,
       remolques: data.remolques || [],
-      ...data // Spread any additional properties
+      ...data
     };
     setAutotransporte(safeData);
   }, [setAutotransporte]);
@@ -143,13 +139,10 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     }
   }, [optimizedConfiguracion, currentCartaPorteId, setCurrentCartaPorteId]);
 
-  // Nuevo: Guardar borrador y salir
   const handleGuardarYSalir = useCallback(async () => {
     await handleGuardarBorradorMejorado();
-    // Navigation is handled in the header component
   }, [handleGuardarBorradorMejorado]);
 
-  // Mejorado: Limpiar borrador
   const handleLimpiarBorradorMejorado = useCallback(async () => {
     try {
       await BorradorServiceExtendido.limpiarBorrador(currentCartaPorteId || undefined);
@@ -159,42 +152,75 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     }
   }, [currentCartaPorteId, handleLimpiarBorrador]);
 
+  // Validación básica de pasos para navegación rápida
+  const stepValidation = useMemo(() => {
+    const validation: Record<number, 'valid' | 'invalid' | 'pending'> = {};
+    
+    // Paso 0: Configuración
+    validation[0] = (optimizedConfiguracion.rfcEmisor && optimizedConfiguracion.rfcReceptor && optimizedConfiguracion.tipoCfdi) 
+      ? 'valid' : 'pending';
+    
+    // Paso 1: Ubicaciones
+    validation[1] = (optimizedUbicaciones.length >= 2) ? 'valid' : 'pending';
+    
+    // Paso 2: Mercancías
+    validation[2] = (optimizedMercancias.length > 0) ? 'valid' : 'pending';
+    
+    // Paso 3: Autotransporte
+    validation[3] = (safeOptimizedAutotransporte.placa_vm) ? 'valid' : 'pending';
+    
+    // Paso 4: Figuras
+    validation[4] = (optimizedFiguras.length > 0) ? 'valid' : 'pending';
+    
+    return validation;
+  }, [optimizedConfiguracion, optimizedUbicaciones, optimizedMercancias, safeOptimizedAutotransporte, optimizedFiguras]);
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen bg-gray-50">
       <CartaPorteHeaderMejorado
         borradorCargado={borradorCargado}
         ultimoGuardado={ultimoGuardado}
         isSaving={isSaving}
+        currentStep={currentStep}
+        currentCartaPorteId={currentCartaPorteId || undefined}
         onGuardarBorrador={handleGuardarBorradorMejorado}
         onGuardarYSalir={handleGuardarYSalir}
         onLimpiarBorrador={handleLimpiarBorradorMejorado}
-        currentCartaPorteId={currentCartaPorteId || undefined}
       />
 
-      <CartaPorteProgressTracker
-        currentStep={currentStep}
-        totalSteps={steps.length}
-      />
+      <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+        {/* Navegación rápida entre pasos */}
+        <QuickStepNavigation
+          currentStep={currentStep}
+          onStepChange={setCurrentStep}
+          stepValidation={stepValidation}
+        />
 
-      <OptimizedCartaPorteStepContent
-        currentStep={currentStep}
-        configuracion={optimizedConfiguracion}
-        ubicaciones={optimizedUbicaciones}
-        mercancias={optimizedMercancias}
-        autotransporte={safeOptimizedAutotransporte}
-        figuras={optimizedFiguras}
-        currentCartaPorteId={currentCartaPorteId}
-        onConfiguracionChange={handleConfiguracionChange}
-        onUbicacionesChange={setUbicaciones}
-        onMercanciasChange={setMercancias}
-        onAutotransporteChange={handleAutotransporteChange}
-        onFigurasChange={setFiguras}
-        onStepChange={setCurrentStep}
-        onXMLGenerated={setXmlGenerated}
-        onTimbrado={setTimbradoData}
-      />
+        <CartaPorteProgressTracker
+          currentStep={currentStep}
+          totalSteps={steps.length}
+        />
 
-      <CartaPorteAutoSaveIndicator />
+        <OptimizedCartaPorteStepContent
+          currentStep={currentStep}
+          configuracion={optimizedConfiguracion}
+          ubicaciones={optimizedUbicaciones}
+          mercancias={optimizedMercancias}
+          autotransporte={safeOptimizedAutotransporte}
+          figuras={optimizedFiguras}
+          currentCartaPorteId={currentCartaPorteId}
+          onConfiguracionChange={handleConfiguracionChange}
+          onUbicacionesChange={setUbicaciones}
+          onMercanciasChange={setMercancias}
+          onAutotransporteChange={handleAutotransporteChange}
+          onFigurasChange={setFiguras}
+          onStepChange={setCurrentStep}
+          onXMLGenerated={setXmlGenerated}
+          onTimbrado={setTimbradoData}
+        />
+
+        <CartaPorteAutoSaveIndicator />
+      </div>
     </div>
   );
 });
