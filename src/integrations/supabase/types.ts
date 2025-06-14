@@ -854,6 +854,9 @@ export type Database = {
           id: string
           nombre: string
           num_licencia: string | null
+          num_reg_id_trib: string | null
+          operador_sct: boolean | null
+          residencia_fiscal: string | null
           rfc: string | null
           telefono: string | null
           tipo_licencia: string | null
@@ -871,6 +874,9 @@ export type Database = {
           id?: string
           nombre: string
           num_licencia?: string | null
+          num_reg_id_trib?: string | null
+          operador_sct?: boolean | null
+          residencia_fiscal?: string | null
           rfc?: string | null
           telefono?: string | null
           tipo_licencia?: string | null
@@ -888,6 +894,9 @@ export type Database = {
           id?: string
           nombre?: string
           num_licencia?: string | null
+          num_reg_id_trib?: string | null
+          operador_sct?: boolean | null
+          residencia_fiscal?: string | null
           rfc?: string | null
           telefono?: string | null
           tipo_licencia?: string | null
@@ -1699,43 +1708,52 @@ export type Database = {
           activo: boolean | null
           created_at: string | null
           direccion: Json | null
+          direccion_fiscal: Json | null
           email: string | null
           estado: string
           id: string
           nombre_razon_social: string
+          regimen_fiscal: string | null
           rfc: string
           telefono: string | null
           tipo_persona: string | null
           updated_at: string | null
           user_id: string
+          uso_cfdi: string | null
         }
         Insert: {
           activo?: boolean | null
           created_at?: string | null
           direccion?: Json | null
+          direccion_fiscal?: Json | null
           email?: string | null
           estado?: string
           id?: string
           nombre_razon_social: string
+          regimen_fiscal?: string | null
           rfc: string
           telefono?: string | null
           tipo_persona?: string | null
           updated_at?: string | null
           user_id: string
+          uso_cfdi?: string | null
         }
         Update: {
           activo?: boolean | null
           created_at?: string | null
           direccion?: Json | null
+          direccion_fiscal?: Json | null
           email?: string | null
           estado?: string
           id?: string
           nombre_razon_social?: string
+          regimen_fiscal?: string | null
           rfc?: string
           telefono?: string | null
           tipo_persona?: string | null
           updated_at?: string | null
           user_id?: string
+          uso_cfdi?: string | null
         }
         Relationships: []
       }
@@ -2121,60 +2139,99 @@ export type Database = {
           acta_instalacion_gps: string | null
           activo: boolean | null
           anio: number | null
+          asegura_med_ambiente: string | null
+          asegura_resp_civil: string | null
+          capacidad_carga: number | null
           config_vehicular: string | null
           created_at: string | null
+          dimensiones: Json | null
           estado: string
           fecha_instalacion_gps: string | null
           id: string
           id_equipo_gps: string | null
           marca: string | null
           modelo: string | null
+          num_permiso_sct: string | null
           num_serie: string | null
+          numero_permisos_adicionales: string[] | null
+          numero_serie_vin: string | null
+          perm_sct: string | null
+          peso_bruto_vehicular: number | null
           placa: string
+          poliza_med_ambiente: string | null
+          poliza_resp_civil: string | null
           poliza_seguro: string | null
+          tipo_carroceria: string | null
           updated_at: string | null
           user_id: string
           verificacion_vigencia: string | null
+          vigencia_permiso: string | null
           vigencia_seguro: string | null
         }
         Insert: {
           acta_instalacion_gps?: string | null
           activo?: boolean | null
           anio?: number | null
+          asegura_med_ambiente?: string | null
+          asegura_resp_civil?: string | null
+          capacidad_carga?: number | null
           config_vehicular?: string | null
           created_at?: string | null
+          dimensiones?: Json | null
           estado?: string
           fecha_instalacion_gps?: string | null
           id?: string
           id_equipo_gps?: string | null
           marca?: string | null
           modelo?: string | null
+          num_permiso_sct?: string | null
           num_serie?: string | null
+          numero_permisos_adicionales?: string[] | null
+          numero_serie_vin?: string | null
+          perm_sct?: string | null
+          peso_bruto_vehicular?: number | null
           placa: string
+          poliza_med_ambiente?: string | null
+          poliza_resp_civil?: string | null
           poliza_seguro?: string | null
+          tipo_carroceria?: string | null
           updated_at?: string | null
           user_id: string
           verificacion_vigencia?: string | null
+          vigencia_permiso?: string | null
           vigencia_seguro?: string | null
         }
         Update: {
           acta_instalacion_gps?: string | null
           activo?: boolean | null
           anio?: number | null
+          asegura_med_ambiente?: string | null
+          asegura_resp_civil?: string | null
+          capacidad_carga?: number | null
           config_vehicular?: string | null
           created_at?: string | null
+          dimensiones?: Json | null
           estado?: string
           fecha_instalacion_gps?: string | null
           id?: string
           id_equipo_gps?: string | null
           marca?: string | null
           modelo?: string | null
+          num_permiso_sct?: string | null
           num_serie?: string | null
+          numero_permisos_adicionales?: string[] | null
+          numero_serie_vin?: string | null
+          perm_sct?: string | null
+          peso_bruto_vehicular?: number | null
           placa?: string
+          poliza_med_ambiente?: string | null
+          poliza_resp_civil?: string | null
           poliza_seguro?: string | null
+          tipo_carroceria?: string | null
           updated_at?: string | null
           user_id?: string
           verificacion_vigencia?: string | null
+          vigencia_permiso?: string | null
           vigencia_seguro?: string | null
         }
         Relationships: []
