@@ -1,35 +1,66 @@
 
-import { useEffect, useCallback } from 'react';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-interface UseCartaPorteAutoSaveOptions {
-  formData: CartaPorteData;
-  currentCartaPorteId?: string;
-  isLoading: boolean;
-  isCreating: boolean;
-  isUpdating: boolean;
-}
+export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPorteId?: string) => {
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedRef = useRef<string>('');
 
-export function useCartaPorteAutoSave({
-  formData,
-  currentCartaPorteId,
-  isLoading,
-  isCreating,
-  isUpdating,
-}: UseCartaPorteAutoSaveOptions) {
-  
-  // Auto-guardado más conservador con mejor control
-  const { loadSavedData, clearSavedData } = useAutoSave({
-    data: formData,
-    key: `cartaporte-form-${currentCartaPorteId || 'new'}`,
-    delay: 5000,
-    enabled: !!(formData.rfcEmisor && formData.rfcReceptor && !isLoading && !isCreating && !isUpdating),
-    useSessionStorage: true,
-  });
+  useEffect(() => {
+    if (!isDirty || !formData) return;
 
-  return {
-    loadSavedData,
-    clearSavedData,
-  };
-}
+    const currentDataString = JSON.stringify(formData);
+    if (currentDataString === lastSavedRef.current) return;
+
+    // Clear previous timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout for auto-save
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        if (cartaPorteId) {
+          // Update existing carta porte
+          await supabase
+            .from('cartas_porte')
+            .update({
+              datos_formulario: formData,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', cartaPorteId);
+        } else {
+          // Create new draft
+          const { data } = await supabase
+            .from('cartas_porte')
+            .insert({
+              status: 'borrador',
+              datos_formulario: formData,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (data) {
+            // Store the new ID somewhere accessible
+            console.log('Draft saved with ID:', data.id);
+          }
+        }
+
+        lastSavedRef.current = currentDataString;
+        console.log('Auto-saved at', new Date().toLocaleTimeString());
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [formData, isDirty, cartaPorteId]);
+
+  return null; // This hook doesn't return anything, just performs auto-save
+};
