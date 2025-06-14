@@ -29,7 +29,12 @@ export function AIValidationAlerts({
   onApplyFix,
   className
 }: AIValidationAlertsProps) {
-  if (!validation.aiEnhancements) {
+  // Check if validation has meaningful content
+  const hasContent = validation.aiSuggestions.length > 0 || 
+                    validation.aiWarnings.length > 0 || 
+                    validation.predictiveAlerts.length > 0;
+
+  if (!hasContent) {
     return null;
   }
 
@@ -175,6 +180,37 @@ export function AIValidationAlerts({
                         Ver
                       </Button>
                     )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Advertencias AI */}
+        {validation.aiWarnings.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-medium text-amber-800 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Advertencias ({validation.aiWarnings.length})
+            </h4>
+            {validation.aiWarnings.slice(0, 2).map((warning, index) => (
+              <div key={index} className={cn(
+                'border rounded-lg p-3',
+                warning.severity === 'critical' ? 'bg-red-50 border-red-200' :
+                warning.severity === 'high' ? 'bg-amber-50 border-amber-200' :
+                'bg-yellow-50 border-yellow-200'
+              )}>
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className={cn(
+                    'h-4 w-4 mt-0.5',
+                    warning.severity === 'critical' ? 'text-red-500' :
+                    warning.severity === 'high' ? 'text-amber-500' :
+                    'text-yellow-500'
+                  )} />
+                  <div>
+                    <span className="text-sm font-medium">{warning.field}</span>
+                    <p className="text-sm mt-1">{warning.message}</p>
                   </div>
                 </div>
               </div>
