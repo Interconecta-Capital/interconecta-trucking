@@ -1,16 +1,13 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 import { AlertTriangle } from 'lucide-react';
 
 interface MercanciaMaterialPeligrosoProps {
-  formData: {
-    material_peligroso: boolean;
-    cve_material_peligroso: string;
-    embalaje: string;
-  };
+  formData: any;
   errors: Record<string, string>;
   onFieldChange: (field: string, value: any) => void;
 }
@@ -18,43 +15,43 @@ interface MercanciaMaterialPeligrosoProps {
 export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: MercanciaMaterialPeligrosoProps) {
   return (
     <div className="space-y-4">
+      <h3 className="text-lg font-semibold flex items-center gap-2">
+        <AlertTriangle className="h-5 w-5 text-amber-500" />
+        Material Peligroso
+      </h3>
+      
       <div className="flex items-center space-x-2">
-        <Switch
+        <Checkbox
           id="material_peligroso"
           checked={formData.material_peligroso}
           onCheckedChange={(checked) => onFieldChange('material_peligroso', checked)}
         />
-        <Label htmlFor="material_peligroso" className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-orange-500" />
-          Es Material Peligroso
+        <Label htmlFor="material_peligroso">
+          Esta mercancía es material peligroso
         </Label>
       </div>
 
       {formData.material_peligroso && (
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-4">
-          <div>
-            <Label htmlFor="cve_material_peligroso">Clave Material Peligroso *</Label>
-            <Input
-              id="cve_material_peligroso"
-              value={formData.cve_material_peligroso}
-              onChange={(e) => onFieldChange('cve_material_peligroso', e.target.value)}
-              placeholder="Ej: 1203"
-              className={errors.cve_material_peligroso ? 'border-red-500' : ''}
-            />
-            {errors.cve_material_peligroso && (
-              <p className="text-sm text-red-500 mt-1">{errors.cve_material_peligroso}</p>
-            )}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <CatalogoSelectorMejorado
+            tipo="materiales_peligrosos"
+            label="Clave de Material Peligroso"
+            value={formData.cve_material_peligroso}
+            onValueChange={(value) => onFieldChange('cve_material_peligroso', value)}
+            placeholder="Buscar material peligroso..."
+            required={formData.material_peligroso}
+            error={errors.cve_material_peligroso}
+          />
 
-          <div>
-            <Label htmlFor="embalaje">Tipo de Embalaje</Label>
-            <Input
-              id="embalaje"
-              value={formData.embalaje}
-              onChange={(e) => onFieldChange('embalaje', e.target.value)}
-              placeholder="Ej: Tambor metálico"
-            />
-          </div>
+          <CatalogoSelectorMejorado
+            tipo="embalajes"
+            label="Tipo de Embalaje"
+            value={formData.embalaje}
+            onValueChange={(value) => onFieldChange('embalaje', value)}
+            placeholder="Seleccionar embalaje..."
+            required={formData.material_peligroso}
+            error={errors.embalaje}
+          />
         </div>
       )}
     </div>

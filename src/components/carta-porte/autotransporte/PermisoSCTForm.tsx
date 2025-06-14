@@ -3,9 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield } from 'lucide-react';
-import { useTiposPermiso } from '@/hooks/useCatalogos';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 
 interface PermisoSCTFormProps {
   data: {
@@ -17,18 +16,6 @@ interface PermisoSCTFormProps {
 }
 
 export function PermisoSCTForm({ data, onChange, errors }: PermisoSCTFormProps) {
-  const { data: tiposPermiso = [], isLoading } = useTiposPermiso();
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse h-32 bg-gray-200 rounded"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -39,22 +26,15 @@ export function PermisoSCTForm({ data, onChange, errors }: PermisoSCTFormProps) 
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="perm_sct">Tipo de Permiso SCT *</Label>
-            <Select value={data.perm_sct} onValueChange={(value) => onChange('perm_sct', value)}>
-              <SelectTrigger className={errors.perm_sct ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Selecciona tipo de permiso" />
-              </SelectTrigger>
-              <SelectContent>
-                {tiposPermiso.map((permiso) => (
-                  <SelectItem key={permiso.clave || permiso.descripcion} value={permiso.clave || permiso.descripcion}>
-                    {permiso.clave || permiso.descripcion} - {permiso.descripcion}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.perm_sct && <p className="text-sm text-red-500 mt-1">{errors.perm_sct}</p>}
-          </div>
+          <CatalogoSelectorMejorado
+            tipo="tipos_permiso"
+            label="Tipo de Permiso SCT"
+            value={data.perm_sct}
+            onValueChange={(value) => onChange('perm_sct', value)}
+            placeholder="Selecciona tipo de permiso"
+            required
+            error={errors.perm_sct}
+          />
 
           <div>
             <Label htmlFor="num_permiso_sct">Número de Permiso SCT *</Label>

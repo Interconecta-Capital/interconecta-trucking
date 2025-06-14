@@ -3,9 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Truck } from 'lucide-react';
-import { useConfiguracionesVehiculo } from '@/hooks/useCatalogos';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 
 interface VehiculoMotorFormProps {
   data: {
@@ -18,18 +17,6 @@ interface VehiculoMotorFormProps {
 }
 
 export function VehiculoMotorForm({ data, onChange, errors }: VehiculoMotorFormProps) {
-  const { data: configuracionesVehiculares = [], isLoading } = useConfiguracionesVehiculo();
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse h-32 bg-gray-200 rounded"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -66,22 +53,15 @@ export function VehiculoMotorForm({ data, onChange, errors }: VehiculoMotorFormP
             {errors.anio_modelo_vm && <p className="text-sm text-red-500 mt-1">{errors.anio_modelo_vm}</p>}
           </div>
 
-          <div>
-            <Label htmlFor="config_vehicular">Configuración Vehicular *</Label>
-            <Select value={data.config_vehicular} onValueChange={(value) => onChange('config_vehicular', value)}>
-              <SelectTrigger className={errors.config_vehicular ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Selecciona configuración" />
-              </SelectTrigger>
-              <SelectContent>
-                {configuracionesVehiculares.map((config) => (
-                  <SelectItem key={config.clave || config.descripcion} value={config.clave || config.descripcion}>
-                    {config.clave || config.descripcion} - {config.descripcion}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.config_vehicular && <p className="text-sm text-red-500 mt-1">{errors.config_vehicular}</p>}
-          </div>
+          <CatalogoSelectorMejorado
+            tipo="configuraciones_vehiculares"
+            label="Configuración Vehicular"
+            value={data.config_vehicular}
+            onValueChange={(value) => onChange('config_vehicular', value)}
+            placeholder="Selecciona configuración"
+            required
+            error={errors.config_vehicular}
+          />
         </div>
       </CardContent>
     </Card>

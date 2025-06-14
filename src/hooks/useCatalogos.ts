@@ -1,169 +1,19 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { CatalogosSATService, CatalogItem, CodigoPostalInfo, ColoniaInfo } from "@/services/catalogosSAT";
+// Re-exportar todo desde el hook real para mantener compatibilidad
+export * from './useCatalogosReal';
 
-// Hook para buscar productos/servicios con opciones iniciales
-export const useBuscarProductosServicios = (busqueda: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'productos', busqueda],
-    queryFn: async () => {
-      if (busqueda.length === 0) {
-        return CatalogosSATService.buscarProductosServicios('transporte');
-      }
-      return CatalogosSATService.buscarProductosServicios(busqueda);
-    },
-    enabled: enabled && (busqueda.length >= 2 || busqueda.length === 0),
-    staleTime: 5 * 60 * 1000,
-  });
+// Hook de compatibilidad que redirige al servicio real
+import { useCatalogosReal } from './useCatalogosReal';
+
+export const useCatalogos = useCatalogosReal;
+
+// Alias para mantener compatibilidad con código existente
+export const useBuscarTipoPermiso = (busqueda?: string) => {
+  const { useTiposPermiso } = require('./useCatalogosReal');
+  return useTiposPermiso(busqueda);
 };
 
-// Hook para buscar claves de unidad con opciones iniciales
-export const useBuscarClaveUnidad = (busqueda: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'unidades', busqueda],
-    queryFn: async () => {
-      if (busqueda.length === 0) {
-        return CatalogosSATService.buscarClaveUnidad('');
-      }
-      return CatalogosSATService.buscarClaveUnidad(busqueda);
-    },
-    enabled: enabled && (busqueda.length >= 1 || busqueda.length === 0),
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-// Hook para obtener tipos de permiso
-export const useTiposPermiso = (busqueda?: string) => {
-  return useQuery({
-    queryKey: ['catalogos', 'permisos', busqueda],
-    queryFn: () => CatalogosSATService.buscarTiposPermiso(busqueda),
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-// Alias for backward compatibility
-export const useBuscarTipoPermiso = useTiposPermiso;
-
-// Hook para obtener configuraciones de vehículo
-export const useConfiguracionesVehiculo = (busqueda?: string) => {
-  return useQuery({
-    queryKey: ['catalogos', 'configuraciones', busqueda],
-    queryFn: () => CatalogosSATService.buscarConfiguracionesVehiculo(busqueda),
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-// Alias for backward compatibility
-export const useBuscarConfigVehicular = useConfiguracionesVehiculo;
-
-// Hook para obtener figuras de transporte
-export const useFigurasTransporte = (busqueda?: string) => {
-  return useQuery({
-    queryKey: ['catalogos', 'figuras', busqueda],
-    queryFn: () => CatalogosSATService.buscarFigurasTransporte(busqueda),
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-// Hook para obtener subtipos de remolque
-export const useSubtiposRemolque = (busqueda?: string) => {
-  return useQuery({
-    queryKey: ['catalogos', 'remolques', busqueda],
-    queryFn: () => CatalogosSATService.buscarSubtiposRemolque(busqueda),
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-// Hook para buscar materiales peligrosos
-export const useBuscarMaterialesPeligrosos = (busqueda: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'materiales', busqueda],
-    queryFn: () => CatalogosSATService.buscarMaterialesPeligrosos(busqueda),
-    enabled: enabled && busqueda.length >= 2,
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-// Hook para información de código postal con validación mejorada y mejor manejo de errores
-export const useCodigoPostal = (codigoPostal: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'codigoPostal', codigoPostal],
-    queryFn: async () => {
-      console.log('Buscando código postal:', codigoPostal);
-      const result = await CatalogosSATService.buscarCodigoPostal(codigoPostal);
-      console.log('Resultado código postal:', result);
-      return result;
-    },
-    enabled: enabled && CatalogosSATService.validarFormatoCodigoPostal(codigoPostal),
-    staleTime: 30 * 60 * 1000,
-    retry: 1,
-    retryDelay: 500,
-    throwOnError: false,
-  });
-};
-
-// Hook para colonias por código postal con mejor manejo de errores
-export const useColoniasPorCP = (codigoPostal: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'colonias', codigoPostal],
-    queryFn: () => CatalogosSATService.buscarColoniasPorCP(codigoPostal),
-    enabled: enabled && CatalogosSATService.validarFormatoCodigoPostal(codigoPostal),
-    staleTime: 30 * 60 * 1000,
-    retry: 1,
-    retryDelay: 500,
-    throwOnError: false,
-  });
-};
-
-// Hook para estados
-export const useEstados = (busqueda?: string) => {
-  return useQuery({
-    queryKey: ['catalogos', 'estados', busqueda],
-    queryFn: () => CatalogosSATService.buscarEstados(busqueda),
-    staleTime: 60 * 60 * 1000,
-  });
-};
-
-// Hook para validar claves
-export const useValidarClave = (catalogo: string, clave: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'validar', catalogo, clave],
-    queryFn: () => CatalogosSATService.validarClave(catalogo, clave),
-    enabled: enabled && clave.length > 0,
-    staleTime: 10 * 60 * 1000,
-    throwOnError: false,
-  });
-};
-
-// Hook principal que agrupa todas las funciones de catálogos
-export const useCatalogos = () => {
-  return {
-    buscarCodigoPostal: async (codigo: string) => {
-      return await CatalogosSATService.buscarCodigoPostal(codigo);
-    },
-    buscarColoniasPorCP: async (codigo: string) => {
-      return await CatalogosSATService.buscarColoniasPorCP(codigo);
-    },
-    obtenerUnidades: async () => {
-      return await CatalogosSATService.buscarClaveUnidad('');
-    },
-    obtenerProductosServicios: async () => {
-      return await CatalogosSATService.buscarProductosServicios('');
-    },
-    obtenerTiposEmbalaje: async () => {
-      return await CatalogosSATService.buscarTiposPermiso();
-    },
-    obtenerMaterialesPeligrosos: async () => {
-      return await CatalogosSATService.buscarMaterialesPeligrosos('');
-    },
-    obtenerFigurasTransporte: async () => {
-      return await CatalogosSATService.buscarFigurasTransporte();
-    },
-    obtenerTiposPermiso: async () => {
-      return await CatalogosSATService.buscarTiposPermiso();
-    },
-    obtenerConfiguracionesVehiculares: async () => {
-      return await CatalogosSATService.buscarConfiguracionesVehiculo();
-    }
-  };
+export const useBuscarConfigVehicular = (busqueda?: string) => {
+  const { useConfiguracionesVehiculo } = require('./useCatalogosReal');
+  return useConfiguracionesVehiculo(busqueda);
 };
