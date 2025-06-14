@@ -167,4 +167,17 @@ pm2 monit
 
 # Restart aplicación
 pm2 restart trucking-api
+
+## Flujo simplificado de Carta Porte
+
+Para depurar o probar el formulario sin las optimizaciones completas puedes activar un modo simplificado.
+
+1. Pasa el prop `simplified` al componente `CartaPorteForm`.
+2. O define la variable de entorno `VITE_SIMPLIFIED_CARTA_PORTE=true` antes de compilar.
+
+```tsx
+<CartaPorteForm simplified />
+```
+
+Este modo mantiene el estado de manera básica y evita las conversiones de datos estables, facilitando la inspección durante el desarrollo.
 ¡Listo para automatizar el transporte de carga con Interconecta Trucking! 🚛📋✨
