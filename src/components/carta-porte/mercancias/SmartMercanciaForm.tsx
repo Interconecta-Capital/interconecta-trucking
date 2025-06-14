@@ -32,14 +32,13 @@ export function SmartMercanciaForm({
   const { context, addUserPattern } = useAIContext();
   
   const [formData, setFormData] = useState<Mercancia>({
-    fraccionArancelaria: '',
+    fraccion_arancelaria: '',
     descripcion: '',
-    claveProdServ: '',
-    claveUnidad: '',
+    bienes_transp: '',
+    clave_unidad: '',
     cantidad: 1,
-    unidad: '',
-    pesoKg: 0,
-    valorMercancia: 0,
+    peso_kg: 0,
+    valor_mercancia: 0,
     ...mercancia
   });
 
@@ -68,8 +67,8 @@ export function SmartMercanciaForm({
     if (success) {
       // Learn patterns on successful save
       addUserPattern('mercancia_descripcion', formData.descripcion);
-      addUserPattern('clave_producto', formData.claveProdServ);
-      addUserPattern('unidad_medida', formData.claveUnidad);
+      addUserPattern('bienes_transporte', formData.bienes_transp);
+      addUserPattern('unidad_medida', formData.clave_unidad);
     }
   };
 
@@ -135,10 +134,7 @@ export function SmartMercanciaForm({
             type="mercancia"
             label="Descripción de la Mercancía *"
             placeholder="Describe detalladamente la mercancía..."
-            context={{
-              ...context,
-              category: 'mercancia_description'
-            }}
+            context={context}
             formName="mercancia"
             fieldName="descripcion"
             showValidation={true}
@@ -147,34 +143,26 @@ export function SmartMercanciaForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <EnhancedAutocompleteInput
-              value={formData.claveProdServ}
-              onChange={(value) => handleFieldChange('claveProdServ', value)}
+              value={formData.bienes_transp}
+              onChange={(value) => handleFieldChange('bienes_transp', value)}
               type="mercancia"
-              label="Clave Producto/Servicio SAT"
+              label="Bienes a Transportar SAT"
               placeholder="00000000"
-              context={{
-                ...context,
-                category: 'sat_product_code',
-                description: formData.descripcion
-              }}
+              context={context}
               formName="mercancia"
-              fieldName="claveProdServ"
+              fieldName="bienes_transp"
               showValidation={true}
             />
 
             <EnhancedAutocompleteInput
-              value={formData.claveUnidad}
-              onChange={(value) => handleFieldChange('claveUnidad', value)}
+              value={formData.clave_unidad}
+              onChange={(value) => handleFieldChange('clave_unidad', value)}
               type="mercancia"
               label="Clave Unidad SAT"
               placeholder="H87"
-              context={{
-                ...context,
-                category: 'sat_unit_code',
-                productType: formData.claveProdServ
-              }}
+              context={context}
               formName="mercancia"
-              fieldName="claveUnidad"
+              fieldName="clave_unidad"
               showValidation={true}
             />
 
@@ -191,21 +179,6 @@ export function SmartMercanciaForm({
               />
             </div>
 
-            <EnhancedAutocompleteInput
-              value={formData.unidad}
-              onChange={(value) => handleFieldChange('unidad', value)}
-              type="mercancia"
-              label="Unidad de Medida"
-              placeholder="Kilogramo, Pieza, etc."
-              context={{
-                ...context,
-                category: 'unit_measure',
-                unitCode: formData.claveUnidad
-              }}
-              formName="mercancia"
-              fieldName="unidad"
-            />
-
             <div className="space-y-2">
               <Label htmlFor="peso">Peso (kg)</Label>
               <Input
@@ -213,8 +186,8 @@ export function SmartMercanciaForm({
                 type="number"
                 min="0"
                 step="0.001"
-                value={formData.pesoKg}
-                onChange={(e) => handleFieldChange('pesoKg', parseFloat(e.target.value) || 0)}
+                value={formData.peso_kg}
+                onChange={(e) => handleFieldChange('peso_kg', parseFloat(e.target.value) || 0)}
               />
             </div>
 
@@ -225,26 +198,21 @@ export function SmartMercanciaForm({
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.valorMercancia}
-                onChange={(e) => handleFieldChange('valorMercancia', parseFloat(e.target.value) || 0)}
+                value={formData.valor_mercancia}
+                onChange={(e) => handleFieldChange('valor_mercancia', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
 
           <EnhancedAutocompleteInput
-            value={formData.fraccionArancelaria || ''}
-            onChange={(value) => handleFieldChange('fraccionArancelaria', value)}
+            value={formData.fraccion_arancelaria || ''}
+            onChange={(value) => handleFieldChange('fraccion_arancelaria', value)}
             type="mercancia"
             label="Fracción Arancelaria"
             placeholder="00000000"
-            context={{
-              ...context,
-              category: 'tariff_fraction',
-              description: formData.descripcion,
-              productCode: formData.claveProdServ
-            }}
+            context={context}
             formName="mercancia"
-            fieldName="fraccionArancelaria"
+            fieldName="fraccion_arancelaria"
             showValidation={true}
           />
 

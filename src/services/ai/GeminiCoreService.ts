@@ -12,6 +12,14 @@ export interface AIContextData {
     vehicleTypes?: string[];
     commonRoutes?: string[];
   };
+  vehicleInfo?: any;
+  category?: string;
+  addressComponent?: string;
+  postalCode?: string;
+  state?: string;
+  description?: string;
+  productCode?: string;
+  unitCode?: string;
 }
 
 export interface AISuggestion {
@@ -92,7 +100,7 @@ export class GeminiCoreService {
 
   async getSmartSuggestions(
     input: string, 
-    type: 'address' | 'mercancia' | 'vehicle' | 'driver',
+    type: 'address' | 'mercancia' | 'vehicle' | 'driver' | 'route',
     context?: AIContextData
   ): Promise<AISuggestion[]> {
     if (input.length < 2) return [];
@@ -113,7 +121,7 @@ export class GeminiCoreService {
 
   async validateData(
     data: any, 
-    type: 'address' | 'mercancia' | 'vehicle' | 'complete_form',
+    type: 'address' | 'mercancia' | 'vehicle' | 'driver' | 'complete_form',
     context?: AIContextData
   ): Promise<AIValidationResult> {
     try {

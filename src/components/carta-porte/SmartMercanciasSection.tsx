@@ -60,7 +60,7 @@ export function SmartMercanciasSection({
       
       // Learn from successful saves
       addUserPattern('mercancia_tipo', mercancia.descripcion);
-      addUserPattern('producto_servicio', mercancia.claveProdServ);
+      addUserPattern('bienes_transporte', mercancia.bienes_transp);
       
       setShowForm(false);
       setEditingMercancia(undefined);

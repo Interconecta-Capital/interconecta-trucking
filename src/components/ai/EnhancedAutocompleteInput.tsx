@@ -88,7 +88,9 @@ export function EnhancedAutocompleteInput({
     if (showValidation && value.length > 3) {
       const validateData = async () => {
         try {
-          const result = await geminiCore.validateData({ [fieldName]: value }, type, context);
+          // Map 'driver' type to 'vehicle' for validation since the service doesn't accept 'driver'
+          const validationType = type === 'driver' ? 'vehicle' : type;
+          const result = await geminiCore.validateData({ [fieldName]: value }, validationType, context);
           setValidation(result);
         } catch (error) {
           console.error('Error validating data:', error);
