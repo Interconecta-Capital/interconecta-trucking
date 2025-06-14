@@ -19,7 +19,6 @@ interface StepValidations {
   mercancias: boolean;
   autotransporte: boolean;
   figuras: boolean;
-  xml: boolean;
 }
 
 export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
@@ -40,7 +39,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
-  // Memoizar la conversión para evitar re-renders
+  // Conversión estable sin re-renders
   const cartaPorteDataForValidation = useMemo((): CartaPorteData => {
     try {
       return formDataExtendidoToCartaPorteData(formData);
@@ -66,7 +65,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     }
   }, [formData, formDataExtendidoToCartaPorteData]);
 
-  // Usar validaciones mejoradas con IA - memoizar para evitar re-renders
+  // Usar validaciones mejoradas con IA
   const validationResult = useCartaPorteValidationEnhanced({ 
     formData: cartaPorteDataForValidation,
     enableAI 
@@ -82,15 +81,24 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     validateComplete
   } = validationResult;
 
-  // Convertir las validaciones al formato correcto - memoizar
+  // Convertir las validaciones al formato correcto
   const stepValidations: StepValidations = useMemo(() => ({
     configuracion: rawStepValidations?.configuracion || false,
     ubicaciones: rawStepValidations?.ubicaciones || false,
     mercancias: rawStepValidations?.mercancias || false,
     autotransporte: rawStepValidations?.autotransporte || false,
     figuras: rawStepValidations?.figuras || false,
-    xml: rawStepValidations?.xml || false,
   }), [rawStepValidations]);
+
+  // Función estable para actualizar datos
+  const stableSetFormData = useCallback((data: CartaPorteData) => {
+    try {
+      const extendedData = cartaPorteDataToFormDataExtendido(data);
+      setFormData(extendedData);
+    } catch (error) {
+      console.error('[CartaPorteForm] Error converting data to extended format:', error);
+    }
+  }, [cartaPorteDataToFormDataExtendido, setFormData]);
 
   // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({
@@ -99,14 +107,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     isLoading,
     isCreating: false,
     isUpdating: false,
-    setFormData: useCallback((data: CartaPorteData) => {
-      try {
-        const extendedData = cartaPorteDataToFormDataExtendido(data);
-        setFormData(extendedData);
-      } catch (error) {
-        console.error('[CartaPorteForm] Error converting data to extended format:', error);
-      }
-    }, [cartaPorteDataToFormDataExtendido, setFormData]),
+    setFormData: stableSetFormData,
     setCurrentCartaPorteId,
   });
 
@@ -118,13 +119,13 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     clearSavedData,
   } = integrationResult;
 
-  // Enhanced updateFormData con mejor manejo - memoizar
+  // Enhanced updateFormData con mejor manejo
   const updateFormData = useCallback((section: string, data: any) => {
     console.log('[CartaPorteForm] Actualizando sección:', section);
     updateFormDataBase({ [section]: data });
   }, [updateFormDataBase]);
 
-  // Mappers específicos para convertir datos del formulario - memoizar
+  // Mappers específicos para convertir datos del formulario
   const formDataToCartaPorteData = useCallback(() => {
     return cartaPorteDataForValidation;
   }, [cartaPorteDataForValidation]);

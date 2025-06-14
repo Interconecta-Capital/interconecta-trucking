@@ -74,23 +74,13 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     formFigurasToData,
   } = useCartaPorteForm({ cartaPorteId });
 
-  // Cache optimizado para el formulario - asegurar tipo correcto y memoizar
-  const cachedFormData = useMemo(() => {
-    if (currentCartaPorteId) {
-      const cached = cache.getCachedFormData(currentCartaPorteId);
-      // Asegurar que retornamos el tipo correcto
-      return cached && typeof cached === 'object' ? cached : formData;
-    }
-    return formData;
-  }, [formData, currentCartaPorteId, cache]);
-
   // Usar hook optimizado para navegación de pestañas
   const { activeTab, handleTabChange } = useTabNavigation({
     initialTab: 'configuracion',
     persistInURL: false,
   });
 
-  // Nuevo handler para aplicar fixes de IA - memoizar
+  // Nuevo handler para aplicar fixes de IA
   const handleApplyAIFix = useCallback((fix: any) => {
     console.log('[CartaPorteForm] Aplicando fix de IA:', fix);
     if (fix.field && fix.suggestedValue) {
@@ -114,7 +104,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     console.log('Carta Porte timbrada exitosamente:', datos);
   }, []);
 
-  // Handlers específicos para cada sección con tipos extendidos - memoizar
+  // Handlers específicos para cada sección con tipos extendidos
   const handleAutotransporteChange = useCallback((data: any) => {
     updateFormData('autotransporte', data);
   }, [updateFormData]);
@@ -123,18 +113,17 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     updateFormData('figuras', data);
   }, [updateFormData]);
 
-  // Memoizar validaciones complejas con cache
+  // Validaciones complejas memoizadas
   const canSaveAsTemplate = useMemo(() => {
-    return stepValidations.configuracion && cachedFormData.ubicaciones?.length > 0;
-  }, [stepValidations.configuracion, cachedFormData.ubicaciones]);
+    return stepValidations.configuracion && formData.ubicaciones?.length > 0;
+  }, [stepValidations.configuracion, formData.ubicaciones]);
 
   const canGenerateXML = useMemo(() => {
     return Object.entries(stepValidations)
-      .filter(([key]) => key !== 'xml')
       .every(([, isValid]) => isValid);
   }, [stepValidations]);
 
-  // Convertir formData a CartaPorteData cuando sea necesario - memoizar
+  // Convertir formData a CartaPorteData cuando sea necesario
   const cartaPorteData = useMemo(() => {
     return formDataToCartaPorteData();
   }, [formDataToCartaPorteData]);
@@ -153,7 +142,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       {/* Header con progreso mejorado */}
       <CartaPorteHeader
         cartaPorteId={cartaPorteId}
-        cartaPorteVersion={cachedFormData.cartaPorteVersion || '3.1'}
+        cartaPorteVersion={formData.cartaPorteVersion || '3.1'}
         hasAIEnhancements={hasAIEnhancements}
         showAIAlerts={showAIAlerts}
         onToggleAIAlerts={() => setShowAIAlerts(!showAIAlerts)}
@@ -186,7 +175,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
           <CartaPorteTabContent
             cartaPorteData={cartaPorteData}
-            cachedFormData={cachedFormData}
+            cachedFormData={formData}
             updateFormData={updateFormData}
             handleTabChange={handleTabChange}
             handleAutotransporteChange={handleAutotransporteChange}
