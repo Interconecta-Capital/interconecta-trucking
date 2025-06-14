@@ -168,6 +168,11 @@ pm2 monit
 # Restart aplicación
 pm2 restart trucking-api
 
+## Extracción de texto de PDFs
+
+Usamos **pdfjs-dist** para leer cada página y extraer el texto de forma fiable.
+La configuración del *worker* se realiza al inicio de `DocumentProcessor`.
+
 ## Flujo simplificado de Carta Porte
 
 Para depurar o probar el formulario sin las optimizaciones completas puedes activar un modo simplificado.

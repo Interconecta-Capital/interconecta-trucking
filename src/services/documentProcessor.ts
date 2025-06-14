@@ -1,11 +1,12 @@
 
 import Tesseract from 'tesseract.js';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?worker';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?worker&inline';
 import { supabase } from '@/integrations/supabase/client';
 import { Mercancia } from '@/hooks/useMercancias';
 import { ExcelParser, defaultColumnMapping } from '@/utils/excelParser';
 
+// Configure worker for pdfjs to enable proper text extraction
 GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export interface DocumentProcessingResult {
