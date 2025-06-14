@@ -1,28 +1,26 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
 import { UbicacionesSection } from '../UbicacionesSection';
 import { MercanciasSection } from '../MercanciasSection';
 import { AutotransporteSection } from '../AutotransporteSection';
 import { FigurasTransporteSection } from '../FigurasTransporteSection';
 import { XMLGenerationPanel } from '../xml/XMLGenerationPanel';
-import { CartaPorteData } from '@/hooks/carta-porte/useCartaPorteFormManager';
-import { AutotransporteCompleto, FiguraCompleta } from '@/types/cartaPorte';
+import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 
 interface CartaPorteStepContentProps {
   currentStep: number;
   configuracion: CartaPorteData;
   ubicaciones: any[];
-  mercancias: any;
+  mercancias: MercanciaCompleta[];
   autotransporte: AutotransporteCompleto;
   figuras: FiguraCompleta[];
-  currentCartaPorteId?: string;
+  currentCartaPorteId: string | null;
   onConfiguracionChange: (data: Partial<CartaPorteData>) => void;
-  onUbicacionesChange: (data: any[]) => void;
-  onMercanciasChange: (data: any) => void;
-  onAutotransporteChange: (data: AutotransporteCompleto) => void;
-  onFigurasChange: (data: FiguraCompleta[]) => void;
+  onUbicacionesChange: (ubicaciones: any[]) => void;
+  onMercanciasChange: (mercancias: MercanciaCompleta[]) => void;
+  onAutotransporteChange: (autotransporte: AutotransporteCompleto) => void;
+  onFigurasChange: (figuras: FiguraCompleta[]) => void;
   onStepChange: (step: number) => void;
   onXMLGenerated: (xml: string) => void;
   onTimbrado: (data: any) => void;
@@ -87,8 +85,8 @@ export function CartaPorteStepContent({
           <FigurasTransporteSection
             data={figuras}
             onChange={onFigurasChange}
+            onNext={() => onStepChange(5)}
             onPrev={() => onStepChange(3)}
-            onFinish={() => onStepChange(5)}
           />
         );
       case 5:
@@ -98,6 +96,7 @@ export function CartaPorteStepContent({
             cartaPorteId={currentCartaPorteId}
             onXMLGenerated={onXMLGenerated}
             onTimbrado={onTimbrado}
+            onPrev={() => onStepChange(4)}
           />
         );
       default:
@@ -106,10 +105,8 @@ export function CartaPorteStepContent({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        {renderStepContent()}
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-lg shadow-sm border p-6">
+      {renderStepContent()}
+    </div>
   );
 }
