@@ -1,101 +1,48 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useState } from 'react';
-import { useConductores } from '@/hooks/useConductores';
-import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ConductorFormRefactored } from './forms/ConductorFormRefactored';
+import { User } from 'lucide-react';
 
 interface ConductorFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  conductor?: any;
 }
 
-export function ConductorFormDialog({ open, onOpenChange }: ConductorFormDialogProps) {
-  const { crearConductor, isCreating } = useConductores();
-  const [formData, setFormData] = useState({
-    nombre: '',
-    rfc: '',
-    curp: '',
-    telefono: '',
-    email: '',
-    num_licencia: '',
-    tipo_licencia: '',
-    estado: 'disponible',
-    activo: true
-  });
+export function ConductorFormDialog({ open, onOpenChange, conductor }: ConductorFormDialogProps) {
+  const handleSuccess = () => {
+    onOpenChange(false);
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await crearConductor(formData);
-      onOpenChange(false);
-      setFormData({
-        nombre: '',
-        rfc: '',
-        curp: '',
-        telefono: '',
-        email: '',
-        num_licencia: '',
-        tipo_licencia: '',
-        estado: 'disponible',
-        activo: true
-      });
-    } catch (error) {
-      toast.error('Error al crear conductor');
-    }
+  const handleCancel = () => {
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nuevo Conductor</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            {conductor ? 'Editar Conductor' : 'Nuevo Conductor'}
+          </DialogTitle>
+          <DialogDescription>
+            {conductor ? 'Modifica los datos del conductor' : 'Ingresa los datos del nuevo conductor con información SAT completa'}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nombre">Nombre completo</Label>
-            <Input
-              id="nombre"
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="rfc">RFC</Label>
-            <Input
-              id="rfc"
-              value={formData.rfc}
-              onChange={(e) => setFormData({ ...formData, rfc: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="telefono">Teléfono</Label>
-            <Input
-              id="telefono"
-              value={formData.telefono}
-              onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="num_licencia">Número de Licencia</Label>
-            <Input
-              id="num_licencia"
-              value={formData.num_licencia}
-              onChange={(e) => setFormData({ ...formData, num_licencia: e.target.value })}
-            />
-          </div>
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? 'Creando...' : 'Crear Conductor'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
+
+        <ConductorFormRefactored
+          conductorId={conductor?.id}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
       </DialogContent>
     </Dialog>
   );
