@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -12,7 +11,7 @@ interface UseCartaPorteFormManagerResult {
   currentStep: number;
   currentCartaPorteId: string | null;
   borradorCargado: boolean;
-  ultimoGuardado: string | null;
+  ultimoGuardado: Date | null;
   
   setUbicaciones: (ubicaciones: any[]) => void;
   setMercancias: (mercancias: MercanciaCompleta[]) => void;
@@ -66,7 +65,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
   const [currentStep, setCurrentStep] = useState(0);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | null>(null);
   const [borradorCargado, setBorradorCargado] = useState(false);
-  const [ultimoGuardado, setUltimoGuardado] = useState<string | null>(null);
+  const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
 
   useEffect(() => {
     const borrador = BorradorService.cargarUltimoBorrador();
@@ -88,7 +87,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     });
 
     const handleAutoSave = () => {
-      setUltimoGuardado(new Date().toISOString());
+      setUltimoGuardado(new Date());
     };
 
     BorradorService.iniciarGuardadoAutomatico(
@@ -116,7 +115,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
       currentStep
     };
     BorradorService.guardarBorradorAutomatico(datosCompletos);
-    setUltimoGuardado(new Date().toISOString());
+    setUltimoGuardado(new Date());
   }, [configuracion, ubicaciones, mercancias, autotransporte, figuras, currentStep]);
 
   const handleLimpiarBorrador = useCallback(() => {

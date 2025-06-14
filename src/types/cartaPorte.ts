@@ -86,6 +86,7 @@ export interface MercanciaCompleta {
   cve_material_peligroso?: string;
   embalaje?: string;
   tipo_embalaje?: string;
+  material_embalaje?: string;
   dimensiones?: {
     largo: number;
     ancho: number;

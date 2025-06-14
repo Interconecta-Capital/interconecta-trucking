@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
 import { UbicacionesSection } from '../UbicacionesSection';
@@ -86,7 +85,7 @@ export function CartaPorteStepContent({
             data={figuras}
             onChange={onFigurasChange}
             onPrev={() => onStepChange(3)}
-            onComplete={() => onStepChange(5)}
+            onNext={() => onStepChange(5)}
           />
         );
       case 5:

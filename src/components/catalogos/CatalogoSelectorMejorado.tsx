@@ -1,24 +1,13 @@
+
 import { useState, useEffect, useMemo } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Search, X, RefreshCw } from 'lucide-react';
-import { 
-  useBuscarProductosServicios,
-  useBuscarClaveUnidad,
-  useTiposPermiso,
-  useConfiguracionesVehiculo,
-  useFigurasTransporte,
-  useSubtiposRemolque,
-  useBuscarMaterialesPeligrosos,
-  useTiposEmbalaje,
-  useEstados,
-  useCatalogosReal
-} from '@/hooks/useCatalogosReal';
+import { useCatalogosReal } from '@/hooks/useCatalogosReal';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useCatalogQuery } from './hooks/useCatalogQuery';
+import { CatalogSearchInput } from './components/CatalogSearchInput';
+import { CatalogSelect } from './components/CatalogSelect';
+import { CatalogActions } from './components/CatalogActions';
+import { CatalogFeedback } from './components/CatalogFeedback';
 
 interface CatalogItem {
   value: string;
@@ -66,38 +55,11 @@ export function CatalogoSelectorMejorado({
   const debouncedSearch = useDebounce(searchTerm, 300);
   const { clearCache } = useCatalogosReal();
 
-  // Determinar qué hook usar según el tipo
   const queryEnabled = !disabled && (tipo !== 'materiales_peligrosos' || debouncedSearch.length >= 2);
-  
-  const productosQuery = useBuscarProductosServicios(debouncedSearch, tipo === 'productos' && queryEnabled);
-  const unidadesQuery = useBuscarClaveUnidad(debouncedSearch, tipo === 'unidades' && queryEnabled);
-  const permisosQuery = useTiposPermiso(debouncedSearch);
-  const configuracionesQuery = useConfiguracionesVehiculo(debouncedSearch);
-  const figurasQuery = useFigurasTransporte(debouncedSearch);
-  const remolquesQuery = useSubtiposRemolque(debouncedSearch);
-  const materialesQuery = useBuscarMaterialesPeligrosos(debouncedSearch, tipo === 'materiales_peligrosos' && queryEnabled);
-  const embalajesQuery = useTiposEmbalaje(debouncedSearch);
-  const estadosQuery = useEstados(debouncedSearch);
-
-  // Seleccionar la query correcta
-  const currentQuery = useMemo(() => {
-    switch (tipo) {
-      case 'productos': return productosQuery;
-      case 'unidades': return unidadesQuery;
-      case 'tipos_permiso': return permisosQuery;
-      case 'configuraciones_vehiculares': return configuracionesQuery;
-      case 'figuras_transporte': return figurasQuery;
-      case 'remolques': return remolquesQuery;
-      case 'materiales_peligrosos': return materialesQuery;
-      case 'embalajes': return embalajesQuery;
-      case 'estados': return estadosQuery;
-      default: return { data: [], isLoading: false, error: null, refetch: () => {} };
-    }
-  }, [tipo, productosQuery, unidadesQuery, permisosQuery, configuracionesQuery, figurasQuery, remolquesQuery, materialesQuery, embalajesQuery, estadosQuery]);
-
+  const currentQuery = useCatalogQuery(tipo, debouncedSearch, queryEnabled);
   const { data: options = [], isLoading, error: queryError, refetch } = currentQuery;
 
-  // Manejar errores
+  // Handle errors
   useEffect(() => {
     if (queryError) {
       setLocalError(`Error cargando catálogo: ${queryError.message || 'Error desconocido'}`);
@@ -106,7 +68,7 @@ export function CatalogoSelectorMejorado({
     }
   }, [queryError]);
 
-  // Limpiar búsqueda al cambiar de tipo
+  // Clear search when type changes
   useEffect(() => {
     setSearchTerm('');
     setShowSearch(false);
@@ -119,7 +81,6 @@ export function CatalogoSelectorMejorado({
       changeCallback(selectedValue);
     }
 
-    // Pasar datos adicionales si se requiere
     if (onSelectionData) {
       const selectedOption = options.find(opt => opt.value === selectedValue);
       if (selectedOption) {
@@ -139,6 +100,15 @@ export function CatalogoSelectorMejorado({
     clearCache();
     refetch();
     setLocalError('');
+  };
+
+  const handleSearchToggle = () => {
+    setShowSearch(true);
+  };
+
+  const handleSearchClose = () => {
+    setShowSearch(false);
+    setSearchTerm('');
   };
 
   const displayError = error || localError;
@@ -176,118 +146,46 @@ export function CatalogoSelectorMejorado({
         <div className="flex gap-2">
           <div className="flex-1">
             {allowSearch && showSearch ? (
-              <div className="flex gap-1">
-                <Input
-                  type="text"
-                  placeholder={`Buscar ${tipo}...`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={displayError ? 'border-red-500' : ''}
-                  disabled={disabled}
-                  autoFocus
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowSearch(false);
-                    setSearchTerm('');
-                  }}
-                  disabled={disabled}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+              <CatalogSearchInput
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onClose={handleSearchClose}
+                tipo={tipo}
+                disabled={disabled}
+              />
             ) : (
-              <Select 
-                value={value} 
+              <CatalogSelect
+                value={value}
                 onValueChange={handleValueChange}
-                disabled={disabled || showLoading}
-              >
-                <SelectTrigger className={displayError ? 'border-red-500' : ''}>
-                  <SelectValue placeholder={getPlaceholderText()} />
-                  {showLoading && (
-                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredOptions.length > 0 ? (
-                    filteredOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{option.label}</span>
-                          {option.descripcion && option.descripcion !== option.label && (
-                            <span className="text-sm text-muted-foreground truncate max-w-[300px]">
-                              {option.descripcion}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-data" disabled>
-                      {tipo === 'materiales_peligrosos' && debouncedSearch.length < 2
-                        ? 'Escribe al menos 2 caracteres'
-                        : showLoading 
-                          ? 'Cargando...' 
-                          : 'No hay datos disponibles'
-                      }
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+                disabled={disabled}
+                showLoading={showLoading}
+                placeholder={getPlaceholderText()}
+                options={filteredOptions}
+                searchTerm={debouncedSearch}
+                tipo={tipo}
+              />
             )}
           </div>
           
-          {allowSearch && !showSearch && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSearch(true)}
-              disabled={disabled}
-              title="Buscar"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          )}
-          
-          {showRefresh && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={disabled || showLoading}
-              title="Actualizar catálogo"
-            >
-              <RefreshCw className={`h-4 w-4 ${showLoading ? 'animate-spin' : ''}`} />
-            </Button>
-          )}
+          <CatalogActions
+            allowSearch={allowSearch}
+            showRefresh={showRefresh}
+            showSearch={showSearch}
+            disabled={disabled}
+            showLoading={showLoading}
+            onSearchToggle={handleSearchToggle}
+            onRefresh={handleRefresh}
+          />
         </div>
       </div>
 
-      {displayError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{displayError}</AlertDescription>
-        </Alert>
-      )}
-
-      {debouncedSearch && filteredOptions.length > 0 && (
-        <div className="text-xs text-muted-foreground">
-          {filteredOptions.length} resultado(s) encontrado(s)
-        </div>
-      )}
-
-      {value && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs">
-            Seleccionado: {options.find(opt => opt.value === value)?.label || value}
-          </Badge>
-        </div>
-      )}
+      <CatalogFeedback
+        error={displayError}
+        searchTerm={debouncedSearch}
+        filteredCount={filteredOptions.length}
+        value={value}
+        options={options}
+      />
     </div>
   );
 }
