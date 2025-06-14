@@ -85,8 +85,8 @@ export function CartaPorteStepContent({
           <FigurasTransporteSection
             data={figuras}
             onChange={onFigurasChange}
-            onNext={() => onStepChange(5)}
             onPrev={() => onStepChange(3)}
+            onComplete={() => onStepChange(5)}
           />
         );
       case 5:
@@ -96,7 +96,6 @@ export function CartaPorteStepContent({
             cartaPorteId={currentCartaPorteId}
             onXMLGenerated={onXMLGenerated}
             onTimbrado={onTimbrado}
-            onPrev={() => onStepChange(4)}
           />
         );
       default:

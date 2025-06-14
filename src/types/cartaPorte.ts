@@ -31,7 +31,6 @@ export interface AutotransporteCompleto {
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
   remolques?: any[];
-  // Additional properties used in AutotransporteFormCompleto
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
   numero_serie_vin?: string;
@@ -55,7 +54,6 @@ export interface FiguraCompleta {
   num_licencia?: string;
   residencia_fiscal_figura?: string;
   num_reg_id_trib_figura?: string;
-  // Additional properties used in FiguraFormCompleta
   curp?: string;
   tipo_licencia?: string;
   vigencia_licencia?: string;
@@ -87,4 +85,10 @@ export interface MercanciaCompleta {
   material_peligroso?: boolean;
   cve_material_peligroso?: string;
   embalaje?: string;
+  tipo_embalaje?: string;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+  };
 }

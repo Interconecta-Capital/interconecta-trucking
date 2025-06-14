@@ -3,11 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
 
-// Export CartaPorteData for other components
-export { CartaPorteData } from '@/types/cartaPorte';
-
 interface UseCartaPorteFormManagerResult {
-  // State
   configuracion: CartaPorteData;
   ubicaciones: any[];
   mercancias: MercanciaCompleta[];
@@ -18,7 +14,6 @@ interface UseCartaPorteFormManagerResult {
   borradorCargado: boolean;
   ultimoGuardado: string | null;
   
-  // Setters
   setUbicaciones: (ubicaciones: any[]) => void;
   setMercancias: (mercancias: MercanciaCompleta[]) => void;
   setAutotransporte: (autotransporte: AutotransporteCompleto) => void;
@@ -27,14 +22,12 @@ interface UseCartaPorteFormManagerResult {
   setXmlGenerated: (xml: string) => void;
   setTimbradoData: (data: any) => void;
   
-  // Handlers
   handleConfiguracionChange: (data: Partial<CartaPorteData>) => void;
   handleGuardarBorrador: () => void;
   handleLimpiarBorrador: () => void;
 }
 
 export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
-  // Default configuration
   const defaultConfig: CartaPorteData = {
     tipoRelacion: '04',
     version: '4.0',
@@ -65,7 +58,6 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     figuras: []
   };
 
-  // State
   const [configuracion, setConfiguracion] = useState<CartaPorteData>(defaultConfig);
   const [ubicaciones, setUbicaciones] = useState<any[]>([]);
   const [mercancias, setMercancias] = useState<MercanciaCompleta[]>([]);
@@ -76,7 +68,6 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
   const [borradorCargado, setBorradorCargado] = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState<string | null>(null);
 
-  // Load draft on mount
   useEffect(() => {
     const borrador = BorradorService.cargarUltimoBorrador();
     if (borrador && borrador.datosFormulario) {
@@ -86,7 +77,6 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     }
   }, []);
 
-  // Auto-save functionality
   useEffect(() => {
     const getAllData = () => ({
       configuracion,
@@ -104,7 +94,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     BorradorService.iniciarGuardadoAutomatico(
       handleAutoSave,
       getAllData,
-      30000 // 30 seconds
+      30000
     );
 
     return () => {
@@ -112,7 +102,6 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     };
   }, [configuracion, ubicaciones, mercancias, autotransporte, figuras, currentStep]);
 
-  // Handlers
   const handleConfiguracionChange = useCallback((data: Partial<CartaPorteData>) => {
     setConfiguracion(prev => ({ ...prev, ...data }));
   }, []);
@@ -143,17 +132,14 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
   }, []);
 
   const setXmlGenerated = useCallback((xml: string) => {
-    // Handle XML generation
     console.log('XML generated:', xml);
   }, []);
 
   const setTimbradoData = useCallback((data: any) => {
-    // Handle timbrado data
     console.log('Timbrado data:', data);
   }, []);
 
   return {
-    // State
     configuracion,
     ubicaciones,
     mercancias,
@@ -164,7 +150,6 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     borradorCargado,
     ultimoGuardado,
     
-    // Setters
     setUbicaciones,
     setMercancias,
     setAutotransporte,
@@ -173,7 +158,6 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     setXmlGenerated,
     setTimbradoData,
     
-    // Handlers
     handleConfiguracionChange,
     handleGuardarBorrador,
     handleLimpiarBorrador,
