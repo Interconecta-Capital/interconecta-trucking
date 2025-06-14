@@ -1,6 +1,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
+import { useAIValidationEnhanced } from '../ai/useAIValidationEnhanced';
 import { CartaPorteFormData } from './useCartaPorteMappers';
 
 interface UseCartaPorteValidationEnhancedOptions {
@@ -44,11 +45,12 @@ export const useCartaPorteValidationEnhanced = ({
   formData, 
   enableAI = false 
 }: UseCartaPorteValidationEnhancedOptions) => {
-  const { validateComplete, validationResult } = useCartaPorteValidation();
+  const { validateComplete: validateTraditional } = useCartaPorteValidation();
+  const { validateCompleteWithAI } = useAIValidationEnhanced();
 
-  // Validaciones por step
+  // Validaciones por step usando validación tradicional
   const stepValidations: StepValidation = useMemo(() => {
-    const result = validateComplete(formData);
+    const result = validateTraditional(formData);
     
     return {
       configuracion: !result.errors.configuracion || result.errors.configuracion.length === 0,
@@ -57,18 +59,69 @@ export const useCartaPorteValidationEnhanced = ({
       autotransporte: !result.errors.autotransporte || result.errors.autotransporte.length === 0,
       figuras: !result.errors.figuras || result.errors.figuras.length === 0,
     };
-  }, [formData, validateComplete]);
+  }, [formData, validateTraditional]);
 
-  // Progreso total
+  // Progreso total basado en validación tradicional
   const totalProgress = useMemo(() => {
     const validSteps = Object.values(stepValidations).filter(Boolean).length;
     return Math.round((validSteps / Object.keys(stepValidations).length) * 100);
   }, [stepValidations]);
 
-  // Validación IA mejorada
+  // Validación completa combinada (tradicional + AI)
+  const validateComplete = useCallback(async (formDataInput?: CartaPorteFormData) => {
+    const dataToValidate = formDataInput || formData;
+    
+    // Validación tradicional (base)
+    const traditionalResult = validateTraditional(dataToValidate);
+    
+    if (!enableAI) {
+      return {
+        ...traditionalResult,
+        aiEnhancements: null,
+        overallScore: traditionalResult.completionPercentage,
+        enhanced: false
+      };
+    }
+
+    try {
+      // Validación AI si está habilitada
+      const aiResult = await validateCompleteWithAI(dataToValidate);
+      
+      // Combinar resultados (70% tradicional, 30% AI)
+      const combinedScore = Math.round(
+        (traditionalResult.completionPercentage * 0.7) +
+        (aiResult.validationScore * 0.3)
+      );
+
+      return {
+        ...traditionalResult,
+        aiEnhancements: {
+          suggestions: aiResult.aiSuggestions || [],
+          warnings: aiResult.aiWarnings || [],
+          optimizations: aiResult.predictiveAlerts || []
+        },
+        overallScore: combinedScore,
+        enhanced: true,
+        aiValidation: aiResult
+      };
+    } catch (error) {
+      console.error('Error in AI validation:', error);
+      // Fallback a validación tradicional
+      return {
+        ...traditionalResult,
+        aiEnhancements: null,
+        overallScore: traditionalResult.completionPercentage,
+        enhanced: false,
+        aiError: error.message
+      };
+    }
+  }, [formData, enableAI, validateTraditional, validateCompleteWithAI]);
+
+  // Validación AI mejorada (si está habilitada)
   const aiValidation: AIValidationEnhanced | null = useMemo(() => {
     if (!enableAI) return null;
     
+    // Simular validación AI básica para compatibilidad inmediata
     return {
       isValid: Object.values(stepValidations).every(Boolean),
       aiSuggestions: [],
@@ -90,6 +143,8 @@ export const useCartaPorteValidationEnhanced = ({
     hasAIEnhancements,
     validationMode,
     overallScore,
-    validationResult,
+    validateComplete,
+    validateTraditional,
+    enableAI
   };
 };

@@ -21,10 +21,10 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
 
   // Función para generar hash de los datos del formulario
   const generateFormHash = useCallback((formData: CartaPorteFormData): string => {
-    return JSON.stringify(formData).slice(0, 100); // Hash simple basado en JSON
+    return JSON.stringify(formData).slice(0, 100);
   }, []);
 
-  // Memoización inteligente con TTL - removido generic problemático
+  // Memoización inteligente con TTL
   const memoizeWithTTL = useCallback((key: string, computeFn: () => any): any => {
     const cached = memoCache.current.get(key);
     const now = Date.now();
@@ -56,12 +56,12 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
     return throttle(validateFn, finalConfig.throttleDelay);
   }, [finalConfig.throttleDelay]);
 
-  // Optimización de re-renders con shallow comparison - removido generic problemático
+  // Optimización de re-renders con shallow comparison
   const shallowMemo = useCallback((obj: object, deps: any[]): any => {
     return useMemo(() => obj, deps);
   }, []);
 
-  // Función para optimizar listas grandes - simplificado sin generics
+  // Función para optimizar listas grandes
   const optimizeListRendering = useCallback((
     items: any[],
     getKey: (item: any) => string,
@@ -74,14 +74,14 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
     return { batches, totalItems: items.length };
   }, []);
 
-  // Función para lazy loading de componentes pesados - simplificado sin generics
+  // Función para lazy loading de componentes pesados
   const createLazyLoader = useCallback((
     loadFn: () => Promise<any>,
     fallback?: React.ComponentType
   ) => {
     return {
       load: loadFn,
-      fallback: fallback || (() => <div className="animate-pulse">Cargando...</div>)
+      fallback: fallback || (() => React.createElement('div', { className: 'animate-pulse' }, 'Cargando...'))
     };
   }, []);
 

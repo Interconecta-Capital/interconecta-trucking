@@ -6,9 +6,10 @@ import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteInteg
 
 interface UseCartaPorteFormOptions {
   cartaPorteId?: string;
+  enableAI?: boolean;
 }
 
-export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {}) {
+export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
   // Estado del formulario
   const {
     formData,
@@ -27,10 +28,11 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     aiValidation,
     hasAIEnhancements,
     validationMode,
-    overallScore
+    overallScore,
+    validateComplete
   } = useCartaPorteValidationEnhanced({ 
     formData,
-    enableAI: true 
+    enableAI 
   });
 
   // Integración completa con auto-save y sincronización
@@ -84,6 +86,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     hasAIEnhancements,
     validationMode,
     overallScore,
+    validateComplete,
     
     // Auto-save
     clearSavedData,
