@@ -3,7 +3,8 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { usePaises, useViasEntradaSalida, useConfiguracionesAutotransporte } from '@/hooks/useCatalogosSAT';
 
@@ -13,29 +14,38 @@ interface OpcionesEspecialesProps {
 }
 
 export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
-  const { data: paises, isLoading: loadingPaises } = usePaises();
-  const { data: viasEntradaSalida, isLoading: loadingViasEntradaSalida } = useViasEntradaSalida();
-  const { data: configuracionesAuto, isLoading: loadingConfiguraciones } = useConfiguracionesAutotransporte();
+  const { data: paises, isLoading: loadingPaises, error: errorPaises } = usePaises();
+  const { data: viasEntradaSalida, isLoading: loadingViasEntradaSalida, error: errorVias } = useViasEntradaSalida();
+  const { data: configuracionesAuto, isLoading: loadingConfiguraciones, error: errorConfiguraciones } = useConfiguracionesAutotransporte();
 
-  console.log('OpcionesEspeciales - Data loaded:', {
+  console.log('OpcionesEspeciales - Current data:', {
+    entradaSalidaMerc: data.entradaSalidaMerc,
+    viaTransporte: data.viaTransporte,
+    transporteInternacional: data.transporteInternacional,
+    pais_origen_destino: data.pais_origen_destino,
+    via_entrada_salida: data.via_entrada_salida
+  });
+
+  console.log('OpcionesEspeciales - Catalogs loaded:', {
     paises: paises?.length || 0,
     viasEntradaSalida: viasEntradaSalida?.length || 0,
     configuracionesAuto: configuracionesAuto?.length || 0,
-    loadingPaises,
-    loadingViasEntradaSalida,
-    loadingConfiguraciones
+    errors: { errorPaises, errorVias, errorConfiguraciones }
   });
 
   const handleTransporteInternacionalChange = (checked: boolean) => {
     console.log('Transporte internacional changed:', checked);
-    onChange({ 
-      transporteInternacional: checked,
-      // Limpiar campos relacionados si se desactiva
-      ...(checked ? {} : {
-        pais_origen_destino: '',
-        via_entrada_salida: ''
-      })
-    });
+    const updateData: Partial<CartaPorteData> = { 
+      transporteInternacional: checked
+    };
+    
+    // Clear international fields if unchecked
+    if (!checked) {
+      updateData.pais_origen_destino = '';
+      updateData.via_entrada_salida = '';
+    }
+    
+    onChange(updateData);
   };
 
   const handleRegistroIstmoChange = (checked: boolean) => {
@@ -44,22 +54,22 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
   };
 
   const handleEntradaSalidaChange = (value: string) => {
-    console.log('Entrada/Salida changed:', value);
+    console.log('Entrada/Salida changed from', data.entradaSalidaMerc, 'to', value);
     onChange({ entradaSalidaMerc: value });
   };
 
   const handleViaTransporteChange = (value: string) => {
-    console.log('Via transporte changed:', value);
+    console.log('Via transporte changed from', data.viaTransporte, 'to', value);
     onChange({ viaTransporte: value });
   };
 
   const handlePaisOrigenDestinoChange = (value: string) => {
-    console.log('Pais origen/destino changed:', value);
+    console.log('Pais origen/destino changed from', data.pais_origen_destino, 'to', value);
     onChange({ pais_origen_destino: value });
   };
 
   const handleViaEntradaSalidaChange = (value: string) => {
-    console.log('Via entrada/salida changed:', value);
+    console.log('Via entrada/salida changed from', data.via_entrada_salida, 'to', value);
     onChange({ via_entrada_salida: value });
   };
 
@@ -115,6 +125,12 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               Vía de Transporte
               {loadingConfiguraciones && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
             </Label>
+            {errorConfiguraciones && (
+              <Alert variant="destructive" className="mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Error cargando configuraciones de transporte</AlertDescription>
+              </Alert>
+            )}
             <Select 
               value={data.viaTransporte || ''} 
               onValueChange={handleViaTransporteChange}
@@ -153,22 +169,32 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               País de Origen/Destino
               {loadingPaises && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
             </Label>
+            {errorPaises && (
+              <Alert variant="destructive" className="mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Error cargando países</AlertDescription>
+              </Alert>
+            )}
+            {!loadingPaises && (!paises || paises.length === 0) && (
+              <Alert className="mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>No hay países disponibles en el catálogo</AlertDescription>
+              </Alert>
+            )}
             <Select 
               value={data.pais_origen_destino || ''} 
               onValueChange={handlePaisOrigenDestinoChange}
-              disabled={loadingPaises}
+              disabled={loadingPaises || !paises || paises.length === 0}
             >
               <SelectTrigger>
                 <SelectValue placeholder={loadingPaises ? "Cargando..." : "Selecciona un país..."} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {paises && paises.length > 0 ? (
-                  paises.map((pais) => (
-                    <SelectItem key={pais.clave_pais} value={pais.clave_pais}>
-                      {pais.descripcion}
-                    </SelectItem>
-                  ))
-                ) : null}
+                {paises && paises.length > 0 && paises.map((pais) => (
+                  <SelectItem key={pais.clave_pais} value={pais.clave_pais}>
+                    {pais.descripcion}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -178,22 +204,32 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               Vía de Entrada/Salida
               {loadingViasEntradaSalida && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
             </Label>
+            {errorVias && (
+              <Alert variant="destructive" className="mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Error cargando vías de entrada/salida</AlertDescription>
+              </Alert>
+            )}
+            {!loadingViasEntradaSalida && (!viasEntradaSalida || viasEntradaSalida.length === 0) && (
+              <Alert className="mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>No hay vías disponibles en el catálogo</AlertDescription>
+              </Alert>
+            )}
             <Select 
               value={data.via_entrada_salida || ''} 
               onValueChange={handleViaEntradaSalidaChange}
-              disabled={loadingViasEntradaSalida}
+              disabled={loadingViasEntradaSalida || !viasEntradaSalida || viasEntradaSalida.length === 0}
             >
               <SelectTrigger>
                 <SelectValue placeholder={loadingViasEntradaSalida ? "Cargando..." : "Selecciona..."} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {viasEntradaSalida && viasEntradaSalida.length > 0 ? (
-                  viasEntradaSalida.map((via) => (
-                    <SelectItem key={via.clave_via} value={via.clave_via}>
-                      {via.descripcion}
-                    </SelectItem>
-                  ))
-                ) : null}
+                {viasEntradaSalida && viasEntradaSalida.length > 0 && viasEntradaSalida.map((via) => (
+                  <SelectItem key={via.clave_via} value={via.clave_via}>
+                    {via.descripcion}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

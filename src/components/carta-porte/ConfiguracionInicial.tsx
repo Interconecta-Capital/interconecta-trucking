@@ -49,8 +49,25 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
     }
   }, [version, data.cartaPorteVersion, onChange]);
 
+  // Enhanced onChange handler with better logging
+  const handleConfiguracionChange = (newData: Partial<CartaPorteData>) => {
+    console.log('ConfiguracionInicial - Handling change:', {
+      previous: {
+        entradaSalidaMerc: data.entradaSalidaMerc,
+        viaTransporte: data.viaTransporte,
+        transporteInternacional: data.transporteInternacional,
+        pais_origen_destino: data.pais_origen_destino,
+        via_entrada_salida: data.via_entrada_salida
+      },
+      new: newData,
+      merged: { ...data, ...newData }
+    });
+    
+    onChange(newData);
+  };
+
   const handleCargarPlantilla = (plantilla: any) => {
-    onChange({
+    const plantillaData = {
       rfcEmisor: plantilla.rfc_emisor,
       nombreEmisor: plantilla.nombre_emisor,
       rfcReceptor: plantilla.rfc_receptor,
@@ -59,7 +76,10 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       transporteInternacional: plantilla.transporte_internacional,
       registroIstmo: plantilla.registro_istmo,
       cartaPorteVersion: plantilla.carta_porte_version || version
-    });
+    };
+    
+    console.log('Loading plantilla data:', plantillaData);
+    onChange(plantillaData);
     setShowPlantillas(false);
     setTipoCreacion('manual');
   };
@@ -118,7 +138,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       {/* Configuración Principal con CRM Integrado */}
       <ConfiguracionPrincipalMejorada
         data={data}
-        onChange={onChange}
+        onChange={handleConfiguracionChange}
         onNext={onNext}
         isFormValid={isFormValid()}
       />
