@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -58,11 +57,16 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
 
   const handleAISuggestion = (suggestion: any) => {
     if (suggestion.data) {
-      // Apply AI suggestion to form
+      // Apply AI suggestion to form with proper type checking
       Object.entries(suggestion.data).forEach(([key, value]) => {
-        if (key === 'bienes_transp' || key === 'clave_unidad' || key === 'descripcion' || 
-            key === 'cantidad' || key === 'peso_kg' || key === 'valor_mercancia') {
-          form.setValue(key as keyof Mercancia, value);
+        if (key === 'bienes_transp' || key === 'clave_unidad' || key === 'descripcion') {
+          form.setValue(key as keyof Mercancia, String(value));
+        } else if (key === 'cantidad' || key === 'peso_kg' || key === 'valor_mercancia') {
+          form.setValue(key as keyof Mercancia, Number(value) || 0);
+        } else if (key === 'material_peligroso') {
+          form.setValue(key as keyof Mercancia, Boolean(value));
+        } else if (key === 'cve_material_peligroso') {
+          form.setValue(key as keyof Mercancia, String(value));
         }
       });
     }
