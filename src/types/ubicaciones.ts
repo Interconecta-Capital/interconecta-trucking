@@ -1,35 +1,26 @@
 
-import { Coordinates } from '@/services/mapService';
-
 export interface Ubicacion {
-  id?: string;
+  id: string;
   idUbicacion: string;
-  tipoUbicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
-  rfcRemitenteDestinatario: string;
-  nombreRemitenteDestinatario: string;
+  tipoUbicacion: 'Origen' | 'Destino';
+  rfcRemitenteDestinatario?: string;
+  nombreRemitenteDestinatario?: string;
   fechaHoraSalidaLlegada?: string;
   distanciaRecorrida?: number;
-  ordenSecuencia?: number;
-  coordenadas?: Coordinates;
+  coordenadas?: {
+    latitud: number;
+    longitud: number;
+  };
   domicilio: {
     pais: string;
     codigoPostal: string;
     estado: string;
     municipio: string;
-    localidad?: string;
     colonia: string;
     calle: string;
-    numExterior: string;
+    numExterior?: string;
     numInterior?: string;
+    localidad?: string;
     referencia?: string;
   };
-}
-
-export interface UbicacionFrecuente {
-  id: string;
-  nombreUbicacion: string;
-  rfcAsociado: string;
-  domicilio: Ubicacion['domicilio'];
-  coordenadas?: Coordinates;
-  usoCount: number;
 }

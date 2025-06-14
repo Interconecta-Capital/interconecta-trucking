@@ -1,3 +1,4 @@
+
 import { CartaPorteData } from '@/types/cartaPorte';
 
 export const validateCartaPorteData = (data: CartaPorteData): string[] => {
@@ -29,3 +30,41 @@ export const validateUbicaciones = (ubicaciones: any[]): string[] => {
   
   return errors;
 };
+
+export class XMLValidatorSAT {
+  static async validateCartaPorteCompliance(data: CartaPorteData) {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validate basic required fields
+    errors.push(...validateCartaPorteData(data));
+    
+    // Validate ubicaciones
+    if (data.ubicaciones) {
+      errors.push(...validateUbicaciones(data.ubicaciones));
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  static validateXMLStructure(xml: string) {
+    const errors: string[] = [];
+    
+    if (!xml.includes('<?xml')) {
+      errors.push('XML declaration missing');
+    }
+    
+    if (!xml.includes('cfdi:Comprobante')) {
+      errors.push('CFDI Comprobante element missing');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+}

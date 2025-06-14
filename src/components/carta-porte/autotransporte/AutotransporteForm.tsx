@@ -34,6 +34,13 @@ export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) 
     });
   };
 
+  const handleFieldChange = (field: string, value: any) => {
+    onChange({
+      ...data,
+      [field]: value,
+    });
+  };
+
   const handleCargarVehiculo = (vehiculo: any) => {
     onChange({
       ...data,
@@ -128,12 +135,12 @@ export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) 
 
           <VehiculoSection 
             data={data}
-            onChange={handleVehiculoChange}
+            onChange={handleFieldChange}
           />
 
           <SegurosSection
             data={data}
-            onChange={handleVehiculoChange}
+            onChange={handleFieldChange}
           />
 
           <RemolquesList

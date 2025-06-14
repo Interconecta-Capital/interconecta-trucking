@@ -1,5 +1,6 @@
+
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
-import { Ubicacion } from '@/types/ubicaciones';
+import { UbicacionCompleta } from '@/types/cartaPorte';
 
 export class XMLUtils {
   static generarFolio(): string {
@@ -9,25 +10,25 @@ export class XMLUtils {
   }
 
   static obtenerCodigoPostalExpedicion(data: CartaPorteData): string {
-    const origen = data.ubicaciones?.find(u => u.tipoUbicacion === 'Origen');
-    return origen?.domicilio?.codigoPostal || '01000';
+    const origen = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Origen');
+    return origen?.domicilio?.codigo_postal || '01000';
   }
 
   static obtenerCodigoPostalReceptor(data: CartaPorteData): string {
-    const destino = data.ubicaciones?.find(u => u.tipoUbicacion === 'Destino');
-    return destino?.domicilio?.codigoPostal || '01000';
+    const destino = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Destino');
+    return destino?.domicilio?.codigo_postal || '01000';
   }
 
-  static calcularDistanciaTotal(ubicaciones: Ubicacion[]): number {
+  static calcularDistanciaTotal(ubicaciones: UbicacionCompleta[]): number {
     return ubicaciones?.reduce((total, ubicacion) => {
-      return total + (ubicacion.distanciaRecorrida || 0);
+      return total + (ubicacion.distancia_recorrida || 0);
     }, 0) || 0;
   }
 
   static construirAtributosInternacionales(data: CartaPorteData): string {
     let attrs = '';
     if (data.transporteInternacional) {
-      attrs += `EntradaSalidaMerc="${data.entrada_salida_merc || ''}" `;
+      attrs += `EntradaSalidaMerc="${data.entradaSalidaMerc || ''}" `;
       attrs += `PaisOrigenDestino="${data.pais_origen_destino || ''}" `;
       attrs += `ViaEntradaSalida="${data.via_entrada_salida || ''}" `;
     }

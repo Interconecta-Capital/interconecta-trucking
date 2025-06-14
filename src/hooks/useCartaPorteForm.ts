@@ -89,7 +89,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
 
   // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({
-    formData: formDataForValidation, // Use the converted form data
+    formData: formDataForValidation,
     currentCartaPorteId,
     isLoading,
     isCreating: false,
@@ -99,10 +99,29 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
       const cartaPorteData = formDataExtendidoToCartaPorteData({
         ...formData,
         configuracion: data.configuracion,
-        ubicaciones: data.ubicaciones,
+        ubicaciones: data.ubicaciones.map(ub => ({
+          id: ub.id,
+          tipo_ubicacion: ub.tipo === 'origen' ? 'Origen' : 'Destino',
+          id_ubicacion: ub.id,
+          domicilio: {
+            pais: 'México',
+            codigo_postal: ub.codigoPostal,
+            estado: ub.estado,
+            municipio: ub.municipio,
+            colonia: '',
+            calle: ub.direccion,
+            numero_exterior: '',
+          },
+          coordenadas: ub.coordenadas,
+        })),
         mercancias: data.mercancias.map(m => ({
-          ...m,
+          id: m.id,
           bienes_transp: m.claveProdServ || m.descripcion || '',
+          descripcion: m.descripcion,
+          cantidad: m.cantidad,
+          clave_unidad: m.unidadMedida,
+          peso_kg: m.peso,
+          valor_mercancia: m.valor,
         })),
         autotransporte: {
           placa_vm: data.autotransporte.placaVm,
@@ -115,7 +134,22 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
           asegura_med_ambiente: '',
           poliza_med_ambiente: '',
         },
-        figuras: data.figuras,
+        figuras: data.figuras.map(fig => ({
+          id: fig.id,
+          tipo_figura: fig.tipoFigura,
+          rfc_figura: fig.rfc,
+          nombre_figura: fig.nombre,
+          num_licencia: fig.licencia,
+          domicilio: {
+            pais: 'México',
+            codigo_postal: '',
+            estado: '',
+            municipio: '',
+            colonia: '',
+            calle: '',
+            numero_exterior: '',
+          },
+        })),
         tipoCreacion: data.tipoCreacion,
         tipoCfdi: data.tipoCfdi,
         rfcEmisor: data.rfcEmisor,

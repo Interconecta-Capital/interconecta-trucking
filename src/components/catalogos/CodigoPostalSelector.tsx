@@ -1,157 +1,111 @@
 
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw } from 'lucide-react';
-import { useCodigoPostalMexicanoNacional } from '@/hooks/useCodigoPostalMexicanoNacional';
+import { Search, MapPin } from 'lucide-react';
+import { consultarCodigoPostal } from '@/services/catalogosSAT';
 
 interface CodigoPostalSelectorProps {
-  value?: string;
-  onCodigoChange?: (codigo: string) => void;
-  onDatosChange?: (datos: any) => void;
-  label?: string;
+  value: string;
+  onChange: (codigoPostal: string, datos?: any) => void;
+  placeholder?: string;
   required?: boolean;
-  error?: string;
 }
 
-export function CodigoPostalSelector({
-  value = '',
-  onCodigoChange,
-  onDatosChange,
-  label = 'Código Postal',
-  required = false,
-  error
+interface DatosCodigoPostal {
+  estado: string;
+  municipio: string;
+  ciudad?: string;
+  asentamientos?: Array<{
+    nombre: string;
+    tipo: string;
+  }>;
+}
+
+export function CodigoPostalSelector({ 
+  value, 
+  onChange, 
+  placeholder = "Código Postal", 
+  required = false 
 }: CodigoPostalSelectorProps) {
-  const [codigoPostal, setCodigoPostal] = useState(value);
-  const [coloniaSeleccionada, setColoniaSeleccionada] = useState('');
-  
-  const {
-    direccionInfo,
-    loading, 
-    error: errorCodigo, 
-    consultarCodigoPostal 
-  } = useCodigoPostalMexicanoNacional();
+  const [isLoading, setIsLoading] = useState(false);
+  const [datos, setDatos] = useState<DatosCodigoPostal | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [datosCodigo, setDatosCodigo] = useState<any>(null);
-  const [colonias, setColonias] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (codigoPostal && codigoPostal.length === 5) {
-      handleBuscarCodigo();
-    }
-  }, [codigoPostal]);
-
-  const handleBuscarCodigo = async () => {
+  const consultarCP = async (cp: string) => {
+    if (!cp || cp.length !== 5) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const datos = await consultarCodigoPostal(codigoPostal);
-      if (datos) {
-        setDatosCodigo(datos);
+      const resultado = await consultarCodigoPostal(cp);
+      
+      if (resultado && typeof resultado === 'object') {
+        const datosCP: DatosCodigoPostal = {
+          estado: resultado.estado || '',
+          municipio: resultado.municipio || '',
+          ciudad: resultado.ciudad,
+          asentamientos: resultado.asentamientos || []
+        };
         
-        // For now, use mock colonias data
-        const mockColonias = [
-          { colonia: 'Centro', descripcion: 'Centro' },
-          { colonia: 'Norte', descripcion: 'Norte' },
-          { colonia: 'Sur', descripcion: 'Sur' }
-        ];
-        setColonias(mockColonias);
-        
-        if (onDatosChange) {
-          onDatosChange({
-            codigo_postal: codigoPostal,
-            estado: datos.estado || direccionInfo.estado,
-            municipio: datos.municipio || direccionInfo.municipio,
-            ...datos
-          });
-        }
+        setDatos(datosCP);
+        onChange(cp, datosCP);
+      } else {
+        setError('Código postal no encontrado');
+        setDatos(null);
       }
-    } catch (error) {
-      console.error('Error al buscar código postal:', error);
+    } catch (err) {
+      console.error('Error consultando código postal:', err);
+      setError('Error al consultar el código postal');
+      setDatos(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCodigoChange = (newCodigo: string) => {
-    setCodigoPostal(newCodigo);
-    if (onCodigoChange) {
-      onCodigoChange(newCodigo);
-    }
-  };
-
-  const handleColoniaChange = (colonia: string) => {
-    setColoniaSeleccionada(colonia);
-    if (onDatosChange && datosCodigo) {
-      onDatosChange({
-        codigo_postal: codigoPostal,
-        estado: datosCodigo.estado || direccionInfo.estado,
-        municipio: datosCodigo.municipio || direccionInfo.municipio,
-        colonia: colonia,
-        ...datosCodigo
-      });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
+    onChange(newValue);
+    
+    if (newValue.length === 5) {
+      consultarCP(newValue);
+    } else {
+      setDatos(null);
+      setError(null);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="codigo-postal">
-          {label} {required && '*'}
-        </Label>
-        <div className="flex gap-2">
-          <Input
-            id="codigo-postal"
-            value={codigoPostal}
-            onChange={(e) => handleCodigoChange(e.target.value)}
-            placeholder="12345"
-            maxLength={5}
-            className={error ? 'border-red-500' : ''}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={handleBuscarCodigo}
-            disabled={loading || codigoPostal.length !== 5}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+    <div className="space-y-2">
+      <div className="relative">
+        <Input
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          placeholder={placeholder}
+          maxLength={5}
+          required={required}
+          className={`pr-10 ${error ? 'border-red-500' : ''}`}
+        />
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+          {isLoading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+          ) : (
+            <MapPin className="h-4 w-4 text-gray-400" />
+          )}
         </div>
-        {error && (
-          <p className="text-sm text-red-600">{error}</p>
-        )}
-        {errorCodigo && (
-          <p className="text-sm text-red-600">Error al buscar código postal</p>
-        )}
       </div>
-
-      {(datosCodigo || direccionInfo.estado) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Estado</Label>
-            <Input value={datosCodigo?.estado || direccionInfo.estado || ''} readOnly className="bg-gray-50" />
-          </div>
-          <div>
-            <Label>Municipio</Label>
-            <Input value={datosCodigo?.municipio || direccionInfo.municipio || ''} readOnly className="bg-gray-50" />
-          </div>
-        </div>
+      
+      {error && (
+        <p className="text-sm text-red-600">{error}</p>
       )}
-
-      {colonias.length > 0 && (
-        <div>
-          <Label>Colonia</Label>
-          <Select value={coloniaSeleccionada} onValueChange={handleColoniaChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una colonia..." />
-            </SelectTrigger>
-            <SelectContent>
-              {colonias.map((colonia: any, index: number) => (
-                <SelectItem key={index} value={colonia.colonia || colonia.descripcion}>
-                  {colonia.colonia || colonia.descripcion}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      
+      {datos && (
+        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+          <p><strong>Estado:</strong> {datos.estado}</p>
+          <p><strong>Municipio:</strong> {datos.municipio}</p>
+          {datos.ciudad && <p><strong>Ciudad:</strong> {datos.ciudad}</p>}
         </div>
       )}
     </div>

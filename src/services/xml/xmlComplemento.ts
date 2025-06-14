@@ -1,6 +1,5 @@
-
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
-import { Ubicacion } from '@/types/ubicaciones';
+import { UbicacionCompleta } from '@/types/cartaPorte';
 import { XMLUtils } from './xmlUtils';
 
 export class XMLComplementoBuilder {
@@ -11,7 +10,7 @@ export class XMLComplementoBuilder {
   }
 
   private static construirCartaPorte(data: CartaPorteData): string {
-    const distanciaTotal = XMLUtils.calcularDistanciaTotal(data.ubicaciones);
+    const distanciaTotal = XMLUtils.calcularDistanciaTotal(data.ubicaciones || []);
     
     return `<cartaporte31:CartaPorte 
       Version="3.1" 
@@ -19,25 +18,25 @@ export class XMLComplementoBuilder {
       ${data.transporteInternacional ? XMLUtils.construirAtributosInternacionales(data) : ''}
       TotalDistRec="${distanciaTotal}">
       
-      ${this.construirUbicaciones(data.ubicaciones)}
-      ${this.construirMercancias(data.mercancias)}
-      ${this.construirFiguraTransporte(data.figuras)}
+      ${this.construirUbicaciones(data.ubicaciones || [])}
+      ${this.construirMercancias(data.mercancias || [])}
+      ${this.construirFiguraTransporte(data.figuras || [])}
       ${this.construirAutotransporte(data.autotransporte)}
       
     </cartaporte31:CartaPorte>`;
   }
 
-  private static construirUbicaciones(ubicaciones: Ubicacion[]): string {
+  private static construirUbicaciones(ubicaciones: UbicacionCompleta[]): string {
     if (!ubicaciones || ubicaciones.length === 0) return '';
     
     const ubicacionesXML = ubicaciones.map((ubicacion, index) => {
       return `<cartaporte31:Ubicacion
-        TipoUbicacion="${ubicacion.tipoUbicacion}"
-        IDUbicacion="${ubicacion.idUbicacion}"
-        RFCRemitenteDestinatario="${ubicacion.rfcRemitenteDestinatario || ''}"
-        NombreRemitenteDestinatario="${ubicacion.nombreRemitenteDestinatario || ''}"
-        ${ubicacion.fechaHoraSalidaLlegada ? `FechaHoraSalidaLlegada="${ubicacion.fechaHoraSalidaLlegada}"` : ''}
-        ${ubicacion.distanciaRecorrida ? `DistanciaRecorrida="${ubicacion.distanciaRecorrida}"` : ''}>
+        TipoUbicacion="${ubicacion.tipo_ubicacion}"
+        IDUbicacion="${ubicacion.id_ubicacion}"
+        RFCRemitenteDestinatario="${ubicacion.rfc_remitente_destinatario || ''}"
+        NombreRemitenteDestinatario="${ubicacion.nombre_remitente_destinatario || ''}"
+        ${ubicacion.fecha_hora_salida_llegada ? `FechaHoraSalidaLlegada="${ubicacion.fecha_hora_salida_llegada}"` : ''}
+        ${ubicacion.distancia_recorrida ? `DistanciaRecorrida="${ubicacion.distancia_recorrida}"` : ''}>
         
         ${this.construirDomicilio(ubicacion.domicilio)}
         
@@ -54,14 +53,14 @@ export class XMLComplementoBuilder {
     
     return `<cartaporte31:Domicilio
       Calle="${domicilio.calle || ''}"
-      ${domicilio.numExterior ? `NumeroExterior="${domicilio.numExterior}"` : ''}
-      ${domicilio.numInterior ? `NumeroInterior="${domicilio.numInterior}"` : ''}
+      ${domicilio.numero_exterior ? `NumeroExterior="${domicilio.numero_exterior}"` : ''}
+      ${domicilio.numero_interior ? `NumeroInterior="${domicilio.numero_interior}"` : ''}
       Colonia="${domicilio.colonia || ''}"
       Localidad="${domicilio.localidad || ''}"
       Municipio="${domicilio.municipio || ''}"
       Estado="${domicilio.estado || ''}"
       Pais="${domicilio.pais || 'MEX'}"
-      CodigoPostal="${domicilio.codigoPostal || ''}" />`;
+      CodigoPostal="${domicilio.codigo_postal || ''}" />`;
   }
 
   private static construirMercancias(mercancias: any[]): string {
@@ -101,11 +100,11 @@ export class XMLComplementoBuilder {
     const figurasXML = figuras.map((figura, index) => {
       return `<cartaporte31:TiposFigura>
         <cartaporte31:Figura
-          TipoFigura="${figura.tipoFigura}"
-          RFCFigura="${figura.rfcFigura || ''}"
-          NombreFigura="${figura.nombreFigura || ''}"
-          ${figura.numLicencia ? `NumLicencia="${figura.numLicencia}"` : ''}
-          ${figura.residenciaFiscal ? `ResidenciaFiscalFigura="${figura.residenciaFiscal}"` : ''}>
+          TipoFigura="${figura.tipo_figura}"
+          RFCFigura="${figura.rfc_figura || ''}"
+          NombreFigura="${figura.nombre_figura || ''}"
+          ${figura.num_licencia ? `NumLicencia="${figura.num_licencia}"` : ''}
+          ${figura.residencia_fiscal_figura ? `ResidenciaFiscalFigura="${figura.residencia_fiscal_figura}"` : ''}>
           
           ${figura.domicilio ? this.construirDomicilioFigura(figura.domicilio) : ''}
           
@@ -121,12 +120,12 @@ export class XMLComplementoBuilder {
   private static construirDomicilioFigura(domicilio: any): string {
     return `<cartaporte31:Domicilio
       Calle="${domicilio.calle || ''}"
-      ${domicilio.numExterior ? `NumeroExterior="${domicilio.numExterior}"` : ''}
+      ${domicilio.numero_exterior ? `NumeroExterior="${domicilio.numero_exterior}"` : ''}
       Colonia="${domicilio.colonia || ''}"
       Municipio="${domicilio.municipio || ''}"
       Estado="${domicilio.estado || ''}"
       Pais="${domicilio.pais || 'MEX'}"
-      CodigoPostal="${domicilio.codigoPostal || ''}" />`;
+      CodigoPostal="${domicilio.codigo_postal || ''}" />`;
   }
 
   private static construirAutotransporte(autotransporte: any): string {
