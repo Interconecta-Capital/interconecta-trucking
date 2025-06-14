@@ -9,6 +9,7 @@ import { CartaPorteHeader } from './form/CartaPorteHeader';
 import { CartaPorteTabNavigation } from './form/CartaPorteTabNavigation';
 import { CartaPorteTabContent } from './form/CartaPorteTabContent';
 import { CartaPorteCompletionCard } from './form/CartaPorteCompletionCard';
+import { toast } from 'sonner';
 
 export interface CartaPorteData {
   // Configuración inicial
@@ -65,6 +66,8 @@ export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFo
     formDataToCartaPorteData,
     formAutotransporteToData,
     formFigurasToData,
+    createNewCartaPorte,
+    saveCartaPorte,
   } = useCartaPorteFormSimplified({ cartaPorteId });
 
   // Usar hook optimizado para navegación de pestañas
@@ -83,10 +86,12 @@ export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFo
 
   const handleXMLGenerated = useCallback((xml: string) => {
     console.log('XML generado exitosamente', xml.length, 'caracteres');
+    toast.success('XML generado exitosamente');
   }, []);
 
   const handleTimbrado = useCallback((datos: any) => {
     console.log('Carta Porte timbrada exitosamente:', datos);
+    toast.success('Carta Porte timbrada exitosamente');
   }, []);
 
   // Handlers específicos para cada sección
@@ -97,6 +102,28 @@ export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFo
   const handleFigurasChange = useCallback((data: any[]) => {
     updateFormData('figuras', data);
   }, [updateFormData]);
+
+  // Handler para crear nueva carta porte
+  const handleCreateNew = useCallback(async () => {
+    try {
+      await createNewCartaPorte();
+      toast.success('Nueva carta porte creada');
+    } catch (error) {
+      console.error('Error creating carta porte:', error);
+      toast.error('Error al crear la carta porte');
+    }
+  }, [createNewCartaPorte]);
+
+  // Handler para guardar carta porte
+  const handleSave = useCallback(async () => {
+    try {
+      await saveCartaPorte();
+      toast.success('Carta porte guardada');
+    } catch (error) {
+      console.error('Error saving carta porte:', error);
+      toast.error('Error al guardar la carta porte');
+    }
+  }, [saveCartaPorte]);
 
   // Validaciones simplificadas
   const canSaveAsTemplate = useMemo(() => {
