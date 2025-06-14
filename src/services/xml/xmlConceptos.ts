@@ -1,9 +1,9 @@
 
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 export class XMLConceptosBuilder {
   static construirConceptos(data: CartaPorteData): string {
-    const conceptos = data.mercancias.map((mercancia, index) => {
+    const conceptos = data.mercancias?.map((mercancia, index) => {
       return `<cfdi:Concepto 
         ClaveProdServ="${mercancia.bienes_transp || '78101800'}"
         Cantidad="${mercancia.cantidad || 1}"
@@ -12,7 +12,7 @@ export class XMLConceptosBuilder {
         ValorUnitario="0"
         Importe="0"
         ObjetoImp="01" />`;
-    }).join('\n    ');
+    }).join('\n    ') || '';
 
     return `<cfdi:Conceptos>
     ${conceptos}
@@ -36,7 +36,7 @@ export class XMLConceptosBuilder {
   }
 
   private static obtenerCodigoPostalReceptor(data: CartaPorteData): string {
-    const destino = data.ubicaciones?.find(u => u.tipoUbicacion === 'Destino');
-    return destino?.domicilio?.codigoPostal || '01000';
+    const destino = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Destino');
+    return destino?.domicilio?.codigo_postal || '01000';
   }
 }

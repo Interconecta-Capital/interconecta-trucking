@@ -1,4 +1,3 @@
-
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { Ubicacion } from '@/types/ubicaciones';
 
@@ -45,3 +44,26 @@ export class XMLUtils {
     return tipos[tipo] || tipo;
   }
 }
+
+export const getUbicacionOrigen = (data: any) => {
+  const origen = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Origen');
+  return origen?.domicilio?.codigo_postal || '01000';
+};
+
+export const getUbicacionDestino = (data: any) => {
+  const destino = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Destino');
+  return destino?.domicilio?.codigo_postal || '01000';
+};
+
+export const buildComplementoCartaPorte = (data: any): string => {
+  const origen = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Origen');
+  const destino = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Destino');
+  
+  return `<cartaporte31:CartaPorte 
+    Version="3.1"
+    TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
+    EntradaSalidaMerc="${data.entradaSalidaMerc || 'Entrada'}"
+    PaisOrigenDestino="${origen?.domicilio?.pais || 'MEX'}"
+    ViaEntradaSalida="${destino?.domicilio?.pais || 'MEX'}"
+    TotalDistRec="${data.totalDistRec || 0}" />`;
+};

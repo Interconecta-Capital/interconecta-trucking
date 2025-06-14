@@ -89,12 +89,46 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
 
   // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({
-    formData: stableFormDataForValidation, // Use stable data directly instead of formDataForValidation
+    formData: formDataForValidation, // Use the converted form data
     currentCartaPorteId,
     isLoading,
     isCreating: false,
     isUpdating: false,
-    setFormData: stableSetFormData,
+    setFormData: (data) => {
+      // Convert CartaPorteFormData back to CartaPorteData for stableSetFormData
+      const cartaPorteData = formDataExtendidoToCartaPorteData({
+        ...formData,
+        configuracion: data.configuracion,
+        ubicaciones: data.ubicaciones,
+        mercancias: data.mercancias.map(m => ({
+          ...m,
+          bienes_transp: m.claveProdServ || m.descripcion || '',
+        })),
+        autotransporte: {
+          placa_vm: data.autotransporte.placaVm,
+          anio_modelo_vm: new Date().getFullYear(),
+          config_vehicular: data.autotransporte.configuracionVehicular,
+          perm_sct: 'TPAF02',
+          num_permiso_sct: '',
+          asegura_resp_civil: data.autotransporte.seguro.aseguradora,
+          poliza_resp_civil: data.autotransporte.seguro.poliza,
+          asegura_med_ambiente: '',
+          poliza_med_ambiente: '',
+        },
+        figuras: data.figuras,
+        tipoCreacion: data.tipoCreacion,
+        tipoCfdi: data.tipoCfdi,
+        rfcEmisor: data.rfcEmisor,
+        nombreEmisor: data.nombreEmisor,
+        rfcReceptor: data.rfcReceptor,
+        nombreReceptor: data.nombreReceptor,
+        transporteInternacional: data.transporteInternacional,
+        registroIstmo: data.registroIstmo,
+        cartaPorteVersion: data.cartaPorteVersion,
+        cartaPorteId: data.cartaPorteId,
+      });
+      stableSetFormData(cartaPorteData);
+    },
     setCurrentCartaPorteId,
   });
 

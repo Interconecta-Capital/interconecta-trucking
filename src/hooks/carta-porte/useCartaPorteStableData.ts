@@ -70,7 +70,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           ...m,
           bienes_transp: m.bienes_transp || m.descripcion || '',
         })),
-        autotransporte: formData.autotransporte as AutotransporteCompleto || {
+        autotransporte: formData.autotransporte || {
           placa_vm: '',
           anio_modelo_vm: 0,
           config_vehicular: '',
