@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { InfoIcon, Save, AlertTriangle, FileText } from 'lucide-react';
+import { InfoIcon, Save, AlertTriangle, FileText, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ConfiguracionInicial } from './ConfiguracionInicial';
@@ -22,6 +23,16 @@ export interface CartaPorteData {
   entradaSalidaMerc: string;
   viaTransporte: string;
   totalDistRec: number;
+  // Additional fields needed by components
+  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
+  cartaPorteVersion?: string;
+  tipoCfdi?: string;
+  rfcEmisor?: string;
+  nombreEmisor?: string;
+  rfcReceptor?: string;
+  nombreReceptor?: string;
+  registroIstmo?: boolean;
+  mercancias?: any[];
 }
 
 interface CartaPorteFormData {
@@ -46,6 +57,15 @@ export function CartaPorteForm() {
     entradaSalidaMerc: '',
     viaTransporte: '',
     totalDistRec: 0,
+    tipoCreacion: 'manual',
+    cartaPorteVersion: '3.1',
+    tipoCfdi: 'T',
+    rfcEmisor: '',
+    nombreEmisor: '',
+    rfcReceptor: '',
+    nombreReceptor: '',
+    registroIstmo: false,
+    mercancias: [],
   });
   const [ubicaciones, setUbicaciones] = useState<any[]>([]);
   const [mercancias, setMercancias] = useState<any>(null);
@@ -55,6 +75,10 @@ export function CartaPorteForm() {
     config_vehicular: '',
     perm_sct: '',
     num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    asegura_med_ambiente: '',
+    poliza_med_ambiente: '',
     remolques: [],
   });
   const [figuras, setFiguras] = useState<FiguraCompleta[]>([]);
@@ -116,6 +140,11 @@ export function CartaPorteForm() {
     });
   }, [configuracion, ubicaciones, mercancias, autotransporte, figuras, currentStep]);
 
+  // Enhanced onChange handler for configuracion
+  const handleConfiguracionChange = (data: Partial<CartaPorteData>) => {
+    setConfiguracion(prev => ({ ...prev, ...data }));
+  };
+
   const handleGuardarBorrador = async () => {
     await BorradorService.guardarBorradorAutomatico(datosFormulario);
     setUltimoGuardado(new Date());
@@ -140,7 +169,7 @@ export function CartaPorteForm() {
       component: (
         <ConfiguracionInicial
           data={configuracion}
-          onChange={setConfiguracion}
+          onChange={handleConfiguracionChange}
           onNext={() => setCurrentStep(1)}
         />
       ),
