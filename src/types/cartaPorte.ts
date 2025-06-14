@@ -15,11 +15,41 @@ export interface CartaPorteData {
   nombreReceptor?: string;
   registroIstmo?: boolean;
   mercancias?: MercanciaCompleta[];
-  ubicaciones?: any[];
+  ubicaciones?: UbicacionCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
   pais_origen_destino?: string;
   via_entrada_salida?: string;
+  cartaPorteId?: string;
+}
+
+export interface UbicacionCompleta {
+  id: string;
+  tipo_ubicacion: string;
+  id_ubicacion: string;
+  rfc_remitente_destinatario?: string;
+  nombre_remitente_destinatario?: string;
+  fecha_hora_salida_llegada?: string;
+  distancia_recorrida?: number;
+  domicilio: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+    referencia?: string;
+  };
+}
+
+export interface AutotransporteCompleta extends AutotransporteCompleto {
+  // Extend with any additional properties if needed
+}
+
+export interface AutotransporteData extends AutotransporteCompleto {
+  // Alias for compatibility
 }
 
 export interface AutotransporteCompleto {
@@ -98,4 +128,20 @@ export interface MercanciaCompleta {
     alto: number;
     unidad?: string;
   };
+}
+
+// Additional catalog interfaces
+export interface CatalogoEmbalaje {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoCarroceria {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoTipoLicencia {
+  clave: string;
+  descripcion: string;
 }

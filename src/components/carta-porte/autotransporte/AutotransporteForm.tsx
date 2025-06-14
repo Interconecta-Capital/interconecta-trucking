@@ -7,12 +7,13 @@ import { VehiculoSection } from './VehiculoSection';
 import { SegurosSection } from './SegurosSection';
 import { RemolquesList } from './RemolquesList';
 import { VehiculosGuardados } from './VehiculosGuardados';
-import { useAutotransporte, AutotransporteData } from '@/hooks/useAutotransporte';
+import { useAutotransporte } from '@/hooks/useAutotransporte';
 import { useToast } from '@/hooks/use-toast';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface AutotransporteFormProps {
-  data: AutotransporteData;
-  onChange: (data: AutotransporteData) => void;
+  data: AutotransporteCompleto;
+  onChange: (data: AutotransporteCompleto) => void;
 }
 
 export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) {
@@ -26,7 +27,7 @@ export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) 
     cargarVehiculosGuardados();
   }, [cargarVehiculosGuardados]);
 
-  const handleVehiculoChange = (vehiculoData: Partial<AutotransporteData>) => {
+  const handleVehiculoChange = (vehiculoData: Partial<AutotransporteCompleto>) => {
     onChange({
       ...data,
       ...vehiculoData,
@@ -35,6 +36,7 @@ export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) 
 
   const handleCargarVehiculo = (vehiculo: any) => {
     onChange({
+      ...data,
       placa_vm: vehiculo.placa_vm,
       anio_modelo_vm: vehiculo.anio_modelo_vm,
       config_vehicular: vehiculo.config_vehicular,

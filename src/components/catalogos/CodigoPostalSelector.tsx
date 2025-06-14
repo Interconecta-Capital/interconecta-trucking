@@ -2,205 +2,153 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, MapPin, RefreshCw } from 'lucide-react';
-import { useCodigoPostal, useColoniasPorCP } from '@/hooks/useCatalogosReal';
-import { useDebounce } from '@/hooks/useDebounce';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RefreshCw } from 'lucide-react';
+import { useCodigoPostalMexicanoNacional } from '@/hooks/useCodigoPostalMexicanoNacional';
 
 interface CodigoPostalSelectorProps {
-  codigoPostal: string;
-  colonia?: string;
-  onCodigoPostalChange: (codigo: string) => void;
-  onColoniaChange?: (colonia: string) => void;
-  onDatosCompletos?: (datos: any) => void;
-  error?: string;
+  value?: string;
+  onCodigoChange?: (codigo: string) => void;
+  onDatosChange?: (datos: any) => void;
+  label?: string;
   required?: boolean;
-  disabled?: boolean;
-  className?: string;
+  error?: string;
 }
 
 export function CodigoPostalSelector({
-  codigoPostal,
-  colonia,
-  onCodigoPostalChange,
-  onColoniaChange,
-  onDatosCompletos,
-  error,
+  value = '',
+  onCodigoChange,
+  onDatosChange,
+  label = 'Código Postal',
   required = false,
-  disabled = false,
-  className
+  error
 }: CodigoPostalSelectorProps) {
-  const [localCP, setLocalCP] = useState(codigoPostal || '');
-  const [localError, setLocalError] = useState('');
-  
-  const debouncedCP = useDebounce(localCP, 500);
+  const [codigoPostal, setCodigoPostal] = useState(value);
+  const [coloniaSeleccionada, setColoniaSeleccionada] = useState('');
   
   const { 
-    data: cpData, 
-    isLoading: cpLoading, 
-    error: cpError,
-    refetch: refetchCP
-  } = useCodigoPostal(debouncedCP, debouncedCP.length === 5);
+    loading: loadingCodigo, 
+    error: errorCodigo, 
+    buscarCodigo 
+  } = useCodigoPostalMexicanoNacional();
   
   const { 
-    data: colonias = [], 
-    isLoading: coloniasLoading,
-    error: coloniasError,
-    refetch: refetchColonias
-  } = useColoniasPorCP(debouncedCP, debouncedCP.length === 5);
+    loading: loadingColonias, 
+    colonias, 
+    buscarColonias 
+  } = useCodigoPostalMexicanoNacional();
 
-  // Sincronizar con prop externa
+  const [datosCodigo, setDatosCodigo] = useState<any>(null);
+
   useEffect(() => {
-    if (codigoPostal !== localCP) {
-      setLocalCP(codigoPostal || '');
+    if (codigoPostal && codigoPostal.length === 5) {
+      handleBuscarCodigo();
     }
   }, [codigoPostal]);
 
-  // Manejar cambios en el código postal
-  useEffect(() => {
-    if (debouncedCP !== codigoPostal) {
-      onCodigoPostalChange(debouncedCP);
+  const handleBuscarCodigo = async () => {
+    try {
+      const datos = await buscarCodigo(codigoPostal);
+      setDatosCodigo(datos);
+      
+      // Buscar colonias para este código postal
+      await buscarColonias(codigoPostal);
+      
+      if (onDatosChange && datos) {
+        onDatosChange({
+          codigo_postal: codigoPostal,
+          estado: datos.estado,
+          municipio: datos.municipio,
+          ...datos
+        });
+      }
+    } catch (error) {
+      console.error('Error al buscar código postal:', error);
     }
-  }, [debouncedCP, onCodigoPostalChange]);
+  };
 
-  // Manejar datos completos cuando se carga la información
-  useEffect(() => {
-    if (cpData && onDatosCompletos) {
-      onDatosCompletos({
-        codigoPostal: cpData.codigo_postal,
-        estado: cpData.estado_descripcion,
-        estadoClave: cpData.estado_clave,
-        municipio: cpData.municipio_descripcion,
-        municipioClave: cpData.municipio_clave,
-        localidad: cpData.localidad_descripcion,
-        localidadClave: cpData.localidad_clave
+  const handleCodigoChange = (newCodigo: string) => {
+    setCodigoPostal(newCodigo);
+    if (onCodigoChange) {
+      onCodigoChange(newCodigo);
+    }
+  };
+
+  const handleColoniaChange = (colonia: string) => {
+    setColoniaSeleccionada(colonia);
+    if (onDatosChange && datosCodigo) {
+      onDatosChange({
+        codigo_postal: codigoPostal,
+        estado: datosCodigo.estado,
+        municipio: datosCodigo.municipio,
+        colonia: colonia,
+        ...datosCodigo
       });
     }
-  }, [cpData, onDatosCompletos]);
-
-  // Manejar errores
-  useEffect(() => {
-    if (cpError || coloniasError) {
-      setLocalError('Error al validar código postal');
-    } else if (debouncedCP.length === 5 && !cpData && !cpLoading) {
-      setLocalError('Código postal no encontrado');
-    } else {
-      setLocalError('');
-    }
-  }, [cpError, coloniasError, cpData, cpLoading, debouncedCP]);
-
-  const handleCPChange = (value: string) => {
-    // Solo permitir números y máximo 5 dígitos
-    const cleaned = value.replace(/\D/g, '').slice(0, 5);
-    setLocalCP(cleaned);
-    setLocalError('');
-    
-    // Limpiar colonia al cambiar CP
-    if (onColoniaChange) {
-      onColoniaChange('');
-    }
   };
-
-  const handleRefresh = () => {
-    refetchCP();
-    refetchColonias();
-    setLocalError('');
-  };
-
-  const displayError = error || localError;
-  const isLoading = cpLoading || coloniasLoading;
-  const isValidCP = localCP.length === 5 && /^\d{5}$/.test(localCP);
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Código Postal */}
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="codigo_postal" className="flex items-center gap-1">
-          <MapPin className="h-4 w-4" />
-          Código Postal
-          {required && <span className="text-red-500">*</span>}
+        <Label htmlFor="codigo-postal">
+          {label} {required && '*'}
         </Label>
-        
         <div className="flex gap-2">
           <Input
-            id="codigo_postal"
-            type="text"
-            inputMode="numeric"
+            id="codigo-postal"
+            value={codigoPostal}
+            onChange={(e) => handleCodigoChange(e.target.value)}
             placeholder="12345"
-            value={localCP}
-            onChange={(e) => handleCPChange(e.target.value)}
-            className={displayError ? 'border-red-500' : ''}
-            disabled={disabled}
             maxLength={5}
+            className={error ? 'border-red-500' : ''}
           />
-          
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={disabled || !isValidCP}
-            title="Validar código postal"
+            size="icon"
+            onClick={handleBuscarCodigo}
+            disabled={loadingCodigo || codigoPostal.length !== 5}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${loadingCodigo ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-
-        {displayError && (
-          <Alert variant="destructive">
-            <AlertDescription>{displayError}</AlertDescription>
-          </Alert>
+        {error && (
+          <p className="text-sm text-red-600">{error}</p>
+        )}
+        {errorCodigo && (
+          <p className="text-sm text-red-600">Error al buscar código postal</p>
         )}
       </div>
 
-      {/* Información del CP */}
-      {cpData && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="font-medium">Estado:</span> {cpData.estado_descripcion}
-            </div>
-            <div>
-              <span className="font-medium">Municipio:</span> {cpData.municipio_descripcion}
-            </div>
-            <div className="md:col-span-2">
-              <span className="font-medium">Localidad:</span> {cpData.localidad_descripcion}
-            </div>
+      {datosCodigo && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>Estado</Label>
+            <Input value={datosCodigo.estado || ''} readOnly className="bg-gray-50" />
+          </div>
+          <div>
+            <Label>Municipio</Label>
+            <Input value={datosCodigo.municipio || ''} readOnly className="bg-gray-50" />
           </div>
         </div>
       )}
 
-      {/* Selector de Colonias */}
-      {colonias.length > 0 && onColoniaChange && (
-        <div className="space-y-2">
-          <Label htmlFor="colonia">Colonia/Asentamiento</Label>
-          <Select
-            value={colonia || ''}
-            onValueChange={onColoniaChange}
-            disabled={disabled || isLoading}
-          >
+      {colonias.length > 0 && (
+        <div>
+          <Label>Colonia</Label>
+          <Select value={coloniaSeleccionada} onValueChange={handleColoniaChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona una colonia" />
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+              <SelectValue placeholder="Selecciona una colonia..." />
             </SelectTrigger>
             <SelectContent>
-              {colonias.map((col, index) => (
-                <SelectItem key={index} value={col.colonia}>
-                  {col.colonia}
+              {colonias.map((colonia: any, index: number) => (
+                <SelectItem key={index} value={colonia.colonia || colonia.descripcion}>
+                  {colonia.colonia || colonia.descripcion}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
-      )}
-
-      {/* Estado de carga */}
-      {isLoading && isValidCP && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Validando código postal...
         </div>
       )}
     </div>

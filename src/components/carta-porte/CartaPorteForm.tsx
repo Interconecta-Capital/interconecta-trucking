@@ -1,9 +1,13 @@
+
 import React from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { CartaPorteHeader } from './form/CartaPorteHeader';
 import { CartaPorteProgressTracker } from './form/CartaPorteProgressTracker';
 import { CartaPorteStepContent } from './form/CartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './form/CartaPorteAutoSaveIndicator';
+
+// Re-export CartaPorteData for backward compatibility
+export { CartaPorteData } from '@/types/cartaPorte';
 
 interface CartaPorteFormProps {
   cartaPorteId?: string;

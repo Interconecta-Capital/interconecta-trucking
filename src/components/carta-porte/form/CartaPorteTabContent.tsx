@@ -7,7 +7,7 @@ import { MercanciasSection } from '../MercanciasSection';
 import { AutotransporteSection } from '../AutotransporteSection';
 import { FigurasTransporteSection } from '../FigurasTransporteSection';
 import { CartaPorteFormDataExtendido } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
-import { CartaPorteData } from '../CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 // Lazy loading del panel XML
 const XMLGenerationPanel = lazy(() => import('../xml/XMLGenerationPanel').then(module => ({ default: module.XMLGenerationPanel })));
@@ -85,7 +85,7 @@ export function CartaPorteTabContent({
           data={cachedFormData.figuras}
           onChange={handleFigurasChange}
           onPrev={() => handlePrevStep('autotransporte')}
-          onFinish={() => handleNextStep('xml')}
+          onNext={() => handleNextStep('xml')}
         />
       </TabsContent>
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -72,7 +73,13 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     if (borrador && borrador.datosFormulario) {
       setConfiguracion(prev => ({ ...prev, ...borrador.datosFormulario }));
       setBorradorCargado(true);
-      setUltimoGuardado(borrador.ultimaModificacion);
+      // Fix: Convert string to Date properly
+      if (borrador.ultimaModificacion) {
+        const fecha = typeof borrador.ultimaModificacion === 'string' 
+          ? new Date(borrador.ultimaModificacion)
+          : borrador.ultimaModificacion;
+        setUltimoGuardado(fecha);
+      }
     }
   }, []);
 
