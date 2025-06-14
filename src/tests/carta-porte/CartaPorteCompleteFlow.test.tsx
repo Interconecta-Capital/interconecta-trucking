@@ -20,7 +20,7 @@ const mockCartaPorteData: CartaPorteData = {
     {
       id: 'loc1',
       tipo_ubicacion: 'Origen',
-      codigo_postal: '01000',
+      id_ubicacion: 'loc1',
       domicilio: {
         pais: 'México',
         codigo_postal: '01000',
