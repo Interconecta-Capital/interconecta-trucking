@@ -1,6 +1,8 @@
 
 import { useMemo, useRef } from 'react';
-import { useCartaPorteDataConverters } from './useCartaPorteDataConverters';
+import {
+  convertExtendedToCartaPorteData,
+} from './cartaPorteDataConverters';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
@@ -16,8 +18,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
 
   const { cartaPorteDataToFormData } = useCartaPorteMappers();
   
-  // Usar el hook directamente sin condicionales
-  const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
+  // Funciones de conversión de datos
 
   // Crear datos estables para validación usando solo valores primitivos como dependencias
   const stableFormDataForValidation = useMemo((): CartaPorteData => {
@@ -90,7 +91,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     !!formData.autotransporte,
     formData.figuras?.length,
     formData.cartaPorteId,
-    convertExtendedToCartaPorteData, // Ahora es estable al venir directamente del hook
   ]);
 
   // Convertir a formato compatible con validación de forma estable
