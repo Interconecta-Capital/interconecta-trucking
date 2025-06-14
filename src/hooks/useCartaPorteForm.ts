@@ -50,51 +50,57 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   // Converters para datos
   const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
 
-  // Conversión estable sin re-renders - usando useMemo para evitar ciclos infinitos
+  // Estabilizar la conversión de datos - usar JSON.stringify para comparación estable
+  const formDataString = useMemo(() => JSON.stringify(formData), [formData]);
+  
+  // Conversión estable sin re-renders - solo depende del string serializado
   const cartaPorteDataForValidation = useMemo((): CartaPorteData => {
     try {
-      return convertExtendedToCartaPorteData(formData);
+      const parsedFormData = JSON.parse(formDataString);
+      return convertExtendedToCartaPorteData(parsedFormData);
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data for validation:', error);
       // Retornar datos mínimos válidos en caso de error
+      const parsedFormData = JSON.parse(formDataString);
       return {
-        tipoCreacion: formData.tipoCreacion || 'manual',
-        tipoCfdi: formData.tipoCfdi || 'Traslado',
-        rfcEmisor: formData.rfcEmisor || '',
-        nombreEmisor: formData.nombreEmisor || '',
-        rfcReceptor: formData.rfcReceptor || '',
-        nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || false,
-        registroIstmo: formData.registroIstmo || false,
-        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+        tipoCreacion: parsedFormData.tipoCreacion || 'manual',
+        tipoCfdi: parsedFormData.tipoCfdi || 'Traslado',
+        rfcEmisor: parsedFormData.rfcEmisor || '',
+        nombreEmisor: parsedFormData.nombreEmisor || '',
+        rfcReceptor: parsedFormData.rfcReceptor || '',
+        nombreReceptor: parsedFormData.nombreReceptor || '',
+        transporteInternacional: parsedFormData.transporteInternacional || false,
+        registroIstmo: parsedFormData.registroIstmo || false,
+        cartaPorteVersion: parsedFormData.cartaPorteVersion || '3.1',
         ubicaciones: [],
         mercancias: [],
-        autotransporte: formData.autotransporte || {},
+        autotransporte: parsedFormData.autotransporte || {},
         figuras: [],
-        cartaPorteId: formData.cartaPorteId,
+        cartaPorteId: parsedFormData.cartaPorteId,
       };
     }
-  }, [formData, convertExtendedToCartaPorteData]);
+  }, [formDataString, convertExtendedToCartaPorteData]);
 
-  // Convertir a formato compatible con validación
+  // Convertir a formato compatible con validación - estabilizado
   const formDataForValidation = useMemo((): CartaPorteFormData => {
     try {
       return cartaPorteDataToFormData(cartaPorteDataForValidation);
     } catch (error) {
       console.error('[CartaPorteForm] Error converting to form data:', error);
       // Retornar datos mínimos válidos en caso de error
+      const parsedFormData = JSON.parse(formDataString);
       return {
         configuracion: {
-          version: formData.cartaPorteVersion || '3.1',
-          tipoComprobante: formData.tipoCfdi === 'Traslado' ? 'T' : 'I',
+          version: parsedFormData.cartaPorteVersion || '3.1',
+          tipoComprobante: parsedFormData.tipoCfdi === 'Traslado' ? 'T' : 'I',
           emisor: {
-            rfc: formData.rfcEmisor || '',
-            nombre: formData.nombreEmisor || '',
+            rfc: parsedFormData.rfcEmisor || '',
+            nombre: parsedFormData.nombreEmisor || '',
             regimenFiscal: '',
           },
           receptor: {
-            rfc: formData.rfcReceptor || '',
-            nombre: formData.nombreReceptor || '',
+            rfc: parsedFormData.rfcReceptor || '',
+            nombre: parsedFormData.nombreReceptor || '',
           },
         },
         ubicaciones: [],
@@ -109,21 +115,21 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
           },
         },
         figuras: [],
-        tipoCreacion: formData.tipoCreacion || 'manual',
-        tipoCfdi: formData.tipoCfdi || 'Traslado',
-        rfcEmisor: formData.rfcEmisor || '',
-        nombreEmisor: formData.nombreEmisor || '',
-        rfcReceptor: formData.rfcReceptor || '',
-        nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || false,
-        registroIstmo: formData.registroIstmo || false,
-        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
-        cartaPorteId: formData.cartaPorteId,
+        tipoCreacion: parsedFormData.tipoCreacion || 'manual',
+        tipoCfdi: parsedFormData.tipoCfdi || 'Traslado',
+        rfcEmisor: parsedFormData.rfcEmisor || '',
+        nombreEmisor: parsedFormData.nombreEmisor || '',
+        rfcReceptor: parsedFormData.rfcReceptor || '',
+        nombreReceptor: parsedFormData.nombreReceptor || '',
+        transporteInternacional: parsedFormData.transporteInternacional || false,
+        registroIstmo: parsedFormData.registroIstmo || false,
+        cartaPorteVersion: parsedFormData.cartaPorteVersion || '3.1',
+        cartaPorteId: parsedFormData.cartaPorteId,
       };
     }
-  }, [cartaPorteDataForValidation, cartaPorteDataToFormData, formData]);
+  }, [cartaPorteDataForValidation, cartaPorteDataToFormData, formDataString]);
 
-  // Usar validaciones mejoradas con IA
+  // Usar validaciones mejoradas con IA - estabilizado
   const validationResult = useCartaPorteValidationEnhanced({ 
     formData: formDataForValidation,
     enableAI 
@@ -183,7 +189,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     updateFormDataBase({ [section]: data });
   }, [updateFormDataBase]);
 
-  // Mappers específicos para convertir datos del formulario - memoizados
+  // Mappers específicos para convertir datos del formulario - estabilizados
   const formDataToCartaPorteData = useCallback(() => {
     return cartaPorteDataForValidation;
   }, [cartaPorteDataForValidation]);
