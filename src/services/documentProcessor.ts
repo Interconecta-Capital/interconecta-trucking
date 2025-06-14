@@ -1,7 +1,11 @@
 
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?worker&inline';
-GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// Configure PDF.js worker for Vite
+GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url
+).toString();
 
 import Tesseract from 'tesseract.js';
 import { supabase } from '@/integrations/supabase/client';
