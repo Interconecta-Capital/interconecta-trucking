@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Package, AlertTriangle, DollarSign } from 'lucide-react';
-import { useCatalogos } from '@/hooks/useCatalogos';
+import { useBuscarClaveUnidad, useBuscarProductosServicios } from '@/hooks/useCatalogos';
 
 interface MercanciaFormOptimizadaProps {
   mercancia?: any;
@@ -23,7 +23,8 @@ export function MercanciaFormOptimizada({
   onCancel,
   index 
 }: MercanciaFormOptimizadaProps) {
-  const { clavesUnidad, clavesProdServ, loading } = useCatalogos();
+  const { data: clavesUnidad = [], isLoading: loadingUnidades } = useBuscarClaveUnidad('');
+  const { data: clavesProdServ = [], isLoading: loadingProdServ } = useBuscarProductosServicios('');
   
   const [formData, setFormData] = React.useState({
     id: mercancia?.id || `mercancia-${Date.now()}`,
@@ -106,6 +107,14 @@ export function MercanciaFormOptimizada({
     }
     return 0;
   };
+
+  if (loadingUnidades || loadingProdServ) {
+    return (
+      <div className="animate-pulse">
+        <div className="h-96 bg-gray-200 rounded"></div>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full">

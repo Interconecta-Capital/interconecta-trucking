@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Truck, Shield, Plus, Trash2 } from 'lucide-react';
-import { useCatalogos } from '@/hooks/useCatalogos';
+import { useConfiguracionesVehiculo, useTiposPermiso } from '@/hooks/useCatalogos';
 
 interface AutotransporteFormOptimizadoProps {
   data: any;
@@ -20,7 +20,8 @@ interface Remolque {
 }
 
 export function AutotransporteFormOptimizado({ data, onChange }: AutotransporteFormOptimizadoProps) {
-  const { configuracionesVehiculares, tiposPermiso, loading } = useCatalogos();
+  const { data: configuracionesVehiculares = [], isLoading: loadingConfiguraciones } = useConfiguracionesVehiculo();
+  const { data: tiposPermiso = [], isLoading: loadingPermisos } = useTiposPermiso();
   
   const [formData, setFormData] = React.useState({
     placa_vm: data?.placa_vm || '',
@@ -139,6 +140,16 @@ export function AutotransporteFormOptimizado({ data, onChange }: AutotransporteF
     const config = configuracionesVehiculares.find(c => c.clave_config === formData.config_vehicular);
     return config?.remolque || config?.semirremolque;
   };
+
+  if (loadingConfiguraciones || loadingPermisos) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
