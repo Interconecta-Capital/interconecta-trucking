@@ -4,6 +4,7 @@ import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormSta
 import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPorteValidationEnhanced';
 import { useCartaPorteAutoSave } from '@/hooks/carta-porte/useCartaPorteAutoSave';
 import { useCartaPorteSync } from '@/hooks/carta-porte/useCartaPorteSync';
+import { useCartaPorteMappers } from '@/hooks/carta-porte/useCartaPorteMappers';
 
 interface UseCartaPorteFormOptions {
   cartaPorteId?: string;
@@ -13,12 +14,12 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
   // Estado del formulario
   const {
     formData,
+    setFormData,
     currentCartaPorteId,
     setCurrentCartaPorteId,
     isLoading,
     setIsLoading,
     updateFormData: updateFormDataBase,
-    setFormData,
   } = useCartaPorteFormState({ cartaPorteId });
 
   // Usar validaciones mejoradas con IA
@@ -34,17 +35,12 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     enableAI: true 
   });
 
-  // Auto-guardado
-  const { clearSavedData } = useCartaPorteAutoSave({
-    formData,
-    currentCartaPorteId,
-    isLoading,
-    isCreating: false,
-    isUpdating: false,
-  });
-
   // Sincronización con base de datos
-  const { isCreating, isUpdating, updateCartaPorte } = useCartaPorteSync({
+  const { 
+    isCreating, 
+    isUpdating, 
+    updateCartaPorte 
+  } = useCartaPorteSync({
     formData,
     currentCartaPorteId,
     cartaPorteId,
@@ -53,15 +49,24 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     setCurrentCartaPorteId,
   });
 
+  // Auto-guardado
+  const { clearSavedData } = useCartaPorteAutoSave({
+    formData,
+    currentCartaPorteId,
+    isLoading,
+    isCreating,
+    isUpdating,
+  });
+
   // Enhanced updateFormData with AI validation feedback
   const updateFormData = useCallback((section: string, data: any) => {
     console.log('[CartaPorteForm] Updating section:', section);
     
-    updateFormDataBase(section, data);
+    updateFormDataBase({ [section]: data });
     
     // Handle configuration updates with carta porte sync
     if (section === 'configuracion') {
-      const newData = { ...formData, ...data };
+      const newData = { ...formData, configuracion: data };
       updateCartaPorte(newData);
     }
   }, [formData, updateFormDataBase, updateCartaPorte]);

@@ -1,13 +1,29 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { CartaPorteFormData } from './useCartaPorteMappers';
 
-export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPorteId?: string) => {
+interface UseCartaPorteAutoSaveOptions {
+  formData: CartaPorteFormData;
+  currentCartaPorteId?: string;
+  isLoading: boolean;
+  isCreating: boolean;
+  isUpdating: boolean;
+}
+
+export const useCartaPorteAutoSave = ({ 
+  formData, 
+  currentCartaPorteId, 
+  isLoading,
+  isCreating,
+  isUpdating 
+}: UseCartaPorteAutoSaveOptions) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
 
   useEffect(() => {
-    if (!isDirty || !formData) return;
+    // No auto-save if loading or already creating/updating
+    if (isLoading || isCreating || isUpdating || !formData) return;
 
     const currentDataString = JSON.stringify(formData);
     if (currentDataString === lastSavedRef.current) return;
@@ -20,7 +36,7 @@ export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPort
     // Set new timeout for auto-save
     timeoutRef.current = setTimeout(async () => {
       try {
-        if (cartaPorteId) {
+        if (currentCartaPorteId) {
           // Update existing carta porte
           await supabase
             .from('cartas_porte')
@@ -28,7 +44,7 @@ export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPort
               datos_formulario: formData,
               updated_at: new Date().toISOString()
             })
-            .eq('id', cartaPorteId);
+            .eq('id', currentCartaPorteId);
         } else {
           // Create new draft
           const { data } = await supabase
@@ -36,6 +52,8 @@ export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPort
             .insert({
               status: 'borrador',
               datos_formulario: formData,
+              rfc_emisor: formData.rfcEmisor || formData.configuracion.emisor.rfc,
+              rfc_receptor: formData.rfcReceptor || formData.configuracion.receptor.rfc,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -43,7 +61,6 @@ export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPort
             .single();
 
           if (data) {
-            // Store the new ID somewhere accessible
             console.log('Draft saved with ID:', data.id);
           }
         }
@@ -60,7 +77,11 @@ export const useCartaPorteAutoSave = (formData: any, isDirty: boolean, cartaPort
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [formData, isDirty, cartaPorteId]);
+  }, [formData, currentCartaPorteId, isLoading, isCreating, isUpdating]);
 
-  return null; // This hook doesn't return anything, just performs auto-save
+  const clearSavedData = useCallback(() => {
+    lastSavedRef.current = '';
+  }, []);
+
+  return { clearSavedData };
 };

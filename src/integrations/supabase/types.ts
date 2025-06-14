@@ -175,6 +175,7 @@ export type Database = {
       cartas_porte: {
         Row: {
           created_at: string | null
+          datos_formulario: Json | null
           entrada_salida_merc: string | null
           fecha_timbrado: string | null
           folio: string | null
@@ -199,6 +200,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          datos_formulario?: Json | null
           entrada_salida_merc?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
@@ -223,6 +225,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          datos_formulario?: Json | null
           entrada_salida_merc?: string | null
           fecha_timbrado?: string | null
           folio?: string | null

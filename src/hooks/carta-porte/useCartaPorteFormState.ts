@@ -1,64 +1,7 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Dispatch, SetStateAction } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
-
-interface CartaPorteFormData {
-  configuracion: {
-    version: '3.0' | '3.1';
-    tipoComprobante: string;
-    emisor: {
-      rfc: string;
-      nombre: string;
-      regimenFiscal: string;
-    };
-    receptor: {
-      rfc: string;
-      nombre: string;
-    };
-  };
-  ubicaciones: Array<{
-    id: string;
-    tipo: 'origen' | 'destino';
-    direccion: string;
-    codigoPostal: string;
-    estado: string;
-    municipio: string;
-    coordenadas?: {
-      latitud: number;
-      longitud: number;
-    };
-  }>;
-  mercancias: Array<{
-    id: string;
-    descripcion: string;
-    cantidad: number;
-    unidadMedida: string;
-    peso: number;
-    valor: number;
-    claveProdServ?: string;
-  }>;
-  autotransporte: {
-    placaVm: string;
-    configuracionVehicular: string;
-    seguro: {
-      aseguradora: string;
-      poliza: string;
-      vigencia: string;
-    };
-    remolques?: Array<{
-      placa: string;
-      subtipo: string;
-    }>;
-  };
-  figuras: Array<{
-    id: string;
-    tipoFigura: string;
-    rfc: string;
-    nombre: string;
-    licencia?: string;
-    vigenciaLicencia?: string;
-  }>;
-}
+import { CartaPorteFormData, useCartaPorteMappers } from './useCartaPorteMappers';
 
 const initialFormData: CartaPorteFormData = {
   configuracion: {
@@ -85,11 +28,25 @@ const initialFormData: CartaPorteFormData = {
       vigencia: ''
     }
   },
-  figuras: []
+  figuras: [],
+  tipoCreacion: 'manual',
+  tipoCfdi: 'Traslado',
+  rfcEmisor: '',
+  nombreEmisor: '',
+  rfcReceptor: '',
+  nombreReceptor: '',
+  transporteInternacional: false,
+  registroIstmo: false,
+  cartaPorteVersion: '3.1',
 };
 
-export const useCartaPorteFormState = () => {
+interface UseCartaPorteFormStateOptions {
+  cartaPorteId?: string;
+}
+
+export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateOptions = {}) => {
   const [formData, setFormData] = useState<CartaPorteFormData>(initialFormData);
+  const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
   const [currentStep, setCurrentStep] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,9 +96,13 @@ export const useCartaPorteFormState = () => {
 
   return {
     formData,
+    setFormData,
+    currentCartaPorteId,
+    setCurrentCartaPorteId,
     currentStep,
     isDirty,
     isLoading,
+    setIsLoading,
     error,
     updateFormData,
     updateSection,
