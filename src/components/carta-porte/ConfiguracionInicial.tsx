@@ -8,6 +8,7 @@ import { RFCValidator } from '@/utils/rfcValidation';
 import { CartaPorteData } from './CartaPorteForm';
 import { useVersionManager } from '@/hooks/useVersionManager';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
+import { toast } from 'sonner';
 
 interface ConfiguracionInicialProps {
   data: CartaPorteData;
@@ -63,8 +64,18 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
   };
 
   const handleCargarDocumento = (mercancias: any[]) => {
-    // Process extracted goods data and update form
-    console.log('Mercancías extraídas:', mercancias);
+    if (Array.isArray(mercancias) && mercancias.length > 0) {
+      const nuevas = mercancias.map(m => ({
+        id: crypto.randomUUID(),
+        moneda: m.moneda || 'MXN',
+        ...m
+      }));
+      const actuales = Array.isArray(data.mercancias) ? data.mercancias : [];
+      onChange({ mercancias: [...actuales, ...nuevas] });
+      toast.success(`${nuevas.length} mercancías importadas`);
+    } else {
+      toast.info('No se encontraron mercancías en el documento');
+    }
     setShowDocumentUpload(false);
     setTipoCreacion('manual');
   };
