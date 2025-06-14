@@ -124,13 +124,13 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
                 <SelectValue placeholder={loadingConfiguraciones ? "Cargando..." : "Selecciona..."} />
               </SelectTrigger>
               <SelectContent>
-                {configuracionesAuto?.map((config) => (
-                  <SelectItem key={config.clave_config} value={config.clave_config}>
-                    {config.descripcion}
-                  </SelectItem>
-                ))}
-                {/* Fallback options if SAT catalog is not available */}
-                {!loadingConfiguraciones && (!configuracionesAuto || configuracionesAuto.length === 0) && (
+                {configuracionesAuto && configuracionesAuto.length > 0 ? (
+                  configuracionesAuto.map((config) => (
+                    <SelectItem key={config.clave_config} value={config.clave_config}>
+                      {config.descripcion}
+                    </SelectItem>
+                  ))
+                ) : !loadingConfiguraciones ? (
                   <>
                     <SelectItem value="01">Autotransporte</SelectItem>
                     <SelectItem value="02">Marítimo</SelectItem>
@@ -138,7 +138,7 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
                     <SelectItem value="04">Ferroviario</SelectItem>
                     <SelectItem value="05">Ducto</SelectItem>
                   </>
-                )}
+                ) : null}
               </SelectContent>
             </Select>
           </div>
@@ -162,14 +162,13 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
                 <SelectValue placeholder={loadingPaises ? "Cargando..." : "Selecciona un país..."} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {paises?.map((pais) => (
-                  <SelectItem key={pais.clave_pais} value={pais.clave_pais}>
-                    {pais.descripcion}
-                  </SelectItem>
-                ))}
-                {!loadingPaises && (!paises || paises.length === 0) && (
-                  <SelectItem value="" disabled>No hay países disponibles</SelectItem>
-                )}
+                {paises && paises.length > 0 ? (
+                  paises.map((pais) => (
+                    <SelectItem key={pais.clave_pais} value={pais.clave_pais}>
+                      {pais.descripcion}
+                    </SelectItem>
+                  ))
+                ) : null}
               </SelectContent>
             </Select>
           </div>
@@ -188,14 +187,13 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
                 <SelectValue placeholder={loadingViasEntradaSalida ? "Cargando..." : "Selecciona..."} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {viasEntradaSalida?.map((via) => (
-                  <SelectItem key={via.clave_via} value={via.clave_via}>
-                    {via.descripcion}
-                  </SelectItem>
-                ))}
-                {!loadingViasEntradaSalida && (!viasEntradaSalida || viasEntradaSalida.length === 0) && (
-                  <SelectItem value="" disabled>No hay vías disponibles</SelectItem>
-                )}
+                {viasEntradaSalida && viasEntradaSalida.length > 0 ? (
+                  viasEntradaSalida.map((via) => (
+                    <SelectItem key={via.clave_via} value={via.clave_via}>
+                      {via.descripcion}
+                    </SelectItem>
+                  ))
+                ) : null}
               </SelectContent>
             </Select>
           </div>
