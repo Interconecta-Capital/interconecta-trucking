@@ -74,7 +74,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     formFigurasToData,
   } = useCartaPorteForm({ cartaPorteId });
 
-  // Cache optimizado para el formulario
+  // Cache optimizado para el formulario - asegurar tipo correcto
   const cachedFormData = useMemo(() => {
     if (currentCartaPorteId) {
       const cached = cache.getCachedFormData(currentCartaPorteId);

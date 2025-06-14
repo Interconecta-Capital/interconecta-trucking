@@ -11,6 +11,17 @@ interface UseCartaPorteFormOptions {
   enableAI?: boolean;
 }
 
+// Interfaz para validaciones de pasos
+interface StepValidations {
+  [key: string]: boolean;
+  configuracion: boolean;
+  ubicaciones: boolean;
+  mercancias: boolean;
+  autotransporte: boolean;
+  figuras: boolean;
+  xml: boolean;
+}
+
 export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
   // Estado del formulario con tipos extendidos
   const {
@@ -36,7 +47,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
 
   // Usar validaciones mejoradas con IA
   const { 
-    stepValidations, 
+    stepValidations: rawStepValidations, 
     totalProgress,
     aiValidation,
     hasAIEnhancements,
@@ -47,6 +58,16 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     formData: cartaPorteDataForValidation(),
     enableAI 
   });
+
+  // Convertir las validaciones al formato correcto
+  const stepValidations: StepValidations = {
+    configuracion: rawStepValidations.configuracion || false,
+    ubicaciones: rawStepValidations.ubicaciones || false,
+    mercancias: rawStepValidations.mercancias || false,
+    autotransporte: rawStepValidations.autotransporte || false,
+    figuras: rawStepValidations.figuras || false,
+    xml: rawStepValidations.xml || false,
+  };
 
   // Integración completa con auto-save y sincronización
   const {
