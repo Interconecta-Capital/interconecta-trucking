@@ -74,11 +74,12 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     formFigurasToData,
   } = useCartaPorteForm({ cartaPorteId });
 
-  // Cache optimizado para el formulario - asegurar tipo correcto
+  // Cache optimizado para el formulario - asegurar tipo correcto y memoizar
   const cachedFormData = useMemo(() => {
     if (currentCartaPorteId) {
       const cached = cache.getCachedFormData(currentCartaPorteId);
-      return cached || formData;
+      // Asegurar que retornamos el tipo correcto
+      return cached && typeof cached === 'object' ? cached : formData;
     }
     return formData;
   }, [formData, currentCartaPorteId, cache]);
@@ -89,7 +90,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     persistInURL: false,
   });
 
-  // Nuevo handler para aplicar fixes de IA
+  // Nuevo handler para aplicar fixes de IA - memoizar
   const handleApplyAIFix = useCallback((fix: any) => {
     console.log('[CartaPorteForm] Aplicando fix de IA:', fix);
     if (fix.field && fix.suggestedValue) {
@@ -113,7 +114,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     console.log('Carta Porte timbrada exitosamente:', datos);
   }, []);
 
-  // Handlers específicos para cada sección con tipos extendidos
+  // Handlers específicos para cada sección con tipos extendidos - memoizar
   const handleAutotransporteChange = useCallback((data: any) => {
     updateFormData('autotransporte', data);
   }, [updateFormData]);
@@ -124,8 +125,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
   // Memoizar validaciones complejas con cache
   const canSaveAsTemplate = useMemo(() => {
-    return stepValidations.configuracion && cachedFormData.ubicaciones.length > 0;
-  }, [stepValidations.configuracion, cachedFormData.ubicaciones.length]);
+    return stepValidations.configuracion && cachedFormData.ubicaciones?.length > 0;
+  }, [stepValidations.configuracion, cachedFormData.ubicaciones]);
 
   const canGenerateXML = useMemo(() => {
     return Object.entries(stepValidations)
@@ -133,7 +134,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       .every(([, isValid]) => isValid);
   }, [stepValidations]);
 
-  // Convertir formData a CartaPorteData cuando sea necesario - optimizado
+  // Convertir formData a CartaPorteData cuando sea necesario - memoizar
   const cartaPorteData = useMemo(() => {
     return formDataToCartaPorteData();
   }, [formDataToCartaPorteData]);
