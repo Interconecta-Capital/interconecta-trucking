@@ -72,7 +72,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       }));
       const actuales = Array.isArray(data.mercancias) ? data.mercancias : [];
       onChange({ mercancias: [...actuales, ...nuevas] });
-      toast.success(`${nuevas.length} mercancías importadas`);
+      toast.success(`${nuevas.length} mercancías cargadas desde el documento`);
     } else {
       toast.info('No se encontraron mercancías en el documento');
     }
