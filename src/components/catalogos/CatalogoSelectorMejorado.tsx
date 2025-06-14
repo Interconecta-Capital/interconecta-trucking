@@ -72,13 +72,13 @@ export function CatalogoSelectorMejorado({
   
   const productosQuery = useBuscarProductosServicios(debouncedSearch, tipo === 'productos' && queryEnabled);
   const unidadesQuery = useBuscarClaveUnidad(debouncedSearch, tipo === 'unidades' && queryEnabled);
-  const permisosQuery = useTiposPermiso(debouncedSearch, tipo === 'tipos_permiso' && queryEnabled);
-  const configuracionesQuery = useConfiguracionesVehiculo(debouncedSearch, tipo === 'configuraciones_vehiculares' && queryEnabled);
-  const figurasQuery = useFigurasTransporte(debouncedSearch, tipo === 'figuras_transporte' && queryEnabled);
-  const remolquesQuery = useSubtiposRemolque(debouncedSearch, tipo === 'remolques' && queryEnabled);
+  const permisosQuery = useTiposPermiso(debouncedSearch);
+  const configuracionesQuery = useConfiguracionesVehiculo(debouncedSearch);
+  const figurasQuery = useFigurasTransporte(debouncedSearch);
+  const remolquesQuery = useSubtiposRemolque(debouncedSearch);
   const materialesQuery = useBuscarMaterialesPeligrosos(debouncedSearch, tipo === 'materiales_peligrosos' && queryEnabled);
-  const embalajesQuery = useTiposEmbalaje(debouncedSearch, tipo === 'embalajes' && queryEnabled);
-  const estadosQuery = useEstados(debouncedSearch, tipo === 'estados' && queryEnabled);
+  const embalajesQuery = useTiposEmbalaje(debouncedSearch);
+  const estadosQuery = useEstados(debouncedSearch);
 
   // Seleccionar la query correcta
   const currentQuery = useMemo(() => {

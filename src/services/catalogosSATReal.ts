@@ -424,9 +424,15 @@ export class CatalogosSATRealService {
       }
 
       const cpData = data[0];
-      const colonias = cpData.colonias || [];
+      const coloniasData = cpData.colonias;
 
-      const result = colonias.map((colonia: any) => ({
+      // Verificar que colonias sea un array antes de usar map
+      if (!Array.isArray(coloniasData)) {
+        console.warn('Colonias data is not an array:', coloniasData);
+        return [];
+      }
+
+      const result = coloniasData.map((colonia: any) => ({
         colonia: colonia.nombre,
         codigo_postal: codigo,
         estado: cpData.estado,
@@ -506,13 +512,31 @@ export class CatalogosSATRealService {
           return false;
       }
 
-      const { data, error } = await supabase
-        .from(tableName)
-        .select(columnName)
-        .eq(columnName, clave)
-        .single();
+      // Usar una consulta específica para evitar problemas de tipos
+      if (tableName === 'cat_clave_prod_serv_cp') {
+        const { data, error } = await supabase
+          .from('cat_clave_prod_serv_cp')
+          .select('clave_prod_serv')
+          .eq('clave_prod_serv', clave)
+          .single();
+        return !error && !!data;
+      } else if (tableName === 'cat_clave_unidad') {
+        const { data, error } = await supabase
+          .from('cat_clave_unidad')
+          .select('clave_unidad')
+          .eq('clave_unidad', clave)
+          .single();
+        return !error && !!data;
+      } else if (tableName === 'cat_tipo_permiso') {
+        const { data, error } = await supabase
+          .from('cat_tipo_permiso')
+          .select('clave_permiso')
+          .eq('clave_permiso', clave)
+          .single();
+        return !error && !!data;
+      }
 
-      return !error && !!data;
+      return false;
     } catch (error) {
       console.error('Error validating clave:', error);
       return false;
