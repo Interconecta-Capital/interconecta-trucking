@@ -1,230 +1,165 @@
 
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
-
 export interface AIContext {
-  usuario: {
-    historial: any[];
-    preferencias: any;
-    ubicacionesFrec: any[];
-    mercanciasFrec: any[];
+  userId?: string;
+  sessionId: string;
+  currentForm: string;
+  currentField?: string;
+  recentInputs: Array<{
+    field: string;
+    value: any;
+    timestamp: number;
+  }>;
+  userPreferences: {
+    suggestionsEnabled: boolean;
+    autoComplete: boolean;
+    language: string;
   };
-  sesion: {
-    cartasPorteRecientes: any[];
-    patronesUso: any;
-    erroresComunes: any[];
-  };
-  geografico: {
+  businessProfile: {
+    industry: string;
     region: string;
-    estado: string;
-    rutas_frecuentes: any[];
+    commonProducts?: string[];
+    commonRoutes?: string[];
+    preferredVehicles?: string[];
   };
-  temporal: {
-    hora: number;
-    dia_semana: number;
-    temporada: string;
-  };
+  formHistory: Array<{
+    formType: string;
+    completedFields: string[];
+    timestamp: number;
+  }>;
 }
 
-export class AIContextManager {
-  private static instance: AIContextManager;
-  private context: Partial<AIContext> = {};
+class AIContextManager {
+  private context: AIContext;
+  private readonly MAX_RECENT_INPUTS = 20;
+  private readonly MAX_FORM_HISTORY = 10;
 
-  static getInstance(): AIContextManager {
-    if (!AIContextManager.instance) {
-      AIContextManager.instance = new AIContextManager();
-    }
-    return AIContextManager.instance;
+  constructor() {
+    this.context = this.initializeContext();
   }
 
-  async inicializarContexto(userId?: string): Promise<void> {
+  private initializeContext(): AIContext {
+    const saved = localStorage.getItem('ai_context');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.warn('[AIContext] Error loading saved context:', error);
+      }
+    }
+
+    return {
+      sessionId: this.generateSessionId(),
+      currentForm: 'carta_porte',
+      recentInputs: [],
+      userPreferences: {
+        suggestionsEnabled: true,
+        autoComplete: true,
+        language: 'es-MX'
+      },
+      businessProfile: {
+        industry: 'transporte',
+        region: 'mexico'
+      },
+      formHistory: []
+    };
+  }
+
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private saveContext(): void {
     try {
-      // Cargar datos del usuario desde localStorage y base de datos
-      const localContext = this.cargarContextoLocal();
-      const userContext = userId ? await this.cargarContextoUsuario(userId) : null;
-      
-      this.context = {
-        ...localContext,
-        ...userContext,
-        temporal: this.obtenerContextoTemporal(),
-        geografico: await this.obtenerContextoGeografico()
-      };
-
-      console.log('[AIContext] Contexto inicializado:', this.context);
+      localStorage.setItem('ai_context', JSON.stringify(this.context));
     } catch (error) {
-      console.error('[AIContext] Error inicializando contexto:', error);
+      console.warn('[AIContext] Error saving context:', error);
     }
   }
 
-  obtenerContexto(): Partial<AIContext> {
+  actualizarCampoActual(form: string, field?: string): void {
+    this.context.currentForm = form;
+    this.context.currentField = field;
+    this.saveContext();
+  }
+
+  registrarInput(field: string, value: any): void {
+    const input = {
+      field,
+      value,
+      timestamp: Date.now()
+    };
+
+    this.context.recentInputs.unshift(input);
+    
+    // Mantener solo los inputs más recientes
+    if (this.context.recentInputs.length > this.MAX_RECENT_INPUTS) {
+      this.context.recentInputs = this.context.recentInputs.slice(0, this.MAX_RECENT_INPUTS);
+    }
+
+    this.saveContext();
+  }
+
+  actualizarPerfilNegocio(updates: Partial<AIContext['businessProfile']>): void {
+    this.context.businessProfile = {
+      ...this.context.businessProfile,
+      ...updates
+    };
+    this.saveContext();
+  }
+
+  registrarFormularioCompletado(formType: string, completedFields: string[]): void {
+    const formRecord = {
+      formType,
+      completedFields,
+      timestamp: Date.now()
+    };
+
+    this.context.formHistory.unshift(formRecord);
+    
+    if (this.context.formHistory.length > this.MAX_FORM_HISTORY) {
+      this.context.formHistory = this.context.formHistory.slice(0, this.MAX_FORM_HISTORY);
+    }
+
+    this.saveContext();
+  }
+
+  obtenerContextoParaAutocompletado(tipo: string, input: string) {
+    const recentInputsForType = this.context.recentInputs
+      .filter(i => i.field.includes(tipo))
+      .slice(0, 5);
+
+    return {
+      sessionId: this.context.sessionId,
+      currentForm: this.context.currentForm,
+      recentInputs: recentInputsForType,
+      businessProfile: this.context.businessProfile,
+      userPreferences: this.context.userPreferences,
+      input,
+      tipo
+    };
+  }
+
+  obtenerContextoCompleto(): AIContext {
     return { ...this.context };
   }
 
-  obtenerContextoParaAutocompletado(tipo: string, input: string): any {
-    const baseContext = {
-      usuario_id: this.context.usuario?.historial?.length || 0,
-      ubicaciones_frecuentes: this.context.usuario?.ubicacionesFrec || [],
-      mercancias_frecuentes: this.context.usuario?.mercanciasFrec || [],
-      region: this.context.geografico?.region || 'mexico',
-      hora_actual: new Date().getHours()
-    };
-
-    switch (tipo) {
-      case 'direccion':
-        return {
-          ...baseContext,
-          rutas_frecuentes: this.context.geografico?.rutas_frecuentes || [],
-          estado_preferido: this.context.geografico?.estado
-        };
-      
-      case 'mercancia':
-        return {
-          ...baseContext,
-          patrones_uso: this.context.sesion?.patronesUso || {},
-          cartas_recientes: this.context.sesion?.cartasPorteRecientes || []
-        };
-      
-      default:
-        return baseContext;
-    }
-  }
-
   actualizarContextoConAccion(accion: string, datos: any): void {
-    if (!this.context.sesion) {
-      this.context.sesion = { cartasPorteRecientes: [], patronesUso: {}, erroresComunes: [] };
-    }
-
-    // Registrar la acción para aprendizaje
-    const timestamp = Date.now();
-    
-    switch (accion) {
-      case 'ubicacion_agregada':
-        this.agregarUbicacionFrecuente(datos);
-        break;
-      
-      case 'mercancia_agregada':
-        this.agregarMercanciaFrecuente(datos);
-        break;
-      
-      case 'carta_porte_guardada':
-        this.context.sesion.cartasPorteRecientes.unshift({
-          ...datos,
-          timestamp
-        });
-        // Mantener solo las 10 más recientes
-        this.context.sesion.cartasPorteRecientes = this.context.sesion.cartasPorteRecientes.slice(0, 10);
-        break;
-    }
-
-    this.guardarContextoLocal();
+    // Registrar acciones específicas para mejorar las sugerencias futuras
+    this.registrarInput(`action_${accion}`, datos);
   }
 
-  private cargarContextoLocal(): Partial<AIContext> {
-    try {
-      const saved = localStorage.getItem('ai-context');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
+  limpiarContexto(): void {
+    this.context = this.initializeContext();
+    this.saveContext();
   }
 
-  private guardarContextoLocal(): void {
-    try {
-      localStorage.setItem('ai-context', JSON.stringify(this.context));
-    } catch (error) {
-      console.error('[AIContext] Error guardando contexto local:', error);
-    }
-  }
-
-  private async cargarContextoUsuario(userId: string): Promise<Partial<AIContext>> {
-    // Aquí se cargarían datos del usuario desde la base de datos
-    // Por ahora retornamos un contexto básico
-    return {
-      usuario: {
-        historial: [],
-        preferencias: {},
-        ubicacionesFrec: [],
-        mercanciasFrec: []
-      }
+  configurarPreferencias(preferencias: Partial<AIContext['userPreferences']>): void {
+    this.context.userPreferences = {
+      ...this.context.userPreferences,
+      ...preferencias
     };
-  }
-
-  private obtenerContextoTemporal(): AIContext['temporal'] {
-    const now = new Date();
-    return {
-      hora: now.getHours(),
-      dia_semana: now.getDay(),
-      temporada: this.determinarTemporada(now)
-    };
-  }
-
-  private async obtenerContextoGeografico(): Promise<AIContext['geografico']> {
-    // Obtener ubicación aproximada del usuario (sin GPS específico)
-    return {
-      region: 'mexico',
-      estado: 'general',
-      rutas_frecuentes: []
-    };
-  }
-
-  private determinarTemporada(fecha: Date): string {
-    const mes = fecha.getMonth() + 1;
-    if (mes >= 12 || mes <= 2) return 'invierno';
-    if (mes >= 3 && mes <= 5) return 'primavera';
-    if (mes >= 6 && mes <= 8) return 'verano';
-    return 'otoño';
-  }
-
-  private agregarUbicacionFrecuente(ubicacion: any): void {
-    if (!this.context.usuario) {
-      this.context.usuario = { historial: [], preferencias: {}, ubicacionesFrec: [], mercanciasFrec: [] };
-    }
-
-    const existing = this.context.usuario.ubicacionesFrec.find(
-      u => u.rfc === ubicacion.rfc || u.codigoPostal === ubicacion.codigoPostal
-    );
-
-    if (existing) {
-      existing.count = (existing.count || 1) + 1;
-      existing.lastUsed = Date.now();
-    } else {
-      this.context.usuario.ubicacionesFrec.push({
-        ...ubicacion,
-        count: 1,
-        lastUsed: Date.now()
-      });
-    }
-
-    // Mantener solo las 20 más frecuentes
-    this.context.usuario.ubicacionesFrec = this.context.usuario.ubicacionesFrec
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .slice(0, 20);
-  }
-
-  private agregarMercanciaFrecuente(mercancia: any): void {
-    if (!this.context.usuario) {
-      this.context.usuario = { historial: [], preferencias: {}, ubicacionesFrec: [], mercanciasFrec: [] };
-    }
-
-    const existing = this.context.usuario.mercanciasFrec.find(
-      m => m.claveProdServ === mercancia.claveProdServ
-    );
-
-    if (existing) {
-      existing.count = (existing.count || 1) + 1;
-      existing.lastUsed = Date.now();
-    } else {
-      this.context.usuario.mercanciasFrec.push({
-        ...mercancia,
-        count: 1,
-        lastUsed: Date.now()
-      });
-    }
-
-    // Mantener solo las 15 más frecuentes
-    this.context.usuario.mercanciasFrec = this.context.usuario.mercanciasFrec
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .slice(0, 15);
+    this.saveContext();
   }
 }
 
-export const aiContextManager = AIContextManager.getInstance();
+export const aiContextManager = new AIContextManager();

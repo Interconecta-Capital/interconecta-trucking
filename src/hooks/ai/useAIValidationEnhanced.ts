@@ -1,10 +1,9 @@
 
 import { useState, useCallback } from 'react';
 import { geminiCore, AIValidationResult } from '@/services/ai/GeminiCoreService';
-import { useAIContext } from '@/hooks/ai/useAIContext';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteFormData } from '../carta-porte/useCartaPorteMappers';
 
-export interface AIValidationEnhanced {
+interface AIValidationEnhanced {
   isValid: boolean;
   aiSuggestions: Array<{
     type: 'warning' | 'suggestion' | 'error' | 'optimization';
@@ -24,273 +23,183 @@ export interface AIValidationEnhanced {
     confidence: number;
     action?: () => void;
   }>;
-  aiEnhancements: boolean;
   validationScore: number;
 }
 
-export function useAIValidationEnhanced() {
-  const { context } = useAIContext();
-  const [validationCache] = useState(new Map<string, AIValidationEnhanced>());
+export const useAIValidationEnhanced = () => {
+  const [isValidating, setIsValidating] = useState(false);
+  const [lastValidationResult, setLastValidationResult] = useState<AIValidationEnhanced | null>(null);
 
-  const validateConfiguracion = useCallback(async (data: any): Promise<AIValidationResult> => {
+  const validateCompleteWithAI = useCallback(async (formData: CartaPorteFormData): Promise<AIValidationEnhanced> => {
+    setIsValidating(true);
+    
     try {
-      // Validar consistencia de RFCs
-      const result = await geminiCore.validateData(
-        { 
-          rfcEmisor: data.rfcEmisor, 
-          rfcReceptor: data.rfcReceptor,
-          tipoOperacion: data.tipoOperacion 
-        }, 
-        'complete_form', 
-        context
-      );
-      
-      return result;
-    } catch (error) {
-      console.error('Error validating configuracion with AI:', error);
-      return { isValid: true, confidence: 0.5, issues: [] };
-    }
-  }, [context]);
-
-  const validateUbicaciones = useCallback(async (ubicaciones: any[]): Promise<AIValidationResult> => {
-    try {
-      if (ubicaciones.length < 2) {
-        return { 
-          isValid: false, 
-          confidence: 1.0, 
-          issues: [{ 
-            field: 'ubicaciones', 
-            severity: 'critical' as const, 
-            message: 'Se requieren al menos origen y destino' 
-          }] 
-        };
-      }
-
-      // Validar cada ubicación y optimizar ruta
-      const validationPromises = ubicaciones.map(ubicacion => 
-        geminiCore.validateData(ubicacion, 'address', {
-          ...context,
-          addressComponent: ubicacion.tipoUbicacion
-        })
+      // Validación de coherencia general
+      const coherenciaResult = await geminiCore.validateData(
+        formData,
+        'complete_form',
+        {
+          userId: 'current_user',
+          businessContext: {
+            industry: 'transporte',
+            region: 'mexico',
+            vehicleTypes: formData.autotransporte ? [formData.autotransporte.configuracionVehicular] : [],
+            commonRoutes: formData.ubicaciones?.map(u => u.domicilio?.municipio).filter(Boolean) || []
+          }
+        }
       );
 
-      const results = await Promise.all(validationPromises);
-      
-      // Combinar resultados
-      const allIssues = results.flatMap(r => r.issues || []);
-      const avgConfidence = results.reduce((acc, r) => acc + r.confidence, 0) / results.length;
-
-      return {
-        isValid: allIssues.filter(i => i.severity === 'critical').length === 0,
-        confidence: avgConfidence,
-        issues: allIssues
-      };
-    } catch (error) {
-      console.error('Error validating ubicaciones with AI:', error);
-      return { isValid: true, confidence: 0.5, issues: [] };
-    }
-  }, [context]);
-
-  const validateMercancias = useCallback(async (mercancias: any[]): Promise<AIValidationResult> => {
-    try {
-      if (mercancias.length === 0) {
-        return { 
-          isValid: false, 
-          confidence: 1.0, 
-          issues: [{ 
-            field: 'mercancias', 
-            severity: 'critical' as const, 
-            message: 'Se requiere al menos una mercancía' 
-          }] 
-        };
-      }
-
-      const validationPromises = mercancias.map(mercancia => 
-        geminiCore.validateData(mercancia, 'mercancia', {
-          ...context,
-          productCode: mercancia.bienes_transp,
-          unitCode: mercancia.clave_unidad,
-          description: mercancia.descripcion
-        })
-      );
-
-      const results = await Promise.all(validationPromises);
-      
-      const allIssues = results.flatMap(r => r.issues || []);
-      const allAutoFixes = results.flatMap(r => r.autoFixes || []);
-      const avgConfidence = results.reduce((acc, r) => acc + r.confidence, 0) / results.length;
-
-      return {
-        isValid: allIssues.filter(i => i.severity === 'critical').length === 0,
-        confidence: avgConfidence,
-        issues: allIssues,
-        autoFixes: allAutoFixes
-      };
-    } catch (error) {
-      console.error('Error validating mercancias with AI:', error);
-      return { isValid: true, confidence: 0.5, issues: [] };
-    }
-  }, [context]);
-
-  const validateAutotransporte = useCallback(async (autotransporte: any): Promise<AIValidationResult> => {
-    try {
-      if (!autotransporte) {
-        return { 
-          isValid: false, 
-          confidence: 1.0, 
-          issues: [{ 
-            field: 'autotransporte', 
-            severity: 'critical' as const, 
-            message: 'Información de autotransporte requerida' 
-          }] 
-        };
-      }
-
-      return await geminiCore.validateData(autotransporte, 'vehicle', context);
-    } catch (error) {
-      console.error('Error validating autotransporte with AI:', error);
-      return { isValid: true, confidence: 0.5, issues: [] };
-    }
-  }, [context]);
-
-  const validateFiguras = useCallback(async (figuras: any[]): Promise<AIValidationResult> => {
-    try {
-      if (figuras.length === 0) {
-        return { 
-          isValid: false, 
-          confidence: 1.0, 
-          issues: [{ 
-            field: 'figuras', 
-            severity: 'critical' as const, 
-            message: 'Se requiere al menos una figura de transporte' 
-          }] 
-        };
-      }
-
-      // Validar que haya al menos un operador
-      const hasOperator = figuras.some(f => f.tipo_figura === '01');
-      if (!hasOperator) {
-        return {
-          isValid: false,
-          confidence: 0.9,
-          issues: [{
-            field: 'figuras',
-            severity: 'high' as const,
-            message: 'Se recomienda incluir al menos un operador (tipo 01)'
-          }]
-        };
-      }
-
-      return { isValid: true, confidence: 0.8, issues: [] };
-    } catch (error) {
-      console.error('Error validating figuras with AI:', error);
-      return { isValid: true, confidence: 0.5, issues: [] };
-    }
-  }, [context]);
-
-  const validateCompleteWithAI = useCallback(async (formData: CartaPorteData): Promise<AIValidationEnhanced> => {
-    const cacheKey = JSON.stringify({
-      rfcs: [formData.rfcEmisor, formData.rfcReceptor],
-      ubicacionesCount: formData.ubicaciones?.length || 0,
-      mercanciasCount: formData.mercancias?.length || 0,
-      hasAutotransporte: !!formData.autotransporte,
-      figurasCount: formData.figuras?.length || 0
-    });
-
-    // Check cache first
-    const cached = validationCache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      const [
-        configResult,
-        ubicacionesResult,
-        mercanciasResult,
-        autotransporteResult,
-        figurasResult
-      ] = await Promise.all([
-        validateConfiguracion(formData),
+      // Validaciones específicas por sección
+      const [ubicacionesValidation, mercanciasValidation, autotransporteValidation] = await Promise.all([
         validateUbicaciones(formData.ubicaciones || []),
         validateMercancias(formData.mercancias || []),
-        validateAutotransporte(formData.autotransporte),
-        validateFiguras(formData.figuras || [])
+        validateAutotransporte(formData.autotransporte)
       ]);
 
-      // Consolidar resultados
-      const allIssues = [
-        ...(configResult.issues || []),
-        ...(ubicacionesResult.issues || []),
-        ...(mercanciasResult.issues || []),
-        ...(autotransporteResult.issues || []),
-        ...(figurasResult.issues || [])
-      ];
-
-      const allAutoFixes = [
-        ...(configResult.autoFixes || []),
-        ...(mercanciasResult.autoFixes || [])
-      ];
-
-      const criticalIssues = allIssues.filter(i => i.severity === 'critical');
-      const isValid = criticalIssues.length === 0;
-
-      // Calcular score de validación
-      const baseScore = isValid ? 80 : 40;
-      const bonusScore = Math.min(20, allAutoFixes.length * 5);
-      const validationScore = Math.min(100, baseScore + bonusScore);
-
-      // Convertir issues a formato UI
-      const aiSuggestions = allIssues.map(issue => ({
-        type: issue.severity === 'critical' ? 'error' as const : 
-              issue.severity === 'high' ? 'warning' as const : 'suggestion' as const,
-        title: `${issue.field.toUpperCase()}: ${issue.severity.toUpperCase()}`,
-        message: issue.message,
-        confidence: 0.8,
-        autoFix: issue.suggestion ? () => console.log('Auto-fix:', issue.suggestion) : undefined
-      }));
-
-      const aiWarnings = allIssues.filter(i => i.severity !== 'low');
-
-      const predictiveAlerts = allAutoFixes.map(fix => ({
-        field: fix.field,
-        prediction: `Sugerencia: ${fix.suggestedValue}`,
-        confidence: fix.confidence,
-        action: () => console.log('Apply fix:', fix)
-      }));
-
-      const result: AIValidationEnhanced = {
-        isValid,
-        aiSuggestions,
-        aiWarnings,
-        predictiveAlerts,
-        aiEnhancements: true,
-        validationScore
+      // Combinar todos los resultados
+      const combinedResult: AIValidationEnhanced = {
+        isValid: coherenciaResult.isValid && ubicacionesValidation.isValid && mercanciasValidation.isValid && autotransporteValidation.isValid,
+        aiSuggestions: [
+          ...mapIssuestoSuggestions(coherenciaResult.issues),
+          ...mapIssuestoSuggestions(ubicacionesValidation.issues),
+          ...mapIssuestoSuggestions(mercanciasValidation.issues),
+          ...mapIssuestoSuggestions(autotransporteValidation.issues)
+        ],
+        aiWarnings: [
+          ...mapIssuesToWarnings(coherenciaResult.issues),
+          ...mapIssuesToWarnings(ubicacionesValidation.issues),
+          ...mapIssuesToWarnings(mercanciasValidation.issues),
+          ...mapIssuesToWarnings(autotransporteValidation.issues)
+        ],
+        predictiveAlerts: await generatePredictiveAlerts(formData),
+        validationScore: calculateValidationScore([coherenciaResult, ubicacionesValidation, mercanciasValidation, autotransporteValidation])
       };
 
-      // Cache result
-      validationCache.set(cacheKey, result);
-
-      return result;
+      setLastValidationResult(combinedResult);
+      return combinedResult;
     } catch (error) {
-      console.error('Error in comprehensive AI validation:', error);
-      return {
+      console.error('[AIValidationEnhanced] Error:', error);
+      
+      // Fallback result
+      const fallbackResult: AIValidationEnhanced = {
         isValid: true,
         aiSuggestions: [],
         aiWarnings: [],
         predictiveAlerts: [],
-        aiEnhancements: false,
-        validationScore: 50
+        validationScore: 75
       };
+      
+      setLastValidationResult(fallbackResult);
+      return fallbackResult;
+    } finally {
+      setIsValidating(false);
     }
-  }, [validateConfiguracion, validateUbicaciones, validateMercancias, validateAutotransporte, validateFiguras, validationCache]);
+  }, []);
+
+  const validateUbicaciones = async (ubicaciones: any[]): Promise<AIValidationResult> => {
+    try {
+      return await geminiCore.validateData(ubicaciones, 'address', {
+        category: 'ubicaciones_carta_porte',
+        businessContext: { region: 'mexico' }
+      });
+    } catch (error) {
+      return { isValid: true, confidence: 0.5, issues: [] };
+    }
+  };
+
+  const validateMercancias = async (mercancias: any[]): Promise<AIValidationResult> => {
+    try {
+      return await geminiCore.validateData(mercancias, 'mercancia', {
+        category: 'mercancias_carta_porte',
+        businessContext: { industry: 'transporte' }
+      });
+    } catch (error) {
+      return { isValid: true, confidence: 0.5, issues: [] };
+    }
+  };
+
+  const validateAutotransporte = async (autotransporte: any): Promise<AIValidationResult> => {
+    try {
+      return await geminiCore.validateData(autotransporte, 'vehicle', {
+        category: 'autotransporte_carta_porte',
+        businessContext: { industry: 'transporte', region: 'mexico' }
+      });
+    } catch (error) {
+      return { isValid: true, confidence: 0.5, issues: [] };
+    }
+  };
+
+  const mapIssuestoSuggestions = (issues: any[]): AIValidationEnhanced['aiSuggestions'] => {
+    return issues.map(issue => ({
+      type: issue.severity === 'critical' ? 'error' : issue.severity === 'high' ? 'warning' : 'suggestion',
+      title: `${issue.field}: ${issue.severity}`,
+      message: issue.message,
+      confidence: 0.8
+    }));
+  };
+
+  const mapIssuesToWarnings = (issues: any[]): AIValidationEnhanced['aiWarnings'] => {
+    return issues.map(issue => ({
+      field: issue.field,
+      message: issue.message,
+      severity: issue.severity
+    }));
+  };
+
+  const generatePredictiveAlerts = async (formData: CartaPorteFormData): Promise<AIValidationEnhanced['predictiveAlerts']> => {
+    try {
+      // Analizar patrones y generar alertas predictivas
+      const alerts: AIValidationEnhanced['predictiveAlerts'] = [];
+
+      // Ejemplo: Predecir problemas de peso vs configuración vehicular
+      if (formData.mercancias && formData.autotransporte) {
+        const pesoTotal = formData.mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0);
+        const configVehicular = formData.autotransporte.configuracionVehicular;
+
+        if (pesoTotal > 10000 && configVehicular === 'VL') {
+          alerts.push({
+            field: 'autotransporte.configuracionVehicular',
+            prediction: 'El peso total de mercancías puede exceder la capacidad de un vehículo ligero',
+            confidence: 0.85
+          });
+        }
+      }
+
+      // Ejemplo: Validar coherencia de ubicaciones
+      if (formData.ubicaciones && formData.ubicaciones.length >= 2) {
+        const estados = formData.ubicaciones.map(u => u.domicilio?.estado).filter(Boolean);
+        const estadosUnicos = new Set(estados);
+
+        if (estadosUnicos.size > 3) {
+          alerts.push({
+            field: 'ubicaciones',
+            prediction: 'Ruta con muchos estados diferentes puede requerir permisos especiales',
+            confidence: 0.75
+          });
+        }
+      }
+
+      return alerts;
+    } catch (error) {
+      console.error('[PredictiveAlerts] Error:', error);
+      return [];
+    }
+  };
+
+  const calculateValidationScore = (results: AIValidationResult[]): number => {
+    const totalIssues = results.reduce((sum, result) => sum + result.issues.length, 0);
+    const averageConfidence = results.reduce((sum, result) => sum + result.confidence, 0) / results.length;
+    
+    // Score basado en cantidad de issues y confianza promedio
+    const issuesPenalty = Math.min(totalIssues * 5, 30); // Máximo 30 puntos de penalización
+    const baseScore = averageConfidence * 100;
+    
+    return Math.max(0, Math.min(100, baseScore - issuesPenalty));
+  };
 
   return {
     validateCompleteWithAI,
-    validateConfiguracion,
-    validateUbicaciones,
-    validateMercancias,
-    validateAutotransporte,
-    validateFiguras
+    isValidating,
+    lastValidationResult
   };
-}
+};

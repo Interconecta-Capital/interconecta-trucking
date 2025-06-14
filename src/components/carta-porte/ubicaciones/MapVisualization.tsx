@@ -5,57 +5,43 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MapPin, Route, Maximize2, Minimize2, AlertCircle } from 'lucide-react';
-import { Ubicacion } from '@/hooks/useUbicaciones';
-import { Coordinates } from '@/services/mapService';
-
-// Get token from environment variables
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
+import { MapPin, AlertTriangle } from 'lucide-react';
 
 interface MapVisualizationProps {
-  ubicaciones: Ubicacion[];
-  ruta?: {
-    geometry: any;
-    distance: number;
-    duration: number;
-  };
-  className?: string;
-  height?: string;
+  ubicaciones: any[];
+  rutaCalculada?: any;
+  isVisible: boolean;
 }
 
-export function MapVisualization({ 
-  ubicaciones, 
-  ruta, 
-  className = "", 
-  height = "400px" 
-}: MapVisualizationProps) {
+export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapVisualizationProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMapReady, setIsMapReady] = useState(false);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [tokenConfigured, setTokenConfigured] = useState(false);
 
   // Check if Mapbox token is configured
-  const isConfigured = MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== 'your-mapbox-token-here';
-
   useEffect(() => {
-    if (!mapContainer.current || map.current || !isConfigured) return;
+    const token = import.meta.env.VITE_MAPBOX_TOKEN || localStorage.getItem('mapbox_token') || '';
+    if (token && token !== 'your-mapbox-token-here') {
+      setMapboxToken(token);
+      setTokenConfigured(true);
+    }
+  }, []);
 
-    // Initialize Mapbox
-    mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+  // Initialize map when token is available
+  useEffect(() => {
+    if (!isVisible || !tokenConfigured || !mapContainer.current || map.current) return;
+
+    mapboxgl.accessToken = mapboxToken;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-99.1332, 19.4326], // Ciudad de México por defecto
-      zoom: 6
+      center: [-99.1332, 19.4326], // Mexico City default
+      zoom: 10
     });
 
-    // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    map.current.on('load', () => {
-      setIsMapReady(true);
-    });
 
     return () => {
       if (map.current) {
@@ -63,184 +49,178 @@ export function MapVisualization({
         map.current = null;
       }
     };
-  }, [isConfigured]);
+  }, [isVisible, tokenConfigured, mapboxToken]);
 
-  // Actualizar marcadores cuando cambien las ubicaciones
+  // Add markers for ubicaciones
   useEffect(() => {
-    if (!map.current || !isMapReady || ubicaciones.length === 0) return;
+    if (!map.current || !tokenConfigured) return;
 
-    // Limpiar marcadores existentes
+    // Clear existing markers
     const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
     existingMarkers.forEach(marker => marker.remove());
 
-    // Agregar nuevos marcadores
     ubicaciones.forEach((ubicacion, index) => {
-      // Usar coordenadas si están disponibles, sino usar coordenadas por defecto
-      const coords: Coordinates = ubicacion.coordenadas || { 
-        lat: 19.4326 + index * 0.1, 
-        lng: -99.1332 + index * 0.1 
-      };
+      if (ubicacion.coordenadas) {
+        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+          `<div>
+            <h4>${ubicacion.nombreRemitenteDestinatario}</h4>
+            <p>${ubicacion.domicilio.calle} ${ubicacion.domicilio.numExterior}</p>
+            <p>${ubicacion.domicilio.municipio}, ${ubicacion.domicilio.estado}</p>
+          </div>`
+        );
 
-      // Crear elemento personalizado para el marcador
-      const el = document.createElement('div');
-      el.className = 'custom-marker';
-      el.style.backgroundColor = ubicacion.tipoUbicacion === 'Origen' ? '#10b981' : 
-                                ubicacion.tipoUbicacion === 'Destino' ? '#ef4444' : '#3b82f6';
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-
-      // Crear popup
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div class="p-2">
-          <h4 class="font-semibold">${ubicacion.tipoUbicacion}</h4>
-          <p class="text-sm">${ubicacion.nombreRemitenteDestinatario}</p>
-          <p class="text-xs text-gray-600">
-            ${ubicacion.domicilio.calle} ${ubicacion.domicilio.numExterior}<br>
-            ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}
-          </p>
-        </div>
-      `);
-
-      // Agregar marcador al mapa
-      new mapboxgl.Marker(el)
-        .setLngLat([coords.lng, coords.lat])
-        .setPopup(popup)
-        .addTo(map.current!);
+        new mapboxgl.Marker({ color: index === 0 ? '#22c55e' : index === ubicaciones.length - 1 ? '#ef4444' : '#3b82f6' })
+          .setLngLat([ubicacion.coordenadas.lng, ubicacion.coordenadas.lat])
+          .setPopup(popup)
+          .addTo(map.current!);
+      }
     });
 
-    // Ajustar vista para mostrar todos los marcadores
-    if (ubicaciones.length > 1) {
-      const bounds = new mapboxgl.LngLatBounds();
-      ubicaciones.forEach((ubicacion, index) => {
-        const coords: Coordinates = ubicacion.coordenadas || { 
-          lat: 19.4326 + index * 0.1, 
-          lng: -99.1332 + index * 0.1 
-        };
-        bounds.extend([coords.lng, coords.lat]);
-      });
-      map.current.fitBounds(bounds, { padding: 50 });
-    }
-  }, [ubicaciones, isMapReady]);
+    // Fit map to show all markers
+    if (ubicaciones.length > 0) {
+      const coordinates = ubicaciones
+        .filter(u => u.coordenadas)
+        .map(u => [u.coordenadas.lng, u.coordenadas.lat]);
 
-  // Mostrar ruta cuando esté disponible
+      if (coordinates.length > 1) {
+        const bounds = coordinates.reduce((bounds, coord) => {
+          return bounds.extend(coord as mapboxgl.LngLatLike);
+        }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+        map.current.fitBounds(bounds, { padding: 50 });
+      }
+    }
+  }, [ubicaciones, tokenConfigured]);
+
+  // Draw route if available
   useEffect(() => {
-    if (!map.current || !isMapReady || !ruta) return;
+    if (!map.current || !rutaCalculada || !tokenConfigured) return;
 
-    // Agregar fuente de la ruta
-    if (map.current.getSource('route')) {
-      map.current.removeLayer('route');
-      map.current.removeSource('route');
+    map.current.on('load', () => {
+      if (rutaCalculada.geometry) {
+        if (map.current!.getSource('route')) {
+          map.current!.removeLayer('route');
+          map.current!.removeSource('route');
+        }
+
+        map.current!.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: rutaCalculada.geometry
+          }
+        });
+
+        map.current!.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#3b82f6',
+            'line-width': 5,
+            'line-opacity': 0.75
+          }
+        });
+      }
+    });
+  }, [rutaCalculada, tokenConfigured]);
+
+  const handleTokenSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const token = formData.get('token') as string;
+    
+    if (token) {
+      localStorage.setItem('mapbox_token', token);
+      setMapboxToken(token);
+      setTokenConfigured(true);
     }
-
-    map.current.addSource('route', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        properties: {},
-        geometry: ruta.geometry
-      }
-    });
-
-    // Agregar capa de la ruta
-    map.current.addLayer({
-      id: 'route',
-      type: 'line',
-      source: 'route',
-      layout: {
-        'line-join': 'round',
-        'line-cap': 'round'
-      },
-      paint: {
-        'line-color': '#3b82f6',
-        'line-width': 4,
-        'line-opacity': 0.8
-      }
-    });
-  }, [ruta, isMapReady]);
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
   };
 
-  // Show configuration message if token is not set
-  if (!isConfigured) {
+  if (!isVisible) return null;
+
+  if (!tokenConfigured) {
     return (
-      <Card className={className}>
-        <CardContent className="p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Configuración de Mapbox
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <Alert>
-            <AlertCircle className="h-4 w-4" />
+            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">Configuración de Mapbox requerida</p>
-                <p className="text-sm">
-                  Para utilizar las funcionalidades de mapas, necesitas configurar tu token de Mapbox.
-                </p>
-                <ol className="text-sm list-decimal list-inside space-y-1">
-                  <li>Ve a <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">mapbox.com</a> y crea una cuenta</li>
-                  <li>Obtén tu token público en el dashboard</li>
-                  <li>Agrega el token como variable de entorno <code className="bg-gray-100 px-1 rounded">VITE_MAPBOX_TOKEN</code></li>
-                </ol>
-              </div>
+              Para visualizar el mapa y las rutas, necesitas configurar tu token de Mapbox.
+              Puedes obtenerlo gratis en{' '}
+              <a 
+                href="https://mapbox.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                mapbox.com
+              </a>
             </AlertDescription>
           </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (ubicaciones.length === 0) {
-    return (
-      <Card className={`${className} border-dashed`}>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>Agrega ubicaciones para ver el mapa</p>
+          
+          <form onSubmit={handleTokenSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="token" className="block text-sm font-medium mb-2">
+                Token de Mapbox (público)
+              </label>
+              <input
+                type="text"
+                name="token"
+                id="token"
+                placeholder="pk.eyJ1IjoibXl1c2VybmFtZSIsImEiOiJjazE..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <Button type="submit">
+              Configurar Mapbox
+            </Button>
+          </form>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={`${className} ${isFullscreen ? 'fixed inset-4 z-50' : ''}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <Route className="h-5 w-5" />
-            <span>Visualización de Ruta</span>
-          </CardTitle>
-          
-          <div className="flex items-center space-x-2">
-            {ruta && (
-              <div className="text-sm text-muted-foreground">
-                <span className="font-medium">{ruta.distance} km</span>
-                <span className="mx-2">•</span>
-                <span>{ruta.duration} min</span>
-              </div>
-            )}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleFullscreen}
-            >
-              {isFullscreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
+          Mapa de Ruta
+        </CardTitle>
       </CardHeader>
-      
-      <CardContent className="p-0">
+      <CardContent>
         <div 
           ref={mapContainer} 
-          style={{ height: isFullscreen ? 'calc(100vh - 120px)' : height }}
-          className="w-full rounded-b-lg"
+          className="w-full h-96 rounded-lg border"
+          style={{ minHeight: '400px' }}
         />
+        {rutaCalculada && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Distancia Total:</span>
+                <span className="ml-2 font-medium">{rutaCalculada.distance} km</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Tiempo Estimado:</span>
+                <span className="ml-2 font-medium">{rutaCalculada.duration} min</span>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
