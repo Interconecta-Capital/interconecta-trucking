@@ -1,299 +1,252 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { SmartAddressInput } from '@/components/ai/SmartAddressInput';
-import { AutocompletedInput } from '@/components/ai/AutocompletedInput';
-import { useSmartAutocomplete } from '@/hooks/ai/useSmartAutocomplete';
-import { RFCValidator } from '@/utils/rfcValidation';
-import { MapPin, User, Save, X, Building } from 'lucide-react';
+import { EnhancedAutocompleteInput } from '@/components/ai/EnhancedAutocompleteInput';
+import { useAIContext } from '@/hooks/ai/useAIContext';
+import { useUbicacionForm } from '@/hooks/useUbicacionForm';
+import { UbicacionFrecuente } from '@/hooks/useUbicaciones';
+import { UbicacionFormHeader } from './UbicacionFormHeader';
+import { UbicacionesFrecuentesCard } from './UbicacionesFrecuentesCard';
+import { UbicacionBasicInfo } from './UbicacionBasicInfo';
+import { Save, X } from 'lucide-react';
 
 interface SmartUbicacionFormProps {
   ubicacion?: any;
   onSave: (ubicacion: any) => void;
   onCancel: () => void;
-  isLoading?: boolean;
+  onSaveToFavorites?: (ubicacion: Omit<UbicacionFrecuente, 'id' | 'usoCount'>) => void;
+  generarId: (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => string;
+  ubicacionesFrecuentes?: UbicacionFrecuente[];
 }
 
 export function SmartUbicacionForm({ 
   ubicacion, 
   onSave, 
   onCancel, 
-  isLoading = false 
+  onSaveToFavorites,
+  generarId,
+  ubicacionesFrecuentes = []
 }: SmartUbicacionFormProps) {
-  const [formData, setFormData] = React.useState({
-    tipoUbicacion: 'Origen',
-    rfcRemitenteDestinatario: '',
-    nombreRemitenteDestinatario: '',
-    fechaHoraSalidaLlegada: '',
-    domicilio: {
-      pais: 'MEX',
-      codigoPostal: '',
-      estado: '',
-      municipio: '',
-      localidad: '',
-      colonia: '',
-      calle: '',
-      numExterior: '',
-      numInterior: '',
-      referencia: ''
-    },
-    ...ubicacion
-  });
-
+  const { context, addUserPattern } = useAIContext();
+  
   const {
-    suggestions: rfcSuggestions,
-    loading: rfcLoading,
-    getSuggestions: getRFCSuggestions
-  } = useSmartAutocomplete({
-    tipo: 'direccion', // Usamos direccion para obtener empresas conocidas
-    minLength: 3
-  });
+    formData,
+    rfcValidation,
+    showFrecuentes,
+    setShowFrecuentes,
+    handleTipoChange,
+    handleRFCChange,
+    handleLocationUpdate,
+    handleFieldChange,
+    cargarUbicacionFrecuente,
+    isFormValid
+  } = useUbicacionForm(ubicacion, generarId);
 
-  const handleFieldChange = (field: string, value: any) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  const handleAddressSelect = (addressData: any) => {
-    if (addressData) {
-      setFormData(prev => ({
-        ...prev,
-        domicilio: {
-          ...prev.domicilio,
-          calle: addressData.street || prev.domicilio.calle,
-          colonia: addressData.colonia || prev.domicilio.colonia,
-          municipio: addressData.municipio || prev.domicilio.municipio,
-          estado: addressData.estado || prev.domicilio.estado,
-          codigoPostal: addressData.codigoPostal || prev.domicilio.codigoPostal
-        }
-      }));
-    }
-  };
-
-  const handleRFCChange = (value: string) => {
-    handleFieldChange('rfcRemitenteDestinatario', value.toUpperCase());
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    if (value.length >= 3) {
-      getRFCSuggestions(value, { 
-        tipo: 'empresa',
-        buscar_rfc: true 
+    if (isFormValid()) {
+      // Learn from user patterns
+      addUserPattern('rfc', formData.rfcRemitenteDestinatario);
+      addUserPattern('nombre_empresa', formData.nombreRemitenteDestinatario);
+      addUserPattern('direccion', `${formData.domicilio.calle} ${formData.domicilio.numExterior}, ${formData.domicilio.colonia}, ${formData.domicilio.municipio}, ${formData.domicilio.estado}`);
+      
+      onSave(formData);
+    }
+  };
+
+  const handleSaveToFavorites = () => {
+    if (onSaveToFavorites && formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario) {
+      onSaveToFavorites({
+        nombreUbicacion: formData.nombreRemitenteDestinatario,
+        rfcAsociado: formData.rfcRemitenteDestinatario,
+        domicilio: formData.domicilio
       });
     }
   };
 
-  const handleRFCSuggestionSelect = (suggestion: any) => {
-    const rfcData = suggestion.metadata;
-    if (rfcData) {
-      setFormData(prev => ({
-        ...prev,
-        rfcRemitenteDestinatario: rfcData.rfc || suggestion.text,
-        nombreRemitenteDestinatario: rfcData.nombre || prev.nombreRemitenteDestinatario
-      }));
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  const isFormValid = () => {
-    const rfcValidation = RFCValidator.validarRFC(formData.rfcRemitenteDestinatario);
-    return (
-      formData.rfcRemitenteDestinatario &&
-      formData.nombreRemitenteDestinatario &&
-      formData.domicilio.codigoPostal &&
-      formData.domicilio.calle &&
-      formData.domicilio.numExterior &&
-      rfcValidation.esValido
-    );
-  };
+  const canSaveToFavorites = Boolean(
+    formData.rfcRemitenteDestinatario && 
+    formData.rfcRemitenteDestinatario.trim() !== '' &&
+    formData.nombreRemitenteDestinatario && 
+    formData.nombreRemitenteDestinatario.trim() !== ''
+  );
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          {ubicacion ? 'Editar Ubicación' : 'Nueva Ubicación'}
-        </CardTitle>
-      </CardHeader>
+      <UbicacionFormHeader
+        ubicacion={ubicacion}
+        ubicacionesFrecuentes={ubicacionesFrecuentes}
+        onToggleFrecuentes={() => setShowFrecuentes(!showFrecuentes)}
+      />
 
       <CardContent>
+        {showFrecuentes && (
+          <UbicacionesFrecuentesCard
+            ubicacionesFrecuentes={ubicacionesFrecuentes}
+            onCargarUbicacion={cargarUbicacionFrecuente}
+          />
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Tipo de Ubicación */}
-          <div className="space-y-2">
-            <Label>Tipo de Ubicación</Label>
-            <select
-              value={formData.tipoUbicacion}
-              onChange={(e) => handleFieldChange('tipoUbicacion', e.target.value)}
-              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Origen">Origen</option>
-              <option value="Destino">Destino</option>
-              <option value="Paso Intermedio">Paso Intermedio</option>
-            </select>
-          </div>
+          <UbicacionBasicInfo
+            formData={formData}
+            onTipoChange={handleTipoChange}
+            onFechaChange={(fecha) => handleFieldChange('fechaHoraSalidaLlegada', fecha)}
+          />
 
-          {/* RFC con Autocompletado Inteligente */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              RFC *
-            </Label>
-            <AutocompletedInput
-              value={formData.rfcRemitenteDestinatario}
-              onChange={handleRFCChange}
-              onSuggestionSelect={handleRFCSuggestionSelect}
-              suggestions={rfcSuggestions}
-              loading={rfcLoading}
-              placeholder="Buscar RFC de empresa..."
-              className="uppercase"
-              showConfidence={true}
-            />
-          </div>
-
-          {/* Nombre */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Nombre / Razón Social *
-            </Label>
-            <Input
-              value={formData.nombreRemitenteDestinatario}
-              onChange={(e) => handleFieldChange('nombreRemitenteDestinatario', e.target.value)}
-              placeholder="Nombre completo o razón social"
-            />
-          </div>
-
-          {/* Fecha y Hora */}
-          <div className="space-y-2">
-            <Label>Fecha y Hora de {formData.tipoUbicacion === 'Origen' ? 'Salida' : 'Llegada'}</Label>
-            <Input
-              type="datetime-local"
-              value={formData.fechaHoraSalidaLlegada}
-              onChange={(e) => handleFieldChange('fechaHoraSalidaLlegada', e.target.value)}
-            />
-          </div>
-
-          {/* Dirección Inteligente */}
+          {/* Enhanced RFC Input */}
           <div className="space-y-4">
-            <Label className="text-base font-medium">Domicilio</Label>
+            <EnhancedAutocompleteInput
+              value={formData.rfcRemitenteDestinatario}
+              onChange={(value) => {
+                handleRFCChange(value);
+                addUserPattern('rfc', value);
+              }}
+              type="driver"
+              label="RFC del Remitente/Destinatario"
+              placeholder="Ingrese RFC..."
+              context={context}
+              formName="ubicacion"
+              fieldName="rfc"
+              showValidation={true}
+              showHelp={true}
+            />
+
+            <EnhancedAutocompleteInput
+              value={formData.nombreRemitenteDestinatario}
+              onChange={(value) => {
+                handleFieldChange('nombreRemitenteDestinatario', value);
+                addUserPattern('nombre_empresa', value);
+              }}
+              type="driver"
+              label="Nombre del Remitente/Destinatario"
+              placeholder="Ingrese nombre de la empresa..."
+              context={context}
+              formName="ubicacion"
+              fieldName="nombre"
+              showValidation={true}
+              showHelp={true}
+            />
+          </div>
+
+          {/* Enhanced Address Inputs */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Domicilio</h3>
             
-            <div className="space-y-2">
-              <Label>Dirección Completa *</Label>
-              <SmartAddressInput
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <EnhancedAutocompleteInput
                 value={formData.domicilio.calle}
                 onChange={(value) => handleFieldChange('domicilio.calle', value)}
-                onAddressSelect={handleAddressSelect}
-                placeholder="Ingrese calle y número..."
-                field="direccion-completa"
+                type="address"
+                label="Calle"
+                placeholder="Nombre de la calle..."
+                context={{
+                  ...context,
+                  addressComponent: 'street',
+                  postalCode: formData.domicilio.codigoPostal
+                }}
+                formName="ubicacion"
+                fieldName="calle"
+                showValidation={true}
+              />
+
+              <EnhancedAutocompleteInput
+                value={formData.domicilio.numExterior}
+                onChange={(value) => handleFieldChange('domicilio.numExterior', value)}
+                type="address"
+                label="Número Exterior"
+                placeholder="Número..."
+                context={context}
+                formName="ubicacion"
+                fieldName="numExterior"
+              />
+
+              <EnhancedAutocompleteInput
+                value={formData.domicilio.colonia}
+                onChange={(value) => handleFieldChange('domicilio.colonia', value)}
+                type="address"
+                label="Colonia"
+                placeholder="Nombre de la colonia..."
+                context={{
+                  ...context,
+                  addressComponent: 'neighborhood',
+                  postalCode: formData.domicilio.codigoPostal
+                }}
+                formName="ubicacion"
+                fieldName="colonia"
+                showValidation={true}
+              />
+
+              <EnhancedAutocompleteInput
+                value={formData.domicilio.municipio}
+                onChange={(value) => handleFieldChange('domicilio.municipio', value)}
+                type="address"
+                label="Municipio"
+                placeholder="Nombre del municipio..."
+                context={{
+                  ...context,
+                  addressComponent: 'city',
+                  state: formData.domicilio.estado
+                }}
+                formName="ubicacion"
+                fieldName="municipio"
+                showValidation={true}
+              />
+
+              <EnhancedAutocompleteInput
+                value={formData.domicilio.estado}
+                onChange={(value) => handleFieldChange('domicilio.estado', value)}
+                type="address"
+                label="Estado"
+                placeholder="Nombre del estado..."
+                context={{
+                  ...context,
+                  addressComponent: 'state'
+                }}
+                formName="ubicacion"
+                fieldName="estado"
+                showValidation={true}
+              />
+
+              <EnhancedAutocompleteInput
+                value={formData.domicilio.codigoPostal}
+                onChange={(value) => handleFieldChange('domicilio.codigoPostal', value)}
+                type="address"
+                label="Código Postal"
+                placeholder="00000"
+                context={context}
+                formName="ubicacion"
+                fieldName="codigoPostal"
                 showValidation={true}
               />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Número Exterior *</Label>
-                <Input
-                  value={formData.domicilio.numExterior}
-                  onChange={(e) => handleFieldChange('domicilio.numExterior', e.target.value)}
-                  placeholder="Número exterior"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Número Interior</Label>
-                <Input
-                  value={formData.domicilio.numInterior}
-                  onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
-                  placeholder="Número interior (opcional)"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Colonia</Label>
-                <Input
-                  value={formData.domicilio.colonia}
-                  onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
-                  placeholder="Colonia"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Código Postal *</Label>
-                <Input
-                  value={formData.domicilio.codigoPostal}
-                  onChange={(e) => handleFieldChange('domicilio.codigoPostal', e.target.value)}
-                  placeholder="CP"
-                  maxLength={5}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Municipio</Label>
-                <Input
-                  value={formData.domicilio.municipio}
-                  onChange={(e) => handleFieldChange('domicilio.municipio', e.target.value)}
-                  placeholder="Municipio"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Estado</Label>
-                <Input
-                  value={formData.domicilio.estado}
-                  onChange={(e) => handleFieldChange('domicilio.estado', e.target.value)}
-                  placeholder="Estado"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Referencias</Label>
-              <Input
-                value={formData.domicilio.referencia}
-                onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
-                placeholder="Referencias adicionales (opcional)"
-              />
-            </div>
           </div>
 
-          {/* Botones */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isLoading}
-            >
+          <div className="flex justify-between pt-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
               <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
             
-            <Button
-              type="submit"
-              disabled={!isFormValid() || isLoading}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isLoading ? 'Guardando...' : 'Guardar'}
-            </Button>
+            <div className="flex gap-2">
+              {canSaveToFavorites && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleSaveToFavorites}
+                >
+                  Guardar en Favoritos
+                </Button>
+              )}
+              
+              <Button type="submit" disabled={!isFormValid()}>
+                <Save className="h-4 w-4 mr-2" />
+                {ubicacion ? 'Actualizar' : 'Guardar'} Ubicación
+              </Button>
+            </div>
           </div>
         </form>
       </CardContent>
