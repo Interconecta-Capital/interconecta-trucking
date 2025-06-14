@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback } from 'react';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useUbicacionesPersistence } from '@/hooks/useUbicacionesPersistence';
@@ -47,6 +46,7 @@ export function useCartaPorteSync({
             entrada_salida_merc: cartaExistente.entrada_salida_merc || '',
             pais_origen_destino: cartaExistente.pais_origen_destino || '',
             via_entrada_salida: cartaExistente.via_entrada_salida || '',
+            cartaPorteVersion: '3.1', // Default version for existing cartas
             ubicaciones: [],
             mercancias: [],
             autotransporte: {},
