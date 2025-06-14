@@ -1,14 +1,6 @@
 
-import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { ConfiguracionInicial } from './ConfiguracionInicial';
-import { UbicacionesSection } from './UbicacionesSection';
-import { MercanciasSection } from './MercanciasSection';
-import { AutotransporteSection } from './AutotransporteSection';
-import { FigurasTransporteSection } from './FigurasTransporteSection';
+import { useState, useCallback, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { AIValidationAlerts } from '@/components/ai/AIValidationAlerts';
 import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
@@ -16,20 +8,10 @@ import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useCartaPorteCache } from '@/hooks/carta-porte/useCartaPorteCache';
 import { useCartaPortePerformance } from '@/hooks/carta-porte/useCartaPortePerformance';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
-import { 
-  FileText, 
-  MapPin, 
-  Package, 
-  Truck, 
-  Users,
-  CheckCircle,
-  Save,
-  Stamp,
-  Brain
-} from 'lucide-react';
-
-// Lazy loading de componentes pesados
-const XMLGenerationPanel = lazy(() => import('./xml/XMLGenerationPanel').then(module => ({ default: module.XMLGenerationPanel })));
+import { CartaPorteHeader } from './form/CartaPorteHeader';
+import { CartaPorteTabNavigation } from './form/CartaPorteTabNavigation';
+import { CartaPorteTabContent } from './form/CartaPorteTabContent';
+import { CartaPorteCompletionCard } from './form/CartaPorteCompletionCard';
 
 export interface CartaPorteData {
   // Configuración inicial
@@ -59,15 +41,6 @@ export interface CartaPorteData {
   regimenAduanero?: string;
   cartaPorteId?: string;
 }
-
-const steps = [
-  { id: 'configuracion', label: 'Configuración', icon: FileText },
-  { id: 'ubicaciones', label: 'Ubicaciones', icon: MapPin },
-  { id: 'mercancias', label: 'Mercancías', icon: Package },
-  { id: 'autotransporte', label: 'Transporte', icon: Truck },
-  { id: 'figuras', label: 'Figuras', icon: Users },
-  { id: 'xml', label: 'XML/Timbrado', icon: Stamp },
-];
 
 interface CartaPorteFormProps {
   cartaPorteId?: string;
@@ -116,17 +89,6 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     persistInURL: false,
   });
 
-  // Performance optimized handlers
-  const optimizedUpdateFormData = useCallback(
-    performance.createDebouncedSave(async (data) => {
-      updateFormData('formData', data);
-      if (currentCartaPorteId) {
-        cache.cacheFormData(currentCartaPorteId, data);
-      }
-    }),
-    [updateFormData, currentCartaPorteId, cache, performance]
-  );
-
   // Nuevo handler para aplicar fixes de IA
   const handleApplyAIFix = useCallback((fix: any) => {
     console.log('[CartaPorteForm] Aplicando fix de IA:', fix);
@@ -135,18 +97,11 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     }
   }, []);
 
-  // Memoizar handlers para evitar re-renders
-  const handleNextStep = useCallback((targetStep: string) => {
-    handleTabChange(targetStep);
-  }, [handleTabChange]);
-
-  const handlePrevStep = useCallback((targetStep: string) => {
-    handleTabChange(targetStep);
-  }, [handleTabChange]);
-
-  const handleSaveTemplate = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSaveTemplate = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowGuardarPlantilla(true);
   }, []);
 
@@ -169,61 +124,19 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
   // Memoizar validaciones complejas con cache
   const canSaveAsTemplate = useMemo(() => {
-    const formHash = performance.generateFormHash(cachedFormData);
-    return performance.memoizeWithTTL(`canSave_${formHash}`, () => {
-      return stepValidations.configuracion && cachedFormData.ubicaciones.length > 0;
-    });
-  }, [stepValidations.configuracion, cachedFormData.ubicaciones.length, performance, cachedFormData]);
+    return stepValidations.configuracion && cachedFormData.ubicaciones.length > 0;
+  }, [stepValidations.configuracion, cachedFormData.ubicaciones.length]);
 
   const canGenerateXML = useMemo(() => {
-    const formHash = performance.generateFormHash(cachedFormData);
-    return performance.memoizeWithTTL(`canGenerate_${formHash}`, () => {
-      return Object.entries(stepValidations)
-        .filter(([key]) => key !== 'xml')
-        .every(([, isValid]) => isValid);
-    });
-  }, [stepValidations, performance, cachedFormData]);
+    return Object.entries(stepValidations)
+      .filter(([key]) => key !== 'xml')
+      .every(([, isValid]) => isValid);
+  }, [stepValidations]);
 
   // Convertir formData a CartaPorteData cuando sea necesario - optimizado
   const cartaPorteData = useMemo(() => {
-    const formHash = performance.generateFormHash(cachedFormData);
-    return performance.memoizeWithTTL(`cartaPorteData_${formHash}`, () => {
-      return formDataToCartaPorteData();
-    });
-  }, [cachedFormData, formDataToCartaPorteData, performance]);
-
-  // Determinar título dinámico con indicador IA - memoizado
-  const getFormTitle = useMemo(() => {
-    const version = cachedFormData.cartaPorteVersion || '3.1';
-    const baseTitle = cartaPorteId ? 'Editar Carta Porte' : 'Nueva Carta Porte';
-    const aiIndicator = hasAIEnhancements ? '🧠' : '';
-    return `${baseTitle} ${version} ${aiIndicator}`;
-  }, [cartaPorteId, cachedFormData.cartaPorteVersion, hasAIEnhancements]);
-
-  // Memoizar renderizado de pestañas
-  const tabTriggers = useMemo(() => {
-    return steps.map((step) => {
-      const Icon = step.icon;
-      const isComplete = stepValidations[step.id as keyof typeof stepValidations];
-      
-      return (
-        <TabsTrigger
-          key={step.id}
-          value={step.id}
-          className="flex flex-col items-center p-4 space-y-2"
-          disabled={step.id === 'xml' && !canGenerateXML}
-        >
-          <div className="flex items-center space-x-2">
-            <Icon className="h-5 w-5" />
-            {isComplete && step.id !== 'xml' && (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            )}
-          </div>
-          <span className="text-xs">{step.label}</span>
-        </TabsTrigger>
-      );
-    });
-  }, [stepValidations, canGenerateXML]);
+    return formDataToCartaPorteData();
+  }, [formDataToCartaPorteData]);
 
   if (isLoading) {
     return (
@@ -237,58 +150,19 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header con progreso mejorado */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold">
-              {getFormTitle}
-              {currentCartaPorteId && (
-                <span className="text-sm font-normal text-green-600 ml-2">
-                  ✓ Guardando automáticamente
-                </span>
-              )}
-            </CardTitle>
-            <div className="flex items-center space-x-4">
-              {hasAIEnhancements && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAIAlerts(!showAIAlerts)}
-                  className="flex items-center space-x-2"
-                >
-                  <Brain className="h-4 w-4" />
-                  <span>{showAIAlerts ? 'Ocultar' : 'Mostrar'} IA</span>
-                </Button>
-              )}
-              {canSaveAsTemplate && (
-                <Button 
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSaveTemplate}
-                  className="flex items-center space-x-2"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>Guardar como Plantilla</span>
-                </Button>
-              )}
-              <div className="text-sm text-muted-foreground">
-                Progreso: {validationMode === 'ai-enhanced' ? overallScore : Math.round(totalProgress)}%
-              </div>
-            </div>
-          </div>
-          <Progress 
-            value={validationMode === 'ai-enhanced' ? overallScore : totalProgress} 
-            className="w-full" 
-          />
-          {validationMode === 'ai-enhanced' && (
-            <p className="text-xs text-purple-600 mt-1">
-              ✨ Validación mejorada con IA activa
-            </p>
-          )}
-        </CardHeader>
-      </Card>
+      <CartaPorteHeader
+        cartaPorteId={cartaPorteId}
+        cartaPorteVersion={cachedFormData.cartaPorteVersion || '3.1'}
+        hasAIEnhancements={hasAIEnhancements}
+        showAIAlerts={showAIAlerts}
+        onToggleAIAlerts={() => setShowAIAlerts(!showAIAlerts)}
+        canSaveAsTemplate={canSaveAsTemplate}
+        onSaveTemplate={handleSaveTemplate}
+        validationMode={validationMode}
+        overallScore={overallScore}
+        totalProgress={totalProgress}
+        currentCartaPorteId={currentCartaPorteId}
+      />
 
       {/* Alertas de IA */}
       {showAIAlerts && aiValidation && hasAIEnhancements && (
@@ -302,119 +176,34 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       {/* Navegación por pasos */}
       <Card>
         <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 h-auto">
-              {tabTriggers}
-            </TabsList>
+          <CartaPorteTabNavigation
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            stepValidations={stepValidations}
+            canGenerateXML={canGenerateXML}
+          />
 
-            <div className="p-6">
-              <TabsContent value="configuracion">
-                <ConfiguracionInicial
-                  data={cartaPorteData}
-                  onChange={(data) => updateFormData('configuracion', data)}
-                  onNext={() => handleNextStep('ubicaciones')}
-                />
-              </TabsContent>
-
-              <TabsContent value="ubicaciones">
-                <UbicacionesSection
-                  data={cachedFormData.ubicaciones}
-                  onChange={(data) => updateFormData('ubicaciones', data)}
-                  onNext={() => handleNextStep('mercancias')}
-                  onPrev={() => handlePrevStep('configuracion')}
-                />
-              </TabsContent>
-
-              <TabsContent value="mercancias">
-                <MercanciasSection
-                  data={cachedFormData.mercancias}
-                  onChange={(data) => updateFormData('mercancias', data)}
-                  onNext={() => handleNextStep('autotransporte')}
-                  onPrev={() => handlePrevStep('ubicaciones')}
-                />
-              </TabsContent>
-
-              <TabsContent value="autotransporte">
-                <AutotransporteSection
-                  data={cachedFormData.autotransporte}
-                  onChange={handleAutotransporteChange}
-                  onNext={() => handleNextStep('figuras')}
-                  onPrev={() => handlePrevStep('mercancias')}
-                />
-              </TabsContent>
-
-              <TabsContent value="figuras">
-                <FigurasTransporteSection
-                  data={cachedFormData.figuras}
-                  onChange={handleFigurasChange}
-                  onPrev={() => handlePrevStep('autotransporte')}
-                  onFinish={() => handleNextStep('xml')}
-                />
-              </TabsContent>
-
-              <TabsContent value="xml">
-                <Suspense fallback={
-                  <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <p className="ml-2">Cargando panel XML...</p>
-                  </div>
-                }>
-                  <XMLGenerationPanel
-                    cartaPorteData={cartaPorteData}
-                    cartaPorteId={currentCartaPorteId}
-                    onXMLGenerated={handleXMLGenerated}
-                    onTimbrado={handleTimbrado}
-                  />
-                </Suspense>
-              </TabsContent>
-            </div>
-          </Tabs>
+          <CartaPorteTabContent
+            cartaPorteData={cartaPorteData}
+            cachedFormData={cachedFormData}
+            updateFormData={updateFormData}
+            handleTabChange={handleTabChange}
+            handleAutotransporteChange={handleAutotransporteChange}
+            handleFigurasChange={handleFigurasChange}
+            handleXMLGenerated={handleXMLGenerated}
+            handleTimbrado={handleTimbrado}
+            currentCartaPorteId={currentCartaPorteId}
+          />
         </CardContent>
       </Card>
 
       {/* Acciones finales mejoradas con IA */}
-      {canGenerateXML && (
-        <Card className={`border-green-200 ${hasAIEnhancements ? 'bg-gradient-to-r from-green-50 to-purple-50' : 'bg-green-50'}`}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-                <div>
-                  <h3 className="font-semibold text-green-800 flex items-center gap-2">
-                    Carta Porte Lista para Generar XML
-                    {hasAIEnhancements && <Brain className="h-4 w-4 text-purple-600" />}
-                  </h3>
-                  <p className="text-sm text-green-600">
-                    {hasAIEnhancements 
-                      ? 'Validada con IA - Sin errores detectados' 
-                      : 'Todos los datos requeridos han sido completados'
-                    }
-                  </p>
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Button 
-                  type="button"
-                  variant="outline"
-                  onClick={handleSaveTemplate}
-                  className="flex items-center space-x-2"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>Guardar Plantilla</span>
-                </Button>
-                <Button 
-                  type="button"
-                  onClick={() => handleNextStep('xml')}
-                  className="flex items-center space-x-2"
-                >
-                  <Stamp className="h-4 w-4" />
-                  <span>Generar XML y Timbrar</span>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <CartaPorteCompletionCard
+        canGenerateXML={canGenerateXML}
+        hasAIEnhancements={hasAIEnhancements}
+        onSaveTemplate={handleSaveTemplate}
+        onGenerateXML={() => handleTabChange('xml')}
+      />
 
       <GuardarPlantillaDialog
         open={showGuardarPlantilla}
