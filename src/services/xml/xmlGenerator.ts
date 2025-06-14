@@ -71,7 +71,7 @@ export class XMLCartaPorteGenerator {
   ${XMLConceptosBuilder.construirEmisor(data)}
   ${XMLConceptosBuilder.construirReceptor(data)}
   ${XMLConceptosBuilder.construirConceptos(data)}
-  ${XMLComplementoBuilder.construirComplemento(data, version)}
+  ${XMLComplementoBuilder.construirComplemento(data)}
   
 </cfdi:Comprobante>`;
   }
