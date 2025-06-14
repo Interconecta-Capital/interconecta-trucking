@@ -53,6 +53,9 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
 
   const handleDimensionesChange = (dimension: 'largo' | 'ancho' | 'alto', value: number) => {
     const nuevasDimensiones = {
+      largo: 0,
+      ancho: 0,
+      alto: 0,
       ...data.dimensiones,
       [dimension]: value
     };
@@ -71,9 +74,9 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
       
       Object.entries(suggestion.data).forEach(([key, value]) => {
         if (key === 'dimensiones' && typeof value === 'object') {
-          updates.dimensiones = value as any;
+          updates.dimensiones = value as { largo: number; ancho: number; alto: number };
         } else if (typeof value === 'string' || typeof value === 'number') {
-          updates[key as keyof AutotransporteCompleto] = value as any;
+          (updates as any)[key] = value;
         }
       });
       

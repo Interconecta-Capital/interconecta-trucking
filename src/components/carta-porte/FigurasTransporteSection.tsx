@@ -1,12 +1,12 @@
 
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
-import { FigurasTransporteForm } from './figuras/FigurasTransporteForm';
-import { FiguraTransporte } from '@/hooks/useFigurasTransporte';
+import { FiguraFormCompleta } from './figuras/FiguraFormCompleta';
+import { FiguraCompleta } from '@/types/cartaPorte';
 
 interface FigurasTransporteSectionProps {
-  data: FiguraTransporte[];
-  onChange: (data: FiguraTransporte[]) => void;
+  data: FiguraCompleta[];
+  onChange: (data: FiguraCompleta[]) => void;
   onPrev: () => void;
   onFinish: () => void;
 }
@@ -17,12 +17,70 @@ export function FigurasTransporteSection({ data, onChange, onPrev, onFinish }: F
     return data.length > 0 && data.some(figura => figura.tipo_figura === '01');
   };
 
+  const handleAddFigura = () => {
+    const nuevaFigura: FiguraCompleta = {
+      id: `figura-${Date.now()}`,
+      tipo_figura: '01', // Operador por defecto
+      rfc_figura: '',
+      nombre_figura: '',
+      domicilio: {
+        pais: 'México',
+        codigo_postal: '',
+        estado: '',
+        municipio: '',
+        colonia: '',
+        calle: '',
+        numero_exterior: ''
+      }
+    };
+    onChange([...data, nuevaFigura]);
+  };
+
+  const handleUpdateFigura = (index: number, figura: FiguraCompleta) => {
+    const newData = [...data];
+    newData[index] = figura;
+    onChange(newData);
+  };
+
+  const handleRemoveFigura = (index: number) => {
+    const newData = data.filter((_, i) => i !== index);
+    onChange(newData);
+  };
+
   return (
     <div className="space-y-6">
-      <FigurasTransporteForm
-        data={data}
-        onChange={onChange}
-      />
+      <div className="space-y-4">
+        {data.map((figura, index) => (
+          <FiguraFormCompleta
+            key={figura.id || index}
+            figura={figura}
+            onUpdate={(updatedFigura) => handleUpdateFigura(index, updatedFigura)}
+            onRemove={() => handleRemoveFigura(index)}
+            index={index}
+          />
+        ))}
+
+        {data.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              No hay figuras de transporte agregadas. Agrega al menos un operador para continuar.
+            </p>
+            <Button onClick={handleAddFigura}>
+              Agregar Operador
+            </Button>
+          </div>
+        )}
+
+        {data.length > 0 && (
+          <Button 
+            variant="outline" 
+            onClick={handleAddFigura}
+            className="w-full"
+          >
+            Agregar Otra Figura de Transporte
+          </Button>
+        )}
+      </div>
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onPrev} className="flex items-center space-x-2">

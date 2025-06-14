@@ -1,9 +1,9 @@
 
-import { useState, useCallback, useEffect, Dispatch, SetStateAction } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
-import { CartaPorteFormData, useCartaPorteMappers } from './useCartaPorteMappers';
+import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
 
-const initialFormData: CartaPorteFormData = {
+const initialFormData: CartaPorteFormDataExtendido = {
   configuracion: {
     version: '3.1',
     tipoComprobante: 'T',
@@ -20,13 +20,13 @@ const initialFormData: CartaPorteFormData = {
   ubicaciones: [],
   mercancias: [],
   autotransporte: {
-    placaVm: '',
-    configuracionVehicular: '',
-    seguro: {
-      aseguradora: '',
-      poliza: '',
-      vigencia: ''
-    }
+    placa_vm: '',
+    anio_modelo_vm: new Date().getFullYear(),
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: ''
   },
   figuras: [],
   tipoCreacion: 'manual',
@@ -45,7 +45,7 @@ interface UseCartaPorteFormStateOptions {
 }
 
 export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateOptions = {}) => {
-  const [formData, setFormData] = useState<CartaPorteFormData>(initialFormData);
+  const [formData, setFormData] = useState<CartaPorteFormDataExtendido>(initialFormData);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
   const [currentStep, setCurrentStep] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
@@ -54,7 +54,7 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
 
   const { validateComplete } = useCartaPorteValidation();
 
-  const updateFormData = useCallback((updates: Partial<CartaPorteFormData>) => {
+  const updateFormData = useCallback((updates: Partial<CartaPorteFormDataExtendido>) => {
     setFormData(prev => ({
       ...prev,
       ...updates
@@ -63,7 +63,7 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
     setError(null);
   }, []);
 
-  const updateSection = useCallback((section: keyof CartaPorteFormData, data: any) => {
+  const updateSection = useCallback((section: keyof CartaPorteFormDataExtendido, data: any) => {
     setFormData(prev => ({
       ...prev,
       [section]: data
@@ -80,7 +80,23 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
   }, []);
 
   const validateCurrentState = useCallback(() => {
-    return validateComplete(formData);
+    // Convertir a formato compatible para validación
+    const compatibleData = {
+      tipoCreacion: formData.tipoCreacion,
+      tipoCfdi: formData.tipoCfdi,
+      rfcEmisor: formData.rfcEmisor,
+      nombreEmisor: formData.nombreEmisor,
+      rfcReceptor: formData.rfcReceptor,
+      nombreReceptor: formData.nombreReceptor,
+      transporteInternacional: formData.transporteInternacional,
+      registroIstmo: formData.registroIstmo,
+      cartaPorteVersion: formData.cartaPorteVersion,
+      ubicaciones: formData.ubicaciones || [],
+      mercancias: formData.mercancias || [],
+      autotransporte: formData.autotransporte,
+      figuras: formData.figuras || [],
+    };
+    return validateComplete(compatibleData as any);
   }, [formData, validateComplete]);
 
   // Auto-validación cuando cambian los datos

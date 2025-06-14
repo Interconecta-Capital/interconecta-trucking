@@ -1,12 +1,12 @@
 
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
-import { AutotransporteForm } from './autotransporte/AutotransporteForm';
-import { AutotransporteData } from '@/hooks/useAutotransporte';
+import { AutotransporteFormCompleto } from './autotransporte/AutotransporteFormCompleto';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface AutotransporteSectionProps {
-  data: AutotransporteData;
-  onChange: (data: AutotransporteData) => void;
+  data: AutotransporteCompleto;
+  onChange: (data: AutotransporteCompleto) => void;
   onNext: () => void;
   onPrev: () => void;
 }
@@ -27,7 +27,7 @@ export function AutotransporteSection({ data, onChange, onNext, onPrev }: Autotr
 
   return (
     <div className="space-y-6">
-      <AutotransporteForm
+      <AutotransporteFormCompleto
         data={data}
         onChange={onChange}
       />
