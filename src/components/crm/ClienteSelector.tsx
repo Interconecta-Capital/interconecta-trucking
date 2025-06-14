@@ -46,8 +46,10 @@ export function ClienteSelector({
   const [showCrearForm, setShowCrearForm] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [buscando, setBuscando] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   const { buscarClientes, crearCliente, obtenerClientePorRFC, loading } = useClientesProveedores();
 
@@ -57,19 +59,27 @@ export function ClienteSelector({
       setBusqueda(value.razon_social);
       setShowResultados(false);
       setShowCrearForm(false);
+      setIsTyping(false);
     }
   }, [value]);
 
+  // Optimized search with better debouncing
   useEffect(() => {
-    const buscarConDelay = setTimeout(async () => {
-      if (busqueda.length >= 2 && !value) {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (busqueda.length >= 2 && !value && !isTyping) {
+      searchTimeoutRef.current = setTimeout(async () => {
         setBuscando(true);
         try {
+          console.log('Searching for:', busqueda);
           const clientes = await buscarClientes(busqueda);
           const clientesFiltrados = tipo === 'ambos' 
             ? clientes 
             : clientes.filter(c => c.tipo === tipo || c.tipo === 'ambos');
           
+          console.log('Filtered clients:', clientesFiltrados);
           setResultados(clientesFiltrados);
           setShowResultados(true);
           setSelectedIndex(-1);
@@ -79,15 +89,19 @@ export function ClienteSelector({
         } finally {
           setBuscando(false);
         }
-      } else if (busqueda.length < 2) {
-        setResultados([]);
-        setShowResultados(false);
-        setShowCrearForm(false);
-      }
-    }, 300);
+      }, 800); // Increased debounce time to prevent interruption
+    } else if (busqueda.length < 2) {
+      setResultados([]);
+      setShowResultados(false);
+      setShowCrearForm(false);
+    }
 
-    return () => clearTimeout(buscarConDelay);
-  }, [busqueda, buscarClientes, tipo, value]);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [busqueda, buscarClientes, tipo, value, isTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showResultados || resultados.length === 0) return;
@@ -131,6 +145,7 @@ export function ClienteSelector({
     setShowResultados(false);
     setShowCrearForm(false);
     setSelectedIndex(-1);
+    setIsTyping(false);
   };
 
   const limpiarSeleccion = () => {
@@ -138,6 +153,7 @@ export function ClienteSelector({
     setBusqueda('');
     setShowResultados(false);
     setShowCrearForm(false);
+    setIsTyping(false);
     inputRef.current?.focus();
   };
 
@@ -149,11 +165,34 @@ export function ClienteSelector({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setBusqueda(newValue);
+    setIsTyping(true);
+    
+    // Clear typing flag after user stops typing
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    setTimeout(() => {
+      setIsTyping(false);
+    }, 500);
     
     // Si el usuario está editando y hay un value seleccionado, limpiar la selección
     if (value && newValue !== value.razon_social) {
       onChange(null);
     }
+  };
+
+  const handleClienteCreado = (cliente: ClienteProveedor) => {
+    console.log('Cliente creado, auto-seleccionando:', cliente);
+    
+    // Auto-select the newly created client
+    onChange(cliente);
+    setBusqueda(cliente.razon_social);
+    setShowCrearForm(false);
+    setShowResultados(false);
+    setIsTyping(false);
+    
+    toast.success('Cliente creado y seleccionado correctamente');
   };
 
   const validarRFC = (rfc: string) => {
@@ -167,7 +206,8 @@ export function ClienteSelector({
     resultados.length === 0 && 
     !buscando && 
     !value && 
-    !showCrearForm;
+    !showCrearForm &&
+    !isTyping;
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -201,7 +241,7 @@ export function ClienteSelector({
             disabled={loading}
           />
           
-          {buscando && (
+          {(buscando || isTyping) && (
             <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
           )}
           
@@ -356,12 +396,7 @@ export function ClienteSelector({
         <CrearClienteRapido
           busquedaInicial={busqueda}
           tipo={tipo}
-          onCreado={(cliente) => {
-            console.log('Cliente creado, seleccionando:', cliente);
-            seleccionarCliente(cliente);
-            setShowCrearForm(false);
-            toast.success('Cliente creado y seleccionado correctamente');
-          }}
+          onCreado={handleClienteCreado}
           onCancelar={() => setShowCrearForm(false)}
         />
       )}

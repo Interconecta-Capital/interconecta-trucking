@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { CartaPorteData } from '@/types/cartaPorte';
-import { usePaises, useViasEntradaSalida } from '@/hooks/useCatalogosSAT';
+import { usePaises, useViasEntradaSalida, useConfiguracionesAutotransporte } from '@/hooks/useCatalogosSAT';
 
 interface OpcionesEspecialesProps {
   data: CartaPorteData;
@@ -14,7 +14,17 @@ interface OpcionesEspecialesProps {
 
 export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
   const { data: paises, isLoading: loadingPaises } = usePaises();
-  const { data: viasEntradaSalida, isLoading: loadingVias } = useViasEntradaSalida();
+  const { data: viasEntradaSalida, isLoading: loadingViasEntradaSalida } = useViasEntradaSalida();
+  const { data: configuracionesAuto, isLoading: loadingConfiguraciones } = useConfiguracionesAutotransporte();
+
+  console.log('OpcionesEspeciales - Data loaded:', {
+    paises: paises?.length || 0,
+    viasEntradaSalida: viasEntradaSalida?.length || 0,
+    configuracionesAuto: configuracionesAuto?.length || 0,
+    loadingPaises,
+    loadingViasEntradaSalida,
+    loadingConfiguraciones
+  });
 
   const handleTransporteInternacionalChange = (checked: boolean) => {
     console.log('Transporte internacional changed:', checked);
@@ -86,7 +96,10 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
         <div className="space-y-4">
           <div>
             <Label htmlFor="entrada-salida">Entrada/Salida de Mercancías</Label>
-            <Select value={data.entradaSalidaMerc || ''} onValueChange={handleEntradaSalidaChange}>
+            <Select 
+              value={data.entradaSalidaMerc || ''} 
+              onValueChange={handleEntradaSalidaChange}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
               </SelectTrigger>
@@ -98,17 +111,34 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
           </div>
 
           <div>
-            <Label htmlFor="via-transporte">Vía de Transporte</Label>
-            <Select value={data.viaTransporte || ''} onValueChange={handleViaTransporteChange}>
+            <Label htmlFor="via-transporte">
+              Vía de Transporte
+              {loadingConfiguraciones && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
+            </Label>
+            <Select 
+              value={data.viaTransporte || ''} 
+              onValueChange={handleViaTransporteChange}
+              disabled={loadingConfiguraciones}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona..." />
+                <SelectValue placeholder={loadingConfiguraciones ? "Cargando..." : "Selecciona..."} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="01">Autotransporte</SelectItem>
-                <SelectItem value="02">Marítimo</SelectItem>
-                <SelectItem value="03">Aéreo</SelectItem>
-                <SelectItem value="04">Ferroviario</SelectItem>
-                <SelectItem value="05">Ducto</SelectItem>
+                {configuracionesAuto?.map((config) => (
+                  <SelectItem key={config.clave_config} value={config.clave_config}>
+                    {config.descripcion}
+                  </SelectItem>
+                ))}
+                {/* Fallback options if SAT catalog is not available */}
+                {!loadingConfiguraciones && (!configuracionesAuto || configuracionesAuto.length === 0) && (
+                  <>
+                    <SelectItem value="01">Autotransporte</SelectItem>
+                    <SelectItem value="02">Marítimo</SelectItem>
+                    <SelectItem value="03">Aéreo</SelectItem>
+                    <SelectItem value="04">Ferroviario</SelectItem>
+                    <SelectItem value="05">Ducto</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -131,12 +161,15 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               <SelectTrigger>
                 <SelectValue placeholder={loadingPaises ? "Cargando..." : "Selecciona un país..."} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {paises?.map((pais) => (
                   <SelectItem key={pais.clave_pais} value={pais.clave_pais}>
                     {pais.descripcion}
                   </SelectItem>
                 ))}
+                {!loadingPaises && (!paises || paises.length === 0) && (
+                  <SelectItem value="" disabled>No hay países disponibles</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -144,22 +177,25 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
           <div>
             <Label htmlFor="via-entrada-salida">
               Vía de Entrada/Salida
-              {loadingVias && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
+              {loadingViasEntradaSalida && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
             </Label>
             <Select 
               value={data.via_entrada_salida || ''} 
               onValueChange={handleViaEntradaSalidaChange}
-              disabled={loadingVias}
+              disabled={loadingViasEntradaSalida}
             >
               <SelectTrigger>
-                <SelectValue placeholder={loadingVias ? "Cargando..." : "Selecciona..."} />
+                <SelectValue placeholder={loadingViasEntradaSalida ? "Cargando..." : "Selecciona..."} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {viasEntradaSalida?.map((via) => (
                   <SelectItem key={via.clave_via} value={via.clave_via}>
                     {via.descripcion}
                   </SelectItem>
                 ))}
+                {!loadingViasEntradaSalida && (!viasEntradaSalida || viasEntradaSalida.length === 0) && (
+                  <SelectItem value="" disabled>No hay vías disponibles</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
