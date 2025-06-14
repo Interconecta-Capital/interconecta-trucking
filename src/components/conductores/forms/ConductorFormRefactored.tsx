@@ -50,6 +50,37 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Función helper para extraer dirección de forma segura
+  const extractDireccionSafe = (direccionData: any): DomicilioUnificado => {
+    if (!direccionData || typeof direccionData !== 'object') {
+      return {
+        pais: 'México',
+        codigoPostal: '',
+        estado: '',
+        municipio: '',
+        localidad: '',
+        colonia: '',
+        calle: '',
+        numExterior: '',
+        numInterior: '',
+        referencia: ''
+      };
+    }
+
+    return {
+      pais: (direccionData as any).pais || 'México',
+      codigoPostal: (direccionData as any).codigoPostal || '',
+      estado: (direccionData as any).estado || '',
+      municipio: (direccionData as any).municipio || '',
+      localidad: (direccionData as any).localidad || '',
+      colonia: (direccionData as any).colonia || '',
+      calle: (direccionData as any).calle || '',
+      numExterior: (direccionData as any).numExterior || '',
+      numInterior: (direccionData as any).numInterior || '',
+      referencia: (direccionData as any).referencia || ''
+    };
+  };
+
   // Cargar datos si es edición
   useEffect(() => {
     if (conductorId && conductores.length > 0) {
@@ -57,18 +88,8 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       if (conductor) {
         setFormData(conductor);
         if (conductor.direccion) {
-          setDomicilio({
-            pais: conductor.direccion.pais || 'México',
-            codigoPostal: conductor.direccion.codigoPostal || '',
-            estado: conductor.direccion.estado || '',
-            municipio: conductor.direccion.municipio || '',
-            localidad: conductor.direccion.localidad || '',
-            colonia: conductor.direccion.colonia || '',
-            calle: conductor.direccion.calle || '',
-            numExterior: conductor.direccion.numExterior || '',
-            numInterior: conductor.direccion.numInterior || '',
-            referencia: conductor.direccion.referencia || ''
-          });
+          const direccionSafe = extractDireccionSafe(conductor.direccion);
+          setDomicilio(direccionSafe);
         }
       }
     }

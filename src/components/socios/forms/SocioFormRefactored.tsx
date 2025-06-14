@@ -60,6 +60,37 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
   const [usarMismoDomicilio, setUsarMismoDomicilio] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Función helper para extraer dirección de forma segura
+  const extractDireccionSafe = (direccionData: any): DomicilioUnificado => {
+    if (!direccionData || typeof direccionData !== 'object') {
+      return {
+        pais: 'México',
+        codigoPostal: '',
+        estado: '',
+        municipio: '',
+        localidad: '',
+        colonia: '',
+        calle: '',
+        numExterior: '',
+        numInterior: '',
+        referencia: ''
+      };
+    }
+
+    return {
+      pais: (direccionData as any).pais || 'México',
+      codigoPostal: (direccionData as any).codigoPostal || '',
+      estado: (direccionData as any).estado || '',
+      municipio: (direccionData as any).municipio || '',
+      localidad: (direccionData as any).localidad || '',
+      colonia: (direccionData as any).colonia || '',
+      calle: (direccionData as any).calle || '',
+      numExterior: (direccionData as any).numExterior || '',
+      numInterior: (direccionData as any).numInterior || '',
+      referencia: (direccionData as any).referencia || ''
+    };
+  };
+
   // Cargar datos si es edición
   useEffect(() => {
     if (socioId && socios.length > 0) {
@@ -68,33 +99,13 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
         setFormData(socio);
         
         if (socio.direccion) {
-          setDomicilioGeneral({
-            pais: socio.direccion.pais || 'México',
-            codigoPostal: socio.direccion.codigoPostal || '',
-            estado: socio.direccion.estado || '',
-            municipio: socio.direccion.municipio || '',
-            localidad: socio.direccion.localidad || '',
-            colonia: socio.direccion.colonia || '',
-            calle: socio.direccion.calle || '',
-            numExterior: socio.direccion.numExterior || '',
-            numInterior: socio.direccion.numInterior || '',
-            referencia: socio.direccion.referencia || ''
-          });
+          const direccionGeneralSafe = extractDireccionSafe(socio.direccion);
+          setDomicilioGeneral(direccionGeneralSafe);
         }
 
         if (socio.direccion_fiscal) {
-          setDomicilioFiscal({
-            pais: socio.direccion_fiscal.pais || 'México',
-            codigoPostal: socio.direccion_fiscal.codigoPostal || '',
-            estado: socio.direccion_fiscal.estado || '',
-            municipio: socio.direccion_fiscal.municipio || '',
-            localidad: socio.direccion_fiscal.localidad || '',
-            colonia: socio.direccion_fiscal.colonia || '',
-            calle: socio.direccion_fiscal.calle || '',
-            numExterior: socio.direccion_fiscal.numExterior || '',
-            numInterior: socio.direccion_fiscal.numInterior || '',
-            referencia: socio.direccion_fiscal.referencia || ''
-          });
+          const direccionFiscalSafe = extractDireccionSafe(socio.direccion_fiscal);
+          setDomicilioFiscal(direccionFiscalSafe);
           setUsarMismoDomicilio(false);
         }
       }
