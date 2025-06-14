@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -16,19 +15,10 @@ interface MapVisualizationProps {
 export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapVisualizationProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [tokenConfigured, setTokenConfigured] = useState(false);
+  const [mapboxToken] = useState<string>('pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q');
+  const [tokenConfigured] = useState(true);
 
-  // Check if Mapbox token is configured
-  useEffect(() => {
-    const token = import.meta.env.VITE_MAPBOX_TOKEN || localStorage.getItem('mapbox_token') || '';
-    if (token && token !== 'your-mapbox-token-here') {
-      setMapboxToken(token);
-      setTokenConfigured(true);
-    }
-  }, []);
-
-  // Initialize map when token is available
+  // Initialize map when component mounts
   useEffect(() => {
     if (!isVisible || !tokenConfigured || !mapContainer.current || map.current) return;
 
@@ -134,68 +124,7 @@ export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapV
     });
   }, [rutaCalculada, tokenConfigured]);
 
-  const handleTokenSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const token = formData.get('token') as string;
-    
-    if (token) {
-      localStorage.setItem('mapbox_token', token);
-      setMapboxToken(token);
-      setTokenConfigured(true);
-    }
-  };
-
   if (!isVisible) return null;
-
-  if (!tokenConfigured) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Configuración de Mapbox
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Para visualizar el mapa y las rutas, necesitas configurar tu token de Mapbox.
-              Puedes obtenerlo gratis en{' '}
-              <a 
-                href="https://mapbox.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                mapbox.com
-              </a>
-            </AlertDescription>
-          </Alert>
-          
-          <form onSubmit={handleTokenSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="token" className="block text-sm font-medium mb-2">
-                Token de Mapbox (público)
-              </label>
-              <input
-                type="text"
-                name="token"
-                id="token"
-                placeholder="pk.eyJ1IjoibXl1c2VybmFtZSIsImEiOiJjazE..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <Button type="submit">
-              Configurar Mapbox
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

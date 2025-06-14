@@ -1,9 +1,7 @@
-
 import mapboxgl from 'mapbox-gl';
 
-// Note: In production, this should come from Supabase secrets or environment variables
-// For now, we'll use a placeholder that needs to be configured
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'your-mapbox-token-here';
+// Mapbox access token
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q';
 
 export interface Coordinates {
   lat: number;
