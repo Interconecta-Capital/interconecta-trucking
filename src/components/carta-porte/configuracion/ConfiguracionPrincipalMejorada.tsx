@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ClienteSelector } from '@/components/crm/ClienteSelector';
 import { ArrowRight } from 'lucide-react';
 import { OpcionesEspeciales } from './OpcionesEspeciales';
-import { CartaPorteData } from '../CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
 
 interface ConfiguracionPrincipalMejoradaProps {
@@ -25,12 +25,14 @@ export function ConfiguracionPrincipalMejorada({
 }: ConfiguracionPrincipalMejoradaProps) {
   
   const handleTipoCfdiChange = (value: string) => {
+    console.log('Tipo CFDI changed:', value);
     if (value === 'Ingreso' || value === 'Traslado') {
       onChange({ tipoCfdi: value });
     }
   };
 
   const handleEmisorChange = (emisor: ClienteProveedor | null) => {
+    console.log('Emisor changed:', emisor);
     if (emisor) {
       onChange({
         rfcEmisor: emisor.rfc,
@@ -45,6 +47,7 @@ export function ConfiguracionPrincipalMejorada({
   };
 
   const handleReceptorChange = (receptor: ClienteProveedor | null) => {
+    console.log('Receptor changed:', receptor);
     if (receptor) {
       onChange({
         rfcReceptor: receptor.rfc,
@@ -83,7 +86,7 @@ export function ConfiguracionPrincipalMejorada({
         {/* Tipo de CFDI */}
         <div className="space-y-2">
           <Label>Tipo de CFDI *</Label>
-          <Select value={data.tipoCfdi} onValueChange={handleTipoCfdiChange}>
+          <Select value={data.tipoCfdi || ''} onValueChange={handleTipoCfdiChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Seleccionar tipo de CFDI..." />
             </SelectTrigger>

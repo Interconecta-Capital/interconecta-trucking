@@ -12,35 +12,39 @@ interface OpcionesEspecialesProps {
 
 export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
   const handleTransporteInternacionalChange = (checked: boolean) => {
+    console.log('Transporte internacional changed:', checked);
     onChange({ 
-      transporteInternacional: checked ? 'Sí' : 'No'
+      transporteInternacional: checked
     });
   };
 
   const handleRegistroIstmoChange = (checked: boolean) => {
+    console.log('Registro istmo changed:', checked);
     onChange({ registroIstmo: checked });
   };
 
   const handleEntradaSalidaChange = (value: string) => {
+    console.log('Entrada/Salida changed:', value);
     onChange({ entradaSalidaMerc: value });
   };
 
   const handleViaTransporteChange = (value: string) => {
+    console.log('Via transporte changed:', value);
     onChange({ viaTransporte: value });
   };
 
   const handlePaisOrigenDestinoChange = (value: string) => {
+    console.log('Pais origen/destino changed:', value);
     onChange({ pais_origen_destino: value });
   };
 
   const handleViaEntradaSalidaChange = (value: string) => {
+    console.log('Via entrada/salida changed:', value);
     onChange({ via_entrada_salida: value });
   };
 
   // Ensure transporteInternacional is treated as boolean for the switch
-  const isTransporteInternacional = typeof data.transporteInternacional === 'string' 
-    ? data.transporteInternacional === 'Sí' 
-    : Boolean(data.transporteInternacional);
+  const isTransporteInternacional = Boolean(data.transporteInternacional);
 
   return (
     <div className="space-y-6">
