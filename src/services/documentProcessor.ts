@@ -2,6 +2,7 @@
 import Tesseract from 'tesseract.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Mercancia } from '@/hooks/useMercancias';
+import { ExcelParser, defaultColumnMapping } from '@/utils/excelParser';
 
 export interface DocumentProcessingResult {
   success: boolean;
@@ -61,6 +62,8 @@ export class DocumentProcessor {
           return await this.processPDF(file, onProgress);
         case 'xml':
           return await this.processXML(file, onProgress);
+        case 'excel':
+          return await this.processExcel(file, onProgress);
         case 'image':
           return await this.processImage(file, onProgress);
         default:
@@ -99,7 +102,7 @@ export class DocumentProcessor {
   }
 
   private static async processXML(
-    file: File, 
+    file: File,
     onProgress?: (progress: ProcessingProgress) => void
   ): Promise<DocumentProcessingResult> {
     onProgress?.({ 
@@ -117,6 +120,45 @@ export class DocumentProcessor {
     });
 
     return await this.parseXMLContent(xmlContent);
+  }
+
+  private static async processExcel(
+    file: File,
+    onProgress?: (progress: ProcessingProgress) => void
+  ): Promise<DocumentProcessingResult> {
+    onProgress?.({
+      stage: 'extraction',
+      progress: 30,
+      message: 'Leyendo archivo Excel/CSV...'
+    });
+
+    try {
+      const { headers, data } = await ExcelParser.parseFile(file);
+
+      onProgress?.({
+        stage: 'parsing',
+        progress: 60,
+        message: 'Convirtiendo filas en mercancías...'
+      });
+
+      const mercancias = ExcelParser.mapDataToMercancias(
+        headers,
+        data,
+        defaultColumnMapping
+      );
+
+      return {
+        success: true,
+        data: mercancias,
+        confidence: 0.8
+      };
+    } catch (error) {
+      return {
+        success: false,
+        confidence: 0,
+        errors: [`Error procesando Excel: ${error instanceof Error ? error.message : error}`]
+      };
+    }
   }
 
   private static async processImage(
