@@ -58,8 +58,13 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
         .single();
       if (error) throw error;
       if (data?.datos_formulario) {
-        setFormData(data.datos_formulario as CartaPorteData);
-        setCurrentCartaPorteId(id);
+        // Safe type conversion with validation
+        const loadedData = data.datos_formulario as unknown;
+        if (loadedData && typeof loadedData === 'object') {
+          const cartaPorteData = loadedData as CartaPorteData;
+          setFormData({ ...initialData, ...cartaPorteData });
+          setCurrentCartaPorteId(id);
+        }
       }
     } catch (error) {
       console.error('Error loading carta porte:', error);
@@ -72,9 +77,11 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
     if (!currentCartaPorteId) return;
     setIsLoading(true);
     try {
+      // Convert to JSON-safe format for Supabase
+      const jsonData = JSON.parse(JSON.stringify(formData));
       await supabase
         .from('cartas_porte')
-        .update({ datos_formulario: formData })
+        .update({ datos_formulario: jsonData })
         .eq('id', currentCartaPorteId);
     } catch (error) {
       console.error('Error saving carta porte:', error);

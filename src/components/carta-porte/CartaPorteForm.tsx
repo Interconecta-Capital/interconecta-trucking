@@ -107,6 +107,24 @@ export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFo
     return Object.values(stepValidations).every(isValid => Boolean(isValid));
   }, [stepValidations]);
 
+  // Create extended form data structure for compatibility
+  const cachedFormData = useMemo(() => ({
+    ...formData,
+    configuracion: {
+      version: formData.cartaPorteVersion || '3.1',
+      tipoComprobante: formData.tipoCfdi === 'Traslado' ? 'T' : 'I',
+      emisor: {
+        rfc: formData.rfcEmisor || '',
+        nombre: formData.nombreEmisor || '',
+        regimenFiscal: '',
+      },
+      receptor: {
+        rfc: formData.rfcReceptor || '',
+        nombre: formData.nombreReceptor || '',
+      },
+    },
+  }), [formData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -145,7 +163,7 @@ export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFo
 
           <CartaPorteTabContent
             cartaPorteData={formData}
-            cachedFormData={formData}
+            cachedFormData={cachedFormData}
             updateFormData={updateFormData}
             handleTabChange={handleTabChange}
             handleAutotransporteChange={handleAutotransporteChange}
