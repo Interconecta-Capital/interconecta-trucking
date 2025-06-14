@@ -15,18 +15,69 @@ const mockFormData: CartaPorteData = {
   registroIstmo: false,
   cartaPorteVersion: '3.1',
   ubicaciones: [
-    { tipo: 'Origen', codigo_postal: '01000' },
-    { tipo: 'Destino', codigo_postal: '02000' }
+    { 
+      id: 'loc1',
+      tipo_ubicacion: 'Origen', 
+      codigo_postal: '01000',
+      domicilio: {
+        pais: 'México',
+        estado: 'Ciudad de México',
+        municipio: 'Álvaro Obregón',
+        colonia: 'Centro',
+        calle: 'Test Street',
+        numero_exterior: '123'
+      }
+    },
+    { 
+      id: 'loc2',
+      tipo_ubicacion: 'Destino', 
+      codigo_postal: '02000',
+      domicilio: {
+        pais: 'México',
+        estado: 'Ciudad de México',
+        municipio: 'Benito Juárez',
+        colonia: 'Centro',
+        calle: 'Test Street 2',
+        numero_exterior: '456'
+      }
+    }
   ],
   mercancias: [
-    { descripcion: 'Producto Test', peso_kg: 100 }
+    { 
+      id: 'merc1',
+      bienes_transp: 'Test Product',
+      descripcion: 'Producto Test', 
+      cantidad: 10,
+      peso_kg: 100,
+      valor_mercancia: 1000,
+      moneda: 'MXN'
+    }
   ],
   autotransporte: {
     placa_vm: 'ABC123',
-    config_vehicular: 'C2'
+    anio_modelo_vm: 2020,
+    config_vehicular: 'C2',
+    perm_sct: 'TPAF01',
+    num_permiso_sct: '123456',
+    asegura_resp_civil: 'Test Insurance',
+    poliza_resp_civil: 'POL123',
+    remolques: []
   },
   figuras: [
-    { tipo_figura: '01', nombre_figura: 'Test Conductor' }
+    { 
+      id: 'fig1',
+      tipo_figura: '01', 
+      rfc_figura: 'XAXX010101000',
+      nombre_figura: 'Test Conductor',
+      domicilio: {
+        pais: 'México',
+        estado: 'Ciudad de México',
+        municipio: 'Álvaro Obregón',
+        colonia: 'Centro',
+        calle: 'Test Street',
+        numero_exterior: '123'
+      }
+    }
   ]
 };
 

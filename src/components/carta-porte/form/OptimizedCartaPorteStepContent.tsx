@@ -2,12 +2,12 @@
 import React, { memo, lazy, Suspense } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 
-// Lazy loading de componentes pesados
-const ConfiguracionInicial = lazy(() => import('../ConfiguracionInicial'));
-const UbicacionesSection = lazy(() => import('../UbicacionesSection'));
-const MercanciasSection = lazy(() => import('../MercanciasSection'));
-const AutotransporteSection = lazy(() => import('../AutotransporteSection'));
-const FigurasTransporteSection = lazy(() => import('../FigurasTransporteSection'));
+// Lazy loading de componentes pesados con default export
+const ConfiguracionInicial = lazy(() => import('../ConfiguracionInicial').then(module => ({ default: module.ConfiguracionInicial })));
+const UbicacionesSection = lazy(() => import('../UbicacionesSection').then(module => ({ default: module.UbicacionesSection })));
+const MercanciasSection = lazy(() => import('../MercanciasSection').then(module => ({ default: module.MercanciasSection })));
+const AutotransporteSection = lazy(() => import('../AutotransporteSection').then(module => ({ default: module.AutotransporteSection })));
+const FigurasTransporteSection = lazy(() => import('../FigurasTransporteSection').then(module => ({ default: module.FigurasTransporteSection })));
 const XMLGenerationPanel = lazy(() => import('../xml/XMLGenerationPanel').then(module => ({ default: module.XMLGenerationPanel })));
 
 interface OptimizedCartaPorteStepContentProps {
