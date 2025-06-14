@@ -27,13 +27,12 @@ export function CodigoPostalSelector({
   const [codigoPostal, setCodigoPostal] = useState(value);
   const [coloniaSeleccionada, setColoniaSeleccionada] = useState('');
   
-  const codigoHook = useCodigoPostalMexicanoNacional();
-  const { 
+  const {
     direccionInfo,
     loading, 
     error: errorCodigo, 
     consultarCodigoPostal 
-  } = codigoHook;
+  } = useCodigoPostalMexicanoNacional();
 
   const [datosCodigo, setDatosCodigo] = useState<any>(null);
   const [colonias, setColonias] = useState<any[]>([]);
@@ -47,23 +46,25 @@ export function CodigoPostalSelector({
   const handleBuscarCodigo = async () => {
     try {
       const datos = await consultarCodigoPostal(codigoPostal);
-      setDatosCodigo(datos);
-      
-      // For now, use mock colonias data
-      const mockColonias = [
-        { colonia: 'Centro', descripcion: 'Centro' },
-        { colonia: 'Norte', descripcion: 'Norte' },
-        { colonia: 'Sur', descripcion: 'Sur' }
-      ];
-      setColonias(mockColonias);
-      
-      if (onDatosChange && datos) {
-        onDatosChange({
-          codigo_postal: codigoPostal,
-          estado: datos.estado || direccionInfo.estado,
-          municipio: datos.municipio || direccionInfo.municipio,
-          ...datos
-        });
+      if (datos) {
+        setDatosCodigo(datos);
+        
+        // For now, use mock colonias data
+        const mockColonias = [
+          { colonia: 'Centro', descripcion: 'Centro' },
+          { colonia: 'Norte', descripcion: 'Norte' },
+          { colonia: 'Sur', descripcion: 'Sur' }
+        ];
+        setColonias(mockColonias);
+        
+        if (onDatosChange) {
+          onDatosChange({
+            codigo_postal: codigoPostal,
+            estado: datos.estado || direccionInfo.estado,
+            municipio: datos.municipio || direccionInfo.municipio,
+            ...datos
+          });
+        }
       }
     } catch (error) {
       console.error('Error al buscar código postal:', error);

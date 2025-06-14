@@ -1,7 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { UseCartaPorteFormOptions } from '@/hooks/carta-porte/types/useCartaPorteFormTypes';
 
 const initialData: CartaPorteData = {
@@ -16,7 +17,16 @@ const initialData: CartaPorteData = {
   cartaPorteVersion: '3.1',
   ubicaciones: [],
   mercancias: [],
-  autotransporte: {},
+  autotransporte: {
+    placa_vm: '',
+    anio_modelo_vm: 0,
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    remolques: []
+  },
   figuras: [],
 };
 
@@ -46,7 +56,7 @@ const serializeForSupabase = (data: CartaPorteData) => {
       nombreEmisor: data.nombreEmisor || '',
       rfcReceptor: data.rfcReceptor || '',
       nombreReceptor: data.nombreReceptor || '',
-      transporteInternacional: Boolean(data.transporteInternacional),
+      transporteInternacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
       registroIstmo: Boolean(data.registroIstmo),
       cartaPorteVersion: data.cartaPorteVersion || '3.1',
       ubicaciones: Array.isArray(data.ubicaciones) ? data.ubicaciones : [],
@@ -149,15 +159,15 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
       const { data, error } = await supabase
         .from('cartas_porte')
         .insert({
-          usuario_id: user.id, // Ensure user_id is set
+          usuario_id: user.id,
           datos_formulario: serializedData,
           rfc_emisor: newFormData.rfcEmisor || 'TEMP',
           rfc_receptor: newFormData.rfcReceptor || 'TEMP',
           nombre_emisor: newFormData.nombreEmisor,
           nombre_receptor: newFormData.nombreReceptor,
           tipo_cfdi: newFormData.tipoCfdi,
-          transporte_internacional: newFormData.transporteInternacional,
-          registro_istmo: newFormData.registroIstmo,
+          transporte_internacional: Boolean(newFormData.transporteInternacional === 'Sí' || newFormData.transporteInternacional === true),
+          registro_istmo: Boolean(newFormData.registroIstmo),
           status: 'borrador'
         })
         .select('id')
@@ -199,12 +209,12 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
           rfc_receptor: formData.rfcReceptor || 'TEMP',
           nombre_receptor: formData.nombreReceptor,
           tipo_cfdi: formData.tipoCfdi,
-          transporte_internacional: formData.transporteInternacional,
-          registro_istmo: formData.registroIstmo,
+          transporte_internacional: Boolean(formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true),
+          registro_istmo: Boolean(formData.registroIstmo),
           updated_at: new Date().toISOString()
         })
         .eq('id', currentCartaPorteId)
-        .eq('usuario_id', user.id); // Ensure we only update our own records
+        .eq('usuario_id', user.id);
         
       if (error) {
         console.error('Error saving carta porte:', error);

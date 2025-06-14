@@ -37,7 +37,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     totalDistRec: 0,
     tipoCreacion: 'manual',
     cartaPorteVersion: '3.1',
-    tipoCfdi: 'T',
+    tipoCfdi: 'Traslado',
     rfcEmisor: '',
     nombreEmisor: '',
     rfcReceptor: '',
