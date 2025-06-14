@@ -4,6 +4,7 @@ import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormSta
 import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPorteValidationEnhanced';
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
 import { useCartaPorteMappersExtendidos, CartaPorteFormDataExtendido } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
+import { useCartaPorteDataConverters } from '@/hooks/carta-porte/useCartaPorteDataConverters';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 interface UseCartaPorteFormOptions {
@@ -39,10 +40,13 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
+  // Converters para datos
+  const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
+
   // Conversión estable sin re-renders - usando useMemo para evitar ciclos infinitos
   const cartaPorteDataForValidation = useMemo((): CartaPorteData => {
     try {
-      return formDataExtendidoToCartaPorteData(formData);
+      return convertExtendedToCartaPorteData(formData);
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data for validation:', error);
       // Retornar datos mínimos válidos en caso de error
@@ -63,7 +67,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
         cartaPorteId: formData.cartaPorteId,
       };
     }
-  }, [formData, formDataExtendidoToCartaPorteData]);
+  }, [formData, convertExtendedToCartaPorteData]);
 
   // Usar validaciones mejoradas con IA
   const validationResult = useCartaPorteValidationEnhanced({ 
