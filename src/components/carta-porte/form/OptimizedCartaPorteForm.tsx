@@ -1,11 +1,12 @@
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
 import { CartaPorteHeader } from './CartaPorteHeader';
 import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface OptimizedCartaPorteFormProps {
   cartaPorteId?: string;
@@ -88,6 +89,24 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     };
   }, [optimizedAutotransporte]);
 
+  // Create a safe handler for autotransporte changes
+  const handleAutotransporteChange = useCallback((data: AutotransporteCompleto) => {
+    const safeData: AutotransporteCompleto = {
+      placa_vm: data.placa_vm || '',
+      anio_modelo_vm: data.anio_modelo_vm || 2020,
+      config_vehicular: data.config_vehicular || '',
+      perm_sct: data.perm_sct || '',
+      num_permiso_sct: data.num_permiso_sct || '',
+      asegura_resp_civil: data.asegura_resp_civil || '',
+      poliza_resp_civil: data.poliza_resp_civil || '',
+      asegura_med_ambiente: data.asegura_med_ambiente,
+      poliza_med_ambiente: data.poliza_med_ambiente,
+      remolques: data.remolques || [],
+      ...data // Spread any additional properties
+    };
+    setAutotransporte(safeData);
+  }, [setAutotransporte]);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <CartaPorteHeader
@@ -113,7 +132,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         onConfiguracionChange={handleConfiguracionChange}
         onUbicacionesChange={setUbicaciones}
         onMercanciasChange={setMercancias}
-        onAutotransporteChange={setAutotransporte}
+        onAutotransporteChange={handleAutotransporteChange}
         onFigurasChange={setFiguras}
         onStepChange={setCurrentStep}
         onXMLGenerated={setXmlGenerated}
