@@ -21,6 +21,7 @@ interface UseCartaPorteFormManagerResult {
   setCurrentStep: (step: number) => void;
   setXmlGenerated: (xml: string) => void;
   setTimbradoData: (data: any) => void;
+  setCurrentCartaPorteId: (id: string | null) => void;
   
   handleConfiguracionChange: (data: Partial<CartaPorteData>) => void;
   handleGuardarBorrador: () => void;
@@ -135,6 +136,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     setCurrentStep(0);
     setBorradorCargado(false);
     setUltimoGuardado(null);
+    setCurrentCartaPorteId(null);
   }, []);
 
   const setXmlGenerated = useCallback((xml: string) => {
@@ -163,6 +165,7 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     setCurrentStep,
     setXmlGenerated,
     setTimbradoData,
+    setCurrentCartaPorteId,
     
     handleConfiguracionChange,
     handleGuardarBorrador,

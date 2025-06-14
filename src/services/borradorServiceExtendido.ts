@@ -45,7 +45,7 @@ export class BorradorServiceExtendido {
       if (!user) throw new Error('Usuario no autenticado');
 
       const borradorData = {
-        datos_formulario: datos,
+        datos_formulario: datos as any, // Type assertion for JSON compatibility
         rfc_emisor: datos.rfcEmisor || 'TEMP',
         nombre_emisor: datos.nombreEmisor || '',
         rfc_receptor: datos.rfcReceptor || 'TEMP',
@@ -63,7 +63,7 @@ export class BorradorServiceExtendido {
           .from('cartas_porte')
           .update(borradorData)
           .eq('id', cartaPorteId)
-          .eq('usuario_id', user.id)
+          .eq('usuario_id', user.id) // Changed from user_id to usuario_id
           .select('id')
           .single();
 
@@ -75,7 +75,7 @@ export class BorradorServiceExtendido {
           .from('cartas_porte')
           .insert({
             ...borradorData,
-            usuario_id: user.id,
+            usuario_id: user.id, // Changed from user_id to usuario_id
             created_at: new Date().toISOString()
           })
           .select('id')
@@ -102,7 +102,7 @@ export class BorradorServiceExtendido {
         .from('cartas_porte')
         .select('datos_formulario')
         .eq('id', cartaPorteId)
-        .eq('usuario_id', user.id)
+        .eq('usuario_id', user.id) // Changed from user_id to usuario_id
         .eq('status', 'borrador')
         .single();
 
@@ -123,7 +123,7 @@ export class BorradorServiceExtendido {
       const { data, error } = await supabase
         .from('cartas_porte')
         .select('id, datos_formulario, updated_at, nombre_emisor, nombre_receptor')
-        .eq('usuario_id', user.id)
+        .eq('usuario_id', user.id) // Changed from user_id to usuario_id
         .eq('status', 'borrador')
         .order('updated_at', { ascending: false });
 
@@ -151,7 +151,7 @@ export class BorradorServiceExtendido {
         .from('cartas_porte')
         .delete()
         .eq('id', cartaPorteId)
-        .eq('usuario_id', user.id)
+        .eq('usuario_id', user.id) // Changed from user_id to usuario_id
         .eq('status', 'borrador');
 
       if (error) throw error;
