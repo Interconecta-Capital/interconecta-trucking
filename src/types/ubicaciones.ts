@@ -7,6 +7,7 @@ export interface Ubicacion {
   nombreRemitenteDestinatario?: string;
   fechaHoraSalidaLlegada?: string;
   distanciaRecorrida?: number;
+  ordenSecuencia?: number;
   coordenadas?: {
     latitud: number;
     longitud: number;
@@ -23,4 +24,20 @@ export interface Ubicacion {
     localidad?: string;
     referencia?: string;
   };
+}
+
+export interface UbicacionFrecuente {
+  id: string;
+  nombre: string;
+  ubicacion: Ubicacion;
+  fechaCreacion: string;
+  vecesUsada: number;
+}
+
+// Coordinates interface for mapping compatibility
+export interface Coordinates {
+  lat: number;
+  lng: number;
+  latitud?: number;
+  longitud?: number;
 }

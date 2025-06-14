@@ -28,12 +28,26 @@ export function UbicacionDomicilioFormOptimizado({
     onFieldChange('distanciaRecorrida', distancia);
   }, [onFieldChange]);
 
+  // Ensure domicilio has required properties for DomicilioUnificado
+  const domicilioUnificado: DomicilioUnificado = {
+    pais: formData.domicilio.pais,
+    codigoPostal: formData.domicilio.codigoPostal,
+    estado: formData.domicilio.estado,
+    municipio: formData.domicilio.municipio,
+    colonia: formData.domicilio.colonia,
+    calle: formData.domicilio.calle,
+    numExterior: formData.domicilio.numExterior || '', // Ensure required property
+    numInterior: formData.domicilio.numInterior,
+    localidad: formData.domicilio.localidad,
+    referencia: formData.domicilio.referencia,
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Domicilio</h3>
       
       <FormularioDomicilioUnificado
-        domicilio={formData.domicilio}
+        domicilio={domicilioUnificado}
         onDomicilioChange={handleDomicilioChange}
         onDireccionCompleta={handleDireccionCompleta}
         mostrarDistancia={true}

@@ -18,8 +18,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
 
   const { cartaPorteDataToFormData } = useCartaPorteMappers();
   
-  // Funciones de conversión de datos
-
   // Crear datos estables para validación usando solo valores primitivos como dependencias
   const stableFormDataForValidation = useMemo((): CartaPorteData => {
     // Crear un hash simple de los datos para detectar cambios reales
@@ -48,7 +46,35 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     lastValidationDataRef.current = dataSignature;
 
     try {
-      const cartaPorteData = convertExtendedToCartaPorteData(formData);
+      // Ensure mercancias have bienes_transp property
+      const cartaPorteData: CartaPorteData = {
+        tipoCreacion: formData.tipoCreacion || 'manual',
+        tipoCfdi: formData.tipoCfdi || 'Traslado',
+        rfcEmisor: formData.rfcEmisor || '',
+        nombreEmisor: formData.nombreEmisor || '',
+        rfcReceptor: formData.rfcReceptor || '',
+        nombreReceptor: formData.nombreReceptor || '',
+        transporteInternacional: formData.transporteInternacional || false,
+        registroIstmo: formData.registroIstmo || false,
+        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+        ubicaciones: formData.ubicaciones || [],
+        mercancias: (formData.mercancias || []).map(m => ({
+          ...m,
+          bienes_transp: m.bienes_transp || m.descripcion || '',
+        })),
+        autotransporte: formData.autotransporte || {
+          placa_vm: '',
+          anio_modelo_vm: 0,
+          config_vehicular: '',
+          perm_sct: '',
+          num_permiso_sct: '',
+          asegura_resp_civil: '',
+          poliza_resp_civil: '',
+        },
+        figuras: formData.figuras || [],
+        cartaPorteId: formData.cartaPorteId,
+      };
+      
       lastCartaPorteDataRef.current = cartaPorteData;
       return cartaPorteData;
     } catch (error) {

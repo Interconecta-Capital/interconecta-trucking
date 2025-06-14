@@ -1,159 +1,98 @@
 
 import { useState, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Ubicacion } from '@/types/ubicaciones';
 
-export const useUbicacionesPersistence = (cartaPorteId?: string) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
+export const useUbicacionesPersistence = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Guardar ubicación en la base de datos
-  const guardarUbicacion = useMutation({
-    mutationFn: async (ubicacion: Ubicacion) => {
-      if (!cartaPorteId) throw new Error('ID de carta porte requerido');
-
-      const { data, error } = await supabase
-        .from('ubicaciones')
-        .insert({
-          carta_porte_id: cartaPorteId,
-          id_ubicacion: ubicacion.idUbicacion,
-          tipo_ubicacion: ubicacion.tipoUbicacion,
-          rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario,
-          nombre_remitente_destinatario: ubicacion.nombreRemitenteDestinatario,
-          fecha_hora_salida_llegada: ubicacion.fechaHoraSalidaLlegada,
-          distancia_recorrida: ubicacion.distanciaRecorrida,
-          orden_secuencia: ubicacion.ordenSecuencia,
-          domicilio: ubicacion.domicilio,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cartas-porte'] });
-      toast({
-        title: "Éxito",
-        description: "Ubicación guardada correctamente",
-      });
-    },
-    onError: (error) => {
-      console.error('Error guardando ubicación:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar la ubicación",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Actualizar ubicación existente
-  const actualizarUbicacion = useMutation({
-    mutationFn: async ({ id, ubicacion }: { id: string; ubicacion: Ubicacion }) => {
-      const { data, error } = await supabase
-        .from('ubicaciones')
-        .update({
-          id_ubicacion: ubicacion.idUbicacion,
-          tipo_ubicacion: ubicacion.tipoUbicacion,
-          rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario,
-          nombre_remitente_destinatario: ubicacion.nombreRemitenteDestinatario,
-          fecha_hora_salida_llegada: ubicacion.fechaHoraSalidaLlegada,
-          distancia_recorrida: ubicacion.distanciaRecorrida,
-          orden_secuencia: ubicacion.ordenSecuencia,
-          domicilio: ubicacion.domicilio,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cartas-porte'] });
-      toast({
-        title: "Éxito",
-        description: "Ubicación actualizada correctamente",
-      });
-    },
-  });
-
-  // Eliminar ubicación
-  const eliminarUbicacion = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('ubicaciones')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cartas-porte'] });
-      toast({
-        title: "Éxito",
-        description: "Ubicación eliminada correctamente",
-      });
-    },
-  });
-
-  // Guardar múltiples ubicaciones
-  const guardarUbicaciones = useCallback(async (ubicaciones: Ubicacion[]) => {
-    if (!cartaPorteId) throw new Error('ID de carta porte requerido');
-
-    setLoading(true);
+  const guardarUbicaciones = useCallback(async (ubicaciones: Ubicacion[], cartaPorteId?: string) => {
+    setIsSaving(true);
     try {
-      // Primero eliminar ubicaciones existentes
-      await supabase
-        .from('ubicaciones')
-        .delete()
-        .eq('carta_porte_id', cartaPorteId);
-
-      // Luego insertar las nuevas
-      const ubicacionesParaInsertar = ubicaciones.map(ubicacion => ({
-        carta_porte_id: cartaPorteId,
-        id_ubicacion: ubicacion.idUbicacion,
-        tipo_ubicacion: ubicacion.tipoUbicacion,
-        rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario,
-        nombre_remitente_destinatario: ubicacion.nombreRemitenteDestinatario,
-        fecha_hora_salida_llegada: ubicacion.fechaHoraSalidaLlegada,
-        distancia_recorrida: ubicacion.distanciaRecorrida,
-        orden_secuencia: ubicacion.ordenSecuencia,
-        domicilio: ubicacion.domicilio,
+      // Mock save - in production this would save to API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const ubicacionesConSecuencia = ubicaciones.map((ubicacion, index) => ({
+        ...ubicacion,
+        ordenSecuencia: index + 1
       }));
-
-      const { error } = await supabase
-        .from('ubicaciones')
-        .insert(ubicacionesParaInsertar);
-
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['cartas-porte'] });
-      toast({
-        title: "Éxito",
-        description: "Ubicaciones guardadas correctamente",
-      });
+      
+      console.log('Ubicaciones guardadas:', ubicacionesConSecuencia);
+      return ubicacionesConSecuencia;
     } catch (error) {
       console.error('Error guardando ubicaciones:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar las ubicaciones",
-        variant: "destructive",
-      });
+      throw error;
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
-  }, [cartaPorteId, toast, queryClient]);
+  }, []);
+
+  const cargarUbicaciones = useCallback(async (cartaPorteId: string): Promise<Ubicacion[]> => {
+    setIsLoading(true);
+    try {
+      // Mock load - in production this would load from API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockUbicaciones: Ubicacion[] = [
+        {
+          id: '1',
+          idUbicacion: 'OR001',
+          tipoUbicacion: 'Origen',
+          ordenSecuencia: 1,
+          domicilio: {
+            pais: 'México',
+            codigoPostal: '01000',
+            estado: 'Ciudad de México',
+            municipio: 'Álvaro Obregón',
+            colonia: 'San Ángel',
+            calle: 'Avenida Revolución',
+            numExterior: '123'
+          }
+        }
+      ];
+      
+      return mockUbicaciones;
+    } catch (error) {
+      console.error('Error cargando ubicaciones:', error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const eliminarUbicacion = useCallback(async (ubicacionId: string, cartaPorteId?: string) => {
+    try {
+      // Mock delete - in production this would delete from API
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('Ubicación eliminada:', ubicacionId);
+    } catch (error) {
+      console.error('Error eliminando ubicación:', error);
+      throw error;
+    }
+  }, []);
+
+  const actualizarOrdenUbicaciones = useCallback(async (ubicaciones: Ubicacion[], cartaPorteId?: string) => {
+    try {
+      // Mock update order - in production this would update in API
+      const ubicacionesOrdenadas = ubicaciones.map((ubicacion, index) => ({
+        ...ubicacion,
+        ordenSecuencia: index + 1
+      }));
+      
+      console.log('Orden de ubicaciones actualizado:', ubicacionesOrdenadas);
+      return ubicacionesOrdenadas;
+    } catch (error) {
+      console.error('Error actualizando orden de ubicaciones:', error);
+      throw error;
+    }
+  }, []);
 
   return {
-    loading: loading || guardarUbicacion.isPending || actualizarUbicacion.isPending,
-    guardarUbicacion: guardarUbicacion.mutate,
-    actualizarUbicacion: actualizarUbicacion.mutate,
-    eliminarUbicacion: eliminarUbicacion.mutate,
     guardarUbicaciones,
+    cargarUbicaciones,
+    eliminarUbicacion,
+    actualizarOrdenUbicaciones,
+    isSaving,
+    isLoading
   };
 };

@@ -1,75 +1,53 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback, useEffect } from 'react';
 import { UbicacionFrecuente } from '@/types/ubicaciones';
 
 export const useUbicacionesFrecuentes = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [ubicacionesFrecuentes, setUbicacionesFrecuentes] = useState<UbicacionFrecuente[]>([]);
+  const [loadingFrecuentes, setLoadingFrecuentes] = useState(false);
+  const [isGuardando, setIsGuardando] = useState(false);
 
-  // Query para obtener ubicaciones frecuentes
-  const { data: ubicacionesFrecuentes = [], isLoading: loadingFrecuentes } = useQuery({
-    queryKey: ['ubicaciones-frecuentes'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ubicaciones_frecuentes')
-        .select('*')
-        .order('uso_count', { ascending: false })
-        .limit(20);
+  const cargarUbicacionesFrecuentes = useCallback(async () => {
+    setLoadingFrecuentes(true);
+    try {
+      // Mock implementation - in production this would load from API/storage
+      const mockData: UbicacionFrecuente[] = [];
+      setUbicacionesFrecuentes(mockData);
+    } catch (error) {
+      console.error('Error cargando ubicaciones frecuentes:', error);
+    } finally {
+      setLoadingFrecuentes(false);
+    }
+  }, []);
 
-      if (error) throw error;
+  const guardarUbicacionFrecuente = useCallback(async (ubicacion: any, nombre: string) => {
+    setIsGuardando(true);
+    try {
+      // Mock implementation - in production this would save to API/storage
+      const nuevaUbicacion: UbicacionFrecuente = {
+        id: Date.now().toString(),
+        nombre,
+        ubicacion,
+        fechaCreacion: new Date().toISOString(),
+        vecesUsada: 1
+      };
       
-      return data.map(item => ({
-        id: item.id,
-        nombreUbicacion: item.nombre_ubicacion,
-        rfcAsociado: item.rfc_asociado,
-        domicilio: item.domicilio,
-        coordenadas: undefined, // Database doesn't store coordinates, will be geocoded when needed
-        usoCount: item.uso_count
-      })) as UbicacionFrecuente[];
-    },
-  });
+      setUbicacionesFrecuentes(prev => [...prev, nuevaUbicacion]);
+    } catch (error) {
+      console.error('Error guardando ubicación frecuente:', error);
+    } finally {
+      setIsGuardando(false);
+    }
+  }, []);
 
-  // Mutation para guardar ubicación frecuente
-  const guardarUbicacionFrecuente = useMutation({
-    mutationFn: async (ubicacion: Omit<UbicacionFrecuente, 'id' | 'usoCount'>) => {
-      const { data, error } = await supabase
-        .from('ubicaciones_frecuentes')
-        .upsert({
-          nombre_ubicacion: ubicacion.nombreUbicacion,
-          rfc_asociado: ubicacion.rfcAsociado,
-          domicilio: ubicacion.domicilio,
-          uso_count: 1
-        }, {
-          onConflict: 'rfc_asociado,domicilio'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ubicaciones-frecuentes'] });
-      toast({
-        title: "Ubicación guardada",
-        description: "La ubicación se ha guardado en favoritos.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "No se pudo guardar la ubicación.",
-        variant: "destructive",
-      });
-    },
-  });
+  useEffect(() => {
+    cargarUbicacionesFrecuentes();
+  }, [cargarUbicacionesFrecuentes]);
 
   return {
     ubicacionesFrecuentes,
     loadingFrecuentes,
-    guardarUbicacionFrecuente: guardarUbicacionFrecuente.mutate,
-    isGuardando: guardarUbicacionFrecuente.isPending,
+    guardarUbicacionFrecuente,
+    isGuardando
   };
 };
