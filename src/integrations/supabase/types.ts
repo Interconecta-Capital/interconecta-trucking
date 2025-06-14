@@ -939,6 +939,42 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos_procesados: {
+        Row: {
+          id: string
+          file_path: string
+          extracted_text: string | null
+          confidence: number | null
+          mercancias_count: number | null
+          errors: string | null
+          carta_porte_id: string | null
+          documento_original_id: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          file_path: string
+          extracted_text?: string | null
+          confidence?: number | null
+          mercancias_count?: number | null
+          errors?: string | null
+          carta_porte_id?: string | null
+          documento_original_id?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          file_path?: string
+          extracted_text?: string | null
+          confidence?: number | null
+          mercancias_count?: number | null
+          errors?: string | null
+          carta_porte_id?: string | null
+          documento_original_id?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       eventos_calendario: {
         Row: {
           carta_porte_id: string | null
