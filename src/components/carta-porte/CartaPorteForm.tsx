@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs } from '@/components/ui/tabs';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { useCartaPorteFormSimplified } from '@/hooks/useCartaPorteFormSimplified';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
@@ -181,24 +182,24 @@ export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFo
       {/* Navegación por pasos */}
       <Card>
         <CardContent className="p-0">
-          <CartaPorteTabNavigation
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            stepValidations={stepValidations}
-            canGenerateXML={canGenerateXML}
-          />
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <CartaPorteTabNavigation
+              stepValidations={stepValidations}
+              canGenerateXML={canGenerateXML}
+            />
 
-          <CartaPorteTabContent
-            cartaPorteData={formData}
-            cachedFormData={cachedFormData}
-            updateFormData={updateFormData}
-            handleTabChange={handleTabChange}
-            handleAutotransporteChange={handleAutotransporteChange}
-            handleFigurasChange={handleFigurasChange}
-            handleXMLGenerated={handleXMLGenerated}
-            handleTimbrado={handleTimbrado}
-            currentCartaPorteId={currentCartaPorteId}
-          />
+            <CartaPorteTabContent
+              cartaPorteData={formData}
+              cachedFormData={cachedFormData}
+              updateFormData={updateFormData}
+              handleTabChange={handleTabChange}
+              handleAutotransporteChange={handleAutotransporteChange}
+              handleFigurasChange={handleFigurasChange}
+              handleXMLGenerated={handleXMLGenerated}
+              handleTimbrado={handleTimbrado}
+              currentCartaPorteId={currentCartaPorteId}
+            />
+          </Tabs>
         </CardContent>
       </Card>
 

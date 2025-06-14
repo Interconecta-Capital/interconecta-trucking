@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   FileText, 
   MapPin, 
@@ -21,15 +21,11 @@ const steps = [
 ];
 
 interface CartaPorteTabNavigationProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   stepValidations: Record<string, boolean>;
   canGenerateXML: boolean;
 }
 
 export function CartaPorteTabNavigation({
-  activeTab,
-  onTabChange,
   stepValidations,
   canGenerateXML,
 }: CartaPorteTabNavigationProps) {
@@ -58,10 +54,8 @@ export function CartaPorteTabNavigation({
   }, [stepValidations, canGenerateXML]);
 
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-6 h-auto">
-        {tabTriggers}
-      </TabsList>
-    </Tabs>
+    <TabsList className="grid w-full grid-cols-6 h-auto">
+      {tabTriggers}
+    </TabsList>
   );
 }
