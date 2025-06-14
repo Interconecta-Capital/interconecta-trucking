@@ -1,14 +1,17 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormState';
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
-import { useCartaPorteMappersExtendidos, CartaPorteFormDataExtendido } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
+import { useCartaPorteMappersExtendidos } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
 import { useCartaPorteStableData } from '@/hooks/carta-porte/useCartaPorteStableData';
 import { useCartaPorteFormValidation } from '@/hooks/carta-porte/useCartaPorteFormValidation';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { UseCartaPorteFormOptions } from '@/hooks/carta-porte/types/useCartaPorteFormTypes';
 
 export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
+  // Referencias para evitar bucles infinitos
+  const lastSetDataRef = useRef<string>('');
+  
   // Estado del formulario con tipos extendidos
   const {
     formData,
@@ -40,16 +43,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   // Función estable para actualizar datos sin causar loops
   const stableSetFormData = useCallback((data: CartaPorteData) => {
     try {
-      // Evitar updates circulares comparando solo datos relevantes
-      const currentSignature = [
-        stableFormDataForValidation.rfcEmisor,
-        stableFormDataForValidation.nombreEmisor,
-        stableFormDataForValidation.rfcReceptor,
-        stableFormDataForValidation.nombreReceptor,
-        String(stableFormDataForValidation.ubicaciones?.length || 0),
-        String(stableFormDataForValidation.mercancias?.length || 0)
-      ].join('|');
-      
+      // Crear signature para evitar updates circulares
       const newSignature = [
         data.rfcEmisor,
         data.nombreEmisor,
@@ -59,17 +53,19 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
         String(data.mercancias?.length || 0)
       ].join('|');
       
-      if (currentSignature === newSignature) {
+      // Evitar updates circulares
+      if (lastSetDataRef.current === newSignature) {
         console.log('[CartaPorteForm] Datos similares, evitando update circular');
         return;
       }
       
+      lastSetDataRef.current = newSignature;
       const extendedData = cartaPorteDataToFormDataExtendido(data);
       setFormData(extendedData);
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data to extended format:', error);
     }
-  }, [cartaPorteDataToFormDataExtendido, setFormData, stableFormDataForValidation]);
+  }, [cartaPorteDataToFormDataExtendido, setFormData]);
 
   // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({

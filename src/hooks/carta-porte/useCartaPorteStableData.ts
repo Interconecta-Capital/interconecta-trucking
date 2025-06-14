@@ -4,7 +4,6 @@ import { useCartaPorteDataConverters } from './useCartaPorteDataConverters';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
-import { CartaPorteFormCache } from './types/useCartaPorteFormTypes';
 
 interface UseCartaPorteStableDataOptions {
   formData: CartaPorteFormDataExtendido;
@@ -18,11 +17,10 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
 
   const { cartaPorteDataToFormData } = useCartaPorteMappers();
 
-  // Converters estables con ref
+  // Inicializar converters una sola vez
   if (!convertersRef.current) {
     convertersRef.current = useCartaPorteDataConverters();
   }
-  const { convertExtendedToCartaPorteData } = convertersRef.current;
 
   // Crear datos estables para validación usando solo valores primitivos como dependencias
   const stableFormDataForValidation = useMemo((): CartaPorteData => {
@@ -52,6 +50,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     lastValidationDataRef.current = dataSignature;
 
     try {
+      const { convertExtendedToCartaPorteData } = convertersRef.current;
       const cartaPorteData = convertExtendedToCartaPorteData(formData);
       lastCartaPorteDataRef.current = cartaPorteData;
       return cartaPorteData;
@@ -95,7 +94,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     !!formData.autotransporte,
     formData.figuras?.length,
     formData.cartaPorteId,
-    convertExtendedToCartaPorteData
   ]);
 
   // Convertir a formato compatible con validación de forma estable
@@ -144,9 +142,9 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         cartaPorteId: formData.cartaPorteId,
       };
     }
-  }, [stableFormDataForValidation, cartaPorteDataToFormData, formData.cartaPorteVersion, formData.tipoCfdi, formData.rfcEmisor, formData.nombreEmisor, formData.rfcReceptor, formData.nombreReceptor, formData.transporteInternacional, formData.registroIstmo, formData.tipoCreacion, formData.cartaPorteId]);
+  }, [stableFormDataForValidation, cartaPorteDataToFormData]);
 
-  const cache: CartaPorteFormCache = {
+  const cache = {
     lastValidationDataRef,
     lastCartaPorteDataRef,
     convertersRef
