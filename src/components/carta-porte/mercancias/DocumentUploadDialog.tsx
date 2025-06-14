@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { DocumentProcessor, type ProcessingProgress } from '@/services/documentProcessor';
+import { Progress } from '@/components/ui/progress';
 
 interface DocumentUploadDialogProps {
   open: boolean;
@@ -18,6 +20,7 @@ export function DocumentUploadDialog({
 }: DocumentUploadDialogProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [progress, setProgress] = useState<ProcessingProgress | null>(null);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -40,34 +43,28 @@ export function DocumentUploadDialog({
     }
 
     setUploading(true);
-    
+    setProgress({ stage: 'upload', progress: 0, message: 'Iniciando...' });
+
     try {
-      // Simulate document processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock processed data
-      const mockMercancias = [
-        {
-          id: '1',
-          descripcion: 'Producto extraído del documento',
-          cantidad: 1,
-          unidad: 'PZA',
-          valorMercancia: 1000,
-          pesoKg: 10
+      const result = await DocumentProcessor.processDocument(file, (p) => {
+        setProgress(p);
+      });
+
+      if (result.success) {
+        if (onDocumentProcessed) {
+          onDocumentProcessed(result.data || []);
         }
-      ];
-      
-      if (onDocumentProcessed) {
-        onDocumentProcessed(mockMercancias);
+        toast.success('Documento procesado exitosamente');
+        onOpenChange(false);
+      } else {
+        result.errors?.forEach((err) => toast.error(err));
       }
-      
-      toast.success('Documento procesado exitosamente');
-      onOpenChange(false);
     } catch (error) {
       console.error('Error processing document:', error);
       toast.error('Error al procesar el documento');
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   };
 
@@ -130,6 +127,13 @@ export function DocumentUploadDialog({
             >
               {uploading ? 'Procesando...' : 'Seleccionar Archivo'}
             </Button>
+
+            {uploading && progress && (
+              <div className="mt-4 space-y-2">
+                <Progress value={progress.progress} className="h-2" />
+                <p className="text-xs text-muted-foreground">{progress.message}</p>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end gap-2">
