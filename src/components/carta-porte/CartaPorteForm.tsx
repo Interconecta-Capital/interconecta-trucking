@@ -15,7 +15,6 @@ import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useCartaPorteCache } from '@/hooks/carta-porte/useCartaPorteCache';
 import { useCartaPortePerformance } from '@/hooks/carta-porte/useCartaPortePerformance';
-import { useCartaPorteDataConverters } from '@/hooks/carta-porte/useCartaPorteDataConverters';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
 import { 
   FileText, 
@@ -81,7 +80,6 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   // Performance hooks
   const cache = useCartaPorteCache();
   const performance = useCartaPortePerformance();
-  const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
   
   // Usar hook optimizado para el manejo del formulario con IA
   const {
@@ -160,7 +158,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     console.log('Carta Porte timbrada exitosamente:', datos);
   }, []);
 
-  // Handlers específicos para cada sección con conversión de tipos optimizados
+  // Handlers específicos para cada sección con tipos extendidos
   const handleAutotransporteChange = useCallback((data: any) => {
     updateFormData('autotransporte', data);
   }, [updateFormData]);
@@ -190,9 +188,9 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   const cartaPorteData = useMemo(() => {
     const formHash = performance.generateFormHash(cachedFormData);
     return performance.memoizeWithTTL(`cartaPorteData_${formHash}`, () => {
-      return convertExtendedToCartaPorteData(cachedFormData);
+      return formDataToCartaPorteData();
     });
-  }, [cachedFormData, convertExtendedToCartaPorteData, performance]);
+  }, [cachedFormData, formDataToCartaPorteData, performance]);
 
   // Determinar título dinámico con indicador IA - memoizado
   const getFormTitle = useMemo(() => {

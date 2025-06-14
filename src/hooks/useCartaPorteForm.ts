@@ -4,6 +4,7 @@ import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormSta
 import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPorteValidationEnhanced';
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
 import { useCartaPorteMappersExtendidos, CartaPorteFormDataExtendido } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
+import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 interface UseCartaPorteFormOptions {
   cartaPorteId?: string;
@@ -28,6 +29,11 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
+  // Convertir formData extendido a CartaPorteData para validaciones
+  const cartaPorteDataForValidation = useCallback((): CartaPorteData => {
+    return formDataExtendidoToCartaPorteData(formData);
+  }, [formData, formDataExtendidoToCartaPorteData]);
+
   // Usar validaciones mejoradas con IA
   const { 
     stepValidations, 
@@ -38,7 +44,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     overallScore,
     validateComplete
   } = useCartaPorteValidationEnhanced({ 
-    formData: formDataExtendidoToCartaPorteData(formData as unknown as CartaPorteFormDataExtendido),
+    formData: cartaPorteDataForValidation(),
     enableAI 
   });
 
@@ -50,14 +56,14 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     resetForm,
     clearSavedData,
   } = useCartaPorteIntegration({
-    formData: formDataExtendidoToCartaPorteData(formData as unknown as CartaPorteFormDataExtendido),
+    formData: cartaPorteDataForValidation(),
     currentCartaPorteId,
     isLoading,
     isCreating: false,
     isUpdating: false,
-    setFormData: (data) => {
+    setFormData: (data: CartaPorteData) => {
       const extendedData = cartaPorteDataToFormDataExtendido(data);
-      setFormData(extendedData as any);
+      setFormData(extendedData);
     },
     setCurrentCartaPorteId,
   });
@@ -70,7 +76,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
 
   // Mappers específicos para convertir datos del formulario
   const formDataToCartaPorteData = useCallback(() => {
-    return formDataExtendidoToCartaPorteData(formData as unknown as CartaPorteFormDataExtendido);
+    return formDataExtendidoToCartaPorteData(formData);
   }, [formData, formDataExtendidoToCartaPorteData]);
 
   const formAutotransporteToData = useCallback((autotransporteForm: any) => {
@@ -82,7 +88,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   }, [formData.figuras]);
 
   return {
-    // Estado del formulario
+    // Estado del formulario (siempre extendido)
     formData,
     currentCartaPorteId,
     isLoading,
