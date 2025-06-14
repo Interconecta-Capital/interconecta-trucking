@@ -38,7 +38,7 @@ export class GeminiValidationService {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'validate_direccion',
+          operation: 'validate_direccion',
           data: direccion,
           context: {
             pais: 'México',
@@ -71,7 +71,7 @@ export class GeminiValidationService {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'validate_mercancia_advanced',
+          operation: 'validate_mercancia_advanced',
           data: mercancia,
           context: {
             catalogo_sat: true,
@@ -105,7 +105,7 @@ export class GeminiValidationService {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'validate_coherencia_carta_porte',
+          operation: 'validate_coherencia_carta_porte',
           data: cartaPorteData,
           context: {
             validacion_cruzada: true,
@@ -132,7 +132,7 @@ export class GeminiValidationService {
     try {
       const { data: result, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'detect_anomalies',
+          operation: 'detect_anomalies',
           data,
           context: {
             tipo,

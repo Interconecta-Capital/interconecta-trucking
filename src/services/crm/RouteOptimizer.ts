@@ -74,7 +74,7 @@ export class RouteOptimizer {
       // Usar Gemini AI para optimización inteligente
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'optimize_route',
+          operation: 'optimize_route',
           data: {
             puntos,
             criterios

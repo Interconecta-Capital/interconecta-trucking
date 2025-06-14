@@ -11,8 +11,24 @@ serve(async (req) => {
   }
 
   try {
-    const { operation, data } = await req.json();
-    console.log('[GEMINI] Received operation:', operation);
+    const { operation, action, data } = await req.json();
+
+    let op = operation || action;
+
+    // Support legacy action field names
+    switch (op) {
+      case 'autocomplete_address':
+        op = 'autocomplete_direccion';
+        break;
+      case 'validate_mercancia_advanced':
+        op = 'validate_mercancia';
+        break;
+      case 'validate_direccion':
+        op = 'validate_section';
+        break;
+    }
+
+    console.log('[GEMINI] Received operation:', op);
 
     if (!geminiApiKey) {
       throw new Error('GEMINI_API_KEY not configured');
@@ -21,7 +37,7 @@ serve(async (req) => {
     let prompt = '';
     let responseFormat = 'json';
 
-    switch (operation) {
+    switch (op) {
       case 'autocomplete_direccion':
         prompt = `
         Completa esta dirección mexicana: "${data.input}"
@@ -65,10 +81,10 @@ serve(async (req) => {
         break;
 
       default:
-        throw new Error(`Operation ${operation} not supported`);
+        throw new Error(`Operation ${op} not supported`);
     }
 
-    console.log('[GEMINI] Calling Gemini API for operation:', operation);
+    console.log('[GEMINI] Calling Gemini API for operation:', op);
 
     // Call Gemini API
     const geminiResponse = await fetch(
