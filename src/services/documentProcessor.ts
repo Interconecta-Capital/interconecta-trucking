@@ -218,7 +218,7 @@ export class DocumentProcessor {
     try {
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'parse_document',
+          operation: 'parse_document',
           data: {
             text: text,
             document_type: documentType

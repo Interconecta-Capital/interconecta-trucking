@@ -59,7 +59,7 @@ export class GeminiAutocompleteService {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'autocomplete_address',
+          operation: 'autocomplete_address',
           input,
           context: {
             ...context,
@@ -93,7 +93,7 @@ export class GeminiAutocompleteService {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'autocomplete_mercancia',
+          operation: 'autocomplete_mercancia',
           input,
           context: {
             ...context,
@@ -127,7 +127,7 @@ export class GeminiAutocompleteService {
       
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action: 'autocomplete_vehiculo',
+          operation: 'autocomplete_vehiculo',
           input,
           context: {
             ...context,

@@ -60,12 +60,12 @@ export class GeminiCoreService {
     return GeminiCoreService.instance;
   }
 
-  private getCacheKey(action: string, input: string, context?: any): string {
-    return `${action}-${input}-${JSON.stringify(context)}`;
+  private getCacheKey(operation: string, input: string, context?: any): string {
+    return `${operation}-${input}-${JSON.stringify(context)}`;
   }
 
-  private async callGeminiAPI(action: string, data: any, context?: AIContextData): Promise<any> {
-    const cacheKey = this.getCacheKey(action, JSON.stringify(data), context);
+  private async callGeminiAPI(operation: string, data: any, context?: AIContextData): Promise<any> {
+    const cacheKey = this.getCacheKey(operation, JSON.stringify(data), context);
     
     // Check cache first
     const cached = this.cache.get(cacheKey);
@@ -76,7 +76,7 @@ export class GeminiCoreService {
     try {
       const { data: result, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          action,
+          operation,
           data,
           context: {
             ...context,
@@ -90,10 +90,10 @@ export class GeminiCoreService {
 
       // Cache the result
       this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
-      
+
       return result;
     } catch (error) {
-      console.error(`[GeminiCore] Error in ${action}:`, error);
+      console.error(`[GeminiCore] Error in ${operation}:`, error);
       throw error;
     }
   }
