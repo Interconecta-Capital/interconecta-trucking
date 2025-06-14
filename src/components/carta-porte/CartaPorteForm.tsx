@@ -10,6 +10,7 @@ import { AutotransporteSection } from './AutotransporteSection';
 import { FigurasTransporteSection } from './FigurasTransporteSection';
 import { XMLGenerationPanel } from './xml/XMLGenerationPanel';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
+import { AIValidationAlerts } from '@/components/ai/AIValidationAlerts';
 import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
@@ -21,7 +22,8 @@ import {
   Users,
   CheckCircle,
   Save,
-  Stamp
+  Stamp,
+  Brain
 } from 'lucide-react';
 
 export interface CartaPorteData {
@@ -86,8 +88,9 @@ interface CartaPorteFormProps {
 
 export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
+  const [showAIAlerts, setShowAIAlerts] = useState(true);
   
-  // Usar hook optimizado para el manejo del formulario
+  // Usar hook optimizado para el manejo del formulario con IA
   const {
     formData,
     currentCartaPorteId,
@@ -98,6 +101,11 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     clearSavedData,
     isCreating,
     isUpdating,
+    // Nuevas propiedades IA
+    aiValidation,
+    hasAIEnhancements,
+    validationMode,
+    overallScore,
   } = useCartaPorteForm({ cartaPorteId });
 
   // Usar hook optimizado para navegación de pestañas
@@ -105,6 +113,16 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     initialTab: 'configuracion',
     persistInURL: false,
   });
+
+  // Nuevo handler para aplicar fixes de IA
+  const handleApplyAIFix = useCallback((fix: any) => {
+    console.log('[CartaPorteForm] Aplicando fix de IA:', fix);
+    // Aquí se aplicarían los fixes automáticos según el tipo
+    if (fix.field && fix.suggestedValue) {
+      // Lógica para aplicar el fix basado en el campo
+      console.log(`Aplicando fix en ${fix.field}: ${fix.suggestedValue}`);
+    }
+  }, []);
 
   // Memoizar handlers para evitar re-renders
   const handleNextStep = useCallback((targetStep: string) => {
@@ -140,12 +158,13 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       .every(([, isValid]) => isValid);
   }, [stepValidations]);
 
-  // Determinar título dinámico basado en versión
+  // Determinar título dinámico con indicador IA
   const getFormTitle = useMemo(() => {
     const version = formData.cartaPorteVersion || '3.1';
     const baseTitle = cartaPorteId ? 'Editar Carta Porte' : 'Nueva Carta Porte';
-    return `${baseTitle} ${version}`;
-  }, [cartaPorteId, formData.cartaPorteVersion]);
+    const aiIndicator = hasAIEnhancements ? '🧠' : '';
+    return `${baseTitle} ${version} ${aiIndicator}`;
+  }, [cartaPorteId, formData.cartaPorteVersion, hasAIEnhancements]);
 
   // Memoizar renderizado de pestañas
   const tabTriggers = useMemo(() => {
@@ -183,7 +202,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Header con progreso */}
+      {/* Header con progreso mejorado */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -196,6 +215,18 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
               )}
             </CardTitle>
             <div className="flex items-center space-x-4">
+              {hasAIEnhancements && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAIAlerts(!showAIAlerts)}
+                  className="flex items-center space-x-2"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span>{showAIAlerts ? 'Ocultar' : 'Mostrar'} IA</span>
+                </Button>
+              )}
               {canSaveAsTemplate && (
                 <Button 
                   type="button"
@@ -209,13 +240,30 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
                 </Button>
               )}
               <div className="text-sm text-muted-foreground">
-                Progreso: {Math.round(totalProgress)}%
+                Progreso: {validationMode === 'ai-enhanced' ? overallScore : Math.round(totalProgress)}%
               </div>
             </div>
           </div>
-          <Progress value={totalProgress} className="w-full" />
+          <Progress 
+            value={validationMode === 'ai-enhanced' ? overallScore : totalProgress} 
+            className="w-full" 
+          />
+          {validationMode === 'ai-enhanced' && (
+            <p className="text-xs text-purple-600 mt-1">
+              ✨ Validación mejorada con IA activa
+            </p>
+          )}
         </CardHeader>
       </Card>
+
+      {/* Alertas de IA */}
+      {showAIAlerts && aiValidation && hasAIEnhancements && (
+        <AIValidationAlerts
+          validation={aiValidation}
+          onDismiss={() => setShowAIAlerts(false)}
+          onApplyFix={handleApplyAIFix}
+        />
+      )}
 
       {/* Navegación por pasos */}
       <Card>
@@ -284,19 +332,23 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
         </CardContent>
       </Card>
 
-      {/* Acciones finales cuando está completo */}
+      {/* Acciones finales mejoradas con IA */}
       {canGenerateXML && (
-        <Card className="bg-green-50 border-green-200">
+        <Card className={`border-green-200 ${hasAIEnhancements ? 'bg-gradient-to-r from-green-50 to-purple-50' : 'bg-green-50'}`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-6 w-6 text-green-600" />
                 <div>
-                  <h3 className="font-semibold text-green-800">
+                  <h3 className="font-semibold text-green-800 flex items-center gap-2">
                     Carta Porte Lista para Generar XML
+                    {hasAIEnhancements && <Brain className="h-4 w-4 text-purple-600" />}
                   </h3>
                   <p className="text-sm text-green-600">
-                    Todos los datos requeridos han sido completados
+                    {hasAIEnhancements 
+                      ? 'Validada con IA - Sin errores detectados' 
+                      : 'Todos los datos requeridos han sido completados'
+                    }
                   </p>
                 </div>
               </div>

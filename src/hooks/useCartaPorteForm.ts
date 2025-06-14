@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormState';
 import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPorteValidationEnhanced';
@@ -20,7 +21,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     setFormData,
   } = useCartaPorteFormState({ cartaPorteId });
 
-  // Usar validaciones mejoradas en lugar de las tradicionales
+  // Usar validaciones mejoradas con IA
   const { 
     stepValidations, 
     totalProgress,
@@ -38,8 +39,8 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     formData,
     currentCartaPorteId,
     isLoading,
-    isCreating: false, // Will be updated by sync hook
-    isUpdating: false, // Will be updated by sync hook
+    isCreating: false,
+    isUpdating: false,
   });
 
   // Sincronización con base de datos
