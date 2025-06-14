@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { DocumentProcessor } from '@/services/documentProcessor';
 
 interface DocumentUploadDialogProps {
   open: boolean;
@@ -31,38 +32,31 @@ export function DocumentUploadDialog({
       'image/png',
       'image/jpg',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel'
+      'application/vnd.ms-excel',
+      'text/xml',
+      'application/xml',
+      'text/csv'
     ];
     
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Tipo de archivo no soportado. Por favor sube PDF, imágenes o archivos Excel.');
+      toast.error('Tipo de archivo no soportado. Por favor sube PDF, imágenes, archivos Excel, XML o CSV.');
       return;
     }
 
     setUploading(true);
     
     try {
-      // Simulate document processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock processed data
-      const mockMercancias = [
-        {
-          id: '1',
-          descripcion: 'Producto extraído del documento',
-          cantidad: 1,
-          unidad: 'PZA',
-          valorMercancia: 1000,
-          pesoKg: 10
+      const result = await DocumentProcessor.processDocument(file);
+
+      if (result.success) {
+        if (onDocumentProcessed) {
+          onDocumentProcessed(result.data || []);
         }
-      ];
-      
-      if (onDocumentProcessed) {
-        onDocumentProcessed(mockMercancias);
+        toast.success('Documento procesado exitosamente');
+        onOpenChange(false);
+      } else {
+        toast.error(result.errors?.join('\n') || 'Error al procesar el documento');
       }
-      
-      toast.success('Documento procesado exitosamente');
-      onOpenChange(false);
     } catch (error) {
       console.error('Error processing document:', error);
       toast.error('Error al procesar el documento');
@@ -110,14 +104,14 @@ export function DocumentUploadDialog({
               Arrastra tu documento aquí o haz clic para seleccionar
             </p>
             <p className="text-sm text-gray-500">
-              PDF, imágenes o archivos Excel
+              PDF, imágenes, archivos Excel, XML o CSV
             </p>
             
             <input
               type="file"
               className="hidden"
               id="file-upload"
-              accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+              accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.xml,.csv"
               onChange={(e) => handleFileUpload(e.target.files)}
               disabled={uploading}
             />
