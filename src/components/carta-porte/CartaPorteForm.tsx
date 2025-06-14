@@ -122,9 +122,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   // Nuevo handler para aplicar fixes de IA
   const handleApplyAIFix = useCallback((fix: any) => {
     console.log('[CartaPorteForm] Aplicando fix de IA:', fix);
-    // Aquí se aplicarían los fixes automáticos según el tipo
     if (fix.field && fix.suggestedValue) {
-      // Lógica para aplicar el fix basado en el campo
       console.log(`Aplicando fix en ${fix.field}: ${fix.suggestedValue}`);
     }
   }, []);

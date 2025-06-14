@@ -74,6 +74,17 @@ export interface CartaPorteFormData {
   cartaPorteId?: string;
 }
 
+// Definir interface de remolque para compatibilidad
+interface RemolqueFormData {
+  placa: string;
+  subtipo: string;
+}
+
+interface RemolqueData {
+  placa: string;
+  subtipo_rem: string;
+}
+
 export const useCartaPorteMappers = () => {
   // Mapper de CartaPorteFormData a CartaPorteData
   const formDataToCartaPorteData = (formData: CartaPorteFormData): CartaPorteData => {
@@ -138,6 +149,11 @@ export const useCartaPorteMappers = () => {
 
   // Mapper de formData.autotransporte a AutotransporteData
   const formAutotransporteToData = (formAutotransporte: CartaPorteFormData['autotransporte']): AutotransporteData => {
+    const remolquesData: RemolqueData[] = (formAutotransporte.remolques || []).map(remolque => ({
+      placa: remolque.placa,
+      subtipo_rem: remolque.subtipo
+    }));
+
     return {
       placa_vm: formAutotransporte.placaVm,
       anio_modelo_vm: new Date().getFullYear(),
@@ -148,12 +164,17 @@ export const useCartaPorteMappers = () => {
       poliza_resp_civil: formAutotransporte.seguro.poliza,
       asegura_med_ambiente: '',
       poliza_med_ambiente: '',
-      remolques: formAutotransporte.remolques || [],
+      remolques: remolquesData,
     };
   };
 
   // Mapper de AutotransporteData a formData.autotransporte
   const dataAutotransporteToForm = (data: AutotransporteData): CartaPorteFormData['autotransporte'] => {
+    const remolquesForm: RemolqueFormData[] = (data.remolques || []).map(remolque => ({
+      placa: remolque.placa,
+      subtipo: remolque.subtipo_rem
+    }));
+
     return {
       placaVm: data.placa_vm || '',
       configuracionVehicular: data.config_vehicular || '',
@@ -162,7 +183,7 @@ export const useCartaPorteMappers = () => {
         poliza: data.poliza_resp_civil || '',
         vigencia: '',
       },
-      remolques: data.remolques || [],
+      remolques: remolquesForm,
     };
   };
 
