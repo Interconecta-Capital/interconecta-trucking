@@ -4,7 +4,8 @@ import { XMLValidation } from './xmlValidation';
 import { XMLUtils } from './xmlUtils';
 import { XMLConceptosBuilder } from './xmlConceptos';
 import { XMLComplementoBuilder } from './xmlComplemento';
-import { XML_NAMESPACES, SCHEMA_LOCATIONS } from './xmlNamespaces';
+import { getCartaPorteNamespace, getSchemaLocation, XML_NAMESPACES } from './xmlNamespaces';
+import { CartaPorteVersion } from '@/types/cartaPorteVersions';
 
 export interface XMLGenerationResult {
   success: boolean;
@@ -44,13 +45,19 @@ export class XMLCartaPorteGenerator {
   private static construirXML(data: CartaPorteData): string {
     const fechaActual = new Date().toISOString();
     const folio = XMLUtils.generarFolio();
+    const version = data.cartaPorteVersion || '3.1';
+    
+    // Obtener namespaces según versión
+    const cartaPorteNamespace = getCartaPorteNamespace(version);
+    const schemaLocation = getSchemaLocation(version);
+    const namespaceAlias = version === '3.1' ? 'cartaporte31' : 'cartaporte30';
     
     return `<?xml version="1.0" encoding="UTF-8"?>
 <cfdi:Comprobante 
   xmlns:cfdi="${XML_NAMESPACES.cfdi}"
-  xmlns:cartaporte31="${XML_NAMESPACES.cartaporte31}"
+  xmlns:${namespaceAlias}="${cartaPorteNamespace}"
   xmlns:xsi="${XML_NAMESPACES.xsi}"
-  xsi:schemaLocation="${SCHEMA_LOCATIONS}"
+  xsi:schemaLocation="${schemaLocation}"
   Version="4.0"
   Serie="CP"
   Folio="${folio}"
@@ -64,7 +71,7 @@ export class XMLCartaPorteGenerator {
   ${XMLConceptosBuilder.construirEmisor(data)}
   ${XMLConceptosBuilder.construirReceptor(data)}
   ${XMLConceptosBuilder.construirConceptos(data)}
-  ${XMLComplementoBuilder.construirComplemento(data)}
+  ${XMLComplementoBuilder.construirComplemento(data, version)}
   
 </cfdi:Comprobante>`;
   }

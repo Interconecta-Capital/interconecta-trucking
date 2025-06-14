@@ -21,10 +21,18 @@ export function useCartaPorteFormState({ cartaPorteId }: UseCartaPorteFormStateO
     nombreReceptor: '',
     transporteInternacional: false,
     registroIstmo: false,
+    cartaPorteVersion: '3.1', // Nueva: versión por defecto
     ubicaciones: [],
     mercancias: [],
     autotransporte: {},
     figuras: [],
+    // Campos específicos v3.1 por defecto
+    regimenesAduaneros: [],
+    version31Fields: {
+      transporteEspecializado: false,
+      tipoCarroceria: '',
+      registroISTMO: false
+    }
   } as CartaPorteData, {
     key: `cartaporte-form-${currentCartaPorteId || 'new'}`,
     storage: 'sessionStorage'

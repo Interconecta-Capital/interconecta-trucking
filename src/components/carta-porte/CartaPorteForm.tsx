@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +12,7 @@ import { XMLGenerationPanel } from './xml/XMLGenerationPanel';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { CartaPorteVersion } from '@/types/cartaPorteVersions';
 import { 
   FileText, 
   MapPin, 
@@ -35,6 +35,9 @@ export interface CartaPorteData {
   transporteInternacional: boolean;
   registroIstmo: boolean;
   
+  // Nueva: Versión del complemento
+  cartaPorteVersion: CartaPorteVersion;
+  
   // Ubicaciones
   ubicaciones: any[];
   
@@ -51,6 +54,18 @@ export interface CartaPorteData {
   entrada_salida_merc?: string;
   pais_origen_destino?: string;
   via_entrada_salida?: string;
+
+  // Campos específicos de versión 3.1
+  regimenesAduaneros?: string[];
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+    [key: string]: any;
+  };
+
+  // Campos específicos de versión 3.0 (legacy)
+  regimenAduanero?: string;
 
   // ID para tracking
   cartaPorteId?: string;
@@ -125,6 +140,13 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       .every(([, isValid]) => isValid);
   }, [stepValidations]);
 
+  // Determinar título dinámico basado en versión
+  const getFormTitle = useMemo(() => {
+    const version = formData.cartaPorteVersion || '3.1';
+    const baseTitle = cartaPorteId ? 'Editar Carta Porte' : 'Nueva Carta Porte';
+    return `${baseTitle} ${version}`;
+  }, [cartaPorteId, formData.cartaPorteVersion]);
+
   // Memoizar renderizado de pestañas
   const tabTriggers = useMemo(() => {
     return steps.map((step) => {
@@ -166,7 +188,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">
-              {cartaPorteId ? 'Editar Carta Porte 3.1' : 'Nueva Carta Porte 3.1'}
+              {getFormTitle}
               {currentCartaPorteId && (
                 <span className="text-sm font-normal text-green-600 ml-2">
                   ✓ Guardando automáticamente

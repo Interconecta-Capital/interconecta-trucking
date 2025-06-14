@@ -4,8 +4,11 @@ import { PlantillasSelector } from './plantillas/PlantillasSelector';
 import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { FlujoCargaSelector } from './configuracion/FlujoCargaSelector';
 import { ConfiguracionPrincipal } from './configuracion/ConfiguracionPrincipal';
+import { VersionSelector } from './VersionSelector';
 import { RFCValidator } from '@/utils/rfcValidation';
 import { CartaPorteData } from './CartaPorteForm';
+import { useVersionManager } from '@/hooks/useVersionManager';
+import { CartaPorteVersion } from '@/types/cartaPorteVersions';
 
 interface ConfiguracionInicialProps {
   data: CartaPorteData;
@@ -18,9 +21,32 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
   const [showPlantillas, setShowPlantillas] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
 
+  // Gestión de versiones
+  const {
+    version,
+    toggleVersion,
+    isChangingVersion
+  } = useVersionManager({
+    initialVersion: (data.cartaPorteVersion as CartaPorteVersion) || '3.1',
+    onVersionChange: (newVersion) => {
+      onChange({ cartaPorteVersion: newVersion });
+    },
+    formData: data,
+    updateFormData: (section, newData) => {
+      onChange(newData);
+    }
+  });
+
   useEffect(() => {
     onChange({ tipoCreacion });
   }, [tipoCreacion, onChange]);
+
+  // Actualizar versión en datos cuando cambie
+  useEffect(() => {
+    if (data.cartaPorteVersion !== version) {
+      onChange({ cartaPorteVersion: version });
+    }
+  }, [version, data.cartaPorteVersion, onChange]);
 
   const handleCargarPlantilla = (plantilla: any) => {
     onChange({
@@ -31,6 +57,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
       tipoCfdi: plantilla.tipo_cfdi,
       transporteInternacional: plantilla.transporte_internacional,
       registroIstmo: plantilla.registro_istmo,
+      cartaPorteVersion: plantilla.carta_porte_version || version
     });
     setShowPlantillas(false);
     setTipoCreacion('manual');
@@ -62,6 +89,13 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
 
   return (
     <div className="space-y-6">
+      {/* Selector de Versión del Complemento */}
+      <VersionSelector
+        version={version}
+        onVersionChange={toggleVersion}
+        isChanging={isChangingVersion}
+      />
+
       {/* Selector de Tipo de Creación */}
       <FlujoCargaSelector
         tipoCreacion={tipoCreacion}
