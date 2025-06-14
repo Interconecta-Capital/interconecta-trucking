@@ -93,6 +93,11 @@ pm2 start ecosystem.config.js --env production
 
 # Actualizar Nginx
 sudo nginx -t && sudo systemctl reload nginx
+
+Extracción de PDFs
+Para procesar documentos en este formato utilizamos la librería `pdfjs-dist`,
+que extrae el texto de cada página de forma individual. El worker se configura
+al inicio de `DocumentProcessor` para asegurar su correcto funcionamiento.
 Variables de Entorno Requeridas
 env# Base de datos
 DATABASE_URL=postgresql://usuario:password@host:puerto/dbname
