@@ -77,7 +77,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   }, [autotransporte]);
 
   const safeOptimizedAutotransporte = useMemo(() => {
-    return optimizedAutotransporte || {
+    // Ensure we always return a complete AutotransporteCompleto object
+    const defaultAutotransporte: AutotransporteCompleto = {
       placa_vm: '',
       anio_modelo_vm: 2020,
       config_vehicular: '',
@@ -86,6 +87,17 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
       asegura_resp_civil: '',
       poliza_resp_civil: '',
       remolques: []
+    };
+
+    // If optimizedAutotransporte is empty or missing properties, use defaults
+    if (!optimizedAutotransporte || Object.keys(optimizedAutotransporte).length === 0) {
+      return defaultAutotransporte;
+    }
+
+    // Merge optimized data with defaults to ensure all required properties exist
+    return {
+      ...defaultAutotransporte,
+      ...optimizedAutotransporte
     };
   }, [optimizedAutotransporte]);
 
