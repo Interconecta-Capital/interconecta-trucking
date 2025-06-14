@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { PlantillasSelector } from './plantillas/PlantillasSelector';
 import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { FlujoCargaSelector } from './configuracion/FlujoCargaSelector';
-import { ConfiguracionPrincipal } from './configuracion/ConfiguracionPrincipal';
+import { ConfiguracionPrincipalMejorada } from './configuracion/ConfiguracionPrincipalMejorada';
 import { VersionSelector } from './VersionSelector';
 import { RFCValidator } from '@/utils/rfcValidation';
 import { CartaPorteData } from './CartaPorteForm';
@@ -104,8 +103,8 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
         onShowDocumentUpload={() => setShowDocumentUpload(true)}
       />
 
-      {/* Configuración Principal */}
-      <ConfiguracionPrincipal
+      {/* Configuración Principal con CRM Integrado */}
+      <ConfiguracionPrincipalMejorada
         data={data}
         onChange={onChange}
         onNext={onNext}
