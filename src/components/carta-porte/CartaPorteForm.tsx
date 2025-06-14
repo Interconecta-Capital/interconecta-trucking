@@ -4,7 +4,6 @@ import { CartaPorteHeader } from './form/CartaPorteHeader';
 import { CartaPorteProgressTracker } from './form/CartaPorteProgressTracker';
 import { CartaPorteStepContent } from './form/CartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './form/CartaPorteAutoSaveIndicator';
-import { CartaPorteData } from '@/types/cartaPorte';
 
 interface CartaPorteFormProps {
   cartaPorteId?: string;
@@ -84,5 +83,4 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   );
 }
 
-export { CartaPorteData };
 export default CartaPorteForm;

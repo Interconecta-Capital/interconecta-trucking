@@ -18,6 +18,8 @@ export interface CartaPorteData {
   ubicaciones?: any[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
+  pais_origen_destino?: string;
+  via_entrada_salida?: string;
 }
 
 export interface AutotransporteCompleto {
@@ -81,15 +83,19 @@ export interface MercanciaCompleta {
   valor_mercancia?: number;
   moneda?: string;
   fraccion_arancelaria?: string;
-  uuid_comercio_ext?: string;
+  uuid_comercio_exterior?: string;
   material_peligroso?: boolean;
   cve_material_peligroso?: string;
   embalaje?: string;
   tipo_embalaje?: string;
   material_embalaje?: string;
+  descripcion_embalaje?: string;
+  peso_bruto_total?: number;
+  unidad_peso_bruto?: string;
   dimensiones?: {
     largo: number;
     ancho: number;
     alto: number;
+    unidad?: string;
   };
 }

@@ -1,20 +1,9 @@
-import React, { useState, useCallback } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AutotransporteService } from '@/services/autotransporteService';
-import { VehiculoMotorForm } from './VehiculoMotorForm';
-import { PermisoSCTForm } from './PermisoSCTForm';
-import { SegurosSection } from './SegurosSection';
-import { RemolquesList } from './RemolquesList';
-import { VehiculoDimensions } from './VehiculoDimensions';
-import { VehiculoInsurance } from './VehiculoInsurance';
-import { VehiculoPermits } from './VehiculoPermits';
-import { VehiculoData } from '@/hooks/carta-porte/useCartaPorteFormManager';
+import { RemolquesForm } from './RemolquesForm';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface AutotransporteFormOptimizadoProps {
@@ -150,7 +139,7 @@ export function AutotransporteFormOptimizado({ data, onChange }: AutotransporteF
         </CardContent>
       </Card>
 
-      <RemolquesList
+      <RemolquesForm
         remolques={data.remolques || []}
         onChange={(remolques) => handleFieldChange('remolques', remolques)}
       />

@@ -14,7 +14,7 @@ import {
   useBuscarProductosServicios, 
   useBuscarClaveUnidad, 
   useBuscarMaterialesPeligrosos 
-} from '@/hooks/useCatalogos';
+} from '@/hooks/useCatalogosReal';
 import { useTiposEmbalaje, useFraccionesArancelarias } from '@/hooks/useCatalogosExtendidos';
 import { MercanciaCompleta } from '@/types/cartaPorte';
 
@@ -37,6 +37,7 @@ export function MercanciaFormCompleta({
 }: MercanciaFormCompletaProps) {
   const form = useForm<MercanciaCompleta>({
     defaultValues: mercancia || {
+      id: `mercancia-${Date.now()}`,
       descripcion: '',
       bienes_transp: '',
       clave_unidad: '',
@@ -49,7 +50,6 @@ export function MercanciaFormCompleta({
       fraccion_arancelaria: '',
       tipo_embalaje: '',
       material_embalaje: '',
-      descripcion_embalaje: '',
       peso_bruto_total: 0,
       unidad_peso_bruto: 'KGM',
       dimensiones: {
@@ -394,23 +394,6 @@ export function MercanciaFormCompleta({
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="descripcion_embalaje"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción del Embalaje</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Descripción detallada del embalaje"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField

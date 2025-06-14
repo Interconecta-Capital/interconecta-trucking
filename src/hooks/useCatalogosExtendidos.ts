@@ -1,50 +1,39 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { CatalogosSATExtendido } from "@/services/catalogosSATExtendido";
+import { useQuery } from '@tanstack/react-query';
 
-// Hook para tipos de embalaje
-export const useTiposEmbalaje = (busqueda?: string) => {
+export function useTiposEmbalaje(searchTerm: string = '') {
   return useQuery({
-    queryKey: ['catalogos', 'embalajes', busqueda],
-    queryFn: () => CatalogosSATExtendido.buscarTiposEmbalaje(busqueda),
-    staleTime: 10 * 60 * 1000,
+    queryKey: ['tipos-embalaje', searchTerm],
+    queryFn: async () => {
+      // Mock data for now
+      return [
+        { value: '1A1', label: '1A1 - Bidón de acero' },
+        { value: '1A2', label: '1A2 - Bidón de acero con tapa no desmontable' },
+        { value: '4G', label: '4G - Caja de cartón' },
+        { value: '3H1', label: '3H1 - Bidón de plástico' },
+      ].filter(item => 
+        item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.value.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    },
+    enabled: true
   });
-};
+}
 
-// Hook para tipos de carrocería
-export const useTiposCarroceria = (busqueda?: string) => {
+export function useFraccionesArancelarias(searchTerm: string = '', enabled: boolean = true) {
   return useQuery({
-    queryKey: ['catalogos', 'carrocerias', busqueda],
-    queryFn: () => CatalogosSATExtendido.buscarTiposCarroceria(busqueda),
-    staleTime: 10 * 60 * 1000,
+    queryKey: ['fracciones-arancelarias', searchTerm],
+    queryFn: async () => {
+      // Mock data for now
+      return [
+        { value: '01012100', label: '01012100 - Caballos reproductores de raza pura' },
+        { value: '02011000', label: '02011000 - Canales y medias canales de bovino' },
+        { value: '03011100', label: '03011100 - Peces ornamentales' },
+      ].filter(item => 
+        item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.value.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    },
+    enabled: enabled && searchTerm.length >= 2
   });
-};
-
-// Hook para tipos de licencia
-export const useTiposLicenciaExtendidos = (busqueda?: string) => {
-  return useQuery({
-    queryKey: ['catalogos', 'licencias', busqueda],
-    queryFn: () => CatalogosSATExtendido.buscarTiposLicencia(busqueda),
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-// Hook para fracciones arancelarias
-export const useFraccionesArancelarias = (busqueda: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['catalogos', 'fracciones', busqueda],
-    queryFn: () => CatalogosSATExtendido.buscarFraccionesArancelarias(busqueda),
-    enabled: enabled && busqueda.length >= 2,
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-// Hook para coordenadas GPS
-export const useCoordenadas = (codigoPostal: string, enabled = true) => {
-  return useQuery({
-    queryKey: ['coordenadas', codigoPostal],
-    queryFn: () => CatalogosSATExtendido.calcularCoordenadas(codigoPostal),
-    enabled: enabled && codigoPostal.length === 5,
-    staleTime: 30 * 60 * 1000,
-  });
-};
+}

@@ -8,10 +8,10 @@ interface FigurasTransporteSectionProps {
   data: FiguraCompleta[];
   onChange: (data: FiguraCompleta[]) => void;
   onPrev: () => void;
-  onFinish: () => void;
+  onNext: () => void;
 }
 
-export function FigurasTransporteSection({ data, onChange, onPrev, onFinish }: FigurasTransporteSectionProps) {
+export function FigurasTransporteSection({ data, onChange, onPrev, onNext }: FigurasTransporteSectionProps) {
   // Validar que hay al menos un operador
   const isDataComplete = () => {
     return data.length > 0 && data.some(figura => figura.tipo_figura === '01');
@@ -88,7 +88,7 @@ export function FigurasTransporteSection({ data, onChange, onPrev, onFinish }: F
           <span>Anterior</span>
         </Button>
         <Button 
-          onClick={onFinish} 
+          onClick={onNext} 
           disabled={!isDataComplete()}
           className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
         >
