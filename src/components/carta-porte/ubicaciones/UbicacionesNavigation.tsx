@@ -1,45 +1,31 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface UbicacionesNavigationProps {
-  showForm: boolean;
-  isValid: boolean;
-  onPrev: (e: React.MouseEvent) => void;
-  onNext: (e: React.MouseEvent) => void;
+  onPrev: () => void;
+  onNext: () => void;
+  canContinue: boolean;
 }
 
-export function UbicacionesNavigation({
-  showForm,
-  isValid,
-  onPrev,
-  onNext
-}: UbicacionesNavigationProps) {
-  if (showForm) {
-    return null;
-  }
-
+export function UbicacionesNavigation({ onPrev, onNext, canContinue }: UbicacionesNavigationProps) {
   return (
-    <div className="flex justify-between">
-      <Button 
+    <div className="flex justify-between pt-6">
+      <Button
         type="button"
-        variant="outline" 
-        onClick={onPrev} 
-        className="flex items-center space-x-2"
+        variant="outline"
+        onClick={onPrev}
       >
-        <ArrowLeft className="h-4 w-4" />
-        <span>Anterior</span>
+        Anterior
       </Button>
       
-      <Button 
+      <Button
         type="button"
-        onClick={onNext} 
-        disabled={!isValid}
-        className="flex items-center space-x-2"
+        onClick={onNext}
+        disabled={!canContinue}
+        className="bg-green-600 hover:bg-green-700"
       >
-        <span>Continuar a Mercancías</span>
-        <ArrowRight className="h-4 w-4" />
+        Continuar a Mercancías
       </Button>
     </div>
   );

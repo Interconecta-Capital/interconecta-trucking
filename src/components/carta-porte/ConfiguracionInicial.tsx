@@ -6,7 +6,7 @@ import { FlujoCargaSelector } from './configuracion/FlujoCargaSelector';
 import { ConfiguracionPrincipalMejorada } from './configuracion/ConfiguracionPrincipalMejorada';
 import { VersionSelector } from './VersionSelector';
 import { RFCValidator } from '@/utils/rfcValidation';
-import { CartaPorteData } from './CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { useVersionManager } from '@/hooks/useVersionManager';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
 import { toast } from 'sonner';

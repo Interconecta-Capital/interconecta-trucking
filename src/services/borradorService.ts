@@ -1,134 +1,92 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface BorradorCartaPorte {
-  id?: string;
-  userId: string;
+interface BorradorData {
   datosFormulario: any;
   ultimaModificacion: string;
-  nombre?: string;
 }
 
 export class BorradorService {
-  private static STORAGE_KEY = 'carta_porte_borrador';
-  private static AUTO_SAVE_INTERVAL = 30000; // 30 segundos
-  private static autoSaveTimer: NodeJS.Timeout | null = null;
+  private static intervalId: NodeJS.Timeout | null = null;
+  private static isAutoSaving = false;
 
-  // Guardar borrador automáticamente
-  static async guardarBorradorAutomatico(datos: any): Promise<void> {
+  // Guardar borrador en localStorage como respaldo
+  static guardarEnLocalStorage(datos: any): void {
     try {
-      const borrador: BorradorCartaPorte = {
-        userId: 'current_user', // Se reemplazará con auth.uid()
+      const borrador = {
         datosFormulario: datos,
-        ultimaModificacion: new Date().toISOString(),
-        nombre: `Borrador ${new Date().toLocaleString()}`
+        ultimaModificacion: new Date().toISOString()
       };
-
-      // Guardar en localStorage primero para respuesta inmediata
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(borrador));
-
-      // Intentar guardar en base de datos
-      const { error } = await supabase
-        .from('cartas_porte')
-        .upsert({
-          status: 'borrador',
-          datos_formulario: datos,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error guardando borrador en BD:', error);
-      }
+      localStorage.setItem('carta_porte_borrador', JSON.stringify(borrador));
     } catch (error) {
-      console.error('Error en guardarBorradorAutomatico:', error);
+      console.error('Error guardando en localStorage:', error);
     }
   }
 
-  // Iniciar guardado automático
-  static iniciarGuardadoAutomatico(onSave: (datos: any) => void, getDatos: () => any): void {
-    if (this.autoSaveTimer) {
-      clearInterval(this.autoSaveTimer);
-    }
-
-    this.autoSaveTimer = setInterval(() => {
-      const datos = getDatos();
-      if (datos && Object.keys(datos).length > 0) {
-        this.guardarBorradorAutomatico(datos);
-        onSave(datos);
-      }
-    }, this.AUTO_SAVE_INTERVAL);
-  }
-
-  // Detener guardado automático
-  static detenerGuardadoAutomatico(): void {
-    if (this.autoSaveTimer) {
-      clearInterval(this.autoSaveTimer);
-      this.autoSaveTimer = null;
-    }
-  }
-
-  // Cargar último borrador
-  static cargarUltimoBorrador(): BorradorCartaPorte | null {
+  // Cargar último borrador desde localStorage
+  static cargarUltimoBorrador(): BorradorData | null {
     try {
-      const borradorLocal = localStorage.getItem(this.STORAGE_KEY);
-      if (borradorLocal) {
-        return JSON.parse(borradorLocal);
+      const borradorStr = localStorage.getItem('carta_porte_borrador');
+      if (borradorStr) {
+        return JSON.parse(borradorStr);
       }
-      return null;
     } catch (error) {
       console.error('Error cargando borrador:', error);
-      return null;
+    }
+    return null;
+  }
+
+  // Guardar borrador automáticamente (sin usar Supabase por ahora)
+  static async guardarBorradorAutomatico(datos: any): Promise<void> {
+    try {
+      this.guardarEnLocalStorage(datos);
+      console.log('Borrador guardado automáticamente');
+    } catch (error) {
+      console.error('Error en guardado automático:', error);
     }
   }
 
   // Limpiar borrador
   static limpiarBorrador(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
-    this.detenerGuardadoAutomatico();
-  }
-
-  // Obtener borradores de la base de datos
-  static async obtenerBorradores(): Promise<BorradorCartaPorte[]> {
     try {
-      const { data, error } = await supabase
-        .from('cartas_porte')
-        .select('id, datos_formulario, updated_at, folio')
-        .eq('status', 'borrador')
-        .order('updated_at', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('Error obteniendo borradores:', error);
-        return [];
-      }
-
-      return (data || []).map(item => ({
-        id: item.id,
-        userId: 'current_user',
-        datosFormulario: item.datos_formulario || {},
-        ultimaModificacion: item.updated_at,
-        nombre: item.folio || `Borrador ${new Date(item.updated_at).toLocaleString()}`
-      }));
+      localStorage.removeItem('carta_porte_borrador');
+      console.log('Borrador eliminado');
     } catch (error) {
-      console.error('Error en obtenerBorradores:', error);
-      return [];
+      console.error('Error limpiando borrador:', error);
     }
   }
 
-  // Eliminar borrador
-  static async eliminarBorrador(id: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('cartas_porte')
-        .delete()
-        .eq('id', id)
-        .eq('status', 'borrador');
+  // Iniciar guardado automático
+  static iniciarGuardadoAutomatico(
+    onSave: () => void, 
+    getDatos: () => any, 
+    intervalMs: number = 30000
+  ): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
 
-      if (error) {
-        console.error('Error eliminando borrador:', error);
+    this.intervalId = setInterval(async () => {
+      if (!this.isAutoSaving) {
+        this.isAutoSaving = true;
+        try {
+          const datos = getDatos();
+          await this.guardarBorradorAutomatico(datos);
+          onSave();
+        } catch (error) {
+          console.error('Error en guardado automático:', error);
+        } finally {
+          this.isAutoSaving = false;
+        }
       }
-    } catch (error) {
-      console.error('Error en eliminarBorrador:', error);
+    }, intervalMs);
+  }
+
+  // Detener guardado automático
+  static detenerGuardadoAutomatico(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
   }
 }

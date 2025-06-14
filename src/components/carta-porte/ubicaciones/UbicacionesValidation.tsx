@@ -1,34 +1,31 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface UbicacionesValidationProps {
-  validation: {
+  validacion: {
     esValido: boolean;
-    errores: string[];
+    mensaje: string;
   };
-  showForm: boolean;
+  distanciaTotal: number;
 }
 
-export function UbicacionesValidation({ validation, showForm }: UbicacionesValidationProps) {
-  if (showForm || validation.esValido) {
-    return null;
-  }
-
+export function UbicacionesValidation({ validacion, distanciaTotal }: UbicacionesValidationProps) {
   return (
-    <Alert variant="destructive">
-      <AlertCircle className="h-4 w-4" />
-      <AlertDescription>
-        <div className="space-y-1">
-          <p className="font-medium">Se requieren correcciones:</p>
-          <ul className="list-disc list-inside">
-            {validation.errores.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
+    <>
+      {!validacion.esValido && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{validacion.mensaje}</AlertDescription>
+        </Alert>
+      )}
+
+      {distanciaTotal > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Distancia total estimada: <strong>{distanciaTotal.toFixed(2)} km</strong>
         </div>
-      </AlertDescription>
-    </Alert>
+      )}
+    </>
   );
 }

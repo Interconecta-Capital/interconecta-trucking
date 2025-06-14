@@ -1,29 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { AutotransporteCompleto, FiguraCompleta } from '@/types/cartaPorte';
+import { AutotransporteCompleto, FiguraCompleta, CartaPorteData } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
-
-export interface CartaPorteData {
-  tipoRelacion: string;
-  version: string;
-  transporteInternacional: string;
-  entradaSalidaMerc: string;
-  viaTransporte: string;
-  totalDistRec: number;
-  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
-  cartaPorteVersion?: string;
-  tipoCfdi?: string;
-  rfcEmisor?: string;
-  nombreEmisor?: string;
-  rfcReceptor?: string;
-  nombreReceptor?: string;
-  registroIstmo?: boolean;
-  mercancias?: any[];
-  ubicaciones?: any[];
-  autotransporte?: AutotransporteCompleto;
-  figuras?: FiguraCompleta[];
-}
 
 export function useCartaPorteFormManager() {
   const [configuracion, setConfiguracion] = useState<CartaPorteData>({

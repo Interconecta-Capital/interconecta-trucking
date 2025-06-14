@@ -1,68 +1,72 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MapPin, Calculator, Route } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, MapPin, Navigation, Map } from 'lucide-react';
 
 interface UbicacionesHeaderProps {
-  showForm: boolean;
   ubicacionesCount: number;
-  onAddUbicacion: (e: React.MouseEvent) => void;
-  onCalcularDistancias: (e: React.MouseEvent) => void;
-  onCalcularRuta: (e: React.MouseEvent) => void;
+  canCalculateDistances: boolean;
+  onAgregarUbicacion: () => void;
+  onCalcularDistancias: () => void;
+  onCalcularRuta: () => void;
 }
 
 export function UbicacionesHeader({
-  showForm,
   ubicacionesCount,
-  onAddUbicacion,
+  canCalculateDistances,
+  onAgregarUbicacion,
   onCalcularDistancias,
-  onCalcularRuta
+  onCalcularRuta,
 }: UbicacionesHeaderProps) {
   return (
     <CardHeader>
       <div className="flex items-center justify-between">
         <CardTitle className="flex items-center space-x-2">
           <MapPin className="h-5 w-5" />
-          <span>Gestión de Ubicaciones</span>
+          <span>Ubicaciones de Carga y Descarga</span>
+          {ubicacionesCount > 0 && (
+            <Badge variant="secondary">
+              {ubicacionesCount} ubicación(es)
+            </Badge>
+          )}
         </CardTitle>
         
-        {!showForm && (
-          <div className="flex flex-wrap gap-2">
-            {ubicacionesCount >= 2 && (
-              <>
-                <Button 
-                  type="button"
-                  variant="outline"
-                  onClick={onCalcularDistancias}
-                  className="flex items-center space-x-2"
-                >
-                  <Calculator className="h-4 w-4" />
-                  <span>Calcular Distancias</span>
-                </Button>
-                
-                <Button 
-                  type="button"
-                  variant="outline"
-                  onClick={onCalcularRuta}
-                  className="flex items-center space-x-2"
-                >
-                  <Route className="h-4 w-4" />
-                  <span>Ver Ruta</span>
-                </Button>
-              </>
-            )}
-            
-            <Button 
-              type="button"
-              onClick={onAddUbicacion} 
-              className="flex items-center space-x-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Agregar Ubicación</span>
-            </Button>
-          </div>
-        )}
+        <div className="flex space-x-2">
+          {canCalculateDistances && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCalcularDistancias}
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Calcular Distancias
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCalcularRuta}
+              >
+                <Map className="h-4 w-4 mr-2" />
+                Ver Ruta
+              </Button>
+            </>
+          )}
+          
+          <Button
+            type="button"
+            onClick={onAgregarUbicacion}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Ubicación
+          </Button>
+        </div>
       </div>
     </CardHeader>
   );

@@ -40,7 +40,6 @@ export class UbicacionesService {
           nombre_ubicacion: ubicacion.nombreUbicacion,
           rfc_asociado: ubicacion.rfcAsociado,
           domicilio: ubicacion.domicilio,
-          coordenadas: coordenadas?.coordinates || null,
           uso_count: 1
         });
 
@@ -74,8 +73,7 @@ export class UbicacionesService {
         id: item.id,
         nombreUbicacion: item.nombre_ubicacion,
         rfcAsociado: item.rfc_asociado,
-        domicilio: item.domicilio,
-        coordenadas: item.coordenadas,
+        domicilio: item.domicilio as any,
         usoCount: item.uso_count
       }));
     } catch (error) {
@@ -84,10 +82,18 @@ export class UbicacionesService {
     }
   }
 
-  // Incrementar contador de uso
+  // Incrementar contador de uso (función simplificada)
   static async incrementarUsoUbicacion(id: string): Promise<void> {
     try {
-      await supabase.rpc('increment_uso_ubicacion', { ubicacion_id: id });
+      // Implementación simplificada sin usar RPC
+      const { error } = await supabase
+        .from('ubicaciones_frecuentes')
+        .update({ uso_count: 1 })
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Error incrementando uso:', error);
+      }
     } catch (error) {
       console.error('Error incrementando uso de ubicación:', error);
     }

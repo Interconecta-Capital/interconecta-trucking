@@ -14,11 +14,11 @@ export const validarSecuenciaUbicaciones = (ubicaciones: Ubicacion[]) => {
   
   return {
     esValido: tieneOrigen && tieneDestino && tieneMinimo,
-    errores: [
+    mensaje: [
       ...(!tieneOrigen ? ['Falta ubicación de origen'] : []),
       ...(!tieneDestino ? ['Falta ubicación de destino'] : []),
       ...(!tieneMinimo ? ['Se requieren al menos 2 ubicaciones'] : [])
-    ]
+    ].join(', ') || 'Configuración válida'
   };
 };
 
