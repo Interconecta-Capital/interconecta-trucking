@@ -1,96 +1,68 @@
 
-import { useMemo } from 'react';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Brain, Save } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Save, InfoIcon } from 'lucide-react';
 
 interface CartaPorteHeaderProps {
-  cartaPorteId?: string;
-  cartaPorteVersion: string;
-  hasAIEnhancements: boolean;
-  showAIAlerts: boolean;
-  onToggleAIAlerts: () => void;
-  canSaveAsTemplate: boolean;
-  onSaveTemplate: () => void;
-  validationMode: string;
-  overallScore: number;
-  totalProgress: number;
-  currentCartaPorteId?: string;
+  borradorCargado: boolean;
+  ultimoGuardado: Date | null;
+  onGuardarBorrador: () => void;
+  onLimpiarBorrador: () => void;
 }
 
-export function CartaPorteHeader({
-  cartaPorteId,
-  cartaPorteVersion,
-  hasAIEnhancements,
-  showAIAlerts,
-  onToggleAIAlerts,
-  canSaveAsTemplate,
-  onSaveTemplate,
-  validationMode,
-  overallScore,
-  totalProgress,
-  currentCartaPorteId,
+export function CartaPorteHeader({ 
+  borradorCargado, 
+  ultimoGuardado, 
+  onGuardarBorrador, 
+  onLimpiarBorrador 
 }: CartaPorteHeaderProps) {
-  const getFormTitle = useMemo(() => {
-    const version = cartaPorteVersion || '3.1';
-    const baseTitle = cartaPorteId ? 'Editar Carta Porte' : 'Nueva Carta Porte';
-    const aiIndicator = hasAIEnhancements ? '🧠' : '';
-    return `${baseTitle} ${version} ${aiIndicator}`;
-  }, [cartaPorteId, cartaPorteVersion, hasAIEnhancements]);
-
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl font-bold">
-            {getFormTitle}
-            {currentCartaPorteId && (
-              <span className="text-sm font-normal text-green-600 ml-2">
-                ✓ Guardando automáticamente
-              </span>
-            )}
-          </CardTitle>
-          <div className="flex items-center space-x-4">
-            {hasAIEnhancements && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onToggleAIAlerts}
-                className="flex items-center space-x-2"
-              >
-                <Brain className="h-4 w-4" />
-                <span>{showAIAlerts ? 'Ocultar' : 'Mostrar'} IA</span>
-              </Button>
-            )}
-            {canSaveAsTemplate && (
-              <Button 
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onSaveTemplate}
-                className="flex items-center space-x-2"
-              >
-                <Save className="h-4 w-4" />
-                <span>Guardar como Plantilla</span>
-              </Button>
-            )}
-            <div className="text-sm text-muted-foreground">
-              Progreso: {validationMode === 'ai-enhanced' ? overallScore : Math.round(totalProgress)}%
-            </div>
-          </div>
-        </div>
-        <Progress 
-          value={validationMode === 'ai-enhanced' ? overallScore : totalProgress} 
-          className="w-full" 
-        />
-        {validationMode === 'ai-enhanced' && (
-          <p className="text-xs text-purple-600 mt-1">
-            ✨ Validación mejorada con IA activa
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Nueva Carta Porte</h1>
+          <p className="text-gray-600 mt-2">
+            Crea un nuevo comprobante fiscal digital de carta porte
           </p>
-        )}
-      </CardHeader>
-    </Card>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {ultimoGuardado && (
+            <div className="text-sm text-gray-500">
+              <Save className="h-4 w-4 inline mr-1" />
+              Guardado: {ultimoGuardado.toLocaleTimeString()}
+            </div>
+          )}
+          
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onGuardarBorrador}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Guardar Borrador
+          </Button>
+        </div>
+      </div>
+
+      {borradorCargado && (
+        <Alert className="mb-4">
+          <InfoIcon className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>Se ha cargado un borrador previo. Los datos han sido restaurados.</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onLimpiarBorrador}
+            >
+              Eliminar Borrador
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
   );
 }
