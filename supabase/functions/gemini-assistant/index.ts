@@ -28,11 +28,11 @@ serve(async (req) => {
       );
     }
 
-    const { action, prompt, context, data } = await req.json();
+    const { action, input, prompt, context, data } = await req.json();
 
-    if (!prompt && !data) {
+    if (!prompt && !data && !input) {
       return new Response(
-        JSON.stringify({ error: 'Prompt or data is required' }),
+        JSON.stringify({ error: 'Prompt, data or input is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -58,6 +58,149 @@ serve(async (req) => {
     let userPrompt = '';
 
     switch (action) {
+      // Autocompletado de direcciones
+      case 'autocomplete_address':
+        systemPrompt = 'Eres un experto en direcciones mexicanas y cartas porte. Generas autocompletado inteligente para direcciones basándote en patrones reales y contexto del usuario.';
+        userPrompt = `
+        Autocompletado inteligente para: "${input}"
+        Contexto: ${JSON.stringify(context)}
+        
+        Responde con JSON array de máximo 5 sugerencias de direcciones mexicanas reales:
+        {
+          "suggestions": [
+            {
+              "fullAddress": "dirección completa",
+              "street": "calle",
+              "colonia": "colonia",
+              "municipio": "municipio", 
+              "estado": "estado",
+              "codigoPostal": "CP",
+              "confidence": 0.9
+            }
+          ]
+        }`;
+        break;
+
+      // Autocompletado de mercancías
+      case 'autocomplete_mercancia':
+        systemPrompt = 'Eres un experto en clasificación de mercancías SAT para cartas porte mexicanas. Generas sugerencias inteligentes basadas en descripciones parciales.';
+        userPrompt = `
+        Autocompletado para mercancía: "${input}"
+        Contexto: ${JSON.stringify(context)}
+        
+        Responde con JSON array de máximo 5 sugerencias de mercancías:
+        {
+          "suggestions": [
+            {
+              "descripcion": "descripción completa",
+              "claveProdServ": "código SAT",
+              "claveUnidad": "unidad SAT",
+              "confidence": 0.9,
+              "esMatPeligroso": false,
+              "fraccionArancelaria": "código opcional"
+            }
+          ]
+        }`;
+        break;
+
+      // Autocompletado de vehículos
+      case 'autocomplete_vehiculo':
+        systemPrompt = 'Eres un experto en vehículos de carga mexicanos. Generas sugerencias de modelos, marcas y configuraciones vehiculares.';
+        userPrompt = `
+        Autocompletado para vehículo: "${input}"
+        Contexto: ${JSON.stringify(context)}
+        
+        Responde con JSON array de máximo 5 sugerencias:
+        {
+          "suggestions": [
+            {
+              "modelo": "modelo completo",
+              "marca": "marca",
+              "año": 2024,
+              "configVehicular": "configuración",
+              "confidence": 0.9
+            }
+          ]
+        }`;
+        break;
+
+      // Validación avanzada de direcciones
+      case 'validate_direccion':
+        systemPrompt = 'Eres un validador experto en direcciones mexicanas para cartas porte. Analizas formato, coherencia y existencia real.';
+        userPrompt = `
+        Valida esta dirección: ${JSON.stringify(data)}
+        Contexto: ${JSON.stringify(context)}
+        
+        Responde con JSON:
+        {
+          "isValid": boolean,
+          "confidence": 0.9,
+          "warnings": [
+            {
+              "field": "campo",
+              "message": "mensaje",
+              "severity": "low|medium|high|critical",
+              "type": "formato|contenido|regulacion|inconsistencia"
+            }
+          ],
+          "suggestions": [
+            {
+              "field": "campo",
+              "suggestion": "sugerencia",
+              "confidence": 0.9,
+              "reason": "explicación"
+            }
+          ],
+          "autoFixes": [
+            {
+              "field": "campo",
+              "currentValue": "valor actual",
+              "suggestedValue": "valor sugerido",
+              "description": "descripción",
+              "confidence": 0.9
+            }
+          ]
+        }`;
+        break;
+
+      // Validación avanzada de mercancías
+      case 'validate_mercancia_advanced':
+        systemPrompt = 'Eres un experto validador de mercancías para cartas porte SAT. Verificas coherencia entre descripción, clave, unidad, peso y valor.';
+        userPrompt = `
+        Valida esta mercancía: ${JSON.stringify(data)}
+        Contexto: ${JSON.stringify(context)}
+        
+        Analiza coherencia entre descripción, clave SAT, unidad, cantidad, peso y valor.
+        Responde con JSON siguiendo la estructura de ValidationResult.`;
+        break;
+
+      // Validación de coherencia general
+      case 'validate_coherencia_carta_porte':
+        systemPrompt = 'Eres un auditor experto en cartas porte mexicanas. Detectas inconsistencias entre ubicaciones, mercancías, vehículos y figuras.';
+        userPrompt = `
+        Valida coherencia general: ${JSON.stringify(data)}
+        
+        Analiza:
+        - Coherencia entre origen/destino y mercancías
+        - Capacidad vehicular vs peso total
+        - Rutas lógicas y eficientes
+        - Cumplimiento regulatorio
+        
+        Responde con JSON siguiendo la estructura de ValidationResult.`;
+        break;
+
+      // Detección de anomalías
+      case 'detect_anomalies':
+        systemPrompt = 'Eres un detector de anomalías en datos de transporte mexicano. Identificas patrones inusuales y posibles errores.';
+        userPrompt = `
+        Detecta anomalías en: ${JSON.stringify(data)}
+        Tipo: ${context?.tipo}
+        
+        Busca patrones inusuales, valores atípicos, inconsistencias temporales o geográficas.
+        Responde con JSON siguiendo la estructura de ValidationResult.`;
+        break;
+
+      // Funciones existentes
       case 'suggest_description':
         systemPrompt = 'Eres un experto en productos y servicios mexicanos. Genera descripciones detalladas y precisas para cartas porte basándote en claves de productos del SAT.';
         userPrompt = `Genera una descripción detallada para el producto con clave: ${prompt}`;
@@ -85,7 +228,7 @@ serve(async (req) => {
 
       default:
         systemPrompt = 'Eres un asistente especializado en logística de transporte en México. Ayudas con cartas porte, regulaciones del SAT, y gestión de flota.';
-        userPrompt = prompt;
+        userPrompt = prompt || input || JSON.stringify(data);
     }
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
@@ -103,10 +246,10 @@ serve(async (req) => {
           }
         ],
         generationConfig: {
-          temperature: 0.3,
+          temperature: action.includes('autocomplete') ? 0.3 : 0.2,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: action.includes('validate') ? 3000 : 2048,
         },
         safetySettings: [
           {
@@ -152,26 +295,74 @@ serve(async (req) => {
       );
     }
 
-    const aiResponse = aiData.candidates[0].content.parts[0].text;
+    let aiResponse = aiData.candidates[0].content.parts[0].text;
     
     // Procesar respuesta según el tipo de acción
     let processedResponse = {};
 
-    switch (action) {
-      case 'suggest_description':
-      case 'improve_description':
-        processedResponse = {
-          description: aiResponse.trim()
-        };
-        break;
-
-      case 'validate_mercancia':
-        try {
-          // Intentar extraer JSON de la respuesta
-          const validationMatch = aiResponse.match(/\{[\s\S]*\}/);
-          if (validationMatch) {
-            processedResponse = JSON.parse(validationMatch[0]);
+    // Intentar parsear JSON para acciones de autocompletado y validación
+    if (action.includes('autocomplete') || action.includes('validate') || action.includes('detect')) {
+      try {
+        // Extraer JSON de la respuesta
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          processedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          // Fallback para respuestas que no son JSON válido
+          if (action.includes('autocomplete')) {
+            processedResponse = {
+              suggestions: [{
+                text: aiResponse.trim(),
+                confidence: 0.6
+              }]
+            };
           } else {
+            processedResponse = {
+              isValid: true,
+              confidence: 0.6,
+              warnings: [],
+              suggestions: []
+            };
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        // Fallback seguro
+        if (action.includes('autocomplete')) {
+          processedResponse = { suggestions: [] };
+        } else {
+          processedResponse = {
+            isValid: true,
+            confidence: 0.5,
+            warnings: [],
+            suggestions: []
+          };
+        }
+      }
+    } else {
+      // Procesar respuestas de acciones existentes
+      switch (action) {
+        case 'suggest_description':
+        case 'improve_description':
+          processedResponse = {
+            description: aiResponse.trim()
+          };
+          break;
+
+        case 'validate_mercancia':
+          try {
+            const validationMatch = aiResponse.match(/\{[\s\S]*\}/);
+            if (validationMatch) {
+              processedResponse = JSON.parse(validationMatch[0]);
+            } else {
+              processedResponse = {
+                is_valid: true,
+                confidence: 0.7,
+                issues: [],
+                suggestions: [aiResponse.trim()]
+              };
+            }
+          } catch {
             processedResponse = {
               is_valid: true,
               confidence: 0.7,
@@ -179,38 +370,31 @@ serve(async (req) => {
               suggestions: [aiResponse.trim()]
             };
           }
-        } catch {
+          break;
+
+        case 'parse_document':
           processedResponse = {
-            is_valid: true,
-            confidence: 0.7,
-            issues: [],
-            suggestions: [aiResponse.trim()]
+            result: {
+              mercancias: [],
+              confidence: 0.6,
+              suggestions: [aiResponse.trim()]
+            }
           };
-        }
-        break;
+          break;
 
-      case 'parse_document':
-        processedResponse = {
-          result: {
-            mercancias: [],
-            confidence: 0.6,
-            suggestions: [aiResponse.trim()]
-          }
-        };
-        break;
-
-      default:
-        processedResponse = {
-          response: aiResponse,
-          suggestions: [{
-            title: 'Sugerencia IA',
-            description: aiResponse.trim(),
-            confidence: 0.8
-          }]
-        };
+        default:
+          processedResponse = {
+            response: aiResponse,
+            suggestions: [{
+              title: 'Sugerencia IA',
+              description: aiResponse.trim(),
+              confidence: 0.8
+            }]
+          };
+      }
     }
 
-    console.log('[GEMINI] Respuesta procesada exitosamente');
+    console.log('[GEMINI] Respuesta procesada exitosamente para:', action);
 
     return new Response(
       JSON.stringify(processedResponse),
