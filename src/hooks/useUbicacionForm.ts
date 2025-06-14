@@ -2,6 +2,13 @@
 import { useState, useCallback } from 'react';
 import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 
+export interface RFCValidationResult {
+  isValid: boolean;
+  message: string;
+  esValido: boolean;
+  errores: string[];
+}
+
 export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => string) => {
   const [formData, setFormData] = useState<Ubicacion>({
     id: initialData?.id || '',
@@ -28,7 +35,12 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     }
   });
 
-  const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
+  const [rfcValidation, setRfcValidation] = useState<RFCValidationResult>({ 
+    isValid: true, 
+    message: '',
+    esValido: true,
+    errores: []
+  });
   const [showFrecuentes, setShowFrecuentes] = useState(false);
 
   const handleFieldChange = useCallback((field: string, value: any) => {
@@ -64,9 +76,19 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     // Basic RFC validation
     const rfcRegex = /^[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
     if (rfc && !rfcRegex.test(rfc.toUpperCase())) {
-      setRfcValidation({ isValid: false, message: 'RFC inválido' });
+      setRfcValidation({ 
+        isValid: false, 
+        message: 'RFC inválido',
+        esValido: false,
+        errores: ['RFC inválido']
+      });
     } else {
-      setRfcValidation({ isValid: true, message: '' });
+      setRfcValidation({ 
+        isValid: true, 
+        message: '',
+        esValido: true,
+        errores: []
+      });
     }
   }, []);
 

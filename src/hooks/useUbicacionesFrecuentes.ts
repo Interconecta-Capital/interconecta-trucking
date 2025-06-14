@@ -20,14 +20,15 @@ export const useUbicacionesFrecuentes = () => {
     }
   }, []);
 
-  const guardarUbicacionFrecuente = useCallback(async (ubicacion: any, nombre: string) => {
+  const guardarUbicacionFrecuente = useCallback(async (ubicacion: any, nombreUbicacion: string) => {
     setIsGuardando(true);
     try {
       // Mock implementation - in production this would save to API/storage
       const nuevaUbicacion: UbicacionFrecuente = {
         id: Date.now().toString(),
-        nombre,
-        ubicacion,
+        nombreUbicacion,
+        rfcAsociado: ubicacion.rfcRemitenteDestinatario || '',
+        domicilio: ubicacion.domicilio,
         fechaCreacion: new Date().toISOString(),
         vecesUsada: 1
       };

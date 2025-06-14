@@ -6,6 +6,7 @@ import { Ubicacion } from '@/types/ubicaciones';
 export interface PDFGenerationResult {
   success: boolean;
   blob?: Blob;
+  pdfUrl?: string;
   error?: string;
 }
 
@@ -66,6 +67,27 @@ export class CartaPortePDFGenerator {
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
+  }
+
+  static async generarPDF(data: any, datosTimbre?: any): Promise<PDFGenerationResult> {
+    try {
+      const blob = generateCartaPortePDF(data);
+      const pdfUrl = URL.createObjectURL(blob);
+      return { success: true, blob, pdfUrl };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  static descargarPDF(blob: Blob, filename = 'carta-porte.pdf') {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }
 

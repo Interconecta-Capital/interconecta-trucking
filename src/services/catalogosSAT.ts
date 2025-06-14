@@ -10,6 +10,11 @@ export interface ConsultaCodigoPostalResult {
   }>;
 }
 
+export interface CatalogItem {
+  codigo: string;
+  descripcion: string;
+}
+
 export const consultarCodigoPostal = async (codigoPostal: string): Promise<ConsultaCodigoPostalResult | null> => {
   // Mock implementation - in production this would call the actual SAT API
   try {
@@ -52,5 +57,11 @@ export const consultarCodigoPostal = async (codigoPostal: string): Promise<Consu
 export class CatalogosSATService {
   static async consultarCodigoPostal(cp: string) {
     return consultarCodigoPostal(cp);
+  }
+
+  static async validarClave(clave: string, tipo: string): Promise<boolean> {
+    // Mock validation - in production this would validate against SAT catalogs
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return clave.length >= 3;
   }
 }
