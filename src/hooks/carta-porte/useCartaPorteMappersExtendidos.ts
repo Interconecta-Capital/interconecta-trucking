@@ -77,7 +77,7 @@ export const useCartaPorteMappersExtendidos = () => {
   const mapMercanciaCompleta = (mercancia: MercanciaCompleta): MercanciaCompleta => {
     return {
       id: mercancia.id || '',
-      bienes_transp: mercancia.bienes_transp,
+      bienes_transp: mercancia.bienes_transp || mercancia.descripcion || '',
       descripcion: mercancia.descripcion,
       cantidad: mercancia.cantidad,
       clave_unidad: mercancia.clave_unidad,
@@ -203,7 +203,7 @@ export const useCartaPorteMappersExtendidos = () => {
   const mapToMercanciaCompleta = (mercancia: any): MercanciaCompleta => {
     return {
       id: mercancia.id,
-      bienes_transp: mercancia.bienes_transp || '',
+      bienes_transp: mercancia.bienes_transp || mercancia.descripcion || '',
       descripcion: mercancia.descripcion || '',
       cantidad: mercancia.cantidad || 0,
       clave_unidad: mercancia.clave_unidad || '',
