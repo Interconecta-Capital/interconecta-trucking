@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,8 +58,7 @@ export function RouteOptimizer({
         waypoints,
         {
           ...context,
-          vehicleInfo: vehiculo,
-          optimization: 'balanced' // time, fuel, or balanced
+          vehicleInfo: vehiculo
         }
       );
 
