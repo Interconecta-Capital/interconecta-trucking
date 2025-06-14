@@ -41,8 +41,11 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
-  // Mappers normales para validación
-  const { formDataToCartaPorteData, cartaPorteDataToFormData } = useCartaPorteMappers();
+  // Mappers normales para validación - renombrados para evitar conflictos
+  const { 
+    formDataToCartaPorteData: mapperFormDataToCartaPorteData, 
+    cartaPorteDataToFormData 
+  } = useCartaPorteMappers();
 
   // Converters para datos
   const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
@@ -155,9 +158,9 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     }
   }, [cartaPorteDataToFormDataExtendido, setFormData]);
 
-  // Integración completa con auto-save y sincronización
+  // Integración completa con auto-save y sincronización - usar formDataForValidation
   const integrationResult = useCartaPorteIntegration({
-    formData: cartaPorteDataForValidation,
+    formData: formDataForValidation,
     currentCartaPorteId,
     isLoading,
     isCreating: false,
