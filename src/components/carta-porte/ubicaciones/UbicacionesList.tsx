@@ -10,9 +10,10 @@ interface UbicacionesListProps {
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
   onReorder?: (startIndex: number, endIndex: number) => void;
+  distanciaTotal?: number;
 }
 
-export function UbicacionesList({ ubicaciones, onEdit, onDelete, onReorder }: UbicacionesListProps) {
+export function UbicacionesList({ ubicaciones, onEdit, onDelete, onReorder, distanciaTotal }: UbicacionesListProps) {
   const getTipoLabel = (tipo: string) => {
     switch (tipo) {
       case 'Origen':
@@ -41,6 +42,18 @@ export function UbicacionesList({ ubicaciones, onEdit, onDelete, onReorder }: Ub
 
   return (
     <div className="space-y-3">
+      {/* Mostrar distancia total si está disponible */}
+      {distanciaTotal && distanciaTotal > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">
+              Distancia Total: {distanciaTotal.toFixed(2)} km
+            </span>
+          </div>
+        </div>
+      )}
+
       {ubicaciones.map((ubicacion, index) => {
         const tipoInfo = getTipoLabel(ubicacion.tipoUbicacion);
         

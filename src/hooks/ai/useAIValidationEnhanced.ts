@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { geminiCore, AIValidationResult } from '@/services/ai/GeminiCoreService';
 import { CartaPorteFormData } from '../carta-porte/useCartaPorteMappers';
 
-interface AIValidationEnhanced {
+export interface AIValidationEnhanced {
   isValid: boolean;
   aiSuggestions: Array<{
     type: 'warning' | 'suggestion' | 'error' | 'optimization';
@@ -44,7 +44,7 @@ export const useAIValidationEnhanced = () => {
             industry: 'transporte',
             region: 'mexico',
             vehicleTypes: formData.autotransporte ? [formData.autotransporte.configuracionVehicular] : [],
-            commonRoutes: formData.ubicaciones?.map(u => u.domicilio?.municipio).filter(Boolean) || []
+            commonRoutes: formData.ubicaciones?.map(u => u.municipio).filter(Boolean) || []
           }
         }
       );
@@ -153,7 +153,7 @@ export const useAIValidationEnhanced = () => {
 
       // Ejemplo: Predecir problemas de peso vs configuración vehicular
       if (formData.mercancias && formData.autotransporte) {
-        const pesoTotal = formData.mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0);
+        const pesoTotal = formData.mercancias.reduce((sum, m) => sum + (m.peso || 0), 0);
         const configVehicular = formData.autotransporte.configuracionVehicular;
 
         if (pesoTotal > 10000 && configVehicular === 'VL') {
@@ -167,7 +167,7 @@ export const useAIValidationEnhanced = () => {
 
       // Ejemplo: Validar coherencia de ubicaciones
       if (formData.ubicaciones && formData.ubicaciones.length >= 2) {
-        const estados = formData.ubicaciones.map(u => u.domicilio?.estado).filter(Boolean);
+        const estados = formData.ubicaciones.map(u => u.estado).filter(Boolean);
         const estadosUnicos = new Set(estados);
 
         if (estadosUnicos.size > 3) {

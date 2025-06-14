@@ -78,16 +78,20 @@ export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapV
 
     // Fit map to show all markers
     if (ubicaciones.length > 0) {
-      const coordinates = ubicaciones
+      const validCoordinates = ubicaciones
         .filter(u => u.coordenadas)
-        .map(u => [u.coordenadas.lng, u.coordenadas.lat]);
+        .map(u => [u.coordenadas.lng, u.coordenadas.lat] as [number, number]);
 
-      if (coordinates.length > 1) {
-        const bounds = coordinates.reduce((bounds, coord) => {
-          return bounds.extend(coord as mapboxgl.LngLatLike);
-        }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+      if (validCoordinates.length > 1) {
+        const bounds = new mapboxgl.LngLatBounds();
+        validCoordinates.forEach(coord => {
+          bounds.extend(coord);
+        });
 
         map.current.fitBounds(bounds, { padding: 50 });
+      } else if (validCoordinates.length === 1) {
+        map.current.setCenter(validCoordinates[0]);
+        map.current.setZoom(14);
       }
     }
   }, [ubicaciones, tokenConfigured]);

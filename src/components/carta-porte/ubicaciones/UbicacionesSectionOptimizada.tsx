@@ -204,8 +204,8 @@ export function UbicacionesSectionOptimizada({ data, onChange, onNext, onPrev }:
       {showMap && ubicaciones.length > 0 && (
         <MapVisualization
           ubicaciones={ubicaciones}
-          ruta={rutaCalculada}
-          className="mb-6"
+          rutaCalculada={rutaCalculada}
+          isVisible={showMap}
         />
       )}
 
