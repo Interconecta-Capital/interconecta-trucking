@@ -5,7 +5,7 @@ import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteInteg
 import { useCartaPorteMappersExtendidos } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
 import { useCartaPorteStableData } from '@/hooks/carta-porte/useCartaPorteStableData';
 import { useCartaPorteFormValidation } from '@/hooks/carta-porte/useCartaPorteFormValidation';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { UseCartaPorteFormOptions } from '@/hooks/carta-porte/types/useCartaPorteFormTypes';
 
 export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
@@ -89,7 +89,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
 
   // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({
-    formData: formDataForValidation,
+    formData: stableFormDataForValidation, // Use stable data directly instead of formDataForValidation
     currentCartaPorteId,
     isLoading,
     isCreating: false,

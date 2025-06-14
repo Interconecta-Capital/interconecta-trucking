@@ -5,7 +5,7 @@ import {
 } from './cartaPorteDataConverters';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData, AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface UseCartaPorteStableDataOptions {
   formData: CartaPorteFormDataExtendido;
@@ -66,8 +66,19 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         registroIstmo: formData.registroIstmo || false,
         cartaPorteVersion: formData.cartaPorteVersion || '3.1',
         ubicaciones: formData.ubicaciones || [],
-        mercancias: formData.mercancias || [],
-        autotransporte: formData.autotransporte || {},
+        mercancias: (formData.mercancias || []).map(m => ({
+          ...m,
+          bienes_transp: m.bienes_transp || m.descripcion || '',
+        })),
+        autotransporte: formData.autotransporte as AutotransporteCompleto || {
+          placa_vm: '',
+          anio_modelo_vm: 0,
+          config_vehicular: '',
+          perm_sct: '',
+          num_permiso_sct: '',
+          asegura_resp_civil: '',
+          poliza_resp_civil: '',
+        },
         figuras: formData.figuras || [],
         cartaPorteId: formData.cartaPorteId,
       };

@@ -21,6 +21,15 @@ export interface CartaPorteData {
   pais_origen_destino?: string;
   via_entrada_salida?: string;
   cartaPorteId?: string;
+  // Add missing properties for version management
+  regimenAduanero?: string;
+  regimenesAduaneros?: string[];
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+    [key: string]: any;
+  };
 }
 
 export interface UbicacionCompleta {
@@ -160,4 +169,5 @@ export interface CatalogoCarroceria {
 export interface CatalogoTipoLicencia {
   clave: string;
   descripcion: string;
+  aplica_federal?: boolean;
 }

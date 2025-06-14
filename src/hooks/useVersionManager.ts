@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { CartaPorteVersion, VERSION_INFO } from '@/types/cartaPorteVersions';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 interface UseVersionManagerOptions {
   initialVersion?: CartaPorteVersion;
