@@ -11,12 +11,16 @@ interface DocumentUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDocumentProcessed?: (mercancias: any[]) => void;
+  cartaPorteId?: string;
+  documentoOriginalId?: string;
 }
 
 export function DocumentUploadDialog({
   open,
   onOpenChange,
-  onDocumentProcessed
+  onDocumentProcessed,
+  cartaPorteId,
+  documentoOriginalId
 }: DocumentUploadDialogProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -45,24 +49,58 @@ export function DocumentUploadDialog({
       return;
     }
 
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('El archivo es muy grande. Tamaño máximo permitido: 10MB');
+      return;
+    }
+
     setUploading(true);
     setProgressState({ stage: 'upload', progress: 0, message: 'Preparando archivo...' });
     
     try {
-      const result = await DocumentProcessor.processDocument(file, (p) => setProgressState(p));
+      const options = {
+        cartaPorteId,
+        documentoOriginalId,
+        metadata: {
+          uploaded_at: new Date().toISOString(),
+          original_filename: file.name
+        }
+      };
+
+      const result = await DocumentProcessor.processDocument(
+        file, 
+        (progress) => setProgressState(progress),
+        options
+      );
 
       if (result.success) {
-        if (onDocumentProcessed) {
-          onDocumentProcessed(result.data || []);
+        if (onDocumentProcessed && result.data) {
+          onDocumentProcessed(result.data);
         }
-        toast.success('Documento procesado exitosamente');
+        
+        toast.success(`Documento procesado exitosamente. ${result.data?.length || 0} mercancías extraídas.`);
+        
+        if (result.confidence < 0.7) {
+          toast.warning('La confianza del procesamiento es baja. Revisa los datos extraídos.');
+        }
+        
         onOpenChange(false);
       } else {
-        toast.error(result.errors?.join('\n') || 'Error al procesar el documento');
+        const errorMessage = result.errors?.join('\n') || 'Error al procesar el documento';
+        toast.error(errorMessage);
+        
+        // Log error for debugging
+        console.error('Document processing failed:', {
+          file: file.name,
+          errors: result.errors,
+          confidence: result.confidence
+        });
       }
     } catch (error) {
       console.error('Error processing document:', error);
-      toast.error('Error al procesar el documento');
+      toast.error('Error inesperado al procesar el documento');
     } finally {
       setUploading(false);
       setProgressState(null);
@@ -107,8 +145,8 @@ export function DocumentUploadDialog({
             <p className="text-gray-600 mb-2">
               Arrastra tu documento aquí o haz clic para seleccionar
             </p>
-            <p className="text-sm text-gray-500">
-              PDF, imágenes, archivos Excel, XML o CSV
+            <p className="text-sm text-gray-500 mb-4">
+              PDF, imágenes, archivos Excel, XML o CSV (máx. 10MB)
             </p>
             
             <input
@@ -126,7 +164,7 @@ export function DocumentUploadDialog({
               onClick={() => document.getElementById('file-upload')?.click()}
               disabled={uploading}
             >
-              Seleccionar Archivo
+              {uploading ? 'Procesando...' : 'Seleccionar Archivo'}
             </Button>
 
             {uploading && progressState && (

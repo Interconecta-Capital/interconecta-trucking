@@ -15,8 +15,25 @@ export interface ProcessingProgress {
 }
 
 export interface ProcessDocumentOptions {
-  cartaPorteId?: string
-  documentoOriginalId?: string
+  cartaPorteId?: string;
+  documentoOriginalId?: string;
+  userId?: string;
+  metadata?: Record<string, any>;
 }
 
 export type DocumentType = 'pdf' | 'xml' | 'excel' | 'image' | 'unknown';
+
+export interface DocumentoProcessado {
+  id: string;
+  user_id: string;
+  file_path: string;
+  document_type: string;
+  extracted_text?: string;
+  confidence: number;
+  mercancias_count: number;
+  errors?: string;
+  carta_porte_id?: string;
+  documento_original_id?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}

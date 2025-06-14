@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +48,13 @@ export function SmartMercanciasSection({
   React.useEffect(() => {
     onChange(mercancias);
   }, [mercancias, onChange]);
+
+  // Get carta porte ID from URL or context if available
+  const getCartaPorteId = () => {
+    // Try to extract from URL or form context
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('id') || undefined;
+  };
 
   const handleSaveMercancia = async (mercancia: Mercancia) => {
     try {
@@ -110,12 +116,14 @@ export function SmartMercanciasSection({
     setShowDocumentDialog(true);
   };
 
-  const handleDocumentProcessed = async (extractedMercancias: Mercancia[]) => {
+  const handleDocumentProcessed = async (extractedMercancias: any[]) => {
     try {
       await importarMercancias(extractedMercancias);
       setShowDocumentDialog(false);
+      toast.success(`${extractedMercancias.length} mercancías importadas exitosamente`);
     } catch (error) {
       console.error('Error processing document:', error);
+      toast.error('Error al procesar las mercancías del documento');
     }
   };
 
@@ -327,6 +335,7 @@ export function SmartMercanciasSection({
         open={showDocumentDialog}
         onOpenChange={setShowDocumentDialog}
         onDocumentProcessed={handleDocumentProcessed}
+        cartaPorteId={getCartaPorteId()}
       />
     </div>
   );
