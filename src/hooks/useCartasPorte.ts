@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +48,7 @@ export const useCartasPorte = () => {
           .from('cartas_porte')
           .select('*')
           .eq('usuario_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('updated_at', { ascending: false });
 
         if (error) {
           console.error('[CartasPorte] Database error:', error);
@@ -144,10 +143,13 @@ export const useCartasPorte = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+      
       const { error } = await supabase
         .from('cartas_porte')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('usuario_id', user.id);
 
       if (error) throw error;
     },

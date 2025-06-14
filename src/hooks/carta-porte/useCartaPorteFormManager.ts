@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
+import { BorradorServiceExtendido } from '@/services/borradorServiceExtendido';
 
 interface UseCartaPorteFormManagerResult {
   configuracion: CartaPorteData;
@@ -28,7 +28,7 @@ interface UseCartaPorteFormManagerResult {
   handleLimpiarBorrador: () => void;
 }
 
-export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
+export function useCartaPorteFormManager(cartaPorteId?: string): UseCartaPorteFormManagerResult {
   const defaultConfig: CartaPorteData = {
     tipoRelacion: '04',
     version: '4.0',
@@ -69,20 +69,67 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
   const [borradorCargado, setBorradorCargado] = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
 
+  // Effect to load draft from Supabase if cartaPorteId is provided
   useEffect(() => {
-    const borrador = BorradorService.cargarUltimoBorrador();
-    if (borrador && borrador.datosFormulario) {
-      setConfiguracion(prev => ({ ...prev, ...borrador.datosFormulario }));
-      setBorradorCargado(true);
-      // Fix: Convert string to Date properly
-      if (borrador.ultimaModificacion) {
-        const fecha = typeof borrador.ultimaModificacion === 'string' 
-          ? new Date(borrador.ultimaModificacion)
-          : borrador.ultimaModificacion;
-        setUltimoGuardado(fecha);
+    const loadBorrador = async () => {
+      if (cartaPorteId) {
+        console.log('Loading draft from Supabase:', cartaPorteId);
+        try {
+          const borradorData = await BorradorServiceExtendido.cargarBorradorSupabase(cartaPorteId);
+          if (borradorData) {
+            console.log('Draft loaded from Supabase:', borradorData);
+            setConfiguracion(prev => ({ ...prev, ...borradorData }));
+            setCurrentCartaPorteId(cartaPorteId);
+            setBorradorCargado(true);
+            setUltimoGuardado(new Date());
+            
+            // Load related data if present
+            if (borradorData.ubicaciones) {
+              setUbicaciones(borradorData.ubicaciones);
+            }
+            if (borradorData.mercancias) {
+              setMercancias(borradorData.mercancias);
+            }
+            if (borradorData.autotransporte) {
+              setAutotransporte(borradorData.autotransporte);
+            }
+            if (borradorData.figuras) {
+              setFiguras(borradorData.figuras);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading draft from Supabase:', error);
+          // Fallback to localStorage
+          const localBorrador = BorradorService.cargarUltimoBorrador();
+          if (localBorrador && localBorrador.datosFormulario) {
+            setConfiguracion(prev => ({ ...prev, ...localBorrador.datosFormulario }));
+            setBorradorCargado(true);
+            if (localBorrador.ultimaModificacion) {
+              const fecha = typeof localBorrador.ultimaModificacion === 'string' 
+                ? new Date(localBorrador.ultimaModificacion)
+                : localBorrador.ultimaModificacion;
+              setUltimoGuardado(fecha);
+            }
+          }
+        }
+      } else {
+        // Load from localStorage if no cartaPorteId provided
+        const borrador = BorradorService.cargarUltimoBorrador();
+        if (borrador && borrador.datosFormulario) {
+          setConfiguracion(prev => ({ ...prev, ...borrador.datosFormulario }));
+          setBorradorCargado(true);
+          if (borrador.ultimaModificacion) {
+            const fecha = typeof borrador.ultimaModificacion === 'string' 
+              ? new Date(borrador.ultimaModificacion)
+              : borrador.ultimaModificacion;
+            setUltimoGuardado(fecha);
+          }
+        }
       }
-    }
-  }, []);
+    };
+
+    loadBorrador();
+  }, [cartaPorteId]);
 
   useEffect(() => {
     const getAllData = () => ({
@@ -126,18 +173,29 @@ export function useCartaPorteFormManager(): UseCartaPorteFormManagerResult {
     setUltimoGuardado(new Date());
   }, [configuracion, ubicaciones, mercancias, autotransporte, figuras, currentStep]);
 
-  const handleLimpiarBorrador = useCallback(() => {
-    BorradorService.limpiarBorrador();
-    setConfiguracion(defaultConfig);
-    setUbicaciones([]);
-    setMercancias([]);
-    setAutotransporte(defaultConfig.autotransporte!);
-    setFiguras([]);
-    setCurrentStep(0);
-    setBorradorCargado(false);
-    setUltimoGuardado(null);
-    setCurrentCartaPorteId(null);
-  }, []);
+  // Updated handleLimpiarBorrador to handle Supabase drafts
+  const handleLimpiarBorrador = useCallback(async () => {
+    try {
+      // Clear from both Supabase and localStorage
+      if (currentCartaPorteId) {
+        await BorradorServiceExtendido.limpiarBorrador(currentCartaPorteId);
+      } else {
+        BorradorService.limpiarBorrador();
+      }
+      
+      setConfiguracion(defaultConfig);
+      setUbicaciones([]);
+      setMercancias([]);
+      setAutotransporte(defaultConfig.autotransporte!);
+      setFiguras([]);
+      setCurrentStep(0);
+      setBorradorCargado(false);
+      setUltimoGuardado(null);
+      setCurrentCartaPorteId(null);
+    } catch (error) {
+      console.error('Error clearing draft:', error);
+    }
+  }, [currentCartaPorteId]);
 
   const setXmlGenerated = useCallback((xml: string) => {
     console.log('XML generated:', xml);
