@@ -1,0 +1,50 @@
+
+import { useMemo } from 'react';
+import { useCartaPorteValidationEnhanced } from './useCartaPorteValidationEnhanced';
+import { CartaPorteFormData } from './useCartaPorteMappers';
+import { StepValidations } from './types/useCartaPorteFormTypes';
+
+interface UseCartaPorteFormValidationOptions {
+  formDataForValidation: CartaPorteFormData;
+  enableAI?: boolean;
+}
+
+export const useCartaPorteFormValidation = ({ 
+  formDataForValidation, 
+  enableAI = true 
+}: UseCartaPorteFormValidationOptions) => {
+  // Usar validaciones mejoradas con IA con datos estables
+  const validationResult = useCartaPorteValidationEnhanced({ 
+    formData: formDataForValidation,
+    enableAI 
+  });
+
+  const { 
+    stepValidations: rawStepValidations, 
+    totalProgress,
+    aiValidation,
+    hasAIEnhancements,
+    validationMode,
+    overallScore,
+    validateComplete
+  } = validationResult;
+
+  // Convertir las validaciones al formato correcto de forma estable
+  const stepValidations: StepValidations = useMemo(() => ({
+    configuracion: rawStepValidations?.configuracion || false,
+    ubicaciones: rawStepValidations?.ubicaciones || false,
+    mercancias: rawStepValidations?.mercancias || false,
+    autotransporte: rawStepValidations?.autotransporte || false,
+    figuras: rawStepValidations?.figuras || false,
+  }), [rawStepValidations]);
+
+  return {
+    stepValidations,
+    totalProgress: totalProgress || 0,
+    aiValidation,
+    hasAIEnhancements: hasAIEnhancements || false,
+    validationMode: validationMode || 'standard',
+    overallScore: overallScore || 0,
+    validateComplete
+  };
+};
