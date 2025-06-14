@@ -1,4 +1,5 @@
 
+
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 
 // Configure PDF.js worker for Vite
@@ -114,7 +115,6 @@ export class DocumentProcessor {
     });
 
     const result = await this.parseWithAI(text, 'pdf');
-    await this.logProcessedDocument(file, result, options);
     return result;
   }
 
@@ -138,7 +138,6 @@ export class DocumentProcessor {
     });
 
     const result = await this.parseXMLContent(xmlContent);
-    await this.logProcessedDocument(file, result, options);
     return result;
   }
 
@@ -168,21 +167,17 @@ export class DocumentProcessor {
         defaultColumnMapping
       );
 
-      const result = {
+      return {
         success: true,
         data: mercancias,
         confidence: 0.8
-      } as DocumentProcessingResult;
-      await this.logProcessedDocument(file, result, options);
-      return result;
+      };
     } catch (error) {
-      const result = {
+      return {
         success: false,
         confidence: 0,
         errors: [`Error procesando Excel: ${error instanceof Error ? error.message : error}`]
-      } as DocumentProcessingResult;
-      await this.logProcessedDocument(file, result, options);
-      return result;
+      };
     }
   }
 
@@ -217,7 +212,6 @@ export class DocumentProcessor {
     });
 
     const result = await this.parseWithAI(text, 'image');
-    await this.logProcessedDocument(file, result, options);
     return result;
   }
 
@@ -304,26 +298,6 @@ export class DocumentProcessor {
     }
   }
 
-  private static async logProcessedDocument(
-    file: File,
-    result: DocumentProcessingResult,
-    options?: ProcessDocumentOptions
-  ): Promise<void> {
-    try {
-      await supabase.from('documentos_procesados').insert({
-        file_path: (file as any).path || (file as any).webkitRelativePath || file.name,
-        extracted_text: result.extractedText || null,
-        confidence: result.confidence,
-        mercancias_count: result.data ? result.data.length : 0,
-        errors: result.errors ? result.errors.join('\n') : null,
-        carta_porte_id: options?.cartaPorteId || null,
-        documento_original_id: options?.documentoOriginalId || null
-      });
-    } catch (e) {
-      console.error('Error logging processed document', e);
-    }
-  }
-
   private static extractMercanciasFromXML(xmlDoc: Document): Mercancia[] {
     const mercancias: Mercancia[] = [];
     
@@ -349,3 +323,4 @@ export class DocumentProcessor {
     return mercancias;
   }
 }
+
