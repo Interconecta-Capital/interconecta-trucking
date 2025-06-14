@@ -5,6 +5,7 @@ import { EnhancedCalendarView } from './EnhancedCalendarView';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AnalyticsPanel } from './AnalyticsPanel';
 import { AIInsights } from '@/components/ai/AIInsights';
+import { DocumentosProcesadosWidget } from './DocumentosProcesadosWidget';
 
 interface DashboardLayoutProps {
   children?: ReactNode;
@@ -18,6 +19,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="space-y-4">
         {children}
         <AIInsights />
+        <DocumentosProcesadosWidget />
         <QuickActionsCard />
         <EnhancedCalendarView />
         <AnalyticsPanel />
@@ -29,7 +31,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="space-y-4 md:space-y-6">
       {children}
       
-      {/* Desktop layout - calendario e insights con IA */}
+      {/* Desktop layout - calendario, insights con IA y documentos procesados */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
         <div className="lg:col-span-2">
           <EnhancedCalendarView />
@@ -38,7 +40,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <AIInsights />
         </div>
         <div className="lg:col-span-1">
-          <QuickActionsCard />
+          <div className="space-y-4">
+            <DocumentosProcesadosWidget />
+            <QuickActionsCard />
+          </div>
         </div>
       </div>
 

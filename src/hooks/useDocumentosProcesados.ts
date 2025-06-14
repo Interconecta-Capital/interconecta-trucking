@@ -28,23 +28,15 @@ export const useDocumentosProcesados = () => {
     queryFn: async (): Promise<DocumentoProcessado[]> => {
       if (!user) return [];
 
-      // Use raw SQL query to avoid TypeScript typing issues
+      // Use direct table access since types are not yet regenerated
       const { data, error } = await supabase
-        .rpc('get_documentos_procesados', { user_uuid: user.id });
+        .from('documentos_procesados' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        // Fallback to direct table access if RPC doesn't exist
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('documentos_procesados' as any)
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (fallbackError) throw fallbackError;
-        return (fallbackData as any[]) || [];
-      }
-
-      return data || [];
+      if (error) throw error;
+      return (data as any[]) || [];
     },
     enabled: !!user,
   });

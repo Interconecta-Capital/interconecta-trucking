@@ -939,6 +939,51 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos_procesados: {
+        Row: {
+          carta_porte_id: string | null
+          confidence: number
+          created_at: string
+          document_type: string
+          documento_original_id: string | null
+          errors: string | null
+          extracted_text: string | null
+          file_path: string
+          id: string
+          mercancias_count: number
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          carta_porte_id?: string | null
+          confidence?: number
+          created_at?: string
+          document_type: string
+          documento_original_id?: string | null
+          errors?: string | null
+          extracted_text?: string | null
+          file_path: string
+          id?: string
+          mercancias_count?: number
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          carta_porte_id?: string | null
+          confidence?: number
+          created_at?: string
+          document_type?: string
+          documento_original_id?: string | null
+          errors?: string | null
+          extracted_text?: string | null
+          file_path?: string
+          id?: string
+          mercancias_count?: number
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       eventos_calendario: {
         Row: {
           carta_porte_id: string | null
@@ -2312,6 +2357,23 @@ export type Database = {
       get_current_user_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_documentos_procesados: {
+        Args: { user_uuid: string }
+        Returns: {
+          id: string
+          user_id: string
+          file_path: string
+          document_type: string
+          extracted_text: string
+          confidence: number
+          mercancias_count: number
+          errors: string
+          carta_porte_id: string
+          documento_original_id: string
+          metadata: Json
+          created_at: string
+        }[]
       }
       get_user_tenant_id: {
         Args: { user_uuid: string }
