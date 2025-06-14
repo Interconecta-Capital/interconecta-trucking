@@ -5,6 +5,7 @@ import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPor
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
 import { useCartaPorteMappersExtendidos, CartaPorteFormDataExtendido } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
 import { useCartaPorteDataConverters } from '@/hooks/carta-porte/useCartaPorteDataConverters';
+import { useCartaPorteMappers, CartaPorteFormData } from '@/hooks/carta-porte/useCartaPorteMappers';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 interface UseCartaPorteFormOptions {
@@ -40,6 +41,9 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
+  // Mappers normales para validación
+  const { formDataToCartaPorteData, cartaPorteDataToFormData } = useCartaPorteMappers();
+
   // Converters para datos
   const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
 
@@ -69,9 +73,56 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     }
   }, [formData, convertExtendedToCartaPorteData]);
 
+  // Convertir a formato compatible con validación
+  const formDataForValidation = useMemo((): CartaPorteFormData => {
+    try {
+      return cartaPorteDataToFormData(cartaPorteDataForValidation);
+    } catch (error) {
+      console.error('[CartaPorteForm] Error converting to form data:', error);
+      // Retornar datos mínimos válidos en caso de error
+      return {
+        configuracion: {
+          version: formData.cartaPorteVersion || '3.1',
+          tipoComprobante: formData.tipoCfdi === 'Traslado' ? 'T' : 'I',
+          emisor: {
+            rfc: formData.rfcEmisor || '',
+            nombre: formData.nombreEmisor || '',
+            regimenFiscal: '',
+          },
+          receptor: {
+            rfc: formData.rfcReceptor || '',
+            nombre: formData.nombreReceptor || '',
+          },
+        },
+        ubicaciones: [],
+        mercancias: [],
+        autotransporte: {
+          placaVm: '',
+          configuracionVehicular: '',
+          seguro: {
+            aseguradora: '',
+            poliza: '',
+            vigencia: '',
+          },
+        },
+        figuras: [],
+        tipoCreacion: formData.tipoCreacion || 'manual',
+        tipoCfdi: formData.tipoCfdi || 'Traslado',
+        rfcEmisor: formData.rfcEmisor || '',
+        nombreEmisor: formData.nombreEmisor || '',
+        rfcReceptor: formData.rfcReceptor || '',
+        nombreReceptor: formData.nombreReceptor || '',
+        transporteInternacional: formData.transporteInternacional || false,
+        registroIstmo: formData.registroIstmo || false,
+        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+        cartaPorteId: formData.cartaPorteId,
+      };
+    }
+  }, [cartaPorteDataForValidation, cartaPorteDataToFormData, formData]);
+
   // Usar validaciones mejoradas con IA
   const validationResult = useCartaPorteValidationEnhanced({ 
-    formData: cartaPorteDataForValidation,
+    formData: formDataForValidation,
     enableAI 
   });
 
