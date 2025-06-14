@@ -17,6 +17,7 @@ import {
   Check,
   X
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ClienteSelectorProps {
   label: string;
@@ -50,9 +51,18 @@ export function ClienteSelector({
 
   const { buscarClientes, crearCliente, obtenerClientePorRFC, loading } = useClientesProveedores();
 
+  // Actualizar busqueda cuando hay un value seleccionado
+  useEffect(() => {
+    if (value) {
+      setBusqueda(value.razon_social);
+      setShowResultados(false);
+      setShowCrearForm(false);
+    }
+  }, [value]);
+
   useEffect(() => {
     const buscarConDelay = setTimeout(async () => {
-      if (busqueda.length >= 2) {
+      if (busqueda.length >= 2 && !value) {
         setBuscando(true);
         try {
           const clientes = await buscarClientes(busqueda);
@@ -65,17 +75,19 @@ export function ClienteSelector({
           setSelectedIndex(-1);
         } catch (error) {
           console.error('Error en búsqueda:', error);
+          toast.error('Error al buscar clientes');
         } finally {
           setBuscando(false);
         }
-      } else {
+      } else if (busqueda.length < 2) {
         setResultados([]);
         setShowResultados(false);
+        setShowCrearForm(false);
       }
     }, 300);
 
     return () => clearTimeout(buscarConDelay);
-  }, [busqueda, buscarClientes, tipo]);
+  }, [busqueda, buscarClientes, tipo, value]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showResultados || resultados.length === 0) return;
@@ -113,9 +125,11 @@ export function ClienteSelector({
   };
 
   const seleccionarCliente = (cliente: ClienteProveedor) => {
+    console.log('Seleccionando cliente:', cliente);
     onChange(cliente);
     setBusqueda(cliente.razon_social);
     setShowResultados(false);
+    setShowCrearForm(false);
     setSelectedIndex(-1);
   };
 
@@ -123,6 +137,7 @@ export function ClienteSelector({
     onChange(null);
     setBusqueda('');
     setShowResultados(false);
+    setShowCrearForm(false);
     inputRef.current?.focus();
   };
 
@@ -131,11 +146,28 @@ export function ClienteSelector({
     setShowResultados(false);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setBusqueda(newValue);
+    
+    // Si el usuario está editando y hay un value seleccionado, limpiar la selección
+    if (value && newValue !== value.razon_social) {
+      onChange(null);
+    }
+  };
+
   const validarRFC = (rfc: string) => {
     if (rfc.length < 10) return null;
     const validacion = RFCValidator.validarRFC(rfc);
     return validacion.esValido;
   };
+
+  const shouldShowCreateButton = showCreateButton && 
+    busqueda.length >= 3 && 
+    resultados.length === 0 && 
+    !buscando && 
+    !value && 
+    !showCrearForm;
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -150,18 +182,23 @@ export function ClienteSelector({
             ref={inputRef}
             id={`cliente-selector-${label}`}
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              if (resultados.length > 0) {
+              if (resultados.length > 0 && !value) {
                 setShowResultados(true);
               }
             }}
             onBlur={() => {
-              setTimeout(() => setShowResultados(false), 200);
+              // Delay para permitir clicks en resultados
+              setTimeout(() => {
+                setShowResultados(false);
+                setShowCrearForm(false);
+              }, 200);
             }}
             placeholder={placeholder}
             className="pl-10 pr-10"
+            disabled={loading}
           />
           
           {buscando && (
@@ -183,67 +220,69 @@ export function ClienteSelector({
 
         {/* Resultados de búsqueda */}
         {showResultados && resultados.length > 0 && (
-          <Card className="absolute z-50 w-full mt-1 max-h-80 overflow-y-auto shadow-lg">
+          <Card className="absolute z-50 w-full mt-1 max-h-80 overflow-hidden shadow-lg">
             <CardContent className="p-0">
-              {resultados.map((cliente, index) => (
-                <div
-                  key={cliente.id}
-                  onClick={() => seleccionarCliente(cliente)}
-                  className={`p-3 cursor-pointer border-b last:border-b-0 hover:bg-muted/50 ${
-                    index === selectedIndex ? 'bg-muted' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Building2 className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium text-sm">{cliente.razon_social}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {cliente.tipo}
-                        </Badge>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono">{cliente.rfc}</span>
-                          {validarRFC(cliente.rfc) && (
-                            <Check className="h-3 w-3 text-green-500" />
-                          )}
+              <div className="max-h-80 overflow-y-auto">
+                {resultados.map((cliente, index) => (
+                  <div
+                    key={cliente.id}
+                    onClick={() => seleccionarCliente(cliente)}
+                    className={`p-3 cursor-pointer border-b last:border-b-0 hover:bg-muted/50 ${
+                      index === selectedIndex ? 'bg-muted' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium text-sm">{cliente.razon_social}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {cliente.tipo}
+                          </Badge>
                         </div>
                         
-                        {cliente.email && (
+                        <div className="text-xs text-muted-foreground space-y-1">
                           <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span>{cliente.email}</span>
+                            <span className="font-mono">{cliente.rfc}</span>
+                            {validarRFC(cliente.rfc) && (
+                              <Check className="h-3 w-3 text-green-500" />
+                            )}
                           </div>
-                        )}
-                        
-                        {cliente.telefono && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            <span>{cliente.telefono}</span>
-                          </div>
-                        )}
+                          
+                          {cliente.email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              <span>{cliente.email}</span>
+                            </div>
+                          )}
+                          
+                          {cliente.telefono && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              <span>{cliente.telefono}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge 
+                          variant={cliente.estatus === 'activo' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {cliente.estatus}
+                        </Badge>
                       </div>
                     </div>
-                    
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge 
-                        variant={cliente.estatus === 'activo' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {cliente.estatus}
-                      </Badge>
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
 
         {/* Opción para crear nuevo cliente */}
-        {showCreateButton && busqueda.length >= 3 && resultados.length === 0 && !buscando && (
+        {shouldShowCreateButton && (
           <Card className="absolute z-50 w-full mt-1 shadow-lg">
             <CardContent className="p-3">
               <Button
@@ -318,8 +357,10 @@ export function ClienteSelector({
           busquedaInicial={busqueda}
           tipo={tipo}
           onCreado={(cliente) => {
+            console.log('Cliente creado, seleccionando:', cliente);
             seleccionarCliente(cliente);
             setShowCrearForm(false);
+            toast.success('Cliente creado y seleccionado correctamente');
           }}
           onCancelar={() => setShowCrearForm(false)}
         />
@@ -356,6 +397,7 @@ function CrearClienteRapido({
     e.preventDefault();
     
     if (!formData.razon_social || !formData.rfc || !formData.email) {
+      toast.error('Por favor completa todos los campos obligatorios');
       return;
     }
 
@@ -397,6 +439,7 @@ function CrearClienteRapido({
       }
     } catch (error) {
       console.error('Error creando cliente:', error);
+      toast.error('Error al crear el cliente');
     } finally {
       setLoading(false);
     }
