@@ -67,7 +67,7 @@ export function useClientesProveedores() {
 
       const clientesFormateados: ClienteProveedor[] = data?.map(socio => ({
         id: socio.id,
-        tipo: socio.tipo_persona || 'cliente',
+        tipo: (socio.tipo_persona as 'cliente' | 'proveedor' | 'ambos') || 'cliente',
         rfc: socio.rfc,
         razon_social: socio.nombre_razon_social,
         nombre_comercial: '',
@@ -107,17 +107,21 @@ export function useClientesProveedores() {
   const crearCliente = useCallback(async (cliente: Omit<ClienteProveedor, 'id' | 'fecha_registro' | 'user_id'>) => {
     setLoading(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Usuario no autenticado');
+
       const { data, error } = await supabase
         .from('socios')
-        .insert([{
+        .insert({
           tipo_persona: cliente.tipo,
           rfc: cliente.rfc,
           nombre_razon_social: cliente.razon_social,
           email: cliente.email,
           telefono: cliente.telefono,
           direccion: cliente.direccion_fiscal || {},
-          estado: cliente.estatus
-        }])
+          estado: cliente.estatus,
+          user_id: userData.user.id
+        })
         .select()
         .single();
 
@@ -179,7 +183,7 @@ export function useClientesProveedores() {
 
       return data ? {
         id: data.id,
-        tipo: data.tipo_persona || 'cliente',
+        tipo: (data.tipo_persona as 'cliente' | 'proveedor' | 'ambos') || 'cliente',
         rfc: data.rfc,
         razon_social: data.nombre_razon_social,
         nombre_comercial: '',

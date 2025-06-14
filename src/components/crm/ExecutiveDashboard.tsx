@@ -25,7 +25,7 @@ import {
   Route,
   Activity
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell } from 'recharts';
 
 interface KPI {
   titulo: string;
@@ -136,7 +136,7 @@ export function ExecutiveDashboard() {
         ...vehiculosVencimiento.map(v => ({
           tipo: 'warning',
           titulo: 'Vencimiento Próximo',
-          descripcion: `${v.placa} - Documentos por vencer`,
+          descripcion: `${v.placas} - Documentos por vencer`,
           fecha: new Date()
         }))
       ];
@@ -383,24 +383,6 @@ export function ExecutiveDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsPieChart>
-                    <Pie
-                      data={datosFlota}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      dataKey="cantidad"
-                    >
-                      {datosFlota.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-                
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   {datosFlota.map((item, index) => (
                     <div key={index} className="flex items-center space-x-2">

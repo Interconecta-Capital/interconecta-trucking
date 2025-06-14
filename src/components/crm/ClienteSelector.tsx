@@ -362,7 +362,7 @@ function CrearClienteRapido({
     setLoading(true);
     try {
       const nuevoCliente = await crearCliente({
-        tipo: tipo === 'ambos' ? 'cliente' : tipo,
+        tipo: (tipo === 'ambos' ? 'cliente' : tipo) as 'cliente' | 'proveedor' | 'ambos',
         razon_social: formData.razon_social,
         rfc: formData.rfc.toUpperCase(),
         email: formData.email,
@@ -379,7 +379,7 @@ function CrearClienteRapido({
       if (nuevoCliente) {
         const clienteFormateado: ClienteProveedor = {
           id: nuevoCliente.id,
-          tipo: nuevoCliente.tipo_persona || 'cliente',
+          tipo: (nuevoCliente.tipo_persona as 'cliente' | 'proveedor' | 'ambos') || 'cliente',
           rfc: nuevoCliente.rfc,
           razon_social: nuevoCliente.nombre_razon_social,
           email: nuevoCliente.email || '',

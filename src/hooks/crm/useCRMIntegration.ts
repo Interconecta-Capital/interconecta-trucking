@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useClientesProveedores, ClienteProveedor } from './useClientesProveedores';
 import { useFlotaManager, VehiculoFlota, ConductorFlota, AsignacionInteligente } from './useFlotaManager';
@@ -225,7 +224,7 @@ export function useCRMIntegration() {
   };
 
   const seleccionarAsignacion = (asignacion: AsignacionInteligente) => {
-    toast.success(`Vehículo ${asignacion.vehiculo.placa} y conductor ${asignacion.conductor.nombre} seleccionados`);
+    toast.success(`Vehículo ${asignacion.vehiculo.placas} y conductor ${asignacion.conductor.nombre} seleccionados`);
   };
 
   // Obtener métricas del CRM
