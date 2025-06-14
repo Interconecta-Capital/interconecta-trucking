@@ -71,7 +71,7 @@ export class CatalogosSATRealService {
         query = query.or(`clave_prod_serv.ilike.%${busqueda}%,descripcion.ilike.%${busqueda}%`);
       }
 
-      const { data, error } = await query.limit(50);
+      const { data, error } = await query.limit(100);
 
       if (error) {
         console.error('Error fetching productos:', error);
@@ -109,7 +109,7 @@ export class CatalogosSATRealService {
         query = query.or(`clave_unidad.ilike.%${busqueda}%,nombre.ilike.%${busqueda}%,descripcion.ilike.%${busqueda}%`);
       }
 
-      const { data, error } = await query.limit(50);
+      const { data, error } = await query.limit(100);
 
       if (error) {
         console.error('Error fetching unidades:', error);
@@ -359,95 +359,6 @@ export class CatalogosSATRealService {
     }
   }
 
-  // Buscar código postal usando la función de Supabase
-  static async buscarCodigoPostal(codigo: string): Promise<CodigoPostalInfo | null> {
-    if (!this.validarFormatoCodigoPostal(codigo)) {
-      return null;
-    }
-
-    const cacheKey = getCacheKey('cp', codigo);
-    const cached = getCache(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const { data, error } = await supabase
-        .rpc('buscar_codigo_postal', { cp_input: codigo });
-
-      if (error) {
-        console.error('Error fetching codigo postal:', error);
-        return null;
-      }
-
-      if (!data || data.length === 0) {
-        return null;
-      }
-
-      const result = {
-        codigo_postal: data[0].codigo_postal,
-        estado_clave: data[0].estado_clave,
-        estado_descripcion: data[0].estado,
-        municipio_clave: data[0].municipio_clave,
-        municipio_descripcion: data[0].municipio,
-        localidad_clave: data[0].localidad || '001',
-        localidad_descripcion: data[0].localidad || data[0].ciudad || data[0].municipio
-      };
-
-      setCache(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.error('Error in buscarCodigoPostal:', error);
-      return null;
-    }
-  }
-
-  // Buscar colonias por código postal
-  static async buscarColoniasPorCP(codigo: string): Promise<ColoniaInfo[]> {
-    if (!this.validarFormatoCodigoPostal(codigo)) {
-      return [];
-    }
-
-    const cacheKey = getCacheKey('colonias', codigo);
-    const cached = getCache(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const { data, error } = await supabase
-        .rpc('buscar_codigo_postal_completo', { cp_input: codigo });
-
-      if (error) {
-        console.error('Error fetching colonias:', error);
-        return [];
-      }
-
-      if (!data || data.length === 0) {
-        return [];
-      }
-
-      const cpData = data[0];
-      const coloniasData = cpData.colonias;
-
-      // Verificar que colonias sea un array antes de usar map
-      if (!Array.isArray(coloniasData)) {
-        console.warn('Colonias data is not an array:', coloniasData);
-        return [];
-      }
-
-      const result = coloniasData.map((colonia: any) => ({
-        colonia: colonia.nombre,
-        codigo_postal: codigo,
-        estado: cpData.estado,
-        municipio: cpData.municipio,
-        localidad: cpData.localidad || cpData.ciudad || cpData.municipio
-      }));
-
-      setCache(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.error('Error in buscarColoniasPorCP:', error);
-      return [];
-    }
-  }
-
   // Buscar estados desde la base de datos
   static async buscarEstados(busqueda?: string): Promise<CatalogItem[]> {
     const cacheKey = getCacheKey('estados', busqueda || '');
@@ -458,6 +369,7 @@ export class CatalogosSATRealService {
       let query = supabase
         .from('cat_estado')
         .select('clave_estado, descripcion')
+        .eq('pais_clave', 'MEX')
         .order('descripcion');
 
       if (busqueda) {
@@ -486,64 +398,7 @@ export class CatalogosSATRealService {
     }
   }
 
-  // Validar clave (implementación básica)
-  static async validarClave(catalogo: string, clave: string): Promise<boolean> {
-    if (!clave) return false;
-    
-    try {
-      // Determinar tabla según el catálogo
-      let tableName = '';
-      let columnName = '';
-      
-      switch (catalogo) {
-        case 'productos':
-          tableName = 'cat_clave_prod_serv_cp';
-          columnName = 'clave_prod_serv';
-          break;
-        case 'unidades':
-          tableName = 'cat_clave_unidad';
-          columnName = 'clave_unidad';
-          break;
-        case 'permisos':
-          tableName = 'cat_tipo_permiso';
-          columnName = 'clave_permiso';
-          break;
-        default:
-          return false;
-      }
-
-      // Usar una consulta específica para evitar problemas de tipos
-      if (tableName === 'cat_clave_prod_serv_cp') {
-        const { data, error } = await supabase
-          .from('cat_clave_prod_serv_cp')
-          .select('clave_prod_serv')
-          .eq('clave_prod_serv', clave)
-          .single();
-        return !error && !!data;
-      } else if (tableName === 'cat_clave_unidad') {
-        const { data, error } = await supabase
-          .from('cat_clave_unidad')
-          .select('clave_unidad')
-          .eq('clave_unidad', clave)
-          .single();
-        return !error && !!data;
-      } else if (tableName === 'cat_tipo_permiso') {
-        const { data, error } = await supabase
-          .from('cat_tipo_permiso')
-          .select('clave_permiso')
-          .eq('clave_permiso', clave)
-          .single();
-        return !error && !!data;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Error validating clave:', error);
-      return false;
-    }
-  }
-
-  // Limpiar cache manualmente si es necesario
+  // Limpiar cache
   static clearCache(): void {
     cache.clear();
   }

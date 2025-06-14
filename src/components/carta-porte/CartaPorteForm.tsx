@@ -1,221 +1,307 @@
-
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs } from '@/components/ui/tabs';
-import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
-import { useCartaPorteFormSimplified } from '@/hooks/useCartaPorteFormSimplified';
-import { useTabNavigation } from '@/hooks/useTabNavigation';
-import { CartaPorteVersion } from '@/types/cartaPorteVersions';
-import { CartaPorteHeader } from './form/CartaPorteHeader';
-import { CartaPorteTabNavigation } from './form/CartaPorteTabNavigation';
-import { CartaPorteTabContent } from './form/CartaPorteTabContent';
-import { CartaPorteCompletionCard } from './form/CartaPorteCompletionCard';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { InfoIcon, Save, AlertTriangle, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ConfiguracionInicial } from './ConfiguracionInicial';
+import { UbicacionesSection } from './UbicacionesSection';
+import { MercanciasSection } from './MercanciasSection';
+import { AutotransporteSection } from './AutotransporteSection';
+import { FigurasTransporteSection } from './FigurasTransporteSection';
+import { XMLGenerationPanel } from './xml/XMLGenerationPanel';
+import { AutotransporteCompleto, FiguraCompleta } from '@/types/cartaPorte';
+import { BorradorService } from '@/services/borradorService';
 
 export interface CartaPorteData {
-  // Configuración inicial
-  tipoCreacion: 'plantilla' | 'carga' | 'manual';
-  tipoCfdi: 'Ingreso' | 'Traslado';
-  rfcEmisor: string;
-  nombreEmisor: string;
-  rfcReceptor: string;
-  nombreReceptor: string;
-  transporteInternacional: boolean;
-  registroIstmo: boolean;
-  cartaPorteVersion: CartaPorteVersion;
+  tipoRelacion: string;
+  version: string;
+  transporteInternacional: string;
+  entradaSalidaMerc: string;
+  viaTransporte: string;
+  totalDistRec: number;
+}
+
+interface CartaPorteFormData {
+  configuracion: CartaPorteData;
   ubicaciones: any[];
-  mercancias: any[];
-  autotransporte: any;
-  figuras: any[];
-  entrada_salida_merc?: string;
-  pais_origen_destino?: string;
-  via_entrada_salida?: string;
-  regimenesAduaneros?: string[];
-  version31Fields?: {
-    transporteEspecializado?: boolean;
-    tipoCarroceria?: string;
-    registroISTMO?: boolean;
-    [key: string]: any;
-  };
-  regimenAduanero?: string;
-  cartaPorteId?: string;
+  mercancias: any;
+  autotransporte: AutotransporteCompleto;
+  figuras: FiguraCompleta[];
 }
 
-interface CartaPorteFormProps {
-  cartaPorteId?: string;
-  simplified?: boolean;
+interface Step {
+  title: string;
+  icon: React.ComponentType<any>;
+  component: React.ReactNode;
 }
 
-export function CartaPorteForm({ cartaPorteId, simplified = true }: CartaPorteFormProps) {
-  const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
-  
-  // Usar siempre el hook simplificado para evitar bucles infinitos
-  const {
-    formData,
-    currentCartaPorteId,
-    isLoading,
-    updateFormData,
-    stepValidations,
-    totalProgress,
-    clearSavedData,
-    isCreating,
-    isUpdating,
-    aiValidation,
-    hasAIEnhancements,
-    validationMode,
-    overallScore,
-    formDataToCartaPorteData,
-    formAutotransporteToData,
-    formFigurasToData,
-    createNewCartaPorte,
-    saveCartaPorte,
-  } = useCartaPorteFormSimplified({ cartaPorteId });
-
-  // Usar hook optimizado para navegación de pestañas
-  const { activeTab, handleTabChange } = useTabNavigation({
-    initialTab: 'configuracion',
-    persistInURL: false,
+export function CartaPorteForm() {
+  const [configuracion, setConfiguracion] = useState<CartaPorteData>({
+    tipoRelacion: '01',
+    version: '3.0',
+    transporteInternacional: 'No',
+    entradaSalidaMerc: '',
+    viaTransporte: '',
+    totalDistRec: 0,
   });
+  const [ubicaciones, setUbicaciones] = useState<any[]>([]);
+  const [mercancias, setMercancias] = useState<any>(null);
+  const [autotransporte, setAutotransporte] = useState<AutotransporteCompleto>({
+    placa_vm: '',
+    anio_modelo_vm: 2023,
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    remolques: [],
+  });
+  const [figuras, setFiguras] = useState<FiguraCompleta[]>([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [xmlGenerated, setXmlGenerated] = useState<string>('');
+  const [timbradoData, setTimbradoData] = useState<any>(null);
+  const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(undefined);
+  
+  const [datosFormulario, setDatosFormulario] = useState<any>({});
+  const [borradorCargado, setBorradorCargado] = useState(false);
+  const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
 
-  const handleSaveTemplate = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+  const { toast } = useToast();
+
+  // Cargar borrador al inicializar
+  useEffect(() => {
+    const borrador = BorradorService.cargarUltimoBorrador();
+    if (borrador && !borradorCargado) {
+      setDatosFormulario(borrador.datosFormulario);
+      setBorradorCargado(true);
+      toast({
+        title: "Borrador cargado",
+        description: `Se ha cargado un borrador guardado el ${new Date(borrador.ultimaModificacion).toLocaleString()}`,
+      });
     }
-    setShowGuardarPlantilla(true);
-  }, []);
+  }, [borradorCargado, toast]);
 
-  const handleXMLGenerated = useCallback((xml: string) => {
-    console.log('XML generado exitosamente', xml.length, 'caracteres');
-    toast.success('XML generado exitosamente');
-  }, []);
+  // Iniciar guardado automático
+  useEffect(() => {
+    const getDatos = () => ({
+      configuracion: configuracion,
+      ubicaciones: ubicaciones,
+      mercancias: mercancias,
+      autotransporte: autotransporte,
+      figuras: figuras,
+      currentStep: currentStep
+    });
 
-  const handleTimbrado = useCallback((datos: any) => {
-    console.log('Carta Porte timbrada exitosamente:', datos);
-    toast.success('Carta Porte timbrada exitosamente');
-  }, []);
+    const onSave = () => {
+      setUltimoGuardado(new Date());
+    };
 
-  // Handlers específicos para cada sección
-  const handleAutotransporteChange = useCallback((data: any) => {
-    updateFormData('autotransporte', data);
-  }, [updateFormData]);
+    BorradorService.iniciarGuardadoAutomatico(onSave, getDatos);
 
-  const handleFigurasChange = useCallback((data: any[]) => {
-    updateFormData('figuras', data);
-  }, [updateFormData]);
+    return () => {
+      BorradorService.detenerGuardadoAutomatico();
+    };
+  }, [configuracion, ubicaciones, mercancias, autotransporte, figuras, currentStep]);
 
-  // Handler para crear nueva carta porte
-  const handleCreateNew = useCallback(async () => {
-    try {
-      await createNewCartaPorte();
-      toast.success('Nueva carta porte creada');
-    } catch (error) {
-      console.error('Error creating carta porte:', error);
-      toast.error('Error al crear la carta porte');
-    }
-  }, [createNewCartaPorte]);
+  // Actualizar datos del formulario cuando cambien
+  useEffect(() => {
+    setDatosFormulario({
+      configuracion,
+      ubicaciones,
+      mercancias,
+      autotransporte,
+      figuras,
+      currentStep
+    });
+  }, [configuracion, ubicaciones, mercancias, autotransporte, figuras, currentStep]);
 
-  // Handler para guardar carta porte
-  const handleSave = useCallback(async () => {
-    try {
-      await saveCartaPorte();
-      toast.success('Carta porte guardada');
-    } catch (error) {
-      console.error('Error saving carta porte:', error);
-      toast.error('Error al guardar la carta porte');
-    }
-  }, [saveCartaPorte]);
+  const handleGuardarBorrador = async () => {
+    await BorradorService.guardarBorradorAutomatico(datosFormulario);
+    setUltimoGuardado(new Date());
+    toast({
+      title: "Borrador guardado",
+      description: "El borrador ha sido guardado correctamente.",
+    });
+  };
 
-  // Validaciones simplificadas
-  const canSaveAsTemplate = useMemo(() => {
-    return Boolean(stepValidations.configuracion && formData.ubicaciones?.length > 0);
-  }, [stepValidations.configuracion, formData.ubicaciones?.length]);
+  const handleLimpiarBorrador = () => {
+    BorradorService.limpiarBorrador();
+    toast({
+      title: "Borrador eliminado",
+      description: "El borrador ha sido eliminado.",
+    });
+  };
 
-  const canGenerateXML = useMemo(() => {
-    return Object.values(stepValidations).every(isValid => Boolean(isValid));
-  }, [stepValidations]);
-
-  // Create extended form data structure for compatibility
-  const cachedFormData = useMemo(() => ({
-    ...formData,
-    configuracion: {
-      version: formData.cartaPorteVersion || '3.1',
-      tipoComprobante: formData.tipoCfdi === 'Traslado' ? 'T' : 'I',
-      emisor: {
-        rfc: formData.rfcEmisor || '',
-        nombre: formData.nombreEmisor || '',
-        regimenFiscal: '',
-      },
-      receptor: {
-        rfc: formData.rfcReceptor || '',
-        nombre: formData.nombreReceptor || '',
-      },
+  const steps: Step[] = [
+    {
+      title: 'Configuración',
+      icon: FileText,
+      component: (
+        <ConfiguracionInicial
+          data={configuracion}
+          onChange={setConfiguracion}
+          onNext={() => setCurrentStep(1)}
+        />
+      ),
     },
-  }), [formData]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p className="ml-2">Cargando carta porte...</p>
-      </div>
-    );
-  }
+    {
+      title: 'Ubicaciones',
+      icon: MapPin,
+      component: (
+        <UbicacionesSection
+          data={ubicaciones}
+          onChange={setUbicaciones}
+          onNext={() => setCurrentStep(2)}
+          onPrev={() => setCurrentStep(0)}
+        />
+      ),
+    },
+    {
+      title: 'Mercancías',
+      icon: AlertTriangle,
+      component: (
+        <MercanciasSection
+          data={mercancias}
+          onChange={setMercancias}
+          onNext={() => setCurrentStep(3)}
+          onPrev={() => setCurrentStep(1)}
+        />
+      ),
+    },
+    {
+      title: 'Autotransporte',
+      icon: InfoIcon,
+      component: (
+        <AutotransporteSection
+          data={autotransporte}
+          onChange={setAutotransporte}
+          onNext={() => setCurrentStep(4)}
+          onPrev={() => setCurrentStep(2)}
+        />
+      ),
+    },
+    {
+      title: 'Figuras',
+      icon: InfoIcon,
+      component: (
+        <FigurasTransporteSection
+          data={figuras}
+          onChange={setFiguras}
+          onPrev={() => setCurrentStep(3)}
+          onFinish={() => setCurrentStep(5)}
+        />
+      ),
+    },
+    {
+      title: 'XML',
+      icon: FileText,
+      component: (
+        <XMLGenerationPanel
+          cartaPorteData={configuracion}
+          cartaPorteId={currentCartaPorteId}
+          onXMLGenerated={setXmlGenerated}
+          onTimbrado={setTimbradoData}
+        />
+      ),
+    },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Header con progreso */}
-      <CartaPorteHeader
-        cartaPorteId={cartaPorteId}
-        cartaPorteVersion={formData.cartaPorteVersion || '3.1'}
-        hasAIEnhancements={hasAIEnhancements}
-        showAIAlerts={false}
-        onToggleAIAlerts={() => {}}
-        canSaveAsTemplate={canSaveAsTemplate}
-        onSaveTemplate={handleSaveTemplate}
-        validationMode={validationMode}
-        overallScore={overallScore}
-        totalProgress={totalProgress}
-        currentCartaPorteId={currentCartaPorteId}
-      />
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Nueva Carta Porte</h1>
+            <p className="text-gray-600 mt-2">
+              Crea un nuevo comprobante fiscal digital de carta porte
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {ultimoGuardado && (
+              <div className="text-sm text-gray-500">
+                <Save className="h-4 w-4 inline mr-1" />
+                Guardado: {ultimoGuardado.toLocaleTimeString()}
+              </div>
+            )}
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGuardarBorrador}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Guardar Borrador
+            </Button>
+          </div>
+        </div>
 
-      {/* Navegación por pasos */}
+        {borradorCargado && (
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Se ha cargado un borrador previo. Los datos han sido restaurados.</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleLimpiarBorrador}
+              >
+                Eliminar Borrador
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Progress indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <span>Progreso del formulario</span>
+            <span>{Math.round((currentStep / (steps.length - 1)) * 100)}%</span>
+          </div>
+          <Progress value={(currentStep / (steps.length - 1)) * 100} className="h-2" />
+        </div>
+
+        {/* Steps navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-4">
+            {steps.map((step, index) => (
+              <div
+                key={index}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border ${
+                  index === currentStep
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : index < currentStep
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-500'
+                }`}
+              >
+                <step.icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{step.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Current step content */}
       <Card>
-        <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <CartaPorteTabNavigation
-              stepValidations={stepValidations}
-              canGenerateXML={canGenerateXML}
-            />
-
-            <CartaPorteTabContent
-              cartaPorteData={formData}
-              cachedFormData={cachedFormData}
-              updateFormData={updateFormData}
-              handleTabChange={handleTabChange}
-              handleAutotransporteChange={handleAutotransporteChange}
-              handleFigurasChange={handleFigurasChange}
-              handleXMLGenerated={handleXMLGenerated}
-              handleTimbrado={handleTimbrado}
-              currentCartaPorteId={currentCartaPorteId}
-            />
-          </Tabs>
+        <CardContent className="p-6">
+          {steps[currentStep].component}
         </CardContent>
       </Card>
 
-      {/* Acciones finales */}
-      <CartaPorteCompletionCard
-        canGenerateXML={canGenerateXML}
-        hasAIEnhancements={hasAIEnhancements}
-        onSaveTemplate={handleSaveTemplate}
-        onGenerateXML={() => handleTabChange('xml')}
-      />
-
-      <GuardarPlantillaDialog
-        open={showGuardarPlantilla}
-        onClose={() => setShowGuardarPlantilla(false)}
-        cartaPorteData={formData}
-      />
+      {/* Auto-save indicator */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Guardado automático activo</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
