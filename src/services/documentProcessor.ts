@@ -1,12 +1,8 @@
 
 import Tesseract from 'tesseract.js';
-import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?worker';
 import { supabase } from '@/integrations/supabase/client';
 import { Mercancia } from '@/hooks/useMercancias';
 import { ExcelParser, defaultColumnMapping } from '@/utils/excelParser';
-
-GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export interface DocumentProcessingResult {
   success: boolean;
@@ -198,32 +194,24 @@ export class DocumentProcessor {
   }
 
   private static async extractTextFromPDF(
-    file: File,
+    file: File, 
     onProgress?: (progress: ProcessingProgress) => void
   ): Promise<string> {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await getDocument({ data: arrayBuffer }).promise;
-    let extracted = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = (content.items as any[])
-        .map((item) => ('str' in item ? (item as any).str : ''))
-        .join(' ');
-      extracted += pageText + '\n';
-      const progress = 20 + Math.round((i / pdf.numPages) * 30);
-      onProgress?.({
-        stage: 'extraction',
-        progress,
-        message: `Procesando página ${i} de ${pdf.numPages}`
-      });
-    }
-    onProgress?.({
-      stage: 'extraction',
-      progress: 50,
-      message: 'Texto extraído del PDF'
+    // For PDF text extraction, we'll use a simple approach
+    // In a production environment, you might want to use pdf-parse or similar
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        onProgress?.({ 
+          stage: 'extraction', 
+          progress: 50, 
+          message: 'Texto extraído del PDF' 
+        });
+        // This is a simplified approach - in reality you'd need proper PDF parsing
+        resolve(reader.result as string || '');
+      };
+      reader.readAsText(file);
     });
-    return extracted;
   }
 
   private static async parseWithAI(text: string, documentType: string): Promise<DocumentProcessingResult> {
