@@ -39,7 +39,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
-  // Conversión estable sin re-renders
+  // Conversión estable sin re-renders - usando useMemo para evitar ciclos infinitos
   const cartaPorteDataForValidation = useMemo((): CartaPorteData => {
     try {
       return formDataExtendidoToCartaPorteData(formData);
@@ -81,7 +81,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     validateComplete
   } = validationResult;
 
-  // Convertir las validaciones al formato correcto
+  // Convertir las validaciones al formato correcto - memoizado para estabilidad
   const stepValidations: StepValidations = useMemo(() => ({
     configuracion: rawStepValidations?.configuracion || false,
     ubicaciones: rawStepValidations?.ubicaciones || false,
@@ -90,7 +90,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     figuras: rawStepValidations?.figuras || false,
   }), [rawStepValidations]);
 
-  // Función estable para actualizar datos
+  // Función estable para actualizar datos - usando useCallback para prevenir re-renders
   const stableSetFormData = useCallback((data: CartaPorteData) => {
     try {
       const extendedData = cartaPorteDataToFormDataExtendido(data);
@@ -125,7 +125,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     updateFormDataBase({ [section]: data });
   }, [updateFormDataBase]);
 
-  // Mappers específicos para convertir datos del formulario
+  // Mappers específicos para convertir datos del formulario - memoizados
   const formDataToCartaPorteData = useCallback(() => {
     return cartaPorteDataForValidation;
   }, [cartaPorteDataForValidation]);
