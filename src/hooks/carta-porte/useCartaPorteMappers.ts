@@ -62,15 +62,15 @@ export interface CartaPorteFormData {
   }>;
   
   // Campos adicionales para compatibilidad
-  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
-  tipoCfdi?: 'Ingreso' | 'Traslado';
-  rfcEmisor?: string;
-  nombreEmisor?: string;
-  rfcReceptor?: string;
-  nombreReceptor?: string;
-  transporteInternacional?: boolean;
-  registroIstmo?: boolean;
-  cartaPorteVersion?: '3.0' | '3.1';
+  tipoCreacion: 'plantilla' | 'carga' | 'manual';
+  tipoCfdi: 'Ingreso' | 'Traslado';
+  rfcEmisor: string;
+  nombreEmisor: string;
+  rfcReceptor: string;
+  nombreReceptor: string;
+  transporteInternacional: boolean;
+  registroIstmo: boolean;
+  cartaPorteVersion: '3.0' | '3.1';
   cartaPorteId?: string;
 }
 
@@ -78,15 +78,15 @@ export const useCartaPorteMappers = () => {
   // Mapper de CartaPorteFormData a CartaPorteData
   const formDataToCartaPorteData = (formData: CartaPorteFormData): CartaPorteData => {
     return {
-      tipoCreacion: formData.tipoCreacion || 'manual',
-      tipoCfdi: formData.tipoCfdi || formData.configuracion.tipoComprobante === 'T' ? 'Traslado' : 'Ingreso',
-      rfcEmisor: formData.rfcEmisor || formData.configuracion.emisor.rfc,
-      nombreEmisor: formData.nombreEmisor || formData.configuracion.emisor.nombre,
-      rfcReceptor: formData.rfcReceptor || formData.configuracion.receptor.rfc,
-      nombreReceptor: formData.nombreReceptor || formData.configuracion.receptor.nombre,
-      transporteInternacional: formData.transporteInternacional || false,
-      registroIstmo: formData.registroIstmo || false,
-      cartaPorteVersion: formData.cartaPorteVersion || formData.configuracion.version,
+      tipoCreacion: formData.tipoCreacion,
+      tipoCfdi: formData.tipoCfdi,
+      rfcEmisor: formData.rfcEmisor,
+      nombreEmisor: formData.nombreEmisor,
+      rfcReceptor: formData.rfcReceptor,
+      nombreReceptor: formData.nombreReceptor,
+      transporteInternacional: formData.transporteInternacional,
+      registroIstmo: formData.registroIstmo,
+      cartaPorteVersion: formData.cartaPorteVersion,
       ubicaciones: formData.ubicaciones,
       mercancias: formData.mercancias,
       autotransporte: formData.autotransporte,
@@ -140,14 +140,15 @@ export const useCartaPorteMappers = () => {
   const formAutotransporteToData = (formAutotransporte: CartaPorteFormData['autotransporte']): AutotransporteData => {
     return {
       placa_vm: formAutotransporte.placaVm,
-      anio_modelo_vm: new Date().getFullYear(), // Default
+      anio_modelo_vm: new Date().getFullYear(),
       config_vehicular: formAutotransporte.configuracionVehicular,
-      perm_sct: 'TPAF02', // Default
+      perm_sct: 'TPAF02',
       num_permiso_sct: '',
       asegura_resp_civil: formAutotransporte.seguro.aseguradora,
       poliza_resp_civil: formAutotransporte.seguro.poliza,
       asegura_med_ambiente: '',
       poliza_med_ambiente: '',
+      remolques: formAutotransporte.remolques || [],
     };
   };
 
@@ -161,6 +162,7 @@ export const useCartaPorteMappers = () => {
         poliza: data.poliza_resp_civil || '',
         vigencia: '',
       },
+      remolques: data.remolques || [],
     };
   };
 

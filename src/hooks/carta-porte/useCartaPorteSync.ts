@@ -38,7 +38,7 @@ export const useCartaPorteSync = ({
         const { error } = await supabase
           .from('cartas_porte')
           .update({
-            datos_formulario: data,
+            datos_formulario: data as any,
             updated_at: new Date().toISOString()
           })
           .eq('id', id);
@@ -50,7 +50,7 @@ export const useCartaPorteSync = ({
           .from('cartas_porte')
           .insert({
             status: 'borrador',
-            datos_formulario: data,
+            datos_formulario: data as any,
             rfc_emisor: data.rfcEmisor || data.configuracion.emisor.rfc,
             rfc_receptor: data.rfcReceptor || data.configuracion.receptor.rfc,
             created_at: new Date().toISOString(),

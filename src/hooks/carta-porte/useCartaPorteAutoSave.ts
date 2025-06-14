@@ -41,7 +41,7 @@ export const useCartaPorteAutoSave = ({
           await supabase
             .from('cartas_porte')
             .update({
-              datos_formulario: formData,
+              datos_formulario: formData as any,
               updated_at: new Date().toISOString()
             })
             .eq('id', currentCartaPorteId);
@@ -51,7 +51,7 @@ export const useCartaPorteAutoSave = ({
             .from('cartas_porte')
             .insert({
               status: 'borrador',
-              datos_formulario: formData,
+              datos_formulario: formData as any,
               rfc_emisor: formData.rfcEmisor || formData.configuracion.emisor.rfc,
               rfc_receptor: formData.rfcReceptor || formData.configuracion.receptor.rfc,
               created_at: new Date().toISOString(),

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +15,7 @@ import { AIValidationAlerts } from '@/components/ai/AIValidationAlerts';
 import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
+import { useCartaPorteMappers } from '@/hooks/carta-porte/useCartaPorteMappers';
 import { 
   FileText, 
   MapPin, 
@@ -108,6 +110,9 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     overallScore,
   } = useCartaPorteForm({ cartaPorteId });
 
+  // Mappers para conversión de datos
+  const { formDataToCartaPorteData } = useCartaPorteMappers();
+
   // Usar hook optimizado para navegación de pestañas
   const { activeTab, handleTabChange } = useTabNavigation({
     initialTab: 'configuracion',
@@ -157,6 +162,11 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       .filter(([key]) => key !== 'xml')
       .every(([, isValid]) => isValid);
   }, [stepValidations]);
+
+  // Convertir formData a CartaPorteData cuando sea necesario
+  const cartaPorteData = useMemo(() => {
+    return formDataToCartaPorteData(formData);
+  }, [formData, formDataToCartaPorteData]);
 
   // Determinar título dinámico con indicador IA
   const getFormTitle = useMemo(() => {
@@ -276,7 +286,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
             <div className="p-6">
               <TabsContent value="configuracion">
                 <ConfiguracionInicial
-                  data={formData}
+                  data={cartaPorteData}
                   onChange={(data) => updateFormData('configuracion', data)}
                   onNext={() => handleNextStep('ubicaciones')}
                 />
@@ -321,7 +331,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="xml">
                 <XMLGenerationPanel
-                  cartaPorteData={formData}
+                  cartaPorteData={cartaPorteData}
                   cartaPorteId={currentCartaPorteId}
                   onXMLGenerated={handleXMLGenerated}
                   onTimbrado={handleTimbrado}
@@ -380,7 +390,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
       <GuardarPlantillaDialog
         open={showGuardarPlantilla}
         onClose={() => setShowGuardarPlantilla(false)}
-        cartaPorteData={formData}
+        cartaPorteData={cartaPorteData}
       />
     </div>
   );
