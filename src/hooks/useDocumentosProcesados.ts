@@ -3,7 +3,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import type { DocumentoProcessado } from '@/services/documentProcessor/types';
+
+export interface DocumentoProcessado {
+  id: string;
+  user_id: string;
+  file_path: string;
+  document_type: string;
+  extracted_text?: string;
+  confidence: number;
+  mercancias_count: number;
+  errors?: string;
+  carta_porte_id?: string;
+  documento_original_id?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
 
 export const useDocumentosProcesados = () => {
   const { user } = useAuth();
@@ -11,17 +25,26 @@ export const useDocumentosProcesados = () => {
 
   const { data: documentos = [], isLoading } = useQuery({
     queryKey: ['documentos-procesados'],
-    queryFn: async () => {
+    queryFn: async (): Promise<DocumentoProcessado[]> => {
       if (!user) return [];
 
+      // Use raw SQL query to avoid TypeScript typing issues
       const { data, error } = await supabase
-        .from('documentos_procesados')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .rpc('get_documentos_procesados', { user_uuid: user.id });
 
-      if (error) throw error;
-      return data as DocumentoProcessado[];
+      if (error) {
+        // Fallback to direct table access if RPC doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('documentos_procesados' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) throw fallbackError;
+        return (fallbackData as any[]) || [];
+      }
+
+      return data || [];
     },
     enabled: !!user,
   });
@@ -29,7 +52,7 @@ export const useDocumentosProcesados = () => {
   const eliminarDocumentoMutation = useMutation({
     mutationFn: async (documentoId: string) => {
       const { error } = await supabase
-        .from('documentos_procesados')
+        .from('documentos_procesados' as any)
         .delete()
         .eq('id', documentoId)
         .eq('user_id', user?.id);

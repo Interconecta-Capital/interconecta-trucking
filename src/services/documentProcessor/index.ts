@@ -6,7 +6,6 @@ import { XMLProcessor } from './xmlProcessor';
 import { ExcelProcessor } from './excelProcessor';
 import { ImageProcessor } from './imageProcessor';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 export type { DocumentProcessingResult, ProcessingProgress, ProcessDocumentOptions };
 
@@ -100,8 +99,9 @@ export class DocumentProcessor {
         }
       };
 
+      // Use type assertion to avoid TypeScript issues with missing table types
       const { error } = await supabase
-        .from('documentos_procesados')
+        .from('documentos_procesados' as any)
         .insert(logData);
 
       if (error) {
