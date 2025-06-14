@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -66,6 +65,36 @@ export function useFlotaManager() {
   const [conductores, setConductores] = useState<ConductorFlota[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const mapVehiculoEstatus = (estado: string): VehiculoFlota['estatus'] => {
+    switch (estado) {
+      case 'disponible':
+        return 'disponible';
+      case 'en_ruta':
+        return 'en_ruta';
+      case 'mantenimiento':
+        return 'mantenimiento';
+      case 'fuera_servicio':
+        return 'fuera_servicio';
+      default:
+        return 'disponible';
+    }
+  };
+
+  const mapConductorEstatus = (estado: string): ConductorFlota['estatus'] => {
+    switch (estado) {
+      case 'disponible':
+        return 'disponible';
+      case 'en_ruta':
+        return 'en_ruta';
+      case 'descanso':
+        return 'descanso';
+      case 'inactivo':
+        return 'inactivo';
+      default:
+        return 'disponible';
+    }
+  };
+
   const obtenerVehiculos = useCallback(async () => {
     setLoading(true);
     try {
@@ -76,7 +105,7 @@ export function useFlotaManager() {
 
       if (error) throw error;
 
-      const vehiculosFormateados = data?.map(vehiculo => ({
+      const vehiculosFormateados: VehiculoFlota[] = data?.map(vehiculo => ({
         id: vehiculo.id,
         placas: vehiculo.placa,
         marca: vehiculo.marca || '',
@@ -85,9 +114,7 @@ export function useFlotaManager() {
         tipo: vehiculo.config_vehicular || 'camion',
         capacidad_peso: 5000, // Default values since not in schema
         capacidad_volumen: 50,
-        estatus: vehiculo.estado === 'disponible' ? 'disponible' : 
-                vehiculo.estado === 'en_ruta' ? 'en_ruta' : 
-                vehiculo.estado === 'mantenimiento' ? 'mantenimiento' : 'fuera_servicio',
+        estatus: mapVehiculoEstatus(vehiculo.estado),
         ubicacion_actual: undefined,
         conductor_asignado: undefined,
         ultima_revision: undefined,
@@ -122,16 +149,14 @@ export function useFlotaManager() {
 
       if (error) throw error;
 
-      const conductoresFormateados = data?.map(conductor => ({
+      const conductoresFormateados: ConductorFlota[] = data?.map(conductor => ({
         id: conductor.id,
         nombre: conductor.nombre,
         licencia: conductor.num_licencia || '',
         tipo_licencia: conductor.tipo_licencia || '',
         telefono: conductor.telefono || '',
         email: conductor.email,
-        estatus: conductor.estado === 'disponible' ? 'disponible' : 
-                conductor.estado === 'en_ruta' ? 'en_ruta' : 
-                conductor.estado === 'descanso' ? 'descanso' : 'inactivo',
+        estatus: mapConductorEstatus(conductor.estado),
         vehiculo_asignado: undefined,
         experiencia_years: 5, // Default value
         vencimiento_licencia: conductor.vigencia_licencia,
