@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, Clock } from 'lucide-react';
-import { UbicacionFrecuente } from '@/hooks/useUbicaciones';
+import { UbicacionFrecuente } from '@/types/ubicaciones';
 import { FormularioDomicilioUnificado, DomicilioUnificado } from '@/components/common/FormularioDomicilioUnificado';
 
 interface UbicacionFormOptimizadoProps {
@@ -232,7 +231,9 @@ export function UbicacionFormOptimizado({
                   onClick={() => onSaveToFavorites({
                     nombreUbicacion: formData.nombreRemitenteDestinatario,
                     rfcAsociado: formData.rfcRemitenteDestinatario,
-                    domicilio: formData.domicilio
+                    domicilio: formData.domicilio,
+                    fechaCreacion: new Date().toISOString(),
+                    vecesUsada: 1
                   })}
                 >
                   Guardar en Favoritos

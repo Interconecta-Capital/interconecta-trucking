@@ -1,6 +1,13 @@
+
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Ubicacion } from '@/types/ubicaciones';
+
+export interface PDFGenerationResult {
+  success: boolean;
+  blob?: Blob;
+  error?: string;
+}
 
 const generateCartaPortePDF = (data: any) => {
   try {
@@ -49,5 +56,17 @@ const generateCartaPortePDF = (data: any) => {
     throw error;
   }
 };
+
+// Mock CartaPortePDFGenerator for compatibility
+export class CartaPortePDFGenerator {
+  static async generate(data: any): Promise<PDFGenerationResult> {
+    try {
+      const blob = generateCartaPortePDF(data);
+      return { success: true, blob };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+}
 
 export { generateCartaPortePDF };

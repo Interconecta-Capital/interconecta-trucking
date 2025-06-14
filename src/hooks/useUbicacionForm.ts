@@ -1,9 +1,9 @@
 
 import { useState, useCallback } from 'react';
-import { Ubicacion } from '@/types/ubicaciones';
+import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 
-export const useUbicacionForm = (initialData?: Partial<Ubicacion>) => {
-  const [ubicacion, setUbicacion] = useState<Ubicacion>({
+export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => string) => {
+  const [formData, setFormData] = useState<Ubicacion>({
     id: initialData?.id || '',
     idUbicacion: initialData?.idUbicacion || '',
     tipoUbicacion: initialData?.tipoUbicacion || 'Origen',
@@ -28,8 +28,11 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>) => {
     }
   });
 
-  const updateField = useCallback((field: string, value: any) => {
-    setUbicacion(prev => {
+  const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
+  const [showFrecuentes, setShowFrecuentes] = useState(false);
+
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    setFormData(prev => {
       const keys = field.split('.');
       if (keys.length === 1) {
         return { ...prev, [field]: value };
@@ -46,20 +49,67 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>) => {
     });
   }, []);
 
-  const updateUbicacion = useCallback((newData: Partial<Ubicacion>) => {
-    setUbicacion(prev => ({
+  const handleTipoChange = useCallback((tipo: string) => {
+    const newId = generarId ? generarId(tipo as 'Origen' | 'Destino' | 'Paso Intermedio') : `${tipo}_${Date.now()}`;
+    setFormData(prev => ({
       ...prev,
-      ...newData,
-      tipoUbicacion: newData.tipoUbicacion || prev.tipoUbicacion,
-      idUbicacion: newData.idUbicacion || prev.idUbicacion,
-      id: newData.id || prev.id
+      tipoUbicacion: tipo as 'Origen' | 'Destino',
+      idUbicacion: newId
+    }));
+  }, [generarId]);
+
+  const handleRFCChange = useCallback((rfc: string) => {
+    setFormData(prev => ({ ...prev, rfcRemitenteDestinatario: rfc.toUpperCase() }));
+    
+    // Basic RFC validation
+    const rfcRegex = /^[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
+    if (rfc && !rfcRegex.test(rfc.toUpperCase())) {
+      setRfcValidation({ isValid: false, message: 'RFC inválido' });
+    } else {
+      setRfcValidation({ isValid: true, message: '' });
+    }
+  }, []);
+
+  const handleLocationUpdate = useCallback((locationData: any) => {
+    setFormData(prev => ({
+      ...prev,
+      domicilio: {
+        ...prev.domicilio,
+        ...locationData
+      }
     }));
   }, []);
 
+  const cargarUbicacionFrecuente = useCallback((ubicacionFrecuente: UbicacionFrecuente) => {
+    setFormData(prev => ({
+      ...prev,
+      rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
+      nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
+      domicilio: ubicacionFrecuente.domicilio
+    }));
+  }, []);
+
+  const isFormValid = useCallback(() => {
+    return !!(
+      formData.rfcRemitenteDestinatario &&
+      formData.nombreRemitenteDestinatario &&
+      formData.domicilio.codigoPostal &&
+      formData.domicilio.calle &&
+      rfcValidation.isValid
+    );
+  }, [formData, rfcValidation]);
+
   return {
-    ubicacion,
-    setUbicacion,
-    updateField,
-    updateUbicacion
+    formData,
+    setFormData,
+    rfcValidation,
+    showFrecuentes,
+    setShowFrecuentes,
+    handleTipoChange,
+    handleRFCChange,
+    handleLocationUpdate,
+    handleFieldChange,
+    cargarUbicacionFrecuente,
+    isFormValid
   };
 };

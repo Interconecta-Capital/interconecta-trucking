@@ -28,10 +28,23 @@ export interface Ubicacion {
 
 export interface UbicacionFrecuente {
   id: string;
-  nombre: string;
-  ubicacion: Ubicacion;
+  nombreUbicacion: string;
+  rfcAsociado: string;
+  domicilio: {
+    pais: string;
+    codigoPostal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numExterior?: string;
+    numInterior?: string;
+    localidad?: string;
+    referencia?: string;
+  };
   fechaCreacion: string;
   vecesUsada: number;
+  usoCount?: number; // alias for vecesUsada for compatibility
 }
 
 // Coordinates interface for mapping compatibility

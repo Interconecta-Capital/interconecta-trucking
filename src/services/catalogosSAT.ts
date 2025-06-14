@@ -47,3 +47,10 @@ export const consultarCodigoPostal = async (codigoPostal: string): Promise<Consu
     return null;
   }
 };
+
+// Mock CatalogosSATService for compatibility
+export class CatalogosSATService {
+  static async consultarCodigoPostal(cp: string) {
+    return consultarCodigoPostal(cp);
+  }
+}
