@@ -1,4 +1,8 @@
 
+import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?worker&inline';
+GlobalWorkerOptions.workerSrc = pdfWorker;
+
 import Tesseract from 'tesseract.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Mercancia } from '@/hooks/useMercancias';
@@ -214,24 +218,31 @@ export class DocumentProcessor {
   }
 
   private static async extractTextFromPDF(
-    file: File, 
+    file: File,
     onProgress?: (progress: ProcessingProgress) => void
   ): Promise<string> {
-    // For PDF text extraction, we'll use a simple approach
-    // In a production environment, you might want to use pdf-parse or similar
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        onProgress?.({ 
-          stage: 'extraction', 
-          progress: 50, 
-          message: 'Texto extraído del PDF' 
-        });
-        // This is a simplified approach - in reality you'd need proper PDF parsing
-        resolve(reader.result as string || '');
-      };
-      reader.readAsText(file);
-    });
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    let text = '';
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => ('str' in item ? item.str : ''))
+        .join(' ');
+      text += pageText + '\n';
+
+      const progress = 20 + Math.round((pageNum / pdf.numPages) * 40);
+      onProgress?.({
+        stage: 'extraction',
+        progress,
+        message: `Extrayendo página ${pageNum} de ${pdf.numPages}...`
+      });
+    }
+
+    return text;
   }
 
   private static async parseWithAI(text: string, documentType: string): Promise<DocumentProcessingResult> {
