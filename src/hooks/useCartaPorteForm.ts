@@ -190,7 +190,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   }, [updateFormDataBase]);
 
   // Mappers específicos para convertir datos del formulario - estabilizados
-  const formDataToCartaPorteData = useCallback(() => {
+  const formDataToCartaPorteDataStable = useCallback(() => {
     return cartaPorteDataForValidation;
   }, [cartaPorteDataForValidation]);
 
@@ -236,7 +236,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     // Mappers
     formDataExtendidoToCartaPorteData,
     cartaPorteDataToFormDataExtendido,
-    formDataToCartaPorteData,
+    formDataToCartaPorteData: formDataToCartaPorteDataStable,
     formAutotransporteToData,
     formFigurasToData,
   };
