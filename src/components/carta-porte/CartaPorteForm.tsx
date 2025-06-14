@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { AIValidationAlerts } from '@/components/ai/AIValidationAlerts';
 import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
+import { useCartaPorteFormSimplified } from '@/hooks/useCartaPorteFormSimplified';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import { useCartaPorteCache } from '@/hooks/carta-porte/useCartaPorteCache';
 import { useCartaPortePerformance } from '@/hooks/carta-porte/useCartaPortePerformance';
@@ -44,9 +45,10 @@ export interface CartaPorteData {
 
 interface CartaPorteFormProps {
   cartaPorteId?: string;
+  simplified?: boolean;
 }
 
-export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
+export function CartaPorteForm({ cartaPorteId, simplified }: CartaPorteFormProps) {
   const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
   const [showAIAlerts, setShowAIAlerts] = useState(true);
   
@@ -72,7 +74,11 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     formDataToCartaPorteData,
     formAutotransporteToData,
     formFigurasToData,
-  } = useCartaPorteForm({ cartaPorteId });
+  } = (
+    simplified || import.meta.env.VITE_SIMPLIFIED_CARTA_PORTE === 'true'
+      ? useCartaPorteFormSimplified({ cartaPorteId })
+      : useCartaPorteForm({ cartaPorteId })
+  );
 
   // Usar hook optimizado para navegación de pestañas
   const { activeTab, handleTabChange } = useTabNavigation({
