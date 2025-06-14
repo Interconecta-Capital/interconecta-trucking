@@ -68,6 +68,19 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     updateFormDataBase({ [section]: data });
   }, [updateFormDataBase]);
 
+  // Mappers específicos para convertir datos del formulario
+  const formDataToCartaPorteData = useCallback(() => {
+    return formDataExtendidoToCartaPorteData(formData as unknown as CartaPorteFormDataExtendido);
+  }, [formData, formDataExtendidoToCartaPorteData]);
+
+  const formAutotransporteToData = useCallback((autotransporteForm: any) => {
+    return autotransporteForm || formData.autotransporte;
+  }, [formData.autotransporte]);
+
+  const formFigurasToData = useCallback((figurasForm: any) => {
+    return figurasForm || formData.figuras;
+  }, [formData.figuras]);
+
   return {
     // Estado del formulario
     formData,
@@ -99,8 +112,11 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     isCreating: false,
     isUpdating: false,
     
-    // Mappers extendidos
+    // Mappers
     formDataExtendidoToCartaPorteData,
     cartaPorteDataToFormDataExtendido,
+    formDataToCartaPorteData,
+    formAutotransporteToData,
+    formFigurasToData,
   };
 }

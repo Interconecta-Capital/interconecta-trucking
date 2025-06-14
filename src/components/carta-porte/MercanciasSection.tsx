@@ -54,10 +54,13 @@ export function MercanciasSection({ data, onChange, onNext, onPrev }: Mercancias
         {data.map((mercancia, index) => (
           <MercanciaFormCompleta
             key={mercancia.id || index}
-            mercancia={mercancia}
-            onUpdate={(updatedMercancia) => handleUpdateMercancia(index, updatedMercancia)}
-            onRemove={() => handleRemoveMercancia(index)}
             index={index}
+            mercancia={mercancia}
+            onSave={async (updatedMercancia) => {
+              handleUpdateMercancia(index, updatedMercancia);
+              return true;
+            }}
+            onRemove={() => handleRemoveMercancia(index)}
           />
         ))}
 
