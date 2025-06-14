@@ -61,6 +61,33 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     'XML'
   ], []);
 
+  // Asegurar que autotransporte tenga valores por defecto
+  const safeAutotransporte = useMemo(() => {
+    return autotransporte || {
+      placa_vm: '',
+      anio_modelo_vm: 2020,
+      config_vehicular: '',
+      perm_sct: '',
+      num_permiso_sct: '',
+      asegura_resp_civil: '',
+      poliza_resp_civil: '',
+      remolques: []
+    };
+  }, [autotransporte]);
+
+  const safeOptimizedAutotransporte = useMemo(() => {
+    return optimizedAutotransporte || {
+      placa_vm: '',
+      anio_modelo_vm: 2020,
+      config_vehicular: '',
+      perm_sct: '',
+      num_permiso_sct: '',
+      asegura_resp_civil: '',
+      poliza_resp_civil: '',
+      remolques: []
+    };
+  }, [optimizedAutotransporte]);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <CartaPorteHeader
@@ -80,7 +107,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         configuracion={optimizedConfiguracion}
         ubicaciones={optimizedUbicaciones}
         mercancias={optimizedMercancias}
-        autotransporte={optimizedAutotransporte}
+        autotransporte={safeOptimizedAutotransporte}
         figuras={optimizedFiguras}
         currentCartaPorteId={currentCartaPorteId}
         onConfiguracionChange={handleConfiguracionChange}

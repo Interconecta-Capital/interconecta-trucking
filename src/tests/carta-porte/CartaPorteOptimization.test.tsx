@@ -21,6 +21,7 @@ const mockFormData: CartaPorteData = {
       codigo_postal: '01000',
       domicilio: {
         pais: 'México',
+        codigo_postal: '01000',
         estado: 'Ciudad de México',
         municipio: 'Álvaro Obregón',
         colonia: 'Centro',
@@ -34,6 +35,7 @@ const mockFormData: CartaPorteData = {
       codigo_postal: '02000',
       domicilio: {
         pais: 'México',
+        codigo_postal: '02000',
         estado: 'Ciudad de México',
         municipio: 'Benito Juárez',
         colonia: 'Centro',
@@ -71,6 +73,7 @@ const mockFormData: CartaPorteData = {
       nombre_figura: 'Test Conductor',
       domicilio: {
         pais: 'México',
+        codigo_postal: '01000',
         estado: 'Ciudad de México',
         municipio: 'Álvaro Obregón',
         colonia: 'Centro',

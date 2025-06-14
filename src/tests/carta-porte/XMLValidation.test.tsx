@@ -21,6 +21,7 @@ const mockValidCartaPorteData: CartaPorteData = {
       codigo_postal: '01000',
       domicilio: {
         pais: 'México',
+        codigo_postal: '01000',
         estado: 'Ciudad de México',
         municipio: 'Álvaro Obregón',
         colonia: 'Centro',
@@ -34,6 +35,7 @@ const mockValidCartaPorteData: CartaPorteData = {
       codigo_postal: '02000',
       domicilio: {
         pais: 'México',
+        codigo_postal: '02000',
         estado: 'Ciudad de México',
         municipio: 'Benito Juárez',
         colonia: 'Centro',
@@ -71,6 +73,7 @@ const mockValidCartaPorteData: CartaPorteData = {
       nombre_figura: 'Test Conductor',
       domicilio: {
         pais: 'México',
+        codigo_postal: '01000',
         estado: 'Ciudad de México',
         municipio: 'Álvaro Obregón',
         colonia: 'Centro',
@@ -217,7 +220,7 @@ describe('XML Validation - Robust Testing', () => {
       // Verificar que se reportan todos los errores principales
       const errorMessages = result.errors.join(' ');
       expect(errorMessages).toContain('RFC');
-      expect(errorMessages).toContain('ubicación' || 'ubicaciones');
+      expect(errorMessages.includes('ubicación') || errorMessages.includes('ubicaciones')).toBe(true);
     });
   });
 });
