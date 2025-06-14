@@ -187,7 +187,10 @@ export function UbicacionForm({
               Domicilio
             </Label>
             <FormularioDomicilioUnificado
-              domicilio={formData.domicilio}
+              domicilio={{
+                ...formData.domicilio,
+                numExterior: formData.domicilio.numExterior || '' // Ensure required field
+              }}
               onDomicilioChange={handleDomicilioChange}
               camposOpcionales={['numInterior', 'referencia', 'localidad']}
             />

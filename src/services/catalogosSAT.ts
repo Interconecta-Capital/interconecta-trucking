@@ -1,4 +1,3 @@
-
 // Mock service for postal code consultation
 export interface ConsultaCodigoPostalResult {
   estado: string;
@@ -13,6 +12,8 @@ export interface ConsultaCodigoPostalResult {
 export interface CatalogItem {
   codigo: string;
   descripcion: string;
+  value?: string; // Add value property for compatibility
+  label?: string; // Add label property for compatibility
 }
 
 export const consultarCodigoPostal = async (codigoPostal: string): Promise<ConsultaCodigoPostalResult | null> => {

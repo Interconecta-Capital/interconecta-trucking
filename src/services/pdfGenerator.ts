@@ -6,6 +6,7 @@ import { Ubicacion } from '@/types/ubicaciones';
 export interface PDFGenerationResult {
   success: boolean;
   blob?: Blob;
+  pdfBlob?: Blob; // Add missing property
   pdfUrl?: string;
   error?: string;
 }
@@ -63,7 +64,7 @@ export class CartaPortePDFGenerator {
   static async generate(data: any): Promise<PDFGenerationResult> {
     try {
       const blob = generateCartaPortePDF(data);
-      return { success: true, blob };
+      return { success: true, blob, pdfBlob: blob };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
@@ -73,7 +74,7 @@ export class CartaPortePDFGenerator {
     try {
       const blob = generateCartaPortePDF(data);
       const pdfUrl = URL.createObjectURL(blob);
-      return { success: true, blob, pdfUrl };
+      return { success: true, blob, pdfBlob: blob, pdfUrl };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
