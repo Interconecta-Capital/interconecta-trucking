@@ -1,7 +1,6 @@
-
 import { useCallback } from 'react';
 import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormState';
-import { useCartaPorteValidation } from '@/hooks/carta-porte/useCartaPorteValidation';
+import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPorteValidationEnhanced';
 import { useCartaPorteAutoSave } from '@/hooks/carta-porte/useCartaPorteAutoSave';
 import { useCartaPorteSync } from '@/hooks/carta-porte/useCartaPorteSync';
 
@@ -21,8 +20,18 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     setFormData,
   } = useCartaPorteFormState({ cartaPorteId });
 
-  // Validaciones y progreso
-  const { stepValidations, totalProgress } = useCartaPorteValidation({ formData });
+  // Usar validaciones mejoradas en lugar de las tradicionales
+  const { 
+    stepValidations, 
+    totalProgress,
+    aiValidation,
+    hasAIEnhancements,
+    validationMode,
+    overallScore
+  } = useCartaPorteValidationEnhanced({ 
+    formData,
+    enableAI: true 
+  });
 
   // Auto-guardado
   const { clearSavedData } = useCartaPorteAutoSave({
@@ -43,7 +52,7 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     setCurrentCartaPorteId,
   });
 
-  // Enhanced updateFormData with carta porte update logic
+  // Enhanced updateFormData with AI validation feedback
   const updateFormData = useCallback((section: string, data: any) => {
     console.log('[CartaPorteForm] Updating section:', section);
     
@@ -61,8 +70,17 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     currentCartaPorteId,
     isLoading,
     updateFormData,
+    
+    // Mantener validaciones tradicionales para compatibilidad
     stepValidations,
     totalProgress,
+    
+    // Agregar nuevas capacidades IA
+    aiValidation,
+    hasAIEnhancements,
+    validationMode,
+    overallScore,
+    
     clearSavedData,
     isCreating,
     isUpdating,
