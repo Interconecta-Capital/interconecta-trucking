@@ -1,5 +1,5 @@
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormState';
 import { useCartaPorteValidationEnhanced } from '@/hooks/carta-porte/useCartaPorteValidationEnhanced';
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
@@ -24,6 +24,10 @@ interface StepValidations {
 }
 
 export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPorteFormOptions = {}) {
+  // Referencias para evitar re-renders
+  const lastValidationDataRef = useRef<string>('');
+  const lastCartaPorteDataRef = useRef<CartaPorteData | null>(null);
+  
   // Estado del formulario con tipos extendidos
   const {
     formData,
@@ -41,7 +45,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     cartaPorteDataToFormDataExtendido,
   } = useCartaPorteMappersExtendidos();
 
-  // Mappers normales para validación - renombrados para evitar conflictos
+  // Mappers normales para validación
   const { 
     formDataToCartaPorteData: mapperFormDataToCartaPorteData, 
     cartaPorteDataToFormData 
@@ -50,57 +54,97 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   // Converters para datos
   const { convertExtendedToCartaPorteData } = useCartaPorteDataConverters();
 
-  // Estabilizar la conversión de datos - usar JSON.stringify para comparación estable
-  const formDataString = useMemo(() => JSON.stringify(formData), [formData]);
-  
-  // Conversión estable sin re-renders - solo depende del string serializado
-  const cartaPorteDataForValidation = useMemo((): CartaPorteData => {
+  // Crear una versión estable de los datos para validación
+  const stableFormDataForValidation = useMemo((): CartaPorteData => {
+    const currentDataString = JSON.stringify({
+      tipoCreacion: formData.tipoCreacion || 'manual',
+      tipoCfdi: formData.tipoCfdi || 'Traslado',
+      rfcEmisor: formData.rfcEmisor || '',
+      nombreEmisor: formData.nombreEmisor || '',
+      rfcReceptor: formData.rfcReceptor || '',
+      nombreReceptor: formData.nombreReceptor || '',
+      transporteInternacional: formData.transporteInternacional || false,
+      registroIstmo: formData.registroIstmo || false,
+      cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+      ubicacionesLength: formData.ubicaciones?.length || 0,
+      mercanciasLength: formData.mercancias?.length || 0,
+      hasAutotransporte: !!formData.autotransporte,
+      figurasLength: formData.figuras?.length || 0,
+    });
+
+    // Solo recalcular si los datos han cambiado realmente
+    if (currentDataString === lastValidationDataRef.current && lastCartaPorteDataRef.current) {
+      return lastCartaPorteDataRef.current;
+    }
+
+    lastValidationDataRef.current = currentDataString;
+
     try {
-      const parsedFormData = JSON.parse(formDataString);
-      return convertExtendedToCartaPorteData(parsedFormData);
+      const cartaPorteData = convertExtendedToCartaPorteData(formData);
+      lastCartaPorteDataRef.current = cartaPorteData;
+      return cartaPorteData;
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data for validation:', error);
-      // Retornar datos mínimos válidos en caso de error
-      const parsedFormData = JSON.parse(formDataString);
-      return {
-        tipoCreacion: parsedFormData.tipoCreacion || 'manual',
-        tipoCfdi: parsedFormData.tipoCfdi || 'Traslado',
-        rfcEmisor: parsedFormData.rfcEmisor || '',
-        nombreEmisor: parsedFormData.nombreEmisor || '',
-        rfcReceptor: parsedFormData.rfcReceptor || '',
-        nombreReceptor: parsedFormData.nombreReceptor || '',
-        transporteInternacional: parsedFormData.transporteInternacional || false,
-        registroIstmo: parsedFormData.registroIstmo || false,
-        cartaPorteVersion: parsedFormData.cartaPorteVersion || '3.1',
-        ubicaciones: [],
-        mercancias: [],
-        autotransporte: parsedFormData.autotransporte || {},
-        figuras: [],
-        cartaPorteId: parsedFormData.cartaPorteId,
+      
+      // Retornar datos mínimos válidos
+      const fallbackData: CartaPorteData = {
+        tipoCreacion: formData.tipoCreacion || 'manual',
+        tipoCfdi: formData.tipoCfdi || 'Traslado',
+        rfcEmisor: formData.rfcEmisor || '',
+        nombreEmisor: formData.nombreEmisor || '',
+        rfcReceptor: formData.rfcReceptor || '',
+        nombreReceptor: formData.nombreReceptor || '',
+        transporteInternacional: formData.transporteInternacional || false,
+        registroIstmo: formData.registroIstmo || false,
+        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+        ubicaciones: formData.ubicaciones || [],
+        mercancias: formData.mercancias || [],
+        autotransporte: formData.autotransporte || {},
+        figuras: formData.figuras || [],
+        cartaPorteId: formData.cartaPorteId,
       };
+      
+      lastCartaPorteDataRef.current = fallbackData;
+      return fallbackData;
     }
-  }, [formDataString, convertExtendedToCartaPorteData]);
+  }, [
+    formData.tipoCreacion,
+    formData.tipoCfdi,
+    formData.rfcEmisor,
+    formData.nombreEmisor,
+    formData.rfcReceptor,
+    formData.nombreReceptor,
+    formData.transporteInternacional,
+    formData.registroIstmo,
+    formData.cartaPorteVersion,
+    formData.ubicaciones?.length,
+    formData.mercancias?.length,
+    formData.autotransporte,
+    formData.figuras?.length,
+    formData.cartaPorteId,
+    convertExtendedToCartaPorteData
+  ]);
 
-  // Convertir a formato compatible con validación - estabilizado
+  // Convertir a formato compatible con validación de forma estable
   const formDataForValidation = useMemo((): CartaPorteFormData => {
     try {
-      return cartaPorteDataToFormData(cartaPorteDataForValidation);
+      return cartaPorteDataToFormData(stableFormDataForValidation);
     } catch (error) {
-      console.error('[CartaPorteForm] Error converting to form data:', error);
-      // Retornar datos mínimos válidos en caso de error
-      const parsedFormData = JSON.parse(formDataString);
+      console.error('[CartaPorteForm] Error converting to form data for validation:', error);
+      
+      // Retornar datos mínimos válidos
       return {
         configuracion: {
-          version: parsedFormData.cartaPorteVersion || '3.1',
-          tipoComprobante: parsedFormData.tipoCfdi === 'Traslado' ? 'T' : 'I',
+          version: formData.cartaPorteVersion || '3.1',
+          tipoComprobante: formData.tipoCfdi === 'Traslado' ? 'T' : 'I',
           emisor: {
-            rfc: parsedFormData.rfcEmisor || '',
-            nombre: parsedFormData.nombreEmisor || '',
+            rfc: formData.rfcEmisor || '',
+            nombre: formData.nombreEmisor || '',
             regimenFiscal: '',
           },
           receptor: {
-            rfc: parsedFormData.rfcReceptor || '',
-            nombre: parsedFormData.nombreReceptor || '',
+            rfc: formData.rfcReceptor || '',
+            nombre: formData.nombreReceptor || '',
           },
         },
         ubicaciones: [],
@@ -115,21 +159,21 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
           },
         },
         figuras: [],
-        tipoCreacion: parsedFormData.tipoCreacion || 'manual',
-        tipoCfdi: parsedFormData.tipoCfdi || 'Traslado',
-        rfcEmisor: parsedFormData.rfcEmisor || '',
-        nombreEmisor: parsedFormData.nombreEmisor || '',
-        rfcReceptor: parsedFormData.rfcReceptor || '',
-        nombreReceptor: parsedFormData.nombreReceptor || '',
-        transporteInternacional: parsedFormData.transporteInternacional || false,
-        registroIstmo: parsedFormData.registroIstmo || false,
-        cartaPorteVersion: parsedFormData.cartaPorteVersion || '3.1',
-        cartaPorteId: parsedFormData.cartaPorteId,
+        tipoCreacion: formData.tipoCreacion || 'manual',
+        tipoCfdi: formData.tipoCfdi || 'Traslado',
+        rfcEmisor: formData.rfcEmisor || '',
+        nombreEmisor: formData.nombreEmisor || '',
+        rfcReceptor: formData.rfcReceptor || '',
+        nombreReceptor: formData.nombreReceptor || '',
+        transporteInternacional: formData.transporteInternacional || false,
+        registroIstmo: formData.registroIstmo || false,
+        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+        cartaPorteId: formData.cartaPorteId,
       };
     }
-  }, [cartaPorteDataForValidation, cartaPorteDataToFormData, formDataString]);
+  }, [stableFormDataForValidation, cartaPorteDataToFormData, formData]);
 
-  // Usar validaciones mejoradas con IA - estabilizado
+  // Usar validaciones mejoradas con IA con datos estables
   const validationResult = useCartaPorteValidationEnhanced({ 
     formData: formDataForValidation,
     enableAI 
@@ -145,7 +189,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     validateComplete
   } = validationResult;
 
-  // Convertir las validaciones al formato correcto - memoizado para estabilidad
+  // Convertir las validaciones al formato correcto
   const stepValidations: StepValidations = useMemo(() => ({
     configuracion: rawStepValidations?.configuracion || false,
     ubicaciones: rawStepValidations?.ubicaciones || false,
@@ -154,17 +198,26 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     figuras: rawStepValidations?.figuras || false,
   }), [rawStepValidations]);
 
-  // Función estable para actualizar datos - usando useCallback para prevenir re-renders
+  // Función estable para actualizar datos sin causar loops
   const stableSetFormData = useCallback((data: CartaPorteData) => {
     try {
+      // Evitar updates circulares comparando datos
+      const currentDataString = JSON.stringify(stableFormDataForValidation);
+      const newDataString = JSON.stringify(data);
+      
+      if (currentDataString === newDataString) {
+        console.log('[CartaPorteForm] Datos iguales, evitando update circular');
+        return;
+      }
+      
       const extendedData = cartaPorteDataToFormDataExtendido(data);
       setFormData(extendedData);
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data to extended format:', error);
     }
-  }, [cartaPorteDataToFormDataExtendido, setFormData]);
+  }, [stableFormDataForValidation, cartaPorteDataToFormDataExtendido, setFormData]);
 
-  // Integración completa con auto-save y sincronización - usar formDataForValidation
+  // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({
     formData: formDataForValidation,
     currentCartaPorteId,
@@ -189,10 +242,10 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     updateFormDataBase({ [section]: data });
   }, [updateFormDataBase]);
 
-  // Mappers específicos para convertir datos del formulario - estabilizados
+  // Mappers específicos para convertir datos del formulario
   const formDataToCartaPorteDataStable = useCallback(() => {
-    return cartaPorteDataForValidation;
-  }, [cartaPorteDataForValidation]);
+    return stableFormDataForValidation;
+  }, [stableFormDataForValidation]);
 
   const formAutotransporteToData = useCallback((autotransporteForm: any) => {
     return autotransporteForm || formData.autotransporte;
