@@ -23,6 +23,11 @@ export interface ProcessingProgress {
   message: string;
 }
 
+export interface ProcessDocumentOptions {
+  cartaPorteId?: string
+  documentoOriginalId?: string
+}
+
 export class DocumentProcessor {
   
   static async detectDocumentType(file: File): Promise<'pdf' | 'xml' | 'excel' | 'image' | 'unknown'> {
@@ -49,8 +54,9 @@ export class DocumentProcessor {
   }
 
   static async processDocument(
-    file: File, 
-    onProgress?: (progress: ProcessingProgress) => void
+    file: File,
+    onProgress?: (progress: ProcessingProgress) => void,
+    options?: ProcessDocumentOptions
   ): Promise<DocumentProcessingResult> {
     try {
       const documentType = await this.detectDocumentType(file);
@@ -63,13 +69,13 @@ export class DocumentProcessor {
 
       switch (documentType) {
         case 'pdf':
-          return await this.processPDF(file, onProgress);
+          return await this.processPDF(file, onProgress, options);
         case 'xml':
-          return await this.processXML(file, onProgress);
+          return await this.processXML(file, onProgress, options);
         case 'excel':
-          return await this.processExcel(file, onProgress);
+          return await this.processExcel(file, onProgress, options);
         case 'image':
-          return await this.processImage(file, onProgress);
+          return await this.processImage(file, onProgress, options);
         default:
           throw new Error(`Tipo de documento no soportado: ${documentType}`);
       }
@@ -84,8 +90,9 @@ export class DocumentProcessor {
   }
 
   private static async processPDF(
-    file: File, 
-    onProgress?: (progress: ProcessingProgress) => void
+    file: File,
+    onProgress?: (progress: ProcessingProgress) => void,
+    options?: ProcessDocumentOptions
   ): Promise<DocumentProcessingResult> {
     onProgress?.({ 
       stage: 'extraction', 
@@ -102,12 +109,15 @@ export class DocumentProcessor {
       message: 'Analizando contenido con IA...' 
     });
 
-    return await this.parseWithAI(text, 'pdf');
+    const result = await this.parseWithAI(text, 'pdf');
+    await this.logProcessedDocument(file, result, options);
+    return result;
   }
 
   private static async processXML(
     file: File,
-    onProgress?: (progress: ProcessingProgress) => void
+    onProgress?: (progress: ProcessingProgress) => void,
+    options?: ProcessDocumentOptions
   ): Promise<DocumentProcessingResult> {
     onProgress?.({ 
       stage: 'extraction', 
@@ -117,18 +127,21 @@ export class DocumentProcessor {
 
     const xmlContent = await file.text();
     
-    onProgress?.({ 
-      stage: 'parsing', 
-      progress: 60, 
-      message: 'Parseando datos de CFDI/Carta Porte...' 
+    onProgress?.({
+      stage: 'parsing',
+      progress: 60,
+      message: 'Parseando datos de CFDI/Carta Porte...'
     });
 
-    return await this.parseXMLContent(xmlContent);
+    const result = await this.parseXMLContent(xmlContent);
+    await this.logProcessedDocument(file, result, options);
+    return result;
   }
 
   private static async processExcel(
     file: File,
-    onProgress?: (progress: ProcessingProgress) => void
+    onProgress?: (progress: ProcessingProgress) => void,
+    options?: ProcessDocumentOptions
   ): Promise<DocumentProcessingResult> {
     onProgress?.({
       stage: 'extraction',
@@ -151,23 +164,28 @@ export class DocumentProcessor {
         defaultColumnMapping
       );
 
-      return {
+      const result = {
         success: true,
         data: mercancias,
         confidence: 0.8
-      };
+      } as DocumentProcessingResult;
+      await this.logProcessedDocument(file, result, options);
+      return result;
     } catch (error) {
-      return {
+      const result = {
         success: false,
         confidence: 0,
         errors: [`Error procesando Excel: ${error instanceof Error ? error.message : error}`]
-      };
+      } as DocumentProcessingResult;
+      await this.logProcessedDocument(file, result, options);
+      return result;
     }
   }
 
   private static async processImage(
-    file: File, 
-    onProgress?: (progress: ProcessingProgress) => void
+    file: File,
+    onProgress?: (progress: ProcessingProgress) => void,
+    options?: ProcessDocumentOptions
   ): Promise<DocumentProcessingResult> {
     onProgress?.({ 
       stage: 'extraction', 
@@ -188,13 +206,15 @@ export class DocumentProcessor {
       }
     });
 
-    onProgress?.({ 
-      stage: 'parsing', 
-      progress: 70, 
-      message: 'Analizando texto extraído...' 
+    onProgress?.({
+      stage: 'parsing',
+      progress: 70,
+      message: 'Analizando texto extraído...'
     });
 
-    return await this.parseWithAI(text, 'image');
+    const result = await this.parseWithAI(text, 'image');
+    await this.logProcessedDocument(file, result, options);
+    return result;
   }
 
   private static async extractTextFromPDF(
@@ -278,6 +298,26 @@ export class DocumentProcessor {
         errors: [`Error parseando XML: ${error}`],
         extractedText: xmlContent
       };
+    }
+  }
+
+  private static async logProcessedDocument(
+    file: File,
+    result: DocumentProcessingResult,
+    options?: ProcessDocumentOptions
+  ): Promise<void> {
+    try {
+      await supabase.from('documentos_procesados').insert({
+        file_path: (file as any).path || (file as any).webkitRelativePath || file.name,
+        extracted_text: result.extractedText || null,
+        confidence: result.confidence,
+        mercancias_count: result.data ? result.data.length : 0,
+        errors: result.errors ? result.errors.join('\n') : null,
+        carta_porte_id: options?.cartaPorteId || null,
+        documento_original_id: options?.documentoOriginalId || null
+      });
+    } catch (e) {
+      console.error('Error logging processed document', e);
     }
   }
 
