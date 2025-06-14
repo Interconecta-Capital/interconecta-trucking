@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -9,13 +9,13 @@ import { UbicacionesSection } from './UbicacionesSection';
 import { MercanciasSection } from './MercanciasSection';
 import { AutotransporteSection } from './AutotransporteSection';
 import { FigurasTransporteSection } from './FigurasTransporteSection';
-import { XMLGenerationPanel } from './xml/XMLGenerationPanel';
 import { GuardarPlantillaDialog } from './plantillas/GuardarPlantillaDialog';
 import { AIValidationAlerts } from '@/components/ai/AIValidationAlerts';
 import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
+import { useCartaPorteCache } from '@/hooks/carta-porte/useCartaPorteCache';
+import { useCartaPortePerformance } from '@/hooks/carta-porte/useCartaPortePerformance';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
-import { useCartaPorteMappers } from '@/hooks/carta-porte/useCartaPorteMappers';
 import { 
   FileText, 
   MapPin, 
@@ -28,6 +28,9 @@ import {
   Brain
 } from 'lucide-react';
 
+// Lazy loading de componentes pesados
+const XMLGenerationPanel = lazy(() => import('./xml/XMLGenerationPanel').then(module => ({ default: module.XMLGenerationPanel })));
+
 export interface CartaPorteData {
   // Configuración inicial
   tipoCreacion: 'plantilla' | 'carga' | 'manual';
@@ -38,28 +41,14 @@ export interface CartaPorteData {
   nombreReceptor: string;
   transporteInternacional: boolean;
   registroIstmo: boolean;
-  
-  // Nueva: Versión del complemento
   cartaPorteVersion: CartaPorteVersion;
-  
-  // Ubicaciones
   ubicaciones: any[];
-  
-  // Mercancías
   mercancias: any[];
-  
-  // Autotransporte
   autotransporte: any;
-  
-  // Figuras
   figuras: any[];
-
-  // Campos adicionales para transporte internacional
   entrada_salida_merc?: string;
   pais_origen_destino?: string;
   via_entrada_salida?: string;
-
-  // Campos específicos de versión 3.1
   regimenesAduaneros?: string[];
   version31Fields?: {
     transporteEspecializado?: boolean;
@@ -67,11 +56,7 @@ export interface CartaPorteData {
     registroISTMO?: boolean;
     [key: string]: any;
   };
-
-  // Campos específicos de versión 3.0 (legacy)
   regimenAduanero?: string;
-
-  // ID para tracking
   cartaPorteId?: string;
 }
 
@@ -92,6 +77,10 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   const [showGuardarPlantilla, setShowGuardarPlantilla] = useState(false);
   const [showAIAlerts, setShowAIAlerts] = useState(true);
   
+  // Performance hooks
+  const cache = useCartaPorteCache();
+  const performance = useCartaPortePerformance();
+  
   // Usar hook optimizado para el manejo del formulario con IA
   const {
     formData,
@@ -103,22 +92,40 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     clearSavedData,
     isCreating,
     isUpdating,
-    // Nuevas propiedades IA
     aiValidation,
     hasAIEnhancements,
     validationMode,
     overallScore,
-    // Mappers
     formDataToCartaPorteData,
     formAutotransporteToData,
     formFigurasToData,
   } = useCartaPorteForm({ cartaPorteId });
+
+  // Cache optimizado para el formulario
+  const cachedFormData = useMemo(() => {
+    if (currentCartaPorteId) {
+      const cached = cache.getCachedFormData(currentCartaPorteId);
+      return cached || formData;
+    }
+    return formData;
+  }, [formData, currentCartaPorteId, cache]);
 
   // Usar hook optimizado para navegación de pestañas
   const { activeTab, handleTabChange } = useTabNavigation({
     initialTab: 'configuracion',
     persistInURL: false,
   });
+
+  // Performance optimized handlers
+  const optimizedUpdateFormData = useCallback(
+    performance.createDebouncedSave(async (data) => {
+      updateFormData('formData', data);
+      if (currentCartaPorteId) {
+        cache.cacheFormData(currentCartaPorteId, data);
+      }
+    }),
+    [updateFormData, currentCartaPorteId, cache, performance]
+  );
 
   // Nuevo handler para aplicar fixes de IA
   const handleApplyAIFix = useCallback((fix: any) => {
@@ -151,10 +158,9 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     console.log('Carta Porte timbrada exitosamente:', datos);
   }, []);
 
-  // Handlers específicos para cada sección con conversión de tipos
+  // Handlers específicos para cada sección con conversión de tipos optimizados
   const handleAutotransporteChange = useCallback((data: any) => {
-    // Convertir de AutotransporteData a formato de formulario
-    const formAutotransporte = {
+    const formAutotransporte = performance.memoizeWithTTL(`autotransporte_${Date.now()}`, () => ({
       placaVm: data.placa_vm || '',
       configuracionVehicular: data.config_vehicular || '',
       seguro: {
@@ -166,46 +172,56 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
         placa: r.placa,
         subtipo: r.subtipo_rem
       })),
-    };
+    }));
     updateFormData('autotransporte', formAutotransporte);
-  }, [updateFormData]);
+  }, [updateFormData, performance]);
 
   const handleFigurasChange = useCallback((data: any[]) => {
-    // Convertir de FiguraTransporte[] a formato de formulario
-    const formFiguras = data.map(figura => ({
-      id: figura.id,
-      tipoFigura: figura.tipo_figura || '',
-      rfc: figura.rfc_figura || '',
-      nombre: figura.nombre_figura || '',
-      licencia: figura.num_licencia,
-      vigenciaLicencia: undefined,
-    }));
+    const formFiguras = performance.memoizeWithTTL(`figuras_${Date.now()}`, () => 
+      data.map(figura => ({
+        id: figura.id,
+        tipoFigura: figura.tipo_figura || '',
+        rfc: figura.rfc_figura || '',
+        nombre: figura.nombre_figura || '',
+        licencia: figura.num_licencia,
+        vigenciaLicencia: undefined,
+      }))
+    );
     updateFormData('figuras', formFiguras);
-  }, [updateFormData]);
+  }, [updateFormData, performance]);
 
-  // Memoizar validaciones complejas
+  // Memoizar validaciones complejas con cache
   const canSaveAsTemplate = useMemo(() => {
-    return stepValidations.configuracion && formData.ubicaciones.length > 0;
-  }, [stepValidations.configuracion, formData.ubicaciones.length]);
+    const formHash = performance.generateFormHash(cachedFormData);
+    return performance.memoizeWithTTL(`canSave_${formHash}`, () => {
+      return stepValidations.configuracion && cachedFormData.ubicaciones.length > 0;
+    });
+  }, [stepValidations.configuracion, cachedFormData.ubicaciones.length, performance, cachedFormData]);
 
   const canGenerateXML = useMemo(() => {
-    return Object.entries(stepValidations)
-      .filter(([key]) => key !== 'xml')
-      .every(([, isValid]) => isValid);
-  }, [stepValidations]);
+    const formHash = performance.generateFormHash(cachedFormData);
+    return performance.memoizeWithTTL(`canGenerate_${formHash}`, () => {
+      return Object.entries(stepValidations)
+        .filter(([key]) => key !== 'xml')
+        .every(([, isValid]) => isValid);
+    });
+  }, [stepValidations, performance, cachedFormData]);
 
-  // Convertir formData a CartaPorteData cuando sea necesario
+  // Convertir formData a CartaPorteData cuando sea necesario - optimizado
   const cartaPorteData = useMemo(() => {
-    return formDataToCartaPorteData(formData);
-  }, [formData, formDataToCartaPorteData]);
+    const formHash = performance.generateFormHash(cachedFormData);
+    return performance.memoizeWithTTL(`cartaPorteData_${formHash}`, () => {
+      return formDataToCartaPorteData(cachedFormData);
+    });
+  }, [cachedFormData, formDataToCartaPorteData, performance]);
 
-  // Determinar título dinámico con indicador IA
+  // Determinar título dinámico con indicador IA - memoizado
   const getFormTitle = useMemo(() => {
-    const version = formData.cartaPorteVersion || '3.1';
+    const version = cachedFormData.cartaPorteVersion || '3.1';
     const baseTitle = cartaPorteId ? 'Editar Carta Porte' : 'Nueva Carta Porte';
     const aiIndicator = hasAIEnhancements ? '🧠' : '';
     return `${baseTitle} ${version} ${aiIndicator}`;
-  }, [cartaPorteId, formData.cartaPorteVersion, hasAIEnhancements]);
+  }, [cartaPorteId, cachedFormData.cartaPorteVersion, hasAIEnhancements]);
 
   // Memoizar renderizado de pestañas
   const tabTriggers = useMemo(() => {
@@ -325,7 +341,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="ubicaciones">
                 <UbicacionesSection
-                  data={formData.ubicaciones}
+                  data={cachedFormData.ubicaciones}
                   onChange={(data) => updateFormData('ubicaciones', data)}
                   onNext={() => handleNextStep('mercancias')}
                   onPrev={() => handlePrevStep('configuracion')}
@@ -334,8 +350,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="mercancias">
                 <MercanciasSection
-                  data={formData.mercancias}
-                  ubicaciones={formData.ubicaciones}
+                  data={cachedFormData.mercancias}
+                  ubicaciones={cachedFormData.ubicaciones}
                   onChange={(data) => updateFormData('mercancias', data)}
                   onNext={() => handleNextStep('autotransporte')}
                   onPrev={() => handlePrevStep('ubicaciones')}
@@ -344,7 +360,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="autotransporte">
                 <AutotransporteSection
-                  data={formAutotransporteToData(formData.autotransporte)}
+                  data={formAutotransporteToData(cachedFormData.autotransporte)}
                   onChange={handleAutotransporteChange}
                   onNext={() => handleNextStep('figuras')}
                   onPrev={() => handlePrevStep('mercancias')}
@@ -353,7 +369,7 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="figuras">
                 <FigurasTransporteSection
-                  data={formFigurasToData(formData.figuras)}
+                  data={formFigurasToData(cachedFormData.figuras)}
                   onChange={handleFigurasChange}
                   onPrev={() => handlePrevStep('autotransporte')}
                   onFinish={() => handleNextStep('xml')}
@@ -361,12 +377,19 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
               </TabsContent>
 
               <TabsContent value="xml">
-                <XMLGenerationPanel
-                  cartaPorteData={cartaPorteData}
-                  cartaPorteId={currentCartaPorteId}
-                  onXMLGenerated={handleXMLGenerated}
-                  onTimbrado={handleTimbrado}
-                />
+                <Suspense fallback={
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="ml-2">Cargando panel XML...</p>
+                  </div>
+                }>
+                  <XMLGenerationPanel
+                    cartaPorteData={cartaPorteData}
+                    cartaPorteId={currentCartaPorteId}
+                    onXMLGenerated={handleXMLGenerated}
+                    onTimbrado={handleTimbrado}
+                  />
+                </Suspense>
               </TabsContent>
             </div>
           </Tabs>
@@ -417,7 +440,6 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
         </Card>
       )}
 
-      {/* Dialog para guardar plantilla */}
       <GuardarPlantillaDialog
         open={showGuardarPlantilla}
         onClose={() => setShowGuardarPlantilla(false)}

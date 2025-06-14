@@ -37,6 +37,10 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
   const {
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
+    formAutotransporteToData,
+    dataAutotransporteToForm,
+    formFigurasToData,
+    dataFigurasToForm,
     loadCartaPorte,
     saveCartaPorte,
     createNewCartaPorte,
@@ -91,5 +95,9 @@ export function useCartaPorteForm({ cartaPorteId }: UseCartaPorteFormOptions = {
     // Mappers
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
+    formAutotransporteToData,
+    dataAutotransporteToForm,
+    formFigurasToData,
+    dataFigurasToForm,
   };
 }

@@ -24,7 +24,14 @@ export const useCartaPorteIntegration = ({
   setFormData,
   setCurrentCartaPorteId,
 }: UseCartaPorteIntegrationOptions) => {
-  const { formDataToCartaPorteData, cartaPorteDataToFormData } = useCartaPorteMappers();
+  const { 
+    formDataToCartaPorteData, 
+    cartaPorteDataToFormData,
+    formAutotransporteToData,
+    dataAutotransporteToForm,
+    formFigurasToData,
+    dataFigurasToForm
+  } = useCartaPorteMappers();
   
   const { updateCartaPorte } = useCartaPorteSync({
     formData,
@@ -54,10 +61,12 @@ export const useCartaPorteIntegration = ({
       if (error) throw error;
 
       if (data?.datos_formulario) {
-        // Safe type casting con validación
+        // Safe type casting con validación mejorada
         const rawData = data.datos_formulario;
         if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
-          setFormData(rawData as CartaPorteFormData);
+          // Convertir unknown a CartaPorteFormData de forma segura
+          const typedData = rawData as unknown as CartaPorteFormData;
+          setFormData(typedData);
           setCurrentCartaPorteId(id);
         } else {
           throw new Error('Invalid form data format');
@@ -118,6 +127,10 @@ export const useCartaPorteIntegration = ({
     // Mappers
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
+    formAutotransporteToData,
+    dataAutotransporteToForm,
+    formFigurasToData,
+    dataFigurasToForm,
     
     // Acciones principales
     loadCartaPorte,
