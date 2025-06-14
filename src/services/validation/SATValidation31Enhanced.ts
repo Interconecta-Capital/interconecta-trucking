@@ -1,9 +1,11 @@
-
 import { ValidationResult } from '@/utils/satValidation';
 import { MercanciaCompleta, AutotransporteCompleto, FiguraCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
 
-export interface ValidationSAT31Result extends ValidationResult {
+export interface ValidationSAT31Result {
+  isValid: boolean;
+  message: string;
+  errors: string[];
   warnings: string[];
   recommendations: string[];
   complianceScore: number;
