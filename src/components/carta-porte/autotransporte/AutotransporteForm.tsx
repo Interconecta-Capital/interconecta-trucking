@@ -66,7 +66,13 @@ export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) 
       return;
     }
 
-    await guardarVehiculo(data, nombrePerfil);
+    // Ensure remolques is always an array for AutotransporteData compatibility
+    const dataWithRemolques: AutotransporteCompleto & { remolques: any[] } = {
+      ...data,
+      remolques: data.remolques || []
+    };
+
+    await guardarVehiculo(dataWithRemolques, nombrePerfil);
     setShowGuardarModal(false);
     setNombrePerfil('');
   };

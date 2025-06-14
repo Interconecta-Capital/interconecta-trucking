@@ -6,8 +6,8 @@ import { CartaPorteProgressTracker } from './form/CartaPorteProgressTracker';
 import { CartaPorteStepContent } from './form/CartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './form/CartaPorteAutoSaveIndicator';
 
-// Re-export CartaPorteData for backward compatibility
-export { CartaPorteData } from '@/types/cartaPorte';
+// Re-export CartaPorteData for backward compatibility using export type
+export type { CartaPorteData } from '@/types/cartaPorte';
 
 interface CartaPorteFormProps {
   cartaPorteId?: string;

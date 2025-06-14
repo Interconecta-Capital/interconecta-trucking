@@ -1,14 +1,14 @@
 
 export interface CartaPorteData {
-  tipoRelacion: string;
-  version: string;
-  transporteInternacional: string;
-  entradaSalidaMerc: string;
-  viaTransporte: string;
-  totalDistRec: number;
+  tipoRelacion?: string;
+  version?: string;
+  transporteInternacional?: string | boolean;
+  entradaSalidaMerc?: string;
+  viaTransporte?: string;
+  totalDistRec?: number;
   tipoCreacion?: 'plantilla' | 'carga' | 'manual';
-  cartaPorteVersion?: string;
-  tipoCfdi?: string;
+  cartaPorteVersion?: '3.0' | '3.1';
+  tipoCfdi?: 'Ingreso' | 'Traslado';
   rfcEmisor?: string;
   nombreEmisor?: string;
   rfcReceptor?: string;
@@ -31,6 +31,13 @@ export interface UbicacionCompleta {
   nombre_remitente_destinatario?: string;
   fecha_hora_salida_llegada?: string;
   distancia_recorrida?: number;
+  tipo_estacion?: string;
+  numero_estacion?: string;
+  kilometro?: number;
+  coordenadas?: {
+    latitud: number;
+    longitud: number;
+  };
   domicilio: {
     pais: string;
     codigo_postal: string;
@@ -50,6 +57,7 @@ export interface AutotransporteCompleta extends AutotransporteCompleto {
 
 export interface AutotransporteData extends AutotransporteCompleto {
   // Alias for compatibility
+  remolques: any[];
 }
 
 export interface AutotransporteCompleto {
@@ -75,6 +83,14 @@ export interface AutotransporteCompleto {
     largo: number;
     ancho: number;
     alto: number;
+  };
+  // Add placaVm for compatibility
+  placaVm?: string;
+  configuracionVehicular?: string;
+  seguro?: {
+    aseguradora: string;
+    poliza: string;
+    vigencia: string;
   };
 }
 
