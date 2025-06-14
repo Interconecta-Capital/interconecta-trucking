@@ -82,13 +82,16 @@ serve(async (req) => {
 
       case 'parse_document':
         prompt = `
-        Analiza el siguiente texto de un documento tipo ${data.document_type || 'desconocido'}
-        y extrae la lista de mercancías mencionadas.
+        Analiza el siguiente texto de un documento tipo ${data.document_type || 'desconocido'}.
+        Identifica todas las mercancías mencionadas y extrae la información
+        estructurada para cada una:
+        descripcion, cantidad, claveProdServ, claveUnidad, peso_kg,
+        valor_mercancia y moneda.
 
         Texto del documento:
         ${data.text}
 
-        Responde SOLO un JSON válido:
+        Devuelve SOLO un JSON válido con la forma:
         {"result": {"mercancias": [{"descripcion": "desc", "cantidad": 1, "claveProdServ": "00000000", "claveUnidad": "H87", "peso_kg": 0, "valor_mercancia": 0, "moneda": "MXN"}], "confidence": 0.8, "suggestions": ["mejora"]}}
         `;
         break;
@@ -153,11 +156,25 @@ serve(async (req) => {
 
     console.log('[GEMINI] Parsed response:', parsedResponse);
 
+    if (op === 'parse_document') {
+      const result = parsedResponse.result ?? parsedResponse;
+      return new Response(
+        JSON.stringify({
+          result: {
+            mercancias: result.mercancias || [],
+            confidence: result.confidence ?? 0,
+            suggestions: result.suggestions || []
+          }
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: parsedResponse
-      }),
+      JSON.stringify(parsedResponse),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
