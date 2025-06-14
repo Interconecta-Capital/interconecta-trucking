@@ -1,3 +1,4 @@
+
 Bienvenido a Interconecta Trucking
 Información del Proyecto
 URL de Producción: https://trucking.interconecta.capital
@@ -30,6 +31,12 @@ npm run dev
 # Paso 6: Para producción
 npm run build
 npm run preview
+
+# Paso 7: Verificar código (linting)
+npm run lint
+
+# Paso 8: Formatear código
+npm run format
 Edición Directa en GitHub
 
 Navega a los archivos que deseas modificar
@@ -145,9 +152,6 @@ sh# Instalar dependencias específicas de Interconecta
 npm install @interconecta/shared-components
 npm install @interconecta/api-client
 
-# Ejecutar tests
-npm run test
-
 # Linting y formato
 npm run lint
 npm run format
@@ -185,4 +189,20 @@ Para depurar o probar el formulario sin las optimizaciones completas puedes acti
 ```
 
 Este modo mantiene el estado de manera básica y evita las conversiones de datos estables, facilitando la inspección durante el desarrollo.
+
+## Calidad de Código
+
+El proyecto sigue las mejores prácticas de desarrollo:
+
+- **TypeScript**: Tipado estático para prevenir errores
+- **ESLint**: Análisis estático de código
+- **Prettier**: Formateo automático consistente
+- **Husky**: Hooks de Git para calidad
+
+Para mantener la calidad del código:
+- Ejecuta `npm run lint` antes de hacer commit
+- Usa `npm run format` para formatear automáticamente
+- Sigue las convenciones de nombres establecidas
+- Mantén los componentes pequeños y focalizados
+
 ¡Listo para automatizar el transporte de carga con Interconecta Trucking! 🚛📋✨

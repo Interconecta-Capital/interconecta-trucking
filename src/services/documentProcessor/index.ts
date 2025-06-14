@@ -9,6 +9,23 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type { DocumentProcessingResult, ProcessingProgress, ProcessDocumentOptions };
 
+interface DocumentLogData {
+  user_id: string;
+  file_path: string;
+  document_type: string;
+  extracted_text: string | null;
+  confidence: number;
+  mercancias_count: number;
+  errors: string | null;
+  carta_porte_id: string | null;
+  documento_original_id: string | null;
+  metadata: {
+    file_size: number;
+    file_type: string;
+    processing_time: string;
+  };
+}
+
 export class DocumentProcessor {
   static async detectDocumentType(file: File) {
     return DocumentTypeDetector.detectDocumentType(file);
@@ -82,7 +99,7 @@ export class DocumentProcessor {
         return;
       }
 
-      const logData = {
+      const logData: DocumentLogData = {
         user_id: user.id,
         file_path: file.name,
         document_type: documentType,
@@ -99,9 +116,8 @@ export class DocumentProcessor {
         }
       };
 
-      // Use type assertion to avoid TypeScript issues with missing table types
       const { error } = await supabase
-        .from('documentos_procesados' as any)
+        .from('documentos_procesados')
         .insert(logData);
 
       if (error) {

@@ -1,7 +1,7 @@
 
 export interface DocumentProcessingResult {
   success: boolean;
-  data?: any[];
+  data?: unknown[];
   confidence: number;
   errors?: string[];
   extractedText?: string;
@@ -18,7 +18,7 @@ export interface ProcessDocumentOptions {
   cartaPorteId?: string;
   documentoOriginalId?: string;
   userId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export type DocumentType = 'pdf' | 'xml' | 'excel' | 'image' | 'unknown';
@@ -34,6 +34,6 @@ export interface DocumentoProcessado {
   errors?: string;
   carta_porte_id?: string;
   documento_original_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }

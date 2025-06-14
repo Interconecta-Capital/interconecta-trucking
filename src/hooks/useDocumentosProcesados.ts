@@ -15,7 +15,22 @@ export interface DocumentoProcessado {
   errors?: string;
   carta_porte_id?: string;
   documento_original_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
+interface DocumentosProcesadosResponse {
+  id: string;
+  user_id: string;
+  file_path: string;
+  document_type: string;
+  extracted_text?: string;
+  confidence: number;
+  mercancias_count: number;
+  errors?: string;
+  carta_porte_id?: string;
+  documento_original_id?: string;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -28,15 +43,15 @@ export const useDocumentosProcesados = () => {
     queryFn: async (): Promise<DocumentoProcessado[]> => {
       if (!user) return [];
 
-      // Use direct table access since types are not yet regenerated
       const { data, error } = await supabase
-        .from('documentos_procesados' as any)
+        .from('documentos_procesados')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<DocumentosProcesadosResponse[]>();
 
       if (error) throw error;
-      return (data as any[]) || [];
+      return data || [];
     },
     enabled: !!user,
   });
@@ -44,7 +59,7 @@ export const useDocumentosProcesados = () => {
   const eliminarDocumentoMutation = useMutation({
     mutationFn: async (documentoId: string) => {
       const { error } = await supabase
-        .from('documentos_procesados' as any)
+        .from('documentos_procesados')
         .delete()
         .eq('id', documentoId)
         .eq('user_id', user?.id);
