@@ -108,10 +108,11 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
     hasAIEnhancements,
     validationMode,
     overallScore,
+    // Mappers
+    formDataToCartaPorteData,
+    formAutotransporteToData,
+    formFigurasToData,
   } = useCartaPorteForm({ cartaPorteId });
-
-  // Mappers para conversión de datos
-  const { formDataToCartaPorteData } = useCartaPorteMappers();
 
   // Usar hook optimizado para navegación de pestañas
   const { activeTab, handleTabChange } = useTabNavigation({
@@ -149,6 +150,38 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
   const handleTimbrado = useCallback((datos: any) => {
     console.log('Carta Porte timbrada exitosamente:', datos);
   }, []);
+
+  // Handlers específicos para cada sección con conversión de tipos
+  const handleAutotransporteChange = useCallback((data: any) => {
+    // Convertir de AutotransporteData a formato de formulario
+    const formAutotransporte = {
+      placaVm: data.placa_vm || '',
+      configuracionVehicular: data.config_vehicular || '',
+      seguro: {
+        aseguradora: data.asegura_resp_civil || '',
+        poliza: data.poliza_resp_civil || '',
+        vigencia: '',
+      },
+      remolques: (data.remolques || []).map((r: any) => ({
+        placa: r.placa,
+        subtipo: r.subtipo_rem
+      })),
+    };
+    updateFormData('autotransporte', formAutotransporte);
+  }, [updateFormData]);
+
+  const handleFigurasChange = useCallback((data: any[]) => {
+    // Convertir de FiguraTransporte[] a formato de formulario
+    const formFiguras = data.map(figura => ({
+      id: figura.id,
+      tipoFigura: figura.tipo_figura || '',
+      rfc: figura.rfc_figura || '',
+      nombre: figura.nombre_figura || '',
+      licencia: figura.num_licencia,
+      vigenciaLicencia: undefined,
+    }));
+    updateFormData('figuras', formFiguras);
+  }, [updateFormData]);
 
   // Memoizar validaciones complejas
   const canSaveAsTemplate = useMemo(() => {
@@ -311,8 +344,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="autotransporte">
                 <AutotransporteSection
-                  data={formData.autotransporte}
-                  onChange={(data) => updateFormData('autotransporte', data)}
+                  data={formAutotransporteToData(formData.autotransporte)}
+                  onChange={handleAutotransporteChange}
                   onNext={() => handleNextStep('figuras')}
                   onPrev={() => handlePrevStep('mercancias')}
                 />
@@ -320,8 +353,8 @@ export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
 
               <TabsContent value="figuras">
                 <FigurasTransporteSection
-                  data={formData.figuras}
-                  onChange={(data) => updateFormData('figuras', data)}
+                  data={formFigurasToData(formData.figuras)}
+                  onChange={handleFigurasChange}
                   onPrev={() => handlePrevStep('autotransporte')}
                   onFinish={() => handleNextStep('xml')}
                 />

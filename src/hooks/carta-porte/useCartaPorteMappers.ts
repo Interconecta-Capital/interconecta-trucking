@@ -195,7 +195,6 @@ export const useCartaPorteMappers = () => {
       rfc_figura: figura.rfc,
       nombre_figura: figura.nombre,
       num_licencia: figura.licencia,
-      vigencia_licencia: figura.vigenciaLicencia,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }));
@@ -209,7 +208,7 @@ export const useCartaPorteMappers = () => {
       rfc: figura.rfc_figura || '',
       nombre: figura.nombre_figura || '',
       licencia: figura.num_licencia,
-      vigenciaLicencia: figura.vigencia_licencia,
+      vigenciaLicencia: undefined, // No tenemos este campo en FiguraTransporte
     }));
   };
 

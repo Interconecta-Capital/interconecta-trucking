@@ -54,8 +54,14 @@ export const useCartaPorteIntegration = ({
       if (error) throw error;
 
       if (data?.datos_formulario) {
-        setFormData(data.datos_formulario as CartaPorteFormData);
-        setCurrentCartaPorteId(id);
+        // Safe type casting con validación
+        const rawData = data.datos_formulario;
+        if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
+          setFormData(rawData as CartaPorteFormData);
+          setCurrentCartaPorteId(id);
+        } else {
+          throw new Error('Invalid form data format');
+        }
       }
     } catch (error) {
       console.error('Error loading carta porte:', error);
