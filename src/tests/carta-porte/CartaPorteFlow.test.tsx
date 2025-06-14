@@ -1,5 +1,7 @@
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/dom';
+import userEvent from '@testing-library/user-event';
 import { vi, describe, test, expect } from 'vitest';
 import { CartaPorteForm } from '@/components/carta-porte/CartaPorteForm';
 
@@ -53,12 +55,13 @@ describe('CartaPorteFlow', () => {
   });
 
   test('validates required fields in configuracion step', async () => {
+    const user = userEvent.setup();
     render(<CartaPorteForm />);
     
     // Try to proceed without filling required fields
     const nextButton = screen.queryByRole('button', { name: /siguiente/i });
     if (nextButton) {
-      fireEvent.click(nextButton);
+      await user.click(nextButton);
       
       await waitFor(() => {
         // Check for validation messages
@@ -71,12 +74,13 @@ describe('CartaPorteFlow', () => {
   });
 
   test('allows navigation between steps', async () => {
+    const user = userEvent.setup();
     render(<CartaPorteForm />);
     
     // Navigate to ubicaciones step
     const ubicacionesTab = screen.queryByRole('button', { name: /ubicaciones/i });
     if (ubicacionesTab) {
-      fireEvent.click(ubicacionesTab);
+      await user.click(ubicacionesTab);
       
       await waitFor(() => {
         const addButton = screen.queryByText(/agregar ubicación/i);
