@@ -182,7 +182,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
 
   const isFormValid = useCallback(() => {
     return !!(
-      formData.tipoUbicacion && formData.tipoUbicacion !== '', // Verificar que no esté vacío
+      formData.tipoUbicacion && formData.tipoUbicacion.trim() !== '' &&
       formData.rfcRemitenteDestinatario &&
       formData.nombreRemitenteDestinatario &&
       formData.domicilio.codigoPostal &&
