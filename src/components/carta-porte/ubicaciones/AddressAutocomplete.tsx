@@ -85,7 +85,6 @@ export function AddressAutocomplete({
     const newValue = e.target.value;
     onChange(newValue);
     
-    // Si se borra todo el texto, limpiar sugerencias
     if (newValue.length === 0) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -93,30 +92,28 @@ export function AddressAutocomplete({
   };
 
   const handleSuggestionSelect = (suggestion: GeocodeResult) => {
-    console.log('Dirección seleccionada:', suggestion);
+    console.log('🔍 Dirección seleccionada desde AddressAutocomplete:', suggestion);
     
-    // Limpiar sugerencias INMEDIATAMENTE antes de cualquier otra acción
     setShowSuggestions(false);
     setSuggestions([]);
-    
-    // Limpiar el campo de búsqueda inmediatamente
     onChange('');
     
     if (onAddressSelect) {
-      // Crear estructura compatible con el componente padre.
-      // Se elimina la simulación de 'context' para mayor fiabilidad.
-      // El componente padre ahora parseará 'place_name' directamente.
+      // MEJORADO: Crear estructura completa compatible con parsing real de Mapbox
       const mapboxData = {
         place_name: suggestion.formattedAddress,
         center: suggestion.coordinates ? [suggestion.coordinates.lng, suggestion.coordinates.lat] : null,
-        text: suggestion.formattedAddress.split(',')[0], // Primera parte como texto principal
+        text: suggestion.formattedAddress.split(',')[0],
+        // NUEVO: Simular context de Mapbox para parsing correcto
+        context: [],
         properties: {
           address: suggestion.formattedAddress
         },
-        ...suggestion
+        // Pasar toda la información original
+        originalData: suggestion
       };
       
-      // Llamar al callback inmediatamente
+      console.log('📤 Enviando datos completos a parsing:', mapboxData);
       onAddressSelect(mapboxData);
     }
   };
