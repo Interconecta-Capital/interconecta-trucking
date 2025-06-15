@@ -5,6 +5,7 @@ import { useOptimizedConductores, useOptimizedVehiculos, useOptimizedSocios } fr
 import { useOptimizedCartaPorte } from '@/hooks/useOptimizedCartaPorte';
 import { useOptimizedNotifications } from '@/hooks/useOptimizedNotifications';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
+import { PerformanceMetricsPanel } from './PerformanceMetricsPanel';
 import { FileText, Car, Users, Bell, TrendingUp } from 'lucide-react';
 
 export function OptimizedDashboard() {
@@ -71,6 +72,9 @@ export function OptimizedDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Panel de métricas de rendimiento */}
+      <PerformanceMetricsPanel />
 
       {/* Estadísticas principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
