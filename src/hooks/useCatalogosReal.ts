@@ -83,7 +83,7 @@ export const useCatalogosReal = () => {
     });
   };
 
-  const clearCache = () => {
+  const limpiarCache = () => {
     CatalogosSATService.clearCache();
   };
 
@@ -96,7 +96,7 @@ export const useCatalogosReal = () => {
     useTiposPermiso,
     useTiposEmbalaje,
     useEstados,
-    clearCache
+    limpiarCache
   };
 };
 
@@ -174,6 +174,27 @@ export const useSubtiposRemolque = (termino: string = '') => {
         s.descripcion.toLowerCase().includes(termino.toLowerCase())
       ) : mockSubtipos;
     },
+    staleTime: 30 * 60 * 1000,
+  });
+};
+
+// Add useEstados export
+export const useEstados = (termino: string = '') => {
+  return useQuery({
+    queryKey: ['estados', termino],
+    queryFn: async () => {
+      const mockEstados = [
+        { clave: 'AGU', descripcion: 'Aguascalientes' },
+        { clave: 'BCN', descripcion: 'Baja California' },
+        { clave: 'BCS', descripcion: 'Baja California Sur' },
+        { clave: 'CAM', descripcion: 'Campeche' },
+        { clave: 'CHP', descripcion: 'Chiapas' },
+      ];
+      return termino ? mockEstados.filter(e => 
+        e.descripcion.toLowerCase().includes(termino.toLowerCase())
+      ) : mockEstados;
+    },
+    enabled: true,
     staleTime: 30 * 60 * 1000,
   });
 };

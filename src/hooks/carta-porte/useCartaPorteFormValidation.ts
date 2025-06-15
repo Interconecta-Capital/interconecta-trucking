@@ -50,10 +50,27 @@ export const useCartaPorteFormValidation = ({
         config_vehicular: formDataForValidation.autotransporte.configuracionVehicular,
         perm_sct: 'TPAF01',
         num_permiso_sct: '123456',
-        asegura_resp_civil: formDataForValidation.autotransporte.seguro?.aseguradora || '',
-        poliza_resp_civil: formDataForValidation.autotransporte.seguro?.poliza || '',
-        remolques: formDataForValidation.autotransporte.remolques || []
-      } : undefined
+        asegura_resp_civil: formDataForValidacion.autotransporte.seguro?.aseguradora || '',
+        poliza_resp_civil: formDataForValidacion.autotransporte.seguro?.poliza || '',
+        remolques: formDataForValidacion.autotransporte.remolques || []
+      } : undefined,
+      figuras: formDataForValidacion.figuras?.map(f => ({
+        id: f.id,
+        tipo_figura: f.tipoFigura,
+        rfc_figura: f.rfc,
+        nombre_figura: f.nombre,
+        num_licencia: f.licencia,
+        vigencia_licencia: f.vigenciaLicencia,
+        domicilio: {
+          pais: 'MEX',
+          codigo_postal: '',
+          estado: '',
+          municipio: '',
+          colonia: '',
+          calle: '',
+          numero_exterior: '',
+        }
+      })) || []
     };
   }, [formDataForValidation]);
 

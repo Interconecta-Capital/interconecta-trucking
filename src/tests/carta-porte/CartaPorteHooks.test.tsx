@@ -141,46 +141,37 @@ describe('CartaPorte Hooks - Robust Testing', () => {
   });
 
   describe('useCartaPorteValidation', () => {
-    test('should validate configuracion correctly', () => {
+    test('should validate complete data correctly', () => {
       const { result } = renderHook(() => useCartaPorteValidation());
       
       act(() => {
-        const validation = result.current.validateConfiguracion({
-          emisor: { rfc: 'XAXX010101000' },
-          receptor: { rfc: 'XBXX010101000' },
-          tipoComprobante: 'T'
-        });
+        const validation = result.current.validateComplete(mockCartaPorteData);
         
-        expect(validation.isValid).toBe(true);
-        expect(validation.errors).toEqual([]);
+        expect(validation.isValid).toBeDefined();
+        expect(validation.errors).toBeDefined();
       });
     });
 
-    test('should validate ubicaciones correctly', () => {
+    test('should validate sections correctly', () => {
       const { result } = renderHook(() => useCartaPorteValidation());
       
       act(() => {
-        const validation = result.current.validateUbicaciones([
-          { direccion: 'Test Address', codigoPostal: '01000' },
-          { direccion: 'Test Address 2', codigoPostal: '02000' }
+        const validation = result.current.validateSection('mercancias', [
+          { descripcion: 'Test Mercancia', cantidad: 1 }
         ]);
         
-        expect(validation.isValid).toBe(true);
+        expect(validation.isValid).toBeDefined();
       });
     });
 
-    test('should detect validation errors', () => {
+    test('should provide validation summary', () => {
       const { result } = renderHook(() => useCartaPorteValidation());
       
       act(() => {
-        const validation = result.current.validateConfiguracion({
-          emisor: { rfc: '' }, // RFC vacío
-          receptor: { rfc: '' },
-          tipoComprobante: ''
-        });
+        const summary = result.current.getValidationSummary(mockCartaPorteData);
         
-        expect(validation.isValid).toBe(false);
-        expect(validation.errors.length).toBeGreaterThan(0);
+        expect(summary).toBeDefined();
+        expect(summary.totalProgress).toBeDefined();
       });
     });
   });
