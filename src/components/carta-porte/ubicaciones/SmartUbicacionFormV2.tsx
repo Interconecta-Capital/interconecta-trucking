@@ -44,14 +44,14 @@ export function SmartUbicacionFormV2({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [camposAutoCompletados, setCamposAutoCompletados] = useState<Set<keyof Ubicacion['domicilio']>>(new Set());
 
-  // MEJORADO: Función de parsing de Mapbox con logging detallado
+  // MEJORADO: Función de parsing de Mapbox completamente robusta
   const parseMapboxAddress = (addressData: any): { parsedData: any; camposCompletados: Set<keyof Ubicacion['domicilio']> } => {
-    console.log('🔄 === INICIANDO PARSING INTEGRAL DE MAPBOX ===');
+    console.log('🔄 === INICIANDO PARSING INTEGRAL DE MAPBOX (CORREGIDO) ===');
     console.log('📥 Datos completos recibidos:', JSON.stringify(addressData, null, 2));
-    
+
     const placeName = addressData.place_name || '';
+    let context = addressData.context || [];
     const camposCompletados = new Set<keyof Ubicacion['domicilio']>();
-    
     let parsedData: Partial<Ubicacion['domicilio']> & { coordenadas?: any } = {
       pais: 'México',
       codigoPostal: '',
@@ -63,8 +63,6 @@ export function SmartUbicacionFormV2({
     };
     camposCompletados.add('pais');
 
-    console.log('📍 Place name:', placeName);
-
     // 1. COORDENADAS
     if (addressData.center) {
       parsedData.coordenadas = {
@@ -74,99 +72,80 @@ export function SmartUbicacionFormV2({
       console.log('✅ Coordenadas extraídas:', parsedData.coordenadas);
     }
 
-    // 2. PARSING DESDE PLACE_NAME (Principal strategy)
-    console.log('🔍 === PARSING DESDE PLACE_NAME ===');
-    const addressParts = placeName.split(',').map(part => part.trim());
+    // 2. PARSING DESDE PLACE_NAME (con lógica segura)
+    const addressParts = placeName.split(',').map(p => p.trim());
     console.log('📝 Partes de la dirección:', addressParts);
 
-    if (addressParts.length >= 3) {
-      // Calle y número (primera parte)
-      const streetPart = addressParts[0] || '';
-      console.log('🛣️ Parte de calle detectada:', streetPart);
-      
-      // Extraer número exterior con patrones mejorados
-      const numberPatterns = [
-        /^(.*?)\s+(\d+[a-zA-Z\-]*)\s*$/,  // "Calle Principal 123A"
-        /^(.*?)\s+#(\d+[a-zA-Z\-]*)\s*$/,  // "Calle Principal #123"
-        /^(.*?)\s+No\.?\s*(\d+[a-zA-Z\-]*)\s*$/,  // "Calle Principal No. 123"
-        /^(.*?)\s+Num\.?\s*(\d+[a-zA-Z\-]*)\s*$/   // "Calle Principal Num 123"
-      ];
-      
-      let matched = false;
-      for (const pattern of numberPatterns) {
-        const match = streetPart.match(pattern);
-        if (match) {
-          parsedData.calle = match[1].trim().replace(/,$/, '');
-          camposCompletados.add('calle');
-          parsedData.numExterior = match[2].trim();
-          camposCompletados.add('numExterior');
-          console.log('✅ Calle y número extraídos:', parsedData.calle, parsedData.numExterior);
-          matched = true;
-          break;
-        }
-      }
-      
-      if (!matched) {
-        parsedData.calle = streetPart.trim().replace(/,$/, '');
-        camposCompletados.add('calle');
-        console.log('✅ Solo calle extraída:', parsedData.calle);
-      }
+    // Helper: Detectar código postal
+    const cpRegex = /\b\d{5}\b/;
+    // Listado parcial de estados para robustez
+    const knownStates = [
+      "aguascalientes","baja california sur","baja california","campeche","chiapas","chihuahua",
+      "ciudad de méxico","cdmx","coahuila","colima","durango","guanajuato","guerrero","hidalgo",
+      "jalisco","méxico","michoacán","morelos","nayarit","nuevo león","oaxaca","puebla","querétaro",
+      "quintana roo","san luis potosí","sinaloa","sonora","tabasco","tamaulipas","tlaxcala","veracruz","yucatán","zacatecas"
+    ];
 
-      // Colonia (segunda parte)
-      if (addressParts[1]) {
-        parsedData.colonia = addressParts[1].trim();
-        camposCompletados.add('colonia');
-        console.log('✅ Colonia extraída:', parsedData.colonia);
-      }
+    // Si el context viene vacío, deducir todo de place_name
+    let cpIndex = -1, stateIndex = -1, municipioIndex = -1;
+    for (let i=0; i < addressParts.length; i++) {
+      if (cpIndex === -1 && cpRegex.test(addressParts[i])) cpIndex = i;
+      if (stateIndex === -1 && knownStates.some(
+        estado => addressParts[i].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                  .includes(estado.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) stateIndex = i;
+    }
 
-      // Estado y municipio desde las últimas partes
-      for (let i = addressParts.length - 1; i >= 2; i--) {
-        const part = addressParts[i];
-        
-        // Buscar código postal
-        const cpMatch = part.match(/\b(\d{5})\b/);
-        if (cpMatch && !parsedData.codigoPostal) {
-          parsedData.codigoPostal = cpMatch[1];
-          camposCompletados.add('codigoPostal');
-          console.log('✅ Código postal extraído:', cpMatch[1]);
-        }
-        
-        // Detectar estados mexicanos
-        const estadosPattern = /(aguascalientes|baja california sur|baja california|campeche|chiapas|chihuahua|ciudad de méxico|cdmx|coahuila|colima|durango|guanajuato|guerrero|hidalgo|jalisco|méxico|michoacán|morelos|nayarit|nuevo león|oaxaca|puebla|querétaro|quintana roo|san luis potosí|sinaloa|sonora|tabasco|tamaulipas|tlaxcala|veracruz|yucatán|zacatecas)/i;
-        if (estadosPattern.test(part.toLowerCase()) && !parsedData.estado) {
-          parsedData.estado = part.includes('CDMX') ? 'Ciudad de México' : part;
-          camposCompletados.add('estado');
-          console.log('✅ Estado extraído:', parsedData.estado);
-        }
-      }
+    // Asignar estado
+    if (stateIndex !== -1) {
+      parsedData.estado = addressParts[stateIndex];
+      camposCompletados.add('estado');
+    }
 
-      // Municipio (buscar en tercera posición o siguientes, evitando estado y país)
-      for (let i = 2; i < Math.min(addressParts.length - 1, 4); i++) {
-        const part = addressParts[i];
-        if (part && 
-            !part.toLowerCase().includes('méxico') && 
-            !part.toLowerCase().includes('mexico') &&
-            !part.match(/\d{5}/) && 
-            part.length > 2 &&
-            !parsedData.municipio) {
-          
-          // Verificar que no sea un estado conocido
-          const estadosLower = ["aguascalientes", "baja california", "campeche", "chiapas", "chihuahua", "ciudad de méxico", "cdmx", "coahuila", "colima", "durango", "guanajuato", "guerrero", "hidalgo", "jalisco", "méxico", "michoacán", "morelos", "nayarit", "nuevo león", "oaxaca", "puebla", "querétaro", "quintana roo", "san luis potosí", "sinaloa", "sonora", "tabasco", "tamaulipas", "tlaxcala", "veracruz", "yucatán", "zacatecas"];
-          
-          if (!estadosLower.some(estado => part.toLowerCase().includes(estado))) {
-            parsedData.municipio = part;
-            camposCompletados.add('municipio');
-            console.log('✅ Municipio extraído:', part);
-            break;
-          }
-        }
+    // Asignar código postal
+    if (cpIndex !== -1) {
+      const cpMatch = addressParts[cpIndex].match(cpRegex);
+      if (cpMatch) {
+        parsedData.codigoPostal = cpMatch[0];
+        camposCompletados.add('codigoPostal');
       }
     }
-    
-    console.log('🎯 === RESULTADO FINAL DEL PARSING ===');
-    console.log('📦 Datos parseados:', parsedData);
-    console.log('🔒 Campos completados:', [...camposCompletados]);
-    
+
+    // Municipio: usualmente parte anterior al estado
+    if (stateIndex > 0) {
+      parsedData.municipio = addressParts[stateIndex - 1];
+      camposCompletados.add('municipio');
+    }
+
+    // Colonia: Si el fragmento anterior a municipio NO es el CP ni estado ni el nombre de la calle
+    if (municipioIndex === -1 && stateIndex > 1) {
+      // Validar que la colonia no sea igual al municipio ni CP ni esté vacía
+      let posibleColonia = addressParts[stateIndex - 2];
+      if (posibleColonia
+          && posibleColonia !== parsedData.municipio
+          && !cpRegex.test(posibleColonia)
+          && posibleColonia !== addressParts[0]) {
+        parsedData.colonia = posibleColonia;
+        camposCompletados.add('colonia');
+      }
+    }
+
+    // Calle y número exterior (primer fragmento)
+    if (addressParts.length > 0) {
+      const streetPart = addressParts[0];
+      // Extraer número exterior si está al final (número limpio)
+      const numberMatch = streetPart.match(/(.*?)(\d+[a-zA-Z\-]*)$/);
+      if (numberMatch) {
+        parsedData.calle = numberMatch[1].trim().replace(/[,#]$/, '');
+        camposCompletados.add('calle');
+        parsedData.numExterior = numberMatch[2].trim();
+        camposCompletados.add('numExterior');
+      } else {
+        parsedData.calle = streetPart;
+        camposCompletados.add('calle');
+      }
+    }
+
+    console.log('🎯 PARSE FINAL:', parsedData, [...camposCompletados]);
     return { parsedData, camposCompletados };
   };
 
@@ -305,12 +284,97 @@ export function SmartUbicacionFormV2({
       </CardHeader>
 
       <CardContent>
-        {/* ... keep existing code (ubicaciones frecuentes) */}
+        {ubicacionesFrecuentes.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-medium mb-2">Ubicaciones Frecuentes</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {ubicacionesFrecuentes.slice(0, 4).map((uf) => (
+                <Button
+                  key={uf.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => cargarUbicacionFrecuente(uf)}
+                  className="text-left justify-start"
+                >
+                  <div className="truncate">
+                    <div className="font-medium">{uf.nombreUbicacion}</div>
+                    <div className="text-xs text-muted-foreground">{uf.rfcAsociado}</div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ... keep existing code (información básica - tipo de ubicación e ID) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="tipoUbicacion">Tipo de Ubicación *</Label>
+              <Select value={formData.tipoUbicacion} onValueChange={handleTipoChange}>
+                <SelectTrigger className={errors.tipoUbicacion ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Seleccionar tipo de ubicación..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Origen">Origen</SelectItem>
+                  <SelectItem value="Destino">Destino</SelectItem>
+                  <SelectItem value="Paso Intermedio">Paso Intermedio</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.tipoUbicacion && <p className="text-sm text-red-500 mt-1">{errors.tipoUbicacion}</p>}
+            </div>
 
-          {/* ... keep existing code (RFC y Nombre condicional e información para paso intermedio) */}
+            <div>
+              <Label htmlFor="idUbicacion">ID Ubicación</Label>
+              <Input
+                id="idUbicacion"
+                value={formData.idUbicacion}
+                readOnly
+                className="bg-gray-50"
+                placeholder="Se genera al seleccionar tipo"
+              />
+            </div>
+          </div>
+
+          {formData.tipoUbicacion !== 'Paso Intermedio' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="rfc">RFC Remitente/Destinatario *</Label>
+                  <Input
+                    id="rfc"
+                    value={formData.rfcRemitenteDestinatario}
+                    onChange={(e) => handleRFCChange(e.target.value)}
+                    placeholder="RFC del remitente o destinatario"
+                    className={errors.rfc ? 'border-red-500' : ''}
+                  />
+                  {rfcValidation && !rfcValidation.isValid && (
+                    <p className="text-sm text-red-500 mt-1">{rfcValidation.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="nombre">Nombre/Razón Social *</Label>
+                  <Input
+                    id="nombre"
+                    value={formData.nombreRemitenteDestinatario}
+                    onChange={(e) => handleFieldChange('nombreRemitenteDestinatario', e.target.value)}
+                    placeholder="Nombre completo o razón social"
+                    className={errors.nombre ? 'border-red-500' : ''}
+                  />
+                  {errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>}
+                </div>
+              </div>
+            </>
+          )}
+
+          {formData.tipoUbicacion === 'Paso Intermedio' && (
+            <div className="p-4 bg-yellow-50 rounded-md">
+              <Info className="h-5 w-5 text-yellow-700 inline-block mr-2 align-middle" />
+              <span className="text-sm text-yellow-800 align-middle">
+                Los campos de RFC y Nombre/Razón Social son opcionales para ubicaciones de "Paso Intermedio".
+              </span>
+            </div>
+          )}
 
           {/* Sección de búsqueda de dirección */}
           <div className="border-t pt-4">
@@ -506,7 +570,14 @@ export function SmartUbicacionFormV2({
             </div>
           )}
 
-          {/* ... keep existing code (botones de acción) */}
+          <div className="flex justify-between pt-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!isFormValid()} className="bg-blue-600 hover:bg-blue-700">
+              {ubicacion ? 'Actualizar Ubicación' : 'Agregar Ubicación'}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
