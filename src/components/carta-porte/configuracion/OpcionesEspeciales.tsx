@@ -11,13 +11,26 @@ interface OpcionesEspecialesProps {
 }
 
 export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
-  // Las funciones llaman siempre a onChange con los valores correctos.
-  // Agregamos casting para los select, y always string para el switch.
+  // Normalizar el valor de transporte internacional
+  const isTransporteInternacional = React.useMemo(() => {
+    if (typeof data.transporteInternacional === 'string') {
+      return data.transporteInternacional === 'Sí';
+    }
+    return Boolean(data.transporteInternacional);
+  }, [data.transporteInternacional]);
+
   const handleTransporteInternacionalChange = (checked: boolean) => {
-    // Siempre string "Sí"/"No" para mantener consistencia con el back
-    onChange({ 
+    // Limpiar campos dependientes cuando se desactiva transporte internacional
+    const updates: Partial<CartaPorteData> = {
       transporteInternacional: checked ? 'Sí' : 'No'
-    });
+    };
+
+    if (!checked) {
+      updates.pais_origen_destino = '';
+      updates.via_entrada_salida = '';
+    }
+
+    onChange(updates);
   };
 
   const handleRegistroIstmoChange = (checked: boolean) => {
@@ -40,12 +53,6 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
     onChange({ via_entrada_salida: value });
   };
 
-  const isTransporteInternacional =
-    typeof data.transporteInternacional === 'string'
-      ? data.transporteInternacional === 'Sí'
-      : Boolean(data.transporteInternacional);
-
-  // Usar "" si no hay valor para evitar controlled/uncontrolled warning
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -75,7 +82,10 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
         <div className="space-y-4">
           <div>
             <Label htmlFor="entrada-salida">Entrada/Salida de Mercancías</Label>
-            <Select value={data.entradaSalidaMerc || ''} onValueChange={handleEntradaSalidaChange}>
+            <Select 
+              value={data.entradaSalidaMerc || ''} 
+              onValueChange={handleEntradaSalidaChange}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
               </SelectTrigger>
@@ -88,7 +98,10 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
 
           <div>
             <Label htmlFor="via-transporte">Vía de Transporte</Label>
-            <Select value={data.viaTransporte || ''} onValueChange={handleViaTransporteChange}>
+            <Select 
+              value={data.viaTransporte || ''} 
+              onValueChange={handleViaTransporteChange}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
               </SelectTrigger>
@@ -103,11 +116,16 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
           </div>
         </div>
       </div>
+
+      {/* Campos que aparecen solo cuando el transporte es internacional */}
       {isTransporteInternacional && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
           <div>
             <Label htmlFor="pais-origen-destino">País de Origen/Destino</Label>
-            <Select value={data.pais_origen_destino || ''} onValueChange={handlePaisOrigenDestinoChange}>
+            <Select 
+              value={data.pais_origen_destino || ''} 
+              onValueChange={handlePaisOrigenDestinoChange}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un país..." />
               </SelectTrigger>
@@ -119,9 +137,13 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <Label htmlFor="via-entrada-salida">Vía de Entrada/Salida</Label>
-            <Select value={data.via_entrada_salida || ''} onValueChange={handleViaEntradaSalidaChange}>
+            <Select 
+              value={data.via_entrada_salida || ''} 
+              onValueChange={handleViaEntradaSalidaChange}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
               </SelectTrigger>

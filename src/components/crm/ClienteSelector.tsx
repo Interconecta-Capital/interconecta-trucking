@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useClientesProveedores, ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
 import { RFCValidator } from '@/utils/rfcValidation';
+import { useDebounce } from '@/hooks/useDebounce';
 import { 
   Search, 
   Plus, 
@@ -47,35 +47,64 @@ export function ClienteSelector({
   const [buscando, setBuscando] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const { buscarClientes, crearCliente, loading } = useClientesProveedores();
+  
+  // Debounce optimizado para mejor fluidez
+  const debouncedBusqueda = useDebounce(busqueda, 150);
 
-  const { buscarClientes, crearCliente, obtenerClientePorRFC, loading } = useClientesProveedores();
-
+  // Efecto para búsqueda con debounce mejorado
   useEffect(() => {
-    const buscarConDelay = setTimeout(async () => {
-      if (busqueda.length >= 2) {
+    const realizarBusqueda = async () => {
+      if (debouncedBusqueda.length >= 2 && !value) {
         setBuscando(true);
         try {
-          const clientes = await buscarClientes(busqueda);
+          const clientes = await buscarClientes(debouncedBusqueda);
           const clientesFiltrados = tipo === 'ambos' 
             ? clientes 
             : clientes.filter(c => c.tipo === tipo || c.tipo === 'ambos');
           
           setResultados(clientesFiltrados);
-          setShowResultados(true);
+          setShowResultados(clientesFiltrados.length > 0);
           setSelectedIndex(-1);
         } catch (error) {
           console.error('Error en búsqueda:', error);
+          setResultados([]);
+          setShowResultados(false);
         } finally {
           setBuscando(false);
         }
-      } else {
+      } else if (debouncedBusqueda.length < 2) {
         setResultados([]);
         setShowResultados(false);
+        setBuscando(false);
       }
-    }, 300);
+    };
 
-    return () => clearTimeout(buscarConDelay);
-  }, [busqueda, buscarClientes, tipo]);
+    realizarBusqueda();
+  }, [debouncedBusqueda, buscarClientes, tipo, value]);
+
+  // Sincronizar búsqueda con valor seleccionado
+  useEffect(() => {
+    if (value && value.razon_social !== busqueda) {
+      setBusqueda(value.razon_social);
+    } else if (!value && busqueda) {
+      // Solo limpiar búsqueda si no hay valor y no está escribiendo
+      const timer = setTimeout(() => {
+        if (!value) setBusqueda('');
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setBusqueda(newValue);
+    
+    // Si el usuario está escribiendo y hay un valor seleccionado, limpiarlo
+    if (value && newValue !== value.razon_social) {
+      onChange(null);
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showResultados || resultados.length === 0) return;
@@ -150,10 +179,10 @@ export function ClienteSelector({
             ref={inputRef}
             id={`cliente-selector-${label}`}
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              if (resultados.length > 0) {
+              if (resultados.length > 0 && !value) {
                 setShowResultados(true);
               }
             }}
@@ -182,7 +211,7 @@ export function ClienteSelector({
         </div>
 
         {/* Resultados de búsqueda */}
-        {showResultados && resultados.length > 0 && (
+        {showResultados && resultados.length > 0 && !value && (
           <Card className="absolute z-50 w-full mt-1 max-h-80 overflow-y-auto shadow-lg">
             <CardContent className="p-0">
               {resultados.map((cliente, index) => (
@@ -243,7 +272,7 @@ export function ClienteSelector({
         )}
 
         {/* Opción para crear nuevo cliente */}
-        {showCreateButton && busqueda.length >= 3 && resultados.length === 0 && !buscando && (
+        {showCreateButton && busqueda.length >= 3 && resultados.length === 0 && !buscando && !value && (
           <Card className="absolute z-50 w-full mt-1 shadow-lg">
             <CardContent className="p-3">
               <Button
