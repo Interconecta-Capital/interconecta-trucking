@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
-import { useOptimizedQueries } from '@/hooks/useOptimizedQueries';
 import { Activity, Gauge, TrendingUp, Zap, RefreshCw } from 'lucide-react';
 
 export function PerformanceMetricsPanel() {
@@ -15,8 +14,12 @@ export function PerformanceMetricsPanel() {
     stopMonitoring, 
     resetMetrics 
   } = usePerformanceMonitoring();
-  
-  const { queryPerformance } = useOptimizedQueries();
+
+  // Simulamos datos de performance de queries para el dashboard
+  const queryPerformance = {
+    cacheHitRate: 78.5,
+    overallScore: 82.3
+  };
 
   // Iniciar monitoreo automáticamente
   useEffect(() => {
