@@ -11,7 +11,10 @@ interface OpcionesEspecialesProps {
 }
 
 export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
+  // Las funciones llaman siempre a onChange con los valores correctos.
+  // Agregamos casting para los select, y always string para el switch.
   const handleTransporteInternacionalChange = (checked: boolean) => {
+    // Siempre string "Sí"/"No" para mantener consistencia con el back
     onChange({ 
       transporteInternacional: checked ? 'Sí' : 'No'
     });
@@ -37,11 +40,12 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
     onChange({ via_entrada_salida: value });
   };
 
-  // Ensure transporteInternacional is treated as boolean for the switch
-  const isTransporteInternacional = typeof data.transporteInternacional === 'string' 
-    ? data.transporteInternacional === 'Sí' 
-    : Boolean(data.transporteInternacional);
+  const isTransporteInternacional =
+    typeof data.transporteInternacional === 'string'
+      ? data.transporteInternacional === 'Sí'
+      : Boolean(data.transporteInternacional);
 
+  // Usar "" si no hay valor para evitar controlled/uncontrolled warning
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -56,7 +60,6 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               Transporte Internacional
             </Label>
           </div>
-
           <div className="flex items-center space-x-2">
             <Switch
               id="registro-istmo"
@@ -100,8 +103,6 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
           </div>
         </div>
       </div>
-
-      {/* Campos adicionales para transporte internacional */}
       {isTransporteInternacional && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
           <div>
@@ -118,7 +119,6 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <Label htmlFor="via-entrada-salida">Vía de Entrada/Salida</Label>
             <Select value={data.via_entrada_salida || ''} onValueChange={handleViaEntradaSalidaChange}>

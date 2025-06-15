@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
@@ -7,6 +6,7 @@ import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
+import { useNavigate } from 'react-router-dom';
 
 interface OptimizedCartaPorteFormProps {
   cartaPorteId?: string;
@@ -119,6 +119,14 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setAutotransporte(safeData);
   }, [setAutotransporte]);
 
+  // Guardar y salir: guarda el borrador y navega al listado
+  const handleGuardarYSalir = async () => {
+    if (typeof handleGuardarBorrador === 'function') {
+      await handleGuardarBorrador();
+    }
+    navigate('/cartas-porte');
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <CartaPorteHeader
@@ -126,6 +134,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         ultimoGuardado={ultimoGuardado}
         onGuardarBorrador={handleGuardarBorrador}
         onLimpiarBorrador={handleLimpiarBorrador}
+        onGuardarYSalir={handleGuardarYSalir}
       />
 
       <CartaPorteProgressTracker

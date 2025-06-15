@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Save, InfoIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 interface CartaPorteHeaderProps {
   borradorCargado: boolean;
@@ -15,8 +16,31 @@ export function CartaPorteHeader({
   borradorCargado, 
   ultimoGuardado, 
   onGuardarBorrador, 
-  onLimpiarBorrador 
+  onLimpiarBorrador,
+  onGuardarYSalir?: () => void
 }: CartaPorteHeaderProps) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+
+  const handleGuardarYSalir = async () => {
+    setLoading(true);
+    if (typeof onGuardarBorrador === 'function') await onGuardarBorrador();
+    setShowSaved(true);
+    setTimeout(() => {
+      setLoading(false);
+      navigate('/cartas-porte');
+    }, 1000);
+  };
+
+  const handleGuardar = async () => {
+    setLoading(true);
+    if (typeof onGuardarBorrador === 'function') await onGuardarBorrador();
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 2000);
+    setLoading(false);
+  };
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -26,7 +50,6 @@ export function CartaPorteHeader({
             Crea un nuevo comprobante fiscal digital de carta porte
           </p>
         </div>
-        
         <div className="flex items-center space-x-4">
           {ultimoGuardado && (
             <div className="text-sm text-gray-500">
@@ -34,19 +57,36 @@ export function CartaPorteHeader({
               Guardado: {ultimoGuardado.toLocaleTimeString()}
             </div>
           )}
-          
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={onGuardarBorrador}
+            onClick={handleGuardar}
+            disabled={loading}
           >
-            <Save className="h-4 w-4 mr-2" />
+            <Save className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Guardar Borrador
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleGuardarYSalir}
+            disabled={loading}
+          >
+            <Save className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Guardar y salir
           </Button>
         </div>
       </div>
-
+      {showSaved && (
+        <Alert className="mb-4">
+          <InfoIcon className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>¡Borrador guardado correctamente!</span>
+          </AlertDescription>
+        </Alert>
+      )}
       {borradorCargado && (
         <Alert className="mb-4">
           <InfoIcon className="h-4 w-4" />

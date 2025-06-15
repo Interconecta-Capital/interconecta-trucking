@@ -30,44 +30,26 @@ export function ConfiguracionPrincipalMejorada({
     }
   };
 
-  const handleEmisorChange = (emisor: ClienteProveedor | null) => {
-    if (emisor) {
-      onChange({
-        rfcEmisor: emisor.rfc,
-        nombreEmisor: emisor.razon_social
-      });
-    } else {
-      onChange({
-        rfcEmisor: '',
-        nombreEmisor: ''
-      });
-    }
-  };
+  // Los valores seleccionados deben reflejarse correctamente en Select y ClienteSelector
+  // Para ClienteSelector, extraer el objeto seleccionado a partir del RFC/nombre actual
+  // Por ahora, se asume que value={null} siempre forzaba el reset; aquí pasamos el actual
+  // NOTA: ClienteSelector debe manejar value como objeto o null. Hay que pasarle un objeto.
 
-  const handleReceptorChange = (receptor: ClienteProveedor | null) => {
-    if (receptor) {
-      onChange({
-        rfcReceptor: receptor.rfc,
-        nombreReceptor: receptor.razon_social
-      });
-    } else {
-      onChange({
-        rfcReceptor: '',
-        nombreReceptor: ''
-      });
-    }
-  };
+  // Emisor y Receptor actuales como objeto
+  const emisorValue = data.rfcEmisor && data.nombreEmisor 
+    ? { rfc: data.rfcEmisor, razon_social: data.nombreEmisor } 
+    : null;
+  const receptorValue = data.rfcReceptor && data.nombreReceptor 
+    ? { rfc: data.rfcReceptor, razon_social: data.nombreReceptor } 
+    : null;
 
-  // Validar si el formulario está completo
-  const isFormCompleto = () => {
-    return (
-      data.tipoCfdi &&
-      data.rfcEmisor &&
-      data.nombreEmisor &&
-      data.rfcReceptor &&
-      data.nombreReceptor
-    );
-  };
+  // Validar si el formulario está completo (opción booleana para desactivar botón)
+  const isFormCompleto = () =>
+    data.tipoCfdi &&
+    data.rfcEmisor &&
+    data.nombreEmisor &&
+    data.rfcReceptor &&
+    data.nombreReceptor;
 
   return (
     <Card>
@@ -83,7 +65,7 @@ export function ConfiguracionPrincipalMejorada({
         {/* Tipo de CFDI */}
         <div className="space-y-2">
           <Label>Tipo de CFDI *</Label>
-          <Select value={data.tipoCfdi} onValueChange={handleTipoCfdiChange}>
+          <Select value={data.tipoCfdi || ''} onValueChange={handleTipoCfdiChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Seleccionar tipo de CFDI..." />
             </SelectTrigger>
@@ -98,8 +80,20 @@ export function ConfiguracionPrincipalMejorada({
         <div className="space-y-2">
           <ClienteSelector
             label="Emisor"
-            value={null}
-            onChange={handleEmisorChange}
+            value={emisorValue}
+            onChange={(emisor) => {
+              if (emisor) {
+                onChange({
+                  rfcEmisor: emisor.rfc,
+                  nombreEmisor: emisor.razon_social
+                });
+              } else {
+                onChange({
+                  rfcEmisor: '',
+                  nombreEmisor: ''
+                });
+              }
+            }}
             tipo="cliente"
             placeholder="Buscar empresa emisora por RFC, nombre o razón social..."
             required
@@ -112,8 +106,20 @@ export function ConfiguracionPrincipalMejorada({
         <div className="space-y-2">
           <ClienteSelector
             label="Receptor"
-            value={null}
-            onChange={handleReceptorChange}
+            value={receptorValue}
+            onChange={(receptor) => {
+              if (receptor) {
+                onChange({
+                  rfcReceptor: receptor.rfc,
+                  nombreReceptor: receptor.razon_social
+                });
+              } else {
+                onChange({
+                  rfcReceptor: '',
+                  nombreReceptor: ''
+                });
+              }
+            }}
             tipo="cliente"
             placeholder="Buscar empresa receptora por RFC, nombre o razón social..."
             required
