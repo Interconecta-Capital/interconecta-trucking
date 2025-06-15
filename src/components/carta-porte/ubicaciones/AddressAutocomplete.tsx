@@ -83,7 +83,14 @@ export function AddressAutocomplete({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    onChange(e.target.value);
+    const newValue = e.target.value;
+    onChange(newValue);
+    
+    // Si se borra todo el texto, limpiar sugerencias
+    if (newValue.length === 0) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
   const handleSuggestionSelect = (suggestion: GeocodeResult) => {
@@ -91,7 +98,10 @@ export function AddressAutocomplete({
     
     // Actualizar el campo de búsqueda con la dirección seleccionada
     onChange(suggestion.formattedAddress);
+    
+    // Limpiar sugerencias INMEDIATAMENTE
     setShowSuggestions(false);
+    setSuggestions([]);
     
     if (onAddressSelect) {
       // Crear estructura compatible con el componente padre
@@ -102,9 +112,22 @@ export function AddressAutocomplete({
         properties: {
           address: suggestion.formattedAddress
         },
+        // Simular contexto de Mapbox basado en los datos disponibles
+        context: [
+          ...(suggestion.formattedAddress.includes('México') ? [{ id: 'country', text: 'México' }] : []),
+          // Extraer código postal si está presente
+          ...(suggestion.formattedAddress.match(/\b(\d{5})\b/) ? [{
+            id: 'postcode',
+            text: suggestion.formattedAddress.match(/\b(\d{5})\b/)?.[1] || ''
+          }] : [])
+        ],
         ...suggestion
       };
-      onAddressSelect(mapboxData);
+      
+      // Llamar al callback después de limpiar las sugerencias
+      setTimeout(() => {
+        onAddressSelect(mapboxData);
+      }, 50);
     }
   };
 
@@ -116,10 +139,21 @@ export function AddressAutocomplete({
   };
 
   const handleInputFocus = () => {
-    if (suggestions.length > 0) {
+    if (suggestions.length > 0 && value.length >= 4) {
       setShowSuggestions(true);
     }
   };
+
+  // Limpiar sugerencias cuando el componente se desmonta o el valor cambia drásticamente
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      setSuggestions([]);
+      setShowSuggestions(false);
+    };
+  }, []);
 
   return (
     <div className="relative">
@@ -133,6 +167,7 @@ export function AddressAutocomplete({
           onFocus={handleInputFocus}
           placeholder={placeholder}
           className={`pl-10 ${className}`}
+          autoComplete="off"
         />
         
         {isSearching && (
@@ -148,11 +183,12 @@ export function AddressAutocomplete({
           <CardContent className="p-0">
             {suggestions.map((suggestion, index) => (
               <Button
-                key={index}
+                key={`${suggestion.formattedAddress}-${index}`}
                 type="button"
                 variant="ghost"
                 className="w-full text-left justify-start h-auto p-4 rounded-none border-b last:border-b-0 hover:bg-blue-50"
-                onClick={(e) => {
+                onMouseDown={(e) => {
+                  // Usar onMouseDown en lugar de onClick para ejecutar antes del onBlur
                   e.preventDefault();
                   e.stopPropagation();
                   handleSuggestionSelect(suggestion);

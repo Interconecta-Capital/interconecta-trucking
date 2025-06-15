@@ -72,56 +72,56 @@ export function SmartUbicacionFormV2({
       };
     }
 
-    // Parsear el place_name para extraer información
-    const parts = placeName.split(', ');
-    
-    if (parts.length > 0) {
-      // Primera parte: calle y número
-      const streetPart = parts[0];
-      const streetMatch = streetPart.match(/^(.+?)\s+(\d+[a-zA-Z]*)?\s*(.*)$/);
-      
-      if (streetMatch) {
-        parsedData.calle = streetMatch[1].trim();
-        if (streetMatch[2]) {
-          parsedData.numExterior = streetMatch[2];
-        }
-      } else {
-        parsedData.calle = streetPart;
-      }
-    }
-
     // Usar el contexto de Mapbox para información precisa
     context.forEach((item: any) => {
       const id = item.id || '';
       
       if (id.startsWith('postcode')) {
         parsedData.codigoPostal = item.text;
+        console.log('CP encontrado:', item.text);
       } else if (id.startsWith('place')) {
         parsedData.municipio = item.text;
+        console.log('Municipio encontrado:', item.text);
       } else if (id.startsWith('district') || id.startsWith('locality')) {
         parsedData.colonia = item.text;
+        console.log('Colonia encontrada:', item.text);
       } else if (id.startsWith('region')) {
         parsedData.estado = item.text;
+        console.log('Estado encontrado:', item.text);
       }
     });
 
-    // Fallback: parsear desde place_name si no hay contexto
-    if (!parsedData.colonia && parts.length > 1) {
-      parsedData.colonia = parts[1];
-    }
-    if (!parsedData.municipio && parts.length > 2) {
-      parsedData.municipio = parts[2];
-    }
-    if (!parsedData.estado && parts.length > 3) {
-      parsedData.estado = parts[3];
+    // Parsear calle y número del place_name de manera más inteligente
+    const addressParts = placeName.split(', ');
+    if (addressParts.length > 0) {
+      const streetPart = addressParts[0];
+      
+      // Mejorar regex para capturar calle y número
+      const streetMatch = streetPart.match(/^(.+?)\s+(\d+[a-zA-Z\-]*)\s*(.*)$/) || 
+                         streetPart.match(/^(.+?)\s+#(\d+[a-zA-Z\-]*)\s*(.*)$/) ||
+                         streetPart.match(/^(.+?)\s+(S\/N|s\/n)\s*(.*)$/);
+      
+      if (streetMatch) {
+        parsedData.calle = streetMatch[1].trim();
+        parsedData.numExterior = streetMatch[2] === 'S/N' || streetMatch[2] === 's/n' ? '' : streetMatch[2];
+        console.log('Calle parseada:', parsedData.calle, 'Número:', parsedData.numExterior);
+      } else {
+        // Si no se puede separar el número, usar todo como calle
+        parsedData.calle = streetPart.trim();
+        console.log('Calle sin número:', parsedData.calle);
+      }
     }
 
-    // Buscar código postal en cualquier parte
-    const cpMatch = placeName.match(/\b(\d{5})\b/);
-    if (cpMatch && !parsedData.codigoPostal) {
-      parsedData.codigoPostal = cpMatch[1];
+    // Buscar código postal en place_name si no se encontró en contexto
+    if (!parsedData.codigoPostal) {
+      const cpMatch = placeName.match(/\b(\d{5})\b/);
+      if (cpMatch) {
+        parsedData.codigoPostal = cpMatch[1];
+        console.log('CP encontrado en place_name:', cpMatch[1]);
+      }
     }
 
+    console.log('Datos parseados finales:', parsedData);
     return parsedData;
   };
 
@@ -147,15 +147,37 @@ export function SmartUbicacionFormV2({
     setDireccionSeleccionada(true);
     setSearchAddress(addressData.place_name);
     
-    console.log('Campos actualizados:', parsedAddress);
+    // Limpiar errores relacionados con la dirección
+    const newErrors = { ...errors };
+    delete newErrors.address;
+    delete newErrors.codigoPostal;
+    delete newErrors.calle;
+    setErrors(newErrors);
+    
+    console.log('Campos actualizados y dirección marcada como seleccionada');
   };
 
   const handleModoManualChange = (checked: boolean) => {
     setModoManual(checked);
-    if (!checked) {
-      // Si volvemos al modo automático, limpiar los campos
+    if (checked) {
+      // Al activar modo manual, limpiar el estado de búsqueda
+      setDireccionSeleccionada(true); // Permitir edición
+      console.log('Modo manual activado - campos desbloqueados');
+    } else {
+      // Al desactivar modo manual, resetear búsqueda si no hay dirección seleccionada
+      if (!direccionSeleccionada) {
+        setSearchAddress('');
+      }
+      console.log('Modo automático activado');
+    }
+  };
+
+  const handleSearchAddressChange = (value: string) => {
+    setSearchAddress(value);
+    // Si el usuario empieza a escribir una nueva dirección, resetear el estado
+    if (direccionSeleccionada && value !== searchAddress) {
       setDireccionSeleccionada(false);
-      setSearchAddress('');
+      console.log('Búsqueda cambiada - reseteando estado de selección');
     }
   };
 
@@ -197,6 +219,7 @@ export function SmartUbicacionFormV2({
     }
   };
 
+  // Los campos están bloqueados solo si NO estamos en modo manual Y NO se ha seleccionado una dirección
   const isFieldDisabled = !modoManual && !direccionSeleccionada;
 
   return (
@@ -291,55 +314,56 @@ export function SmartUbicacionFormV2({
             </div>
           </div>
 
-          {/* Control de modo */}
+          {/* Sección de búsqueda de dirección */}
           <div className="border-t pt-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
-                id="modoManual"
-                checked={modoManual}
-                onCheckedChange={handleModoManualChange}
-              />
-              <Label htmlFor="modoManual" className="flex items-center gap-2">
-                {modoManual ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                Llenar dirección manualmente
-              </Label>
-            </div>
-
-            {!modoManual ? (
-              <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <Label className="flex items-center gap-2 mb-3 font-medium">
-                    <Search className="h-4 w-4" />
-                    Buscar Dirección Completa
-                  </Label>
-                  <AddressAutocomplete
-                    value={searchAddress}
-                    onChange={setSearchAddress}
-                    onAddressSelect={handleMapboxAddressSelect}
-                    placeholder="Escribe la dirección completa para autocompletado..."
-                    className="w-full"
-                  />
-                  {errors.address && <p className="text-sm text-red-500 mt-2">{errors.address}</p>}
-                  
-                  {direccionSeleccionada && (
-                    <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
-                      ✅ Dirección encontrada y campos completados automáticamente
-                    </div>
-                  )}
-                  
-                  <p className="text-sm text-muted-foreground mt-2">
-                    💡 Al seleccionar una dirección se completarán automáticamente: país, código postal, estado, municipio, colonia, calle y coordenadas
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-orange-50 p-3 rounded-lg">
-                <p className="text-sm text-orange-800 flex items-center gap-2">
-                  <Edit className="h-4 w-4" />
-                  Modo manual activado: Puedes editar todos los campos libremente
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <Label className="flex items-center gap-2 mb-3 font-medium">
+                  <Search className="h-4 w-4" />
+                  Buscar Dirección Completa
+                </Label>
+                <AddressAutocomplete
+                  value={searchAddress}
+                  onChange={handleSearchAddressChange}
+                  onAddressSelect={handleMapboxAddressSelect}
+                  placeholder="Escribe la dirección completa para autocompletado..."
+                  className="w-full"
+                />
+                {errors.address && <p className="text-sm text-red-500 mt-2">{errors.address}</p>}
+                
+                {direccionSeleccionada && !modoManual && (
+                  <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
+                    ✅ Dirección encontrada y campos completados automáticamente
+                  </div>
+                )}
+                
+                <p className="text-sm text-muted-foreground mt-2">
+                  💡 Al seleccionar una dirección se completarán automáticamente todos los campos de domicilio
                 </p>
               </div>
-            )}
+
+              {/* Control de modo manual - MOVIDO DEBAJO */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="modoManual"
+                  checked={modoManual}
+                  onCheckedChange={handleModoManualChange}
+                />
+                <Label htmlFor="modoManual" className="flex items-center gap-2">
+                  {modoManual ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                  Llenar dirección manualmente (modo avanzado)
+                </Label>
+              </div>
+
+              {modoManual && (
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <p className="text-sm text-orange-800 flex items-center gap-2">
+                    <Edit className="h-4 w-4" />
+                    Modo manual activado: Puedes editar todos los campos libremente
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Campos de domicilio */}
@@ -446,14 +470,14 @@ export function SmartUbicacionFormV2({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="localidad">Localidad</Label>
+                <Label htmlFor="localidad">Localidad (Opcional)</Label>
                 <Input
                   id="localidad"
                   value={formData.domicilio.localidad}
                   onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
                   disabled={isFieldDisabled}
                   className={isFieldDisabled ? 'bg-gray-100' : ''}
-                  placeholder="Opcional"
+                  placeholder="Opcional para Carta Porte"
                 />
               </div>
 
