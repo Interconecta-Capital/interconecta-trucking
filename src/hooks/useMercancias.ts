@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -15,6 +16,7 @@ export interface Mercancia {
   fraccion_arancelaria?: string;
   embalaje?: string;
   uuid_comercio_ext?: string;
+  codigo_producto?: string; // New field for product ID
 }
 
 export interface MercanciaConErrores extends Mercancia {
@@ -71,6 +73,14 @@ export const useMercancias = () => {
         throw new Error('La cantidad debe ser mayor a 0');
       }
 
+      if (mercancia.peso_kg <= 0) {
+        throw new Error('El peso debe ser mayor a 0');
+      }
+
+      if (mercancia.valor_mercancia <= 0) {
+        throw new Error('El valor debe ser mayor a 0');
+      }
+
       // Validar claves con SAT
       const esValidaClaveProdServ = await validarClaveMercancia(mercancia.bienes_transp);
       if (!esValidaClaveProdServ) {
@@ -102,6 +112,22 @@ export const useMercancias = () => {
       // Validaciones similares a agregarMercancia
       if (!mercancia.bienes_transp) {
         throw new Error('La clave de producto/servicio es requerida');
+      }
+      
+      if (!mercancia.clave_unidad) {
+        throw new Error('La clave de unidad es requerida');
+      }
+
+      if (mercancia.cantidad <= 0) {
+        throw new Error('La cantidad debe ser mayor a 0');
+      }
+
+      if (mercancia.peso_kg <= 0) {
+        throw new Error('El peso debe ser mayor a 0');
+      }
+
+      if (mercancia.valor_mercancia <= 0) {
+        throw new Error('El valor debe ser mayor a 0');
       }
       
       return { id, mercancia };
@@ -141,6 +167,18 @@ export const useMercancias = () => {
 
         if (!mercancia.bienes_transp || !mercancia.descripcion) {
           erroresMercancia.push('Datos incompletos en mercancía');
+        }
+
+        if (!mercancia.cantidad || mercancia.cantidad <= 0) {
+          erroresMercancia.push('Cantidad inválida');
+        }
+
+        if (!mercancia.peso_kg || mercancia.peso_kg <= 0) {
+          erroresMercancia.push('Peso inválido');
+        }
+
+        if (!mercancia.valor_mercancia || mercancia.valor_mercancia <= 0) {
+          erroresMercancia.push('Valor inválido');
         }
 
         if (erroresMercancia.length > 0) {

@@ -34,7 +34,8 @@ export function MercanciaFormOptimizada({
     embalaje: mercancia?.embalaje || '',
     fraccion_arancelaria: mercancia?.fraccion_arancelaria || '',
     moneda: mercancia?.moneda || 'MXN',
-    uuid_comercio_ext: mercancia?.uuid_comercio_ext || ''
+    uuid_comercio_ext: mercancia?.uuid_comercio_ext || '',
+    codigo_producto: mercancia?.codigo_producto || ''
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -61,6 +62,10 @@ export function MercanciaFormOptimizada({
 
     if (!formData.peso_kg || formData.peso_kg <= 0) {
       newErrors.peso_kg = 'El peso debe ser mayor a 0';
+    }
+
+    if (!formData.valor_mercancia || formData.valor_mercancia <= 0) {
+      newErrors.valor_mercancia = 'El valor debe ser mayor a 0';
     }
 
     if (formData.material_peligroso && !formData.cve_material_peligroso?.trim()) {

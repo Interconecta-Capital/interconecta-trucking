@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { useMercancias, Mercancia } from '@/hooks/useMercancias';
 import { useAIContext } from '@/hooks/ai/useAIContext';
 import { geminiCore } from '@/services/ai/GeminiCoreService';
-import { Package, Upload, ArrowRight, ArrowLeft, Plus, Sparkles, Brain } from 'lucide-react';
+import { Package, Upload, ArrowRight, ArrowLeft, Plus, Sparkles, Brain, FileText, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SmartMercanciasSectionProps {
@@ -51,7 +52,6 @@ export function SmartMercanciasSection({
 
   // Get carta porte ID from URL or context if available
   const getCartaPorteId = () => {
-    // Try to extract from URL or form context
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('id') || undefined;
   };
@@ -79,7 +79,8 @@ export function SmartMercanciasSection({
     }
   };
 
-  const handleEditMercancia = (mercancia: Mercancia, index: number) => {
+  const handleEditMercancia = (mercancia: Mercancia) => {
+    const index = mercancias.findIndex(m => m.id === mercancia.id);
     setEditingMercancia(mercancia);
     setEditingIndex(index);
     setShowForm(true);
@@ -211,12 +212,11 @@ export function SmartMercanciasSection({
                 </Button>
                 <Button 
                   type="button"
-                  variant="outline" 
                   onClick={handleShowDocuments}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  <span>IA: PDF/XML/OCR</span>
+                  <FileText className="h-4 w-4" />
+                  <span>Importar Documento</span>
                 </Button>
                 <Button 
                   type="button"
@@ -238,6 +238,30 @@ export function SmartMercanciasSection({
               </div>
             )}
           </div>
+          
+          {/* Quick import info */}
+          {!showForm && mercancias.length === 0 && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Bot className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">¿Tienes un documento con tus mercancías?</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Puedes importar automáticamente desde PDFs, imágenes, archivos Excel o XML. 
+                    Nuestra IA extraerá la información y completará los campos SAT requeridos.
+                  </p>
+                  <Button 
+                    onClick={handleShowDocuments}
+                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    Probar Importación IA
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </CardHeader>
         
         <CardContent>
@@ -253,10 +277,7 @@ export function SmartMercanciasSection({
           ) : (
             <MercanciasListWrapper
               mercancias={mercancias}
-              onEdit={(mercancia: Mercancia) => {
-                const index = mercancias.findIndex(m => m.id === mercancia.id);
-                handleEditMercancia(mercancia, index);
-              }}
+              onEdit={handleEditMercancia}
               onDelete={eliminarMercancia}
               isLoading={isLoading}
             />
