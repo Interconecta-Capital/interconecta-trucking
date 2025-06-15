@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search } from 'lucide-react';
 import { UbicacionFrecuente } from '@/types/ubicaciones';
 import { FormularioDomicilioUnificado, DomicilioUnificado } from '@/components/common/FormularioDomicilioUnificado';
+import { AddressAutocomplete } from './AddressAutocomplete';
 import { useUbicacionForm } from '@/hooks/useUbicacionForm';
 
 interface SmartUbicacionFormProps {
@@ -36,11 +37,13 @@ export function SmartUbicacionForm({
     handleRFCChange,
     handleLocationUpdate,
     handleFieldChange,
+    handleMapboxAddressSelect,
     cargarUbicacionFrecuente,
     isFormValid
   } = useUbicacionForm(ubicacion, generarId);
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [searchAddress, setSearchAddress] = React.useState('');
 
   const handleDomicilioChange = (campo: keyof DomicilioUnificado, valor: string) => {
     handleFieldChange(`domicilio.${campo}`, valor);
@@ -48,6 +51,10 @@ export function SmartUbicacionForm({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+
+    if (!formData.tipoUbicacion?.trim()) {
+      newErrors.tipoUbicacion = 'El tipo de ubicación es requerido';
+    }
 
     if (!formData.rfcRemitenteDestinatario?.trim()) {
       newErrors.rfc = 'El RFC es requerido';
@@ -125,8 +132,8 @@ export function SmartUbicacionForm({
             <div>
               <Label htmlFor="tipoUbicacion">Tipo de Ubicación *</Label>
               <Select value={formData.tipoUbicacion} onValueChange={handleTipoChange}>
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className={errors.tipoUbicacion ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Seleccionar tipo de ubicación..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Origen">Origen</SelectItem>
@@ -134,6 +141,7 @@ export function SmartUbicacionForm({
                   <SelectItem value="Paso Intermedio">Paso Intermedio</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.tipoUbicacion && <p className="text-sm text-red-500 mt-1">{errors.tipoUbicacion}</p>}
             </div>
 
             <div>
@@ -143,6 +151,7 @@ export function SmartUbicacionForm({
                 value={formData.idUbicacion}
                 readOnly
                 className="bg-gray-50"
+                placeholder="Se genera al seleccionar tipo"
               />
             </div>
           </div>
@@ -173,6 +182,24 @@ export function SmartUbicacionForm({
             </div>
           </div>
 
+          {/* Búsqueda de Dirección con Mapbox */}
+          <div className="space-y-4">
+            <Label className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Buscar Dirección (Mapbox)
+            </Label>
+            <AddressAutocomplete
+              value={searchAddress}
+              onChange={setSearchAddress}
+              onAddressSelect={handleMapboxAddressSelect}
+              placeholder="Buscar dirección completa..."
+              className="w-full"
+            />
+            <p className="text-sm text-muted-foreground">
+              💡 Busca la dirección completa para autocompletar todos los campos automáticamente
+            </p>
+          </div>
+
           <div>
             <Label className="flex items-center gap-2 mb-4">
               <MapPin className="h-4 w-4" />
@@ -181,7 +208,7 @@ export function SmartUbicacionForm({
             <FormularioDomicilioUnificado
               domicilio={{
                 ...formData.domicilio,
-                numExterior: formData.domicilio.numExterior || '' // Ensure required field
+                numExterior: formData.domicilio.numExterior || ''
               }}
               onDomicilioChange={handleDomicilioChange}
               camposOpcionales={['numInterior', 'referencia', 'localidad']}

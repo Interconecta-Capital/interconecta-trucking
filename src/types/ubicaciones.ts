@@ -2,7 +2,7 @@
 export interface Ubicacion {
   id: string;
   idUbicacion: string;
-  tipoUbicacion: 'Origen' | 'Destino';
+  tipoUbicacion: 'Origen' | 'Destino' | 'Paso Intermedio' | '';
   rfcRemitenteDestinatario?: string;
   nombreRemitenteDestinatario?: string;
   fechaHoraSalidaLlegada?: string;
