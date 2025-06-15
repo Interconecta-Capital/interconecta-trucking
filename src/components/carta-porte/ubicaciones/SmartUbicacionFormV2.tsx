@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,7 +46,8 @@ export function SmartUbicacionFormV2({
 
   // Función mejorada para parsear direcciones mexicanas de Mapbox
   const parseMapboxAddress = (addressData: any): { parsedData: any; populatedFields: Set<keyof Ubicacion['domicilio']> } => {
-    console.log('Parseando dirección de Mapbox v3:', addressData);
+    console.log('=== INICIANDO PARSING DE MAPBOX ===');
+    console.log('Address Data completo:', JSON.stringify(addressData, null, 2));
     
     const placeName = addressData.place_name || '';
     const populatedFields = new Set<keyof Ubicacion['domicilio']>();
@@ -61,85 +63,170 @@ export function SmartUbicacionFormV2({
     };
     populatedFields.add('pais');
 
+    console.log('place_name:', placeName);
+
     // 1. Coordenadas
     if (addressData.center) {
       parsedData.coordenadas = {
         longitud: addressData.center[0],
         latitud: addressData.center[1]
       };
+      console.log('Coordenadas extraídas:', parsedData.coordenadas);
     }
 
-    // 2. Extraer de `context` (más fiable)
-    if (addressData.context) {
+    // 2. Extraer de `context` PRIMERO (más fiable)
+    console.log('=== PROCESANDO CONTEXT ===');
+    if (addressData.context && Array.isArray(addressData.context)) {
+      console.log('Context disponible:', addressData.context);
+      
       for (const item of addressData.context) {
-        if (item.id.startsWith('postcode') && !parsedData.codigoPostal) {
+        console.log('Procesando item del context:', item);
+        
+        // Código postal
+        if (item.id && item.id.startsWith('postcode') && !parsedData.codigoPostal) {
           parsedData.codigoPostal = item.text;
           populatedFields.add('codigoPostal');
+          console.log('✅ Código postal extraído de context:', item.text);
         }
-        if (item.id.startsWith('region') && !parsedData.estado) {
+        
+        // Estado/Región
+        if (item.id && item.id.startsWith('region') && !parsedData.estado) {
           parsedData.estado = item.text;
           populatedFields.add('estado');
+          console.log('✅ Estado extraído de context:', item.text);
         }
-        if (item.id.startsWith('place') && !parsedData.municipio) {
+        
+        // Municipio - puede venir como 'place' o 'district'
+        if (item.id && (item.id.startsWith('place') || item.id.startsWith('district')) && !parsedData.municipio) {
           parsedData.municipio = item.text;
           populatedFields.add('municipio');
+          console.log('✅ Municipio extraído de context:', item.text);
         }
-        if (item.id.startsWith('neighborhood') && !parsedData.colonia) {
+        
+        // Colonia - puede venir como 'neighborhood' o 'locality'
+        if (item.id && (item.id.startsWith('neighborhood') || item.id.startsWith('locality')) && !parsedData.colonia) {
           parsedData.colonia = item.text;
           populatedFields.add('colonia');
+          console.log('✅ Colonia extraída de context:', item.text);
         }
       }
     }
 
-    // 3. Parsear calle y número (del `text` o `place_name`)
+    // 3. Extraer calle y número del texto principal
+    console.log('=== PROCESANDO CALLE Y NÚMERO ===');
     const streetPart = addressData.text || (placeName.split(',')[0] || '');
+    console.log('Street part detectado:', streetPart);
+    
     if (streetPart) {
-      // Intenta extraer número de `address` si existe. `address` a veces es solo el número.
+      // Si hay campo `address` separado en Mapbox, usarlo como número
       if (addressData.address && /^\d+[a-zA-Z\-]*$/.test(addressData.address)) {
         parsedData.calle = streetPart.trim();
         populatedFields.add('calle');
         parsedData.numExterior = addressData.address.trim();
         populatedFields.add('numExterior');
+        console.log('✅ Calle y número extraídos (método 1):', parsedData.calle, parsedData.numExterior);
       } else {
-        // Regex para encontrar número al final de la calle
-        const match = streetPart.match(/^(.*?)\s+([\d\-]+[a-zA-Z]?)\s*$/);
-        if (match) {
-          parsedData.calle = match[1].trim().replace(/,$/, '');
-          populatedFields.add('calle');
-          parsedData.numExterior = match[2].trim();
-          populatedFields.add('numExterior');
-        } else {
+        // Buscar número al final de la calle con regex mejorado
+        const patterns = [
+          /^(.*?)\s+([\d]+[a-zA-Z\-]*)\s*$/,  // "Calle Principal 123A"
+          /^(.*?)\s+#([\d]+[a-zA-Z\-]*)\s*$/,  // "Calle Principal #123"
+          /^(.*?)\s+No\.?\s*([\d]+[a-zA-Z\-]*)\s*$/,  // "Calle Principal No. 123"
+          /^(.*?)\s+Num\.?\s*([\d]+[a-zA-Z\-]*)\s*$/   // "Calle Principal Num 123"
+        ];
+        
+        let matched = false;
+        for (const pattern of patterns) {
+          const match = streetPart.match(pattern);
+          if (match) {
+            parsedData.calle = match[1].trim().replace(/,$/, '');
+            populatedFields.add('calle');
+            parsedData.numExterior = match[2].trim();
+            populatedFields.add('numExterior');
+            console.log('✅ Calle y número extraídos (patrón):', parsedData.calle, parsedData.numExterior);
+            matched = true;
+            break;
+          }
+        }
+        
+        if (!matched) {
           // Si no hay número, todo es calle
           parsedData.calle = streetPart.trim().replace(/,$/, '');
           populatedFields.add('calle');
+          console.log('✅ Solo calle extraída (sin número):', parsedData.calle);
         }
       }
     }
 
-    // 4. Fallbacks usando `place_name` (si `context` no proveyó los datos)
+    // 4. Fallbacks usando place_name si no se encontró en context
+    console.log('=== APLICANDO FALLBACKS ===');
+    const addressParts = placeName.split(',').map(part => part.trim());
+    console.log('Address parts:', addressParts);
+
+    // Fallback para código postal
     if (!populatedFields.has('codigoPostal')) {
       const cpMatch = placeName.match(/\b(\d{5})\b/);
       if (cpMatch) {
         parsedData.codigoPostal = cpMatch[1];
         populatedFields.add('codigoPostal');
-      }
-    }
-    if (!populatedFields.has('estado')) {
-      const estados = ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua", "Ciudad de México", "CDMX", "Coahuila", "Colima", "Durango", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "México", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"];
-      const estadosPattern = new RegExp(`(?<=[, ])(${estados.join('|')})(?=[,]|$)`, 'i');
-      const estadoMatch = placeName.match(estadosPattern);
-      if (estadoMatch) {
-        let estadoEncontrado = estadoMatch[0];
-        if (estadoEncontrado.toUpperCase() === 'CDMX') {
-          estadoEncontrado = 'Ciudad de México';
-        }
-        parsedData.estado = estadoEncontrado;
-        populatedFields.add('estado');
+        console.log('✅ Código postal extraído por fallback:', cpMatch[1]);
       }
     }
     
-    console.log('Datos parseados finales:', parsedData);
+    // Fallback para estado usando lista completa
+    if (!populatedFields.has('estado')) {
+      const estados = [
+        "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", 
+        "Chihuahua", "Ciudad de México", "CDMX", "Coahuila", "Colima", "Durango", 
+        "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "México", "Michoacán", "Morelos", 
+        "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", 
+        "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", 
+        "Veracruz", "Yucatán", "Zacatecas"
+      ];
+      
+      for (const part of addressParts) {
+        const estadoEncontrado = estados.find(estado => 
+          part.toLowerCase().includes(estado.toLowerCase()) ||
+          (estado === 'Ciudad de México' && (part.toLowerCase().includes('cdmx') || part.toLowerCase().includes('ciudad de mexico')))
+        );
+        
+        if (estadoEncontrado) {
+          parsedData.estado = estadoEncontrado === 'CDMX' ? 'Ciudad de México' : estadoEncontrado;
+          populatedFields.add('estado');
+          console.log('✅ Estado extraído por fallback:', parsedData.estado);
+          break;
+        }
+      }
+    }
+    
+    // Fallback para municipio (buscar en las últimas partes, excluyendo estado y país)
+    if (!populatedFields.has('municipio') && addressParts.length >= 3) {
+      // Buscar municipio en la tercera o cuarta posición, evitando estado y país
+      for (let i = 2; i < Math.min(addressParts.length - 1, 4); i++) {
+        const part = addressParts[i];
+        // Evitar que tome el estado o país como municipio
+        if (part && 
+            !part.toLowerCase().includes('méxico') && 
+            !part.toLowerCase().includes('mexico') &&
+            !part.match(/\d{5}/) && // No es código postal
+            part.length > 2) { // Tiene longitud suficiente
+          
+          // Verificar que no sea un estado conocido
+          const estados = ["aguascalientes", "baja california", "campeche", "chiapas", "chihuahua", "ciudad de méxico", "cdmx", "coahuila", "colima", "durango", "guanajuato", "guerrero", "hidalgo", "jalisco", "méxico", "michoacán", "morelos", "nayarit", "nuevo león", "oaxaca", "puebla", "querétaro", "quintana roo", "san luis potosí", "sinaloa", "sonora", "tabasco", "tamaulipas", "tlaxcala", "veracruz", "yucatán", "zacatecas"];
+          
+          if (!estados.some(estado => part.toLowerCase().includes(estado))) {
+            parsedData.municipio = part;
+            populatedFields.add('municipio');
+            console.log('✅ Municipio extraído por fallback:', part);
+            break;
+          }
+        }
+      }
+    }
+    
+    console.log('=== RESULTADO FINAL ===');
+    console.log('Datos parseados:', parsedData);
     console.log('Campos poblados:', [...populatedFields]);
+    
     return { parsedData, populatedFields };
   };
 
@@ -157,7 +244,7 @@ export function SmartUbicacionFormV2({
       }
     });
     
-    // Marcar dirección como seleccionada y limpiar búsqueda
+    // Marcar dirección como seleccionada y actualizar campos poblados
     setDireccionSeleccionada(true);
     setSearchAddress('');
     setPopulatedAddressFields(populatedFields);
@@ -172,6 +259,7 @@ export function SmartUbicacionFormV2({
     setErrors(newErrors);
     
     console.log('Campos actualizados y dirección marcada como seleccionada');
+    console.log('Campos poblados guardados:', [...populatedFields]);
   };
 
   const handleModoManualChange = (checked: boolean) => {
@@ -182,8 +270,7 @@ export function SmartUbicacionFormV2({
         setPopulatedAddressFields(new Set());
       }
     } else {
-      // Al activar modo manual, permitir edición de todos los campos
-      setDireccionSeleccionada(true);
+      // Al activar modo manual, NO limpiar los campos poblados, solo permitir edición
       console.log('Modo manual activado - todos los campos desbloqueados');
     }
   };
@@ -247,20 +334,20 @@ export function SmartUbicacionFormV2({
     }
   };
 
-  // Determinar qué campos están bloqueados
-  // Lógica inteligente: un campo se bloquea si fue autocompletado y no estamos en modo manual.
-  // Si no fue autocompletado, permanece editable.
+  // Lógica CORREGIDA de bloqueo de campos
   const isFieldLocked = (field: keyof Ubicacion['domicilio']) => {
-    if (modoManual) return false;
+    // En modo manual, NADA está bloqueado
+    if (modoManual) {
+      return false;
+    }
     
-    // Estos campos son siempre editables para ajustes finos.
+    // Campos siempre editables (nunca se bloquean)
     const alwaysEditableFields: (keyof Ubicacion['domicilio'])[] = ['colonia', 'numInterior', 'localidad', 'referencia'];
     if (alwaysEditableFields.includes(field)) {
       return false;
     }
 
-    // Bloquear si el campo fue poblado por el autocompletado.
-    // Si no fue poblado, permanece desbloqueado para llenado manual.
+    // Solo bloquear si el campo fue poblado automáticamente por Mapbox
     return populatedAddressFields.has(field);
   };
 
@@ -416,13 +503,9 @@ export function SmartUbicacionFormV2({
                 
                 {direccionSeleccionada && !modoManual && (
                   <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
-                    ✅ Dirección encontrada. Campos completados automáticamente. Los campos faltantes se pueden editar.
+                    ✅ Dirección encontrada. Los campos detectados están protegidos, los faltantes se pueden editar.
                   </div>
                 )}
-                
-                <p className="text-sm text-muted-foreground mt-2">
-                  💡 Al seleccionar una dirección se completarán los campos detectados. Podrás editar los que falten.
-                </p>
               </div>
 
               {/* Control de modo manual */}
@@ -434,7 +517,7 @@ export function SmartUbicacionFormV2({
                 />
                 <Label htmlFor="modoManual" className="flex items-center gap-2">
                   {modoManual ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                  Llenar dirección manualmente (modo avanzado)
+                  Llenar dirección manualmente
                 </Label>
               </div>
 
@@ -442,7 +525,7 @@ export function SmartUbicacionFormV2({
                 <div className="bg-orange-50 p-3 rounded-lg">
                   <p className="text-sm text-orange-800 flex items-center gap-2">
                     <Edit className="h-4 w-4" />
-                    Modo manual activado: Puedes editar todos los campos libremente
+                    Modo manual activado: Todos los campos desbloqueados
                   </p>
                 </div>
               )}
@@ -516,9 +599,6 @@ export function SmartUbicacionFormV2({
                   disabled={isFieldLocked('colonia')}
                   className={isFieldLocked('colonia') ? 'bg-gray-100' : 'bg-white'}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Campo editable; verifique que el autocompletado sea correcto.
-                </p>
               </div>
             </div>
 
@@ -570,9 +650,6 @@ export function SmartUbicacionFormV2({
                   disabled={isFieldLocked('localidad')}
                   className={isFieldLocked('localidad') ? 'bg-gray-100' : 'bg-white'}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Opcional según normativa de Carta Porte.
-                </p>
               </div>
 
               <div>
