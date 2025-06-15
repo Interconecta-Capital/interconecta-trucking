@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin, Search, Edit, Lock, Unlock, Info, EyeOff } from 'lucide-react';
 import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 import { AddressAutocomplete } from './AddressAutocomplete';
+import { FechaHoraFields } from './FechaHoraFields';
 import { useUbicacionForm } from '@/hooks/useUbicacionForm';
 
 interface SmartUbicacionFormV2Props {
@@ -17,6 +18,8 @@ interface SmartUbicacionFormV2Props {
   onSaveToFavorites?: (ubicacion: Omit<UbicacionFrecuente, 'id' | 'usoCount'>) => void;
   generarId: (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => string;
   ubicacionesFrecuentes?: UbicacionFrecuente[];
+  ubicacionIndex?: number;
+  totalUbicaciones?: number;
 }
 
 export function SmartUbicacionFormV2({ 
@@ -25,7 +28,9 @@ export function SmartUbicacionFormV2({
   onCancel, 
   onSaveToFavorites,
   generarId,
-  ubicacionesFrecuentes = []
+  ubicacionesFrecuentes = [],
+  ubicacionIndex = 0,
+  totalUbicaciones = 1
 }: SmartUbicacionFormV2Props) {
   const {
     formData,
@@ -40,17 +45,16 @@ export function SmartUbicacionFormV2({
   const [modoManual, setModoManual] = useState(false);
   const [searchAddress, setSearchAddress] = useState('');
   const [direccionSeleccionada, setDireccionSeleccionada] = useState(false);
-  const [mostrarDomicilio, setMostrarDomicilio] = useState(false); // NUEVO: Control de visibilidad
+  const [mostrarDomicilio, setMostrarDomicilio] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [camposAutoCompletados, setCamposAutoCompletados] = useState<Set<keyof Ubicacion['domicilio']>>(new Set());
 
   // MEJORADO: Función de parsing de Mapbox completamente robusta
   const parseMapboxAddress = (addressData: any): { parsedData: any; camposCompletados: Set<keyof Ubicacion['domicilio']> } => {
-    console.log('🔄 === INICIANDO PARSING INTEGRAL DE MAPBOX (CORREGIDO) ===');
+    console.log('🔄 === INICIANDO PARSING INTEGRAL DE MAPBOX (CORREGIDO V2) ===');
     console.log('📥 Datos completos recibidos:', JSON.stringify(addressData, null, 2));
 
     const placeName = addressData.place_name || '';
-    let context = addressData.context || [];
     const camposCompletados = new Set<keyof Ubicacion['domicilio']>();
     let parsedData: Partial<Ubicacion['domicilio']> & { coordenadas?: any } = {
       pais: 'México',
@@ -72,13 +76,13 @@ export function SmartUbicacionFormV2({
       console.log('✅ Coordenadas extraídas:', parsedData.coordenadas);
     }
 
-    // 2. PARSING DESDE PLACE_NAME (con lógica segura)
+    // 2. PARSING DESDE PLACE_NAME (lógica mejorada)
     const addressParts = placeName.split(',').map(p => p.trim());
     console.log('📝 Partes de la dirección:', addressParts);
 
     // Helper: Detectar código postal
     const cpRegex = /\b\d{5}\b/;
-    // Listado de estados
+    // Listado de estados mejorado
     const knownStates = [
       "aguascalientes","baja california sur","baja california","campeche","chiapas","chihuahua",
       "ciudad de méxico","cdmx","coahuila","colima","durango","guanajuato","guerrero","hidalgo",
@@ -87,7 +91,7 @@ export function SmartUbicacionFormV2({
     ];
 
     let cpIndex = -1, stateIndex = -1;
-    for (let i=0; i < addressParts.length; i++) {
+    for (let i = 0; i < addressParts.length; i++) {
       if (cpIndex === -1 && cpRegex.test(addressParts[i])) cpIndex = i;
       if (stateIndex === -1 && knownStates.some(
         estado => addressParts[i].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -109,31 +113,17 @@ export function SmartUbicacionFormV2({
       }
     }
 
-    // NUEVO: Municipio -> solo nombre (NUNCA debe traer el CP, corregido)
-    // Buscamos la parte municipio cercana al CP o estado
-    // Muchos place_name usan el formato: [calle, codigoPostal municipio, estado, pais]
-    // Detectar si addressParts[cpIndex] tiene ambos (CP y municipio), separar.
-    if (cpIndex !== -1 && cpIndex + 1 <= addressParts.length) {
-      // Ejemplo addressParts[cpIndex]: "56386 Chicoloapan de Juárez"
-      // Buscamos el municipio separado del CP
+    // CORREGIDO: Municipio solo el nombre, sin CP
+    if (cpIndex !== -1) {
       const municipioWithCP = addressParts[cpIndex];
-      const municipioMatch = municipioWithCP.match(/\b\d{5}\b\s*(.+)/);
-      if (municipioMatch && municipioMatch[1]) {
-        parsedData.municipio = municipioMatch[1];
-        camposCompletados.add('municipio');
-      } else if (
-        cpRegex.test(municipioWithCP) && municipioWithCP.length > 7 // Si hay más que CP solo
-      ) {
-        // Remove CP and trim
-        parsedData.municipio = municipioWithCP.replace(cpRegex, '').trim();
-        camposCompletados.add('municipio');
-      } else if (cpIndex + 1 < addressParts.length && stateIndex > cpIndex + 1) {
-        // A veces formato: [calle, CP, municipio, estado, pais]
-        parsedData.municipio = addressParts[cpIndex + 1];
+      // Extraer solo el municipio, removiendo el CP
+      const municipioMatch = municipioWithCP.replace(cpRegex, '').trim();
+      if (municipioMatch && municipioMatch.length > 0) {
+        parsedData.municipio = municipioMatch;
         camposCompletados.add('municipio');
       }
     } else if (stateIndex > 0) {
-      // Fallback: municipio antes de estado si no hay CP típico
+      // Fallback: municipio antes de estado
       parsedData.municipio = addressParts[stateIndex - 1];
       camposCompletados.add('municipio');
     }
@@ -167,7 +157,7 @@ export function SmartUbicacionFormV2({
       }
     }
 
-    console.log('🎯 PARSE FINAL:', parsedData, [...camposCompletados]);
+    console.log('🎯 PARSE FINAL V2:', parsedData, [...camposCompletados]);
     return { parsedData, camposCompletados };
   };
 
@@ -185,7 +175,6 @@ export function SmartUbicacionFormV2({
       }
     });
     
-    // NUEVO: Marcar dirección como seleccionada y mostrar formulario
     setDireccionSeleccionada(true);
     setMostrarDomicilio(true);
     setSearchAddress('');
@@ -206,11 +195,9 @@ export function SmartUbicacionFormV2({
   const handleModoManualChange = (checked: boolean) => {
     setModoManual(checked);
     if (checked) {
-      // Activar modo manual: mostrar formulario y permitir edición total
       setMostrarDomicilio(true);
       console.log('🔓 Modo manual activado - formulario mostrado y todos los campos desbloqueados');
     } else {
-      // Desactivar modo manual: ocultar formulario si no hay dirección seleccionada
       if (!direccionSeleccionada) {
         setMostrarDomicilio(false);
         setCamposAutoCompletados(new Set());
@@ -266,6 +253,12 @@ export function SmartUbicacionFormV2({
       newErrors.calle = 'La calle es requerida';
     }
 
+    // Validar fecha y hora para origen y destino
+    if ((formData.tipoUbicacion === 'Origen' || formData.tipoUbicacion === 'Destino') && 
+        !formData.fechaHoraSalidaLlegada?.trim()) {
+      newErrors.fechaHora = `La fecha y hora ${formData.tipoUbicacion === 'Origen' ? 'de salida' : 'de llegada'} es requerida`;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -277,20 +270,16 @@ export function SmartUbicacionFormV2({
     }
   };
 
-  // CORREGIDO: Lógica de bloqueo de campos completamente nueva
   const isFieldLocked = (field: keyof Ubicacion['domicilio']) => {
-    // En modo manual, NADA está bloqueado
     if (modoManual) {
       return false;
     }
     
-    // Campos especiales NUNCA se bloquean (usuario siempre puede editarlos)
     const camposSiempreEditables: (keyof Ubicacion['domicilio'])[] = ['colonia', 'numInterior', 'localidad', 'referencia'];
     if (camposSiempreEditables.includes(field)) {
       return false;
     }
 
-    // Solo bloquear si el campo fue auto-completado por Mapbox
     return camposAutoCompletados.has(field);
   };
 
@@ -398,9 +387,35 @@ export function SmartUbicacionFormV2({
             </div>
           )}
 
+          {/* NUEVO: Sección de fecha y hora */}
+          {formData.tipoUbicacion && (
+            <div className="border-t pt-4">
+              <FechaHoraFields
+                ubicacion={formData}
+                onFieldChange={handleFieldChange}
+                errors={errors}
+                ubicacionIndex={ubicacionIndex}
+                totalUbicaciones={totalUbicaciones}
+              />
+            </div>
+          )}
+
           {/* Sección de búsqueda de dirección */}
           <div className="border-t pt-4">
             <div className="space-y-4">
+              {/* Control de modo manual */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="modoManual"
+                  checked={modoManual}
+                  onCheckedChange={handleModoManualChange}
+                />
+                <Label htmlFor="modoManual" className="flex items-center gap-2">
+                  {modoManual ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                  Llenar dirección manualmente
+                </Label>
+              </div>
+
               {/* SOLO mostrar autocomplete si NO está en modo manual */}
               {!modoManual && (
                 <div className="bg-blue-50 p-4 rounded-lg">
@@ -425,19 +440,6 @@ export function SmartUbicacionFormV2({
                 </div>
               )}
 
-              {/* Control de modo manual */}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="modoManual"
-                  checked={modoManual}
-                  onCheckedChange={handleModoManualChange}
-                />
-                <Label htmlFor="modoManual" className="flex items-center gap-2">
-                  {modoManual ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                  Llenar dirección manualmente
-                </Label>
-              </div>
-
               {modoManual && (
                 <div className="bg-orange-50 p-3 rounded-lg">
                   <p className="text-sm text-orange-800 flex items-center gap-2">
@@ -447,7 +449,7 @@ export function SmartUbicacionFormV2({
                 </div>
               )}
 
-              {/* NUEVO: Mensaje cuando el formulario está oculto */}
+              {/* Mensaje cuando el formulario está oculto */}
               {!mostrarDomicilio && (
                 <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
                   <p className="text-sm text-gray-600 flex items-center gap-2 justify-center">
@@ -459,7 +461,7 @@ export function SmartUbicacionFormV2({
             </div>
           </div>
 
-          {/* NUEVO: Campos de domicilio condicionalmente visibles */}
+          {/* Campos de domicilio condicionalmente visibles */}
           {mostrarDomicilio && (
             <div className="space-y-4">
               <Label className="flex items-center gap-2 font-medium">
@@ -467,6 +469,7 @@ export function SmartUbicacionFormV2({
                 Domicilio
               </Label>
 
+              {/* ... keep existing domicilio fields the same ... */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="pais">País *</Label>

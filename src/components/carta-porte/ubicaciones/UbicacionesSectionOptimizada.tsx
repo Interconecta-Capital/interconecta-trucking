@@ -7,6 +7,7 @@ import { UbicacionesValidation } from './UbicacionesValidation';
 import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesRouteInfo } from './UbicacionesRouteInfo';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
+import { DistanceCalculator } from './DistanceCalculator';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,6 +28,9 @@ export function UbicacionesSectionOptimizada({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
+  const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   
   const { toast } = useToast();
   
@@ -86,11 +90,11 @@ export function UbicacionesSectionOptimizada({
         errores.push('El tipo de ubicación es requerido');
       }
       
-      if (!ubicacionData.rfcRemitenteDestinatario) {
+      if (ubicacionData.tipoUbicacion !== 'Paso Intermedio' && !ubicacionData.rfcRemitenteDestinatario) {
         errores.push('El RFC es requerido');
       }
       
-      if (!ubicacionData.nombreRemitenteDestinatario) {
+      if (ubicacionData.tipoUbicacion !== 'Paso Intermedio' && !ubicacionData.nombreRemitenteDestinatario) {
         errores.push('El nombre es requerido');
       }
       
@@ -100,6 +104,12 @@ export function UbicacionesSectionOptimizada({
       
       if (!ubicacionData.domicilio?.calle) {
         errores.push('La calle es requerida');
+      }
+
+      // Validar fecha y hora para origen y destino
+      if ((ubicacionData.tipoUbicacion === 'Origen' || ubicacionData.tipoUbicacion === 'Destino') && 
+          !ubicacionData.fechaHoraSalidaLlegada) {
+        errores.push(`La fecha y hora ${ubicacionData.tipoUbicacion === 'Origen' ? 'de salida' : 'de llegada'} es requerida`);
       }
 
       if (errores.length > 0) {
@@ -173,6 +183,34 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
+  // NUEVO: Manejar cálculo de distancia total
+  const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
+    setIsCalculatingDistance(true);
+    try {
+      // Simular delay de cálculo
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setDistanciaTotal(distancia);
+      setTiempoEstimado(tiempo);
+      
+      // TODO: Guardar en la carta porte (campo totalDistRec)
+      // Esto se podría hacer enviando al componente padre o guardando en el hook
+      
+      toast({
+        title: "Distancia calculada",
+        description: `Distancia total: ${distancia} km. Tiempo estimado: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al calcular la distancia total.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCalculatingDistance(false);
+    }
+  };
+
   const handleSaveToFavorites = (ubicacion: any) => {
     // Implementation for saving to favorites
     toast({
@@ -182,7 +220,7 @@ export function UbicacionesSectionOptimizada({
   };
 
   const validacion = validarSecuenciaUbicaciones();
-  const distanciaTotal = calcularDistanciaTotal();
+  const distanciaCalculada = calcularDistanciaTotal();
   const canCalculateDistances = ubicaciones.length >= 2;
   const canContinue = ubicaciones.length > 0 && validacion.esValido;
 
@@ -213,8 +251,19 @@ export function UbicacionesSectionOptimizada({
 
       <UbicacionesValidation
         validacion={validacion}
-        distanciaTotal={distanciaTotal}
+        distanciaTotal={distanciaCalculada}
       />
+
+      {/* NUEVO: Calculadora de distancia prominente */}
+      {canCalculateDistances && (
+        <DistanceCalculator
+          ubicaciones={ubicaciones}
+          onDistanceCalculated={handleDistanceCalculated}
+          distanciaTotal={distanciaTotal}
+          tiempoEstimado={tiempoEstimado}
+          isCalculating={isCalculatingDistance}
+        />
+      )}
 
       <CardContent>
         <UbicacionesList
