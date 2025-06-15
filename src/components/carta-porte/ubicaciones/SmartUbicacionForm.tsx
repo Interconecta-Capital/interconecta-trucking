@@ -42,92 +42,29 @@ export function SmartUbicacionForm({
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
-  // --- NUEVA LÓGICA AddressAutocomplete Mapbox + Fallback por CP ---
-  // Valor del campo/autocompletado para toda la dirección
-  const [addressSearch, setAddressSearch] = React.useState("");
-  const [addressAutocompleteEnabled, setAddressAutocompleteEnabled] = React.useState(true); // Flag para permitir ignorar Mapbox
-
-  // Para obtener todos los componentes de dirección via Mapbox (GeocodeResult)
-  const { mapService } = require('@/services/mapService');
-  const parseMapboxAddress = async (address: string) => {
-    if (!address) return;
-    const result = await mapService.geocodeAddress(address);
-    if (result && result.formattedAddress) {
-      // Intentar parsear todos los componentes del resultado. Mapbox da una cadena compuesta, intentamos extracción básica.
-      // En producción, lo ideal sería usar data.features[0].context para granularidad.
-      // Aquí haremos el mejor esfuerzo con el `place_name` y `center`.
-      // Dividimos por comas y tratamos de asignar calle, colonia, municipio, estado, CP.
-      const segments = result.formattedAddress.split(",");
-      // Ejemplo: Av. Madero 123, Col. Roma, Cuauhtémoc, CDMX, 06700, México
-      let calle = segments[0]?.trim() || "";
-      let colonia = "";
-      let municipio = "";
-      let estado = "";
-      let codigoPostal = "";
-      let pais = "México";
-      segments.forEach((s) => {
-        // Asignaciones heurísticas
-        if (s.match(/\d{5}/)) codigoPostal = s.match(/\d{5}/)?.[0] || codigoPostal;
-        else if (s.toLowerCase().includes("col.") || s.toLowerCase().includes("fracc.")) colonia = s.trim();
-        else if (!municipio && (s.endsWith("mx") || s.endsWith("xico") || ["CDMX", "Queretaro", "Jalisco"].some(e => s.includes(e)))) estado = s.trim();
-        else if (!municipio) municipio = s.trim();
-      });
-
-      // Llenar el formulario automáticamente
-      handleFieldChange("domicilio.calle", calle);
-      handleFieldChange("domicilio.colonia", colonia);
-      handleFieldChange("domicilio.estado", estado);
-      handleFieldChange("domicilio.municipio", municipio);
-      handleFieldChange("domicilio.codigoPostal", codigoPostal);
-      handleFieldChange("domicilio.pais", pais);
-      // Guardar coordenadas si disponible
-      if (result.coordinates) {
-        handleFieldChange("coordenadas", {
-          latitud: result.coordinates.lat,
-          longitud: result.coordinates.lng
-        });
-      }
-    }
-  };
-
-  const handleAddressAutocompleteChange = async (dir: string) => {
-    setAddressSearch(dir);
-    await parseMapboxAddress(dir);
-  };
-
-  // Para el domicilio: actualizar CP => autollenar estado, municipio, colonias si se reconoce (API CP)
-  const fetchCPData = async (cp: string) => {
-    if (cp && cp.length === 5) {
-      // Usa el servicio CP de forma dinámica
-      try {
-        const { codigosPostalesService } = require('@/services/codigosPostalesService');
-        const res = await codigosPostalesService.buscarDireccionPorCP(cp);
-        if (res && res.data) {
-          handleFieldChange("domicilio.estado", res.data.estado);
-          handleFieldChange("domicilio.municipio", res.data.municipio);
-          handleFieldChange("domicilio.colonia", Array.isArray(res.data.colonias) && res.data.colonias[0]?.nombre ? res.data.colonias[0].nombre : '');
-        }
-      } catch (err) {
-        // No interrumpe formulario
-      }
-    }
-  };
-
   const handleDomicilioChange = (campo: keyof DomicilioUnificado, valor: string) => {
     handleFieldChange(`domicilio.${campo}`, valor);
-    // Si cambian el CP directamente, actualizar dependientes
-    if (campo === "codigoPostal") {
-      fetchCPData(valor);
-    }
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.tipoUbicacion?.trim()) newErrors.tipoUbicacion = 'Seleccione el tipo de ubicación';
-    if (!formData.rfcRemitenteDestinatario?.trim()) newErrors.rfc = 'El RFC es requerido';
-    if (!formData.nombreRemitenteDestinatario?.trim()) newErrors.nombre = 'El nombre es requerido';
-    if (!formData.domicilio.codigoPostal?.trim()) newErrors.codigoPostal = 'El código postal es requerido';
-    if (!formData.domicilio.calle?.trim()) newErrors.calle = 'La calle es requerida';
+
+    if (!formData.rfcRemitenteDestinatario?.trim()) {
+      newErrors.rfc = 'El RFC es requerido';
+    }
+
+    if (!formData.nombreRemitenteDestinatario?.trim()) {
+      newErrors.nombre = 'El nombre es requerido';
+    }
+
+    if (!formData.domicilio.codigoPostal?.trim()) {
+      newErrors.codigoPostal = 'El código postal es requerido';
+    }
+
+    if (!formData.domicilio.calle?.trim()) {
+      newErrors.calle = 'La calle es requerida';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -151,7 +88,6 @@ export function SmartUbicacionForm({
     }
   };
 
-  // --- UI ---
   return (
     <Card className="w-full">
       <CardHeader>
@@ -188,18 +124,16 @@ export function SmartUbicacionForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="tipoUbicacion">Tipo de Ubicación *</Label>
-              <Select value={formData.tipoUbicacion || ''} onValueChange={handleTipoChange}>
+              <Select value={formData.tipoUbicacion} onValueChange={handleTipoChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar tipo de ubicación..." />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Seleccionar...</SelectItem>
                   <SelectItem value="Origen">Origen</SelectItem>
                   <SelectItem value="Destino">Destino</SelectItem>
                   <SelectItem value="Paso Intermedio">Paso Intermedio</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.tipoUbicacion && <p className="text-sm text-red-500 mt-1">{errors.tipoUbicacion}</p>}
             </div>
 
             <div>
@@ -239,32 +173,6 @@ export function SmartUbicacionForm({
             </div>
           </div>
 
-          {/* AddressAutocomplete-mapbox (buscador avanzado, rellena campos domicilio) */}
-          {addressAutocompleteEnabled && (
-            <div>
-              <Label className='flex items-center gap-2 mb-1'>Buscar Dirección con Mapbox</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ej: Av. Madero 123, CDMX"
-                  value={addressSearch}
-                  onChange={e => handleAddressAutocompleteChange(e.target.value)}
-                />
-                <Button type="button" variant="secondary" onClick={() => setAddressAutocompleteEnabled(false)}>
-                  Prefiero ingresar manual
-                </Button>
-              </div>
-              <div className="text-xs text-muted-foreground mb-2">Busca y selecciona la dirección, se llenarán los campos debajo automáticamente.</div>
-            </div>
-          )}
-          {!addressAutocompleteEnabled && (
-            <div>
-              <Button type="button" variant="secondary" onClick={() => setAddressAutocompleteEnabled(true)}>
-                Usar autocompletado Mapbox
-              </Button>
-            </div>
-          )}
-
-          {/* Domicilio: igual que antes, pero ahora sus campos pueden autollenarse */}
           <div>
             <Label className="flex items-center gap-2 mb-4">
               <MapPin className="h-4 w-4" />
@@ -273,7 +181,7 @@ export function SmartUbicacionForm({
             <FormularioDomicilioUnificado
               domicilio={{
                 ...formData.domicilio,
-                numExterior: formData.domicilio.numExterior || '' 
+                numExterior: formData.domicilio.numExterior || '' // Ensure required field
               }}
               onDomicilioChange={handleDomicilioChange}
               camposOpcionales={['numInterior', 'referencia', 'localidad']}

@@ -13,8 +13,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
   const [formData, setFormData] = useState<Ubicacion>({
     id: initialData?.id || '',
     idUbicacion: initialData?.idUbicacion || '',
-    // CAMBIO: valor por defecto vacío, obliga a usuario a seleccionar
-    tipoUbicacion: initialData?.tipoUbicacion || '',
+    tipoUbicacion: initialData?.tipoUbicacion || 'Origen',
     rfcRemitenteDestinatario: initialData?.rfcRemitenteDestinatario || '',
     nombreRemitenteDestinatario: initialData?.nombreRemitenteDestinatario || '',
     fechaHoraSalidaLlegada: initialData?.fechaHoraSalidaLlegada || '',
@@ -63,24 +62,18 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
   }, []);
 
   const handleTipoChange = useCallback((tipo: string) => {
-    // CAMBIO: Solo permite selecciona si es O, D o PI (y generaId sigue funcionando)
-    if (!tipo) {
-      setFormData(prev => ({
-        ...prev,
-        tipoUbicacion: ''
-      }));
-      return;
-    }
     const newId = generarId ? generarId(tipo as 'Origen' | 'Destino' | 'Paso Intermedio') : `${tipo}_${Date.now()}`;
     setFormData(prev => ({
       ...prev,
-      tipoUbicacion: tipo as 'Origen' | 'Destino' | 'Paso Intermedio',
+      tipoUbicacion: tipo as 'Origen' | 'Destino',
       idUbicacion: newId
     }));
   }, [generarId]);
 
   const handleRFCChange = useCallback((rfc: string) => {
     setFormData(prev => ({ ...prev, rfcRemitenteDestinatario: rfc.toUpperCase() }));
+    
+    // Basic RFC validation
     const rfcRegex = /^[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
     if (rfc && !rfcRegex.test(rfc.toUpperCase())) {
       setRfcValidation({ 
@@ -118,10 +111,8 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     }));
   }, []);
 
-  // CAMBIO: Validar que tipoUbicacion está seleccionado explícitamente
   const isFormValid = useCallback(() => {
     return !!(
-      formData.tipoUbicacion && // Obligatorio para avanzar
       formData.rfcRemitenteDestinatario &&
       formData.nombreRemitenteDestinatario &&
       formData.domicilio.codigoPostal &&
