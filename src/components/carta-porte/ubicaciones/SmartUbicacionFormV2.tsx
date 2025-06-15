@@ -78,16 +78,15 @@ export function SmartUbicacionFormV2({
 
     // Helper: Detectar código postal
     const cpRegex = /\b\d{5}\b/;
-    // Listado parcial de estados para robustez
+    // Listado de estados
     const knownStates = [
       "aguascalientes","baja california sur","baja california","campeche","chiapas","chihuahua",
       "ciudad de méxico","cdmx","coahuila","colima","durango","guanajuato","guerrero","hidalgo",
-      "jalisco","méxico","michoacán","morelos","nayarit","nuevo león","oaxaca","puebla","querétaro",
+      "jalisco","méxico","mexico","michoacán","morelos","nayarit","nuevo león","oaxaca","puebla","querétaro",
       "quintana roo","san luis potosí","sinaloa","sonora","tabasco","tamaulipas","tlaxcala","veracruz","yucatán","zacatecas"
     ];
 
-    // Si el context viene vacío, deducir todo de place_name
-    let cpIndex = -1, stateIndex = -1, municipioIndex = -1;
+    let cpIndex = -1, stateIndex = -1;
     for (let i=0; i < addressParts.length; i++) {
       if (cpIndex === -1 && cpRegex.test(addressParts[i])) cpIndex = i;
       if (stateIndex === -1 && knownStates.some(
@@ -110,20 +109,44 @@ export function SmartUbicacionFormV2({
       }
     }
 
-    // Municipio: usualmente parte anterior al estado
-    if (stateIndex > 0) {
+    // NUEVO: Municipio -> solo nombre (NUNCA debe traer el CP, corregido)
+    // Buscamos la parte municipio cercana al CP o estado
+    // Muchos place_name usan el formato: [calle, codigoPostal municipio, estado, pais]
+    // Detectar si addressParts[cpIndex] tiene ambos (CP y municipio), separar.
+    if (cpIndex !== -1 && cpIndex + 1 <= addressParts.length) {
+      // Ejemplo addressParts[cpIndex]: "56386 Chicoloapan de Juárez"
+      // Buscamos el municipio separado del CP
+      const municipioWithCP = addressParts[cpIndex];
+      const municipioMatch = municipioWithCP.match(/\b\d{5}\b\s*(.+)/);
+      if (municipioMatch && municipioMatch[1]) {
+        parsedData.municipio = municipioMatch[1];
+        camposCompletados.add('municipio');
+      } else if (
+        cpRegex.test(municipioWithCP) && municipioWithCP.length > 7 // Si hay más que CP solo
+      ) {
+        // Remove CP and trim
+        parsedData.municipio = municipioWithCP.replace(cpRegex, '').trim();
+        camposCompletados.add('municipio');
+      } else if (cpIndex + 1 < addressParts.length && stateIndex > cpIndex + 1) {
+        // A veces formato: [calle, CP, municipio, estado, pais]
+        parsedData.municipio = addressParts[cpIndex + 1];
+        camposCompletados.add('municipio');
+      }
+    } else if (stateIndex > 0) {
+      // Fallback: municipio antes de estado si no hay CP típico
       parsedData.municipio = addressParts[stateIndex - 1];
       camposCompletados.add('municipio');
     }
 
-    // Colonia: Si el fragmento anterior a municipio NO es el CP ni estado ni el nombre de la calle
-    if (municipioIndex === -1 && stateIndex > 1) {
-      // Validar que la colonia no sea igual al municipio ni CP ni esté vacía
-      let posibleColonia = addressParts[stateIndex - 2];
-      if (posibleColonia
-          && posibleColonia !== parsedData.municipio
-          && !cpRegex.test(posibleColonia)
-          && posibleColonia !== addressParts[0]) {
+    // Colonia: nunca debe ser el CP ni municipio
+    if (stateIndex > 1) {
+      const posibleColonia = addressParts[stateIndex - 2];
+      if (
+        posibleColonia &&
+        posibleColonia !== parsedData.municipio &&
+        !cpRegex.test(posibleColonia) &&
+        posibleColonia !== addressParts[0]
+      ) {
         parsedData.colonia = posibleColonia;
         camposCompletados.add('colonia');
       }
@@ -132,7 +155,6 @@ export function SmartUbicacionFormV2({
     // Calle y número exterior (primer fragmento)
     if (addressParts.length > 0) {
       const streetPart = addressParts[0];
-      // Extraer número exterior si está al final (número limpio)
       const numberMatch = streetPart.match(/(.*?)(\d+[a-zA-Z\-]*)$/);
       if (numberMatch) {
         parsedData.calle = numberMatch[1].trim().replace(/[,#]$/, '');
@@ -379,26 +401,29 @@ export function SmartUbicacionFormV2({
           {/* Sección de búsqueda de dirección */}
           <div className="border-t pt-4">
             <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <Label className="flex items-center gap-2 mb-3 font-medium">
-                  <Search className="h-4 w-4" />
-                  Buscar Dirección Completa
-                </Label>
-                <AddressAutocomplete
-                  value={searchAddress}
-                  onChange={handleSearchAddressChange}
-                  onAddressSelect={handleMapboxAddressSelect}
-                  placeholder="Escribe la dirección completa para autocompletado..."
-                  className="w-full"
-                />
-                {errors.address && <p className="text-sm text-red-500 mt-2">{errors.address}</p>}
-                
-                {direccionSeleccionada && !modoManual && (
-                  <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
-                    ✅ Dirección encontrada. Los campos detectados están protegidos, los faltantes se pueden editar.
-                  </div>
-                )}
-              </div>
+              {/* SOLO mostrar autocomplete si NO está en modo manual */}
+              {!modoManual && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <Label className="flex items-center gap-2 mb-3 font-medium">
+                    <Search className="h-4 w-4" />
+                    Buscar Dirección Completa
+                  </Label>
+                  <AddressAutocomplete
+                    value={searchAddress}
+                    onChange={handleSearchAddressChange}
+                    onAddressSelect={handleMapboxAddressSelect}
+                    placeholder="Escribe la dirección completa para autocompletado..."
+                    className="w-full"
+                  />
+                  {errors.address && <p className="text-sm text-red-500 mt-2">{errors.address}</p>}
+                  
+                  {direccionSeleccionada && !modoManual && (
+                    <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
+                      ✅ Dirección encontrada. Los campos detectados están protegidos, los faltantes se pueden editar.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Control de modo manual */}
               <div className="flex items-center space-x-2">
