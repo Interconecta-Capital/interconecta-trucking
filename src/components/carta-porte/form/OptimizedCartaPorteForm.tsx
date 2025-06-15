@@ -1,8 +1,10 @@
+
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
 import { CartaPorteHeader } from './CartaPorteHeader';
 import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
+import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
@@ -13,6 +15,8 @@ interface OptimizedCartaPorteFormProps {
 }
 
 const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorteId }) => {
+  const navigate = useNavigate();
+  
   const {
     // State
     configuracion,
@@ -24,6 +28,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     currentCartaPorteId,
     borradorCargado,
     ultimoGuardado,
+    validationSummary,
+    isGuardando,
     
     // Setters
     setUbicaciones,
@@ -38,6 +44,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleConfiguracionChange,
     handleGuardarBorrador,
     handleLimpiarBorrador,
+    cargarBorrador,
   } = useCartaPorteFormManager();
 
   // Optimizar datos del formulario con memoización inteligente
@@ -119,14 +126,37 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setAutotransporte(safeData);
   }, [setAutotransporte]);
 
-  // Guardar y salir: guarda el borrador y navega al listado
-  const navigate = useNavigate();
-  const handleGuardarYSalir = async () => {
-    if (typeof handleGuardarBorrador === 'function') {
+  // Guardar y salir mejorado
+  const handleGuardarYSalir = useCallback(async () => {
+    try {
       await handleGuardarBorrador();
+      navigate('/cartas-porte');
+    } catch (error) {
+      console.error('Error guardando antes de salir:', error);
+      // Permitir salir aunque falle el guardado
+      navigate('/cartas-porte');
     }
-    navigate('/cartas-porte');
-  };
+  }, [handleGuardarBorrador, navigate]);
+
+  // Manejar navegación entre pasos con validación
+  const handleStepNavigation = useCallback((targetStep: number) => {
+    // Permitir navegación hacia atrás siempre
+    if (targetStep < currentStep) {
+      setCurrentStep(targetStep);
+      return;
+    }
+
+    // Para avanzar, verificar que el paso actual tenga datos mínimos
+    const currentSectionKeys = ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'];
+    const currentSectionKey = currentSectionKeys[currentStep];
+    
+    if (currentSectionKey && validationSummary.sectionStatus[currentSectionKey] === 'empty') {
+      // No permitir avanzar si la sección actual está vacía
+      return;
+    }
+
+    setCurrentStep(targetStep);
+  }, [currentStep, setCurrentStep, validationSummary.sectionStatus]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -136,8 +166,19 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         onGuardarBorrador={handleGuardarBorrador}
         onLimpiarBorrador={handleLimpiarBorrador}
         onGuardarYSalir={handleGuardarYSalir}
+        isGuardando={isGuardando}
       />
 
+      {/* Indicador de progreso mejorado */}
+      <div className="mb-6">
+        <CartaPorteProgressIndicator
+          validationSummary={validationSummary}
+          currentStep={currentStep}
+          onStepClick={handleStepNavigation}
+        />
+      </div>
+
+      {/* Tracker de progreso original */}
       <CartaPorteProgressTracker
         currentStep={currentStep}
         totalSteps={steps.length}
