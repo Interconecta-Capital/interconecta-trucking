@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -30,7 +29,6 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
         updates.viaTransporte = data.viaTransporte || '01';
     }
 
-
     onChange(updates);
   };
 
@@ -42,17 +40,16 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
     onChange({ [field]: value });
   };
 
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
+            {/* Cambiado: eliminado el disabled por tipoCfdi */}
             <Switch
               id="transporte-internacional"
               checked={isTransporteInternacional}
               onCheckedChange={handleTransporteInternacionalChange}
-              disabled={data.tipoCfdi === 'Ingreso'}
             />
             <Label htmlFor="transporte-internacional">
               Transporte Internacional

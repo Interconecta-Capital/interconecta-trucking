@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,8 +29,6 @@ const ConfiguracionPrincipalMejoradaComponent = ({
         nombreEmisor: '',
         rfcReceptor: '',
         nombreReceptor: '',
-        // Resetear transporte internacional al cambiar, para evitar bugs
-        transporteInternacional: 'No',
       });
     }
   };
