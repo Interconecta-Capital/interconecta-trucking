@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,10 +44,9 @@ export function SmartUbicacionFormV2({
 
   // Función mejorada para parsear direcciones mexicanas de Mapbox
   const parseMapboxAddress = (addressData: any) => {
-    console.log('Parseando dirección de Mapbox:', addressData);
+    console.log('Parseando dirección de Mapbox desde place_name:', addressData.place_name);
     
     const placeName = addressData.place_name || '';
-    const context = addressData.context || [];
     
     let parsedData = {
       pais: 'México',
@@ -71,36 +69,6 @@ export function SmartUbicacionFormV2({
         latitud: addressData.center[1]
       };
     }
-
-    // Usar el contexto de Mapbox para información precisa con múltiples fallbacks
-    context.forEach((item: any) => {
-      const id = item.id || '';
-      const text = item.text || '';
-      
-      // Código postal con múltiples variantes
-      if (id.startsWith('postcode') || id.includes('postal')) {
-        parsedData.codigoPostal = text;
-        console.log('CP encontrado:', text);
-      }
-      
-      // Estado con múltiples variantes
-      else if (id.startsWith('region') || id.includes('admin_area_1') || id.includes('state')) {
-        parsedData.estado = text;
-        console.log('Estado encontrado:', text);
-      }
-      
-      // Municipio con múltiples variantes
-      else if (id.startsWith('place') || id.includes('admin_area_2') || id.includes('city')) {
-        parsedData.municipio = text;
-        console.log('Municipio encontrado:', text);
-      }
-      
-      // Colonia con múltiples variantes
-      else if (id.startsWith('district') || id.startsWith('locality') || id.includes('neighborhood')) {
-        parsedData.colonia = text;
-        console.log('Colonia encontrada:', text);
-      }
-    });
 
     // Parsear calle y número del place_name de manera más inteligente
     const addressParts = placeName.split(', ');
@@ -146,12 +114,40 @@ export function SmartUbicacionFormV2({
 
     // Buscar estado en place_name si no se encontró
     if (!parsedData.estado) {
-      const estadosPattern = /(Ciudad de México|CDMX|México|Jalisco|Nuevo León|Puebla|Guanajuato|Veracruz|Chihuahua|Sonora|Coahuila|Michoacán|Oaxaca|Chiapas|Guerrero|Tamaulipas|Baja California|Sinaloa|Hidalgo|San Luis Potosí|Tabasco|Yucatán|Querétaro|Morelos|Durango|Zacatecas|Aguascalientes|Tlaxcala|Nayarit|Campeche|Colima|Quintana Roo)/i;
+      const estados = ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua", "Ciudad de México", "CDMX", "Coahuila", "Colima", "Durango", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "México", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"];
+      const estadosPattern = new RegExp(`(?<=[, ])(${estados.join('|')})(?=[,]|$)`, 'i');
       const estadoMatch = placeName.match(estadosPattern);
       if (estadoMatch) {
-        parsedData.estado = estadoMatch[1];
-        console.log('Estado encontrado en place_name:', estadoMatch[1]);
+        let estadoEncontrado = estadoMatch[0];
+        if (estadoEncontrado.toUpperCase() === 'CDMX') {
+            estadoEncontrado = 'Ciudad de México';
+        }
+        parsedData.estado = estadoEncontrado;
+        console.log('Estado encontrado en place_name:', estadoEncontrado);
       }
+    }
+    
+    // Heurística para municipio y colonia usando las partes de la dirección
+    if (addressParts.length > 1 && parsedData.estado) {
+        const estadoIndex = addressParts.findIndex(p => p.toLowerCase().includes(parsedData.estado.toLowerCase()));
+        if (estadoIndex > 0) {
+            const municipioCandidato = addressParts[estadoIndex - 1];
+            // Asegurarse que no sea el CP
+            if (municipioCandidato && !/\d{5}/.test(municipioCandidato)) {
+                parsedData.municipio = municipioCandidato;
+                console.log('Municipio encontrado:', municipioCandidato);
+            }
+        }
+        if (estadoIndex > 1) {
+            const coloniaCandidata = addressParts[estadoIndex - 2];
+             if (coloniaCandidata && coloniaCandidata.toLowerCase() !== addressParts[0].toLowerCase()) {
+                parsedData.colonia = coloniaCandidata;
+                console.log('Colonia encontrada:', coloniaCandidata);
+            }
+        } else if (addressParts.length > 1 && parsedData.calle !== addressParts[1]) {
+            // Fallback para colonia si es la segunda parte
+            parsedData.colonia = addressParts[1];
+        }
     }
 
     console.log('Datos parseados finales:', parsedData);
@@ -267,12 +263,18 @@ export function SmartUbicacionFormV2({
   };
 
   // Determinar qué campos están bloqueados
-  // Solo colonia, número interior, localidad y referencia son siempre editables
+  // Lógica corregida: Los campos se bloquean si no estamos en modo manual.
   const isFieldLocked = (field: string) => {
-    if (modoManual) return false; // En modo manual todo está desbloqueado
+    if (modoManual) return false;
     
     const alwaysEditableFields = ['colonia', 'numInterior', 'localidad', 'referencia'];
-    return !alwaysEditableFields.includes(field) && !direccionSeleccionada;
+    if (alwaysEditableFields.includes(field)) {
+      return false;
+    }
+
+    // Si no es un campo siempre editable, se bloquea a menos que estemos en modo manual.
+    // Esto fuerza al usuario a usar el autocompletado o activar explícitamente el modo manual.
+    return true;
   };
 
   // Determinar si los campos RFC/Nombre son necesarios
@@ -428,9 +430,6 @@ export function SmartUbicacionFormV2({
                 {direccionSeleccionada && !modoManual && (
                   <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
                     ✅ Dirección encontrada. Campos principales completados automáticamente.
-                    {!formData.domicilio.colonia && (
-                      <span className="ml-2 text-orange-700">⚠️ Colonia no detectada - completar manualmente</span>
-                    )}
                   </div>
                 )}
                 
@@ -526,11 +525,11 @@ export function SmartUbicacionFormV2({
                   id="colonia"
                   value={formData.domicilio.colonia}
                   onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
-                  placeholder="Siempre editable"
-                  className="bg-white" // Siempre editable
+                  placeholder="Colonia"
+                  className="bg-white"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Campo siempre editable - Mapbox no siempre detecta la colonia
+                  Verifique este campo; el autocompletado puede no ser preciso.
                 </p>
               </div>
             </div>
@@ -565,21 +564,21 @@ export function SmartUbicacionFormV2({
                   id="numInterior"
                   value={formData.domicilio.numInterior}
                   onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
-                  placeholder="Siempre editable"
-                  className="bg-white" // Siempre editable
+                  placeholder="Ej: 1A, Local 2"
+                  className="bg-white"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="localidad">Localidad (Opcional para Carta Porte)</Label>
+                <Label htmlFor="localidad">Localidad</Label>
                 <Input
                   id="localidad"
                   value={formData.domicilio.localidad}
                   onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
-                  placeholder="Siempre editable"
-                  className="bg-white" // Siempre editable
+                  placeholder="Localidad o población"
+                  className="bg-white"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Campo opcional según normativa de Carta Porte
@@ -592,8 +591,8 @@ export function SmartUbicacionFormV2({
                   id="referencia"
                   value={formData.domicilio.referencia}
                   onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
-                  placeholder="Siempre editable"
-                  className="bg-white" // Siempre editable
+                  placeholder="Ej: Entre calles, color de fachada"
+                  className="bg-white"
                 />
               </div>
             </div>

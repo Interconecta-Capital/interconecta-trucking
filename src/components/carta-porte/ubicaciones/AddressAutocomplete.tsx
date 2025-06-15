@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -104,7 +103,9 @@ export function AddressAutocomplete({
     onChange('');
     
     if (onAddressSelect) {
-      // Crear estructura compatible con el componente padre
+      // Crear estructura compatible con el componente padre.
+      // Se elimina la simulación de 'context' para mayor fiabilidad.
+      // El componente padre ahora parseará 'place_name' directamente.
       const mapboxData = {
         place_name: suggestion.formattedAddress,
         center: suggestion.coordinates ? [suggestion.coordinates.lng, suggestion.coordinates.lat] : null,
@@ -112,15 +113,6 @@ export function AddressAutocomplete({
         properties: {
           address: suggestion.formattedAddress
         },
-        // Simular contexto de Mapbox basado en los datos disponibles
-        context: [
-          ...(suggestion.formattedAddress.includes('México') ? [{ id: 'country', text: 'México' }] : []),
-          // Extraer código postal si está presente
-          ...(suggestion.formattedAddress.match(/\b(\d{5})\b/) ? [{
-            id: 'postcode',
-            text: suggestion.formattedAddress.match(/\b(\d{5})\b/)?.[1] || ''
-          }] : [])
-        ],
         ...suggestion
       };
       
