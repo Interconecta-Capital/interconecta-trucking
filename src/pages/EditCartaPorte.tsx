@@ -1,9 +1,9 @@
 
 import { useParams } from 'react-router-dom';
-import { OptimizedCartaPorteForm } from '@/components/carta-porte/form/OptimizedCartaPorteForm';
+import { CartaPorteForm } from '@/components/carta-porte/CartaPorteForm';
 
 export default function EditCartaPorte() {
   const { id } = useParams<{ id: string }>();
   
-  return <OptimizedCartaPorteForm cartaPorteId={id} />;
+  return <CartaPorteForm cartaPorteId={id} />;
 }

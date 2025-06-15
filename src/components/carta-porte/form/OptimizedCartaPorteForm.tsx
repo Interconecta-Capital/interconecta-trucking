@@ -1,21 +1,18 @@
 
-import React, { memo, useMemo, useCallback, useState } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
-import { CartaPorteHeaderMejorado } from './CartaPorteHeaderMejorado';
+import { CartaPorteHeader } from './CartaPorteHeader';
 import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
-import { BorradorServiceExtendido } from '@/services/borradorServiceExtendido';
 
 interface OptimizedCartaPorteFormProps {
   cartaPorteId?: string;
 }
 
 const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorteId }) => {
-  const [isSaving, setIsSaving] = useState(false);
-  
   const {
     // State
     configuracion,
@@ -36,7 +33,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setCurrentStep,
     setXmlGenerated,
     setTimbradoData,
-    setCurrentCartaPorteId,
     
     // Handlers
     handleConfiguracionChange,
@@ -123,52 +119,13 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setAutotransporte(safeData);
   }, [setAutotransporte]);
 
-  // Mejorado: Guardar borrador y continuar
-  const handleGuardarBorradorMejorado = useCallback(async () => {
-    setIsSaving(true);
-    try {
-      const id = await BorradorServiceExtendido.guardarBorradorSupabase(
-        optimizedConfiguracion, 
-        currentCartaPorteId || undefined
-      );
-      
-      if (id && !currentCartaPorteId) {
-        setCurrentCartaPorteId(id);
-      }
-    } catch (error) {
-      console.error('Error guardando borrador:', error);
-      throw error;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [optimizedConfiguracion, currentCartaPorteId, setCurrentCartaPorteId]);
-
-  // Nuevo: Guardar borrador y salir
-  const handleGuardarYSalir = useCallback(async () => {
-    await handleGuardarBorradorMejorado();
-    // Navigation is handled in the header component
-  }, [handleGuardarBorradorMejorado]);
-
-  // Mejorado: Limpiar borrador
-  const handleLimpiarBorradorMejorado = useCallback(async () => {
-    try {
-      await BorradorServiceExtendido.limpiarBorrador(currentCartaPorteId || undefined);
-      handleLimpiarBorrador();
-    } catch (error) {
-      console.error('Error limpiando borrador:', error);
-    }
-  }, [currentCartaPorteId, handleLimpiarBorrador]);
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <CartaPorteHeaderMejorado
+      <CartaPorteHeader
         borradorCargado={borradorCargado}
         ultimoGuardado={ultimoGuardado}
-        isSaving={isSaving}
-        onGuardarBorrador={handleGuardarBorradorMejorado}
-        onGuardarYSalir={handleGuardarYSalir}
-        onLimpiarBorrador={handleLimpiarBorradorMejorado}
-        currentCartaPorteId={currentCartaPorteId || undefined}
+        onGuardarBorrador={handleGuardarBorrador}
+        onLimpiarBorrador={handleLimpiarBorrador}
       />
 
       <CartaPorteProgressTracker

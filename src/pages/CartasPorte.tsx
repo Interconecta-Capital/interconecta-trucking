@@ -14,45 +14,19 @@ import { PlanNotifications } from '@/components/common/PlanNotifications';
 
 export default function CartasPorte() {
   const navigate = useNavigate();
-  const { cartasPorte, loading, eliminarCartaPorte } = useCartasPorte();
+  const { cartasPorte, loading } = useCartasPorte();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('todos');
 
   const handleNewCartaPorte = () => {
     navigate('/cartas-porte/nueva');
   };
 
-  const handleDeleteCartaPorte = async (id: string) => {
-    try {
-      await eliminarCartaPorte(id);
-    } catch (error) {
-      console.error('Error eliminando carta porte:', error);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setStatusFilter('todos');
-    setSearchTerm('');
-  };
-
-  // Apply filters
-  const filteredCartas = cartasPorte.filter(carta => {
-    const matchesSearch = 
-      carta.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      carta.rfc_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      carta.rfc_receptor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      carta.nombre_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      carta.nombre_receptor?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'todos' || carta.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  // Separate drafts and completed for better organization
-  const borradores = filteredCartas.filter(carta => carta.status === 'borrador');
-  const completadas = filteredCartas.filter(carta => carta.status !== 'borrador');
+  const filteredCartas = cartasPorte.filter(carta =>
+    carta.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    carta.rfc_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    carta.rfc_receptor?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <ProtectedContent requiredFeature="cartas_porte">
@@ -84,7 +58,7 @@ export default function CartasPorte() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por folio, RFC, nombre de emisor o receptor..."
+              placeholder="Buscar por folio, RFC emisor o receptor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -101,31 +75,13 @@ export default function CartasPorte() {
 
         {/* Filtros adicionales */}
         {showFilters && (
-          <CartasPorteFilters 
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            onClearFilters={handleClearFilters}
-          />
-        )}
-
-        {/* Summary */}
-        {!loading && (
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Total: {filteredCartas.length}</span>
-            {borradores.length > 0 && (
-              <span className="text-orange-600">Borradores: {borradores.length}</span>
-            )}
-            {completadas.length > 0 && (
-              <span className="text-green-600">Completadas: {completadas.length}</span>
-            )}
-          </div>
+          <CartasPorteFilters />
         )}
 
         {/* Tabla */}
         <CartasPorteTable 
           cartasPorte={filteredCartas}
           loading={loading}
-          onDelete={handleDeleteCartaPorte}
         />
       </div>
     </ProtectedContent>
