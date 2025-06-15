@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { useCartaPorteSync } from './useCartaPorteSync';
@@ -27,10 +26,6 @@ export const useCartaPorteIntegration = ({
   const { 
     formDataToCartaPorteData, 
     cartaPorteDataToFormData,
-    formAutotransporteToData,
-    dataAutotransporteToForm,
-    formFigurasToData,
-    dataFigurasToForm
   } = useCartaPorteMappers();
   
   const { updateCartaPorte } = useCartaPorteSync({
@@ -80,8 +75,7 @@ export const useCartaPorteIntegration = ({
 
   // Guardar carta porte en base de datos
   const saveCartaPorte = useCallback(async (data?: CartaPorteFormData) => {
-    const dataToSave = data || formData;
-    await updateCartaPorte(dataToSave);
+    await updateCartaPorte(data || formData);
   }, [formData, updateCartaPorte]);
 
   // Crear nueva carta porte
@@ -96,9 +90,13 @@ export const useCartaPorteIntegration = ({
       ubicaciones: [],
       mercancias: [],
       autotransporte: {
-        placaVm: '',
-        configuracionVehicular: '',
-        seguro: { aseguradora: '', poliza: '', vigencia: '' }
+        placa_vm: '',
+        anio_modelo_vm: 0,
+        config_vehicular: '',
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: '',
       },
       figuras: [],
       tipoCreacion: 'manual',
@@ -110,6 +108,7 @@ export const useCartaPorteIntegration = ({
       transporteInternacional: false,
       registroIstmo: false,
       cartaPorteVersion: '3.1',
+      cartaPorteId: undefined,
       ...initialData
     };
 
@@ -127,10 +126,7 @@ export const useCartaPorteIntegration = ({
     // Mappers
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
-    formAutotransporteToData,
-    dataAutotransporteToForm,
-    formFigurasToData,
-    dataFigurasToForm,
+    // Elimino mappers parciales que ya no son necesarios
     
     // Acciones principales
     loadCartaPorte,

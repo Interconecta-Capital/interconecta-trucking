@@ -6,7 +6,7 @@ import { UbicacionesSection } from '../UbicacionesSection';
 import { MercanciasSection } from '../MercanciasSection';
 import { AutotransporteSection } from '../AutotransporteSection';
 import { FigurasTransporteSection } from '../FigurasTransporteSection';
-import { CartaPorteFormDataExtendido } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
+import { CartaPorteFormData } from '@/hooks/carta-porte/useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
 
 // Lazy loading del panel XML
@@ -14,7 +14,7 @@ const XMLGenerationPanel = lazy(() => import('../xml/XMLGenerationPanel').then(m
 
 interface CartaPorteTabContentProps {
   cartaPorteData: CartaPorteData;
-  cachedFormData: CartaPorteFormDataExtendido;
+  cachedFormData: CartaPorteFormData;
   updateFormData: (section: string, data: any) => void;
   handleTabChange: (tab: string) => void;
   handleAutotransporteChange: (data: any) => void;

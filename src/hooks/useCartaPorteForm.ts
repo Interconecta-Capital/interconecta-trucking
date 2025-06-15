@@ -1,8 +1,7 @@
-
 import { useCallback, useRef } from 'react';
 import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormState';
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
-import { useCartaPorteMappersExtendidos } from '@/hooks/carta-porte/useCartaPorteMappersExtendidos';
+import { useCartaPorteMappers } from '@/hooks/carta-porte/useCartaPorteMappers';
 import { useCartaPorteStableData } from '@/hooks/carta-porte/useCartaPorteStableData';
 import { useCartaPorteFormValidation } from '@/hooks/carta-porte/useCartaPorteFormValidation';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -38,9 +37,9 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
 
   // Mappers estables
   const {
-    formDataExtendidoToCartaPorteData,
-    cartaPorteDataToFormDataExtendido,
-  } = useCartaPorteMappersExtendidos();
+    formDataToCartaPorteData,
+    cartaPorteDataToFormData,
+  } = useCartaPorteMappers();
 
   // Datos estables para validación
   const { stableFormDataForValidation, formDataForValidation } = useCartaPorteStableData({ 
@@ -79,13 +78,13 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
       }
       
       lastSetDataRef.current = newSignature;
-      const extendedData = cartaPorteDataToFormDataExtendido(data);
+      const extendedData = cartaPorteDataToFormData(data);
       setFormData(extendedData);
       console.log('[useCartaPorteForm] Data set successfully');
     } catch (error) {
       console.error('[CartaPorteForm] Error converting data to extended format:', error);
     }
-  }, [cartaPorteDataToFormDataExtendido, setFormData]);
+  }, [cartaPorteDataToFormData, setFormData]);
 
   // Integración completa con auto-save y sincronización
   const integrationResult = useCartaPorteIntegration({
@@ -96,71 +95,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     isUpdating: false,
     setFormData: (data) => {
       // Convert CartaPorteFormData back to CartaPorteData for stableSetFormData
-      const cartaPorteData = formDataExtendidoToCartaPorteData({
-        ...formData,
-        configuracion: data.configuracion,
-        ubicaciones: data.ubicaciones.map(ub => ({
-          id: ub.id,
-          tipo_ubicacion: ub.tipo === 'origen' ? 'Origen' : 'Destino',
-          id_ubicacion: ub.id,
-          domicilio: {
-            pais: 'México',
-            codigo_postal: ub.codigoPostal,
-            estado: ub.estado,
-            municipio: ub.municipio,
-            colonia: '',
-            calle: ub.direccion,
-            numero_exterior: '',
-          },
-          coordenadas: ub.coordenadas,
-        })),
-        mercancias: data.mercancias.map(m => ({
-          id: m.id,
-          bienes_transp: m.claveProdServ || m.descripcion || '',
-          descripcion: m.descripcion,
-          cantidad: m.cantidad,
-          clave_unidad: m.unidadMedida,
-          peso_kg: m.peso,
-          valor_mercancia: m.valor,
-        })),
-        autotransporte: {
-          placa_vm: data.autotransporte.placaVm,
-          anio_modelo_vm: new Date().getFullYear(),
-          config_vehicular: data.autotransporte.configuracionVehicular,
-          perm_sct: 'TPAF02',
-          num_permiso_sct: '',
-          asegura_resp_civil: data.autotransporte.seguro.aseguradora,
-          poliza_resp_civil: data.autotransporte.seguro.poliza,
-          asegura_med_ambiente: '',
-          poliza_med_ambiente: '',
-        },
-        figuras: data.figuras.map(fig => ({
-          id: fig.id,
-          tipo_figura: fig.tipoFigura,
-          rfc_figura: fig.rfc,
-          nombre_figura: fig.nombre,
-          num_licencia: fig.licencia,
-          domicilio: {
-            pais: 'México',
-            codigo_postal: '',
-            estado: '',
-            municipio: '',
-            colonia: '',
-            calle: '',
-            numero_exterior: '',
-          },
-        })),
-        tipoCreacion: data.tipoCreacion,
-        tipoCfdi: data.tipoCfdi,
-        rfcEmisor: data.rfcEmisor,
-        nombreEmisor: data.nombreEmisor,
-        rfcReceptor: data.rfcReceptor,
-        nombreReceptor: data.nombreReceptor,
-        transporteInternacional: data.transporteInternacional,
-        registroIstmo: data.registroIstmo,
-        cartaPorteVersion: data.cartaPorteVersion,
-        cartaPorteId: data.cartaPorteId,
-      });
+      const cartaPorteData = formDataToCartaPorteData(data);
       stableSetFormData(cartaPorteData);
     },
     setCurrentCartaPorteId,
@@ -221,9 +156,8 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     isUpdating: false,
     
     // Mappers
-    formDataExtendidoToCartaPorteData,
-    cartaPorteDataToFormDataExtendido,
     formDataToCartaPorteData: formDataToCartaPorteDataStable,
+    cartaPorteDataToFormData,
     formAutotransporteToData,
     formFigurasToData,
   };

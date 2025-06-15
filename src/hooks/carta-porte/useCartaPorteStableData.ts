@@ -1,14 +1,9 @@
-
 import { useMemo, useRef } from 'react';
-import {
-  convertExtendedToCartaPorteData,
-} from './cartaPorteDataConverters';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
-import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
-import { CartaPorteData, AutotransporteCompleto } from '@/types/cartaPorte';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 interface UseCartaPorteStableDataOptions {
-  formData: CartaPorteFormDataExtendido;
+  formData: CartaPorteFormData;
 }
 
 export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOptions) => {
@@ -135,7 +130,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     try {
       return cartaPorteDataToFormData(stableFormDataForValidation);
     } catch (error) {
-      console.error('[CartaPorteForm] Error converting to form data for validation:', error);
       
       // Retornar datos mínimos válidos
       return {
@@ -155,13 +149,13 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         ubicaciones: [],
         mercancias: [],
         autotransporte: {
-          placaVm: '',
-          configuracionVehicular: '',
-          seguro: {
-            aseguradora: '',
-            poliza: '',
-            vigencia: '',
-          },
+          placa_vm: '',
+          anio_modelo_vm: new Date().getFullYear(),
+          config_vehicular: '',
+          perm_sct: '',
+          num_permiso_sct: '',
+          asegura_resp_civil: '',
+          poliza_resp_civil: '',
         },
         figuras: [],
         tipoCreacion: formData.tipoCreacion || 'manual',

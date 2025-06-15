@@ -1,9 +1,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
-import { CartaPorteFormDataExtendido } from './useCartaPorteMappersExtendidos';
+import { CartaPorteFormData } from './useCartaPorteMappers';
 
-const initialFormData: CartaPorteFormDataExtendido = {
+const initialFormData: CartaPorteFormData = {
   configuracion: {
     version: '3.1',
     tipoComprobante: 'T',
@@ -45,7 +45,7 @@ interface UseCartaPorteFormStateOptions {
 }
 
 export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateOptions = {}) => {
-  const [formData, setFormData] = useState<CartaPorteFormDataExtendido>(initialFormData);
+  const [formData, setFormData] = useState<CartaPorteFormData>(initialFormData);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
   const [currentStep, setCurrentStep] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
