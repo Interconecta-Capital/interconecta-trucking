@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -10,6 +11,7 @@ interface CartaPorteHeaderProps {
   ultimoGuardado: Date | null;
   onGuardarBorrador: () => void;
   onLimpiarBorrador: () => void;
+  onGuardarYSalir?: () => void; // <- aquí la opcionalidad, ¡ya estaba bien!
 }
 
 export function CartaPorteHeader({ 
@@ -17,7 +19,7 @@ export function CartaPorteHeader({
   ultimoGuardado, 
   onGuardarBorrador, 
   onLimpiarBorrador,
-  onGuardarYSalir?: () => void
+  onGuardarYSalir // <- SIN el signo de interrogación ni tipo, solo el identificador
 }: CartaPorteHeaderProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,17 @@ export function CartaPorteHeader({
 
   const handleGuardarYSalir = async () => {
     setLoading(true);
-    if (typeof onGuardarBorrador === 'function') await onGuardarBorrador();
+    if (typeof onGuardarYSalir === 'function') {
+      await onGuardarYSalir();
+    } else if (typeof onGuardarBorrador === 'function') {
+      await onGuardarBorrador();
+      setShowSaved(true);
+      setTimeout(() => {
+        setLoading(false);
+        navigate('/cartas-porte');
+      }, 1000);
+      return;
+    }
     setShowSaved(true);
     setTimeout(() => {
       setLoading(false);
