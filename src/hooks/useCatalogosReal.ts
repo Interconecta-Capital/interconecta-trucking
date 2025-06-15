@@ -2,111 +2,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { CatalogosSATService } from '@/services/catalogosSAT';
 
-export const useCatalogosReal = () => {
-  const useProductosServicios = (termino: string = '') => {
-    return useQuery({
-      queryKey: ['productos-servicios', termino],
-      queryFn: () => CatalogosSATService.obtenerProductosServicios(termino),
-      enabled: termino.length >= 2,
-      staleTime: 5 * 60 * 1000,
-    });
-  };
+const STALE_TIME_SHORT = 5 * 60 * 1000; // 5 minutes
+const STALE_TIME_LONG = 30 * 60 * 1000; // 30 minutes
 
-  const useUnidades = (termino: string = '') => {
-    return useQuery({
-      queryKey: ['unidades', termino],
-      queryFn: () => CatalogosSATService.obtenerUnidades(termino),
-      enabled: termino.length >= 2,
-      staleTime: 5 * 60 * 1000,
-    });
-  };
-
-  const useMaterialesPeligrosos = (termino: string = '') => {
-    return useQuery({
-      queryKey: ['materiales-peligrosos', termino],
-      queryFn: () => CatalogosSATService.obtenerMaterialesPeligrosos(termino),
-      enabled: termino.length >= 2,
-      staleTime: 5 * 60 * 1000,
-    });
-  };
-
-  const useConfiguracionesVehiculares = () => {
-    return useQuery({
-      queryKey: ['configuraciones-vehiculares'],
-      queryFn: () => CatalogosSATService.obtenerConfiguracionesVehiculares(),
-      staleTime: 30 * 60 * 1000,
-    });
-  };
-
-  const useFigurasTransporte = () => {
-    return useQuery({
-      queryKey: ['figuras-transporte'],
-      queryFn: () => CatalogosSATService.obtenerFigurasTransporte(),
-      staleTime: 30 * 60 * 1000,
-    });
-  };
-
-  const useTiposPermiso = () => {
-    return useQuery({
-      queryKey: ['tipos-permiso'],
-      queryFn: () => CatalogosSATService.obtenerTiposPermiso(),
-      staleTime: 30 * 60 * 1000,
-    });
-  };
-
-  const useTiposEmbalaje = () => {
-    return useQuery({
-      queryKey: ['tipos-embalaje'],
-      queryFn: () => CatalogosSATService.obtenerTiposEmbalaje(),
-      staleTime: 30 * 60 * 1000,
-    });
-  };
-
-  const useEstados = (termino: string = '') => {
-    return useQuery({
-      queryKey: ['estados', termino],
-      queryFn: async () => {
-        // Mock implementation - replace with real API call
-        const mockEstados = [
-          { clave: 'AGU', descripcion: 'Aguascalientes' },
-          { clave: 'BCN', descripcion: 'Baja California' },
-          { clave: 'BCS', descripcion: 'Baja California Sur' },
-          { clave: 'CAM', descripcion: 'Campeche' },
-          { clave: 'CHP', descripcion: 'Chiapas' },
-        ];
-        return termino ? mockEstados.filter(e => 
-          e.descripcion.toLowerCase().includes(termino.toLowerCase())
-        ) : mockEstados;
-      },
-      enabled: true,
-      staleTime: 30 * 60 * 1000,
-    });
-  };
-
-  const limpiarCache = () => {
-    CatalogosSATService.clearCache();
-  };
-
-  return {
-    useProductosServicios,
-    useUnidades,
-    useMaterialesPeligrosos,
-    useConfiguracionesVehiculares,
-    useFigurasTransporte,
-    useTiposPermiso,
-    useTiposEmbalaje,
-    useEstados,
-    limpiarCache
-  };
-};
-
-// Export individual hooks for compatibility
 export const useBuscarProductosServicios = (termino: string = '', enabled: boolean = true) => {
   return useQuery({
     queryKey: ['productos-servicios', termino],
     queryFn: () => CatalogosSATService.obtenerProductosServicios(termino),
     enabled: enabled && termino.length >= 2,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIME_SHORT,
   });
 };
 
@@ -115,7 +19,7 @@ export const useBuscarClaveUnidad = (termino: string = '', enabled: boolean = tr
     queryKey: ['unidades', termino],
     queryFn: () => CatalogosSATService.obtenerUnidades(termino),
     enabled: enabled && termino.length >= 2,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIME_SHORT,
   });
 };
 
@@ -124,77 +28,55 @@ export const useBuscarMaterialesPeligrosos = (termino: string = '', enabled: boo
     queryKey: ['materiales-peligrosos', termino],
     queryFn: () => CatalogosSATService.obtenerMaterialesPeligrosos(termino),
     enabled: enabled && termino.length >= 2,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIME_SHORT,
   });
 };
 
-export const useConfiguracionesVehiculo = (termino: string = '') => {
+export const useConfiguracionesVehiculo = () => {
   return useQuery({
-    queryKey: ['configuraciones-vehiculares', termino],
-    queryFn: () => CatalogosSATService.obtenerConfiguracionesVehiculares(),
-    staleTime: 30 * 60 * 1000,
+    queryKey: ['configuraciones-vehiculares'],
+    queryFn: CatalogosSATService.obtenerConfiguracionesVehiculares,
+    staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useFigurasTransporte = (termino: string = '') => {
+export const useFigurasTransporte = () => {
   return useQuery({
-    queryKey: ['figuras-transporte', termino],
-    queryFn: () => CatalogosSATService.obtenerFigurasTransporte(),
-    staleTime: 30 * 60 * 1000,
+    queryKey: ['figuras-transporte'],
+    queryFn: CatalogosSATService.obtenerFigurasTransporte,
+    staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useTiposPermiso = (termino: string = '') => {
+export const useTiposPermiso = () => {
   return useQuery({
-    queryKey: ['tipos-permiso', termino],
-    queryFn: () => CatalogosSATService.obtenerTiposPermiso(),
-    staleTime: 30 * 60 * 1000,
+    queryKey: ['tipos-permiso'],
+    queryFn: CatalogosSATService.obtenerTiposPermiso,
+    staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useTiposEmbalaje = (termino: string = '') => {
+export const useTiposEmbalaje = () => {
   return useQuery({
-    queryKey: ['tipos-embalaje', termino],
-    queryFn: () => CatalogosSATService.obtenerTiposEmbalaje(),
-    staleTime: 30 * 60 * 1000,
+    queryKey: ['tipos-embalaje'],
+    queryFn: CatalogosSATService.obtenerTiposEmbalaje,
+    staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useSubtiposRemolque = (termino: string = '') => {
+export const useRemolques = (termino: string = '') => {
   return useQuery({
-    queryKey: ['subtipos-remolque', termino],
-    queryFn: async () => {
-      // Mock implementation
-      const mockSubtipos = [
-        { clave: 'CTR001', descripcion: 'Remolque carga general' },
-        { clave: 'CTR002', descripcion: 'Semirremolque' },
-        { clave: 'CTR003', descripcion: 'Dolly' }
-      ];
-      return termino ? mockSubtipos.filter(s => 
-        s.descripcion.toLowerCase().includes(termino.toLowerCase())
-      ) : mockSubtipos;
-    },
-    staleTime: 30 * 60 * 1000,
+    queryKey: ['remolques', termino],
+    queryFn: () => CatalogosSATService.obtenerSubtiposRemolque(termino),
+    staleTime: STALE_TIME_LONG,
   });
 };
 
-// Add useEstados export
 export const useEstados = (termino: string = '') => {
   return useQuery({
     queryKey: ['estados', termino],
-    queryFn: async () => {
-      const mockEstados = [
-        { clave: 'AGU', descripcion: 'Aguascalientes' },
-        { clave: 'BCN', descripcion: 'Baja California' },
-        { clave: 'BCS', descripcion: 'Baja California Sur' },
-        { clave: 'CAM', descripcion: 'Campeche' },
-        { clave: 'CHP', descripcion: 'Chiapas' },
-      ];
-      return termino ? mockEstados.filter(e => 
-        e.descripcion.toLowerCase().includes(termino.toLowerCase())
-      ) : mockEstados;
-    },
+    queryFn: () => CatalogosSATService.obtenerEstados(termino),
     enabled: true,
-    staleTime: 30 * 60 * 1000,
+    staleTime: STALE_TIME_LONG,
   });
 };

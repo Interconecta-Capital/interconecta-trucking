@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
-import { useCatalogosReal } from '@/hooks/useCatalogosReal';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useCatalogQuery } from './hooks/useCatalogQuery';
 import { CatalogSearchInput } from './components/CatalogSearchInput';
 import { CatalogSelect } from './components/CatalogSelect';
 import { CatalogActions } from './components/CatalogActions';
 import { CatalogFeedback } from './components/CatalogFeedback';
+import { useAdaptedCatalogQuery } from './hooks/useAdaptedCatalogQuery';
+import { CatalogosSATService } from '@/services/catalogosSAT';
 
 interface CatalogItem {
   value: string;
@@ -52,11 +52,9 @@ export function CatalogoSelectorMejorado({
   const [localError, setLocalError] = useState<string>('');
   
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const { limpiarCache } = useCatalogosReal();
 
   const queryEnabled = !disabled && (tipo !== 'materiales_peligrosos' || debouncedSearch.length >= 2);
-  const currentQuery = useCatalogQuery(tipo, debouncedSearch, queryEnabled);
-  const { data: options = [], isLoading, error: queryError, refetch } = currentQuery;
+  const { data: options = [], isLoading, error: queryError, refetch } = useAdaptedCatalogQuery(tipo, debouncedSearch, queryEnabled);
 
   // Handle errors
   useEffect(() => {
@@ -96,7 +94,7 @@ export function CatalogoSelectorMejorado({
   };
 
   const handleRefresh = () => {
-    limpiarCache();
+    CatalogosSATService.clearCache();
     refetch();
     setLocalError('');
   };
@@ -114,7 +112,7 @@ export function CatalogoSelectorMejorado({
   const showLoading = isLoading && debouncedSearch === searchTerm;
 
   const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
+    if (!searchTerm || debouncedSearch !== searchTerm) return options;
     
     const term = searchTerm.toLowerCase();
     return options.filter(option => 
@@ -122,7 +120,7 @@ export function CatalogoSelectorMejorado({
       option.label.toLowerCase().includes(term) ||
       option.descripcion?.toLowerCase().includes(term)
     );
-  }, [options, searchTerm]);
+  }, [options, searchTerm, debouncedSearch]);
 
   const getPlaceholderText = () => {
     if (showLoading) return 'Cargando...';

@@ -1,9 +1,9 @@
-import { CartaPorteData } from '@/types/cartaPorte';
-import { AutotransporteData } from '@/hooks/useAutotransporte';
-import { FiguraTransporte } from '@/hooks/useFigurasTransporte';
 
-// Interfaces para el formulario
-export interface CartaPorteFormData {
+import { CartaPorteData } from '@/types/cartaPorte';
+import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
+
+// Interfaces para el formulario extendido
+export interface CartaPorteFormDataExtendido {
   configuracion: {
     version: '3.0' | '3.1';
     tipoComprobante: string;
@@ -17,48 +17,10 @@ export interface CartaPorteFormData {
       nombre: string;
     };
   };
-  ubicaciones: Array<{
-    id: string;
-    tipo: 'origen' | 'destino';
-    direccion: string;
-    codigoPostal: string;
-    estado: string;
-    municipio: string;
-    coordenadas?: {
-      latitud: number;
-      longitud: number;
-    };
-  }>;
-  mercancias: Array<{
-    id: string;
-    descripcion: string;
-    cantidad: number;
-    unidadMedida: string;
-    peso: number;
-    valor: number;
-    claveProdServ?: string;
-  }>;
-  autotransporte: {
-    placaVm: string;
-    configuracionVehicular: string;
-    seguro: {
-      aseguradora: string;
-      poliza: string;
-      vigencia: string;
-    };
-    remolques?: Array<{
-      placa: string;
-      subtipo: string;
-    }>;
-  };
-  figuras: Array<{
-    id: string;
-    tipoFigura: string;
-    rfc: string;
-    nombre: string;
-    licencia?: string;
-    vigenciaLicencia?: string;
-  }>;
+  ubicaciones: UbicacionCompleta[];
+  mercancias: MercanciaCompleta[];
+  autotransporte: AutotransporteCompleto;
+  figuras: FiguraCompleta[];
   
   // Campos adicionales para compatibilidad
   tipoCreacion: 'plantilla' | 'carga' | 'manual';
@@ -73,23 +35,12 @@ export interface CartaPorteFormData {
   cartaPorteId?: string;
 }
 
-// Definir interface de remolque para compatibilidad
-interface RemolqueFormData {
-  placa: string;
-  subtipo: string;
-}
-
-interface RemolqueData {
-  placa: string;
-  subtipo_rem: string;
-}
-
-export const useCartaPorteMappers = () => {
-  // Mapper de CartaPorteFormData a CartaPorteData
-  const formDataToCartaPorteData = (formData: CartaPorteFormData): CartaPorteData => {
+export const useCartaPorteMappersExtendidos = () => {
+  // Mapper de CartaPorteFormDataExtendido a CartaPorteData
+  const formDataExtendidoToCartaPorteData = (formData: CartaPorteFormDataExtendido): CartaPorteData => {
     return {
       tipoCreacion: formData.tipoCreacion,
-      tipoCfdi: formData.tipoCfdi as 'Ingreso' | 'Traslado',
+      tipoCfdi: formData.tipoCfdi,
       rfcEmisor: formData.rfcEmisor,
       nombreEmisor: formData.nombreEmisor,
       rfcReceptor: formData.rfcReceptor,
@@ -97,70 +48,102 @@ export const useCartaPorteMappers = () => {
       transporteInternacional: formData.transporteInternacional ? 'Sí' : 'No',
       registroIstmo: formData.registroIstmo,
       cartaPorteVersion: formData.cartaPorteVersion,
-      ubicaciones: formData.ubicaciones.map(ub => ({
-        id: ub.id,
-        tipo_ubicacion: ub.tipo === 'origen' ? 'Origen' : 'Destino',
-        id_ubicacion: ub.id,
-        domicilio: {
-          pais: 'México',
-          codigo_postal: ub.codigoPostal,
-          estado: ub.estado,
-          municipio: ub.municipio,
-          colonia: '',
-          calle: ub.direccion,
-          numero_exterior: '',
-        },
-        coordenadas: ub.coordenadas,
-      })),
-      mercancias: formData.mercancias.map(mer => ({
-        id: mer.id,
-        bienes_transp: mer.claveProdServ || '',
-        descripcion: mer.descripcion,
-        cantidad: mer.cantidad,
-        clave_unidad: mer.unidadMedida,
-        peso_kg: mer.peso,
-        valor_mercancia: mer.valor,
-      })),
-      autotransporte: {
-        placa_vm: formData.autotransporte.placaVm,
-        anio_modelo_vm: new Date().getFullYear(),
-        config_vehicular: formData.autotransporte.configuracionVehicular,
-        perm_sct: 'TPAF02',
-        num_permiso_sct: '',
-        asegura_resp_civil: formData.autotransporte.seguro.aseguradora,
-        poliza_resp_civil: formData.autotransporte.seguro.poliza,
-        asegura_med_ambiente: '',
-        poliza_med_ambiente: '',
-        remolques: formData.autotransporte.remolques?.map(rem => ({
-          placa: rem.placa,
-          subtipo_rem: rem.subtipo
-        })) || [],
-      },
-      figuras: formData.figuras.map(fig => ({
-        id: fig.id,
-        tipo_figura: fig.tipoFigura,
-        rfc_figura: fig.rfc,
-        nombre_figura: fig.nombre,
-        num_licencia: fig.licencia,
-        domicilio: {
-          pais: 'México',
-          codigo_postal: '',
-          estado: '',
-          municipio: '',
-          colonia: '',
-          calle: '',
-          numero_exterior: '',
-        },
-      })),
+      ubicaciones: formData.ubicaciones.map(mapUbicacionCompleta),
+      mercancias: formData.mercancias.map(mapMercanciaCompleta),
+      autotransporte: mapAutotransporteCompleto(formData.autotransporte),
+      figuras: formData.figuras.map(mapFiguraCompleta),
       cartaPorteId: formData.cartaPorteId,
     };
   };
 
-  // Mapper de CartaPorteData a CartaPorteFormData
-  const cartaPorteDataToFormData = (data: CartaPorteData): CartaPorteFormData => {
+  // Mappers individuales
+  const mapUbicacionCompleta = (ubicacion: UbicacionCompleta): UbicacionCompleta => {
+    return {
+      id: ubicacion.id || '',
+      tipo_ubicacion: ubicacion.tipo_ubicacion,
+      id_ubicacion: ubicacion.id_ubicacion,
+      rfc_remitente_destinatario: ubicacion.rfc_remitente_destinatario,
+      nombre_remitente_destinatario: ubicacion.nombre_remitente_destinatario,
+      fecha_hora_salida_llegada: ubicacion.fecha_hora_salida_llegada,
+      distancia_recorrida: ubicacion.distancia_recorrida,
+      tipo_estacion: ubicacion.tipo_estacion,
+      numero_estacion: ubicacion.numero_estacion,
+      kilometro: ubicacion.kilometro,
+      coordenadas: ubicacion.coordenadas,
+      domicilio: ubicacion.domicilio,
+    };
+  };
+
+  const mapMercanciaCompleta = (mercancia: MercanciaCompleta): MercanciaCompleta => {
+    return {
+      id: mercancia.id || '',
+      bienes_transp: mercancia.bienes_transp || mercancia.descripcion || '',
+      descripcion: mercancia.descripcion,
+      cantidad: mercancia.cantidad,
+      clave_unidad: mercancia.clave_unidad,
+      peso_kg: mercancia.peso_kg,
+      valor_mercancia: mercancia.valor_mercancia,
+      material_peligroso: mercancia.material_peligroso,
+      cve_material_peligroso: mercancia.cve_material_peligroso,
+      fraccion_arancelaria: mercancia.fraccion_arancelaria,
+      tipo_embalaje: mercancia.tipo_embalaje,
+      dimensiones: mercancia.dimensiones,
+      peso_bruto_total: mercancia.peso_bruto_total,
+      unidad_peso_bruto: mercancia.unidad_peso_bruto,
+      material_embalaje: mercancia.material_embalaje,
+      descripcion_embalaje: mercancia.descripcion_embalaje,
+      moneda: mercancia.moneda,
+      uuid_comercio_exterior: mercancia.uuid_comercio_exterior,
+      embalaje: mercancia.embalaje,
+    };
+  };
+
+  const mapAutotransporteCompleto = (autotransporte: AutotransporteCompleto): AutotransporteCompleto => {
+    return {
+      placa_vm: autotransporte.placa_vm,
+      anio_modelo_vm: autotransporte.anio_modelo_vm,
+      config_vehicular: autotransporte.config_vehicular,
+      perm_sct: autotransporte.perm_sct,
+      num_permiso_sct: autotransporte.num_permiso_sct,
+      asegura_resp_civil: autotransporte.asegura_resp_civil,
+      poliza_resp_civil: autotransporte.poliza_resp_civil,
+      asegura_med_ambiente: autotransporte.asegura_med_ambiente,
+      poliza_med_ambiente: autotransporte.poliza_med_ambiente,
+      remolques: autotransporte.remolques,
+      marca_vehiculo: autotransporte.marca_vehiculo,
+      modelo_vehiculo: autotransporte.modelo_vehiculo,
+      numero_serie_vin: autotransporte.numero_serie_vin,
+      tipo_carroceria: autotransporte.tipo_carroceria,
+      capacidad_carga: autotransporte.capacidad_carga,
+      peso_bruto_vehicular: autotransporte.peso_bruto_vehicular,
+      vigencia_permiso: autotransporte.vigencia_permiso,
+      numero_permisos_adicionales: autotransporte.numero_permisos_adicionales,
+      dimensiones: autotransporte.dimensiones,
+    };
+  };
+
+  const mapFiguraCompleta = (figura: FiguraCompleta): FiguraCompleta => {
+    return {
+      id: figura.id || '',
+      tipo_figura: figura.tipo_figura,
+      rfc_figura: figura.rfc_figura,
+      nombre_figura: figura.nombre_figura,
+      num_licencia: figura.num_licencia,
+      vigencia_licencia: figura.vigencia_licencia,
+      curp: figura.curp,
+      residencia_fiscal_figura: figura.residencia_fiscal_figura,
+      num_reg_id_trib_figura: figura.num_reg_id_trib_figura,
+      tipo_licencia: figura.tipo_licencia,
+      operador_sct: figura.operador_sct,
+      domicilio: figura.domicilio,
+    };
+  };
+
+  // Mappers inversos para cargar datos existentes
+  const cartaPorteDataToFormDataExtendido = (data: CartaPorteData): CartaPorteFormDataExtendido => {
     return {
       configuracion: {
-        version: (data.cartaPorteVersion || '3.1') as '3.0' | '3.1',
+        version: data.cartaPorteVersion || '3.1',
         tipoComprobante: data.tipoCfdi === 'Traslado' ? 'T' : 'I',
         emisor: {
           rfc: data.rfcEmisor || '',
@@ -172,47 +155,12 @@ export const useCartaPorteMappers = () => {
           nombre: data.nombreReceptor || '',
         },
       },
-      ubicaciones: (data.ubicaciones || []).map(ub => ({
-        id: ub.id,
-        tipo: ub.tipo_ubicacion === 'Origen' ? 'origen' as const : 'destino' as const,
-        direccion: ub.domicilio?.calle || '',
-        codigoPostal: ub.domicilio?.codigo_postal || '',
-        estado: ub.domicilio?.estado || '',
-        municipio: ub.domicilio?.municipio || '',
-        coordenadas: ub.coordenadas,
-      })),
-      mercancias: (data.mercancias || []).map(mer => ({
-        id: mer.id,
-        descripcion: mer.descripcion || '',
-        cantidad: mer.cantidad || 0,
-        unidadMedida: mer.clave_unidad || '',
-        peso: mer.peso_kg || 0,
-        valor: mer.valor_mercancia || 0,
-        claveProdServ: mer.bienes_transp,
-      })),
-      autotransporte: {
-        placaVm: data.autotransporte?.placa_vm || '',
-        configuracionVehicular: data.autotransporte?.config_vehicular || '',
-        seguro: {
-          aseguradora: data.autotransporte?.asegura_resp_civil || '',
-          poliza: data.autotransporte?.poliza_resp_civil || '',
-          vigencia: '',
-        },
-        remolques: (data.autotransporte?.remolques || []).map(rem => ({
-          placa: rem.placa,
-          subtipo: rem.subtipo_rem
-        })),
-      },
-      figuras: (data.figuras || []).map(fig => ({
-        id: fig.id,
-        tipoFigura: fig.tipo_figura || '',
-        rfc: fig.rfc_figura || '',
-        nombre: fig.nombre_figura || '',
-        licencia: fig.num_licencia,
-        vigenciaLicencia: undefined,
-      })),
+      ubicaciones: (data.ubicaciones || []).map(mapToUbicacionCompleta),
+      mercancias: (data.mercancias || []).map(mapToMercanciaCompleta),
+      autotransporte: mapToAutotransporteCompleto(data.autotransporte),
+      figuras: (data.figuras || []).map(mapToFiguraCompleta),
       tipoCreacion: data.tipoCreacion || 'manual',
-      tipoCfdi: (data.tipoCfdi || 'Traslado') as 'Ingreso' | 'Traslado',
+      tipoCfdi: data.tipoCfdi || 'Traslado',
       rfcEmisor: data.rfcEmisor || '',
       nombreEmisor: data.nombreEmisor || '',
       rfcReceptor: data.rfcReceptor || '',
@@ -221,82 +169,133 @@ export const useCartaPorteMappers = () => {
         ? data.transporteInternacional === 'Sí' 
         : Boolean(data.transporteInternacional),
       registroIstmo: Boolean(data.registroIstmo),
-      cartaPorteVersion: (data.cartaPorteVersion || '3.1') as '3.0' | '3.1',
+      cartaPorteVersion: data.cartaPorteVersion || '3.1',
       cartaPorteId: data.cartaPorteId,
     };
   };
 
-  // Mapper de formData.autotransporte a AutotransporteData
-  const formAutotransporteToData = (formAutotransporte: CartaPorteFormData['autotransporte']): AutotransporteData => {
-    const remolquesData: RemolqueData[] = (formAutotransporte.remolques || []).map(remolque => ({
-      placa: remolque.placa,
-      subtipo_rem: remolque.subtipo
-    }));
-
+  // Mappers inversos individuales
+  const mapToUbicacionCompleta = (ubicacion: any): UbicacionCompleta => {
     return {
-      placa_vm: formAutotransporte.placaVm,
-      anio_modelo_vm: new Date().getFullYear(),
-      config_vehicular: formAutotransporte.configuracionVehicular,
-      perm_sct: 'TPAF02',
-      num_permiso_sct: '',
-      asegura_resp_civil: formAutotransporte.seguro.aseguradora,
-      poliza_resp_civil: formAutotransporte.seguro.poliza,
-      asegura_med_ambiente: '',
-      poliza_med_ambiente: '',
-      remolques: remolquesData,
-    };
-  };
-
-  // Mapper de AutotransporteData a formData.autotransporte
-  const dataAutotransporteToForm = (data: AutotransporteData): CartaPorteFormData['autotransporte'] => {
-    const remolquesForm: RemolqueFormData[] = (data.remolques || []).map(remolque => ({
-      placa: remolque.placa,
-      subtipo: remolque.subtipo_rem
-    }));
-
-    return {
-      placaVm: data.placa_vm || '',
-      configuracionVehicular: data.config_vehicular || '',
-      seguro: {
-        aseguradora: data.asegura_resp_civil || '',
-        poliza: data.poliza_resp_civil || '',
-        vigencia: '',
+      id: ubicacion.id,
+      tipo_ubicacion: ubicacion.tipo_ubicacion || 'Origen',
+      id_ubicacion: ubicacion.id_ubicacion || ubicacion.id || '',
+      rfc_remitente_destinatario: ubicacion.rfc_remitente_destinatario,
+      nombre_remitente_destinatario: ubicacion.nombre_remitente_destinatario,
+      fecha_hora_salida_llegada: ubicacion.fecha_hora_salida_llegada,
+      distancia_recorrida: ubicacion.distancia_recorrida,
+      tipo_estacion: ubicacion.tipo_estacion,
+      numero_estacion: ubicacion.numero_estacion,
+      kilometro: ubicacion.kilometro,
+      coordenadas: ubicacion.coordenadas,
+      domicilio: ubicacion.domicilio || {
+        pais: 'México',
+        codigo_postal: '',
+        estado: '',
+        municipio: '',
+        colonia: '',
+        calle: '',
+        numero_exterior: '',
       },
-      remolques: remolquesForm,
     };
   };
 
-  // Mapper de formData.figuras a FiguraTransporte[]
-  const formFigurasToData = (formFiguras: CartaPorteFormData['figuras']): FiguraTransporte[] => {
-    return formFiguras.map(figura => ({
-      id: figura.id,
-      tipo_figura: figura.tipoFigura,
-      rfc_figura: figura.rfc,
-      nombre_figura: figura.nombre,
-      num_licencia: figura.licencia,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
+  const mapToMercanciaCompleta = (mercancia: any): MercanciaCompleta => {
+    return {
+      id: mercancia.id,
+      bienes_transp: mercancia.bienes_transp || mercancia.descripcion || '',
+      descripcion: mercancia.descripcion || '',
+      cantidad: mercancia.cantidad || 0,
+      clave_unidad: mercancia.clave_unidad || '',
+      peso_kg: mercancia.peso_kg || 0,
+      valor_mercancia: mercancia.valor_mercancia || 0,
+      material_peligroso: mercancia.material_peligroso || false,
+      cve_material_peligroso: mercancia.cve_material_peligroso,
+      moneda: mercancia.moneda || 'MXN',
+      fraccion_arancelaria: mercancia.fraccion_arancelaria,
+      tipo_embalaje: mercancia.tipo_embalaje,
+      material_embalaje: mercancia.material_embalaje,
+      descripcion_embalaje: mercancia.descripcion_embalaje,
+      peso_bruto_total: mercancia.peso_bruto_total,
+      unidad_peso_bruto: mercancia.unidad_peso_bruto,
+      dimensiones: mercancia.dimensiones,
+      uuid_comercio_exterior: mercancia.uuid_comercio_exterior,
+      embalaje: mercancia.embalaje,
+    };
   };
 
-  // Mapper de FiguraTransporte[] a formData.figuras
-  const dataFigurasToForm = (data: FiguraTransporte[]): CartaPorteFormData['figuras'] => {
-    return data.map(figura => ({
+  const mapToAutotransporteCompleto = (autotransporte: any): AutotransporteCompleto => {
+    if (!autotransporte) {
+      return {
+        placa_vm: '',
+        anio_modelo_vm: new Date().getFullYear(),
+        config_vehicular: '',
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: '',
+        remolques: [],
+      };
+    }
+
+    return {
+      placa_vm: autotransporte.placa_vm || '',
+      anio_modelo_vm: autotransporte.anio_modelo_vm || new Date().getFullYear(),
+      config_vehicular: autotransporte.config_vehicular || '',
+      perm_sct: autotransporte.perm_sct || '',
+      num_permiso_sct: autotransporte.num_permiso_sct || '',
+      asegura_resp_civil: autotransporte.asegura_resp_civil || '',
+      poliza_resp_civil: autotransporte.poliza_resp_civil || '',
+      asegura_med_ambiente: autotransporte.asegura_med_ambiente,
+      poliza_med_ambiente: autotransporte.poliza_med_ambiente,
+      remolques: autotransporte.remolques || [],
+      marca_vehiculo: autotransporte.marca_vehiculo,
+      modelo_vehiculo: autotransporte.modelo_vehiculo,
+      numero_serie_vin: autotransporte.numero_serie_vin,
+      tipo_carroceria: autotransporte.tipo_carroceria,
+      capacidad_carga: autotransporte.capacidad_carga,
+      peso_bruto_vehicular: autotransporte.peso_bruto_vehicular,
+      vigencia_permiso: autotransporte.vigencia_permiso,
+      numero_permisos_adicionales: autotransporte.numero_permisos_adicionales,
+      dimensiones: autotransporte.dimensiones,
+    };
+  };
+
+  const mapToFiguraCompleta = (figura: any): FiguraCompleta => {
+    return {
       id: figura.id,
-      tipoFigura: figura.tipo_figura || '',
-      rfc: figura.rfc_figura || '',
-      nombre: figura.nombre_figura || '',
-      licencia: figura.num_licencia,
-      vigenciaLicencia: undefined,
-    }));
+      tipo_figura: figura.tipo_figura || '',
+      rfc_figura: figura.rfc_figura || '',
+      nombre_figura: figura.nombre_figura || '',
+      num_licencia: figura.num_licencia,
+      vigencia_licencia: figura.vigencia_licencia,
+      curp: figura.curp,
+      residencia_fiscal_figura: figura.residencia_fiscal_figura || 'MEX',
+      num_reg_id_trib_figura: figura.num_reg_id_trib_figura,
+      tipo_licencia: figura.tipo_licencia,
+      operador_sct: figura.operador_sct,
+      domicilio: figura.domicilio || {
+        pais: 'México',
+        codigo_postal: '',
+        estado: '',
+        municipio: '',
+        colonia: '',
+        calle: '',
+        numero_exterior: '',
+      },
+    };
   };
 
   return {
-    formDataToCartaPorteData,
-    cartaPorteDataToFormData,
-    formAutotransporteToData,
-    dataAutotransporteToForm,
-    formFigurasToData,
-    dataFigurasToForm,
+    formDataExtendidoToCartaPorteData,
+    cartaPorteDataToFormDataExtendido,
+    mapUbicacionCompleta,
+    mapMercanciaCompleta,
+    mapAutotransporteCompleto,
+    mapFiguraCompleta,
+    mapToUbicacionCompleta,
+    mapToMercanciaCompleta,
+    mapToAutotransporteCompleto,
+    mapToFiguraCompleta,
   };
 };

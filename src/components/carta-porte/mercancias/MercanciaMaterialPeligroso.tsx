@@ -24,7 +24,7 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
         <Checkbox
           id="material_peligroso"
           checked={formData.material_peligroso}
-          onCheckedChange={(checked) => onFieldChange('material_peligroso', checked)}
+          onCheckedChange={(checked) => onFieldChange('material_peligroso', !!checked)}
         />
         <Label htmlFor="material_peligroso">
           Esta mercancía es material peligroso
@@ -46,11 +46,11 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
           <CatalogoSelectorMejorado
             tipo="embalajes"
             label="Tipo de Embalaje"
-            value={formData.embalaje}
-            onValueChange={(value) => onFieldChange('embalaje', value)}
-            placeholder="Seleccionar embalaje..."
+            value={formData.tipo_embalaje}
+            onValueChange={(value) => onFieldChange('tipo_embalaje', value)}
+            placeholder="Buscar tipo de embalaje..."
             required={formData.material_peligroso}
-            error={errors.embalaje}
+            error={errors.tipo_embalaje}
           />
         </div>
       )}

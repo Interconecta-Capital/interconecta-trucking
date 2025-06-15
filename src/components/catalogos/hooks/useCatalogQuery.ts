@@ -6,7 +6,7 @@ import {
   useTiposPermiso,
   useConfiguracionesVehiculo,
   useFigurasTransporte,
-  useSubtiposRemolque,
+  useRemolques,
   useBuscarMaterialesPeligrosos,
   useTiposEmbalaje,
   useEstados
@@ -15,12 +15,12 @@ import {
 export function useCatalogQuery(tipo: string, searchTerm: string, enabled: boolean) {
   const productosQuery = useBuscarProductosServicios(searchTerm, tipo === 'productos' && enabled);
   const unidadesQuery = useBuscarClaveUnidad(searchTerm, tipo === 'unidades' && enabled);
-  const permisosQuery = useTiposPermiso(searchTerm);
-  const configuracionesQuery = useConfiguracionesVehiculo(searchTerm);
-  const figurasQuery = useFigurasTransporte(searchTerm);
-  const remolquesQuery = useSubtiposRemolque(searchTerm);
+  const permisosQuery = useTiposPermiso();
+  const configuracionesQuery = useConfiguracionesVehiculo();
+  const figurasQuery = useFigurasTransporte();
+  const remolquesQuery = useRemolques(searchTerm);
   const materialesQuery = useBuscarMaterialesPeligrosos(searchTerm, tipo === 'materiales_peligrosos' && enabled);
-  const embalajesQuery = useTiposEmbalaje(searchTerm);
+  const embalajesQuery = useTiposEmbalaje();
   const estadosQuery = useEstados(searchTerm);
 
   return useMemo(() => {

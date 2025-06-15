@@ -1,84 +1,76 @@
 
-import { 
-  ProductoServicio, 
-  ClaveUnidad, 
-  MaterialPeligroso, 
-  ConfiguracionVehicular,
-  FiguraTransporte,
-  TipoPermiso,
-  CatalogoItem 
-} from '@/services/catalogosSAT';
+import { ProductoServicio, ClaveUnidad, MaterialPeligroso, ConfiguracionVehicular, FiguraTransporte, TipoPermiso, CatalogoItem as RawCatalogoItem } from '@/services/catalogosSAT';
 
 export interface CatalogItem {
   value: string;
   label: string;
-  metadata?: any;
+  descripcion?: string;
+  [key: string]: any;
 }
 
-export const adaptProductosServicios = (productos: ProductoServicio[]): CatalogItem[] => {
-  return productos.map(producto => ({
-    value: producto.clave,
-    label: `${producto.clave} - ${producto.descripcion}`,
-    metadata: { incluye_iva: producto.incluye_iva }
-  }));
+const formatLabel = (clave: string, descripcion: string): string => {
+  return `${clave} - ${descripcion}`;
 };
 
-export const adaptClaveUnidad = (unidades: ClaveUnidad[]): CatalogItem[] => {
-  return unidades.map(unidad => ({
-    value: unidad.clave,
-    label: `${unidad.clave} - ${unidad.nombre}`,
-    metadata: { simbolo: unidad.simbolo, descripcion: unidad.descripcion }
-  }));
-};
-
-export const adaptMaterialesPeligrosos = (materiales: MaterialPeligroso[]): CatalogItem[] => {
-  return materiales.map(material => ({
-    value: material.clave,
-    label: `${material.clave} - ${material.descripcion}`,
-    metadata: { 
-      clase_division: material.clase_division, 
-      grupo_embalaje: material.grupo_embalaje 
-    }
-  }));
-};
-
-export const adaptConfiguracionesVehiculares = (configuraciones: ConfiguracionVehicular[]): CatalogItem[] => {
-  return configuraciones.map(config => ({
-    value: config.clave,
-    label: `${config.clave} - ${config.descripcion}`,
-    metadata: { 
-      remolque: config.remolque, 
-      semirremolque: config.semirremolque 
-    }
-  }));
-};
-
-export const adaptFigurasTransporte = (figuras: FiguraTransporte[]): CatalogItem[] => {
-  return figuras.map(figura => ({
-    value: figura.clave,
-    label: `${figura.clave} - ${figura.descripcion}`,
-    metadata: { 
-      persona_fisica: figura.persona_fisica, 
-      persona_moral: figura.persona_moral 
-    }
-  }));
-};
-
-export const adaptTiposPermiso = (tipos: TipoPermiso[]): CatalogItem[] => {
-  return tipos.map(tipo => ({
-    value: tipo.clave,
-    label: `${tipo.clave} - ${tipo.descripcion}`,
-    metadata: { 
-      transporte_carga: tipo.transporte_carga, 
-      transporte_pasajeros: tipo.transporte_pasajeros 
-    }
-  }));
-};
-
-export const adaptCatalogItems = (items: CatalogoItem[]): CatalogItem[] => {
-  return items.map(item => ({
+export const adaptProductosServicios = (data: ProductoServicio[]): CatalogItem[] => {
+  return data.map(item => ({
     value: item.clave,
-    label: `${item.clave} - ${item.descripcion}`,
-    metadata: {}
+    label: formatLabel(item.clave, item.descripcion),
+    descripcion: item.descripcion,
+    ...item
+  }));
+};
+
+export const adaptClaveUnidad = (data: ClaveUnidad[]): CatalogItem[] => {
+  return data.map(item => ({
+    value: item.clave,
+    label: formatLabel(item.clave, item.nombre),
+    descripcion: item.descripcion,
+    ...item
+  }));
+};
+
+export const adaptMaterialesPeligrosos = (data: MaterialPeligroso[]): CatalogItem[] => {
+  return data.map(item => ({
+    value: item.clave,
+    label: formatLabel(item.clave, item.descripcion),
+    descripcion: item.descripcion,
+    ...item
+  }));
+};
+
+export const adaptConfiguracionesVehiculares = (data: ConfiguracionVehicular[]): CatalogItem[] => {
+  return data.map(item => ({
+    value: item.clave,
+    label: formatLabel(item.clave, item.descripcion),
+    descripcion: item.descripcion,
+    ...item
+  }));
+};
+
+export const adaptFigurasTransporte = (data: FiguraTransporte[]): CatalogItem[] => {
+  return data.map(item => ({
+    value: item.clave,
+    label: formatLabel(item.clave, item.descripcion),
+    descripcion: item.descripcion,
+    ...item
+  }));
+};
+
+export const adaptTiposPermiso = (data: TipoPermiso[]): CatalogItem[] => {
+  return data.map(item => ({
+    value: item.clave,
+    label: formatLabel(item.clave, item.descripcion),
+    descripcion: item.descripcion,
+    ...item
+  }));
+};
+
+export const adaptCatalogItems = (data: RawCatalogoItem[]): CatalogItem[] => {
+  return data.map(item => ({
+    value: item.clave,
+    label: formatLabel(item.clave, item.descripcion),
+    descripcion: item.descripcion,
+    ...item
   }));
 };

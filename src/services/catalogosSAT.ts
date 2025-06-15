@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Interfaces para los catálogos SAT
@@ -260,6 +259,70 @@ export const CatalogosSATService = {
       return result;
     } catch (error) {
       console.error('Error obteniendo tipos de embalaje:', error);
+      return [];
+    }
+  },
+
+  // Subtipos de Remolque
+  async obtenerSubtiposRemolque(termino: string = ''): Promise<CatalogoItem[]> {
+    const cacheKey = `subtipos-remolque-${termino}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+
+    try {
+      let query = supabase
+        .from('cat_subtipo_remolque')
+        .select('clave_subtipo, descripcion');
+
+      if (termino) {
+        query = query.ilike('descripcion', `%${termino}%`);
+      }
+
+      const { data, error } = await query.limit(50);
+
+      if (error) throw error;
+      
+      const result = (data || []).map(item => ({
+        clave: item.clave_subtipo,
+        descripcion: item.descripcion
+      }));
+      
+      setCachedData(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Error obteniendo subtipos de remolque:', error);
+      return [];
+    }
+  },
+
+  // Estados
+  async obtenerEstados(termino: string = ''): Promise<CatalogoItem[]> {
+    const cacheKey = `estados-${termino}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+
+    try {
+      let query = supabase
+        .from('cat_estado')
+        .select('clave_estado, descripcion');
+
+      if (termino) {
+        query = query.ilike('descripcion', `%${termino}%`);
+      }
+      
+      const { data, error } = await query.limit(50);
+
+      if (error) throw error;
+      
+      const result = (data || []).map(item => ({
+        clave: item.clave_estado,
+        descripcion: item.descripcion
+      }));
+      
+      setCachedData(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error('Error obteniendo estados:', error);
       return [];
     }
   },
