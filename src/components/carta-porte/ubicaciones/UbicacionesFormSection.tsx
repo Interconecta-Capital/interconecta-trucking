@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UbicacionFormOptimizado } from './UbicacionFormOptimizado';
-import { AlertCircle } from 'lucide-react';
+import { SmartUbicacionFormV2 } from './SmartUbicacionFormV2';
+import { UbicacionFrecuente } from '@/types/ubicaciones';
 
 interface UbicacionesFormSectionProps {
   formErrors: string[];
@@ -10,9 +9,9 @@ interface UbicacionesFormSectionProps {
   ubicaciones: any[];
   onSave: (ubicacion: any) => void;
   onCancel: () => void;
-  onSaveToFavorites: (ubicacion: any) => void;
+  onSaveToFavorites: (ubicacion: Omit<UbicacionFrecuente, 'id' | 'usoCount'>) => void;
   generarId: (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => string;
-  ubicacionesFrecuentes: any[];
+  ubicacionesFrecuentes: UbicacionFrecuente[];
 }
 
 export function UbicacionesFormSection({
@@ -25,26 +24,23 @@ export function UbicacionesFormSection({
   generarId,
   ubicacionesFrecuentes
 }: UbicacionesFormSectionProps) {
+  const ubicacionActual = editingIndex !== null ? ubicaciones[editingIndex] : undefined;
+
   return (
     <div className="space-y-4">
       {formErrors.length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-1">
-              <p className="font-medium">Corrija los siguientes errores:</p>
-              <ul className="list-disc list-inside">
-                {formErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="text-red-800 font-medium mb-2">Errores en el formulario:</h4>
+          <ul className="text-red-700 text-sm space-y-1">
+            {formErrors.map((error, index) => (
+              <li key={index}>• {error}</li>
+            ))}
+          </ul>
+        </div>
       )}
-      
-      <UbicacionFormOptimizado
-        ubicacion={editingIndex !== null ? ubicaciones[editingIndex] : undefined}
+
+      <SmartUbicacionFormV2
+        ubicacion={ubicacionActual}
         onSave={onSave}
         onCancel={onCancel}
         onSaveToFavorites={onSaveToFavorites}

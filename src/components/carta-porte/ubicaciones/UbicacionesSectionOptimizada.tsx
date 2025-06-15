@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { UbicacionFormMejorado } from './UbicacionFormMejorado';
 import { UbicacionesHeader } from './UbicacionesHeader';
 import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
@@ -80,6 +79,34 @@ export function UbicacionesSectionOptimizada({
 
   const handleGuardarUbicacion = (ubicacionData: any) => {
     try {
+      // Validar datos básicos
+      const errores = [];
+      
+      if (!ubicacionData.tipoUbicacion) {
+        errores.push('El tipo de ubicación es requerido');
+      }
+      
+      if (!ubicacionData.rfcRemitenteDestinatario) {
+        errores.push('El RFC es requerido');
+      }
+      
+      if (!ubicacionData.nombreRemitenteDestinatario) {
+        errores.push('El nombre es requerido');
+      }
+      
+      if (!ubicacionData.domicilio?.codigoPostal) {
+        errores.push('El código postal es requerido');
+      }
+      
+      if (!ubicacionData.domicilio?.calle) {
+        errores.push('La calle es requerida');
+      }
+
+      if (errores.length > 0) {
+        setFormErrors(errores);
+        return;
+      }
+
       if (editingIndex !== null) {
         actualizarUbicacion(editingIndex, ubicacionData);
         toast({
@@ -98,6 +125,7 @@ export function UbicacionesSectionOptimizada({
       setEditingIndex(null);
       setFormErrors([]);
     } catch (error) {
+      console.error('Error al guardar ubicación:', error);
       toast({
         title: "Error",
         description: "Hubo un error al guardar la ubicación.",
