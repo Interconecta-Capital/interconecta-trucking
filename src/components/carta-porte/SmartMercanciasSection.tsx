@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -119,9 +118,12 @@ export function SmartMercanciasSection({
 
   const handleDocumentProcessed = async (extractedMercancias: any[]) => {
     try {
-      await importarMercancias(extractedMercancias);
+      const result = await importarMercancias(extractedMercancias);
       setShowDocumentDialog(false);
-      toast.success(`${extractedMercancias.length} mercancías importadas exitosamente`);
+      toast.success(`${result.importadas} mercancías importadas exitosamente`);
+      if (result.errores > 0) {
+        toast.warning(`${result.errores} mercancías con errores`);
+      }
     } catch (error) {
       console.error('Error processing document:', error);
       toast.error('Error al procesar las mercancías del documento');

@@ -60,7 +60,11 @@ export function CodigoPostalSelector({
         codigo_postal: rawData.codigo_postal,
         estado: rawData.estado,
         municipio: rawData.municipio,
-        colonias: Array.isArray(rawData.colonias) ? rawData.colonias : []
+        colonias: Array.isArray(rawData.colonias) 
+          ? rawData.colonias as { nombre: string; tipo: string; }[]
+          : typeof rawData.colonias === 'string'
+          ? JSON.parse(rawData.colonias)
+          : []
       };
       onValueChange(codigoPostal, transformedData);
     } else {

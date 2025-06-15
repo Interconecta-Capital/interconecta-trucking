@@ -28,6 +28,21 @@ export const useCartaPorteFormValidation = ({
         valor_mercancia: m.valor,
         material_peligroso: false,
         moneda: 'MXN'
+      })) || [],
+      ubicaciones: formDataForValidation.ubicaciones?.map(u => ({
+        id: u.id,
+        tipo_ubicacion: u.tipo === 'origen' ? 'Origen' : 'Destino',
+        id_ubicacion: u.id,
+        domicilio: {
+          pais: 'MEX',
+          codigo_postal: u.codigoPostal,
+          estado: u.estado,
+          municipio: u.municipio,
+          colonia: '',
+          calle: u.direccion,
+          numero_exterior: '',
+        },
+        coordenadas: u.coordenadas
       })) || []
     };
   }, [formDataForValidation]);

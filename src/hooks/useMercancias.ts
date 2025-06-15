@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -20,6 +19,7 @@ export interface Mercancia {
 
 export interface MercanciaConErrores extends Mercancia {
   errores?: string[];
+  fila?: number;
 }
 
 export const useMercancias = () => {
@@ -124,23 +124,54 @@ export const useMercancias = () => {
     ));
   }, []);
 
-  const importarMercancias = useCallback(async (mercanciasList: Mercancia[]) => {
+  const importarMercancias = useCallback(async (mercanciasList: Mercancia[]): Promise<{
+    importadas: number;
+    errores: number;
+    mercanciasConErrores: MercanciaConErrores[];
+  }> => {
     try {
+      const mercanciasConErrores: MercanciaConErrores[] = [];
+      let importadas = 0;
+      let errores = 0;
+
       // Validar cada mercancía antes de importar
-      for (const mercancia of mercanciasList) {
+      for (let i = 0; i < mercanciasList.length; i++) {
+        const mercancia = mercanciasList[i];
+        const erroresMercancia: string[] = [];
+
         if (!mercancia.bienes_transp || !mercancia.descripcion) {
-          throw new Error('Datos incompletos en una o más mercancías');
+          erroresMercancia.push('Datos incompletos en mercancía');
+        }
+
+        if (erroresMercancia.length > 0) {
+          mercanciasConErrores.push({
+            ...mercancia,
+            errores: erroresMercancia,
+            fila: i + 1
+          });
+          errores++;
+        } else {
+          importadas++;
         }
       }
       
-      // Agregar IDs únicos
-      const mercanciasConId = mercanciasList.map(m => ({
+      // Agregar solo las mercancías válidas
+      const mercanciasValidas = mercanciasList.filter((_, index) => 
+        !mercanciasConErrores.some(error => error.fila === index + 1)
+      );
+
+      const mercanciasConId = mercanciasValidas.map(m => ({
         ...m,
         id: `imported-${Date.now()}-${Math.random()}`
       }));
       
       setMercancias(prev => [...prev, ...mercanciasConId]);
-      return true;
+
+      return {
+        importadas,
+        errores,
+        mercanciasConErrores
+      };
     } catch (error) {
       console.error('Error importando mercancías:', error);
       throw error;

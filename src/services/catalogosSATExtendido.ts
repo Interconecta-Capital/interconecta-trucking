@@ -1,5 +1,5 @@
-import { CatalogoEmbalaje, CatalogoCarroceria, CatalogoTipoLicencia } from '@/types/cartaPorte';
-import { CatalogItem } from './catalogosSAT';
+import { supabase } from '@/integrations/supabase/client';
+import { CatalogoItem } from './catalogosSAT';
 
 // Catálogo de tipos de embalaje SAT
 export const catalogoTiposEmbalaje: CatalogoEmbalaje[] = [
