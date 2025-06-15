@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { CartaPorteFormData } from './useCartaPorteMappers';
@@ -54,7 +53,7 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
 
   const { validateComplete } = useCartaPorteValidation();
 
-  const updateFormData = useCallback((updates: Partial<CartaPorteFormDataExtendido>) => {
+  const updateFormData = useCallback((updates: Partial<CartaPorteFormData>) => {
     setFormData(prev => ({
       ...prev,
       ...updates
@@ -63,7 +62,7 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
     setError(null);
   }, []);
 
-  const updateSection = useCallback((section: keyof CartaPorteFormDataExtendido, data: any) => {
+  const updateSection = useCallback((section: keyof CartaPorteFormData, data: any) => {
     setFormData(prev => ({
       ...prev,
       [section]: data
@@ -80,7 +79,6 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
   }, []);
 
   const validateCurrentState = useCallback(() => {
-    // Convertir a formato compatible para validación
     const compatibleData = {
       tipoCreacion: formData.tipoCreacion,
       tipoCfdi: formData.tipoCfdi,

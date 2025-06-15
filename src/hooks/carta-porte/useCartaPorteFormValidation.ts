@@ -1,11 +1,12 @@
+
 import { useMemo } from 'react';
 import { useCartaPorteValidationEnhanced } from './useCartaPorteValidationEnhanced';
-import { CartaPorteFormDataExtendido, useCartaPorteMappersExtendidos } from './useCartaPorteMappers';
+import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { StepValidations } from './types/useCartaPorteFormTypes';
 
 interface UseCartaPorteFormValidationOptions {
-  formDataForValidation: CartaPorteFormDataExtendido;
+  formDataForValidation: CartaPorteFormData;
   enableAI?: boolean;
 }
 
@@ -13,12 +14,12 @@ export const useCartaPorteFormValidation = ({
   formDataForValidation, 
   enableAI = true 
 }: UseCartaPorteFormValidationOptions) => {
-  const { formDataExtendidoToCartaPorteData } = useCartaPorteMappersExtendidos();
+  const { formDataToCartaPorteData } = useCartaPorteMappers();
 
   // Transform formData to CartaPorteData for validation
   const transformedData: CartaPorteData = useMemo(() => {
-    return formDataExtendidoToCartaPorteData(formDataForValidation);
-  }, [formDataForValidation, formDataExtendidoToCartaPorteData]);
+    return formDataToCartaPorteData(formDataForValidation);
+  }, [formDataForValidation, formDataToCartaPorteData]);
 
   // Usar validaciones mejoradas con IA con datos transformados
   const validationResult = useCartaPorteValidationEnhanced({ 

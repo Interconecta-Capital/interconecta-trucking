@@ -1,4 +1,3 @@
-
 import {
   CartaPorteData,
   UbicacionCompleta,
@@ -155,8 +154,8 @@ export const useCartaPorteMappers = () => {
       nombreEmisor: cartaPorteData.nombreEmisor || '',
       rfcReceptor: cartaPorteData.rfcReceptor || '',
       nombreReceptor: cartaPorteData.nombreReceptor || '',
-      transporteInternacional: cartaPorteData.transporteInternacional || false,
-      registroIstmo: cartaPorteData.registroIstmo || false,
+      transporteInternacional: cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí',
+      registroIstmo: !!cartaPorteData.registroIstmo,
       cartaPorteVersion: cartaPorteData.cartaPorteVersion || '3.1',
       cartaPorteId: cartaPorteData.cartaPorteId,
     };
@@ -167,4 +166,3 @@ export const useCartaPorteMappers = () => {
     cartaPorteDataToFormData,
   };
 };
-

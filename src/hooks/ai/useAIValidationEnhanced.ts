@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { geminiCore, AIValidationResult } from '@/services/ai/GeminiCoreService';
 import { CartaPorteFormData } from '../carta-porte/useCartaPorteMappers';
@@ -43,8 +42,8 @@ export const useAIValidationEnhanced = () => {
           businessContext: {
             industry: 'transporte',
             region: 'mexico',
-            vehicleTypes: formData.autotransporte ? [formData.autotransporte.configuracionVehicular] : [],
-            commonRoutes: formData.ubicaciones?.map(u => u.municipio).filter(Boolean) || []
+            vehicleTypes: formData.autotransporte ? [formData.autotransporte.config_vehicular] : [],
+            commonRoutes: formData.ubicaciones?.map(u => u.domicilio.municipio).filter(Boolean) || []
           }
         }
       );
@@ -153,12 +152,12 @@ export const useAIValidationEnhanced = () => {
 
       // Ejemplo: Predecir problemas de peso vs configuración vehicular
       if (formData.mercancias && formData.autotransporte) {
-        const pesoTotal = formData.mercancias.reduce((sum, m) => sum + (m.peso || 0), 0);
-        const configVehicular = formData.autotransporte.configuracionVehicular;
+        const pesoTotal = formData.mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0);
+        const configVehicular = formData.autotransporte.config_vehicular;
 
         if (pesoTotal > 10000 && configVehicular === 'VL') {
           alerts.push({
-            field: 'autotransporte.configuracionVehicular',
+            field: 'autotransporte.config_vehicular',
             prediction: 'El peso total de mercancías puede exceder la capacidad de un vehículo ligero',
             confidence: 0.85
           });
@@ -167,7 +166,7 @@ export const useAIValidationEnhanced = () => {
 
       // Ejemplo: Validar coherencia de ubicaciones
       if (formData.ubicaciones && formData.ubicaciones.length >= 2) {
-        const estados = formData.ubicaciones.map(u => u.estado).filter(Boolean);
+        const estados = formData.ubicaciones.map(u => u.domicilio.estado).filter(Boolean);
         const estadosUnicos = new Set(estados);
 
         if (estadosUnicos.size > 3) {

@@ -9,12 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Package, Trash2, Save, X, Ruler, Globe } from 'lucide-react';
 import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
 import { AIAssistantButton } from './AIAssistantButton';
-import { 
-  useBuscarProductosServiciosAdaptados, 
-  useBuscarClaveUnidadAdaptados, 
-  useBuscarMaterialesPeligrososAdaptados,
-  useTiposEmbalajeAdaptados
-} from '@/hooks/useCatalogosWithAdapters';
+import { useAdaptedCatalogQuery } from '@/components/catalogos/hooks/useAdaptedCatalogQuery';
 import { useFraccionesArancelarias } from '@/hooks/useCatalogosExtendidos';
 import { MercanciaCompleta } from '@/types/cartaPorte';
 
@@ -70,22 +65,25 @@ export function MercanciaFormCompleta({
   const materialPeligroso = form.watch('material_peligroso') || false;
   const esComercioExterior = form.watch('fraccion_arancelaria') !== '';
   
-  const { data: productos = [], isLoading: loadingProductos } = useBuscarProductosServiciosAdaptados(
+  const { data: productos = [], isLoading: loadingProductos } = useAdaptedCatalogQuery(
+    'productos',
     productoSearch,
-    true
+    productoSearch.length >= 2
   );
   
-  const { data: unidades = [], isLoading: loadingUnidades } = useBuscarClaveUnidadAdaptados(
+  const { data: unidades = [], isLoading: loadingUnidades } = useAdaptedCatalogQuery(
+    'unidades',
     unidadSearch,
-    true
+    unidadSearch.length >= 2
   );
   
-  const { data: materiales = [], isLoading: loadingMateriales } = useBuscarMaterialesPeligrososAdaptados(
+  const { data: materiales = [], isLoading: loadingMateriales } = useAdaptedCatalogQuery(
+    'materiales_peligrosos',
     materialSearch,
     materialPeligroso && materialSearch.length >= 2
   );
 
-  const { data: embalajes = [], isLoading: loadingEmbalajes } = useTiposEmbalajeAdaptados();
+  const { data: embalajes = [], isLoading: loadingEmbalajes } = useAdaptedCatalogQuery('embalajes', '', true);
 
   const { data: fracciones = [], isLoading: loadingFracciones } = useFraccionesArancelarias(
     fraccionSearch,
