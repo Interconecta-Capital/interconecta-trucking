@@ -1,8 +1,8 @@
-
 export interface Ubicacion {
   id: string;
   idUbicacion: string;
-  tipoUbicacion: 'Origen' | 'Destino';
+  // Permitir seleccion vacío y paso intermedio para el workflow
+  tipoUbicacion: '' | 'Origen' | 'Destino' | 'Paso Intermedio';
   rfcRemitenteDestinatario?: string;
   nombreRemitenteDestinatario?: string;
   fechaHoraSalidaLlegada?: string;
