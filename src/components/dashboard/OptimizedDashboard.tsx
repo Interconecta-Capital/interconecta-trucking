@@ -1,16 +1,16 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useOptimizedQueries } from '@/hooks/useOptimizedQueries';
+import { useOptimizedConductores, useOptimizedVehiculos, useOptimizedSocios } from '@/hooks/useOptimizedQueries';
 import { useOptimizedCartaPorte } from '@/hooks/useOptimizedCartaPorte';
 import { useOptimizedNotifications } from '@/hooks/useOptimizedNotifications';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 import { FileText, Car, Users, Bell, TrendingUp } from 'lucide-react';
 
 export function OptimizedDashboard() {
-  const { conductores } = useOptimizedQueries();
-  const { vehiculos } = useOptimizedQueries();
-  const { socios } = useOptimizedQueries();
+  const { conductores } = useOptimizedConductores();
+  const { vehiculos } = useOptimizedVehiculos();
+  const { socios } = useOptimizedSocios();
   const { cartasPorte, totalCount } = useOptimizedCartaPorte(1, 5);
   const { notificacionesNoLeidas, notificacionesUrgentes } = useOptimizedNotifications();
   const { metrics } = usePerformanceMonitoring();
