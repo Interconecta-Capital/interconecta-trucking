@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { useCatalogosReal } from '@/hooks/useCatalogosReal';
@@ -53,7 +52,7 @@ export function CatalogoSelectorMejorado({
   const [localError, setLocalError] = useState<string>('');
   
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const { clearCache } = useCatalogosReal();
+  const { limpiarCache } = useCatalogosReal();
 
   const queryEnabled = !disabled && (tipo !== 'materiales_peligrosos' || debouncedSearch.length >= 2);
   const currentQuery = useCatalogQuery(tipo, debouncedSearch, queryEnabled);
@@ -97,7 +96,7 @@ export function CatalogoSelectorMejorado({
   };
 
   const handleRefresh = () => {
-    clearCache();
+    limpiarCache();
     refetch();
     setLocalError('');
   };

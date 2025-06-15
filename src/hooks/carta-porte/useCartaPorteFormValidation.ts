@@ -50,11 +50,11 @@ export const useCartaPorteFormValidation = ({
         config_vehicular: formDataForValidation.autotransporte.configuracionVehicular,
         perm_sct: 'TPAF01',
         num_permiso_sct: '123456',
-        asegura_resp_civil: formDataForValidacion.autotransporte.seguro?.aseguradora || '',
-        poliza_resp_civil: formDataForValidacion.autotransporte.seguro?.poliza || '',
-        remolques: formDataForValidacion.autotransporte.remolques || []
+        asegura_resp_civil: formDataForValidation.autotransporte.seguro?.aseguradora || '',
+        poliza_resp_civil: formDataForValidation.autotransporte.seguro?.poliza || '',
+        remolques: formDataForValidation.autotransporte.remolques || []
       } : undefined,
-      figuras: formDataForValidacion.figuras?.map(f => ({
+      figuras: formDataForValidation.figuras?.map(f => ({
         id: f.id,
         tipo_figura: f.tipoFigura,
         rfc_figura: f.rfc,

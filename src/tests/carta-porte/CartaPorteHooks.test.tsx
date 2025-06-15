@@ -171,7 +171,7 @@ describe('CartaPorte Hooks - Robust Testing', () => {
         const summary = result.current.getValidationSummary(mockCartaPorteData);
         
         expect(summary).toBeDefined();
-        expect(summary.totalProgress).toBeDefined();
+        expect(summary.completionPercentage).toBeDefined();
       });
     });
   });
