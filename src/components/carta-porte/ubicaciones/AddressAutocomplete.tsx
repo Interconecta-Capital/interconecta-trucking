@@ -96,12 +96,12 @@ export function AddressAutocomplete({
   const handleSuggestionSelect = (suggestion: GeocodeResult) => {
     console.log('Dirección seleccionada:', suggestion);
     
-    // Actualizar el campo de búsqueda con la dirección seleccionada
-    onChange(suggestion.formattedAddress);
-    
-    // Limpiar sugerencias INMEDIATAMENTE
+    // Limpiar sugerencias INMEDIATAMENTE antes de cualquier otra acción
     setShowSuggestions(false);
     setSuggestions([]);
+    
+    // Limpiar el campo de búsqueda inmediatamente
+    onChange('');
     
     if (onAddressSelect) {
       // Crear estructura compatible con el componente padre
@@ -124,10 +124,8 @@ export function AddressAutocomplete({
         ...suggestion
       };
       
-      // Llamar al callback después de limpiar las sugerencias
-      setTimeout(() => {
-        onAddressSelect(mapboxData);
-      }, 50);
+      // Llamar al callback inmediatamente
+      onAddressSelect(mapboxData);
     }
   };
 
@@ -144,7 +142,7 @@ export function AddressAutocomplete({
     }
   };
 
-  // Limpiar sugerencias cuando el componente se desmonta o el valor cambia drásticamente
+  // Limpiar sugerencias cuando el componente se desmonta
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {

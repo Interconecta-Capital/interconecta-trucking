@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin, Search, Edit, Lock, Unlock } from 'lucide-react';
+import { MapPin, Search, Edit, Lock, Unlock, Info } from 'lucide-react';
 import { UbicacionFrecuente } from '@/types/ubicaciones';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import { useUbicacionForm } from '@/hooks/useUbicacionForm';
@@ -72,22 +72,33 @@ export function SmartUbicacionFormV2({
       };
     }
 
-    // Usar el contexto de Mapbox para información precisa
+    // Usar el contexto de Mapbox para información precisa con múltiples fallbacks
     context.forEach((item: any) => {
       const id = item.id || '';
+      const text = item.text || '';
       
-      if (id.startsWith('postcode')) {
-        parsedData.codigoPostal = item.text;
-        console.log('CP encontrado:', item.text);
-      } else if (id.startsWith('place')) {
-        parsedData.municipio = item.text;
-        console.log('Municipio encontrado:', item.text);
-      } else if (id.startsWith('district') || id.startsWith('locality')) {
-        parsedData.colonia = item.text;
-        console.log('Colonia encontrada:', item.text);
-      } else if (id.startsWith('region')) {
-        parsedData.estado = item.text;
-        console.log('Estado encontrado:', item.text);
+      // Código postal con múltiples variantes
+      if (id.startsWith('postcode') || id.includes('postal')) {
+        parsedData.codigoPostal = text;
+        console.log('CP encontrado:', text);
+      }
+      
+      // Estado con múltiples variantes
+      else if (id.startsWith('region') || id.includes('admin_area_1') || id.includes('state')) {
+        parsedData.estado = text;
+        console.log('Estado encontrado:', text);
+      }
+      
+      // Municipio con múltiples variantes
+      else if (id.startsWith('place') || id.includes('admin_area_2') || id.includes('city')) {
+        parsedData.municipio = text;
+        console.log('Municipio encontrado:', text);
+      }
+      
+      // Colonia con múltiples variantes
+      else if (id.startsWith('district') || id.startsWith('locality') || id.includes('neighborhood')) {
+        parsedData.colonia = text;
+        console.log('Colonia encontrada:', text);
       }
     });
 
@@ -96,28 +107,50 @@ export function SmartUbicacionFormV2({
     if (addressParts.length > 0) {
       const streetPart = addressParts[0];
       
-      // Mejorar regex para capturar calle y número
-      const streetMatch = streetPart.match(/^(.+?)\s+(\d+[a-zA-Z\-]*)\s*(.*)$/) || 
-                         streetPart.match(/^(.+?)\s+#(\d+[a-zA-Z\-]*)\s*(.*)$/) ||
-                         streetPart.match(/^(.+?)\s+(S\/N|s\/n)\s*(.*)$/);
+      // Mejorar regex para capturar calle y número con más variantes
+      const streetPatterns = [
+        /^(.+?)\s+(\d+[a-zA-Z\-]*)\s*(.*)$/,           // Número normal
+        /^(.+?)\s+#(\d+[a-zA-Z\-]*)\s*(.*)$/,          // Con #
+        /^(.+?)\s+(S\/N|s\/n|SN|sn)\s*(.*)$/,         // Sin número
+        /^(.+?)\s+(\d+\s*[A-Z])\s*(.*)$/,             // Número con letra separada
+        /^(.+?)\s+KM\s*(\d+[.\d]*)\s*(.*)$/           // Kilómetro
+      ];
       
-      if (streetMatch) {
-        parsedData.calle = streetMatch[1].trim();
-        parsedData.numExterior = streetMatch[2] === 'S/N' || streetMatch[2] === 's/n' ? '' : streetMatch[2];
-        console.log('Calle parseada:', parsedData.calle, 'Número:', parsedData.numExterior);
-      } else {
+      let matched = false;
+      for (const pattern of streetPatterns) {
+        const match = streetPart.match(pattern);
+        if (match) {
+          parsedData.calle = match[1].trim();
+          parsedData.numExterior = ['S/N', 's/n', 'SN', 'sn'].includes(match[2]) ? '' : match[2];
+          console.log('Calle parseada:', parsedData.calle, 'Número:', parsedData.numExterior);
+          matched = true;
+          break;
+        }
+      }
+      
+      if (!matched) {
         // Si no se puede separar el número, usar todo como calle
         parsedData.calle = streetPart.trim();
         console.log('Calle sin número:', parsedData.calle);
       }
     }
 
-    // Buscar código postal en place_name si no se encontró en contexto
+    // Buscar información faltante en place_name si no se encontró en contexto
     if (!parsedData.codigoPostal) {
       const cpMatch = placeName.match(/\b(\d{5})\b/);
       if (cpMatch) {
         parsedData.codigoPostal = cpMatch[1];
         console.log('CP encontrado en place_name:', cpMatch[1]);
+      }
+    }
+
+    // Buscar estado en place_name si no se encontró
+    if (!parsedData.estado) {
+      const estadosPattern = /(Ciudad de México|CDMX|México|Jalisco|Nuevo León|Puebla|Guanajuato|Veracruz|Chihuahua|Sonora|Coahuila|Michoacán|Oaxaca|Chiapas|Guerrero|Tamaulipas|Baja California|Sinaloa|Hidalgo|San Luis Potosí|Tabasco|Yucatán|Querétaro|Morelos|Durango|Zacatecas|Aguascalientes|Tlaxcala|Nayarit|Campeche|Colima|Quintana Roo)/i;
+      const estadoMatch = placeName.match(estadosPattern);
+      if (estadoMatch) {
+        parsedData.estado = estadoMatch[1];
+        console.log('Estado encontrado en place_name:', estadoMatch[1]);
       }
     }
 
@@ -144,14 +177,17 @@ export function SmartUbicacionFormV2({
       handleFieldChange('coordenadas', parsedAddress.coordenadas);
     }
     
+    // Marcar dirección como seleccionada y limpiar búsqueda
     setDireccionSeleccionada(true);
-    setSearchAddress(addressData.place_name);
+    setSearchAddress('');
     
     // Limpiar errores relacionados con la dirección
     const newErrors = { ...errors };
     delete newErrors.address;
     delete newErrors.codigoPostal;
     delete newErrors.calle;
+    delete newErrors.estado;
+    delete newErrors.municipio;
     setErrors(newErrors);
     
     console.log('Campos actualizados y dirección marcada como seleccionada');
@@ -160,11 +196,11 @@ export function SmartUbicacionFormV2({
   const handleModoManualChange = (checked: boolean) => {
     setModoManual(checked);
     if (checked) {
-      // Al activar modo manual, limpiar el estado de búsqueda
-      setDireccionSeleccionada(true); // Permitir edición
-      console.log('Modo manual activado - campos desbloqueados');
+      // Al activar modo manual, permitir edición de todos los campos
+      setDireccionSeleccionada(true);
+      console.log('Modo manual activado - todos los campos desbloqueados');
     } else {
-      // Al desactivar modo manual, resetear búsqueda si no hay dirección seleccionada
+      // Al desactivar modo manual, resetear si no hay dirección seleccionada
       if (!direccionSeleccionada) {
         setSearchAddress('');
       }
@@ -177,7 +213,7 @@ export function SmartUbicacionFormV2({
     // Si el usuario empieza a escribir una nueva dirección, resetear el estado
     if (direccionSeleccionada && value !== searchAddress) {
       setDireccionSeleccionada(false);
-      console.log('Búsqueda cambiada - reseteando estado de selección');
+      console.log('Nueva búsqueda iniciada - reseteando estado de selección');
     }
   };
 
@@ -188,20 +224,31 @@ export function SmartUbicacionFormV2({
       newErrors.tipoUbicacion = 'El tipo de ubicación es requerido';
     }
 
-    if (!formData.rfcRemitenteDestinatario?.trim()) {
-      newErrors.rfc = 'El RFC es requerido';
+    // RFC opcional solo para Paso Intermedio
+    if (formData.tipoUbicacion !== 'Paso Intermedio' && !formData.rfcRemitenteDestinatario?.trim()) {
+      newErrors.rfc = 'El RFC es requerido para origen y destino';
     }
 
-    if (!formData.nombreRemitenteDestinatario?.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
+    // Nombre opcional para Paso Intermedio
+    if (formData.tipoUbicacion !== 'Paso Intermedio' && !formData.nombreRemitenteDestinatario?.trim()) {
+      newErrors.nombre = 'El nombre es requerido para origen y destino';
     }
 
     if (!modoManual && !direccionSeleccionada) {
       newErrors.address = 'Debe buscar y seleccionar una dirección completa';
     }
 
+    // Campos obligatorios del domicilio
     if (!formData.domicilio.codigoPostal?.trim()) {
       newErrors.codigoPostal = 'El código postal es requerido';
+    }
+
+    if (!formData.domicilio.estado?.trim()) {
+      newErrors.estado = 'El estado es requerido';
+    }
+
+    if (!formData.domicilio.municipio?.trim()) {
+      newErrors.municipio = 'El municipio es requerido';
     }
 
     if (!formData.domicilio.calle?.trim()) {
@@ -219,8 +266,17 @@ export function SmartUbicacionFormV2({
     }
   };
 
-  // Los campos están bloqueados solo si NO estamos en modo manual Y NO se ha seleccionado una dirección
-  const isFieldDisabled = !modoManual && !direccionSeleccionada;
+  // Determinar qué campos están bloqueados
+  // Solo colonia, número interior, localidad y referencia son siempre editables
+  const isFieldLocked = (field: string) => {
+    if (modoManual) return false; // En modo manual todo está desbloqueado
+    
+    const alwaysEditableFields = ['colonia', 'numInterior', 'localidad', 'referencia'];
+    return !alwaysEditableFields.includes(field) && !direccionSeleccionada;
+  };
+
+  // Determinar si los campos RFC/Nombre son necesarios
+  const isRFCRequired = formData.tipoUbicacion !== 'Paso Intermedio';
 
   return (
     <Card className="w-full">
@@ -287,32 +343,70 @@ export function SmartUbicacionFormV2({
             </div>
           </div>
 
-          {/* RFC y Nombre */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="rfc">RFC Remitente/Destinatario *</Label>
-              <Input
-                id="rfc"
-                value={formData.rfcRemitenteDestinatario}
-                onChange={(e) => handleRFCChange(e.target.value)}
-                placeholder="RFC del remitente o destinatario"
-                className={errors.rfc ? 'border-red-500' : ''}
-              />
-              {errors.rfc && <p className="text-sm text-red-500 mt-1">{errors.rfc}</p>}
-            </div>
+          {/* RFC y Nombre - Condicional según tipo */}
+          {isRFCRequired && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="rfc">RFC Remitente/Destinatario *</Label>
+                <Input
+                  id="rfc"
+                  value={formData.rfcRemitenteDestinatario}
+                  onChange={(e) => handleRFCChange(e.target.value)}
+                  placeholder="RFC del remitente o destinatario"
+                  className={errors.rfc ? 'border-red-500' : ''}
+                />
+                {errors.rfc && <p className="text-sm text-red-500 mt-1">{errors.rfc}</p>}
+              </div>
 
-            <div>
-              <Label htmlFor="nombre">Nombre/Razón Social *</Label>
-              <Input
-                id="nombre"
-                value={formData.nombreRemitenteDestinatario}
-                onChange={(e) => handleFieldChange('nombreRemitenteDestinatario', e.target.value)}
-                placeholder="Nombre completo o razón social"
-                className={errors.nombre ? 'border-red-500' : ''}
-              />
-              {errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>}
+              <div>
+                <Label htmlFor="nombre">Nombre/Razón Social *</Label>
+                <Input
+                  id="nombre"
+                  value={formData.nombreRemitenteDestinatario}
+                  onChange={(e) => handleFieldChange('nombreRemitenteDestinatario', e.target.value)}
+                  placeholder="Nombre completo o razón social"
+                  className={errors.nombre ? 'border-red-500' : ''}
+                />
+                {errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Información para Paso Intermedio */}
+          {formData.tipoUbicacion === 'Paso Intermedio' && (
+            <div className="p-4 bg-yellow-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-yellow-600" />
+                <span className="font-medium text-yellow-800">Paso Intermedio</span>
+              </div>
+              <p className="text-sm text-yellow-700 mb-3">
+                Para pasos intermedios solo es necesario especificar la ubicación. 
+                El RFC y razón social son opcionales y se usan cuando hay transferencia de mercancía.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="rfc-opcional">RFC (Opcional)</Label>
+                  <Input
+                    id="rfc-opcional"
+                    value={formData.rfcRemitenteDestinatario}
+                    onChange={(e) => handleRFCChange(e.target.value)}
+                    placeholder="Solo si hay transferencia"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="nombre-opcional">Nombre (Opcional)</Label>
+                  <Input
+                    id="nombre-opcional"
+                    value={formData.nombreRemitenteDestinatario}
+                    onChange={(e) => handleFieldChange('nombreRemitenteDestinatario', e.target.value)}
+                    placeholder="Solo si hay transferencia"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Sección de búsqueda de dirección */}
           <div className="border-t pt-4">
@@ -333,12 +427,15 @@ export function SmartUbicacionFormV2({
                 
                 {direccionSeleccionada && !modoManual && (
                   <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
-                    ✅ Dirección encontrada y campos completados automáticamente
+                    ✅ Dirección encontrada. Campos principales completados automáticamente.
+                    {!formData.domicilio.colonia && (
+                      <span className="ml-2 text-orange-700">⚠️ Colonia no detectada - completar manualmente</span>
+                    )}
                   </div>
                 )}
                 
                 <p className="text-sm text-muted-foreground mt-2">
-                  💡 Al seleccionar una dirección se completarán automáticamente todos los campos de domicilio
+                  💡 Al seleccionar una dirección se completarán automáticamente: país, código postal, estado, municipio, calle y número exterior
                 </p>
               </div>
 
@@ -375,13 +472,13 @@ export function SmartUbicacionFormV2({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="pais">País</Label>
+                <Label htmlFor="pais">País *</Label>
                 <Input
                   id="pais"
                   value={formData.domicilio.pais}
                   onChange={(e) => handleFieldChange('domicilio.pais', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={isFieldDisabled ? 'bg-gray-100' : ''}
+                  disabled={isFieldLocked('pais')}
+                  className={isFieldLocked('pais') ? 'bg-gray-100' : ''}
                 />
               </div>
 
@@ -391,34 +488,36 @@ export function SmartUbicacionFormV2({
                   id="codigoPostal"
                   value={formData.domicilio.codigoPostal}
                   onChange={(e) => handleFieldChange('domicilio.codigoPostal', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={`${isFieldDisabled ? 'bg-gray-100' : ''} ${errors.codigoPostal ? 'border-red-500' : ''}`}
+                  disabled={isFieldLocked('codigoPostal')}
+                  className={`${isFieldLocked('codigoPostal') ? 'bg-gray-100' : ''} ${errors.codigoPostal ? 'border-red-500' : ''}`}
                 />
                 {errors.codigoPostal && <p className="text-sm text-red-500 mt-1">{errors.codigoPostal}</p>}
               </div>
 
               <div>
-                <Label htmlFor="estado">Estado</Label>
+                <Label htmlFor="estado">Estado *</Label>
                 <Input
                   id="estado"
                   value={formData.domicilio.estado}
                   onChange={(e) => handleFieldChange('domicilio.estado', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={isFieldDisabled ? 'bg-gray-100' : ''}
+                  disabled={isFieldLocked('estado')}
+                  className={`${isFieldLocked('estado') ? 'bg-gray-100' : ''} ${errors.estado ? 'border-red-500' : ''}`}
                 />
+                {errors.estado && <p className="text-sm text-red-500 mt-1">{errors.estado}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="municipio">Municipio</Label>
+                <Label htmlFor="municipio">Municipio *</Label>
                 <Input
                   id="municipio"
                   value={formData.domicilio.municipio}
                   onChange={(e) => handleFieldChange('domicilio.municipio', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={isFieldDisabled ? 'bg-gray-100' : ''}
+                  disabled={isFieldLocked('municipio')}
+                  className={`${isFieldLocked('municipio') ? 'bg-gray-100' : ''} ${errors.municipio ? 'border-red-500' : ''}`}
                 />
+                {errors.municipio && <p className="text-sm text-red-500 mt-1">{errors.municipio}</p>}
               </div>
 
               <div>
@@ -427,9 +526,12 @@ export function SmartUbicacionFormV2({
                   id="colonia"
                   value={formData.domicilio.colonia}
                   onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={isFieldDisabled ? 'bg-gray-100' : ''}
+                  placeholder="Siempre editable"
+                  className="bg-white" // Siempre editable
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Campo siempre editable - Mapbox no siempre detecta la colonia
+                </p>
               </div>
             </div>
 
@@ -440,8 +542,8 @@ export function SmartUbicacionFormV2({
                   id="calle"
                   value={formData.domicilio.calle}
                   onChange={(e) => handleFieldChange('domicilio.calle', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={`${isFieldDisabled ? 'bg-gray-100' : ''} ${errors.calle ? 'border-red-500' : ''}`}
+                  disabled={isFieldLocked('calle')}
+                  className={`${isFieldLocked('calle') ? 'bg-gray-100' : ''} ${errors.calle ? 'border-red-500' : ''}`}
                 />
                 {errors.calle && <p className="text-sm text-red-500 mt-1">{errors.calle}</p>}
               </div>
@@ -452,8 +554,8 @@ export function SmartUbicacionFormV2({
                   id="numExterior"
                   value={formData.domicilio.numExterior}
                   onChange={(e) => handleFieldChange('domicilio.numExterior', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={isFieldDisabled ? 'bg-gray-100' : ''}
+                  disabled={isFieldLocked('numExterior')}
+                  className={isFieldLocked('numExterior') ? 'bg-gray-100' : ''}
                 />
               </div>
 
@@ -463,22 +565,25 @@ export function SmartUbicacionFormV2({
                   id="numInterior"
                   value={formData.domicilio.numInterior}
                   onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
-                  placeholder="Opcional - siempre editable"
+                  placeholder="Siempre editable"
+                  className="bg-white" // Siempre editable
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="localidad">Localidad (Opcional)</Label>
+                <Label htmlFor="localidad">Localidad (Opcional para Carta Porte)</Label>
                 <Input
                   id="localidad"
                   value={formData.domicilio.localidad}
                   onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
-                  disabled={isFieldDisabled}
-                  className={isFieldDisabled ? 'bg-gray-100' : ''}
-                  placeholder="Opcional para Carta Porte"
+                  placeholder="Siempre editable"
+                  className="bg-white" // Siempre editable
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Campo opcional según normativa de Carta Porte
+                </p>
               </div>
 
               <div>
@@ -487,7 +592,8 @@ export function SmartUbicacionFormV2({
                   id="referencia"
                   value={formData.domicilio.referencia}
                   onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
-                  placeholder="Opcional - siempre editable"
+                  placeholder="Siempre editable"
+                  className="bg-white" // Siempre editable
                 />
               </div>
             </div>
