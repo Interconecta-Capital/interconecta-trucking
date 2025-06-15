@@ -1,262 +1,232 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface CatalogoItem {
+// Interfaces para los catálogos SAT
+export interface ProductoServicio {
   clave: string;
   descripcion: string;
-  fecha_inicio_vigencia?: string;
-  fecha_fin_vigencia?: string;
-}
-
-export interface ProductoServicio extends CatalogoItem {
   incluye_iva?: boolean;
 }
 
-export interface ClaveUnidad extends CatalogoItem {
+export interface ClaveUnidad {
+  clave: string;
   nombre: string;
+  descripcion?: string;
   simbolo?: string;
 }
 
-export interface MaterialPeligroso extends CatalogoItem {
+export interface MaterialPeligroso {
+  clave: string;
+  descripcion: string;
   clase_division?: string;
   grupo_embalaje?: string;
 }
 
-export interface ConfiguracionVehicular extends CatalogoItem {
+export interface ConfiguracionVehicular {
+  clave: string;
+  descripcion: string;
   remolque?: boolean;
   semirremolque?: boolean;
 }
 
-export interface FiguraTransporte extends CatalogoItem {
+export interface FiguraTransporte {
+  clave: string;
+  descripcion: string;
   persona_fisica?: boolean;
   persona_moral?: boolean;
 }
 
-export interface TipoPermiso extends CatalogoItem {
+export interface TipoPermiso {
+  clave: string;
+  descripcion: string;
   transporte_carga?: boolean;
   transporte_pasajeros?: boolean;
 }
 
-export class CatalogosSATService {
-  // Cache simple en memoria
-  private static cache = new Map<string, { data: any[], timestamp: number }>();
-  private static CACHE_TTL = 10 * 60 * 1000; // 10 minutos
+export interface CatalogoItem {
+  clave: string;
+  descripcion: string;
+}
 
-  private static isValidCache(key: string): boolean {
-    const cached = this.cache.get(key);
-    return cached ? (Date.now() - cached.timestamp) < this.CACHE_TTL : false;
+// Cache en memoria para mejorar rendimiento
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+const getCachedData = (key: string) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
   }
+  return null;
+};
 
-  private static setCache(key: string, data: any[]): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
+const setCachedData = (key: string, data: any) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
 
-  private static getCache(key: string): any[] | null {
-    const cached = this.cache.get(key);
-    return cached ? cached.data : null;
-  }
-
-  static async buscarProductosServicios(termino: string): Promise<ProductoServicio[]> {
-    const cacheKey = `productos_${termino}`;
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+export const CatalogosSATService = {
+  // Productos y Servicios
+  async obtenerProductosServicios(termino: string = ''): Promise<ProductoServicio[]> {
+    const cacheKey = `productos-${termino}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_clave_prod_serv_cp')
         .select('clave_prod_serv as clave, descripcion, incluye_iva')
-        .or(`clave_prod_serv.ilike.%${termino}%,descripcion.ilike.%${termino}%`)
-        .order('clave_prod_serv')
-        .limit(20);
+        .ilike('descripcion', `%${termino}%`)
+        .limit(50);
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error buscando productos/servicios:', error);
+      console.error('Error obteniendo productos/servicios:', error);
       return [];
     }
-  }
+  },
 
-  static async buscarClaveUnidad(termino: string): Promise<ClaveUnidad[]> {
-    const cacheKey = `unidades_${termino}`;
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+  // Unidades de Medida
+  async obtenerUnidades(termino: string = ''): Promise<ClaveUnidad[]> {
+    const cacheKey = `unidades-${termino}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_clave_unidad')
         .select('clave_unidad as clave, nombre, descripcion, simbolo')
-        .or(`clave_unidad.ilike.%${termino}%,nombre.ilike.%${termino}%,descripcion.ilike.%${termino}%`)
-        .order('clave_unidad')
-        .limit(20);
+        .or(`nombre.ilike.%${termino}%,descripcion.ilike.%${termino}%`)
+        .limit(50);
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error buscando claves de unidad:', error);
+      console.error('Error obteniendo unidades:', error);
       return [];
     }
-  }
+  },
 
-  static async buscarMaterialesPeligrosos(termino: string): Promise<MaterialPeligroso[]> {
-    if (!termino || termino.length < 2) return [];
-    
-    const cacheKey = `materiales_${termino}`;
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+  // Materiales Peligrosos
+  async obtenerMaterialesPeligrosos(termino: string = ''): Promise<MaterialPeligroso[]> {
+    const cacheKey = `materiales-${termino}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_material_peligroso')
         .select('clave_material as clave, descripcion, clase_division, grupo_embalaje')
-        .or(`clave_material.ilike.%${termino}%,descripcion.ilike.%${termino}%`)
-        .order('clave_material')
-        .limit(15);
+        .ilike('descripcion', `%${termino}%`)
+        .limit(50);
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error buscando materiales peligrosos:', error);
+      console.error('Error obteniendo materiales peligrosos:', error);
       return [];
     }
-  }
+  },
 
-  static async obtenerConfiguracionesVehiculares(): Promise<ConfiguracionVehicular[]> {
-    const cacheKey = 'configuraciones_vehiculares';
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+  // Configuraciones Vehiculares
+  async obtenerConfiguracionesVehiculares(): Promise<ConfiguracionVehicular[]> {
+    const cacheKey = 'configuraciones-vehiculares';
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_config_autotransporte')
-        .select('clave_config as clave, descripcion, remolque, semirremolque')
-        .order('clave_config');
+        .select('clave_config as clave, descripcion, remolque, semirremolque');
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
       console.error('Error obteniendo configuraciones vehiculares:', error);
       return [];
     }
-  }
+  },
 
-  static async obtenerFigurasTransporte(): Promise<FiguraTransporte[]> {
-    const cacheKey = 'figuras_transporte';
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+  // Figuras de Transporte
+  async obtenerFigurasTransporte(): Promise<FiguraTransporte[]> {
+    const cacheKey = 'figuras-transporte';
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_figura_transporte')
-        .select('clave_figura as clave, descripcion, persona_fisica, persona_moral')
-        .order('clave_figura');
+        .select('clave_figura as clave, descripcion, persona_fisica, persona_moral');
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
       console.error('Error obteniendo figuras de transporte:', error);
       return [];
     }
-  }
+  },
 
-  static async obtenerTiposPermiso(): Promise<TipoPermiso[]> {
-    const cacheKey = 'tipos_permiso';
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+  // Tipos de Permiso
+  async obtenerTiposPermiso(): Promise<TipoPermiso[]> {
+    const cacheKey = 'tipos-permiso';
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_tipo_permiso')
-        .select('clave_permiso as clave, descripcion, transporte_carga, transporte_pasajeros')
-        .order('clave_permiso');
+        .select('clave_permiso as clave, descripcion, transporte_carga, transporte_pasajeros');
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
       console.error('Error obteniendo tipos de permiso:', error);
       return [];
     }
-  }
+  },
 
-  static async obtenerTiposEmbalaje(): Promise<CatalogoItem[]> {
-    const cacheKey = 'tipos_embalaje';
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
+  // Tipos de Embalaje
+  async obtenerTiposEmbalaje(): Promise<CatalogoItem[]> {
+    const cacheKey = 'tipos-embalaje';
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
 
     try {
       const { data, error } = await supabase
         .from('cat_tipo_embalaje')
-        .select('clave_embalaje as clave, descripcion')
-        .order('clave_embalaje');
+        .select('clave_embalaje as clave, descripcion');
 
       if (error) throw error;
-
+      
       const result = data || [];
-      this.setCache(cacheKey, result);
+      setCachedData(cacheKey, result);
       return result;
     } catch (error) {
       console.error('Error obteniendo tipos de embalaje:', error);
       return [];
     }
+  },
+
+  // Utilidades
+  clearCache: () => {
+    cache.clear();
   }
-
-  static async obtenerEstados(): Promise<CatalogoItem[]> {
-    const cacheKey = 'estados';
-    
-    if (this.isValidCache(cacheKey)) {
-      return this.getCache(cacheKey) || [];
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('cat_estado')
-        .select('clave_estado as clave, descripcion')
-        .order('descripcion');
-
-      if (error) throw error;
-
-      const result = data || [];
-      this.setCache(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.error('Error obteniendo estados:', error);
-      return [];
-    }
-  }
-
-  static limpiarCache(): void {
-    this.cache.clear();
-  }
-}
+};

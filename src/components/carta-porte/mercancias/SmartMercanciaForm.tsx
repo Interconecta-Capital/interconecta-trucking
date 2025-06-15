@@ -32,13 +32,18 @@ export function SmartMercanciaForm({
   const { context, addUserPattern } = useAIContext();
   
   const [formData, setFormData] = useState<Mercancia>({
-    fraccion_arancelaria: '',
     descripcion: '',
     bienes_transp: '',
     clave_unidad: '',
     cantidad: 1,
     peso_kg: 0,
     valor_mercancia: 0,
+    material_peligroso: false,
+    cve_material_peligroso: '',
+    moneda: 'MXN',
+    fraccion_arancelaria: '',
+    embalaje: '',
+    uuid_comercio_ext: '',
     ...mercancia
   });
 

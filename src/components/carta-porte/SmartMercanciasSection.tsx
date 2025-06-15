@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,9 +60,9 @@ export function SmartMercanciasSection({
   const handleSaveMercancia = async (mercancia: Mercancia) => {
     try {
       if (editingMercancia) {
-        await actualizarMercancia(editingMercancia.id!, mercancia);
+        actualizarMercancia({ id: editingMercancia.id!, mercancia });
       } else {
-        await agregarMercancia(mercancia);
+        agregarMercancia(mercancia);
       }
       
       // Learn from successful saves

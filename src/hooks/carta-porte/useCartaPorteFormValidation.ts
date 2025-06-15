@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useCartaPorteValidationEnhanced } from './useCartaPorteValidationEnhanced';
 import { CartaPorteFormData } from './useCartaPorteMappers';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { StepValidations } from './types/useCartaPorteFormTypes';
 
 interface UseCartaPorteFormValidationOptions {
@@ -13,9 +14,27 @@ export const useCartaPorteFormValidation = ({
   formDataForValidation, 
   enableAI = true 
 }: UseCartaPorteFormValidationOptions) => {
-  // Usar validaciones mejoradas con IA con datos estables
+  // Transform formData to CartaPorteData for validation
+  const transformedData = useMemo((): CartaPorteData => {
+    return {
+      ...formDataForValidation,
+      mercancias: formDataForValidation.mercancias?.map(m => ({
+        id: m.id,
+        bienes_transp: m.claveProdServ || '',
+        descripcion: m.descripcion,
+        cantidad: m.cantidad,
+        clave_unidad: m.unidadMedida,
+        peso_kg: m.peso,
+        valor_mercancia: m.valor,
+        material_peligroso: false,
+        moneda: 'MXN'
+      })) || []
+    };
+  }, [formDataForValidation]);
+
+  // Usar validaciones mejoradas con IA con datos transformados
   const validationResult = useCartaPorteValidationEnhanced({ 
-    formData: formDataForValidation,
+    formData: transformedData,
     enableAI 
   });
 

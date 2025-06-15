@@ -53,8 +53,19 @@ export function CodigoPostalSelector({
   });
 
   const handleSelect = (codigoPostal: string) => {
-    const data = sugerencias.find(s => s.codigo_postal === codigoPostal);
-    onValueChange(codigoPostal, data);
+    const rawData = sugerencias.find(s => s.codigo_postal === codigoPostal);
+    if (rawData) {
+      // Transform the data to match CodigoPostalData interface
+      const transformedData: CodigoPostalData = {
+        codigo_postal: rawData.codigo_postal,
+        estado: rawData.estado,
+        municipio: rawData.municipio,
+        colonias: Array.isArray(rawData.colonias) ? rawData.colonias : []
+      };
+      onValueChange(codigoPostal, transformedData);
+    } else {
+      onValueChange(codigoPostal);
+    }
     setOpen(false);
   };
 

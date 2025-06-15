@@ -13,6 +13,13 @@ export interface Mercancia {
   material_peligroso: boolean;
   cve_material_peligroso?: string;
   moneda: string;
+  fraccion_arancelaria?: string;
+  embalaje?: string;
+  uuid_comercio_ext?: string;
+}
+
+export interface MercanciaConErrores extends Mercancia {
+  errores?: string[];
 }
 
 export const useMercancias = () => {
@@ -90,6 +97,23 @@ export const useMercancias = () => {
     }
   });
 
+  const actualizarMercancia = useMutation({
+    mutationFn: async ({ id, mercancia }: { id: string; mercancia: Mercancia }) => {
+      // Validaciones similares a agregarMercancia
+      if (!mercancia.bienes_transp) {
+        throw new Error('La clave de producto/servicio es requerida');
+      }
+      
+      return { id, mercancia };
+    },
+    onSuccess: ({ id, mercancia }) => {
+      setMercancias(prev => prev.map(m => 
+        m.id === id ? { ...mercancia, id } : m
+      ));
+      queryClient.invalidateQueries({ queryKey: ['mercancias'] });
+    }
+  });
+
   const eliminarMercancia = useCallback((id: string) => {
     setMercancias(prev => prev.filter(m => m.id !== id));
   }, []);
@@ -100,11 +124,37 @@ export const useMercancias = () => {
     ));
   }, []);
 
+  const importarMercancias = useCallback(async (mercanciasList: Mercancia[]) => {
+    try {
+      // Validar cada mercancía antes de importar
+      for (const mercancia of mercanciasList) {
+        if (!mercancia.bienes_transp || !mercancia.descripcion) {
+          throw new Error('Datos incompletos en una o más mercancías');
+        }
+      }
+      
+      // Agregar IDs únicos
+      const mercanciasConId = mercanciasList.map(m => ({
+        ...m,
+        id: `imported-${Date.now()}-${Math.random()}`
+      }));
+      
+      setMercancias(prev => [...prev, ...mercanciasConId]);
+      return true;
+    } catch (error) {
+      console.error('Error importando mercancías:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     mercancias,
-    agregarMercancia,
+    isLoading: agregarMercancia.isPending || actualizarMercancia.isPending,
+    agregarMercancia: agregarMercancia.mutate,
+    actualizarMercancia: actualizarMercancia.mutate,
     eliminarMercancia,
     editarMercancia,
+    importarMercancias,
     validarClaveMercancia,
     validarClaveUnidad,
     validarMaterialPeligroso
