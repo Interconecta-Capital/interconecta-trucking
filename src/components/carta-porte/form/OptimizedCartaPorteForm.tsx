@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
@@ -7,7 +6,7 @@ import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
 import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
-import { AutotransporteCompleto } from '@/types/cartaPorte';
+import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { useNavigate } from 'react-router-dom';
 
 interface OptimizedCartaPorteFormProps {
@@ -18,7 +17,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   const navigate = useNavigate();
   
   const {
-    // State
+    // Estado directo desde el gestor
     configuracion,
     ubicaciones,
     mercancias,
@@ -31,21 +30,16 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     validationSummary,
     isGuardando,
     
-    // Setters
+    // Setters y Handlers
     setUbicaciones,
     setMercancias,
     setAutotransporte,
     setFiguras,
     setCurrentStep,
-    setXmlGenerated,
-    setTimbradoData,
-    
-    // Handlers
     handleConfiguracionChange,
     handleGuardarBorrador,
     handleLimpiarBorrador,
-    cargarBorrador,
-  } = useCartaPorteFormManager();
+  } = useCartaPorteFormManager(cartaPorteId);
 
   // Optimizar datos del formulario con memoización inteligente
   const {
@@ -186,20 +180,20 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
 
       <OptimizedCartaPorteStepContent
         currentStep={currentStep}
-        configuracion={optimizedConfiguracion}
-        ubicaciones={optimizedUbicaciones}
-        mercancias={optimizedMercancias}
-        autotransporte={safeOptimizedAutotransporte}
-        figuras={optimizedFiguras}
+        configuracion={configuracion}
+        ubicaciones={ubicaciones}
+        mercancias={mercancias}
+        autotransporte={autotransporte || {}} // Pasar un objeto seguro
+        figuras={figuras}
         currentCartaPorteId={currentCartaPorteId}
         onConfiguracionChange={handleConfiguracionChange}
         onUbicacionesChange={setUbicaciones}
         onMercanciasChange={setMercancias}
-        onAutotransporteChange={handleAutotransporteChange}
+        onAutotransporteChange={setAutotransporte}
         onFigurasChange={setFiguras}
         onStepChange={setCurrentStep}
-        onXMLGenerated={setXmlGenerated}
-        onTimbrado={setTimbradoData}
+        onXMLGenerated={() => {}}
+        onTimbrado={() => {}}
       />
 
       <CartaPorteAutoSaveIndicator />

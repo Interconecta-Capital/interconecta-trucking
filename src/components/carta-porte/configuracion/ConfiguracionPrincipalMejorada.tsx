@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ClienteSelector } from '@/components/crm/ClienteSelector';
 import { ArrowRight } from 'lucide-react';
 import { OpcionesEspeciales } from './OpcionesEspeciales';
-import { CartaPorteData } from '../CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
 
 interface ConfiguracionPrincipalMejoradaProps {
@@ -17,26 +17,26 @@ interface ConfiguracionPrincipalMejoradaProps {
   isFormValid: boolean;
 }
 
-export function ConfiguracionPrincipalMejorada({
+const ConfiguracionPrincipalMejoradaComponent = ({
   data,
   onChange,
   onNext,
-  isFormValid
-}: ConfiguracionPrincipalMejoradaProps) {
+}: ConfiguracionPrincipalMejoradaProps) => {
   const handleTipoCfdiChange = (value: string) => {
     if (value === 'Ingreso' || value === 'Traslado') {
-      // Limpiar emisor y receptor al cambiar tipo de CFDI para evitar confusiones
       onChange({
         tipoCfdi: value,
         rfcEmisor: '',
         nombreEmisor: '',
         rfcReceptor: '',
-        nombreReceptor: ''
+        nombreReceptor: '',
+        // Resetear transporte internacional al cambiar, para evitar bugs
+        transporteInternacional: 'No',
       });
     }
   };
 
-  // Crear objetos ClienteProveedor solo si hay datos completos
+  // FIX: Crear objetos ClienteProveedor solo si hay datos completos
   const emisorValue = (data.rfcEmisor && data.nombreEmisor) ? {
     id: `emisor-${data.rfcEmisor}`,
     tipo: 'cliente' as const,
@@ -58,34 +58,19 @@ export function ConfiguracionPrincipalMejorada({
   } : null;
 
   const handleEmisorChange = (emisor: ClienteProveedor | null) => {
-    if (emisor) {
-      onChange({
-        rfcEmisor: emisor.rfc,
-        nombreEmisor: emisor.razon_social
-      });
-    } else {
-      onChange({
-        rfcEmisor: '',
-        nombreEmisor: ''
-      });
-    }
+    onChange({
+      rfcEmisor: emisor?.rfc || '',
+      nombreEmisor: emisor?.razon_social || ''
+    });
   };
 
   const handleReceptorChange = (receptor: ClienteProveedor | null) => {
-    if (receptor) {
-      onChange({
-        rfcReceptor: receptor.rfc,
-        nombreReceptor: receptor.razon_social
-      });
-    } else {
-      onChange({
-        rfcReceptor: '',
-        nombreReceptor: ''
-      });
-    }
+    onChange({
+      rfcReceptor: receptor?.rfc || '',
+      nombreReceptor: receptor?.razon_social || ''
+    });
   };
 
-  // Validar si el formulario está completo
   const isFormCompleto = () => {
     return !!(data.tipoCfdi && data.rfcEmisor && data.nombreEmisor && data.rfcReceptor && data.nombreReceptor);
   };
@@ -101,7 +86,6 @@ export function ConfiguracionPrincipalMejorada({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Tipo de CFDI */}
         <div className="space-y-2">
           <Label>Tipo de CFDI *</Label>
           <Select value={data.tipoCfdi || ''} onValueChange={handleTipoCfdiChange}>
@@ -115,35 +99,32 @@ export function ConfiguracionPrincipalMejorada({
           </Select>
         </div>
 
-        {/* Emisor con CRM */}
         <div className="space-y-2">
           <ClienteSelector 
             label="Emisor" 
             value={emisorValue}
             onChange={handleEmisorChange}
             tipo="cliente" 
-            placeholder="Buscar empresa emisora por RFC, nombre o razón social..." 
+            placeholder="Buscar empresa emisora..." 
             required 
             showCreateButton 
             className="w-full" 
           />
         </div>
 
-        {/* Receptor con CRM */}
         <div className="space-y-2">
           <ClienteSelector 
             label="Receptor" 
             value={receptorValue}
             onChange={handleReceptorChange}
             tipo="cliente" 
-            placeholder="Buscar empresa receptora por RFC, nombre o razón social..." 
+            placeholder="Buscar empresa receptora..." 
             required 
             showCreateButton 
             className="w-full" 
           />
         </div>
 
-        {/* Opciones Especiales */}
         <OpcionesEspeciales data={data} onChange={onChange} />
 
         <div className="flex justify-end">
@@ -159,4 +140,6 @@ export function ConfiguracionPrincipalMejorada({
       </CardContent>
     </Card>
   );
-}
+};
+
+export const ConfiguracionPrincipalMejorada = memo(ConfiguracionPrincipalMejoradaComponent);

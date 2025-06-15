@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,12 +10,11 @@ interface OpcionesEspecialesProps {
   onChange: (data: Partial<CartaPorteData>) => void;
 }
 
-export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
-  // Lógica simplificada y robusta para determinar el estado del switch.
+const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps) => {
+  // FIX: Lógica simplificada y robusta. 'Sí' o true se consideran activos.
   const isTransporteInternacional = data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
 
   const handleTransporteInternacionalChange = (checked: boolean) => {
-    // Limpiar campos dependientes cuando se desactiva transporte internacional
     const updates: Partial<CartaPorteData> = {
       transporteInternacional: checked ? 'Sí' : 'No'
     };
@@ -23,6 +23,13 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
       updates.pais_origen_destino = '';
       updates.via_entrada_salida = '';
     }
+    
+    // Si se activa, preseleccionar valores si no los hay
+    if (checked) {
+        updates.entradaSalidaMerc = data.entradaSalidaMerc || 'Salida';
+        updates.viaTransporte = data.viaTransporte || '01';
+    }
+
 
     onChange(updates);
   };
@@ -30,22 +37,11 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
   const handleRegistroIstmoChange = (checked: boolean) => {
     onChange({ registroIstmo: checked });
   };
-
-  const handleEntradaSalidaChange = (value: string) => {
-    onChange({ entradaSalidaMerc: value });
+  
+  const handleFieldChange = (field: keyof CartaPorteData, value: string) => {
+    onChange({ [field]: value });
   };
 
-  const handleViaTransporteChange = (value: string) => {
-    onChange({ viaTransporte: value });
-  };
-
-  const handlePaisOrigenDestinoChange = (value: string) => {
-    onChange({ pais_origen_destino: value });
-  };
-
-  const handleViaEntradaSalidaChange = (value: string) => {
-    onChange({ via_entrada_salida: value });
-  };
 
   return (
     <div className="space-y-6">
@@ -56,6 +52,7 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
               id="transporte-internacional"
               checked={isTransporteInternacional}
               onCheckedChange={handleTransporteInternacionalChange}
+              disabled={data.tipoCfdi === 'Ingreso'}
             />
             <Label htmlFor="transporte-internacional">
               Transporte Internacional
@@ -64,7 +61,7 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
           <div className="flex items-center space-x-2">
             <Switch
               id="registro-istmo"
-              checked={Boolean(data.registroIstmo)}
+              checked={!!data.registroIstmo}
               onCheckedChange={handleRegistroIstmoChange}
             />
             <Label htmlFor="registro-istmo">
@@ -78,7 +75,8 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
             <Label htmlFor="entrada-salida">Entrada/Salida de Mercancías</Label>
             <Select 
               value={data.entradaSalidaMerc || ''} 
-              onValueChange={handleEntradaSalidaChange}
+              onValueChange={(value) => handleFieldChange('entradaSalidaMerc', value)}
+              disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -94,7 +92,8 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
             <Label htmlFor="via-transporte">Vía de Transporte</Label>
             <Select 
               value={data.viaTransporte || ''} 
-              onValueChange={handleViaTransporteChange}
+              onValueChange={(value) => handleFieldChange('viaTransporte', value)}
+               disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -111,14 +110,13 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
         </div>
       </div>
 
-      {/* Campos que aparecen solo cuando el transporte es internacional */}
       {isTransporteInternacional && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
           <div>
             <Label htmlFor="pais-origen-destino">País de Origen/Destino</Label>
             <Select 
               value={data.pais_origen_destino || ''} 
-              onValueChange={handlePaisOrigenDestinoChange}
+              onValueChange={(value) => handleFieldChange('pais_origen_destino', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un país..." />
@@ -136,7 +134,7 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
             <Label htmlFor="via-entrada-salida">Vía de Entrada/Salida</Label>
             <Select 
               value={data.via_entrada_salida || ''} 
-              onValueChange={handleViaEntradaSalidaChange}
+              onValueChange={(value) => handleFieldChange('via_entrada_salida', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -152,4 +150,6 @@ export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) 
       )}
     </div>
   );
-}
+};
+
+export const OpcionesEspeciales = memo(OpcionesEspecialesComponent);
