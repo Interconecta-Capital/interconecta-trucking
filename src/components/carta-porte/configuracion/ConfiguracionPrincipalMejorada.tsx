@@ -33,7 +33,7 @@ export function ConfiguracionPrincipalMejorada({
   const emisorValue = data.rfcEmisor && data.nombreEmisor 
     ? {
         id: '',
-        tipo: 'cliente',
+        tipo: 'cliente' as 'cliente', // <------- fix here
         rfc: data.rfcEmisor,
         razon_social: data.nombreEmisor,
         estatus: 'activo',
@@ -44,7 +44,7 @@ export function ConfiguracionPrincipalMejorada({
   const receptorValue = data.rfcReceptor && data.nombreReceptor 
     ? {
         id: '',
-        tipo: 'cliente',
+        tipo: 'cliente' as 'cliente', // <------- fix here
         rfc: data.rfcReceptor,
         razon_social: data.nombreReceptor,
         estatus: 'activo',

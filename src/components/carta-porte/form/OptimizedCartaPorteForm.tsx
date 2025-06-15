@@ -120,6 +120,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   }, [setAutotransporte]);
 
   // Guardar y salir: guarda el borrador y navega al listado
+  const navigate = useNavigate();
   const handleGuardarYSalir = async () => {
     if (typeof handleGuardarBorrador === 'function') {
       await handleGuardarBorrador();
