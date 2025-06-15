@@ -10,7 +10,6 @@ interface OpcionesEspecialesProps {
 }
 
 const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps) => {
-  // FIX: Lógica simplificada y robusta. 'Sí' o true se consideran activos.
   const isTransporteInternacional = data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
 
   const handleTransporteInternacionalChange = (checked: boolean) => {
@@ -45,7 +44,6 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            {/* Cambiado: eliminado el disabled por tipoCfdi */}
             <Switch
               id="transporte-internacional"
               checked={isTransporteInternacional}
@@ -73,7 +71,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
             <Select 
               value={data.entradaSalidaMerc || ''} 
               onValueChange={(value) => handleFieldChange('entradaSalidaMerc', value)}
-              disabled={!isTransporteInternacional}
+              // SIEMPRE habilitado, no condicionado a isTransporteInternacional
+              // disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -90,7 +89,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
             <Select 
               value={data.viaTransporte || ''} 
               onValueChange={(value) => handleFieldChange('viaTransporte', value)}
-               disabled={!isTransporteInternacional}
+              // SIEMPRE habilitado, no condicionado a isTransporteInternacional
+              // disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -107,6 +107,7 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
         </div>
       </div>
 
+      {/* SOLO los campos estrictamente internacionales siguen condicionados */}
       {isTransporteInternacional && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
           <div>

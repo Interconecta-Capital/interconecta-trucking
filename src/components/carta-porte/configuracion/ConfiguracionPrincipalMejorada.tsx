@@ -22,13 +22,15 @@ const ConfiguracionPrincipalMejoradaComponent = ({
   onNext,
 }: ConfiguracionPrincipalMejoradaProps) => {
   const handleTipoCfdiChange = (value: string) => {
+    // Solo actualiza tipoCfdi; NO resetear emisor ni receptor
     if (value === 'Ingreso' || value === 'Traslado') {
       onChange({
         tipoCfdi: value,
-        rfcEmisor: '',
-        nombreEmisor: '',
-        rfcReceptor: '',
-        nombreReceptor: '',
+        // Ya no se reinician estos campos:
+        // rfcEmisor: '',
+        // nombreEmisor: '',
+        // rfcReceptor: '',
+        // nombreReceptor: '',
       });
     }
   };
