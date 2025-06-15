@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -36,14 +35,17 @@ export interface FiltrosClientes {
 export function useClientesProveedores() {
   const [clientes, setClientes] = useState<ClienteProveedor[]>([]);
   const [loading, setLoading] = useState(false);
-  const [cache, setCache] = useState(new Map<string, ClienteProveedor[]>());
+  // Usar useRef para que el caché persista entre re-renders
+  const cache = useRef(new Map<string, ClienteProveedor[]>());
 
   const obtenerClientes = useCallback(async (filtros: FiltrosClientes = {}) => {
     const cacheKey = JSON.stringify(filtros);
     
-    if (cache.has(cacheKey)) {
-      setClientes(cache.get(cacheKey)!);
-      return cache.get(cacheKey)!;
+    // Acceder al caché a través de cache.current
+    if (cache.current.has(cacheKey)) {
+      const cachedData = cache.current.get(cacheKey)!;
+      setClientes(cachedData);
+      return cachedData;
     }
 
     setLoading(true);
@@ -86,7 +88,8 @@ export function useClientesProveedores() {
         user_id: socio.user_id
       })) || [];
 
-      setCache(prev => new Map(prev.set(cacheKey, clientesFormateados)));
+      // Actualizar el caché a través de cache.current
+      cache.current.set(cacheKey, clientesFormateados);
       setClientes(clientesFormateados);
       return clientesFormateados;
 
@@ -97,7 +100,7 @@ export function useClientesProveedores() {
     } finally {
       setLoading(false);
     }
-  }, [cache]);
+  }, []);
 
   const buscarClientes = useCallback(async (termino: string) => {
     if (termino.length < 2) return [];
@@ -128,7 +131,8 @@ export function useClientesProveedores() {
       if (error) throw error;
 
       toast.success('Cliente creado exitosamente');
-      setCache(new Map());
+      // Limpiar caché en mutaciones
+      cache.current.clear();
       return data;
     } catch (error: any) {
       console.error('Error creando cliente:', error);
@@ -160,7 +164,8 @@ export function useClientesProveedores() {
       if (error) throw error;
 
       toast.success('Cliente actualizado exitosamente');
-      setCache(new Map());
+      // Limpiar caché en mutaciones
+      cache.current.clear();
       return data;
     } catch (error: any) {
       console.error('Error actualizando cliente:', error);
@@ -220,6 +225,6 @@ export function useClientesProveedores() {
     crearCliente,
     actualizarCliente,
     obtenerClientePorRFC,
-    limpiarCache: () => setCache(new Map())
+    limpiarCache: () => cache.current.clear()
   };
 }

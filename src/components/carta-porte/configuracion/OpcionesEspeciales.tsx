@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -11,13 +10,8 @@ interface OpcionesEspecialesProps {
 }
 
 export function OpcionesEspeciales({ data, onChange }: OpcionesEspecialesProps) {
-  // Normalizar el valor de transporte internacional
-  const isTransporteInternacional = React.useMemo(() => {
-    if (typeof data.transporteInternacional === 'string') {
-      return data.transporteInternacional === 'Sí';
-    }
-    return Boolean(data.transporteInternacional);
-  }, [data.transporteInternacional]);
+  // Lógica simplificada y robusta para determinar el estado del switch.
+  const isTransporteInternacional = data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
 
   const handleTransporteInternacionalChange = (checked: boolean) => {
     // Limpiar campos dependientes cuando se desactiva transporte internacional

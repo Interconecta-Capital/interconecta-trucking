@@ -39,7 +39,8 @@ export function ClienteSelector({
   showCreateButton = true,
   className
 }: ClienteSelectorProps) {
-  const [busqueda, setBusqueda] = useState('');
+  // Estado para el texto del input, desacoplado del `value` seleccionado.
+  const [inputValue, setInputValue] = useState(value?.razon_social || '');
   const [resultados, setResultados] = useState<ClienteProveedor[]>([]);
   const [showResultados, setShowResultados] = useState(false);
   const [showCrearForm, setShowCrearForm] = useState(false);
@@ -49,16 +50,26 @@ export function ClienteSelector({
   const inputRef = useRef<HTMLInputElement>(null);
   const { buscarClientes, crearCliente, loading } = useClientesProveedores();
   
-  // Debounce optimizado para mejor fluidez
-  const debouncedBusqueda = useDebounce(busqueda, 150);
+  // Debounce optimizado para mejor fluidez, ahora a 300ms.
+  const debouncedSearchTerm = useDebounce(inputValue, 300);
 
-  // Efecto para búsqueda con debounce mejorado
+  // Efecto para sincronizar el input cuando el valor externo cambia.
+  useEffect(() => {
+    // Solo actualiza el input si el valor externo es diferente a lo que se muestra
+    if (value?.razon_social !== inputValue) {
+      setInputValue(value?.razon_social || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  // Efecto para realizar la búsqueda con debounce.
   useEffect(() => {
     const realizarBusqueda = async () => {
-      if (debouncedBusqueda.length >= 2 && !value) {
+      // Solo buscar si hay término y no hay un valor seleccionado.
+      if (debouncedSearchTerm.length >= 2 && !value) {
         setBuscando(true);
         try {
-          const clientes = await buscarClientes(debouncedBusqueda);
+          const clientes = await buscarClientes(debouncedSearchTerm);
           const clientesFiltrados = tipo === 'ambos' 
             ? clientes 
             : clientes.filter(c => c.tipo === tipo || c.tipo === 'ambos');
@@ -73,7 +84,7 @@ export function ClienteSelector({
         } finally {
           setBuscando(false);
         }
-      } else if (debouncedBusqueda.length < 2) {
+      } else {
         setResultados([]);
         setShowResultados(false);
         setBuscando(false);
@@ -81,27 +92,14 @@ export function ClienteSelector({
     };
 
     realizarBusqueda();
-  }, [debouncedBusqueda, buscarClientes, tipo, value]);
-
-  // Sincronizar búsqueda con valor seleccionado
-  useEffect(() => {
-    if (value && value.razon_social !== busqueda) {
-      setBusqueda(value.razon_social);
-    } else if (!value && busqueda) {
-      // Solo limpiar búsqueda si no hay valor y no está escribiendo
-      const timer = setTimeout(() => {
-        if (!value) setBusqueda('');
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [value]);
+  }, [debouncedSearchTerm, buscarClientes, tipo, value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setBusqueda(newValue);
+    const newText = e.target.value;
+    setInputValue(newText);
     
-    // Si el usuario está escribiendo y hay un valor seleccionado, limpiarlo
-    if (value && newValue !== value.razon_social) {
+    // Si el usuario empieza a escribir, deseleccionamos el valor actual.
+    if (value) {
       onChange(null);
     }
   };
@@ -143,14 +141,14 @@ export function ClienteSelector({
 
   const seleccionarCliente = (cliente: ClienteProveedor) => {
     onChange(cliente);
-    setBusqueda(cliente.razon_social);
+    setInputValue(cliente.razon_social); // Sincroniza el input con el valor seleccionado
     setShowResultados(false);
     setSelectedIndex(-1);
   };
 
   const limpiarSeleccion = () => {
     onChange(null);
-    setBusqueda('');
+    setInputValue(''); // Limpia el texto del input
     setShowResultados(false);
     inputRef.current?.focus();
   };
@@ -178,7 +176,7 @@ export function ClienteSelector({
           <Input
             ref={inputRef}
             id={`cliente-selector-${label}`}
-            value={busqueda}
+            value={inputValue} // Usar el estado local `inputValue`
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => {
@@ -272,7 +270,7 @@ export function ClienteSelector({
         )}
 
         {/* Opción para crear nuevo cliente */}
-        {showCreateButton && busqueda.length >= 3 && resultados.length === 0 && !buscando && !value && (
+        {showCreateButton && inputValue.length >= 3 && resultados.length === 0 && !buscando && !value && (
           <Card className="absolute z-50 w-full mt-1 shadow-lg">
             <CardContent className="p-3">
               <Button
@@ -282,7 +280,7 @@ export function ClienteSelector({
                 className="w-full flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>Crear nuevo {tipo === 'proveedor' ? 'proveedor' : 'cliente'}: "{busqueda}"</span>
+                <span>Crear nuevo {tipo === 'proveedor' ? 'proveedor' : 'cliente'}: "{inputValue}"</span>
               </Button>
             </CardContent>
           </Card>
@@ -344,7 +342,7 @@ export function ClienteSelector({
       {/* Formulario rápido de creación */}
       {showCrearForm && (
         <CrearClienteRapido
-          busquedaInicial={busqueda}
+          busquedaInicial={inputValue}
           tipo={tipo}
           onCreado={(cliente) => {
             seleccionarCliente(cliente);
