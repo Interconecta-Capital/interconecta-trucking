@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,17 +29,28 @@ export function ConfiguracionPrincipalMejorada({
     }
   };
 
-  // Los valores seleccionados deben reflejarse correctamente en Select y ClienteSelector
-  // Para ClienteSelector, extraer el objeto seleccionado a partir del RFC/nombre actual
-  // Por ahora, se asume que value={null} siempre forzaba el reset; aquí pasamos el actual
-  // NOTA: ClienteSelector debe manejar value como objeto o null. Hay que pasarle un objeto.
-
-  // Emisor y Receptor actuales como objeto
+  // Emisor y Receptor actuales como objeto ClienteProveedor stub
   const emisorValue = data.rfcEmisor && data.nombreEmisor 
-    ? { rfc: data.rfcEmisor, razon_social: data.nombreEmisor } 
+    ? {
+        id: '',
+        tipo: 'cliente',
+        rfc: data.rfcEmisor,
+        razon_social: data.nombreEmisor,
+        estatus: 'activo',
+        fecha_registro: '',
+        user_id: '',
+      }
     : null;
   const receptorValue = data.rfcReceptor && data.nombreReceptor 
-    ? { rfc: data.rfcReceptor, razon_social: data.nombreReceptor } 
+    ? {
+        id: '',
+        tipo: 'cliente',
+        rfc: data.rfcReceptor,
+        razon_social: data.nombreReceptor,
+        estatus: 'activo',
+        fecha_registro: '',
+        user_id: '',
+      }
     : null;
 
   // Validar si el formulario está completo (opción booleana para desactivar botón)
