@@ -43,7 +43,17 @@ export const useCartaPorteFormValidation = ({
           numero_exterior: '',
         },
         coordenadas: u.coordenadas
-      })) || []
+      })) || [],
+      autotransporte: formDataForValidation.autotransporte ? {
+        placa_vm: formDataForValidation.autotransporte.placaVm,
+        anio_modelo_vm: 2020,
+        config_vehicular: formDataForValidation.autotransporte.configuracionVehicular,
+        perm_sct: 'TPAF01',
+        num_permiso_sct: '123456',
+        asegura_resp_civil: formDataForValidation.autotransporte.seguro?.aseguradora || '',
+        poliza_resp_civil: formDataForValidation.autotransporte.seguro?.poliza || '',
+        remolques: formDataForValidation.autotransporte.remolques || []
+      } : undefined
     };
   }, [formDataForValidation]);
 

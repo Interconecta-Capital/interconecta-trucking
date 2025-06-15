@@ -74,13 +74,18 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_clave_prod_serv_cp')
-        .select('clave_prod_serv as clave, descripcion, incluye_iva')
+        .select('clave_prod_serv, descripcion, incluye_iva')
         .ilike('descripcion', `%${termino}%`)
         .limit(50);
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_prod_serv,
+        descripcion: item.descripcion,
+        incluye_iva: item.incluye_iva
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {
@@ -98,13 +103,19 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_clave_unidad')
-        .select('clave_unidad as clave, nombre, descripcion, simbolo')
+        .select('clave_unidad, nombre, descripcion, simbolo')
         .or(`nombre.ilike.%${termino}%,descripcion.ilike.%${termino}%`)
         .limit(50);
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_unidad,
+        nombre: item.nombre,
+        descripcion: item.descripcion,
+        simbolo: item.simbolo
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {
@@ -122,13 +133,19 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_material_peligroso')
-        .select('clave_material as clave, descripcion, clase_division, grupo_embalaje')
+        .select('clave_material, descripcion, clase_division, grupo_embalaje')
         .ilike('descripcion', `%${termino}%`)
         .limit(50);
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_material,
+        descripcion: item.descripcion,
+        clase_division: item.clase_division,
+        grupo_embalaje: item.grupo_embalaje
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {
@@ -146,11 +163,17 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_config_autotransporte')
-        .select('clave_config as clave, descripcion, remolque, semirremolque');
+        .select('clave_config, descripcion, remolque, semirremolque');
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_config,
+        descripcion: item.descripcion,
+        remolque: item.remolque,
+        semirremolque: item.semirremolque
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {
@@ -168,11 +191,17 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_figura_transporte')
-        .select('clave_figura as clave, descripcion, persona_fisica, persona_moral');
+        .select('clave_figura, descripcion, persona_fisica, persona_moral');
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_figura,
+        descripcion: item.descripcion,
+        persona_fisica: item.persona_fisica,
+        persona_moral: item.persona_moral
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {
@@ -190,11 +219,17 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_tipo_permiso')
-        .select('clave_permiso as clave, descripcion, transporte_carga, transporte_pasajeros');
+        .select('clave_permiso, descripcion, transporte_carga, transporte_pasajeros');
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_permiso,
+        descripcion: item.descripcion,
+        transporte_carga: item.transporte_carga,
+        transporte_pasajeros: item.transporte_pasajeros
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {
@@ -212,11 +247,15 @@ export const CatalogosSATService = {
     try {
       const { data, error } = await supabase
         .from('cat_tipo_embalaje')
-        .select('clave_embalaje as clave, descripcion');
+        .select('clave_embalaje, descripcion');
 
       if (error) throw error;
       
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_embalaje,
+        descripcion: item.descripcion
+      }));
+      
       setCachedData(cacheKey, result);
       return result;
     } catch (error) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -349,7 +348,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
                               <div className="space-y-1">
                                 {mercancia.errores?.map((error, errorIndex) => (
                                   <Badge key={errorIndex} variant="destructive" className="text-xs">
-                                    {error.mensaje}
+                                    {typeof error === 'string' ? error : error}
                                   </Badge>
                                 ))}
                               </div>

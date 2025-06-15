@@ -1,6 +1,23 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CatalogoItem } from './catalogosSAT';
 
+// Additional catalog interfaces
+export interface CatalogoEmbalaje {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoCarroceria {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoTipoLicencia {
+  clave: string;
+  descripcion: string;
+  aplica_federal?: boolean;
+}
+
 // Catálogo de tipos de embalaje SAT
 export const catalogoTiposEmbalaje: CatalogoEmbalaje[] = [
   { clave: '1A1', descripcion: 'Tambor de acero con tapa no desmontable' },
@@ -82,77 +99,70 @@ export const catalogoTiposLicencia: CatalogoTipoLicencia[] = [
 ];
 
 // Catálogo mejorado de fracciones arancelarias (muestra)
-export const catalogoFraccionesArancelarias: CatalogItem[] = [
-  { codigo: '01012100', descripcion: 'Animales vivos de la especie equina, reproductores de raza pura', value: '01012100', label: '01012100 - Caballos reproductores de raza pura' },
-  { codigo: '02011000', descripcion: 'Carne de bovino, fresca o refrigerada', value: '02011000', label: '02011000 - Canales y medias canales de bovino' },
-  { codigo: '84071000', descripcion: 'Motores de encendido por chispa', value: '84071000', label: '84071000 - Motores de pistón alternativo' },
-  { codigo: '87041000', descripcion: 'Vehículos automotores para transporte de mercancías', value: '87041000', label: '87041000 - Volquetes automotores' },
-  { codigo: '25232900', descripcion: 'Cemento Portland y demás cementos hidráulicos', value: '25232900', label: '25232900 - Cementos hidráulicos' },
-  { codigo: '27101911', descripcion: 'Combustibles derivados del petróleo', value: '27101911', label: '27101911 - Gasolina sin tetraetilo de plomo' },
-  { codigo: '15179099', descripcion: 'Aceites y grasas vegetales y sus fracciones', value: '15179099', label: '15179099 - Mezclas de aceites vegetales' }
+export const catalogoFraccionesArancelarias: CatalogoItem[] = [
+  { clave: '01012100', descripcion: 'Animales vivos de la especie equina, reproductores de raza pura' },
+  { clave: '02011000', descripcion: 'Carne de bovino, fresca o refrigerada' },
+  { clave: '84071000', descripcion: 'Motores de encendido por chispa' },
+  { clave: '87041000', descripcion: 'Vehículos automotores para transporte de mercancías' },
+  { clave: '25232900', descripcion: 'Cemento Portland y demás cementos hidráulicos' },
+  { clave: '27101911', descripcion: 'Combustibles derivados del petróleo' },
+  { clave: '15179099', descripcion: 'Aceites y grasas vegetales y sus fracciones' }
 ];
 
 // Servicio extendido para catálogos SAT
 export class CatalogosSATExtendido {
   // Obtener tipos de embalaje
-  static buscarTiposEmbalaje(busqueda?: string): CatalogItem[] {
+  static buscarTiposEmbalaje(busqueda?: string): CatalogoItem[] {
     const items = catalogoTiposEmbalaje.map(item => ({
-      codigo: item.clave,
-      descripcion: item.descripcion,
-      value: item.clave,
-      label: `${item.clave} - ${item.descripcion}`
+      clave: item.clave,
+      descripcion: item.descripcion
     }));
 
     if (!busqueda) return items;
     
     return items.filter(item => 
-      item.label!.toLowerCase().includes(busqueda.toLowerCase()) ||
-      item.descripcion?.toLowerCase().includes(busqueda.toLowerCase())
+      item.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
+      item.clave.toLowerCase().includes(busqueda.toLowerCase())
     );
   }
 
   // Obtener tipos de carrocería
-  static buscarTiposCarroceria(busqueda?: string): CatalogItem[] {
+  static buscarTiposCarroceria(busqueda?: string): CatalogoItem[] {
     const items = catalogoTiposCarroceria.map(item => ({
-      codigo: item.clave,
-      descripcion: item.descripcion,
-      value: item.clave,
-      label: `${item.clave} - ${item.descripcion}`
+      clave: item.clave,
+      descripcion: item.descripcion
     }));
 
     if (!busqueda) return items;
     
     return items.filter(item => 
-      item.label!.toLowerCase().includes(busqueda.toLowerCase()) ||
-      item.descripcion?.toLowerCase().includes(busqueda.toLowerCase())
+      item.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
+      item.clave.toLowerCase().includes(busqueda.toLowerCase())
     );
   }
 
   // Obtener tipos de licencia
-  static buscarTiposLicencia(busqueda?: string): CatalogItem[] {
+  static buscarTiposLicencia(busqueda?: string): CatalogoItem[] {
     const items = catalogoTiposLicencia.map(item => ({
-      codigo: item.clave,
-      descripcion: item.descripcion,
-      value: item.clave,
-      label: `${item.clave} - ${item.descripcion}`
+      clave: item.clave,
+      descripcion: item.descripcion
     }));
 
     if (!busqueda) return items;
     
     return items.filter(item => 
-      item.label!.toLowerCase().includes(busqueda.toLowerCase()) ||
-      item.descripcion?.toLowerCase().includes(busqueda.toLowerCase())
+      item.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
+      item.clave.toLowerCase().includes(busqueda.toLowerCase())
     );
   }
 
   // Obtener fracciones arancelarias
-  static buscarFraccionesArancelarias(busqueda?: string): CatalogItem[] {
+  static buscarFraccionesArancelarias(busqueda?: string): CatalogoItem[] {
     if (!busqueda || busqueda.length < 2) return [];
     
     return catalogoFraccionesArancelarias.filter(item => 
-      item.codigo.includes(busqueda) ||
-      item.label!.toLowerCase().includes(busqueda.toLowerCase()) ||
-      item.descripcion?.toLowerCase().includes(busqueda.toLowerCase())
+      item.clave.includes(busqueda) ||
+      item.descripcion.toLowerCase().includes(busqueda.toLowerCase())
     );
   }
 
