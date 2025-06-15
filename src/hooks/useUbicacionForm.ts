@@ -102,36 +102,48 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     }
   }, []);
 
-  // Nuevo: Manejar selección de dirección desde Mapbox
+  // Mejorar el manejo de selección de dirección desde Mapbox
   const handleMapboxAddressSelect = useCallback((addressData: any) => {
     console.log('Dirección seleccionada desde Mapbox:', addressData);
     
-    // Extraer componentes de la dirección de Mapbox
-    const components = addressData.place_name ? addressData.place_name.split(', ') : [];
+    // Extraer componentes de la dirección de Mapbox de manera más robusta
+    const addressParts = addressData.place_name ? addressData.place_name.split(', ') : [];
     let calle = '';
     let colonia = '';
     let municipio = '';
     let estado = '';
     let codigoPostal = '';
 
-    // Parsear la dirección de Mapbox (formato típico: "Calle Número, Colonia, Municipio, Estado CP, País")
-    if (components.length >= 4) {
-      calle = components[0] || '';
-      colonia = components[1] || '';
-      municipio = components[2] || '';
+    // Algoritmo mejorado para parsear direcciones mexicanas
+    if (addressParts.length >= 3) {
+      // Primera parte: calle y número
+      calle = addressParts[0] || '';
       
-      // El estado y CP suelen venir juntos en el último componente antes del país
-      const estadoCP = components[components.length - 2] || '';
-      const cpMatch = estadoCP.match(/(\d{5})/);
-      if (cpMatch) {
-        codigoPostal = cpMatch[1];
-        estado = estadoCP.replace(cpMatch[0], '').trim();
-      } else {
-        estado = estadoCP;
+      // Segunda parte: colonia
+      colonia = addressParts[1] || '';
+      
+      // Buscar el municipio (usualmente la tercera parte)
+      municipio = addressParts[2] || '';
+      
+      // Buscar estado y código postal en las últimas partes
+      for (let i = addressParts.length - 1; i >= 0; i--) {
+        const part = addressParts[i];
+        
+        // Buscar código postal (5 dígitos)
+        const cpMatch = part.match(/\b(\d{5})\b/);
+        if (cpMatch && !codigoPostal) {
+          codigoPostal = cpMatch[1];
+        }
+        
+        // Detectar estados mexicanos comunes
+        const estadosPatter = /(ciudad de méxico|cdmx|jalisco|nuevo león|puebla|guanajuato|veracruz|chihuahua|sonora|coahuila|michoacán|oaxaca|chiapas|guerrero|tamaulipas|baja california|sinaloa|hidalgo|san luis potosí|tabasco|yucatán|querétaro|morelos|durango|zacatecas|aguascalientes|tlaxcala|nayarit|campeche|colima|quintana roo|baja california sur)/i;
+        if (estadosPatter.test(part) && !estado) {
+          estado = part;
+        }
       }
     }
 
-    // Actualizar el formulario con los datos de Mapbox
+    // Actualizar el formulario con los datos procesados
     setFormData(prev => ({
       ...prev,
       domicilio: {
@@ -170,7 +182,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
 
   const isFormValid = useCallback(() => {
     return !!(
-      formData.tipoUbicacion && // Ahora requerimos que se seleccione un tipo
+      formData.tipoUbicacion && formData.tipoUbicacion !== '', // Verificar que no esté vacío
       formData.rfcRemitenteDestinatario &&
       formData.nombreRemitenteDestinatario &&
       formData.domicilio.codigoPostal &&
@@ -187,10 +199,17 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     setShowFrecuentes,
     handleTipoChange,
     handleRFCChange,
-    handleLocationUpdate,
+    handleLocationUpdate: handleFieldChange, // Mantener compatibilidad
     handleFieldChange,
     handleMapboxAddressSelect,
-    cargarUbicacionFrecuente,
+    cargarUbicacionFrecuente: useCallback((ubicacionFrecuente: UbicacionFrecuente) => {
+      setFormData(prev => ({
+        ...prev,
+        rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
+        nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
+        domicilio: ubicacionFrecuente.domicilio
+      }));
+    }, []),
     isFormValid
   };
 };
