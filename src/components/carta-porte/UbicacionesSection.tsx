@@ -8,9 +8,16 @@ interface UbicacionesSectionProps {
   onChange: (data: any[]) => void;
   onNext: () => void;
   onPrev: () => void;
+  cartaPorteId?: string;
 }
 
-export function UbicacionesSection({ data, onChange, onNext, onPrev }: UbicacionesSectionProps) {
+export function UbicacionesSection({ 
+  data, 
+  onChange, 
+  onNext, 
+  onPrev, 
+  cartaPorteId 
+}: UbicacionesSectionProps) {
   return (
     <Card>
       <UbicacionesSectionOptimizada
@@ -18,6 +25,7 @@ export function UbicacionesSection({ data, onChange, onNext, onPrev }: Ubicacion
         onChange={onChange}
         onNext={onNext}
         onPrev={onPrev}
+        cartaPorteId={cartaPorteId}
       />
     </Card>
   );

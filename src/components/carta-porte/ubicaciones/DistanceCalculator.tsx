@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Route, Clock, MapPin, Calculator, Loader2 } from 'lucide-react';
+import { Route, Clock, MapPin, Calculator, Loader2, CheckCircle } from 'lucide-react';
 import { Ubicacion } from '@/types/ubicaciones';
+import { DistanceCalculationService } from '@/services/distanceCalculationService';
+import { useToast } from '@/hooks/use-toast';
 
 interface DistanceCalculatorProps {
   ubicaciones: Ubicacion[];
@@ -21,18 +23,42 @@ export function DistanceCalculator({
   tiempoEstimado,
   isCalculating = false
 }: DistanceCalculatorProps) {
+  const [isCalculatingLocal, setIsCalculatingLocal] = useState(false);
+  const [lastCalculation, setLastCalculation] = useState<Date | null>(null);
+  const { toast } = useToast();
+
   const canCalculate = ubicaciones.length >= 2 && 
     ubicaciones.some(u => u.tipoUbicacion === 'Origen') &&
     ubicaciones.some(u => u.tipoUbicacion === 'Destino');
 
-  const handleCalculateDistance = () => {
-    if (!canCalculate) return;
+  const handleCalculateDistance = async () => {
+    if (!canCalculate || isCalculatingLocal) return;
     
-    // Simular cálculo de distancia - en producción usaría un servicio real
-    const mockDistance = Math.round(Math.random() * 500 + 50); // 50-550 km
-    const mockTime = Math.round(mockDistance / 80 * 60); // ~80 km/h en minutos
-    
-    onDistanceCalculated(mockDistance, mockTime);
+    setIsCalculatingLocal(true);
+    try {
+      console.log('🚀 Iniciando cálculo real de distancia con Mapbox');
+      
+      const resultado = await DistanceCalculationService.calcularDistanciaReal(ubicaciones);
+      
+      onDistanceCalculated(resultado.distanciaTotal, resultado.tiempoEstimado);
+      setLastCalculation(new Date());
+      
+      toast({
+        title: "Distancia calculada exitosamente",
+        description: `Distancia: ${resultado.distanciaTotal} km, Tiempo: ${formatTime(resultado.tiempoEstimado)}`,
+      });
+
+      console.log('✅ Cálculo completado:', resultado);
+    } catch (error) {
+      console.error('❌ Error calculando distancia:', error);
+      toast({
+        title: "Error en el cálculo",
+        description: error instanceof Error ? error.message : "No se pudo calcular la distancia",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCalculatingLocal(false);
+    }
   };
 
   const formatTime = (minutes: number) => {
@@ -41,12 +67,20 @@ export function DistanceCalculator({
     return `${hours}h ${mins}m`;
   };
 
+  const isCalculatingState = isCalculating || isCalculatingLocal;
+
   return (
     <Card className="border-blue-200 bg-blue-50/50">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-blue-800">
           <Calculator className="h-5 w-5" />
           Calculadora de Distancia de Ruta
+          {distanciaTotal && lastCalculation && (
+            <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Calculada
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       
@@ -62,19 +96,19 @@ export function DistanceCalculator({
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             onClick={handleCalculateDistance}
-            disabled={!canCalculate || isCalculating}
+            disabled={!canCalculate || isCalculatingState}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
             size="lg"
           >
-            {isCalculating ? (
+            {isCalculatingState ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Calculando...
+                Calculando con Mapbox...
               </>
             ) : (
               <>
                 <Route className="h-4 w-4 mr-2" />
-                Calcular Distancia de Ruta
+                Calcular Distancia Real
               </>
             )}
           </Button>
@@ -107,6 +141,12 @@ export function DistanceCalculator({
                 Estimación
               </Badge>
             </div>
+          </div>
+        )}
+
+        {lastCalculation && (
+          <div className="text-xs text-gray-600 bg-white p-2 rounded border">
+            <strong>Última actualización:</strong> {lastCalculation.toLocaleString('es-MX')}
           </div>
         )}
 

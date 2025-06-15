@@ -8,7 +8,9 @@ import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesRouteInfo } from './UbicacionesRouteInfo';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
 import { DistanceCalculator } from './DistanceCalculator';
+import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
+import { useViajeCreation } from '@/hooks/useViajeCreation';
 import { useToast } from '@/hooks/use-toast';
 
 interface UbicacionesSectionOptimizadaProps {
@@ -16,13 +18,15 @@ interface UbicacionesSectionOptimizadaProps {
   onChange: (data: any[]) => void;
   onNext: () => void;
   onPrev: () => void;
+  cartaPorteId?: string;
 }
 
 export function UbicacionesSectionOptimizada({ 
   data, 
   onChange, 
   onNext, 
-  onPrev 
+  onPrev,
+  cartaPorteId 
 }: UbicacionesSectionOptimizadaProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -31,8 +35,10 @@ export function UbicacionesSectionOptimizada({
   const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const [showViajeModal, setShowViajeModal] = useState(false);
   
   const { toast } = useToast();
+  const { createViaje, isCreating } = useViajeCreation();
   
   const {
     ubicaciones,
@@ -60,6 +66,20 @@ export function UbicacionesSectionOptimizada({
   useEffect(() => {
     onChange(ubicaciones);
   }, [ubicaciones, onChange]);
+
+  // Persistir datos cuando cambian las ubicaciones
+  useEffect(() => {
+    if (ubicaciones.length > 0) {
+      console.log('💾 Persistiendo datos de ubicaciones:', ubicaciones);
+      // Aquí se podría guardar en localStorage o hacer auto-save
+      localStorage.setItem('carta-porte-ubicaciones', JSON.stringify({
+        ubicaciones,
+        distanciaTotal,
+        tiempoEstimado,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  }, [ubicaciones, distanciaTotal, tiempoEstimado]);
 
   const handleAgregarUbicacion = () => {
     setEditingIndex(null);
@@ -106,7 +126,6 @@ export function UbicacionesSectionOptimizada({
         errores.push('La calle es requerida');
       }
 
-      // Validar fecha y hora para origen y destino
       if ((ubicacionData.tipoUbicacion === 'Origen' || ubicacionData.tipoUbicacion === 'Destino') && 
           !ubicacionData.fechaHoraSalidaLlegada) {
         errores.push(`La fecha y hora ${ubicacionData.tipoUbicacion === 'Origen' ? 'de salida' : 'de llegada'} es requerida`);
@@ -183,18 +202,14 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
-  // NUEVO: Manejar cálculo de distancia total
+  // Manejar cálculo de distancia total
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
     setIsCalculatingDistance(true);
     try {
-      // Simular delay de cálculo
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
       
-      // TODO: Guardar en la carta porte (campo totalDistRec)
-      // Esto se podría hacer enviando al componente padre o guardando en el hook
+      console.log('✅ Distancia guardada:', { distancia, tiempo });
       
       toast({
         title: "Distancia calculada",
@@ -212,11 +227,37 @@ export function UbicacionesSectionOptimizada({
   };
 
   const handleSaveToFavorites = (ubicacion: any) => {
-    // Implementation for saving to favorites
     toast({
       title: "Guardado en favoritos",
       description: "La ubicación ha sido guardada en tus favoritos.",
     });
+  };
+
+  // Manejar el click en "Continuar"
+  const handleContinueClick = () => {
+    if (canContinue && ubicaciones.length > 0) {
+      setShowViajeModal(true);
+    }
+  };
+
+  // Confirmar guardar viaje y continuar
+  const handleConfirmSaveTrip = () => {
+    if (cartaPorteId) {
+      createViaje({
+        cartaPorteId,
+        ubicaciones,
+        distanciaTotal,
+        tiempoEstimado
+      });
+    }
+    setShowViajeModal(false);
+    onNext();
+  };
+
+  // Continuar sin guardar viaje
+  const handleConfirmContinue = () => {
+    setShowViajeModal(false);
+    onNext();
   };
 
   const validacion = validarSecuenciaUbicaciones();
@@ -254,7 +295,7 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* NUEVO: Calculadora de distancia prominente */}
+      {/* Calculadora de distancia mejorada */}
       {canCalculateDistances && (
         <DistanceCalculator
           ubicaciones={ubicaciones}
@@ -281,10 +322,21 @@ export function UbicacionesSectionOptimizada({
 
         <UbicacionesNavigation
           onPrev={onPrev}
-          onNext={onNext}
+          onNext={handleContinueClick}
           canContinue={canContinue}
         />
       </CardContent>
+
+      {/* Modal de confirmación de viaje */}
+      <ViajeConfirmationModal
+        isOpen={showViajeModal}
+        onClose={() => setShowViajeModal(false)}
+        onConfirmSaveTrip={handleConfirmSaveTrip}
+        onConfirmContinue={handleConfirmContinue}
+        ubicaciones={ubicaciones}
+        distanciaTotal={distanciaTotal}
+        tiempoEstimado={tiempoEstimado}
+      />
     </div>
   );
 }
