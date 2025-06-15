@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -11,11 +10,12 @@ import { Package, Trash2, Save, X, Ruler, Globe } from 'lucide-react';
 import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
 import { AIAssistantButton } from './AIAssistantButton';
 import { 
-  useBuscarProductosServicios, 
-  useBuscarClaveUnidad, 
-  useBuscarMaterialesPeligrosos 
-} from '@/hooks/useCatalogosReal';
-import { useTiposEmbalaje, useFraccionesArancelarias } from '@/hooks/useCatalogosExtendidos';
+  useBuscarProductosServiciosAdaptados, 
+  useBuscarClaveUnidadAdaptados, 
+  useBuscarMaterialesPeligrososAdaptados,
+  useTiposEmbalajeAdaptados
+} from '@/hooks/useCatalogosWithAdapters';
+import { useFraccionesArancelarias } from '@/hooks/useCatalogosExtendidos';
 import { MercanciaCompleta } from '@/types/cartaPorte';
 
 interface MercanciaFormCompletaProps {
@@ -70,23 +70,23 @@ export function MercanciaFormCompleta({
   const materialPeligroso = form.watch('material_peligroso') || false;
   const esComercioExterior = form.watch('fraccion_arancelaria') !== '';
   
-  const { data: productos = [], isLoading: loadingProductos } = useBuscarProductosServicios(
+  const { data: productos = [], isLoading: loadingProductos } = useBuscarProductosServiciosAdaptados(
     productoSearch,
     true
   );
   
-  const { data: unidades = [], isLoading: loadingUnidades } = useBuscarClaveUnidad(
+  const { data: unidades = [], isLoading: loadingUnidades } = useBuscarClaveUnidadAdaptados(
     unidadSearch,
     true
   );
   
-  const { data: materiales = [], isLoading: loadingMateriales } = useBuscarMaterialesPeligrosos(
+  const { data: materiales = [], isLoading: loadingMateriales } = useBuscarMaterialesPeligrososAdaptados(
     materialSearch,
     materialPeligroso && materialSearch.length >= 2
   );
 
-  const { data: embalajes = [], isLoading: loadingEmbalajes } = useTiposEmbalaje(embalajeSearch);
-  
+  const { data: embalajes = [], isLoading: loadingEmbalajes } = useTiposEmbalajeAdaptados();
+
   const { data: fracciones = [], isLoading: loadingFracciones } = useFraccionesArancelarias(
     fraccionSearch,
     fraccionSearch.length >= 2

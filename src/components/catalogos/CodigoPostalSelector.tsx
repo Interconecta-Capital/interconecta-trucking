@@ -1,113 +1,129 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, MapPin } from 'lucide-react';
-import { consultarCodigoPostal } from '@/services/catalogosSAT';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown, MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface CodigoPostalSelectorProps {
-  value: string;
-  onChange: (codigoPostal: string, datos?: any) => void;
-  placeholder?: string;
-  required?: boolean;
-}
-
-interface DatosCodigoPostal {
+interface CodigoPostalData {
+  codigo_postal: string;
   estado: string;
   municipio: string;
-  ciudad?: string;
-  asentamientos?: Array<{
+  colonias: Array<{
     nombre: string;
     tipo: string;
   }>;
 }
 
-export function CodigoPostalSelector({ 
-  value, 
-  onChange, 
-  placeholder = "Código Postal", 
-  required = false 
+interface CodigoPostalSelectorProps {
+  value?: string;
+  onValueChange: (codigoPostal: string, data?: CodigoPostalData) => void;
+  placeholder?: string;
+  className?: string;
+  disabled?: boolean;
+}
+
+export function CodigoPostalSelector({
+  value,
+  onValueChange,
+  placeholder = 'Código postal',
+  className,
+  disabled = false
 }: CodigoPostalSelectorProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [datos, setDatos] = useState<DatosCodigoPostal | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
 
-  const consultarCP = async (cp: string) => {
-    if (!cp || cp.length !== 5) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const resultado = await consultarCodigoPostal(cp);
+  const { data: sugerencias = [], isLoading } = useQuery({
+    queryKey: ['codigos-postales', search],
+    queryFn: async () => {
+      if (!search || search.length < 2) return [];
       
-      if (resultado && typeof resultado === 'object') {
-        const datosCP: DatosCodigoPostal = {
-          estado: resultado.estado || '',
-          municipio: resultado.municipio || '',
-          ciudad: resultado.ciudad,
-          asentamientos: resultado.asentamientos || []
-        };
-        
-        setDatos(datosCP);
-        onChange(cp, datosCP);
-      } else {
-        setError('Código postal no encontrado');
-        setDatos(null);
-      }
-    } catch (err) {
-      console.error('Error consultando código postal:', err);
-      setError('Error al consultar el código postal');
-      setDatos(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const { data, error } = await supabase
+        .rpc('buscar_codigo_postal_completo', { cp_input: search });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: search.length >= 2,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
-    onChange(newValue);
-    
-    if (newValue.length === 5) {
-      consultarCP(newValue);
-    } else {
-      setDatos(null);
-      setError(null);
-    }
+  const handleSelect = (codigoPostal: string) => {
+    const data = sugerencias.find(s => s.codigo_postal === codigoPostal);
+    onValueChange(codigoPostal, data);
+    setOpen(false);
   };
 
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        <Input
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          placeholder={placeholder}
-          maxLength={5}
-          required={required}
-          className={`pr-10 ${error ? 'border-red-500' : ''}`}
-        />
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-          {isLoading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-          ) : (
-            <MapPin className="h-4 w-4 text-gray-400" />
-          )}
-        </div>
-      </div>
-      
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
-      
-      {datos && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-          <p><strong>Estado:</strong> {datos.estado}</p>
-          <p><strong>Municipio:</strong> {datos.municipio}</p>
-          {datos.ciudad && <p><strong>Ciudad:</strong> {datos.ciudad}</p>}
-        </div>
-      )}
+    <div className={className}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+            disabled={disabled}
+          >
+            <div className="flex items-center">
+              <MapPin className="mr-2 h-4 w-4" />
+              {value || placeholder}
+            </div>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" align="start">
+          <Command>
+            <div className="flex items-center border-b px-3">
+              <MapPin className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Buscar código postal..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-0 p-2 focus:ring-0"
+              />
+            </div>
+            <CommandList>
+              {isLoading && (
+                <CommandEmpty>Buscando códigos postales...</CommandEmpty>
+              )}
+              
+              {!isLoading && search.length >= 2 && sugerencias.length === 0 && (
+                <CommandEmpty>No se encontraron códigos postales.</CommandEmpty>
+              )}
+              
+              {!isLoading && sugerencias.length > 0 && (
+                <CommandGroup>
+                  {sugerencias.map((item) => (
+                    <CommandItem
+                      key={item.codigo_postal}
+                      value={item.codigo_postal}
+                      onSelect={() => handleSelect(item.codigo_postal)}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === item.codigo_postal ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div>
+                        <div className="font-medium">{item.codigo_postal}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {item.municipio}, {item.estado}
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

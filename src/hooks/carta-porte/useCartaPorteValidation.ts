@@ -30,11 +30,11 @@ export const useCartaPorteValidation = () => {
 
     switch (section) {
       case 'configuracion':
-        if (!data.rfcEmisor) errors.push('RFC del emisor requerido');
-        if (!data.nombreEmisor) errors.push('Nombre del emisor requerido');
-        if (!data.rfcReceptor) errors.push('RFC del receptor requerido');
-        if (!data.nombreReceptor) errors.push('Nombre del receptor requerido');
-        if (!data.tipoCfdi) errors.push('Tipo de CFDI requerido');
+        if (!data?.rfcEmisor) errors.push('RFC del emisor requerido');
+        if (!data?.nombreEmisor) errors.push('Nombre del emisor requerido');
+        if (!data?.rfcReceptor) errors.push('RFC del receptor requerido');
+        if (!data?.nombreReceptor) errors.push('Nombre del receptor requerido');
+        if (!data?.tipoCfdi) errors.push('Tipo de CFDI requerido');
         break;
 
       case 'ubicaciones':
@@ -60,9 +60,9 @@ export const useCartaPorteValidation = () => {
         break;
 
       case 'autotransporte':
-        if (!data.placa_vm) errors.push('Placa del vehículo requerida');
-        if (!data.config_vehicular) errors.push('Configuración vehicular requerida');
-        if (!data.asegura_resp_civil) warnings.push('Aseguradora recomendada');
+        if (!data?.placa_vm) errors.push('Placa del vehículo requerida');
+        if (!data?.config_vehicular) errors.push('Configuración vehicular requerida');
+        if (!data?.asegura_resp_civil) warnings.push('Aseguradora recomendada');
         break;
 
       case 'figuras':
@@ -100,7 +100,7 @@ export const useCartaPorteValidation = () => {
         acc[key as keyof typeof acc] = 'complete';
       } else if (validation.errors.length > 0) {
         // Determinar si hay datos parciales
-        const hasPartialData = this.hasPartialData(key, data);
+        const hasPartialData = hasPartialDataInSection(key, data);
         acc[key as keyof typeof acc] = hasPartialData ? 'partial' : 'empty';
       } else {
         acc[key as keyof typeof acc] = 'empty';
@@ -134,7 +134,7 @@ export const useCartaPorteValidation = () => {
     // Errores críticos (que bloquean el progreso)
     const criticalErrors = Object.values(sectionValidations)
       .flatMap(v => v.errors)
-      .filter(error => this.isCriticalError(error));
+      .filter(error => isCriticalError(error));
 
     // Advertencias
     const warnings = Object.values(sectionValidations)
@@ -151,7 +151,7 @@ export const useCartaPorteValidation = () => {
   }, [validateSection]);
 
   // Función auxiliar para determinar datos parciales
-  const hasPartialData = useCallback((section: string, data: CartaPorteData): boolean => {
+  const hasPartialDataInSection = useCallback((section: string, data: CartaPorteData): boolean => {
     switch (section) {
       case 'configuracion':
         return !!(data.rfcEmisor || data.nombreEmisor || data.rfcReceptor || data.nombreReceptor);

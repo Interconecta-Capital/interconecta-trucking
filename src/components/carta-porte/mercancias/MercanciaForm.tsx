@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -7,7 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Save, X } from 'lucide-react';
 import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
 import { AIAssistantButton } from './AIAssistantButton';
-import { useBuscarProductosServicios, useBuscarClaveUnidad, useBuscarMaterialesPeligrosos } from '@/hooks/useCatalogos';
+import { 
+  useBuscarProductosServiciosAdaptados, 
+  useBuscarClaveUnidadAdaptados, 
+  useBuscarMaterialesPeligrososAdaptados 
+} from '@/hooks/useCatalogosWithAdapters';
 import { Mercancia } from '@/hooks/useMercancias';
 
 interface MercanciaFormProps {
@@ -40,17 +45,17 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
   
   const materialPeligroso = form.watch('material_peligroso') || false;
   
-  const { data: productos = [], isLoading: loadingProductos } = useBuscarProductosServicios(
+  const { data: productos = [], isLoading: loadingProductos } = useBuscarProductosServiciosAdaptados(
     productoSearch,
     true
   );
   
-  const { data: unidades = [], isLoading: loadingUnidades } = useBuscarClaveUnidad(
+  const { data: unidades = [], isLoading: loadingUnidades } = useBuscarClaveUnidadAdaptados(
     unidadSearch,
     true
   );
   
-  const { data: materiales = [], isLoading: loadingMateriales } = useBuscarMaterialesPeligrosos(
+  const { data: materiales = [], isLoading: loadingMateriales } = useBuscarMaterialesPeligrososAdaptados(
     materialSearch,
     materialPeligroso && materialSearch.length >= 2
   );

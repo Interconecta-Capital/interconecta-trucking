@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign } from 'lucide-react';
-import { useBuscarClaveUnidad } from '@/hooks/useCatalogos';
+import { useBuscarClaveUnidadAdaptados } from '@/hooks/useCatalogosWithAdapters';
 
 interface MercanciaCantidadesProps {
   formData: {
@@ -19,7 +19,7 @@ interface MercanciaCantidadesProps {
 }
 
 export function MercanciaCantidades({ formData, errors, onFieldChange }: MercanciaCantidadesProps) {
-  const { data: clavesUnidad = [], isLoading: loadingUnidades } = useBuscarClaveUnidad('');
+  const { data: clavesUnidad = [], isLoading: loadingUnidades } = useBuscarClaveUnidadAdaptados('');
 
   const calcularValorTotal = () => {
     if (formData.cantidad && formData.valor_mercancia) {
