@@ -11,7 +11,7 @@ interface CartaPorteHeaderCorregidoProps {
   borradorCargado: boolean;
   ultimoGuardado: Date | null;
   isSaving?: boolean;
-  onGuardarBorrador: () => Promise<void>;
+  onGuardarBorrador: () => Promise<string | void>;
   onGuardarYSalir: () => Promise<void>;
   onLimpiarBorrador: () => void;
   currentCartaPorteId?: string;

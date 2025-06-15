@@ -99,7 +99,7 @@ const OptimizedCartaPorteFormCorregido = memo<OptimizedCartaPorteFormCorregidoPr
     setAutotransporte(safeData);
   }, [setAutotransporte]);
 
-  const handleGuardarBorradorMejorado = useCallback(async () => {
+  const handleGuardarBorradorMejorado = useCallback(async (): Promise<string | void> => {
     setIsSaving(true);
     try {
       console.log('🔄 Guardando borrador con servicio corregido...');
