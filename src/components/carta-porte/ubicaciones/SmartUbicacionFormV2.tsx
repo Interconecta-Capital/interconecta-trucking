@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin, Search, Edit, Lock, Unlock, Info } from 'lucide-react';
-import { UbicacionFrecuente } from '@/types/ubicaciones';
+import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import { useUbicacionForm } from '@/hooks/useUbicacionForm';
 
@@ -41,14 +41,16 @@ export function SmartUbicacionFormV2({
   const [searchAddress, setSearchAddress] = useState('');
   const [direccionSeleccionada, setDireccionSeleccionada] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [populatedAddressFields, setPopulatedAddressFields] = useState<Set<keyof Ubicacion['domicilio']>>(new Set());
 
   // Función mejorada para parsear direcciones mexicanas de Mapbox
-  const parseMapboxAddress = (addressData: any) => {
-    console.log('Parseando dirección de Mapbox desde place_name:', addressData.place_name);
+  const parseMapboxAddress = (addressData: any): { parsedData: any; populatedFields: Set<keyof Ubicacion['domicilio']> } => {
+    console.log('Parseando dirección de Mapbox v3:', addressData);
     
     const placeName = addressData.place_name || '';
+    const populatedFields = new Set<keyof Ubicacion['domicilio']>();
     
-    let parsedData = {
+    let parsedData: Partial<Ubicacion['domicilio']> & { coordenadas?: any } = {
       pais: 'México',
       codigoPostal: '',
       estado: '',
@@ -56,13 +58,10 @@ export function SmartUbicacionFormV2({
       colonia: '',
       calle: '',
       numExterior: '',
-      coordenadas: {
-        latitud: 0,
-        longitud: 0
-      }
     };
+    populatedFields.add('pais');
 
-    // Extraer coordenadas
+    // 1. Coordenadas
     if (addressData.center) {
       parsedData.coordenadas = {
         longitud: addressData.center[0],
@@ -70,112 +69,98 @@ export function SmartUbicacionFormV2({
       };
     }
 
-    // Parsear calle y número del place_name de manera más inteligente
-    const addressParts = placeName.split(', ');
-    if (addressParts.length > 0) {
-      const streetPart = addressParts[0];
-      
-      // Mejorar regex para capturar calle y número con más variantes
-      const streetPatterns = [
-        /^(.+?)\s+(\d+[a-zA-Z\-]*)\s*(.*)$/,           // Número normal
-        /^(.+?)\s+#(\d+[a-zA-Z\-]*)\s*(.*)$/,          // Con #
-        /^(.+?)\s+(S\/N|s\/n|SN|sn)\s*(.*)$/,         // Sin número
-        /^(.+?)\s+(\d+\s*[A-Z])\s*(.*)$/,             // Número con letra separada
-        /^(.+?)\s+KM\s*(\d+[.\d]*)\s*(.*)$/           // Kilómetro
-      ];
-      
-      let matched = false;
-      for (const pattern of streetPatterns) {
-        const match = streetPart.match(pattern);
-        if (match) {
-          parsedData.calle = match[1].trim();
-          parsedData.numExterior = ['S/N', 's/n', 'SN', 'sn'].includes(match[2]) ? '' : match[2];
-          console.log('Calle parseada:', parsedData.calle, 'Número:', parsedData.numExterior);
-          matched = true;
-          break;
+    // 2. Extraer de `context` (más fiable)
+    if (addressData.context) {
+      for (const item of addressData.context) {
+        if (item.id.startsWith('postcode') && !parsedData.codigoPostal) {
+          parsedData.codigoPostal = item.text;
+          populatedFields.add('codigoPostal');
         }
-      }
-      
-      if (!matched) {
-        // Si no se puede separar el número, usar todo como calle
-        parsedData.calle = streetPart.trim();
-        console.log('Calle sin número:', parsedData.calle);
+        if (item.id.startsWith('region') && !parsedData.estado) {
+          parsedData.estado = item.text;
+          populatedFields.add('estado');
+        }
+        if (item.id.startsWith('place') && !parsedData.municipio) {
+          parsedData.municipio = item.text;
+          populatedFields.add('municipio');
+        }
+        if (item.id.startsWith('neighborhood') && !parsedData.colonia) {
+          parsedData.colonia = item.text;
+          populatedFields.add('colonia');
+        }
       }
     }
 
-    // Buscar información faltante en place_name si no se encontró en contexto
-    if (!parsedData.codigoPostal) {
+    // 3. Parsear calle y número (del `text` o `place_name`)
+    const streetPart = addressData.text || (placeName.split(',')[0] || '');
+    if (streetPart) {
+      // Intenta extraer número de `address` si existe. `address` a veces es solo el número.
+      if (addressData.address && /^\d+[a-zA-Z\-]*$/.test(addressData.address)) {
+        parsedData.calle = streetPart.trim();
+        populatedFields.add('calle');
+        parsedData.numExterior = addressData.address.trim();
+        populatedFields.add('numExterior');
+      } else {
+        // Regex para encontrar número al final de la calle
+        const match = streetPart.match(/^(.*?)\s+([\d\-]+[a-zA-Z]?)\s*$/);
+        if (match) {
+          parsedData.calle = match[1].trim().replace(/,$/, '');
+          populatedFields.add('calle');
+          parsedData.numExterior = match[2].trim();
+          populatedFields.add('numExterior');
+        } else {
+          // Si no hay número, todo es calle
+          parsedData.calle = streetPart.trim().replace(/,$/, '');
+          populatedFields.add('calle');
+        }
+      }
+    }
+
+    // 4. Fallbacks usando `place_name` (si `context` no proveyó los datos)
+    if (!populatedFields.has('codigoPostal')) {
       const cpMatch = placeName.match(/\b(\d{5})\b/);
       if (cpMatch) {
         parsedData.codigoPostal = cpMatch[1];
-        console.log('CP encontrado en place_name:', cpMatch[1]);
+        populatedFields.add('codigoPostal');
       }
     }
-
-    // Buscar estado en place_name si no se encontró
-    if (!parsedData.estado) {
+    if (!populatedFields.has('estado')) {
       const estados = ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua", "Ciudad de México", "CDMX", "Coahuila", "Colima", "Durango", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "México", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"];
       const estadosPattern = new RegExp(`(?<=[, ])(${estados.join('|')})(?=[,]|$)`, 'i');
       const estadoMatch = placeName.match(estadosPattern);
       if (estadoMatch) {
         let estadoEncontrado = estadoMatch[0];
         if (estadoEncontrado.toUpperCase() === 'CDMX') {
-            estadoEncontrado = 'Ciudad de México';
+          estadoEncontrado = 'Ciudad de México';
         }
         parsedData.estado = estadoEncontrado;
-        console.log('Estado encontrado en place_name:', estadoEncontrado);
+        populatedFields.add('estado');
       }
     }
     
-    // Heurística para municipio y colonia usando las partes de la dirección
-    if (addressParts.length > 1 && parsedData.estado) {
-        const estadoIndex = addressParts.findIndex(p => p.toLowerCase().includes(parsedData.estado.toLowerCase()));
-        if (estadoIndex > 0) {
-            const municipioCandidato = addressParts[estadoIndex - 1];
-            // Asegurarse que no sea el CP
-            if (municipioCandidato && !/\d{5}/.test(municipioCandidato)) {
-                parsedData.municipio = municipioCandidato;
-                console.log('Municipio encontrado:', municipioCandidato);
-            }
-        }
-        if (estadoIndex > 1) {
-            const coloniaCandidata = addressParts[estadoIndex - 2];
-             if (coloniaCandidata && coloniaCandidata.toLowerCase() !== addressParts[0].toLowerCase()) {
-                parsedData.colonia = coloniaCandidata;
-                console.log('Colonia encontrada:', coloniaCandidata);
-            }
-        } else if (addressParts.length > 1 && parsedData.calle !== addressParts[1]) {
-            // Fallback para colonia si es la segunda parte
-            parsedData.colonia = addressParts[1];
-        }
-    }
-
     console.log('Datos parseados finales:', parsedData);
-    return parsedData;
+    console.log('Campos poblados:', [...populatedFields]);
+    return { parsedData, populatedFields };
   };
 
   const handleMapboxAddressSelect = (addressData: any) => {
     console.log('Dirección seleccionada desde Mapbox:', addressData);
     
-    const parsedAddress = parseMapboxAddress(addressData);
+    const { parsedData, populatedFields } = parseMapboxAddress(addressData);
     
     // Actualizar todos los campos del domicilio
-    handleFieldChange('domicilio.pais', parsedAddress.pais);
-    handleFieldChange('domicilio.codigoPostal', parsedAddress.codigoPostal);
-    handleFieldChange('domicilio.estado', parsedAddress.estado);
-    handleFieldChange('domicilio.municipio', parsedAddress.municipio);
-    handleFieldChange('domicilio.colonia', parsedAddress.colonia);
-    handleFieldChange('domicilio.calle', parsedAddress.calle);
-    handleFieldChange('domicilio.numExterior', parsedAddress.numExterior);
-    
-    // Actualizar coordenadas si están disponibles
-    if (parsedAddress.coordenadas.latitud && parsedAddress.coordenadas.longitud) {
-      handleFieldChange('coordenadas', parsedAddress.coordenadas);
-    }
+    Object.keys(parsedData).forEach(key => {
+      if (key === 'coordenadas' && parsedData.coordenadas) {
+        handleFieldChange('coordenadas', parsedData.coordenadas);
+      } else if (key in formData.domicilio) {
+        handleFieldChange(`domicilio.${key}`, parsedData[key as keyof typeof parsedData]);
+      }
+    });
     
     // Marcar dirección como seleccionada y limpiar búsqueda
     setDireccionSeleccionada(true);
     setSearchAddress('');
+    setPopulatedAddressFields(populatedFields);
     
     // Limpiar errores relacionados con la dirección
     const newErrors = { ...errors };
@@ -191,24 +176,24 @@ export function SmartUbicacionFormV2({
 
   const handleModoManualChange = (checked: boolean) => {
     setModoManual(checked);
-    if (checked) {
+    if (!checked) {
+      // Al volver a modo automático, si no hay dirección, limpiar campos poblados
+      if (!direccionSeleccionada) {
+        setPopulatedAddressFields(new Set());
+      }
+    } else {
       // Al activar modo manual, permitir edición de todos los campos
       setDireccionSeleccionada(true);
       console.log('Modo manual activado - todos los campos desbloqueados');
-    } else {
-      // Al desactivar modo manual, resetear si no hay dirección seleccionada
-      if (!direccionSeleccionada) {
-        setSearchAddress('');
-      }
-      console.log('Modo automático activado');
     }
   };
 
   const handleSearchAddressChange = (value: string) => {
     setSearchAddress(value);
     // Si el usuario empieza a escribir una nueva dirección, resetear el estado
-    if (direccionSeleccionada && value !== searchAddress) {
+    if (direccionSeleccionada) {
       setDireccionSeleccionada(false);
+      setPopulatedAddressFields(new Set());
       console.log('Nueva búsqueda iniciada - reseteando estado de selección');
     }
   };
@@ -263,18 +248,20 @@ export function SmartUbicacionFormV2({
   };
 
   // Determinar qué campos están bloqueados
-  // Lógica corregida: Los campos se bloquean si no estamos en modo manual.
-  const isFieldLocked = (field: string) => {
+  // Lógica inteligente: un campo se bloquea si fue autocompletado y no estamos en modo manual.
+  // Si no fue autocompletado, permanece editable.
+  const isFieldLocked = (field: keyof Ubicacion['domicilio']) => {
     if (modoManual) return false;
     
-    const alwaysEditableFields = ['colonia', 'numInterior', 'localidad', 'referencia'];
+    // Estos campos son siempre editables para ajustes finos.
+    const alwaysEditableFields: (keyof Ubicacion['domicilio'])[] = ['colonia', 'numInterior', 'localidad', 'referencia'];
     if (alwaysEditableFields.includes(field)) {
       return false;
     }
 
-    // Si no es un campo siempre editable, se bloquea a menos que estemos en modo manual.
-    // Esto fuerza al usuario a usar el autocompletado o activar explícitamente el modo manual.
-    return true;
+    // Bloquear si el campo fue poblado por el autocompletado.
+    // Si no fue poblado, permanece desbloqueado para llenado manual.
+    return populatedAddressFields.has(field);
   };
 
   // Determinar si los campos RFC/Nombre son necesarios
@@ -429,16 +416,16 @@ export function SmartUbicacionFormV2({
                 
                 {direccionSeleccionada && !modoManual && (
                   <div className="mt-3 p-2 bg-green-100 text-green-800 rounded text-sm flex items-center gap-2">
-                    ✅ Dirección encontrada. Campos principales completados automáticamente.
+                    ✅ Dirección encontrada. Campos completados automáticamente. Los campos faltantes se pueden editar.
                   </div>
                 )}
                 
                 <p className="text-sm text-muted-foreground mt-2">
-                  💡 Al seleccionar una dirección se completarán automáticamente: país, código postal, estado, municipio, calle y número exterior
+                  💡 Al seleccionar una dirección se completarán los campos detectados. Podrás editar los que falten.
                 </p>
               </div>
 
-              {/* Control de modo manual - MOVIDO DEBAJO */}
+              {/* Control de modo manual */}
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="modoManual"
@@ -477,7 +464,7 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.pais}
                   onChange={(e) => handleFieldChange('domicilio.pais', e.target.value)}
                   disabled={isFieldLocked('pais')}
-                  className={isFieldLocked('pais') ? 'bg-gray-100' : ''}
+                  className={isFieldLocked('pais') ? 'bg-gray-100' : 'bg-white'}
                 />
               </div>
 
@@ -488,7 +475,7 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.codigoPostal}
                   onChange={(e) => handleFieldChange('domicilio.codigoPostal', e.target.value)}
                   disabled={isFieldLocked('codigoPostal')}
-                  className={`${isFieldLocked('codigoPostal') ? 'bg-gray-100' : ''} ${errors.codigoPostal ? 'border-red-500' : ''}`}
+                  className={`${isFieldLocked('codigoPostal') ? 'bg-gray-100' : 'bg-white'} ${errors.codigoPostal ? 'border-red-500' : ''}`}
                 />
                 {errors.codigoPostal && <p className="text-sm text-red-500 mt-1">{errors.codigoPostal}</p>}
               </div>
@@ -500,7 +487,7 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.estado}
                   onChange={(e) => handleFieldChange('domicilio.estado', e.target.value)}
                   disabled={isFieldLocked('estado')}
-                  className={`${isFieldLocked('estado') ? 'bg-gray-100' : ''} ${errors.estado ? 'border-red-500' : ''}`}
+                  className={`${isFieldLocked('estado') ? 'bg-gray-100' : 'bg-white'} ${errors.estado ? 'border-red-500' : ''}`}
                 />
                 {errors.estado && <p className="text-sm text-red-500 mt-1">{errors.estado}</p>}
               </div>
@@ -514,7 +501,7 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.municipio}
                   onChange={(e) => handleFieldChange('domicilio.municipio', e.target.value)}
                   disabled={isFieldLocked('municipio')}
-                  className={`${isFieldLocked('municipio') ? 'bg-gray-100' : ''} ${errors.municipio ? 'border-red-500' : ''}`}
+                  className={`${isFieldLocked('municipio') ? 'bg-gray-100' : 'bg-white'} ${errors.municipio ? 'border-red-500' : ''}`}
                 />
                 {errors.municipio && <p className="text-sm text-red-500 mt-1">{errors.municipio}</p>}
               </div>
@@ -526,10 +513,11 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.colonia}
                   onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
                   placeholder="Colonia"
-                  className="bg-white"
+                  disabled={isFieldLocked('colonia')}
+                  className={isFieldLocked('colonia') ? 'bg-gray-100' : 'bg-white'}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Verifique este campo; el autocompletado puede no ser preciso.
+                  Campo editable; verifique que el autocompletado sea correcto.
                 </p>
               </div>
             </div>
@@ -542,7 +530,7 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.calle}
                   onChange={(e) => handleFieldChange('domicilio.calle', e.target.value)}
                   disabled={isFieldLocked('calle')}
-                  className={`${isFieldLocked('calle') ? 'bg-gray-100' : ''} ${errors.calle ? 'border-red-500' : ''}`}
+                  className={`${isFieldLocked('calle') ? 'bg-gray-100' : 'bg-white'} ${errors.calle ? 'border-red-500' : ''}`}
                 />
                 {errors.calle && <p className="text-sm text-red-500 mt-1">{errors.calle}</p>}
               </div>
@@ -554,7 +542,7 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.numExterior}
                   onChange={(e) => handleFieldChange('domicilio.numExterior', e.target.value)}
                   disabled={isFieldLocked('numExterior')}
-                  className={isFieldLocked('numExterior') ? 'bg-gray-100' : ''}
+                  className={isFieldLocked('numExterior') ? 'bg-gray-100' : 'bg-white'}
                 />
               </div>
 
@@ -565,7 +553,8 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.numInterior}
                   onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
                   placeholder="Ej: 1A, Local 2"
-                  className="bg-white"
+                  disabled={isFieldLocked('numInterior')}
+                  className={isFieldLocked('numInterior') ? 'bg-gray-100' : 'bg-white'}
                 />
               </div>
             </div>
@@ -578,10 +567,11 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.localidad}
                   onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
                   placeholder="Localidad o población"
-                  className="bg-white"
+                  disabled={isFieldLocked('localidad')}
+                  className={isFieldLocked('localidad') ? 'bg-gray-100' : 'bg-white'}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Campo opcional según normativa de Carta Porte
+                  Opcional según normativa de Carta Porte.
                 </p>
               </div>
 
@@ -592,7 +582,8 @@ export function SmartUbicacionFormV2({
                   value={formData.domicilio.referencia}
                   onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
                   placeholder="Ej: Entre calles, color de fachada"
-                  className="bg-white"
+                  disabled={isFieldLocked('referencia')}
+                  className={isFieldLocked('referencia') ? 'bg-gray-100' : 'bg-white'}
                 />
               </div>
             </div>
