@@ -1,32 +1,31 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight } from 'lucide-react';
 
 const PremiumCTASection = () => {
   return (
-    <section id="demo" className="py-space-32 px-space-6 bg-pure-black text-pure-white text-center">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-display text-pure-white mb-space-6">
-          Listo para nunca más<br />
-          preocuparte por el SAT?
+    <section id="demo" className="cta">
+      <div className="cta-container">
+        <h2 className="text-display cta-title">
+          ¿Listo para revolucionar tu negocio con IA?
         </h2>
         
-        <p className="text-body-xl text-gray-40 mb-space-10">
-          Únete a más de 2,500 transportistas que ya automatizaron completamente sus cartas porte. 
-          Prueba gratis durante 30 días.
+        <p className="text-body-xl cta-subtitle">
+          Únete a cientos de transportistas que ya usan inteligencia artificial para automatizar sus procesos
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-space-4 justify-center items-center">
+        <div className="cta-actions">
           <Link to="/auth/trial">
             <button className="btn-white interactive">
-              <span>Comenzar ahora</span>
-              <ArrowRight className="w-4 h-4" />
+              <Calendar className="w-5 h-5" />
+              <span>Solicitar Demo</span>
             </button>
           </Link>
-          <Link to="/auth/trial">
+          <Link to="/auth/register">
             <button className="btn-outline-white interactive">
-              <span>Agendar demo personal</span>
+              <span>Ver Demo</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </Link>
         </div>

@@ -1,191 +1,88 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const PremiumHeroSection = () => {
-  const [revealed, setRevealed] = useState(false);
-
-  useEffect(() => {
-    // Trigger animations on mount
-    const timer = setTimeout(() => setRevealed(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
-    <section className="relative min-h-screen flex items-center justify-center text-center px-space-6 py-space-32 overflow-hidden">
-      {/* Animated Grid Background */}
-      <div 
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          background: 'linear-gradient(90deg, transparent 49%, var(--gray-10) 50%, transparent 51%), linear-gradient(0deg, transparent 49%, var(--gray-10) 50%, transparent 51%)',
-          backgroundSize: '80px 80px',
-          animation: 'grid-move 60s linear infinite'
-        }}
-      />
-      
-      {/* Radial Gradients */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 30% 20%, rgba(26, 105, 250, 0.03) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(26, 105, 250, 0.02) 0%, transparent 50%)'
-        }}
-      />
-
-      <div className="relative z-10 max-w-4xl mx-auto">
-        {/* Badge */}
-        <div 
-          className={`inline-flex items-center gap-space-2 bg-gray-10 border border-gray-20 px-space-4 py-space-2 rounded-radius-full text-caption text-gray-70 mb-space-8 transition-all duration-1000 ${
-            revealed ? 'opacity-100 transform-none' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ animationDelay: '0.2s', animation: revealed ? 'float 6s ease-in-out infinite' : 'none' }}
-        >
+    <section className="hero">
+      <div className="hero-container">
+        <div className="hero-badge">
           <span>⚡</span>
-          <span>Primera IA mexicana para transportistas</span>
+          <span>Primera Plataforma IA Especializada en Transporte Mexicano</span>
         </div>
-
-        {/* Title */}
-        <h1 
-          className={`text-hero mb-space-6 transition-all duration-1000 ${
-            revealed ? 'opacity-100 transform-none' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ 
-            animationDelay: '0.4s',
-            background: 'linear-gradient(135deg, var(--pure-black) 0%, var(--gray-60) 100%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}
-        >
-          Carta Porte.<br />
-          Completamente<br />
-          <em 
-            style={{
-              fontStyle: 'normal',
-              background: 'linear-gradient(135deg, var(--blue-interconecta), var(--blue-hover))',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}
-          >
-            automática
-          </em>.
+        
+        <h1 className="text-hero hero-title">
+          La Plataforma Completa para<br />
+          <span style={{ fontStyle: 'normal', background: 'linear-gradient(135deg, var(--blue-interconecta), var(--blue-hover))', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Transportistas Mexicanos
+          </span>
         </h1>
-
-        {/* Subtitle */}
-        <p 
-          className={`text-body-xl text-gray-60 mb-space-10 max-w-2xl mx-auto transition-all duration-1000 ${
-            revealed ? 'opacity-100 transform-none' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ animationDelay: '0.6s' }}
-        >
-          La única plataforma que genera, valida y timbra tus cartas porte SAT en menos de 4 minutos. Sin errores. Sin multas. Sin complicaciones.
+        
+        <p className="text-body-xl hero-subtitle">
+          Gestiona cartas porte con inteligencia artificial, importa datos masivamente y automatiza procesos. 
+          Cumple con todas las regulaciones SAT de manera fácil y eficiente.
         </p>
-
-        {/* Actions */}
-        <div 
-          className={`flex flex-col sm:flex-row gap-space-4 justify-center items-center mb-space-16 transition-all duration-1000 ${
-            revealed ? 'opacity-100 transform-none' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ animationDelay: '0.8s' }}
-        >
+        
+        <div className="hero-actions">
           <Link to="/auth/trial">
             <button className="btn-primary interactive">
-              <span>Ver demo en vivo</span>
-              <ArrowRight className="w-4 h-4" />
+              <Calendar className="w-5 h-5" />
+              <span>Prueba 14 días gratis</span>
             </button>
           </Link>
-          <a href="#características">
+          <Link to="/auth/login">
             <button className="btn-secondary interactive">
-              <span>Cómo funciona</span>
+              <LogIn className="w-5 h-5" />
+              <span>Iniciar sesión</span>
             </button>
-          </a>
+          </Link>
         </div>
 
-        {/* Device Mockup */}
-        <div 
-          className={`max-w-4xl mx-auto transition-all duration-1000 ${
-            revealed ? 'opacity-100 transform-none' : 'opacity-0 translate-y-10'
-          }`}
-          style={{ animationDelay: '1.0s' }}
-        >
-          <div className="relative bg-pure-white rounded-radius-24 p-space-6 overflow-hidden border border-gray-20">
-            {/* Floating Notifications */}
-            <div 
-              className="absolute top-1/5 -right-5 bg-pure-white border border-gray-20 rounded-radius-12 px-space-4 py-space-3 text-body-sm text-gray-70 z-10"
-              style={{ 
-                boxShadow: 'var(--shadow-lg)',
-                animation: 'float-notification 8s ease-in-out infinite',
-                animationDelay: '-2s'
-              }}
-            >
-              ✅ Carta CP-2847 generada
+        <div className="hero-device">
+          <div className="device-container">
+            <div className="floating-notification notification-1">
+              ✅ Carta Porte CP-2847 timbrada
             </div>
-            
-            <div 
-              className="absolute bottom-1/3 -left-8 bg-pure-white border border-gray-20 rounded-radius-12 px-space-4 py-space-3 text-body-sm text-gray-70 z-10"
-              style={{ 
-                boxShadow: 'var(--shadow-lg)',
-                animation: 'float-notification 8s ease-in-out infinite',
-                animationDelay: '-4s'
-              }}
-            >
+            <div className="floating-notification notification-2">
               🚛 TRK-005 en ruta a Guadalajara
             </div>
-
-            <div 
-              className="absolute top-3/5 -right-10 bg-pure-white border border-gray-20 rounded-radius-12 px-space-4 py-space-3 text-body-sm text-gray-70 z-10"
-              style={{ 
-                boxShadow: 'var(--shadow-lg)',
-                animation: 'float-notification 8s ease-in-out infinite',
-                animationDelay: '-6s'
-              }}
-            >
+            <div className="floating-notification notification-3">
               💡 IA sugiere ruta optimizada
             </div>
-
-            {/* Device Header */}
-            <div className="flex items-center gap-space-2 pb-space-4 border-b border-gray-20 mb-space-6">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <div className="ml-auto text-body-sm font-semibold text-gray-70">
-                Interconecta — Panel de control
+            
+            <div className="device-header">
+              <div className="traffic-light red"></div>
+              <div className="traffic-light yellow"></div>
+              <div className="traffic-light green"></div>
+              <div className="device-title">Interconecta — Dashboard</div>
+            </div>
+            
+            <div className="dashboard-preview">
+              <div className="metric-card">
+                <div className="metric-label">Multas evitadas</div>
+                <div className="metric-value text-mono">$2.5M</div>
+                <div className="metric-trend">Total histórico</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-label">Cartas porte diarias</div>
+                <div className="metric-value text-mono">500+</div>
+                <div className="metric-trend">Automatizadas</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-label">Precisión IA</div>
+                <div className="metric-value text-mono">99.9%</div>
+                <div className="metric-trend">Sin errores SAT</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-label">Tiempo promedio</div>
+                <div className="metric-value text-mono">15<span style={{ fontSize: '18px', color: 'var(--gray-60)' }}>min</span></div>
+                <div className="metric-trend">vs 2 horas manual</div>
               </div>
             </div>
-
-            {/* Dashboard Preview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-space-4 mb-space-6">
-              <div className="bg-gray-05 border border-gray-20 rounded-radius-12 p-space-5 text-left group hover:bg-pure-white hover:shadow-shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                <div className="text-caption text-gray-60 mb-space-2">Viajes activos</div>
-                <div className="text-mono text-3xl font-bold text-pure-black mb-space-1">12</div>
-                <div className="text-body-sm font-semibold text-blue-interconecta">+3 esta semana</div>
-              </div>
-              
-              <div className="bg-gray-05 border border-gray-20 rounded-radius-12 p-space-5 text-left group hover:bg-pure-white hover:shadow-shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                <div className="text-caption text-gray-60 mb-space-2">Ingresos mensuales</div>
-                <div className="text-mono text-3xl font-bold text-pure-black mb-space-1">$287K</div>
-                <div className="text-body-sm font-semibold text-blue-interconecta">+18% vs. anterior</div>
-              </div>
-              
-              <div className="bg-gray-05 border border-gray-20 rounded-radius-12 p-space-5 text-left group hover:bg-pure-white hover:shadow-shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                <div className="text-caption text-gray-60 mb-space-2">Tiempo promedio</div>
-                <div className="text-mono text-3xl font-bold text-pure-black mb-space-1">
-                  3.2<span className="text-lg text-gray-60">mín</span>
-                </div>
-                <div className="text-body-sm font-semibold text-blue-interconecta">Automatización IA</div>
-              </div>
-              
-              <div className="bg-gray-05 border border-gray-20 rounded-radius-12 p-space-5 text-left group hover:bg-pure-white hover:shadow-shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                <div className="text-caption text-gray-60 mb-space-2">Errores SAT</div>
-                <div className="text-mono text-3xl font-bold text-pure-black mb-space-1">0</div>
-                <div className="text-body-sm font-semibold text-blue-interconecta">Perfección total</div>
-              </div>
-            </div>
-
-            {/* Status Indicator */}
-            <div className="bg-blue-light border border-blue-interconecta/20 rounded-radius-8 px-space-4 py-space-3 text-center text-body-sm font-semibold text-blue-interconecta">
+            
+            <div className="status-indicator">
               ✨ Todas las cartas se generan automáticamente
             </div>
           </div>

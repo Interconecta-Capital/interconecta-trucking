@@ -9,7 +9,6 @@ const PremiumHeader = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isHidden, setIsHidden] = useState(false);
   
-  // Solo mostrar en página principal y auth
   const showHeader = location.pathname === '/' || location.pathname.startsWith('/auth');
 
   useEffect(() => {
@@ -18,7 +17,6 @@ const PremiumHeader = () => {
       
       setIsScrolled(currentScrollY > 100);
       
-      // Auto-hide logic
       if (currentScrollY > lastScrollY && currentScrollY > 200) {
         setIsHidden(true);
       } else {
@@ -52,18 +50,13 @@ const PremiumHeader = () => {
       <div className="nav-container">
         <Link to="/" className="nav-logo">
           <div className="nav-logo-mark">I</div>
-          <span>Interconecta</span>
+          <span>Interconecta Trucking</span>
         </Link>
         
         <ul className="nav-menu hidden md:flex">
           <li>
             <a href="#características" className="nav-link">
               Características
-            </a>
-          </li>
-          <li>
-            <a href="#beneficios" className="nav-link">
-              Beneficios
             </a>
           </li>
           <li>
