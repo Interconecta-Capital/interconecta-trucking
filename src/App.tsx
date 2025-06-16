@@ -38,9 +38,7 @@ const queryClient = new QueryClient({
         return failureCount < 1; // Máximo 1 retry
       },
       retryDelay: (attemptIndex) => Math.min(5000 * 2 ** attemptIndex, 30000), // Delay más largo
-      // Corregir: usar placeholderData en lugar de keepPreviousData
       structuralSharing: true, // Mantener sharing para evitar re-renders
-      keepPreviousData: true,  // Mantener datos previos durante refetch
     },
     mutations: {
       retry: false, // No retry mutations
