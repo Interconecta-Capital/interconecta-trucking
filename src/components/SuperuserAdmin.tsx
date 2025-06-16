@@ -12,10 +12,8 @@ import { Crown, Shield, UserPlus, Key, Copy, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SuperuserAdmin() {
-  const { isSuperuser, convertToSuperuser, createSuperuserAccount } = useSuperuser();
+  const { isSuperuser, convertToSuperuser, createSuperuserAccount, isConverting, isCreating } = useSuperuser();
   const [email, setEmail] = useState('');
-  const [isConverting, setIsConverting] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState<{email: string; password: string} | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -23,20 +21,19 @@ export function SuperuserAdmin() {
   const handleConvertUser = async () => {
     if (!email.trim()) return;
     
-    setIsConverting(true);
-    await convertToSuperuser(email.trim());
-    setIsConverting(false);
+    convertToSuperuser(email.trim());
     setEmail('');
   };
 
   const handleCreateSuperuser = async () => {
-    setIsCreating(true);
-    const result = await createSuperuserAccount();
-    setIsCreating(false);
-    
-    if (result && typeof result === 'object' && 'email' in result) {
-      setCredentials(result);
-      setShowCredentials(true);
+    try {
+      const result = await createSuperuserAccount();
+      if (result && typeof result === 'object' && 'email' in result) {
+        setCredentials(result);
+        setShowCredentials(true);
+      }
+    } catch (error) {
+      console.error('Error creating superuser:', error);
     }
   };
 
