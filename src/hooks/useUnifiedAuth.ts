@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,6 +50,7 @@ export const useUnifiedAuth = () => {
         setTimeout(() => reject(new Error('Timeout')), 5000)
       );
 
+      // Use proper typing for Supabase responses
       const [profileResult, usuarioResult] = await Promise.allSettled([
         Promise.race([
           supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
@@ -62,17 +62,33 @@ export const useUnifiedAuth = () => {
         ])
       ]);
 
-      const profile = profileResult.status === 'fulfilled' && profileResult.value && 'data' in profileResult.value ? profileResult.value.data : null;
-      const usuario = usuarioResult.status === 'fulfilled' && usuarioResult.value && 'data' in usuarioResult.value ? usuarioResult.value.data : null;
+      // Safely extract data with proper typing
+      const profile: Profile | null = profileResult.status === 'fulfilled' && 
+        profileResult.value && 
+        typeof profileResult.value === 'object' && 
+        'data' in profileResult.value 
+        ? (profileResult.value as any).data 
+        : null;
+
+      const usuario: Usuario | null = usuarioResult.status === 'fulfilled' && 
+        usuarioResult.value && 
+        typeof usuarioResult.value === 'object' && 
+        'data' in usuarioResult.value 
+        ? (usuarioResult.value as any).data 
+        : null;
 
       let tenant: Tenant | null = null;
       if (usuario?.tenant_id) {
-        const tenantResult = await Promise.race([
-          supabase.from('tenants').select('*').eq('id', usuario.tenant_id).maybeSingle(),
-          timeout
-        ]);
-        if (tenantResult && 'data' in tenantResult) {
-          tenant = tenantResult.data;
+        try {
+          const tenantResult = await Promise.race([
+            supabase.from('tenants').select('*').eq('id', usuario.tenant_id).maybeSingle(),
+            timeout
+          ]);
+          if (tenantResult && typeof tenantResult === 'object' && 'data' in tenantResult) {
+            tenant = (tenantResult as any).data;
+          }
+        } catch (error) {
+          console.warn('[UnifiedAuth] Error loading tenant:', error);
         }
       }
 
@@ -267,7 +283,7 @@ export const useUnifiedAuth = () => {
   const hasAccess = useCallback((resource: string): boolean => {
     if (!authState.user) return false;
     
-    if (authState.user.usuario?.rol === 'superuser' || authState.user.usuario?.rol_especial === 'superuser') {
+    if (authState.user.usuario?.rol_especial === 'superuser' || authState.user.usuario?.rol === 'superuser') {
       return true;
     }
     
