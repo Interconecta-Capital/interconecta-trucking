@@ -85,16 +85,17 @@ export const useTrialTracking = () => {
         // Solo actualizar trial_end_date si no existe y no causar recargas
         if (!profile.trial_end_date) {
           // Hacer update silencioso sin manejo de errores que cause logs
-          supabase
+          const updatePromise = supabase
             .from('profiles')
             .update({ trial_end_date: trialEndDate.toISOString() })
-            .eq('id', user.id)
-            .then(() => {
-              // Update silencioso, no loggear
-            })
-            .catch(() => {
-              // Ignorar errores silenciosamente
-            });
+            .eq('id', user.id);
+          
+          // Manejar la promesa de forma silenciosa
+          updatePromise.then(() => {
+            // Update silencioso, no loggear
+          }).catch(() => {
+            // Ignorar errores silenciosamente
+          });
         }
 
       } catch (error) {
