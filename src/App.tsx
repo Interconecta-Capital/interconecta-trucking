@@ -22,26 +22,29 @@ import NewCartaPorte from "./pages/NewCartaPorte";
 import EditCartaPorte from "./pages/EditCartaPorte";
 import SuperuserManagement from "./pages/SuperuserManagement";
 
-// Configure React Query con configuración optimizada para evitar auto-refresh
+// Configure React Query con configuración optimizada para evitar recargas automáticas
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10 * 60 * 1000, // 10 minutos (aumentado de 5)
-      refetchOnWindowFocus: false, // Mantener deshabilitado
-      refetchOnReconnect: false,   // Mantener deshabilitado
-      refetchOnMount: false,       // Mantener deshabilitado
-      refetchInterval: false,      // Deshabilitar polling automático
+      staleTime: 30 * 60 * 1000, // 30 minutos (aumentado de 10)
+      refetchOnWindowFocus: false, // Mantener completamente deshabilitado
+      refetchOnReconnect: false,   // Mantener completamente deshabilitado
+      refetchOnMount: false,       // Mantener completamente deshabilitado
+      refetchInterval: false,      // Deshabilitar polling automático completamente
       retry: (failureCount, error: any) => {
         // Don't retry on authentication or RLS errors
         if (error?.status === 401 || error?.code === 'PGRST116') {
           return false;
         }
-        return failureCount < 1; // Reducir reintentos de 2 a 1
+        return failureCount < 1; // Máximo 1 retry
       },
-      retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000), // Aumentar delay inicial
+      retryDelay: (attemptIndex) => Math.min(5000 * 2 ** attemptIndex, 30000), // Delay más largo
+      // Añadir configuración para evitar queries innecesarias
+      structuralSharing: true, // Mantener sharing para evitar re-renders
+      keepPreviousData: true,  // Mantener datos previos durante refetch
     },
     mutations: {
-      retry: false, // Don't retry mutations by default
+      retry: false, // No retry mutations
     },
   },
 });

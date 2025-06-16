@@ -13,9 +13,9 @@ interface SessionSecurityConfig {
 
 export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const {
-    inactivityTimeoutMinutes = 45, // Aumentado de 30 a 45 minutos
-    warningMinutesBeforeTimeout = 5,
-    maxSessionDurationHours = 8
+    inactivityTimeoutMinutes = 60, // Aumentado de 45 a 60 minutos
+    warningMinutesBeforeTimeout = 10, // Aumentado de 5 a 10 minutos
+    maxSessionDurationHours = 12 // Aumentado de 8 a 12 horas
   } = config;
 
   const { user } = useAuth();
@@ -26,9 +26,10 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const activityDebounceRef = useRef<NodeJS.Timeout>();
   const isTabActiveRef = useRef<boolean>(true);
+  const wasTabInactiveRef = useRef<boolean>(false);
 
   const resetActivityTimer = useCallback(() => {
-    // Solo resetear si la pestaña está activa
+    // Solo resetear si la pestaña está activa y fue una actividad real
     if (!isTabActiveRef.current) return;
     
     lastActivityRef.current = Date.now();
@@ -46,7 +47,7 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
         toast.warning(
           `Su sesión expirará en ${warningMinutesBeforeTimeout} minutos por inactividad.`,
           {
-            duration: 10000,
+            duration: 15000, // Aumentar duración del toast
             action: {
               label: 'Mantener sesión',
               onClick: resetActivityTimer
@@ -56,9 +57,10 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       }
     }, warningTime);
 
-    // Set logout timeout
+    // Set logout timeout (solo si la pestaña está activa)
     timeoutRef.current = setTimeout(() => {
       if (isTabActiveRef.current) {
+        console.log('[SessionSecurity] Logging out due to inactivity');
         handleInactivityLogout();
       }
     }, inactivityTimeoutMinutes * 60 * 1000);
@@ -68,18 +70,16 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     try {
       await supabase.auth.signOut();
       toast.error('Sesión cerrada por inactividad');
-      // Usar navegación de React Router en lugar de window.location.href
       navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Error during inactivity logout:', error);
-      // Solo en caso de error usar navegación directa
       navigate('/auth', { replace: true });
     }
   }, [navigate]);
 
   const checkSessionAge = useCallback(async () => {
-    // Solo verificar si la pestaña está activa
-    if (!isTabActiveRef.current) return;
+    // Solo verificar si la pestaña está activa y no estamos en proceso de cambio
+    if (!isTabActiveRef.current || wasTabInactiveRef.current) return;
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -88,49 +88,68 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       const expiresAt = new Date(session.expires_at * 1000).getTime();
       const now = Date.now();
       
-      // Check if session is close to expiring (within 1 hour)
-      const oneHour = 60 * 60 * 1000;
-      if (expiresAt - now < oneHour) {
-        // Try to refresh the session
+      // Check if session is close to expiring (within 2 horas en lugar de 1)
+      const twoHours = 2 * 60 * 60 * 1000;
+      if (expiresAt - now < twoHours) {
+        // Try to refresh the session silently
         const { error } = await supabase.auth.refreshSession();
         if (error) {
+          console.error('[SessionSecurity] Failed to refresh session:', error);
           await supabase.auth.signOut();
           toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
           navigate('/auth', { replace: true });
+        } else {
+          console.log('[SessionSecurity] Session refreshed successfully');
         }
       }
     } catch (error) {
       console.error('Error checking session age:', error);
     }
-  }, [maxSessionDurationHours, navigate]);
+  }, [navigate]);
 
   const handleUserActivity = useCallback(() => {
     if (user && isTabActiveRef.current) {
-      // Debounce activity updates to reduce frequency
+      // Debounce activity updates para reducir frecuencia (aumentado de 2 a 5 segundos)
       if (activityDebounceRef.current) {
         clearTimeout(activityDebounceRef.current);
       }
       
       activityDebounceRef.current = setTimeout(() => {
         resetActivityTimer();
-      }, 2000); // Aumentado de 1 a 2 segundos para reducir llamadas
+      }, 5000); // 5 segundos de debounce
     }
   }, [user, resetActivityTimer]);
 
-  // Manejar visibilidad de la pestaña sin recargar
+  // Manejar cambios de visibilidad de pestaña de forma más inteligente
   const handleVisibilityChange = useCallback(() => {
     const isVisible = !document.hidden;
+    const wasInactive = !isTabActiveRef.current;
+    
     isTabActiveRef.current = isVisible;
     
-    if (isVisible && user) {
-      // Cuando la pestaña vuelve a estar activa, resetear timer
-      console.log('[SessionSecurity] Tab became active, resetting activity timer');
-      resetActivityTimer();
-    } else if (!isVisible) {
-      // Cuando la pestaña se oculta, pausar timers sin cerrar sesión
-      console.log('[SessionSecurity] Tab became hidden, pausing timers');
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+    if (isVisible && wasInactive && user) {
+      // Cuando la pestaña vuelve a estar activa después de estar inactiva
+      console.log('[SessionSecurity] Tab became active after being inactive');
+      wasTabInactiveRef.current = false;
+      
+      // Dar tiempo para que la aplicación se estabilice antes de resetear timers
+      setTimeout(() => {
+        resetActivityTimer();
+      }, 1000);
+      
+    } else if (!isVisible && user) {
+      // Cuando la pestaña se oculta, marcar como inactiva pero NO pausar timers inmediatamente
+      console.log('[SessionSecurity] Tab became hidden');
+      wasTabInactiveRef.current = true;
+      
+      // Pausar timers solo después de un delay para evitar pausas/reinicios constantes
+      setTimeout(() => {
+        if (!isTabActiveRef.current) {
+          console.log('[SessionSecurity] Pausing timers due to prolonged tab inactivity');
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+          if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+        }
+      }, 30000); // 30 segundos de gracia
     }
   }, [user, resetActivityTimer]);
 
@@ -146,17 +165,27 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     // Initialize activity timer
     resetActivityTimer();
 
-    // Check session age every 30 minutes (aumentado de 15)
-    const sessionCheckInterval = setInterval(checkSessionAge, 30 * 60 * 1000);
+    // Check session age mucho menos frecuentemente (cada hora en lugar de 30 minutos)
+    const sessionCheckInterval = setInterval(checkSessionAge, 60 * 60 * 1000);
 
-    // Add activity listeners with passive option for better performance
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    // Add activity listeners con throttling mejorado
+    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    // Throttle activity events más agresivamente
+    let lastActivity = 0;
+    const throttledActivity = () => {
+      const now = Date.now();
+      if (now - lastActivity > 10000) { // Solo procesar actividad cada 10 segundos
+        lastActivity = now;
+        handleUserActivity();
+      }
+    };
     
     activityEvents.forEach(event => {
-      document.addEventListener(event, handleUserActivity, { passive: true });
+      document.addEventListener(event, throttledActivity, { passive: true });
     });
 
-    // Agregar listener para visibilidad sin causar recargas
+    // Agregar listener para visibilidad
     document.addEventListener('visibilitychange', handleVisibilityChange, { passive: true });
 
     return () => {
@@ -167,12 +196,12 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       clearInterval(sessionCheckInterval);
       
       activityEvents.forEach(event => {
-        document.removeEventListener(event, handleUserActivity);
+        document.removeEventListener(event, throttledActivity);
       });
 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, handleUserActivity, resetActivityTimer, checkSessionAge, handleVisibilityChange]);
+  }, [user?.id, handleUserActivity, resetActivityTimer, checkSessionAge, handleVisibilityChange]);
 
   return {
     resetActivityTimer,

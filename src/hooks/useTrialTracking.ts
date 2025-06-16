@@ -35,12 +35,12 @@ export const useTrialTracking = () => {
 
     const fetchTrialInfo = async () => {
       try {
-        // Obtener información del perfil del usuario
+        // Usar .maybeSingle() en lugar de .single() para evitar errores cuando no hay datos
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('created_at, trial_end_date, plan_type')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching trial info:', error);
@@ -48,7 +48,9 @@ export const useTrialTracking = () => {
           return;
         }
 
+        // Si no hay perfil, usar valores por defecto sin errores
         if (!profile) {
+          console.log('[TrialTracking] No profile found, using defaults');
           setLoading(false);
           return;
         }
@@ -80,12 +82,18 @@ export const useTrialTracking = () => {
           isTrialActive
         });
 
-        // Actualizar trial_end_date si no existe
+        // Solo actualizar trial_end_date si no existe y no causar recargas
         if (!profile.trial_end_date) {
-          await supabase
+          supabase
             .from('profiles')
             .update({ trial_end_date: trialEndDate.toISOString() })
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .then(() => {
+              console.log('[TrialTracking] Updated trial_end_date');
+            })
+            .catch(err => {
+              console.error('[TrialTracking] Error updating trial_end_date:', err);
+            });
         }
 
       } catch (error) {
@@ -97,15 +105,16 @@ export const useTrialTracking = () => {
 
     fetchTrialInfo();
 
-    // Actualizar cada minuto para mantener la información en tiempo real
-    const interval = setInterval(fetchTrialInfo, 60000);
+    // Reducir drasticamente la frecuencia de actualización de 1 minuto a 10 minutos
+    // para evitar recargas constantes
+    const interval = setInterval(fetchTrialInfo, 10 * 60 * 1000); // 10 minutos
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user?.id]); // Solo depender del user.id, no del objeto completo
 
   const refreshTrialInfo = () => {
+    // Función para refrescar manualmente sin causar recargas automáticas
     setLoading(true);
-    // El useEffect se encargará de refrescar cuando loading cambie
   };
 
   return {
