@@ -2,7 +2,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { CartaPorteHeader } from './CartaPorteHeader';
-import { CartaPorteProgressTracker } from './CartaPorteProgressTracker';
 import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
@@ -39,15 +38,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleLimpiarBorrador,
   } = useCartaPorteFormManager(cartaPorteId);
 
-  // Memoizar lista de pasos para evitar re-renders innecesarios
-  const steps = useMemo(() => [
-    'Configuración',
-    'Ubicaciones', 
-    'Mercancías',
-    'Autotransporte',
-    'Figuras',
-    'XML'
-  ], []);
 
   // Crear un objeto Autotransporte por defecto para evitar errores de tipo
   const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
@@ -113,11 +103,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         />
       </div>
 
-      {/* Tracker de progreso original */}
-      <CartaPorteProgressTracker
-        currentStep={currentStep}
-        totalSteps={steps.length}
-      />
 
       <OptimizedCartaPorteStepContent
         currentStep={currentStep}
