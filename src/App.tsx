@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -12,7 +13,7 @@ import Conductores from "./pages/Conductores";
 import Socios from "./pages/Socios";
 import Viajes from "./pages/Viajes";
 import Administracion from "./pages/Administracion";
-import { AuthGuard } from "./components/auth/AuthGuard";
+import { OptimizedAuthGuard } from "./components/auth/OptimizedAuthGuard";
 import Auth from "./pages/Auth";
 import Trial from "./pages/Trial";
 import { BaseLayout } from "./components/layout/BaseLayout";
@@ -21,27 +22,27 @@ import NewCartaPorte from "./pages/NewCartaPorte";
 import EditCartaPorte from "./pages/EditCartaPorte";
 import SuperuserManagement from "./pages/SuperuserManagement";
 
-// Configure React Query con configuración optimizada para evitar recargas automáticas
+// Configure React Query con configuración extremadamente optimizada
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 60 * 1000, // 30 minutos (aumentado de 10)
-      refetchOnWindowFocus: false, // Mantener completamente deshabilitado
-      refetchOnReconnect: false,   // Mantener completamente deshabilitado
-      refetchOnMount: false,       // Mantener completamente deshabilitado
-      refetchInterval: false,      // Deshabilitar polling automático completamente
+      staleTime: 60 * 60 * 1000, // 60 minutos (muy aumentado)
+      refetchOnWindowFocus: false, // Completamente deshabilitado
+      refetchOnReconnect: false,   // Completamente deshabilitado
+      refetchOnMount: false,       // Completamente deshabilitado
+      refetchInterval: false,      // Sin polling automático
       retry: (failureCount, error: any) => {
-        // Don't retry on authentication or RLS errors
+        // No retry en errores de auth o RLS
         if (error?.status === 401 || error?.code === 'PGRST116') {
           return false;
         }
         return failureCount < 1; // Máximo 1 retry
       },
-      retryDelay: (attemptIndex) => Math.min(5000 * 2 ** attemptIndex, 30000), // Delay más largo
-      structuralSharing: true, // Mantener sharing para evitar re-renders
+      retryDelay: () => 10000, // 10 segundos de delay fijo
+      structuralSharing: true,
     },
     mutations: {
-      retry: false, // No retry mutations
+      retry: false,
     },
   },
 });
@@ -67,93 +68,93 @@ function App() {
                   <Route path="/recover-password" element={<Auth />} />
                   <Route path="/new-password" element={<Auth />} />
 
-                  {/* Rutas protegidas - todas con BaseLayout */}
+                  {/* Rutas protegidas - todas con OptimizedAuthGuard */}
                   <Route path="/dashboard" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Dashboard />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/cartas-porte" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <CartasPorte />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/cartas-porte/nueva" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <NewCartaPorte />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/cartas-porte/editar/:id" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <EditCartaPorte />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/viajes" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Viajes />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/administracion" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Administracion />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/planes" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Planes />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/vehiculos" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Vehiculos />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/conductores" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Conductores />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/socios" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <Socios />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
 
                   <Route path="/administracion/usuarios" element={
-                    <AuthGuard>
+                    <OptimizedAuthGuard>
                       <BaseLayout>
                         <SuperuserManagement />
                       </BaseLayout>
-                    </AuthGuard>
+                    </OptimizedAuthGuard>
                   } />
                 </Routes>
               </AuthProvider>
