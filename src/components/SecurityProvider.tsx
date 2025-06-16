@@ -1,6 +1,7 @@
 
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { useSecurityValidation } from '@/hooks/useSecurityValidation';
+import { useNavigate } from 'react-router-dom';
 
 interface SecurityContextType {
   validateRFC: (rfc: string) => { isValid: boolean; errors: string[] };
@@ -21,6 +22,7 @@ interface SecurityProviderProps {
 
 export function SecurityProvider({ children }: SecurityProviderProps) {
   const validation = useSecurityValidation();
+  const navigate = useNavigate();
 
   // Basic security functions that don't depend on auth
   const logSecurityEvent = async (eventType: string, eventData?: any) => {
@@ -46,10 +48,12 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
           localStorage.removeItem(key);
         }
       });
-      // Force page reload for clean state
-      window.location.href = '/auth';
+      // Usar navegación React Router en lugar de window.location.href
+      navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
+      // En caso de error, usar navegación React Router
+      navigate('/auth', { replace: true });
     }
   };
 

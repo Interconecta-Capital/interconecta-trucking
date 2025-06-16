@@ -3,6 +3,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface SessionSecurityConfig {
   inactivityTimeoutMinutes?: number;
@@ -12,19 +13,24 @@ interface SessionSecurityConfig {
 
 export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const {
-    inactivityTimeoutMinutes = 30,
+    inactivityTimeoutMinutes = 45, // Aumentado de 30 a 45 minutos
     warningMinutesBeforeTimeout = 5,
     maxSessionDurationHours = 8
   } = config;
 
   const { user } = useAuth();
+  const navigate = useNavigate();
   const lastActivityRef = useRef<number>(Date.now());
   const warningShownRef = useRef<boolean>(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const activityDebounceRef = useRef<NodeJS.Timeout>();
+  const isTabActiveRef = useRef<boolean>(true);
 
   const resetActivityTimer = useCallback(() => {
+    // Solo resetear si la pestaña está activa
+    if (!isTabActiveRef.current) return;
+    
     lastActivityRef.current = Date.now();
     warningShownRef.current = false;
 
@@ -35,7 +41,7 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     // Set warning timeout
     const warningTime = (inactivityTimeoutMinutes - warningMinutesBeforeTimeout) * 60 * 1000;
     warningTimeoutRef.current = setTimeout(() => {
-      if (!warningShownRef.current) {
+      if (!warningShownRef.current && isTabActiveRef.current) {
         warningShownRef.current = true;
         toast.warning(
           `Su sesión expirará en ${warningMinutesBeforeTimeout} minutos por inactividad.`,
@@ -52,7 +58,9 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
 
     // Set logout timeout
     timeoutRef.current = setTimeout(() => {
-      handleInactivityLogout();
+      if (isTabActiveRef.current) {
+        handleInactivityLogout();
+      }
     }, inactivityTimeoutMinutes * 60 * 1000);
   }, [inactivityTimeoutMinutes, warningMinutesBeforeTimeout]);
 
@@ -60,22 +68,23 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     try {
       await supabase.auth.signOut();
       toast.error('Sesión cerrada por inactividad');
-      // Use programmatic navigation instead of window.location.href
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('auth-logout', { detail: { reason: 'inactivity' } });
-        window.dispatchEvent(event);
-      }
+      // Usar navegación de React Router en lugar de window.location.href
+      navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Error during inactivity logout:', error);
+      // Solo en caso de error usar navegación directa
+      navigate('/auth', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   const checkSessionAge = useCallback(async () => {
+    // Solo verificar si la pestaña está activa
+    if (!isTabActiveRef.current) return;
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Use expires_at instead of issued_at for session age validation
       const expiresAt = new Date(session.expires_at * 1000).getTime();
       const now = Date.now();
       
@@ -87,20 +96,16 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
         if (error) {
           await supabase.auth.signOut();
           toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.');
-          // Use programmatic navigation instead of window.location.href
-          if (typeof window !== 'undefined') {
-            const event = new CustomEvent('auth-logout', { detail: { reason: 'expired' } });
-            window.dispatchEvent(event);
-          }
+          navigate('/auth', { replace: true });
         }
       }
     } catch (error) {
       console.error('Error checking session age:', error);
     }
-  }, [maxSessionDurationHours]);
+  }, [maxSessionDurationHours, navigate]);
 
   const handleUserActivity = useCallback(() => {
-    if (user) {
+    if (user && isTabActiveRef.current) {
       // Debounce activity updates to reduce frequency
       if (activityDebounceRef.current) {
         clearTimeout(activityDebounceRef.current);
@@ -108,7 +113,24 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       
       activityDebounceRef.current = setTimeout(() => {
         resetActivityTimer();
-      }, 1000); // Debounce for 1 second
+      }, 2000); // Aumentado de 1 a 2 segundos para reducir llamadas
+    }
+  }, [user, resetActivityTimer]);
+
+  // Manejar visibilidad de la pestaña sin recargar
+  const handleVisibilityChange = useCallback(() => {
+    const isVisible = !document.hidden;
+    isTabActiveRef.current = isVisible;
+    
+    if (isVisible && user) {
+      // Cuando la pestaña vuelve a estar activa, resetear timer
+      console.log('[SessionSecurity] Tab became active, resetting activity timer');
+      resetActivityTimer();
+    } else if (!isVisible) {
+      // Cuando la pestaña se oculta, pausar timers sin cerrar sesión
+      console.log('[SessionSecurity] Tab became hidden, pausing timers');
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
     }
   }, [user, resetActivityTimer]);
 
@@ -124,8 +146,8 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     // Initialize activity timer
     resetActivityTimer();
 
-    // Check session age every 15 minutes instead of 5 (reduce frequency)
-    const sessionCheckInterval = setInterval(checkSessionAge, 15 * 60 * 1000);
+    // Check session age every 30 minutes (aumentado de 15)
+    const sessionCheckInterval = setInterval(checkSessionAge, 30 * 60 * 1000);
 
     // Add activity listeners with passive option for better performance
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
@@ -134,15 +156,8 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       document.addEventListener(event, handleUserActivity, { passive: true });
     });
 
-    // Listen for custom logout events
-    const handleLogoutEvent = (event: CustomEvent) => {
-      console.log('[SessionSecurity] Logout event received:', event.detail);
-      // Navigate programmatically instead of using window.location.href
-      window.history.pushState({}, '', '/auth');
-      window.location.reload();
-    };
-
-    window.addEventListener('auth-logout', handleLogoutEvent as EventListener);
+    // Agregar listener para visibilidad sin causar recargas
+    document.addEventListener('visibilitychange', handleVisibilityChange, { passive: true });
 
     return () => {
       // Cleanup
@@ -155,9 +170,9 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
         document.removeEventListener(event, handleUserActivity);
       });
 
-      window.removeEventListener('auth-logout', handleLogoutEvent as EventListener);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, handleUserActivity, resetActivityTimer, checkSessionAge]);
+  }, [user, handleUserActivity, resetActivityTimer, checkSessionAge, handleVisibilityChange]);
 
   return {
     resetActivityTimer,

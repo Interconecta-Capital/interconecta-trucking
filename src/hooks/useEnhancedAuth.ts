@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSecureAuth } from './auth/useSecureAuth';
-import { useSessionSecurity } from './useSessionSecurity';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginAttempt {
   email: string;
@@ -15,9 +15,9 @@ export const useEnhancedAuth = () => {
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
   const [isAccountLocked, setIsAccountLocked] = useState(false);
   const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
+  const navigate = useNavigate();
   
   const { secureLogin, secureLogout } = useSecureAuth();
-  const { resetActivityTimer } = useSessionSecurity();
 
   const MAX_FAILED_ATTEMPTS = 5;
   const LOCKOUT_DURATION_MINUTES = 15;
@@ -81,7 +81,6 @@ export const useEnhancedAuth = () => {
         // Clear lockout state on successful login
         setIsAccountLocked(false);
         setLockoutEndTime(null);
-        resetActivityTimer();
         
         // Log successful login for security monitoring
         await supabase.rpc('log_security_event', {
@@ -103,7 +102,7 @@ export const useEnhancedAuth = () => {
       checkAccountLockout(normalizedEmail);
       throw error;
     }
-  }, [secureLogin, recordLoginAttempt, checkAccountLockout, getRecentAttempts, resetActivityTimer, lockoutEndTime]);
+  }, [secureLogin, recordLoginAttempt, checkAccountLockout, getRecentAttempts, lockoutEndTime]);
 
   const enhancedLogout = useCallback(async () => {
     try {
@@ -113,11 +112,15 @@ export const useEnhancedAuth = () => {
       setLoginAttempts([]);
       setIsAccountLocked(false);
       setLockoutEndTime(null);
+      
+      // Usar navegación React Router en lugar de window.location
+      navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Enhanced logout error:', error);
-      throw error;
+      // En caso de error, usar navegación React Router
+      navigate('/auth', { replace: true });
     }
-  }, [secureLogout]);
+  }, [secureLogout, navigate]);
 
   // Clean up old attempts periodically
   useEffect(() => {

@@ -23,18 +23,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
     });
   }, [user, loading, logEvent]);
 
-  // Timeout más corto para AuthGuard - 8 segundos
+  // Timeout más largo para AuthGuard - 15 segundos
   useEffect(() => {
     if (loading) {
       const timeout = setTimeout(() => {
         console.warn('[AuthGuard] Authentication timeout reached');
         logEvent('auth_guard_timeout', { 
           timestamp: Date.now(),
-          timeoutDuration: 8000,
+          timeoutDuration: 15000, // Aumentado de 8 a 15 segundos
           currentPath: window.location.pathname
         });
         setTimeoutReached(true);
-      }, 8000);
+      }, 15000);
 
       return () => clearTimeout(timeout);
     } else {
@@ -63,7 +63,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Handle timeout case
+  // Handle timeout case - usar navegación React Router
   if (timeoutReached && !user) {
     logEvent('auth_guard_timeout_redirect', { 
       reason: 'timeout_no_user',
@@ -74,7 +74,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return null;
   }
 
-  // Redirect to auth if not authenticated
+  // Redirect to auth if not authenticated - usar navegación React Router
   if (!user && !loading) {
     logEvent('auth_guard_redirect', { 
       reason: 'no_user',

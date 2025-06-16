@@ -27,7 +27,7 @@ export function useAuthState() {
         .eq('id', authUser.id)
         .maybeSingle();
 
-      // Load usuario data safely
+      // Load usuario data safely usando función segura
       const { data: usuario } = await supabase
         .from('usuarios')
         .select('*')
@@ -78,7 +78,7 @@ export function useAuthState() {
           console.log('[AuthState] Session found, loading user data');
           await loadUserData(currentSession.user);
           
-          // If user is authenticated and on landing page, redirect to dashboard
+          // Usar navegación de React Router en lugar de window.location
           if (window.location.pathname === '/') {
             console.log('[AuthState] Redirecting authenticated user from landing to dashboard');
             navigate('/dashboard', { replace: true });
@@ -105,24 +105,24 @@ export function useAuthState() {
         
         if (event === 'SIGNED_IN' && session?.user) {
           setLoading(true);
-          // Reduced delay and added redirect logic
+          // Reducir delay y usar navegación React Router
           setTimeout(async () => {
             await loadUserData(session.user);
             setLoading(false);
             
-            // Redirect to dashboard after successful login
+            // Usar navegación React Router en lugar de window.location
             if (window.location.pathname === '/' || window.location.pathname === '/auth') {
               console.log('[AuthState] Redirecting after sign in to dashboard');
               navigate('/dashboard', { replace: true });
             }
-          }, 10); // Reduced from 25ms to 10ms
+          }, 10);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
-          // Redirect to auth page after logout
+          // Usar navegación React Router en lugar de window.location
           navigate('/auth', { replace: true });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // Refresh user data on token refresh
+          // Refresh user data on token refresh sin recargar
           await loadUserData(session.user);
         }
       }
