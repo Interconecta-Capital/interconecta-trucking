@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -199,8 +200,8 @@ export const useUnifiedAuth = () => {
 
     return () => {
       mountedRef.current = false;
-      if (authSubscription) {
-        authSubscription.unsubscribe();
+      if (authSubscription && authSubscription.data) {
+        authSubscription.data.subscription.unsubscribe();
       }
     };
   }, [updateAuthState, navigate]);
