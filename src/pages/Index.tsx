@@ -9,9 +9,14 @@ import BenefitsSection from "@/components/landing/BenefitsSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { usePremiumAnimations } from "@/hooks/usePremiumAnimations";
+import { useEffect } from "react";
 
 const Index = () => {
   const { loading } = useAuthRedirect();
+  
+  // Initialize premium animations
+  usePremiumAnimations();
 
   // Mostrar un loader simple mientras verifica la autenticación
   if (loading) {
@@ -26,7 +31,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white">
+    <div className="min-h-screen bg-white">
       <Header />
       <HeroSection />
       <FeaturesSection />
