@@ -84,15 +84,17 @@ export const useTrialTracking = () => {
 
         // Solo actualizar trial_end_date si no existe y no causar recargas
         if (!profile.trial_end_date) {
+          // Corregir: usar .then() con manejo de errores en lugar de .catch()
           supabase
             .from('profiles')
             .update({ trial_end_date: trialEndDate.toISOString() })
             .eq('id', user.id)
-            .then(() => {
-              console.log('[TrialTracking] Updated trial_end_date');
-            })
-            .catch(err => {
-              console.error('[TrialTracking] Error updating trial_end_date:', err);
+            .then((result) => {
+              if (result.error) {
+                console.error('[TrialTracking] Error updating trial_end_date:', result.error);
+              } else {
+                console.log('[TrialTracking] Updated trial_end_date');
+              }
             });
         }
 

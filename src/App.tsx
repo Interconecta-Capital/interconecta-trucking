@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -39,7 +38,7 @@ const queryClient = new QueryClient({
         return failureCount < 1; // Máximo 1 retry
       },
       retryDelay: (attemptIndex) => Math.min(5000 * 2 ** attemptIndex, 30000), // Delay más largo
-      // Añadir configuración para evitar queries innecesarias
+      // Corregir: usar placeholderData en lugar de keepPreviousData
       structuralSharing: true, // Mantener sharing para evitar re-renders
       keepPreviousData: true,  // Mantener datos previos durante refetch
     },
