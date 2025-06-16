@@ -1,4 +1,5 @@
 
+
 -- CORRECCIÓN CRÍTICA: Eliminar recursión infinita en políticas RLS
 -- Este error está causando cientos de errores por segundo y afectando el rendimiento
 
@@ -54,3 +55,4 @@ CREATE INDEX IF NOT EXISTS idx_conductores_user_id_optimized ON public.conductor
 CREATE INDEX IF NOT EXISTS idx_vehiculos_user_id_optimized ON public.vehiculos(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_socios_user_id_optimized ON public.socios(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_cartas_porte_usuario_id_optimized ON public.cartas_porte(usuario_id) WHERE usuario_id IS NOT NULL;
+

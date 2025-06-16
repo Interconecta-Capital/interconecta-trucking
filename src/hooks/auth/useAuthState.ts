@@ -97,7 +97,7 @@ export function useAuthState() {
 
     getSession();
 
-    // Listen for auth changes con debouncing mejorado
+    // Listen for auth changes con debouncing mucho más conservador
     let authChangeTimeout: NodeJS.Timeout;
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -109,13 +109,13 @@ export function useAuthState() {
           clearTimeout(authChangeTimeout);
         }
         
-        // Debounce auth state changes para evitar múltiples actualizaciones
+        // Debounce auth state changes más agresivamente para evitar múltiples actualizaciones
         authChangeTimeout = setTimeout(async () => {
           setSession(session);
           
           if (event === 'SIGNED_IN' && session?.user) {
             setLoading(true);
-            // Delay reducido y sin recargas automáticas
+            // Delay más largo para evitar conflictos
             setTimeout(async () => {
               await loadUserData(session.user);
               setLoading(false);
@@ -125,7 +125,7 @@ export function useAuthState() {
                 console.log('[AuthState] Redirecting after sign in to dashboard');
                 navigate('/dashboard', { replace: true });
               }
-            }, 100); // Reducido de 10ms a 100ms
+            }, 500); // Aumentado de 100ms a 500ms
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
             setLoading(false);
@@ -134,11 +134,14 @@ export function useAuthState() {
               navigate('/auth', { replace: true });
             }
           } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-            // Refresh user data silently sin recargas
+            // Refresh user data silently sin recargas y con throttling
             console.log('[AuthState] Token refreshed, updating user data silently');
-            await loadUserData(session.user);
+            // Evitar recargas excesivas en token refresh
+            setTimeout(async () => {
+              await loadUserData(session.user);
+            }, 1000);
           }
-        }, 200); // Debounce de 200ms
+        }, 500); // Debounce aumentado de 200ms a 500ms
       }
     );
 

@@ -1,136 +1,52 @@
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 interface DebugEvent {
-  timestamp: number;
   type: string;
   data: any;
-  url?: string;
-  userAgent?: string;
+  timestamp: number;
 }
 
 export const useDebugMonitor = () => {
-  const debugEventsRef = useRef<DebugEvent[]>([]);
-  const maxEvents = 100; // Increased to keep more events for debugging
+  const eventsRef = useRef<DebugEvent[]>([]);
+  const lastLogTime = useRef<number>(0);
 
-  const logEvent = (type: string, data: any) => {
+  const logEvent = useCallback((type: string, data: any) => {
+    const now = Date.now();
+    
+    // Throttle logging más agresivamente - solo 1 evento cada 5 segundos
+    if (now - lastLogTime.current < 5000) {
+      return;
+    }
+    
+    lastLogTime.current = now;
+    
     const event: DebugEvent = {
-      timestamp: Date.now(),
       type,
       data,
-      url: window.location.href,
-      userAgent: navigator.userAgent,
+      timestamp: now,
     };
 
-    debugEventsRef.current.push(event);
+    // Mantener solo los últimos 10 eventos para reducir memoria
+    eventsRef.current = [...eventsRef.current.slice(-9), event];
     
-    // Keep only recent events
-    if (debugEventsRef.current.length > maxEvents) {
-      debugEventsRef.current = debugEventsRef.current.slice(-maxEvents);
+    // Solo loggear en desarrollo y con throttling
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Debug] ${type}:`, data);
     }
+  }, []);
 
-    // Enhanced logging for auth events
-    if (type.includes('auth')) {
-      console.log(`[DEBUG-AUTH] ${type}:`, data);
-    } else {
-      console.log(`[DEBUG] ${type}:`, data);
-    }
-  };
+  const getEvents = useCallback(() => {
+    return eventsRef.current;
+  }, []);
 
-  const getDebugEvents = () => debugEventsRef.current;
-
-  const clearDebugEvents = () => {
-    debugEventsRef.current = [];
-  };
-
-  const getAuthEvents = () => {
-    return debugEventsRef.current.filter(event => 
-      event.type.includes('auth') || 
-      event.type.includes('session') ||
-      event.type.includes('token')
-    );
-  };
-
-  // Monitor page visibility changes
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      logEvent('visibility_change', {
-        hidden: document.hidden,
-        visibilityState: document.visibilityState,
-      });
-    };
-
-    const handlePageShow = (event: PageTransitionEvent) => {
-      logEvent('page_show', {
-        persisted: event.persisted,
-      });
-    };
-
-    const handlePageHide = (event: PageTransitionEvent) => {
-      logEvent('page_hide', {
-        persisted: event.persisted,
-      });
-    };
-
-    const handleBeforeUnload = () => {
-      logEvent('before_unload', {
-        timestamp: Date.now(),
-      });
-    };
-
-    const handleFocus = () => {
-      logEvent('window_focus', {
-        timestamp: Date.now(),
-      });
-    };
-
-    const handleBlur = () => {
-      logEvent('window_blur', {
-        timestamp: Date.now(),
-      });
-    };
-
-    // Monitor URL hash changes for auth token detection
-    const handleHashChange = () => {
-      logEvent('hash_change', {
-        hash: window.location.hash,
-        hasAuthTokens: window.location.hash.includes('access_token'),
-        timestamp: Date.now(),
-      });
-    };
-
-    // Add event listeners
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handlePageShow);
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('hashchange', handleHashChange);
-
-    // Log initial page load
-    logEvent('page_load', {
-      url: window.location.href,
-      referrer: document.referrer,
-      hasAuthTokens: window.location.hash.includes('access_token'),
-      timestamp: Date.now(),
-    });
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('hashchange', handleHashChange);
-    };
+  const clearEvents = useCallback(() => {
+    eventsRef.current = [];
   }, []);
 
   return {
     logEvent,
-    getDebugEvents,
-    clearDebugEvents,
-    getAuthEvents,
+    getEvents,
+    clearEvents,
   };
 };

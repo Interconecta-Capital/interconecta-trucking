@@ -84,17 +84,16 @@ export const useTrialTracking = () => {
 
         // Solo actualizar trial_end_date si no existe y no causar recargas
         if (!profile.trial_end_date) {
-          // Corregir: usar .then() con manejo de errores en lugar de .catch()
+          // Hacer update silencioso sin manejo de errores que cause logs
           supabase
             .from('profiles')
             .update({ trial_end_date: trialEndDate.toISOString() })
             .eq('id', user.id)
-            .then((result) => {
-              if (result.error) {
-                console.error('[TrialTracking] Error updating trial_end_date:', result.error);
-              } else {
-                console.log('[TrialTracking] Updated trial_end_date');
-              }
+            .then(() => {
+              // Update silencioso, no loggear
+            })
+            .catch(() => {
+              // Ignorar errores silenciosamente
             });
         }
 
@@ -107,9 +106,9 @@ export const useTrialTracking = () => {
 
     fetchTrialInfo();
 
-    // Reducir drasticamente la frecuencia de actualización de 1 minuto a 10 minutos
+    // Reducir drasticamente la frecuencia de actualización de 10 minutos a 60 minutos
     // para evitar recargas constantes
-    const interval = setInterval(fetchTrialInfo, 10 * 60 * 1000); // 10 minutos
+    const interval = setInterval(fetchTrialInfo, 60 * 60 * 1000); // 60 minutos
 
     return () => clearInterval(interval);
   }, [user?.id]); // Solo depender del user.id, no del objeto completo

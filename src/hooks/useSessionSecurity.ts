@@ -13,9 +13,9 @@ interface SessionSecurityConfig {
 
 export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const {
-    inactivityTimeoutMinutes = 60, // Aumentado de 45 a 60 minutos
-    warningMinutesBeforeTimeout = 10, // Aumentado de 5 a 10 minutos
-    maxSessionDurationHours = 12 // Aumentado de 8 a 12 horas
+    inactivityTimeoutMinutes = 90, // Aumentado significativamente de 60 a 90 minutos
+    warningMinutesBeforeTimeout = 15, // Aumentado de 10 a 15 minutos
+    maxSessionDurationHours = 24 // Aumentado de 12 a 24 horas
   } = config;
 
   const { user } = useAuth();
@@ -29,7 +29,7 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   const wasTabInactiveRef = useRef<boolean>(false);
 
   const resetActivityTimer = useCallback(() => {
-    // Solo resetear si la pestaña está activa y fue una actividad real
+    // Solo resetear si la pestaña está activa
     if (!isTabActiveRef.current) return;
     
     lastActivityRef.current = Date.now();
@@ -47,7 +47,7 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
         toast.warning(
           `Su sesión expirará en ${warningMinutesBeforeTimeout} minutos por inactividad.`,
           {
-            duration: 15000, // Aumentar duración del toast
+            duration: 20000, // Duración más larga del toast
             action: {
               label: 'Mantener sesión',
               onClick: resetActivityTimer
@@ -78,7 +78,7 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
   }, [navigate]);
 
   const checkSessionAge = useCallback(async () => {
-    // Solo verificar si la pestaña está activa y no estamos en proceso de cambio
+    // Solo verificar si la pestaña está activa
     if (!isTabActiveRef.current || wasTabInactiveRef.current) return;
     
     try {
@@ -88,9 +88,9 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       const expiresAt = new Date(session.expires_at * 1000).getTime();
       const now = Date.now();
       
-      // Check if session is close to expiring (within 2 horas en lugar de 1)
-      const twoHours = 2 * 60 * 60 * 1000;
-      if (expiresAt - now < twoHours) {
+      // Check if session is close to expiring (dentro de 4 horas en lugar de 2)
+      const fourHours = 4 * 60 * 60 * 1000;
+      if (expiresAt - now < fourHours) {
         // Try to refresh the session silently
         const { error } = await supabase.auth.refreshSession();
         if (error) {
@@ -109,18 +109,18 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
 
   const handleUserActivity = useCallback(() => {
     if (user && isTabActiveRef.current) {
-      // Debounce activity updates para reducir frecuencia (aumentado de 2 a 5 segundos)
+      // Debounce activity updates mucho más agresivo (aumentado de 5 a 30 segundos)
       if (activityDebounceRef.current) {
         clearTimeout(activityDebounceRef.current);
       }
       
       activityDebounceRef.current = setTimeout(() => {
         resetActivityTimer();
-      }, 5000); // 5 segundos de debounce
+      }, 30000); // 30 segundos de debounce
     }
   }, [user, resetActivityTimer]);
 
-  // Manejar cambios de visibilidad de pestaña de forma más inteligente
+  // Manejar cambios de visibilidad de pestaña de forma más conservadora
   const handleVisibilityChange = useCallback(() => {
     const isVisible = !document.hidden;
     const wasInactive = !isTabActiveRef.current;
@@ -132,24 +132,24 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
       console.log('[SessionSecurity] Tab became active after being inactive');
       wasTabInactiveRef.current = false;
       
-      // Dar tiempo para que la aplicación se estabilice antes de resetear timers
+      // Dar más tiempo para que la aplicación se estabilice
       setTimeout(() => {
         resetActivityTimer();
-      }, 1000);
+      }, 3000); // Aumentado de 1 a 3 segundos
       
     } else if (!isVisible && user) {
-      // Cuando la pestaña se oculta, marcar como inactiva pero NO pausar timers inmediatamente
+      // Cuando la pestaña se oculta
       console.log('[SessionSecurity] Tab became hidden');
       wasTabInactiveRef.current = true;
       
-      // Pausar timers solo después de un delay para evitar pausas/reinicios constantes
+      // Pausar timers después de un delay más largo
       setTimeout(() => {
         if (!isTabActiveRef.current) {
           console.log('[SessionSecurity] Pausing timers due to prolonged tab inactivity');
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
           if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
         }
-      }, 30000); // 30 segundos de gracia
+      }, 60000); // 60 segundos de gracia en lugar de 30
     }
   }, [user, resetActivityTimer]);
 
@@ -165,17 +165,17 @@ export const useSessionSecurity = (config: SessionSecurityConfig = {}) => {
     // Initialize activity timer
     resetActivityTimer();
 
-    // Check session age mucho menos frecuentemente (cada hora en lugar de 30 minutos)
-    const sessionCheckInterval = setInterval(checkSessionAge, 60 * 60 * 1000);
+    // Check session age mucho menos frecuentemente (cada 2 horas en lugar de 1 hora)
+    const sessionCheckInterval = setInterval(checkSessionAge, 2 * 60 * 60 * 1000);
 
-    // Add activity listeners con throttling mejorado
+    // Add activity listeners con throttling extremadamente conservador
     const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
     
-    // Throttle activity events más agresivamente
+    // Throttle activity events mucho más agresivamente
     let lastActivity = 0;
     const throttledActivity = () => {
       const now = Date.now();
-      if (now - lastActivity > 10000) { // Solo procesar actividad cada 10 segundos
+      if (now - lastActivity > 30000) { // Solo procesar actividad cada 30 segundos
         lastActivity = now;
         handleUserActivity();
       }
