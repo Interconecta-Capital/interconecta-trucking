@@ -49,10 +49,10 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SecurityProvider>
-        <TooltipProvider>
-          <div className="min-h-screen bg-background font-sans antialiased">
-            <Router>
+      <TooltipProvider>
+        <div className="min-h-screen bg-background font-sans antialiased">
+          <Router>
+            <SecurityProvider>
               <AuthProvider>
                 <Routes>
                   {/* Landing page - sin autenticación */}
@@ -157,11 +157,11 @@ function App() {
                   } />
                 </Routes>
               </AuthProvider>
-            </Router>
-            <Toaster />
-          </div>
-        </TooltipProvider>
-      </SecurityProvider>
+            </SecurityProvider>
+          </Router>
+          <Toaster />
+        </div>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
