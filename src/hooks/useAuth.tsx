@@ -7,19 +7,39 @@ interface AuthContextType {
   loading: boolean;
   hasAccess: (resource: string) => boolean;
   signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
+  signInWithGoogle: () => Promise<void>;
+  resendConfirmation: (email: string) => Promise<void>;
+  updateProfile: (updates: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { user, loading, hasAccess, signOut } = useUnifiedAuth();
+  const { 
+    user, 
+    loading, 
+    hasAccess, 
+    signOut, 
+    signIn, 
+    signUp, 
+    signInWithGoogle, 
+    resendConfirmation, 
+    updateProfile 
+  } = useUnifiedAuth();
 
   return (
     <AuthContext.Provider value={{ 
       user, 
       loading, 
       hasAccess,
-      signOut
+      signOut,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      resendConfirmation,
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>

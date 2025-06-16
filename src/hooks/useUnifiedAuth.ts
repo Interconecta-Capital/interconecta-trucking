@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -37,7 +38,6 @@ export const useUnifiedAuth = () => {
 
   const loadUserData = useCallback(async (authUser: User): Promise<UnifiedAuthUser> => {
     try {
-      // Evitar múltiples cargas para el mismo usuario
       if (loadingRef.current || lastUserIdRef.current === authUser.id) {
         return { ...authUser, profile: null, usuario: null, tenant: null };
       }
@@ -47,7 +47,6 @@ export const useUnifiedAuth = () => {
 
       console.log('[UnifiedAuth] Loading user data for:', authUser.id);
       
-      // Cargar datos en paralelo con timeout
       const timeout = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout')), 5000)
       );
@@ -63,8 +62,8 @@ export const useUnifiedAuth = () => {
         ])
       ]);
 
-      const profile = profileResult.status === 'fulfilled' ? profileResult.value?.data : null;
-      const usuario = usuarioResult.status === 'fulfilled' ? usuarioResult.value?.data : null;
+      const profile = profileResult.status === 'fulfilled' && profileResult.value && 'data' in profileResult.value ? profileResult.value.data : null;
+      const usuario = usuarioResult.status === 'fulfilled' && usuarioResult.value && 'data' in usuarioResult.value ? usuarioResult.value.data : null;
 
       let tenant: Tenant | null = null;
       if (usuario?.tenant_id) {
@@ -72,7 +71,7 @@ export const useUnifiedAuth = () => {
           supabase.from('tenants').select('*').eq('id', usuario.tenant_id).maybeSingle(),
           timeout
         ]);
-        if ('data' in tenantResult) {
+        if (tenantResult && 'data' in tenantResult) {
           tenant = tenantResult.data;
         }
       }
@@ -128,26 +127,21 @@ export const useUnifiedAuth = () => {
       try {
         console.log('[UnifiedAuth] Initializing authentication...');
 
-        // Configurar listener primero
         authSubscription = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('[UnifiedAuth] Auth state change:', event, !!session);
             
-            // Throttle auth state changes
             if (event === 'TOKEN_REFRESHED') {
-              // No recargar datos en token refresh, solo actualizar session
               if (mountedRef.current) {
                 setAuthState(prev => ({ ...prev, session }));
               }
               return;
             }
 
-            // Para otros eventos, usar debounce
             setTimeout(async () => {
               if (mountedRef.current) {
                 await updateAuthState(session);
                 
-                // Manejar navegación solo en casos específicos
                 if (event === 'SIGNED_IN' && session?.user) {
                   const currentPath = window.location.pathname;
                   if (currentPath === '/' || currentPath === '/auth') {
@@ -165,7 +159,6 @@ export const useUnifiedAuth = () => {
           }
         );
 
-        // Obtener sesión inicial
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('[UnifiedAuth] Error getting initial session:', error);
@@ -196,11 +189,43 @@ export const useUnifiedAuth = () => {
     };
   }, [updateAuthState, navigate]);
 
-  // Cleanup en unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+
+  // Funciones de autenticación
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string, metadata?: any) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
+    if (error) throw error;
+    return { needsVerification: !data.user?.email_confirmed_at };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
@@ -213,20 +238,43 @@ export const useUnifiedAuth = () => {
     }
   }, [navigate]);
 
+  const resendConfirmation = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`
+      }
+    });
+    if (error) throw error;
+  }, []);
+
+  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
+    if (!authState.user?.id) throw new Error('No user logged in');
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', authState.user.id);
+    
+    if (error) throw error;
+    
+    // Reload user data
+    const userData = await loadUserData(authState.user);
+    setAuthState(prev => ({ ...prev, user: userData }));
+  }, [authState.user, loadUserData]);
+
   const hasAccess = useCallback((resource: string): boolean => {
     if (!authState.user) return false;
     
-    // Superuser tiene acceso a todo
     if (authState.user.usuario?.rol === 'superuser' || authState.user.usuario?.rol_especial === 'superuser') {
       return true;
     }
     
-    // Admin tiene acceso a la mayoría
     if (authState.user.usuario?.rol === 'admin') {
       return !resource.includes('superuser');
     }
     
-    // Usuarios regulares tienen acceso básico
     return ['dashboard', 'carta-porte', 'profile'].some(allowed => resource.includes(allowed));
   }, [authState.user]);
 
@@ -235,7 +283,12 @@ export const useUnifiedAuth = () => {
     session: authState.session,
     loading: authState.loading,
     initialized: authState.initialized,
+    signIn,
+    signUp,
+    signInWithGoogle,
     signOut,
+    resendConfirmation,
+    updateProfile,
     hasAccess,
   };
 };
