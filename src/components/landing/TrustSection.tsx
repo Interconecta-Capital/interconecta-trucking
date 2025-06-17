@@ -31,7 +31,6 @@ const TrustSection = () => {
             >
               <div className="text-[48px] font-extrabold text-pure-black mb-2 text-mono">
                 {stat.number}
-                {stat.suffix && <span className="text-2xl">{stat.suffix}</span>}
               </div>
               <div className="text-caption text-gray-60">{stat.label}</div>
             </div>
