@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -223,7 +224,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         datosCalculoRuta
       };
       
-      // Preparar datos para la carta porte oficial
+      // Preparar datos para la carta porte oficial - FIXED: Cast to any for Json compatibility
       const cartaPorteData = {
         folio: currentCartaPorteId ? undefined : `CP-${Date.now().toString().slice(-8)}`,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -234,7 +235,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         transporte_internacional: Boolean(formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true),
         registro_istmo: Boolean(formData.registroIstmo),
         status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: datosCompletos,
+        datos_formulario: datosCompletos as any, // Cast to any for Json compatibility
         usuario_id: user.id,
         updated_at: new Date().toISOString()
       };
@@ -255,14 +256,17 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           throw error;
         }
       } else {
-        // Crear nueva carta porte
+        // Crear nueva carta porte - FIXED: Proper data structure
         console.log('Creando nueva carta porte');
+        const insertData = {
+          ...cartaPorteData,
+          created_at: new Date().toISOString(),
+          folio: `CP-${Date.now().toString().slice(-8)}`
+        };
+        
         const { data: nuevaCarta, error } = await supabase
           .from('cartas_porte')
-          .insert({
-            ...cartaPorteData,
-            created_at: new Date().toISOString()
-          })
+          .insert(insertData)
           .select('id')
           .single();
 
@@ -336,6 +340,32 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     }
   }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando, handleGuardarCartaPorteOficial]);
 
+  // FIXED: Implement missing handleLimpiarBorrador function
+  const handleLimpiarBorrador = useCallback(async () => {
+    try {
+      if (currentCartaPorteId) {
+        await BorradorService.limpiarBorrador(currentCartaPorteId);
+      } else {
+        // Si no hay ID, limpiar localStorage
+        localStorage.removeItem('carta_porte_borrador');
+      }
+      
+      // Reset form to initial state
+      setFormData(initialCartaPorteData);
+      setCurrentStep(0);
+      setCurrentCartaPorteId(null);
+      setBorradorCargado(false);
+      setXmlGenerado(null);
+      setDatosCalculoRuta(null);
+      setUltimoGuardado(null);
+      
+      toast.success('Borrador limpiado correctamente');
+    } catch (error: any) {
+      console.error('Error limpiando borrador:', error);
+      toast.error(`Error al limpiar el borrador: ${error.message || 'Error desconocido'}`);
+    }
+  }, [currentCartaPorteId]);
+
   // Actualizar último guardado cuando hay auto-save
   useEffect(() => {
     if (lastSaved) {
@@ -379,7 +409,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     handleGuardarBorrador,
     handleGuardarCartaPorteOficial,
     handleGuardarYSalir,
-    handleLimpiarBorrador,
+    handleLimpiarBorrador, // Now properly implemented
     
     // Nuevos handlers para datos persistidos
     handleXMLGenerated,
