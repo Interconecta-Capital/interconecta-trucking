@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -96,7 +95,9 @@ export function DocumentUploadDialog({
         },
         {
           cartaPorteId,
-          extractMercancias: true
+          metadata: {
+            extractMercancias: true
+          }
         }
       );
 

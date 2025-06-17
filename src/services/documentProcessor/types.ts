@@ -19,6 +19,7 @@ export interface ProcessDocumentOptions {
   documentoOriginalId?: string;
   userId?: string;
   metadata?: Record<string, unknown>;
+  extractMercancias?: boolean;
 }
 
 export type DocumentType = 'pdf' | 'xml' | 'excel' | 'image' | 'unknown';

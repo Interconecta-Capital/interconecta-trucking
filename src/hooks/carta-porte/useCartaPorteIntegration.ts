@@ -1,7 +1,7 @@
+
 import { useCallback } from 'react';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { useCartaPorteSync } from './useCartaPorteSync';
-import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseCartaPorteIntegrationOptions {
@@ -34,14 +34,6 @@ export const useCartaPorteIntegration = ({
     isLoading,
     setFormData,
     setCurrentCartaPorteId,
-  });
-
-  const { clearSavedData } = useCartaPorteAutoSave({
-    formData,
-    currentCartaPorteId,
-    isLoading,
-    isCreating,
-    isUpdating,
   });
 
   // Cargar carta porte desde base de datos
@@ -113,8 +105,7 @@ export const useCartaPorteIntegration = ({
     };
 
     setFormData(newFormData);
-    clearSavedData();
-  }, [setFormData, clearSavedData]);
+  }, [setFormData]);
 
   // Resetear formulario
   const resetForm = useCallback(() => {
@@ -126,15 +117,11 @@ export const useCartaPorteIntegration = ({
     // Mappers
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
-    // Elimino mappers parciales que ya no son necesarios
     
     // Acciones principales
     loadCartaPorte,
     saveCartaPorte,
     createNewCartaPorte,
     resetForm,
-    
-    // Auto-save
-    clearSavedData,
   };
 };

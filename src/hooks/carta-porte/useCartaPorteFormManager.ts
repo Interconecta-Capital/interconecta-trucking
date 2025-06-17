@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -5,6 +6,11 @@ import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { toast } from 'sonner';
 import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { useBorradorRecovery } from './useBorradorRecovery';
+
+// Extender CartaPorteData para incluir currentStep
+interface CartaPorteDataWithStep extends CartaPorteData {
+  currentStep?: number;
+}
 
 // Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
@@ -84,8 +90,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setFormData(data);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
-      if (data.currentStep !== undefined) {
-        setCurrentStep(data.currentStep);
+      // Verificar si el borrador tiene información del paso actual
+      if ((data as CartaPorteDataWithStep).currentStep !== undefined) {
+        setCurrentStep((data as CartaPorteDataWithStep).currentStep!);
       }
     }
   }, [acceptBorrador]);
@@ -106,7 +113,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     
     setIsGuardando(true);
     try {
-      const datosCompletos = {
+      const datosCompletos: CartaPorteDataWithStep = {
         ...formData,
         currentStep,
       };
