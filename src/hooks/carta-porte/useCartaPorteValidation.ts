@@ -15,6 +15,7 @@ export interface ValidationSummary {
   totalErrors: number;
   totalWarnings: number;
   isFormComplete: boolean;
+  completionPercentage: number;
 }
 
 export const useCartaPorteValidation = () => {
@@ -34,7 +35,8 @@ export const useCartaPorteValidation = () => {
       },
       totalErrors: 0,
       totalWarnings: 0,
-      isFormComplete: false
+      isFormComplete: false,
+      completionPercentage: 0
     };
 
     // Configuración
@@ -69,8 +71,12 @@ export const useCartaPorteValidation = () => {
     // XML (se establecerá externamente)
     summary.sectionStatus.xml = 'empty';
 
-    // Calcular si el formulario está completo
+    // Calcular porcentaje de completitud
     const completeSections = Object.values(summary.sectionStatus).filter(status => status === 'complete').length;
+    const totalSections = Object.keys(summary.sectionStatus).length;
+    summary.completionPercentage = Math.round((completeSections / totalSections) * 100);
+
+    // Calcular si el formulario está completo
     summary.isFormComplete = completeSections >= 5; // Sin contar XML
 
     return summary;
@@ -156,6 +162,47 @@ export const useCartaPorteValidation = () => {
     }
   }, [toast]);
 
+  const validateComplete = useCallback((formData: any) => {
+    const summary = getValidationSummary(formData);
+    return {
+      isValid: summary.isFormComplete,
+      errors: summary.totalErrors > 0 ? ['Hay errores en el formulario'] : [],
+      warnings: summary.totalWarnings > 0 ? ['Hay advertencias en el formulario'] : [],
+      completionPercentage: summary.completionPercentage
+    };
+  }, [getValidationSummary]);
+
+  const validateSection = useCallback((sectionKey: string, sectionData: any) => {
+    // Validación básica por sección
+    let isValid = false;
+    
+    switch (sectionKey) {
+      case 'configuracion':
+        isValid = sectionData.rfcEmisor && sectionData.rfcReceptor;
+        break;
+      case 'ubicaciones':
+        isValid = Array.isArray(sectionData) && sectionData.length >= 2;
+        break;
+      case 'mercancias':
+        isValid = Array.isArray(sectionData) && sectionData.length > 0;
+        break;
+      case 'autotransporte':
+        isValid = sectionData && sectionData.placa_vm;
+        break;
+      case 'figuras':
+        isValid = Array.isArray(sectionData) && sectionData.length > 0;
+        break;
+      default:
+        isValid = true;
+    }
+
+    return {
+      isValid,
+      errors: isValid ? [] : [`Sección ${sectionKey} incompleta`],
+      warnings: []
+    };
+  }, []);
+
   const clearValidation = useCallback(() => {
     setValidationResults(null);
   }, []);
@@ -165,6 +212,8 @@ export const useCartaPorteValidation = () => {
     isValidating,
     validateCartaPorte,
     validateXML,
+    validateComplete,
+    validateSection,
     clearValidation,
     getValidationSummary
   };

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { CartaPorteFormData } from './useCartaPorteMappers';
@@ -94,7 +95,7 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
       autotransporte: formData.autotransporte,
       figuras: formData.figuras || [],
     };
-    return validateComplete(compatibleData as any);
+    return validateComplete(compatibleData);
   }, [formData, validateComplete]);
 
   // Auto-validación cuando cambian los datos

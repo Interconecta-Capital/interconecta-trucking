@@ -149,6 +149,7 @@ describe('CartaPorte Hooks - Robust Testing', () => {
         
         expect(validation.isValid).toBeDefined();
         expect(validation.errors).toBeDefined();
+        expect(validation.completionPercentage).toBeDefined();
       });
     });
 
