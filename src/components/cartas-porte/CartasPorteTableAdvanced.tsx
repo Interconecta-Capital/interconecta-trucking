@@ -30,6 +30,7 @@ interface CartasPorteTableAdvancedProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onRegenerateXML?: (id: string) => void;
+  onGeneratePDF?: (id: string) => void;
 }
 
 export function CartasPorteTableAdvanced({ 
@@ -37,7 +38,8 @@ export function CartasPorteTableAdvanced({
   loading, 
   onEdit, 
   onDelete,
-  onRegenerateXML 
+  onRegenerateXML,
+  onGeneratePDF 
 }: CartasPorteTableAdvancedProps) {
   const [selectedXML, setSelectedXML] = useState<string | null>(null);
   const [showXMLDialog, setShowXMLDialog] = useState(false);
@@ -78,37 +80,40 @@ export function CartasPorteTableAdvanced({
   };
 
   const handleDownloadPDF = async (carta: CartaPorte) => {
-    if (!carta.datos_formulario) {
+    if (onGeneratePDF) {
+      onGeneratePDF(carta.id);
+    } else if (!carta.datos_formulario) {
       toast({
         title: "Error",
         description: "No hay datos suficientes para generar el PDF.",
         variant: "destructive"
       });
       return;
-    }
-
-    setGeneratingPDF(carta.id);
-    try {
-      const result = await CartaPortePDFAdvanced.generarPDF(carta.datos_formulario);
-      
-      if (result.success && result.pdfBlob) {
-        CartaPortePDFAdvanced.descargarPDF(result.pdfBlob, `carta-porte-${carta.folio || carta.id.slice(-8)}.pdf`);
+    } else {
+      // Fallback to local PDF generation if no onGeneratePDF prop
+      setGeneratingPDF(carta.id);
+      try {
+        const result = await CartaPortePDFAdvanced.generarPDF(carta.datos_formulario);
+        
+        if (result.success && result.pdfBlob) {
+          CartaPortePDFAdvanced.descargarPDF(result.pdfBlob, `carta-porte-${carta.folio || carta.id.slice(-8)}.pdf`);
+          toast({
+            title: "PDF generado",
+            description: "El PDF se ha descargado correctamente.",
+          });
+        } else {
+          throw new Error(result.error || 'Error desconocido');
+        }
+      } catch (error) {
+        console.error('Error generando PDF:', error);
         toast({
-          title: "PDF generado",
-          description: "El PDF se ha descargado correctamente.",
+          title: "Error generando PDF",
+          description: "No se pudo generar el PDF. Intenta nuevamente.",
+          variant: "destructive"
         });
-      } else {
-        throw new Error(result.error || 'Error desconocido');
+      } finally {
+        setGeneratingPDF(null);
       }
-    } catch (error) {
-      console.error('Error generando PDF:', error);
-      toast({
-        title: "Error generando PDF",
-        description: "No se pudo generar el PDF. Intenta nuevamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setGeneratingPDF(null);
     }
   };
 
