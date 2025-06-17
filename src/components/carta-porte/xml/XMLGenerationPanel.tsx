@@ -7,7 +7,7 @@ import { FileText } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
 import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { PDFPreviewDialog } from '../pdf/PDFPreviewDialog';
 import { XMLSection } from './sections/XMLSection';
 import { PDFSection } from './sections/PDFSection';
@@ -63,7 +63,7 @@ export function XMLGenerationPanel({
     cartaPorteData.rfcReceptor &&
     cartaPorteData.ubicaciones?.length >= 2 &&
     cartaPorteData.mercancias?.length > 0 &&
-    cartaPorteData.autotransporte?.placaVm &&
+    cartaPorteData.autotransporte?.placa_vm &&
     cartaPorteData.figuras?.length > 0
   );
 
@@ -157,7 +157,10 @@ export function XMLGenerationPanel({
               xmlGenerado={xmlGenerado}
               onGenerarXML={handleGenerarXML}
               onDescargarXML={() => descargarXML('generado')}
+              onRegenerarXML={handleGenerarXML}
             />
+
+            <XMLPreviewSection xmlGenerado={xmlGenerado} />
 
             <Separator />
 
@@ -192,8 +195,6 @@ export function XMLGenerationPanel({
               onVisualizarPDF={handleVisualizarPDF}
               onDescargarPDF={() => descargarPDF(`carta-porte-${Date.now()}.pdf`)}
             />
-
-            <XMLPreviewSection xmlGenerado={xmlGenerado} />
           </CardContent>
         </Card>
 

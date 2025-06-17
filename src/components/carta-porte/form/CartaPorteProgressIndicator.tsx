@@ -1,38 +1,52 @@
 
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle, Clock, Info } from 'lucide-react';
-
-interface ValidationSummary {
-  isComplete: boolean;
-  completionPercentage: number;
-  sectionStatus: {
-    configuracion: 'complete' | 'partial' | 'empty';
-    ubicaciones: 'complete' | 'partial' | 'empty';
-    mercancias: 'complete' | 'partial' | 'empty';
-    autotransporte: 'complete' | 'partial' | 'empty';
-    figuras: 'complete' | 'partial' | 'empty';
-  };
-  nextRequiredAction: string;
-  criticalErrors: string[];
-  warnings: string[];
-}
+import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code } from 'lucide-react';
+import type { ValidationSummary } from '@/hooks/carta-porte/useCartaPorteValidation';
 
 interface CartaPorteProgressIndicatorProps {
   validationSummary: ValidationSummary;
   currentStep: number;
-  onStepClick?: (step: number) => void;
+  onStepClick: (step: number) => void;
 }
 
-const stepNames = [
-  'Configuración',
-  'Ubicaciones',
-  'Mercancías',
-  'Autotransporte',
-  'Figuras',
-  'XML'
+const steps = [
+  { 
+    id: 0, 
+    name: 'Configuración', 
+    icon: FileText,
+    key: 'configuracion' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 1, 
+    name: 'Ubicaciones', 
+    icon: MapPin,
+    key: 'ubicaciones' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 2, 
+    name: 'Mercancías', 
+    icon: Package,
+    key: 'mercancias' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 3, 
+    name: 'Autotransporte', 
+    icon: Truck,
+    key: 'autotransporte' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 4, 
+    name: 'Figuras', 
+    icon: Users,
+    key: 'figuras' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 5, 
+    name: 'XML', 
+    icon: Code,
+    key: 'xml' as keyof ValidationSummary['sectionStatus']
+  }
 ];
 
 export function CartaPorteProgressIndicator({ 
@@ -40,161 +54,155 @@ export function CartaPorteProgressIndicator({
   currentStep, 
   onStepClick 
 }: CartaPorteProgressIndicatorProps) {
-  const getStepIcon = (stepIndex: number, sectionKey?: keyof ValidationSummary['sectionStatus']) => {
-    if (stepIndex === 5) { // XML step
-      return validationSummary.isComplete ? (
-        <CheckCircle className="h-4 w-4 text-green-600" />
-      ) : (
-        <Clock className="h-4 w-4 text-gray-400" />
-      );
+  
+  const getStepStatus = (step: typeof steps[0]) => {
+    const sectionStatus = validationSummary.sectionStatus[step.key];
+    
+    if (step.id < currentStep) {
+      return sectionStatus === 'complete' ? 'completed' : 'completed-warning';
     }
+    
+    if (step.id === currentStep) {
+      return 'current';
+    }
+    
+    return sectionStatus === 'empty' ? 'pending' : 'ready';
+  };
 
-    if (!sectionKey) return <Clock className="h-4 w-4 text-gray-400" />;
-
-    const status = validationSummary.sectionStatus[sectionKey];
+  const getStepIcon = (step: typeof steps[0], status: string) => {
+    const IconComponent = step.icon;
     
     switch (status) {
-      case 'complete':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'partial':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'completed-warning':
+        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+      case 'current':
+        return <IconComponent className="h-5 w-5 text-blue-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
+        return <IconComponent className="h-5 w-5 text-gray-400" />;
     }
   };
 
-  const getStepBadgeVariant = (stepIndex: number, sectionKey?: keyof ValidationSummary['sectionStatus']) => {
-    if (stepIndex === currentStep) return 'default';
-    
-    if (stepIndex === 5) { // XML step
-      return validationSummary.isComplete ? 'success' : 'secondary';
-    }
-
-    if (!sectionKey) return 'secondary';
-
-    const status = validationSummary.sectionStatus[sectionKey];
-    
+  const getStepBadge = (status: string) => {
     switch (status) {
-      case 'complete':
-        return 'success';
-      case 'partial':
-        return 'warning';
+      case 'completed':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Completo</Badge>;
+      case 'completed-warning':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Revisar</Badge>;
+      case 'current':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Actual</Badge>;
+      case 'ready':
+        return <Badge variant="outline">Listo</Badge>;
       default:
-        return 'secondary';
+        return <Badge variant="outline" className="text-gray-500">Pendiente</Badge>;
     }
   };
 
-  const sectionKeys: (keyof ValidationSummary['sectionStatus'])[] = [
-    'configuracion',
-    'ubicaciones', 
-    'mercancias',
-    'autotransporte',
-    'figuras'
-  ];
+  const canNavigateTo = (stepId: number) => {
+    // Permitir navegación hacia atrás siempre
+    if (stepId <= currentStep) return true;
+    
+    // Para avanzar, verificar que los pasos anteriores no estén vacíos
+    for (let i = 0; i < stepId; i++) {
+      const step = steps[i];
+      if (validationSummary.sectionStatus[step.key] === 'empty') {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const getNextStepMessage = () => {
+    const currentStepData = steps[currentStep];
+    const nextStepData = steps[currentStep + 1];
+    
+    if (!nextStepData) return null;
+    
+    const currentSectionStatus = validationSummary.sectionStatus[currentStepData.key];
+    
+    if (currentSectionStatus === 'empty') {
+      switch (currentStepData.key) {
+        case 'configuracion':
+          return 'Complete los datos del emisor y receptor';
+        case 'ubicaciones':
+          return 'Agregue las ubicaciones de origen y destino';
+        case 'mercancias':
+          return 'Agregue al menos una mercancía';
+        case 'autotransporte':
+          return 'Complete los datos del vehículo';
+        case 'figuras':
+          return 'Agregue al menos una figura de transporte';
+        default:
+          return `Complete la sección ${currentStepData.name}`;
+      }
+    }
+    
+    return `Siguiente paso: ${nextStepData.name}`;
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Barra de progreso principal */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700">
-            Progreso del formulario
-          </h3>
-          <span className="text-sm text-gray-500">
-            {validationSummary.completionPercentage}% completado
-          </span>
-        </div>
-        <Progress 
-          value={validationSummary.completionPercentage} 
-          className="h-2"
-        />
-      </div>
-
-      {/* Indicadores de pasos */}
-      <div className="grid grid-cols-6 gap-2">
-        {stepNames.map((name, index) => {
-          const sectionKey = index < 5 ? sectionKeys[index] : undefined;
-          const isClickable = onStepClick && (
-            index <= currentStep || 
-            (sectionKey && validationSummary.sectionStatus[sectionKey] !== 'empty')
-          );
+    <div className="w-full space-y-4">
+      {/* Progress Bar */}
+      <div className="flex items-center justify-between">
+        {steps.map((step, index) => {
+          const status = getStepStatus(step);
+          const isClickable = canNavigateTo(step.id);
           
           return (
-            <div 
-              key={index}
-              className={`
-                flex flex-col items-center space-y-1 p-2 rounded-lg border transition-colors
-                ${isClickable ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'}
-                ${index === currentStep ? 'border-blue-200 bg-blue-50' : 'border-gray-200'}
-              `}
-              onClick={() => isClickable && onStepClick?.(index)}
-            >
-              <div className="flex items-center space-x-1">
-                {getStepIcon(index, sectionKey)}
-                <Badge 
-                  variant={getStepBadgeVariant(index, sectionKey) as any}
-                  className="text-xs"
+            <React.Fragment key={step.id}>
+              <div className="flex flex-col items-center space-y-2">
+                <button
+                  onClick={() => isClickable && onStepClick(step.id)}
+                  disabled={!isClickable}
+                  className={`
+                    flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all
+                    ${isClickable ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-50'}
+                    ${status === 'completed' ? 'border-green-600 bg-green-50' : ''}
+                    ${status === 'completed-warning' ? 'border-yellow-600 bg-yellow-50' : ''}
+                    ${status === 'current' ? 'border-blue-600 bg-blue-50' : ''}
+                    ${status === 'pending' || status === 'ready' ? 'border-gray-300 bg-gray-50' : ''}
+                  `}
                 >
-                  {index + 1}
-                </Badge>
+                  {getStepIcon(step, status)}
+                </button>
+                
+                <div className="text-center">
+                  <div className={`text-sm font-medium ${
+                    status === 'current' ? 'text-blue-900' : 
+                    status === 'completed' ? 'text-green-900' :
+                    status === 'completed-warning' ? 'text-yellow-900' :
+                    'text-gray-600'
+                  }`}>
+                    {step.name}
+                  </div>
+                  {getStepBadge(status)}
+                </div>
               </div>
-              <span className="text-xs text-center text-gray-600 leading-tight">
-                {name}
-              </span>
-            </div>
+              
+              {index < steps.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 ${
+                  step.id < currentStep ? 'bg-green-300' : 'bg-gray-200'
+                }`} />
+              )}
+            </React.Fragment>
           );
         })}
       </div>
 
-      {/* Próxima acción requerida */}
-      {!validationSummary.isComplete && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Siguiente paso:</strong> {validationSummary.nextRequiredAction}
-          </AlertDescription>
-        </Alert>
+      {/* Next Step Message */}
+      {getNextStepMessage() && (
+        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+          <Clock className="h-4 w-4" />
+          <span>{getNextStepMessage()}</span>
+        </div>
       )}
 
-      {/* Errores críticos */}
-      {validationSummary.criticalErrors.length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Errores que requieren atención:</strong>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              {validationSummary.criticalErrors.slice(0, 3).map((error, index) => (
-                <li key={index} className="text-sm">{error}</li>
-              ))}
-              {validationSummary.criticalErrors.length > 3 && (
-                <li className="text-sm text-gray-600">
-                  +{validationSummary.criticalErrors.length - 3} más...
-                </li>
-              )}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Advertencias */}
-      {validationSummary.warnings.length > 0 && validationSummary.criticalErrors.length === 0 && (
-        <Alert variant="default">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Recomendaciones:</strong>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              {validationSummary.warnings.slice(0, 2).map((warning, index) => (
-                <li key={index} className="text-sm">{warning}</li>
-              ))}
-              {validationSummary.warnings.length > 2 && (
-                <li className="text-sm text-gray-600">
-                  +{validationSummary.warnings.length - 2} más...
-                </li>
-              )}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Progress Summary */}
+      <div className="text-center text-sm text-gray-500">
+        Progreso del formulario: {Math.round((validationSummary.completionPercentage || 0) * 100)}% completado
+      </div>
     </div>
   );
 }

@@ -130,7 +130,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         nombre_emisor: formData.nombreEmisor || '',
         rfc_receptor: formData.rfcReceptor || '',
         nombre_receptor: formData.nombreReceptor || '',
-        transporte_internacional: formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true,
+        transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
         status: 'borrador', // Inicia como borrador hasta que se genere XML
         datos_formulario: JSON.parse(JSON.stringify(formData)), // Asegurar compatibilidad con JSON
@@ -138,6 +138,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+
+      let savedId = currentCartaPorteId;
 
       if (currentCartaPorteId) {
         // Actualizar carta porte existente
@@ -160,6 +162,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
         if (error) throw error;
         if (nuevaCarta) {
+          savedId = nuevaCarta.id;
           setCurrentCartaPorteId(nuevaCarta.id);
         }
       }
@@ -167,7 +170,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setUltimoGuardado(new Date());
       toast.success('Carta porte guardada correctamente');
       
-      return currentCartaPorteId;
+      return savedId;
     } catch (error) {
       console.error('Error guardando carta porte:', error);
       toast.error('Error al guardar la carta porte');
