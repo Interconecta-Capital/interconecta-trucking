@@ -3,6 +3,8 @@ import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaComple
 import { BorradorService } from '@/services/borradorService';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { toast } from 'sonner';
+import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
+import { useBorradorRecovery } from './useBorradorRecovery';
 
 // Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
@@ -39,6 +41,17 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   
   const { getValidationSummary } = useCartaPorteValidation();
 
+  // Auto-save mejorado
+  const { isAutoSaving, lastSaved } = useCartaPorteAutoSave({
+    formData,
+    currentCartaPorteId: currentCartaPorteId || undefined,
+    onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
+    enabled: true
+  });
+
+  // Recuperación de borrador
+  const { showRecoveryDialog, borradorData, acceptBorrador, rejectBorrador } = useBorradorRecovery(cartaPorteId);
+
   // El resumen de validación ahora depende directamente del estado unificado
   const validationSummary = getValidationSummary(formData);
 
@@ -63,6 +76,29 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const setFiguras = useCallback((figuras: FiguraCompleta[]) => {
     setFormData(prev => ({ ...prev, figuras }));
   }, []);
+
+  // Manejar aceptación de borrador
+  const handleAcceptBorrador = useCallback(() => {
+    const { data, id } = acceptBorrador();
+    if (data) {
+      setFormData(data);
+      setCurrentCartaPorteId(id);
+      setBorradorCargado(true);
+      if (data.currentStep !== undefined) {
+        setCurrentStep(data.currentStep);
+      }
+    }
+  }, [acceptBorrador]);
+
+  // Manejar rechazo de borrador
+  const handleRejectBorrador = useCallback(() => {
+    rejectBorrador();
+    // Empezar con datos frescos
+    setFormData(initialCartaPorteData);
+    setCurrentStep(0);
+    setCurrentCartaPorteId(null);
+    setBorradorCargado(false);
+  }, [rejectBorrador]);
   
   // Lógica de borrador (mantenida pero simplificada)
   const handleGuardarBorrador = useCallback(async () => {
@@ -108,39 +144,16 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     }
   }, [currentCartaPorteId]);
 
-  const cargarBorrador = useCallback(async (id: string) => {
-    try {
-      const borrador = await BorradorService.cargarBorrador(id);
-      
-      if (borrador && borrador.datosFormulario) {
-        setFormData(borrador.datosFormulario);
-        setCurrentStep(borrador.datosFormulario.currentStep || 0);
-        setCurrentCartaPorteId(id);
-        setBorradorCargado(true);
-        
-        if (borrador.ultimaModificacion) {
-          setUltimoGuardado(new Date(borrador.ultimaModificacion));
-        }
-        
-        toast.success('Borrador cargado correctamente');
-      }
-    } catch (error) {
-      console.error('Error cargando borrador:', error);
-      toast.error('Error al cargar el borrador');
-    }
-  }, []);
-
-  // Efecto para cargar el borrador una sola vez
+  // Actualizar último guardado cuando hay auto-save
   useEffect(() => {
-    if (cartaPorteId) {
-      cargarBorrador(cartaPorteId);
+    if (lastSaved) {
+      setUltimoGuardado(lastSaved);
     }
-  }, [cartaPorteId, cargarBorrador]);
-
+  }, [lastSaved]);
 
   return {
     // Estado unificado
-    configuracion: formData, // Ahora 'configuracion' es el formData completo
+    configuracion: formData,
     ubicaciones: formData.ubicaciones,
     mercancias: formData.mercancias,
     autotransporte: formData.autotransporte,
@@ -152,7 +165,13 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     borradorCargado,
     ultimoGuardado,
     validationSummary,
-    isGuardando,
+    isGuardando: isGuardando || isAutoSaving,
+    
+    // Dialog de recuperación
+    showRecoveryDialog,
+    borradorData,
+    handleAcceptBorrador,
+    handleRejectBorrador,
     
     // Setters y Handlers estables
     setUbicaciones,
@@ -160,9 +179,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setAutotransporte,
     setFiguras,
     setCurrentStep,
-    handleConfiguracionChange, // Handler unificado
+    handleConfiguracionChange,
     handleGuardarBorrador,
     handleLimpiarBorrador,
-    cargarBorrador,
   };
 }

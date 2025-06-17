@@ -5,6 +5,7 @@ import { CartaPorteHeader } from './CartaPorteHeader';
 import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
+import { BorradorRecoveryDialog } from '../BorradorRecoveryDialog';
 import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +29,12 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     validationSummary,
     isGuardando,
     
+    // Dialog de recuperación
+    showRecoveryDialog,
+    borradorData,
+    handleAcceptBorrador,
+    handleRejectBorrador,
+    
     setUbicaciones,
     setMercancias,
     setAutotransporte,
@@ -37,7 +44,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleGuardarBorrador,
     handleLimpiarBorrador,
   } = useCartaPorteFormManager(cartaPorteId);
-
 
   // Crear un objeto Autotransporte por defecto para evitar errores de tipo
   const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
@@ -85,6 +91,14 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Dialog de recuperación de borrador */}
+      <BorradorRecoveryDialog
+        open={showRecoveryDialog}
+        borradorData={borradorData}
+        onAccept={handleAcceptBorrador}
+        onReject={handleRejectBorrador}
+      />
+
       <CartaPorteHeader
         borradorCargado={borradorCargado}
         ultimoGuardado={ultimoGuardado}
@@ -102,7 +116,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
           onStepClick={handleStepNavigation}
         />
       </div>
-
 
       <OptimizedCartaPorteStepContent
         currentStep={currentStep}

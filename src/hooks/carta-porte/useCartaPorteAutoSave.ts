@@ -1,87 +1,106 @@
 
-import { useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { CartaPorteFormData } from './useCartaPorteMappers';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { CartaPorteData } from '@/types/cartaPorte';
+import { BorradorService } from '@/services/borradorService';
+import { toast } from 'sonner';
 
 interface UseCartaPorteAutoSaveOptions {
-  formData: CartaPorteFormData;
+  formData: CartaPorteData;
   currentCartaPorteId?: string;
-  isLoading: boolean;
-  isCreating: boolean;
-  isUpdating: boolean;
+  onCartaPorteIdChange?: (id: string) => void;
+  enabled?: boolean;
 }
 
 export const useCartaPorteAutoSave = ({ 
   formData, 
-  currentCartaPorteId, 
-  isLoading,
-  isCreating,
-  isUpdating 
+  currentCartaPorteId,
+  onCartaPorteIdChange,
+  enabled = true
 }: UseCartaPorteAutoSaveOptions) => {
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
-  const lastSavedRef = useRef<string>('');
-
-  useEffect(() => {
-    // No auto-save if loading or already creating/updating
-    if (isLoading || isCreating || isUpdating || !formData) return;
-
+  const lastDataRef = useRef<string>('');
+  
+  // Auto-guardado mejorado
+  const autoSave = useCallback(async () => {
+    if (!enabled || isAutoSaving) return;
+    
     const currentDataString = JSON.stringify(formData);
-    if (currentDataString === lastSavedRef.current) return;
+    if (currentDataString === lastDataRef.current || !formData) return;
+    
+    // Verificar que hay datos significativos
+    const hasSignificantData = !!(
+      formData.rfcEmisor || 
+      formData.rfcReceptor || 
+      (formData.ubicaciones && formData.ubicaciones.length > 0) ||
+      (formData.mercancias && formData.mercancias.length > 0) ||
+      formData.autotransporte?.placa_vm ||
+      (formData.figuras && formData.figuras.length > 0)
+    );
+    
+    if (!hasSignificantData) return;
+    
+    setIsAutoSaving(true);
+    try {
+      const nuevoId = await BorradorService.guardarBorrador(formData, currentCartaPorteId);
+      
+      if (nuevoId && nuevoId !== currentCartaPorteId && onCartaPorteIdChange) {
+        onCartaPorteIdChange(nuevoId);
+      }
+      
+      lastDataRef.current = currentDataString;
+      setLastSaved(new Date());
+      console.log('Auto-guardado completado:', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Error en auto-guardado:', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [formData, currentCartaPorteId, enabled, isAutoSaving, onCartaPorteIdChange]);
 
-    // Clear previous timeout
+  // Efecto para auto-guardado con debounce
+  useEffect(() => {
+    if (!enabled) return;
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Set new timeout for auto-save
-    timeoutRef.current = setTimeout(async () => {
-      try {
-        if (currentCartaPorteId) {
-          // Update existing carta porte
-          await supabase
-            .from('cartas_porte')
-            .update({
-              datos_formulario: formData as any,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', currentCartaPorteId);
-        } else {
-          // Create new draft
-          const { data } = await supabase
-            .from('cartas_porte')
-            .insert({
-              status: 'borrador',
-              datos_formulario: formData as any,
-              rfc_emisor: formData.rfcEmisor || formData.configuracion.emisor.rfc,
-              rfc_receptor: formData.rfcReceptor || formData.configuracion.receptor.rfc,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (data) {
-            console.log('Draft saved with ID:', data.id);
-          }
-        }
-
-        lastSavedRef.current = currentDataString;
-        console.log('Auto-saved at', new Date().toLocaleTimeString());
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-      }
-    }, 2000); // Auto-save after 2 seconds of inactivity
+    timeoutRef.current = setTimeout(() => {
+      autoSave();
+    }, 3000); // Auto-guardar cada 3 segundos
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [formData, currentCartaPorteId, isLoading, isCreating, isUpdating]);
+  }, [formData, autoSave, enabled]);
 
-  const clearSavedData = useCallback(() => {
-    lastSavedRef.current = '';
-  }, []);
+  // Guardar antes de salir de la página
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (enabled && formData) {
+        // Intentar guardado síncrono antes de salir
+        BorradorService.guardarBorradorAutomatico(formData, currentCartaPorteId);
+        e.preventDefault();
+        e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
+      }
+    };
 
-  return { clearSavedData };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [formData, currentCartaPorteId, enabled]);
+
+  // Función para forzar guardado manual
+  const forceSave = useCallback(async () => {
+    await autoSave();
+  }, [autoSave]);
+
+  return {
+    isAutoSaving,
+    lastSaved,
+    forceSave
+  };
 };
