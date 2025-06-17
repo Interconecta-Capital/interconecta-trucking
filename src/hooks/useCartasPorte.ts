@@ -26,6 +26,7 @@ export interface CartaPorte {
   uuid_fiscal?: string;
   fecha_timbrado?: string;
   tenant_id?: string;
+  datos_formulario?: any;
   created_at: string;
   updated_at: string;
 }
@@ -53,7 +54,6 @@ export const useCartasPorte = () => {
 
         if (error) {
           console.error('[CartasPorte] Database error:', error);
-          // Don't throw error immediately, let React Query handle retries
           if (error.code === 'PGRST116' || error.message.includes('infinite recursion')) {
             console.error('[CartasPorte] RLS recursion detected - returning empty array');
             return [];
@@ -69,16 +69,14 @@ export const useCartasPorte = () => {
       }
     },
     enabled: !!user?.id,
-    staleTime: 10 * 60 * 1000, // Increase stale time to 10 minutes
-    refetchOnWindowFocus: false, // Prevent refetch on window focus
-    refetchOnReconnect: false,   // Prevent refetch on reconnect
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: (failureCount, error: any) => {
-      // Don't retry on RLS/recursion errors
       if (error?.code === 'PGRST116' || error?.message?.includes('infinite recursion')) {
         console.error('[CartasPorte] RLS error detected, not retrying');
         return false;
       }
-      // Limit retries to prevent excessive requests
       return failureCount < 2;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

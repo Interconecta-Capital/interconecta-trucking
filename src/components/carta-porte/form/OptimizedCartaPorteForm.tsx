@@ -42,6 +42,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setCurrentStep,
     handleConfiguracionChange,
     handleGuardarBorrador,
+    handleGuardarCartaPorteOficial,
     handleLimpiarBorrador,
   } = useCartaPorteFormManager(cartaPorteId);
 
@@ -57,17 +58,16 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     remolques: []
   }), []);
 
-  // Guardar y salir mejorado
+  // Guardar y salir mejorado - ahora guarda como carta porte oficial
   const handleGuardarYSalir = useCallback(async () => {
     try {
-      await handleGuardarBorrador();
+      await handleGuardarCartaPorteOficial();
       navigate('/cartas-porte');
     } catch (error) {
-      console.error('Error guardando antes de salir:', error);
-      // Permitir salir aunque falle el guardado
-      navigate('/cartas-porte');
+      console.error('Error guardando carta porte:', error);
+      // No navegar si hay error
     }
-  }, [handleGuardarBorrador, navigate]);
+  }, [handleGuardarCartaPorteOficial, navigate]);
 
   // Manejar navegación entre pasos con validación
   const handleStepNavigation = useCallback((targetStep: number) => {

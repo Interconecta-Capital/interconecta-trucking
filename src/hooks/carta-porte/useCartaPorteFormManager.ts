@@ -6,6 +6,8 @@ import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { toast } from 'sonner';
 import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { useBorradorRecovery } from './useBorradorRecovery';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '../useAuth';
 
 // Extender CartaPorteData para incluir currentStep
 interface CartaPorteDataWithStep extends CartaPorteData {
@@ -38,6 +40,7 @@ const initialCartaPorteData: CartaPorteData = {
 };
 
 export function useCartaPorteFormManager(cartaPorteId?: string) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<CartaPorteData>(initialCartaPorteData);
   const [currentStep, setCurrentStep] = useState(0);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | null>(cartaPorteId || null);
@@ -90,7 +93,6 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setFormData(data);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
-      // Verificar si el borrador tiene información del paso actual
       if ((data as CartaPorteDataWithStep).currentStep !== undefined) {
         setCurrentStep((data as CartaPorteDataWithStep).currentStep!);
       }
@@ -100,14 +102,82 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   // Manejar rechazo de borrador
   const handleRejectBorrador = useCallback(() => {
     rejectBorrador();
-    // Empezar con datos frescos
     setFormData(initialCartaPorteData);
     setCurrentStep(0);
     setCurrentCartaPorteId(null);
     setBorradorCargado(false);
   }, [rejectBorrador]);
   
-  // Lógica de borrador (mantenida pero simplificada)
+  // Guardar como carta porte oficial (no borrador)
+  const handleGuardarCartaPorteOficial = useCallback(async () => {
+    if (!user?.id) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    if (isGuardando) return;
+    
+    setIsGuardando(true);
+    try {
+      // Generar folio único
+      const folio = `CP-${Date.now().toString().slice(-8)}`;
+      
+      // Preparar datos para la carta porte oficial
+      const cartaPorteData = {
+        folio,
+        tipo_cfdi: formData.tipoCfdi || 'Traslado',
+        rfc_emisor: formData.rfcEmisor || '',
+        nombre_emisor: formData.nombreEmisor || '',
+        rfc_receptor: formData.rfcReceptor || '',
+        nombre_receptor: formData.nombreReceptor || '',
+        transporte_internacional: formData.transporteInternacional === 'Sí' || false,
+        registro_istmo: formData.registroIstmo || false,
+        status: 'borrador', // Inicia como borrador hasta que se genere XML
+        datos_formulario: formData,
+        usuario_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      if (currentCartaPorteId) {
+        // Actualizar carta porte existente
+        const { error } = await supabase
+          .from('cartas_porte')
+          .update({
+            ...cartaPorteData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentCartaPorteId);
+
+        if (error) throw error;
+      } else {
+        // Crear nueva carta porte
+        const { data: nuevaCarta, error } = await supabase
+          .from('cartas_porte')
+          .insert(cartaPorteData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (nuevaCarta) {
+          setCurrentCartaPorteId(nuevaCarta.id);
+        }
+      }
+      
+      setUltimoGuardado(new Date());
+      toast.success('Carta porte guardada correctamente');
+      
+      return currentCartaPorteId;
+    } catch (error) {
+      console.error('Error guardando carta porte:', error);
+      toast.error('Error al guardar la carta porte');
+      throw error;
+    } finally {
+      setIsGuardando(false);
+    }
+  }, [formData, currentCartaPorteId, user?.id, isGuardando]);
+
+  // Lógica de borrador (mantenida para compatibilidad)
   const handleGuardarBorrador = useCallback(async () => {
     if (isGuardando) return;
     
@@ -188,6 +258,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setCurrentStep,
     handleConfiguracionChange,
     handleGuardarBorrador,
+    handleGuardarCartaPorteOficial,
     handleLimpiarBorrador,
   };
 }

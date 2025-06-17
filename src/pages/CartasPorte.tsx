@@ -4,22 +4,81 @@ import { Plus, FileText, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
-import { CartasPorteTable } from '@/components/cartas-porte/CartasPorteTable';
+import { CartasPorteTableAdvanced } from '@/components/cartas-porte/CartasPorteTableAdvanced';
 import { CartasPorteFilters } from '@/components/cartas-porte/CartasPorteFilters';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CartasPorte() {
   const navigate = useNavigate();
-  const { cartasPorte, loading } = useCartasPorte();
+  const { cartasPorte, loading, actualizarCartaPorte, eliminarCartaPorte } = useCartasPorte();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const { toast } = useToast();
 
   const handleNewCartaPorte = () => {
     navigate('/cartas-porte/nueva');
+  };
+
+  const handleEdit = (id: string) => {
+    navigate(`/cartas-porte/${id}/editar`);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await eliminarCartaPorte(id);
+      toast({
+        title: "Carta porte eliminada",
+        description: "La carta porte se ha eliminado correctamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la carta porte.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRegenerateXML = async (id: string) => {
+    try {
+      const carta = cartasPorte.find(c => c.id === id);
+      if (!carta || !carta.datos_formulario) {
+        throw new Error('No se encontraron datos para generar XML');
+      }
+
+      const result = await XMLCartaPorteGenerator.generarXML(carta.datos_formulario);
+      
+      if (result.success && result.xml) {
+        await actualizarCartaPorte({
+          id,
+          data: {
+            xml_generado: result.xml,
+            status: 'completa',
+            updated_at: new Date().toISOString()
+          }
+        });
+        
+        toast({
+          title: "XML regenerado",
+          description: "El XML se ha generado y guardado correctamente.",
+        });
+      } else {
+        throw new Error(result.errors?.join(', ') || 'Error desconocido');
+      }
+    } catch (error) {
+      console.error('Error regenerando XML:', error);
+      toast({
+        title: "Error regenerando XML",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive"
+      });
+    }
   };
 
   const filteredCartas = cartasPorte.filter(carta =>
@@ -78,10 +137,13 @@ export default function CartasPorte() {
           <CartasPorteFilters />
         )}
 
-        {/* Tabla */}
-        <CartasPorteTable 
+        {/* Tabla Avanzada */}
+        <CartasPorteTableAdvanced 
           cartasPorte={filteredCartas}
           loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onRegenerateXML={handleRegenerateXML}
         />
       </div>
     </ProtectedContent>
