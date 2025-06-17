@@ -13,15 +13,22 @@ import {
 } from '@/hooks/useCatalogosReal';
 
 export function useCatalogQuery(tipo: string, searchTerm: string, enabled: boolean) {
+  // Para productos y unidades que requieren búsqueda con término
   const productosQuery = useBuscarProductosServicios(searchTerm, tipo === 'productos' && enabled);
   const unidadesQuery = useBuscarClaveUnidad(searchTerm, tipo === 'unidades' && enabled);
-  const permisosQuery = useTiposPermiso();
-  const configuracionesQuery = useConfiguracionesVehiculo();
-  const figurasQuery = useFigurasTransporte();
-  const remolquesQuery = useRemolques(searchTerm);
+  
+  // Para materiales peligrosos que requieren mínimo 2 caracteres
   const materialesQuery = useBuscarMaterialesPeligrosos(searchTerm, tipo === 'materiales_peligrosos' && enabled);
-  const embalajesQuery = useTiposEmbalaje();
-  const estadosQuery = useEstados(searchTerm);
+  
+  // Para catálogos que pueden usar término de búsqueda opcional
+  const remolquesQuery = useRemolques(searchTerm, tipo === 'remolques' && enabled);
+  const estadosQuery = useEstados(searchTerm, tipo === 'estados' && enabled);
+  
+  // Para catálogos estáticos que no requieren término de búsqueda
+  const permisosQuery = useTiposPermiso(tipo === 'tipos_permiso' && enabled);
+  const configuracionesQuery = useConfiguracionesVehiculo(tipo === 'configuraciones_vehiculares' && enabled);
+  const figurasQuery = useFigurasTransporte(tipo === 'figuras_transporte' && enabled);
+  const embalajesQuery = useTiposEmbalaje(tipo === 'embalajes' && enabled);
 
   return useMemo(() => {
     switch (tipo) {

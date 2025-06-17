@@ -32,51 +32,56 @@ export const useBuscarMaterialesPeligrosos = (termino: string = '', enabled: boo
   });
 };
 
-export const useConfiguracionesVehiculo = () => {
+export const useConfiguracionesVehiculo = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['configuraciones-vehiculares'],
     queryFn: CatalogosSATService.obtenerConfiguracionesVehiculares,
+    enabled: enabled,
     staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useFigurasTransporte = () => {
+export const useFigurasTransporte = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['figuras-transporte'],
     queryFn: CatalogosSATService.obtenerFigurasTransporte,
+    enabled: enabled,
     staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useTiposPermiso = () => {
+export const useTiposPermiso = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['tipos-permiso'],
     queryFn: CatalogosSATService.obtenerTiposPermiso,
+    enabled: enabled,
     staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useTiposEmbalaje = () => {
+export const useTiposEmbalaje = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['tipos-embalaje'],
     queryFn: CatalogosSATService.obtenerTiposEmbalaje,
+    enabled: enabled,
     staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useRemolques = (termino: string = '') => {
+export const useRemolques = (termino: string = '', enabled: boolean = true) => {
   return useQuery({
     queryKey: ['remolques', termino],
     queryFn: () => CatalogosSATService.obtenerSubtiposRemolque(termino),
+    enabled: enabled,
     staleTime: STALE_TIME_LONG,
   });
 };
 
-export const useEstados = (termino: string = '') => {
+export const useEstados = (termino: string = '', enabled: boolean = true) => {
   return useQuery({
     queryKey: ['estados', termino],
     queryFn: () => CatalogosSATService.obtenerEstados(termino),
-    enabled: true,
+    enabled: enabled,
     staleTime: STALE_TIME_LONG,
   });
 };

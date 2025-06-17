@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -55,20 +56,40 @@ export function CatalogoSelectorMejorado({
   
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Configuración mejorada para habilitar queries
-  const queryEnabled = !disabled && (
-    showAllOptions || 
-    (tipo === 'materiales_peligrosos' ? debouncedSearch.length >= 2 : true)
-  );
+  // Simplificar la lógica de habilitación
+  const queryEnabled = useMemo(() => {
+    if (disabled) return false;
+    
+    // Para showAllOptions, siempre habilitar excepto para materiales peligrosos sin búsqueda
+    if (showAllOptions) {
+      if (tipo === 'materiales_peligrosos') {
+        return debouncedSearch.length >= 2;
+      }
+      return true;
+    }
+    
+    // Para búsqueda normal
+    if (tipo === 'materiales_peligrosos') {
+      return debouncedSearch.length >= 2;
+    }
+    
+    return true;
+  }, [disabled, showAllOptions, tipo, debouncedSearch]);
   
-  // Para showAllOptions, usar string vacío para obtener todas las opciones
-  const searchQuery = showAllOptions ? '' : debouncedSearch;
+  // Para showAllOptions, usar string vacío para obtener todas las opciones (excepto materiales peligrosos)
+  const searchQuery = useMemo(() => {
+    if (showAllOptions && tipo !== 'materiales_peligrosos') {
+      return '';
+    }
+    return debouncedSearch;
+  }, [showAllOptions, tipo, debouncedSearch]);
   
   const { data: options = [], isLoading, error: queryError, refetch } = useAdaptedCatalogQuery(tipo, searchQuery, queryEnabled);
 
   // Handle errors
   useEffect(() => {
     if (queryError) {
+      console.error('Catalog query error:', queryError);
       setLocalError(`Error cargando catálogo: ${queryError.message || 'Error desconocido'}`);
     } else {
       setLocalError('');
@@ -119,7 +140,7 @@ export function CatalogoSelectorMejorado({
   };
 
   const displayError = error || localError;
-  const showLoading = isLoading && (showAllOptions || debouncedSearch === searchTerm);
+  const showLoading = isLoading && queryEnabled;
 
   const filteredOptions = useMemo(() => {
     if (showAllOptions) {
@@ -143,7 +164,7 @@ export function CatalogoSelectorMejorado({
     if (tipo === 'materiales_peligrosos' && debouncedSearch.length < 2) {
       return 'Escribe al menos 2 caracteres para buscar';
     }
-    if (options.length === 0 && !isLoading) {
+    if (options.length === 0 && !isLoading && queryEnabled) {
       return 'No hay datos disponibles';
     }
     return placeholder;
