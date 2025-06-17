@@ -3,7 +3,7 @@ import { useMemo, useCallback } from 'react';
 import { XMLValidatorSAT, ValidationResult } from '@/services/xml/xmlValidatorSAT';
 import { CartaPorteData } from '@/types/cartaPorte';
 
-interface ValidationSummary {
+export interface ValidationSummary {
   isComplete: boolean;
   completionPercentage: number;
   sectionStatus: {

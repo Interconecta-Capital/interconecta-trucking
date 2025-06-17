@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
-import { XMLPreviewDialog } from '../../XMLPreviewDialog';
+import { XMLPreviewDialog } from '@/components/cartas-porte/XMLPreviewDialog';
 
 interface XMLPreviewSectionProps {
   xmlGenerado: string | null;
