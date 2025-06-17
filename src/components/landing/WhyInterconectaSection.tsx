@@ -1,47 +1,10 @@
+
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { Crown, Bot, Shield, TrendingUp } from "lucide-react";
+import { Crown } from "lucide-react";
+import TruckAnimation from "./TruckAnimation";
 
 const WhyInterconectaSection = () => {
   const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
-
-  const whyFeatures = [
-    {
-      icon: Crown,
-      title: "Producto Único en México",
-      features: [
-        "Primera y única plataforma IA especializada en transporte",
-        "Desarrollada específicamente para regulaciones mexicanas SAT",
-        "Sin competencia directa en automatización total"
-      ]
-    },
-    {
-      icon: Bot,
-      title: "Inteligencia Artificial Avanzada",
-      features: [
-        "OCR que lee cualquier documento en segundos",
-        "IA que genera descripciones SAT automáticamente",
-        "Validación en tiempo real con catálogos oficiales"
-      ]
-    },
-    {
-      icon: Shield,
-      title: "Cumplimiento Garantizado",
-      features: [
-        "100% compatible con regulaciones SAT actuales",
-        "Actualizaciones automáticas de normativas",
-        "SLA 99.9% de disponibilidad"
-      ]
-    },
-    {
-      icon: TrendingUp,
-      title: "Escalabilidad Sin Límites",
-      features: [
-        "Desde 1 hasta 1,000+ vehículos",
-        "Multi-tenant para empresas grandes",
-        "API completa para integraciones"
-      ]
-    }
-  ];
 
   const marketStats = [
     { number: "100%", label: "Automatización IA" },
@@ -70,40 +33,9 @@ const WhyInterconectaSection = () => {
           </p>
         </div>
 
-        {/* Why Features Grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-20">
-          {whyFeatures.map((feature, index) => {
-            const IconComponent = feature.icon;
-            return (
-              <div
-                key={index}
-                className={`card-premium p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
-                style={{ transitionDelay: `${index * 0.1}s` }}
-              >
-                
-                {/* Icon */}
-                <div className="w-16 h-16 bg-blue-light rounded-16 flex items-center justify-center mb-6">
-                  <IconComponent className="h-8 w-8 text-blue-interconecta" />
-                </div>
-                
-                {/* Title */}
-                <h3 className="text-subtitle font-medium text-pure-black mb-6">
-                  {feature.title}
-                </h3>
-                
-                {/* Features List */}
-                <ul className="space-y-3">
-                  {feature.features.map((item, itemIndex) => (
-                    <li key={itemIndex} className="flex items-start gap-3 text-gray-70">
-                      <span className="text-blue-interconecta font-bold text-base mt-1">•</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                
-              </div>
-            );
-          })}
+        {/* Truck Animation */}
+        <div className={`mb-20 ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+          <TruckAnimation />
         </div>
 
         {/* Market Leadership Stats */}

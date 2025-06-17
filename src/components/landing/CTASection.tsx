@@ -32,8 +32,11 @@ const CTASection = () => {
               </Button>
             </Link>
             <ContactSalesModal>
-              <Button variant="outline" className="btn-premium border-2 border-pure-white hover:border-pure-white text-pure-white hover:bg-pure-white hover:text-pure-black px-8 py-4 text-base font-semibold rounded-12 interactive transition-all duration-300">
-                <span>Contactar Ventas</span>
+              <Button 
+                variant="outline" 
+                className="btn-premium border-2 border-pure-white bg-transparent text-pure-white hover:bg-pure-white hover:text-pure-black px-8 py-4 text-base font-semibold rounded-12 interactive transition-all duration-300"
+              >
+                <span className="text-pure-white hover:text-pure-black transition-colors">Contactar Ventas</span>
               </Button>
             </ContactSalesModal>
           </div>
