@@ -2,11 +2,11 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { useScrollPosition } from "@/hooks/useScrollPosition";
+import { usePremiumNavigation } from "@/hooks/usePremiumNavigation";
 
 const Header = () => {
   const location = useLocation();
-  const scrollY = useScrollPosition();
+  const { isScrolled } = usePremiumNavigation();
   
   // Mostrar en todas las páginas que no sean protegidas
   const showHeader = location.pathname === '/' || location.pathname.startsWith('/auth');
@@ -14,8 +14,6 @@ const Header = () => {
   if (!showHeader) {
     return null;
   }
-
-  const isScrolled = scrollY > 100;
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -28,10 +26,12 @@ const Header = () => {
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 text-pure-black no-underline font-bold text-xl tracking-title">
-            <div className="w-8 h-8 bg-blue-interconecta rounded-8 flex items-center justify-center text-pure-white font-bold text-base">
-              I
-            </div>
-            <span>Interconecta</span>
+            <img 
+              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+              alt="Interconecta Trucking Logo"
+              className="w-8 h-8 rounded-lg"
+            />
+            <span>Interconecta Trucking</span>
           </Link>
           
           {/* Navigation Menu */}

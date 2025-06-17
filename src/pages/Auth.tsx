@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,12 +23,12 @@ export default function Auth() {
   
   if (currentView === 'magic-link') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-05 p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
             <Link 
               to="/" 
-              className="inline-flex items-center text-interconecta-text-secondary hover:text-interconecta-primary transition-colors mb-4"
+              className="inline-flex items-center text-gray-60 hover:text-blue-interconecta transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver al inicio
@@ -42,10 +41,10 @@ export default function Auth() {
                 className="h-16 w-16 rounded-xl"
               />
             </div>
-            <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+            <h1 className="text-subtitle font-bold text-pure-black">
               Interconecta Trucking
             </h1>
-            <p className="font-inter text-interconecta-text-secondary">
+            <p className="text-gray-60">
               Sistema de Gestión de Cartas Porte
             </p>
           </div>
@@ -58,12 +57,12 @@ export default function Auth() {
 
   if (currentView === 'forgot-password') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-05 p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
             <Link 
               to="/" 
-              className="inline-flex items-center text-interconecta-text-secondary hover:text-interconecta-primary transition-colors mb-4"
+              className="inline-flex items-center text-gray-60 hover:text-blue-interconecta transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver al inicio
@@ -76,10 +75,10 @@ export default function Auth() {
                 className="h-16 w-16 rounded-xl"
               />
             </div>
-            <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+            <h1 className="text-subtitle font-bold text-pure-black">
               Interconecta Trucking
             </h1>
-            <p className="font-inter text-interconecta-text-secondary">
+            <p className="text-gray-60">
               Sistema de Gestión de Cartas Porte
             </p>
           </div>
@@ -91,13 +90,13 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-interconecta-bg-alternate to-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-05 p-4">
       <div className="w-full max-w-md">
         {/* Header con enlace de regreso */}
         <div className="text-center mb-6">
           <Link 
             to="/" 
-            className="inline-flex items-center text-interconecta-text-secondary hover:text-interconecta-primary transition-colors mb-4"
+            className="inline-flex items-center text-gray-60 hover:text-blue-interconecta transition-colors mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al inicio
@@ -110,18 +109,18 @@ export default function Auth() {
               className="h-16 w-16 rounded-xl"
             />
           </div>
-          <h1 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+          <h1 className="text-subtitle font-bold text-pure-black">
             Interconecta Trucking
           </h1>
-          <p className="font-inter text-interconecta-text-secondary">
+          <p className="text-gray-60">
             Sistema de Gestión de Cartas Porte
           </p>
         </div>
 
-        <Card className="border-interconecta-border-subtle">
+        <Card className="card-premium border-gray-20 shadow-lg">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl font-sora">Accede a tu cuenta</CardTitle>
-            <CardDescription className="font-inter">
+            <CardTitle className="text-subtitle font-bold text-pure-black">Accede a tu cuenta</CardTitle>
+            <CardDescription className="text-gray-60">
               Ingresa tus credenciales para continuar
             </CardDescription>
           </CardHeader>
@@ -145,11 +144,11 @@ export default function Auth() {
 
         {/* Enlace a prueba gratuita */}
         <div className="text-center mt-6">
-          <p className="text-sm text-interconecta-text-secondary font-inter mb-2">
+          <p className="text-sm text-gray-60 mb-2">
             ¿Nuevo en Interconecta Trucking?
           </p>
           <Link to="/auth/trial">
-            <Button variant="outline" className="w-full border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light">
+            <Button variant="outline" className="w-full border-blue-interconecta text-blue-interconecta hover:bg-blue-light">
               Comenzar prueba gratuita de 14 días
             </Button>
           </Link>
@@ -207,10 +206,10 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-interconecta-border-subtle" />
+            <span className="w-full border-t border-gray-20" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
+            <span className="bg-white px-2 text-gray-60 font-inter">
               O accede con
             </span>
           </div>
@@ -220,7 +219,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
           <Button
             onClick={onShowMagicLink}
             variant="outline"
-            className="w-full border-interconecta-border-subtle text-interconecta-text-primary hover:bg-interconecta-bg-alternate font-inter"
+            className="w-full border-gray-20 text-gray-60 hover:bg-gray-20 font-inter"
           >
             Link Mágico (Sin contraseña)
           </Button>
@@ -238,7 +237,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border-interconecta-border-subtle"
+              className="border-gray-20"
             />
           </div>
           <div className="space-y-2">
@@ -251,7 +250,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="border-interconecta-border-subtle"
+              className="border-gray-20"
             />
           </div>
           
@@ -259,7 +258,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
             <button
               type="button"
               onClick={onShowForgotPassword}
-              className="text-sm text-interconecta-primary hover:text-interconecta-accent font-inter underline"
+              className="text-sm text-gray-60 hover:text-blue-interconecta font-inter underline"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -267,7 +266,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
           
           <Button 
             type="submit" 
-            className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
+            className="w-full bg-blue-interconecta hover:bg-blue-light font-sora" 
             disabled={loading}
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
@@ -276,7 +275,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         {/* Help text for unconfirmed users */}
         <div className="text-center">
-          <p className="text-xs text-interconecta-text-secondary font-inter">
+          <p className="text-xs text-gray-60 font-inter">
             ¿Te registraste pero no verificaste tu correo?{' '}
             <button
               type="button"
@@ -287,7 +286,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
                   toast.error('Por favor ingresa tu correo electrónico primero');
                 }
               }}
-              className="text-interconecta-primary hover:text-interconecta-accent underline"
+              className="text-gray-60 hover:text-blue-interconecta underline"
             >
               Reenviar verificación
             </button>
@@ -378,10 +377,10 @@ function RegisterForm() {
       
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-interconecta-border-subtle" />
+          <span className="w-full border-t border-gray-20" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-interconecta-text-secondary font-inter">
+          <span className="bg-white px-2 text-gray-60 font-inter">
             O regístrate con email
           </span>
         </div>
@@ -396,7 +395,7 @@ function RegisterForm() {
               value={formData.nombre}
               onChange={(e) => handleChange('nombre', e.target.value)}
               required
-              className="border-interconecta-border-subtle"
+              className="border-gray-20"
             />
           </div>
           <div className="space-y-2">
@@ -405,7 +404,7 @@ function RegisterForm() {
               id="telefono"
               value={formData.telefono}
               onChange={(e) => handleChange('telefono', e.target.value)}
-              className="border-interconecta-border-subtle"
+              className="border-gray-20"
             />
           </div>
         </div>
@@ -417,7 +416,7 @@ function RegisterForm() {
             value={formData.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             required
-            className="border-interconecta-border-subtle"
+            className="border-gray-20"
           />
         </div>
         
@@ -429,7 +428,7 @@ function RegisterForm() {
             onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
             required
             maxLength={13}
-            className="border-interconecta-border-subtle"
+            className="border-gray-20"
           />
         </div>
         
@@ -441,7 +440,7 @@ function RegisterForm() {
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             required
-            className="border-interconecta-border-subtle"
+            className="border-gray-20"
           />
         </div>
         
@@ -454,7 +453,7 @@ function RegisterForm() {
             onChange={(e) => handleChange('password', e.target.value)}
             required
             minLength={6}
-            className="border-interconecta-border-subtle"
+            className="border-gray-20"
           />
         </div>
         
@@ -466,13 +465,13 @@ function RegisterForm() {
             value={formData.confirmPassword}
             onChange={(e) => handleChange('confirmPassword', e.target.value)}
             required
-            className="border-interconecta-border-subtle"
+            className="border-gray-20"
           />
         </div>
         
         <Button 
           type="submit" 
-          className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora" 
+          className="w-full bg-blue-interconecta hover:bg-blue-light font-sora" 
           disabled={loading}
         >
           {loading ? 'Creando cuenta...' : 'Crear Cuenta'}

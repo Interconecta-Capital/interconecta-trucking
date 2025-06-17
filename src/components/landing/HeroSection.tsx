@@ -1,11 +1,11 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const HeroSection = () => {
-  const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
 
   return (
     <section className="relative min-h-screen flex items-center justify-center text-center premium-grid pt-32 pb-24 px-6">
@@ -47,11 +47,12 @@ const HeroSection = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <a href="#características">
+              <Link to="/auth/login">
                 <Button variant="outline" className="btn-premium border border-gray-30 text-gray-70 hover:border-blue-interconecta hover:text-blue-interconecta hover:bg-blue-light px-8 py-4 text-base font-semibold rounded-12 interactive">
+                  <Play className="mr-2 h-5 w-5" />
                   <span>Iniciar sesión</span>
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
           

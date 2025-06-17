@@ -129,22 +129,22 @@ export default function Trial() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white">
+    <div className="min-h-screen bg-gray-05">
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-interconecta-border-subtle">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+      <header className="bg-pure-white border-b border-gray-20 shadow-sm">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-screen-xl">
           <Link to="/" className="flex items-center space-x-3">
             <img 
               src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
               alt="Interconecta Trucking Logo"
               className="h-8 w-8 rounded-lg"
             />
-            <span className="text-xl font-bold font-sora text-interconecta-text-primary">
+            <span className="text-xl font-bold text-pure-black">
               Interconecta Trucking
             </span>
           </Link>
           <Link to="/">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="border-gray-30 text-gray-70 hover:border-blue-interconecta hover:text-blue-interconecta">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
@@ -152,20 +152,20 @@ export default function Trial() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-6 py-12 max-w-screen-xl">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center bg-interconecta-primary-light border border-interconecta-border-subtle rounded-full px-4 py-2 mb-6">
-              <Calendar className="h-4 w-4 text-interconecta-primary mr-2" />
-              <span className="text-sm font-inter font-medium text-interconecta-text-body">
+            <div className="inline-flex items-center bg-blue-light border border-blue-interconecta/20 rounded-full px-4 py-2 mb-6">
+              <Calendar className="h-4 w-4 text-blue-interconecta mr-2" />
+              <span className="text-sm font-medium text-blue-interconecta">
                 Prueba Gratuita por 14 Días
               </span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold font-sora text-interconecta-text-primary mb-6">
+            <h1 className="text-display font-bold text-pure-black mb-6">
               Comienza tu prueba gratuita
             </h1>
-            <p className="text-xl font-inter text-interconecta-text-secondary max-w-2xl mx-auto">
+            <p className="text-body-xl text-gray-60 max-w-2xl mx-auto">
               Accede a todas las funciones de Interconecta Trucking sin costo por 14 días. 
               No se requiere tarjeta de crédito.
             </p>
@@ -179,10 +179,10 @@ export default function Trial() {
                 onBack={() => setShowVerification(false)}
               />
             ) : (
-              <Card className="border-interconecta-border-subtle">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-sora">Crear cuenta de prueba</CardTitle>
-                  <CardDescription className="font-inter">
+              <Card className="card-premium border-gray-20 shadow-lg">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-subtitle font-bold text-pure-black">Crear cuenta de prueba</CardTitle>
+                  <CardDescription className="text-gray-60">
                     Completa el formulario para comenzar tu prueba gratuita
                   </CardDescription>
                 </CardHeader>
@@ -208,46 +208,46 @@ export default function Trial() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="nombre" className="font-inter">Nombre Completo</Label>
+                          <Label htmlFor="nombre" className="text-gray-70 font-medium">Nombre Completo</Label>
                           <Input
                             id="nombre"
                             value={formData.nombre}
                             onChange={(e) => handleChange('nombre', e.target.value)}
                             required
-                            className="border-interconecta-border-subtle"
+                            className="border-gray-30 focus:border-blue-interconecta"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
+                          <Label htmlFor="telefono" className="text-gray-70 font-medium">Teléfono</Label>
                           <Input
                             id="telefono"
                             value={formData.telefono}
                             onChange={(e) => handleChange('telefono', e.target.value)}
-                            className="border-interconecta-border-subtle"
+                            className="border-gray-30 focus:border-blue-interconecta"
                           />
                         </div>
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="empresa" className="font-inter">Nombre de la Empresa</Label>
+                        <Label htmlFor="empresa" className="text-gray-70 font-medium">Nombre de la Empresa</Label>
                         <Input
                           id="empresa"
                           value={formData.empresa}
                           onChange={(e) => handleChange('empresa', e.target.value)}
                           required
-                          className="border-interconecta-border-subtle"
+                          className="border-gray-30 focus:border-blue-interconecta"
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
+                        <Label htmlFor="rfc" className="text-gray-70 font-medium">RFC de la Empresa</Label>
                         <Input
                           id="rfc"
                           value={formData.rfc}
                           onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
                           required
                           maxLength={13}
-                          className={`border-interconecta-border-subtle ${
+                          className={`border-gray-30 focus:border-blue-interconecta ${
                             !rfcValidation.isValid ? 'border-red-500' : ''
                           }`}
                         />
@@ -257,19 +257,19 @@ export default function Trial() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="font-inter">Correo Electrónico</Label>
+                        <Label htmlFor="email" className="text-gray-70 font-medium">Correo Electrónico</Label>
                         <Input
                           id="email"
                           type="email"
                           value={formData.email}
                           onChange={(e) => handleChange('email', e.target.value)}
                           required
-                          className="border-interconecta-border-subtle"
+                          className="border-gray-30 focus:border-blue-interconecta"
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="password" className="font-inter">Contraseña</Label>
+                        <Label htmlFor="password" className="text-gray-70 font-medium">Contraseña</Label>
                         <div className="relative">
                           <Input
                             id="password"
@@ -278,7 +278,7 @@ export default function Trial() {
                             onChange={(e) => handleChange('password', e.target.value)}
                             required
                             minLength={8}
-                            className="border-interconecta-border-subtle pr-10"
+                            className="border-gray-30 focus:border-blue-interconecta pr-10"
                             placeholder="Mínimo 8 caracteres"
                           />
                           <Button
@@ -298,7 +298,7 @@ export default function Trial() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña</Label>
+                        <Label htmlFor="confirm-password" className="text-gray-70 font-medium">Confirmar Contraseña</Label>
                         <div className="relative">
                           <Input
                             id="confirm-password"
@@ -306,7 +306,7 @@ export default function Trial() {
                             value={formData.confirmPassword}
                             onChange={(e) => handleChange('confirmPassword', e.target.value)}
                             required
-                            className="border-interconecta-border-subtle pr-10"
+                            className="border-gray-30 focus:border-blue-interconecta pr-10"
                           />
                           <Button
                             type="button"
@@ -326,13 +326,13 @@ export default function Trial() {
                       
                       <Button 
                         type="submit" 
-                        className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora text-lg py-3" 
+                        className="w-full bg-blue-interconecta hover:bg-blue-hover text-pure-white py-3 text-base font-semibold" 
                         disabled={loading || !rfcValidation.isValid}
                       >
                         {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
                       </Button>
                       
-                      <p className="text-xs text-interconecta-text-secondary text-center font-inter">
+                      <p className="text-xs text-gray-60 text-center">
                         Al registrarte, aceptas nuestros términos de servicio y política de privacidad
                       </p>
                     </form>
@@ -343,7 +343,7 @@ export default function Trial() {
 
             {/* Beneficios */}
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold font-sora text-interconecta-text-primary">
+              <h3 className="text-subtitle font-bold text-pure-black">
                 ¿Qué incluye tu prueba gratuita?
               </h3>
               
@@ -358,20 +358,20 @@ export default function Trial() {
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <span className="font-inter text-interconecta-text-body">{benefit}</span>
+                    <span className="text-gray-70">{benefit}</span>
                   </div>
                 ))}
               </div>
               
-              <div className="bg-interconecta-primary-light p-6 rounded-lg border border-interconecta-border-subtle">
-                <h4 className="font-semibold font-sora text-interconecta-text-primary mb-2">
+              <div className="card-premium p-6 bg-blue-light border border-blue-interconecta/20">
+                <h4 className="font-semibold text-pure-black mb-2">
                   ¿Ya tienes una cuenta?
                 </h4>
-                <p className="text-sm font-inter text-interconecta-text-secondary mb-4">
+                <p className="text-sm text-gray-60 mb-4">
                   Si ya tienes una cuenta, puedes iniciar sesión directamente
                 </p>
                 <Link to="/auth/login">
-                  <Button variant="outline" className="w-full border-interconecta-primary text-interconecta-primary">
+                  <Button variant="outline" className="w-full border-blue-interconecta text-blue-interconecta hover:bg-blue-light">
                     Iniciar Sesión
                   </Button>
                 </Link>

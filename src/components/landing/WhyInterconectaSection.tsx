@@ -1,12 +1,13 @@
 
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { Crown, Bot, Shield, TrendingUp } from "lucide-react";
 
 const WhyInterconectaSection = () => {
-  const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
 
   const whyFeatures = [
     {
-      icon: "👑",
+      icon: Crown,
       title: "Producto Único en México",
       features: [
         "Primera y única plataforma IA especializada en transporte",
@@ -15,7 +16,7 @@ const WhyInterconectaSection = () => {
       ]
     },
     {
-      icon: "🤖",
+      icon: Bot,
       title: "Inteligencia Artificial Avanzada",
       features: [
         "OCR que lee cualquier documento en segundos",
@@ -24,7 +25,7 @@ const WhyInterconectaSection = () => {
       ]
     },
     {
-      icon: "🛡️",
+      icon: Shield,
       title: "Cumplimiento Garantizado",
       features: [
         "100% compatible con regulaciones SAT actuales",
@@ -33,7 +34,7 @@ const WhyInterconectaSection = () => {
       ]
     },
     {
-      icon: "📈",
+      icon: TrendingUp,
       title: "Escalabilidad Sin Límites",
       features: [
         "Desde 1 hasta 1,000+ vehículos",
@@ -57,7 +58,7 @@ const WhyInterconectaSection = () => {
         {/* Section Header */}
         <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <div className="inline-flex items-center gap-2 bg-blue-light border border-blue-interconecta/20 px-4 py-2 rounded-full text-xs font-bold text-blue-interconecta uppercase tracking-wide mb-8">
-            <span>👑</span>
+            <Crown className="h-4 w-4" />
             <span>Fortalezas Únicas</span>
           </div>
           
@@ -72,35 +73,38 @@ const WhyInterconectaSection = () => {
 
         {/* Why Features Grid */}
         <div className="grid md:grid-cols-2 gap-8 mb-20">
-          {whyFeatures.map((feature, index) => (
-            <div
-              key={index}
-              className={`card-premium p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
-              style={{ transitionDelay: `${index * 0.1}s` }}
-            >
-              
-              {/* Icon */}
-              <div className="w-16 h-16 bg-blue-light rounded-16 flex items-center justify-center mb-6 text-3xl">
-                {feature.icon}
+          {whyFeatures.map((feature, index) => {
+            const IconComponent = feature.icon;
+            return (
+              <div
+                key={index}
+                className={`card-premium p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
+                style={{ transitionDelay: `${index * 0.1}s` }}
+              >
+                
+                {/* Icon */}
+                <div className="w-16 h-16 bg-blue-light rounded-16 flex items-center justify-center mb-6">
+                  <IconComponent className="h-8 w-8 text-blue-interconecta" />
+                </div>
+                
+                {/* Title */}
+                <h3 className="text-subtitle font-medium text-pure-black mb-6">
+                  {feature.title}
+                </h3>
+                
+                {/* Features List */}
+                <ul className="space-y-3">
+                  {feature.features.map((item, itemIndex) => (
+                    <li key={itemIndex} className="flex items-start gap-3 text-gray-70">
+                      <span className="text-blue-interconecta font-bold text-base mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                
               </div>
-              
-              {/* Title */}
-              <h3 className="text-subtitle font-medium text-pure-black mb-6">
-                {feature.title}
-              </h3>
-              
-              {/* Features List */}
-              <ul className="space-y-3">
-                {feature.features.map((item, itemIndex) => (
-                  <li key={itemIndex} className="flex items-start gap-3 text-gray-70">
-                    <span className="text-blue-interconecta font-bold text-base mt-1">•</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-              
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Market Leadership Stats */}
@@ -112,7 +116,7 @@ const WhyInterconectaSection = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {marketStats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-[48px] font-extrabold text-pure-white mb-2 text-mono">
+                <div className="text-[32px] font-extrabold text-pure-white mb-2 text-mono">
                   {stat.number}
                 </div>
                 <div className="text-caption text-blue-light">{stat.label}</div>

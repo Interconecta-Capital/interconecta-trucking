@@ -1,10 +1,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { DollarSign, Check, Mail } from "lucide-react";
 
 const NewPricingSection = () => {
-  const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
 
   const plans = [
     {
@@ -87,7 +88,7 @@ const NewPricingSection = () => {
         {/* Section Header */}
         <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <div className="inline-flex items-center gap-2 bg-gray-10 border border-gray-20 px-4 py-2 rounded-full text-xs font-bold text-gray-70 uppercase tracking-wide mb-8">
-            <span>💰</span>
+            <DollarSign className="h-4 w-4" />
             <span>Precios transparentes</span>
           </div>
           
@@ -145,7 +146,7 @@ const NewPricingSection = () => {
               <ul className="text-left mb-10 space-y-3">
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-start gap-3 text-[14px] text-gray-70">
-                    <span className="text-green-500 font-bold text-base mt-0.5 flex-shrink-0">✓</span>
+                    <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -157,10 +158,17 @@ const NewPricingSection = () => {
                   className={`w-full py-3 text-base font-semibold rounded-12 interactive ${
                     plan.buttonVariant === 'primary' 
                       ? 'btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white' 
-                      : 'btn-premium border border-blue-interconecta text-blue-interconecta hover:bg-blue-light'
+                      : 'btn-premium border border-blue-interconecta text-blue-interconecta hover:bg-blue-light hover:text-blue-interconecta'
                   }`}
                 >
-                  {plan.buttonText}
+                  {plan.name === "Plan Enterprise Sin Límites" ? (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      {plan.buttonText}
+                    </>
+                  ) : (
+                    plan.buttonText
+                  )}
                 </Button>
               </Link>
               
