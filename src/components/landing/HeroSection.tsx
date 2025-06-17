@@ -5,14 +5,14 @@ import { Link } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const HeroSection = () => {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
 
   return (
     <section className="relative min-h-screen flex items-center justify-center text-center premium-grid pt-32 pb-24 px-6">
       
       {/* Main Content */}
       <div className="container mx-auto max-w-4xl relative z-10">
-        <div ref={ref} className={`space-y-8 ${isVisible ? '' : ''}`}>
+        <div ref={ref} className={`space-y-8 ${isRevealed ? '' : ''}`}>
           
           {/* Hero Badge */}
           <div className="animate-slide-up">

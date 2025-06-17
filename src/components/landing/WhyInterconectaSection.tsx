@@ -1,9 +1,8 @@
-
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Crown, Bot, Shield, TrendingUp } from "lucide-react";
 
 const WhyInterconectaSection = () => {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
 
   const whyFeatures = [
     {
@@ -56,7 +55,7 @@ const WhyInterconectaSection = () => {
       <div className="container mx-auto px-6 max-w-screen-xl">
         
         {/* Section Header */}
-        <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <div className="inline-flex items-center gap-2 bg-blue-light border border-blue-interconecta/20 px-4 py-2 rounded-full text-xs font-bold text-blue-interconecta uppercase tracking-wide mb-8">
             <Crown className="h-4 w-4" />
             <span>Fortalezas Únicas</span>
@@ -78,7 +77,7 @@ const WhyInterconectaSection = () => {
             return (
               <div
                 key={index}
-                className={`card-premium p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
+                className={`card-premium p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
                 style={{ transitionDelay: `${index * 0.1}s` }}
               >
                 
@@ -108,7 +107,7 @@ const WhyInterconectaSection = () => {
         </div>
 
         {/* Market Leadership Stats */}
-        <div className={`card-premium p-10 bg-blue-interconecta text-center ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div className={`card-premium p-10 bg-blue-interconecta text-center ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <h3 className="text-subtitle font-bold text-pure-white mb-8">
             Líderes Indiscutibles en el Mercado
           </h3>

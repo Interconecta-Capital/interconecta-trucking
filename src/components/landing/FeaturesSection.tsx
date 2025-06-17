@@ -1,9 +1,8 @@
-
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Bot, Upload, Zap, FileText, Building, Users, TrendingUp, Shield, Sparkles } from "lucide-react";
 
 const FeaturesSection = () => {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
 
   const mainFeatures = [
     {
@@ -67,7 +66,7 @@ const FeaturesSection = () => {
       <div className="container mx-auto px-6 max-w-screen-xl">
         
         {/* Section Header */}
-        <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <h2 className="text-display font-bold leading-display tracking-display text-pure-black mb-6">
             Características Principales
           </h2>
@@ -86,7 +85,7 @@ const FeaturesSection = () => {
                 key={index}
                 className={`card-premium p-8 text-center relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
                   feature.highlighted ? 'border-2 border-blue-interconecta' : ''
-                } ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
+                } ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
                 style={{ transitionDelay: `${index * 0.1}s` }}
               >
                 

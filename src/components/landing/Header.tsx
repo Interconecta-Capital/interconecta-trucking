@@ -6,7 +6,7 @@ import { usePremiumNavigation } from "@/hooks/usePremiumNavigation";
 
 const Header = () => {
   const location = useLocation();
-  const { isScrolled } = usePremiumNavigation();
+  const { scrollY } = usePremiumNavigation();
   
   // Mostrar en todas las páginas que no sean protegidas
   const showHeader = location.pathname === '/' || location.pathname.startsWith('/auth');
@@ -14,6 +14,8 @@ const Header = () => {
   if (!showHeader) {
     return null;
   }
+
+  const isScrolled = scrollY > 50;
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${

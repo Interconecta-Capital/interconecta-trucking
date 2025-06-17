@@ -1,9 +1,8 @@
-
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Clock, ShieldCheck, DollarSign, TrendingUp } from "lucide-react";
 
 const ProvenResultsSection = () => {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
 
   const results = [
     {
@@ -33,7 +32,7 @@ const ProvenResultsSection = () => {
       <div className="container mx-auto px-6 max-w-screen-xl">
         
         {/* Section Header */}
-        <div ref={ref} className={`text-center mb-16 ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div ref={ref} className={`text-center mb-16 ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <h2 className="text-display font-bold leading-display tracking-display text-pure-white mb-6">
             Resultados Comprobados
           </h2>
@@ -50,7 +49,7 @@ const ProvenResultsSection = () => {
             return (
               <div
                 key={index}
-                className={`text-center text-pure-white ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
+                className={`text-center text-pure-white ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
                 style={{ transitionDelay: `${index * 0.1}s` }}
               >
                 

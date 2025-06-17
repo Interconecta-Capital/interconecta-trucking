@@ -4,7 +4,7 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { AlertTriangle, BarChart3 } from "lucide-react";
 
 const ROICalculatorSection = () => {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
   const [viajesPorMes, setViajesPorMes] = useState(50);
   const [multasEvitadas, setMultasEvitadas] = useState(2);
 
@@ -27,7 +27,7 @@ const ROICalculatorSection = () => {
       <div className="container mx-auto px-6 max-w-4xl">
         
         {/* Section Header */}
-        <div ref={ref} className={`text-center mb-20 ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div ref={ref} className={`text-center mb-20 ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 px-4 py-2 rounded-full text-xs font-bold text-red-600 uppercase tracking-wide mb-8">
             <AlertTriangle className="h-4 w-4" />
             <span>Calculadora de Pérdidas</span>
@@ -43,7 +43,7 @@ const ROICalculatorSection = () => {
         </div>
 
         {/* Calculator Card */}
-        <div className={`card-premium p-10 shadow-xl ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div className={`card-premium p-10 shadow-xl ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           
           {/* Calculator Header */}
           <div className="bg-blue-interconecta text-pure-white p-6 rounded-t-16 -m-10 mb-8">
@@ -101,7 +101,7 @@ const ROICalculatorSection = () => {
                   <BarChart3 className="h-6 w-6 text-blue-interconecta" />
                   <span className="text-subtitle font-bold text-gray-70">Ahorro Anual Estimado</span>
                 </div>
-                <div className="text-[32px] font-extrabold text-blue-interconecta text-mono">
+                <div className="text-2xl font-extrabold text-blue-interconecta text-mono">
                   ${ahorroAnual.toLocaleString()} MXN
                 </div>
                 <div className="text-body text-gray-60">
@@ -126,7 +126,7 @@ const ROICalculatorSection = () => {
               <div className="grid grid-cols-2 gap-4">
                 {beneficios.map((beneficio, index) => (
                   <div key={index} className="text-center p-4 card-premium">
-                    <div className="text-[20px] font-bold text-blue-interconecta text-mono mb-2">
+                    <div className="text-lg font-bold text-blue-interconecta text-mono mb-2">
                       {beneficio.value}
                     </div>
                     <div className="text-caption text-gray-60">

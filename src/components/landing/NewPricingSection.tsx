@@ -1,11 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { DollarSign, Check, Mail } from "lucide-react";
 
 const NewPricingSection = () => {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
 
   const plans = [
     {
@@ -86,7 +85,7 @@ const NewPricingSection = () => {
       <div className="container mx-auto px-6 max-w-screen-xl">
         
         {/* Section Header */}
-        <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           <div className="inline-flex items-center gap-2 bg-gray-10 border border-gray-20 px-4 py-2 rounded-full text-xs font-bold text-gray-70 uppercase tracking-wide mb-8">
             <DollarSign className="h-4 w-4" />
             <span>Precios transparentes</span>
@@ -108,7 +107,7 @@ const NewPricingSection = () => {
               key={index}
               className={`card-premium p-8 text-center relative transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
                 plan.popular ? 'border-2 border-blue-interconecta' : ''
-              } ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
+              } ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
               style={{ transitionDelay: `${index * 0.1}s` }}
             >
               
