@@ -6,8 +6,7 @@ import { CatalogSearchInput } from './components/CatalogSearchInput';
 import { CatalogSelect } from './components/CatalogSelect';
 import { CatalogActions } from './components/CatalogActions';
 import { CatalogFeedback } from './components/CatalogFeedback';
-import { useAdaptedCatalogQuery } from './hooks/useAdaptedCatalogQuery';
-import { CatalogosSATService } from '@/services/catalogosSAT';
+import { useCatalogosHibrido } from '@/hooks/useCatalogosHibrido';
 
 interface CatalogItem {
   value: string;
@@ -56,27 +55,18 @@ export function CatalogoSelectorMejorado({
   
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Simplificar la lógica de habilitación
+  // Usar el hook híbrido que combina datos dinámicos y estáticos
   const queryEnabled = useMemo(() => {
     if (disabled) return false;
     
-    // Para showAllOptions, siempre habilitar excepto para materiales peligrosos sin búsqueda
-    if (showAllOptions) {
-      if (tipo === 'materiales_peligrosos') {
-        return debouncedSearch.length >= 2;
-      }
-      return true;
-    }
-    
-    // Para búsqueda normal
-    if (tipo === 'materiales_peligrosos') {
+    // Para materiales peligrosos, requerir mínimo 2 caracteres
+    if (tipo === 'materiales_peligrosos' && !showAllOptions) {
       return debouncedSearch.length >= 2;
     }
     
     return true;
-  }, [disabled, showAllOptions, tipo, debouncedSearch]);
+  }, [disabled, tipo, debouncedSearch, showAllOptions]);
   
-  // Para showAllOptions, usar string vacío para obtener todas las opciones (excepto materiales peligrosos)
   const searchQuery = useMemo(() => {
     if (showAllOptions && tipo !== 'materiales_peligrosos') {
       return '';
@@ -84,7 +74,7 @@ export function CatalogoSelectorMejorado({
     return debouncedSearch;
   }, [showAllOptions, tipo, debouncedSearch]);
   
-  const { data: options = [], isLoading, error: queryError, refetch } = useAdaptedCatalogQuery(tipo, searchQuery, queryEnabled);
+  const { data: options = [], isLoading, error: queryError, refetch } = useCatalogosHibrido(tipo, searchQuery, queryEnabled);
 
   // Handle errors
   useEffect(() => {
@@ -125,8 +115,9 @@ export function CatalogoSelectorMejorado({
   };
 
   const handleRefresh = () => {
-    CatalogosSATService.clearCache();
-    refetch();
+    if (refetch) {
+      refetch();
+    }
     setLocalError('');
   };
 
@@ -144,7 +135,6 @@ export function CatalogoSelectorMejorado({
 
   const filteredOptions = useMemo(() => {
     if (showAllOptions) {
-      // Si showAllOptions es true, mostrar todas las opciones sin filtrado adicional
       return options;
     }
     
@@ -170,7 +160,6 @@ export function CatalogoSelectorMejorado({
     return placeholder;
   };
 
-  // Si showAllOptions es true, no mostrar búsqueda ni acciones de búsqueda
   const shouldShowSearchActions = allowSearch && !showAllOptions;
 
   return (

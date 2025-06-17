@@ -61,7 +61,7 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           required
           error={errors.bienes_transp}
           allowSearch={true}
-          showAllOptions={false}
+          showAllOptions={true}
           showRefresh={true}
         />
 
@@ -74,7 +74,7 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           required
           error={errors.clave_unidad}
           allowSearch={true}
-          showAllOptions={false}
+          showAllOptions={true}
           showRefresh={true}
         />
       </div>
