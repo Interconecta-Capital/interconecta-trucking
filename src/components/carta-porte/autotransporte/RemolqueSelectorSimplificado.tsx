@@ -20,21 +20,18 @@ export function RemolqueSelectorSimplificado({ remolques, onChange }: RemolqueSe
   
   const { vehiculos, loading } = useVehiculos();
 
-  // Filtrar remolques/trailers usando config_vehicular que contiene información del tipo
+  // Filtrar solo remolques/trailers
   const filteredRemolques = vehiculos.filter(vehiculo => 
-    vehiculo.config_vehicular?.toLowerCase().includes('remolque') ||
-    vehiculo.config_vehicular?.toLowerCase().includes('trailer') ||
-    vehiculo.config_vehicular?.toLowerCase().includes('semirremolque')
-  ).filter(vehiculo =>
-    vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+    (vehiculo.tipo_vehiculo === 'remolque' || vehiculo.tipo_vehiculo === 'trailer') &&
+    (vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleRemolqueSelect = (vehiculo: any) => {
     const nuevoRemolque = {
       placa: vehiculo.placa || '',
-      subtipo_rem: vehiculo.config_vehicular || ''
+      subtipo_rem: vehiculo.subtipo_rem || vehiculo.config_vehicular || ''
     };
     onChange([...remolques, nuevoRemolque]);
     setShowSelector(false);
@@ -165,8 +162,8 @@ export function RemolqueSelectorSimplificado({ remolques, onChange }: RemolqueSe
                             </span>
                           )}
                         </div>
-                        {vehiculo.config_vehicular && (
-                          <div className="text-xs text-gray-500">Tipo: {vehiculo.config_vehicular}</div>
+                        {vehiculo.subtipo_rem && (
+                          <div className="text-xs text-gray-500">Tipo: {vehiculo.subtipo_rem}</div>
                         )}
                       </div>
                       <Badge variant={vehiculo.estado === 'disponible' ? 'default' : 'secondary'}>
