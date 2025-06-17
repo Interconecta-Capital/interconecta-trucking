@@ -1,4 +1,3 @@
-
 // Catálogos SAT estáticos más comunes para uso como respaldo
 export interface CatalogoSATItem {
   clave: string;
@@ -29,7 +28,7 @@ export const PRODUCTOS_SERVICIOS_SAT: CatalogoSATItem[] = [
   { clave: "43191600", descripcion: "Servicios de construcción" },
   { clave: "50101600", descripcion: "Servicios de comercio" },
   { clave: "60101600", descripcion: "Servicios de transporte" },
-  { clave: "70101600", descripción: "Servicios profesionales" },
+  { clave: "70101600", descripcion: "Servicios profesionales" },
   { clave: "80101600", descripcion: "Servicios de salud" },
   { clave: "81101600", descripcion: "Servicios educativos" },
   { clave: "84101600", descripcion: "Servicios de alimentación" },
