@@ -161,7 +161,7 @@
   /* Premium Card Styles */
   .card-premium {
     @apply relative bg-pure-white border border-gray-20 rounded-2xl;
-    @apply transition-all duration-400 ease-premium transform-gpu;
+    @apply transition-all duration-300 ease-premium transform-gpu;
     @apply will-change-transform;
   }
 
