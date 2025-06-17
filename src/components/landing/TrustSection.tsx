@@ -6,7 +6,7 @@ const TrustSection = () => {
 
   const stats = [
     { number: "98%", label: "Reducción errores" },
-    { number: "3.2", suffix: "min", label: "Tiempo promedio" },
+    { number: "2,847", label: "Cartas porte" },
     { number: "0", label: "Multas SAT" },
     { number: "24/7", label: "Automatización" }
   ];

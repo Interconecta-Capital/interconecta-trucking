@@ -53,9 +53,18 @@ const TruckAnimation = () => {
   return (
     <div className="relative w-full max-w-5xl mx-auto h-[500px] flex items-center justify-center">
       
-      {/* Feature Card - Positioned above truck */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
-        <div className={`${currentFeatureData.bgColor} p-8 rounded-20 shadow-2xl max-w-md border border-white/50 backdrop-blur-sm transition-all duration-1000 ease-in-out transform hover:scale-105`}
+      {/* Feature Card - Posicionada más arriba y con estilo Mac Window */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20">
+        {/* Mac Window Header */}
+        <div className="bg-gray-100 px-4 py-3 rounded-t-2xl border border-gray-200 flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-400"></div>
+          <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          <div className="ml-2 text-xs font-medium text-gray-600">Interconecta — Características</div>
+        </div>
+        
+        {/* Feature Content */}
+        <div className={`${currentFeatureData.bgColor} p-8 rounded-b-2xl shadow-2xl max-w-md border border-gray-200 border-t-0 backdrop-blur-sm transition-all duration-1000 ease-in-out transform hover:scale-105`}
              style={{
                animation: `fade-in 1s ease-in-out`,
                boxShadow: '0 20px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.5)'
@@ -105,9 +114,31 @@ const TruckAnimation = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Notifications - Fuera del contenedor principal */}
+      <div className="absolute top-16 right-0 z-30 space-y-3 transform translate-x-8">
+        <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 min-w-[280px] animate-slide-in-right">
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          <span className="text-sm font-medium text-gray-700">✅ Carta porte CP-2847 timbrada</span>
+        </div>
+      </div>
+
+      <div className="absolute top-32 left-0 z-30 space-y-3 transform -translate-x-8">
+        <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 min-w-[280px] animate-slide-in-right" style={{ animationDelay: '2s' }}>
+          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+          <span className="text-sm font-medium text-gray-700">🚛 TRK-005 en ruta a Guadalajara</span>
+        </div>
+      </div>
+
+      <div className="absolute bottom-20 right-0 z-30 space-y-3 transform translate-x-8">
+        <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 min-w-[280px] animate-slide-in-right" style={{ animationDelay: '4s' }}>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <span className="text-sm font-medium text-gray-700">💡 IA sugiere ruta optimizada</span>
+        </div>
+      </div>
       
       {/* Modern Truck Illustration */}
-      <div className="relative z-10">
+      <div className="relative z-10 mt-16">
         <svg 
           width="500" 
           height="280" 
