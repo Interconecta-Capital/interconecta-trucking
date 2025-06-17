@@ -4,24 +4,60 @@ import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 const FeaturesSection = () => {
   const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
 
-  const features = [
+  const mainFeatures = [
     {
       icon: "🤖",
-      title: "IA 100% mexicana",
-      description: "Primera inteligencia artificial entrenada exclusivamente en regulaciones SAT mexicanas. Entiende tu negocio y automatiza sin errores.",
-      badge: "SAT Compliant"
+      title: "Asistente IA Avanzado",
+      description: "Inteligencia artificial que genera descripciones automáticamente y valida mercancías según catálogos SAT",
+      highlighted: false
+    },
+    {
+      icon: "📊",
+      title: "Importación Masiva",
+      description: "Importa mercancías desde Excel, PDF o XML con OCR y procesamiento automático de documentos",
+      highlighted: true
     },
     {
       icon: "⚡",
-      title: "Automatización total",
-      description: "Desde la generación hasta el timbrado automático. Tu única responsabilidad es confirmar. Todo lo demás es instantáneo y perfecto.",
-      badge: "3.2 min promedio"
+      title: "Automatización Total",
+      description: "Automatiza timbrado, generación de XML y validaciones con inteligencia artificial integrada",
+      highlighted: false
     },
     {
-      icon: "📱",
-      title: "Diseño humano",
-      description: "Interfaz pensada para transportistas reales. Funciona en carretera, sincroniza automáticamente y respeta tu forma de trabajar.",
-      badge: "Mobile-first"
+      icon: "📋",
+      title: "Cartas Porte Inteligentes",
+      description: "Genera cartas porte con sugerencias de IA y cumplimiento automático de regulaciones mexicanas",
+      highlighted: false
+    },
+    {
+      icon: "🏢",
+      title: "Procesamiento Documental",
+      description: "Extrae datos automáticamente de facturas, remisiones y documentos con tecnología OCR avanzada",
+      highlighted: false
+    },
+    {
+      icon: "👥",
+      title: "Multi-Tenant Avanzado",
+      description: "Cada empresa tiene su entorno aislado con datos completamente separados y configuraciones personalizadas",
+      highlighted: false
+    },
+    {
+      icon: "📈",
+      title: "Analytics Inteligentes",
+      description: "Dashboards con IA que analizan patrones y generan insights automáticos para tu negocio",
+      highlighted: false
+    },
+    {
+      icon: "🔒",
+      title: "Seguridad Enterprise",
+      description: "Cifrado avanzado, backups automáticos y cumplimiento total con normativas de privacidad mexicanas",
+      highlighted: false
+    },
+    {
+      icon: "✨",
+      title: "Plantillas Inteligentes",
+      description: "Plantillas que se adaptan automáticamente y aprenden de tus patrones para acelerar la creación",
+      highlighted: false
     }
   ];
 
@@ -31,52 +67,39 @@ const FeaturesSection = () => {
         
         {/* Section Header */}
         <div ref={ref} className={`text-center mb-20 max-w-3xl mx-auto ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
-          <div className="inline-flex items-center gap-2 bg-gray-10 border border-gray-20 px-4 py-2 rounded-full text-xs font-bold text-gray-70 uppercase tracking-wide mb-8">
-            <span>🧠</span>
-            <span>Inteligencia artificial</span>
-          </div>
-          
           <h2 className="text-display font-bold leading-display tracking-display text-pure-black mb-6">
-            Pensado para transportistas.<br />
-            Potenciado por IA mexicana.
+            Características Principales
           </h2>
           
           <p className="text-body-lg text-gray-60 leading-relaxed">
-            No es solo software. Es tu compañero inteligente que entiende el transporte mexicano 
-            y automatiza todo lo que necesitas para cumplir perfectamente con el SAT.
+            Tecnología avanzada con IA para revolucionar tu empresa de transporte
           </p>
         </div>
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+          {mainFeatures.map((feature, index) => (
             <div
               key={index}
-              className={`card-premium p-8 text-center relative overflow-hidden ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
+              className={`card-premium p-8 text-center relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
+                feature.highlighted ? 'border-2 border-blue-interconecta' : ''
+              } ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
               style={{ transitionDelay: `${index * 0.1}s` }}
             >
               
-              {/* Top Border Animation */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-interconecta to-blue-hover transform scale-x-0 origin-left transition-transform duration-700 ease-expo group-hover:scale-x-100"></div>
-              
               {/* Icon */}
-              <div className="w-20 h-20 bg-blue-light rounded-16 flex items-center justify-center mx-auto mb-6 text-4xl transition-all duration-300 group-hover:bg-blue-interconecta group-hover:scale-110">
+              <div className="w-20 h-20 bg-blue-light rounded-16 flex items-center justify-center mx-auto mb-6 text-4xl transition-all duration-300 hover:bg-blue-interconecta hover:scale-110">
                 {feature.icon}
               </div>
               
               {/* Content */}
-              <h3 className="text-subtitle font-medium text-pure-black mb-4 group-hover:text-blue-interconecta transition-colors duration-300">
+              <h3 className="text-subtitle font-medium text-pure-black mb-4 hover:text-blue-interconecta transition-colors duration-300">
                 {feature.title}
               </h3>
               
-              <p className="text-gray-60 leading-relaxed mb-6">
+              <p className="text-gray-60 leading-relaxed">
                 {feature.description}
               </p>
-              
-              {/* Badge */}
-              <span className="inline-block bg-blue-light text-blue-hover px-3 py-2 rounded-full text-[11px] font-bold uppercase tracking-wide">
-                {feature.badge}
-              </span>
               
             </div>
           ))}

@@ -3,8 +3,11 @@ import Header from "@/components/landing/Header";
 import HeroSection from "@/components/landing/HeroSection";
 import TrustSection from "@/components/landing/TrustSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
+import WhyInterconectaSection from "@/components/landing/WhyInterconectaSection";
+import ROICalculatorSection from "@/components/landing/ROICalculatorSection";
+import ProvenResultsSection from "@/components/landing/ProvenResultsSection";
 import TestimonialSection from "@/components/landing/TestimonialSection";
-import PricingSection from "@/components/landing/PricingSection";
+import NewPricingSection from "@/components/landing/NewPricingSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
@@ -30,8 +33,11 @@ const Index = () => {
       <HeroSection />
       <TrustSection />
       <FeaturesSection />
+      <WhyInterconectaSection />
+      <ROICalculatorSection />
+      <ProvenResultsSection />
       <TestimonialSection />
-      <PricingSection />
+      <NewPricingSection />
       <CTASection />
       <Footer />
     </div>
