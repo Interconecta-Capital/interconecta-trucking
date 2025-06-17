@@ -1,9 +1,12 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { PricingCard } from "./PricingCard";
 import { AddOnsSection } from "./AddOnsSection";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 const PricingSection = () => {
+  const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
+
   const plans = [
     {
       name: "Plan Esencial SAT",
@@ -64,28 +67,56 @@ const PricingSection = () => {
       ],
       isEnterprise: true,
       buttonText: "Contactar Ventas",
-      buttonLink: "#"
+      buttonLink: "#contacto"
     }
   ];
 
   return (
-    <section id="pricing" className="container mx-auto px-4 py-20">
-      <div className="text-center mb-16">
-        <h3 className="text-4xl font-bold font-sora text-interconecta-text-primary mb-4">
-          Planes que Protegen tu Negocio
-        </h3>
-        <p className="text-xl font-inter text-interconecta-text-secondary max-w-2xl mx-auto">
-          Elige el plan perfecto para tu empresa y comienza a ahorrar desde el primer día
-        </p>
-      </div>
+    <section id="precios" className="py-32 gradient-subtle">
+      <div className="container mx-auto px-4 max-w-7xl">
+        
+        {/* Header */}
+        <div ref={ref} className={`text-center mb-20 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
+          <div className="stagger-item">
+            <div className="inline-flex items-center bg-blue-interconecta/10 border border-blue-interconecta/20 rounded-full px-4 py-2 mb-6">
+              <span className="text-sm font-medium text-blue-interconecta uppercase tracking-wide">
+                Planes Premium
+              </span>
+            </div>
+          </div>
+          
+          <div className="stagger-item">
+            <h3 className="text-responsive-display font-bold text-gray-90 mb-6">
+              Planes que Protegen tu Negocio
+            </h3>
+          </div>
+          
+          <div className="stagger-item">
+            <p className="text-responsive-subtitle text-gray-70 max-w-2xl mx-auto">
+              Elige el plan perfecto para tu empresa y comienza a ahorrar desde el primer día
+            </p>
+          </div>
+        </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-        {plans.map((plan, index) => (
-          <PricingCard key={index} plan={plan} />
-        ))}
-      </div>
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+          {plans.map((plan, index) => (
+            <div
+              key={index}
+              className={`stagger-item ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <PricingCard plan={plan} />
+            </div>
+          ))}
+        </div>
 
-      <AddOnsSection />
+        {/* Add-ons Section */}
+        <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'} stagger-item`} style={{ animationDelay: '0.4s' }}>
+          <AddOnsSection />
+        </div>
+        
+      </div>
     </section>
   );
 };

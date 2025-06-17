@@ -13,20 +13,20 @@ import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 const Index = () => {
   const { loading } = useAuthRedirect();
 
-  // Mostrar un loader simple mientras verifica la autenticación
+  // Mostrar un loader premium mientras verifica la autenticación
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-interconecta-primary mx-auto mb-4"></div>
-          <p className="text-interconecta-text-secondary">Cargando...</p>
+      <div className="min-h-screen gradient-subtle flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-2 border-blue-interconecta border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-70 font-medium">Cargando experiencia premium...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-interconecta-bg-alternate to-white">
+    <div className="min-h-screen bg-pure-white">
       <Header />
       <HeroSection />
       <FeaturesSection />

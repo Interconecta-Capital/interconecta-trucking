@@ -24,44 +24,66 @@ interface PricingCardProps {
 
 export function PricingCard({ plan }: PricingCardProps) {
   return (
-    <Card className={`relative ${plan.isPopular ? 'border-interconecta-primary shadow-lg scale-105' : 'border-interconecta-border-subtle'}`}>
+    <Card className={`relative h-[600px] p-10 transition-all duration-400 ease-premium transform-gpu card-premium ${
+      plan.isPopular 
+        ? 'border-2 border-blue-interconecta shadow-premium scale-105' 
+        : 'border border-gray-20'
+    }`}>
+      
+      {/* Popular Badge */}
       {plan.isPopular && (
-        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-interconecta-primary text-white font-sora font-medium px-3 py-1 text-xs sm:text-sm">
+        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 gradient-premium text-pure-white font-semibold px-4 py-1">
           MÁS POPULAR
         </Badge>
       )}
       
-      <CardHeader className="text-center">
-        <CardTitle className="text-xl font-sora text-interconecta-text-primary">{plan.name}</CardTitle>
-        <div className="mt-4">
-          <div className="text-3xl font-bold font-sora text-interconecta-primary">{plan.price}</div>
+      <CardHeader className="text-center p-0 mb-8">
+        <CardTitle className="text-xl font-bold text-gray-90 mb-4">
+          {plan.name}
+        </CardTitle>
+        
+        <div className="mb-4">
+          <div className="text-3xl font-bold text-blue-interconecta font-mono">
+            {plan.price}
+          </div>
         </div>
-        <p className="text-interconecta-text-secondary font-inter">{plan.description}</p>
+        
+        <p className="text-gray-60 leading-relaxed">
+          {plan.description}
+        </p>
       </CardHeader>
       
-      <CardContent>
-        <ul className="space-y-3 mb-6">
+      <CardContent className="p-0 flex-1 flex flex-col">
+        
+        {/* Features List */}
+        <ul className="space-y-4 mb-8 flex-1">
           {plan.features.map((feature, featureIndex) => (
-            <li key={featureIndex} className="flex items-start space-x-2">
+            <li key={featureIndex} className="flex items-start space-x-3">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <span className="font-inter text-interconecta-text-body text-sm">{feature}</span>
+              <span className="text-gray-70 text-sm leading-relaxed">
+                {feature}
+              </span>
             </li>
           ))}
         </ul>
         
-        {plan.isEnterprise ? (
-          <ContactSalesModal />
-        ) : (
-          <Link to={plan.buttonLink}>
-            <Button className={`w-full font-sora font-medium ${
-              plan.isPopular 
-                ? 'bg-interconecta-primary hover:bg-interconecta-accent text-white' 
-                : 'border-interconecta-primary text-interconecta-primary hover:bg-interconecta-primary-light'
-            }`} variant={plan.isPopular ? 'default' : 'outline'}>
-              {plan.buttonText}
-            </Button>
-          </Link>
-        )}
+        {/* CTA Button */}
+        <div className="mt-auto">
+          {plan.isEnterprise ? (
+            <ContactSalesModal />
+          ) : (
+            <Link to={plan.buttonLink} className="block">
+              <Button className={`w-full btn-premium font-semibold ${
+                plan.isPopular 
+                  ? 'gradient-premium text-pure-white shadow-premium' 
+                  : 'border-2 border-blue-interconecta text-blue-interconecta hover:bg-blue-interconecta hover:text-pure-white'
+              }`} variant={plan.isPopular ? 'default' : 'outline'}>
+                {plan.buttonText}
+              </Button>
+            </Link>
+          )}
+        </div>
+        
       </CardContent>
     </Card>
   );
