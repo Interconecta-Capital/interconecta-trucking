@@ -13,12 +13,14 @@ import { User } from 'lucide-react';
 interface ConductorFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  conductor?: any;
+  conductorId?: string;
+  onSuccess?: () => void;
 }
 
-export function ConductorFormDialog({ open, onOpenChange, conductor }: ConductorFormDialogProps) {
+export function ConductorFormDialog({ open, onOpenChange, conductorId, onSuccess }: ConductorFormDialogProps) {
   const handleSuccess = () => {
     onOpenChange(false);
+    onSuccess?.();
   };
 
   const handleCancel = () => {
@@ -31,15 +33,15 @@ export function ConductorFormDialog({ open, onOpenChange, conductor }: Conductor
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            {conductor ? 'Editar Conductor' : 'Nuevo Conductor'}
+            {conductorId ? 'Editar Conductor' : 'Nuevo Conductor'}
           </DialogTitle>
           <DialogDescription>
-            {conductor ? 'Modifica los datos del conductor' : 'Ingresa los datos del nuevo conductor con información SAT completa'}
+            {conductorId ? 'Modifica los datos del conductor' : 'Ingresa los datos del nuevo conductor'}
           </DialogDescription>
         </DialogHeader>
 
         <ConductorFormRefactored
-          conductorId={conductor?.id}
+          conductorId={conductorId}
           onSuccess={handleSuccess}
           onCancel={handleCancel}
         />

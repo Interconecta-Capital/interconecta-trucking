@@ -15,9 +15,12 @@ export interface Conductor {
   num_licencia?: string;
   tipo_licencia?: string;
   vigencia_licencia?: string;
-  direccion?: any;
+  operador_sct: boolean;
+  residencia_fiscal?: string;
+  num_reg_id_trib?: string;
   estado: string;
   activo: boolean;
+  direccion?: any;
   created_at: string;
   updated_at: string;
 }

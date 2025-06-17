@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { FiguraFormCompleta } from './figuras/FiguraFormCompleta';
 import { FiguraCompleta } from '@/types/cartaPorte';
 
@@ -14,13 +14,19 @@ interface FigurasTransporteSectionProps {
 export function FigurasTransporteSection({ data, onChange, onPrev, onNext }: FigurasTransporteSectionProps) {
   // Validar que hay al menos un operador
   const isDataComplete = () => {
-    return data.length > 0 && data.some(figura => figura.tipo_figura === '01');
+    return data.length > 0 && 
+           data.some(figura => figura.tipo_figura === '01') &&
+           data.every(figura => 
+             figura.rfc_figura && 
+             figura.nombre_figura && 
+             figura.tipo_figura
+           );
   };
 
   const handleAddFigura = () => {
     const nuevaFigura: FiguraCompleta = {
       id: `figura-${Date.now()}`,
-      tipo_figura: '01', // Operador por defecto
+      tipo_figura: data.length === 0 ? '01' : '02', // Primer figura siempre operador
       rfc_figura: '',
       nombre_figura: '',
       domicilio: {
@@ -92,8 +98,8 @@ export function FigurasTransporteSection({ data, onChange, onPrev, onNext }: Fig
           disabled={!isDataComplete()}
           className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
         >
-          <CheckCircle className="h-4 w-4" />
-          <span>Generar Carta Porte</span>
+          <span>Finalizar Carta Porte</span>
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

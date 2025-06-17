@@ -1,342 +1,178 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { CodigoPostalInputOptimizado } from '@/components/catalogos/CodigoPostalInputOptimizado';
+import { ConductorSelector } from './ConductorSelector';
+import { FormularioDomicilioUnificado, DomicilioUnificado } from '@/components/common/FormularioDomicilioUnificado';
 import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
+import { User, Trash2 } from 'lucide-react';
 import { FiguraCompleta } from '@/types/cartaPorte';
-import { User, Trash2, AlertTriangle, Globe, FileText } from 'lucide-react';
-import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
 
-export interface FiguraFormCompletaProps {
+interface FiguraFormCompletaProps {
   figura: FiguraCompleta;
   onUpdate: (figura: FiguraCompleta) => void;
   onRemove: () => void;
   index: number;
 }
 
-const tiposFigura = [
-  { value: '01', label: '01 - Operador' },
-  { value: '02', label: '02 - Propietario' },
-  { value: '03', label: '03 - Arrendador' },
-  { value: '04', label: '04 - Notificado' },
-];
-
-const paisesList = [
-  { value: 'MEX', label: 'México' },
-  { value: 'USA', label: 'Estados Unidos' },
-  { value: 'CAN', label: 'Canadá' },
-  { value: 'GTM', label: 'Guatemala' },
-  { value: 'BLZ', label: 'Belice' },
-];
-
 export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: FiguraFormCompletaProps) {
-  const [formData, setFormData] = useState<FiguraCompleta>(figura);
-  const [curpValidation, setCurpValidation] = useState<{ valido: boolean; mensaje?: string }>({ valido: true });
-
-  useEffect(() => {
-    setFormData(figura);
-  }, [figura]);
-
-  const handleChange = (field: string, value: any) => {
-    const updatedFigura = { ...formData, [field]: value };
-    setFormData(updatedFigura);
-    onUpdate(updatedFigura);
+  const handleFieldChange = (field: keyof FiguraCompleta, value: any) => {
+    onUpdate({ ...figura, [field]: value });
   };
 
-  const handleDomicilioChange = (field: string, value: string) => {
-    const updatedDomicilio = { ...formData.domicilio, [field]: value };
-    const updatedFigura = { ...formData, domicilio: updatedDomicilio };
-    setFormData(updatedFigura);
-    onUpdate(updatedFigura);
+  const handleDomicilioChange = (campo: keyof DomicilioUnificado, valor: string) => {
+    const domicilioActual = figura.domicilio || {
+      pais: 'México',
+      codigo_postal: '',
+      estado: '',
+      municipio: '',
+      colonia: '',
+      calle: '',
+      numero_exterior: ''
+    };
+
+    const nuevoDomicilio = { ...domicilioActual };
+    
+    // Mapear campos del domicilio unificado al formato de figura
+    switch (campo) {
+      case 'codigoPostal':
+        nuevoDomicilio.codigo_postal = valor;
+        break;
+      case 'numExterior':
+        nuevoDomicilio.numero_exterior = valor;
+        break;
+      default:
+        (nuevoDomicilio as any)[campo] = valor;
+    }
+
+    onUpdate({ ...figura, domicilio: nuevoDomicilio });
   };
 
-  const handleCURPChange = (curp: string) => {
-    const validation = CatalogosSATExtendido.validarCURP(curp);
-    setCurpValidation(validation);
-    handleChange('curp', curp);
+  // Convertir domicilio de figura a formato unificado
+  const domicilioUnificado: DomicilioUnificado = {
+    pais: figura.domicilio?.pais || 'México',
+    codigoPostal: figura.domicilio?.codigo_postal || '',
+    estado: figura.domicilio?.estado || '',
+    municipio: figura.domicilio?.municipio || '',
+    localidad: '',
+    colonia: figura.domicilio?.colonia || '',
+    calle: figura.domicilio?.calle || '',
+    numExterior: figura.domicilio?.numero_exterior || '',
+    numInterior: '',
+    referencia: ''
   };
-
-  const handleCodigoPostalChange = (codigoPostal: string) => {
-    handleDomicilioChange('codigo_postal', codigoPostal);
-  };
-
-  const handleInfoChange = (info: {
-    estado?: string;
-    municipio?: string;
-    localidad?: string;
-    colonia?: string;
-  }) => {
-    if (info.estado) handleDomicilioChange('estado', info.estado);
-    if (info.municipio) handleDomicilioChange('municipio', info.municipio);
-    if (info.colonia) handleDomicilioChange('colonia', info.colonia);
-  };
-
-  const handleColoniaChange = (colonia: string) => {
-    handleDomicilioChange('colonia', colonia);
-  };
-
-  const esOperador = formData.tipo_figura === '01';
-  const esExtranjero = formData.residencia_fiscal_figura && formData.residencia_fiscal_figura !== 'MEX';
 
   return (
-    <Card className="mb-4">
+    <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <User className="h-4 w-4" />
-            <span>Figura de Transporte {index + 1}</span>
-          </CardTitle>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={onRemove}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Figura de Transporte #{index + 1}
+          </div>
+          {index > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onRemove}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </CardTitle>
       </CardHeader>
-      
       <CardContent className="space-y-6">
-        {/* Información Básica */}
-        <div className="space-y-4">
-          <h4 className="font-medium flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Información Básica
-          </h4>
+        {/* Solo mostrar selector si es la primera figura (operador) */}
+        {index === 0 && (
+          <ConductorSelector figura={figura} onUpdate={onUpdate} />
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
             <CatalogoSelectorMejorado
               tipo="figuras_transporte"
-              label="Tipo de Figura"
-              value={formData.tipo_figura}
-              onValueChange={(value) => handleChange('tipo_figura', value)}
-              placeholder="Seleccionar tipo"
+              label="Tipo de Figura *"
+              value={figura.tipo_figura || ''}
+              onValueChange={(value) => handleFieldChange('tipo_figura', value)}
+              placeholder="Seleccionar tipo..."
               required
+              allowSearch={true}
+              showAllOptions={true}
+              showRefresh={true}
             />
-
-            <div className="space-y-2">
-              <Label>RFC *</Label>
-              <Input
-                value={formData.rfc_figura}
-                onChange={(e) => handleChange('rfc_figura', e.target.value.toUpperCase())}
-                placeholder="RFC de la figura"
-                maxLength={13}
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Nombre Completo *</Label>
+            <Label htmlFor="rfc_figura">RFC de la Figura *</Label>
             <Input
-              value={formData.nombre_figura}
-              onChange={(e) => handleChange('nombre_figura', e.target.value)}
-              placeholder="Nombre completo de la figura"
+              id="rfc_figura"
+              value={figura.rfc_figura || ''}
+              onChange={(e) => handleFieldChange('rfc_figura', e.target.value.toUpperCase())}
+              placeholder="RFC123456789"
+              maxLength={13}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>CURP</Label>
-              <Input
-                value={formData.curp || ''}
-                onChange={(e) => handleCURPChange(e.target.value.toUpperCase())}
-                placeholder="CURP (solo personas físicas mexicanas)"
-                maxLength={18}
-                className={!curpValidation.valido ? 'border-red-500' : ''}
-              />
-              {!curpValidation.valido && curpValidation.mensaje && (
-                <div className="flex items-center gap-2 text-sm text-red-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  {curpValidation.mensaje}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>País de Residencia Fiscal</Label>
-              <Select
-                value={formData.residencia_fiscal_figura || 'MEX'}
-                onValueChange={(value) => handleChange('residencia_fiscal_figura', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar país" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paisesList.map((pais) => (
-                    <SelectItem key={pais.value} value={pais.value}>
-                      {pais.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="nombre_figura">Nombre de la Figura *</Label>
+            <Input
+              id="nombre_figura"
+              value={figura.nombre_figura || ''}
+              onChange={(e) => handleFieldChange('nombre_figura', e.target.value)}
+              placeholder="Nombre completo"
+            />
           </div>
 
-          {esExtranjero && (
-            <div className="space-y-2">
-              <Label>Número de Registro de Identidad Tributaria</Label>
-              <Input
-                value={formData.num_reg_id_trib_figura || ''}
-                onChange={(e) => handleChange('num_reg_id_trib_figura', e.target.value)}
-                placeholder="Número de identificación tributaria del país de residencia"
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="num_licencia">Número de Licencia</Label>
+            <Input
+              id="num_licencia"
+              value={figura.num_licencia || ''}
+              onChange={(e) => handleFieldChange('num_licencia', e.target.value)}
+              placeholder="Número de licencia"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="residencia_fiscal_figura">Residencia Fiscal</Label>
+            <Select
+              value={figura.residencia_fiscal_figura || 'MEX'}
+              onValueChange={(value) => handleFieldChange('residencia_fiscal_figura', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar país" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MEX">México</SelectItem>
+                <SelectItem value="USA">Estados Unidos</SelectItem>
+                <SelectItem value="CAN">Canadá</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="num_reg_id_trib_figura">Reg. Identidad Tributaria</Label>
+            <Input
+              id="num_reg_id_trib_figura"
+              value={figura.num_reg_id_trib_figura || ''}
+              onChange={(e) => handleFieldChange('num_reg_id_trib_figura', e.target.value)}
+              placeholder="Registro tributario"
+            />
+          </div>
         </div>
 
-        <Separator />
-
-        {/* Información de Licencia (solo para operadores) */}
-        {esOperador && (
-          <div className="space-y-4">
-            <h4 className="font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Información de Licencia (Operador)
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Tipo de Licencia</Label>
-                <Input
-                  value={formData.tipo_licencia || ''}
-                  onChange={(e) => handleChange('tipo_licencia', e.target.value)}
-                  placeholder="Ej: Federal, Estatal"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Número de Licencia *</Label>
-                <Input
-                  value={formData.num_licencia || ''}
-                  onChange={(e) => handleChange('num_licencia', e.target.value)}
-                  placeholder="Número de licencia federal"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Vigencia de la Licencia</Label>
-                <Input
-                  type="date"
-                  value={formData.vigencia_licencia || ''}
-                  onChange={(e) => handleChange('vigencia_licencia', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Operador SCT</Label>
-                <Select
-                  value={formData.operador_sct ? 'true' : 'false'}
-                  onValueChange={(value) => handleChange('operador_sct', value === 'true')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">Sí es operador SCT</SelectItem>
-                    <SelectItem value="false">No es operador SCT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {esOperador && <Separator />}
-
-        {/* Domicilio */}
-        <div className="space-y-4">
-          <h4 className="font-medium flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Domicilio
-          </h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>País</Label>
-              <Input
-                value={formData.domicilio?.pais || 'México'}
-                onChange={(e) => handleDomicilioChange('pais', e.target.value)}
-                placeholder="País"
-              />
-            </div>
-
-            <CodigoPostalInputOptimizado
-              value={formData.domicilio?.codigo_postal || ''}
-              onChange={handleCodigoPostalChange}
-              onLocationUpdate={handleInfoChange}
-              coloniaValue={formData.domicilio?.colonia || ''}
-              onColoniaChange={handleColoniaChange}
-              className="w-full"
-              soloCodigoPostal={true}
+        <div>
+          <Label className="text-base font-medium">Domicilio de la Figura</Label>
+          <div className="mt-2">
+            <FormularioDomicilioUnificado
+              domicilio={domicilioUnificado}
+              onDomicilioChange={handleDomicilioChange}
+              camposOpcionales={['numInterior', 'referencia', 'localidad']}
             />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Estado</Label>
-              <Input
-                value={formData.domicilio?.estado || ''}
-                onChange={(e) => handleDomicilioChange('estado', e.target.value)}
-                placeholder="Estado"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Municipio</Label>
-              <Input
-                value={formData.domicilio?.municipio || ''}
-                onChange={(e) => handleDomicilioChange('municipio', e.target.value)}
-                placeholder="Municipio"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Colonia</Label>
-              <Input
-                value={formData.domicilio?.colonia || ''}
-                onChange={(e) => handleDomicilioChange('colonia', e.target.value)}
-                placeholder="Colonia"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Calle</Label>
-              <Input
-                value={formData.domicilio?.calle || ''}
-                onChange={(e) => handleDomicilioChange('calle', e.target.value)}
-                placeholder="Nombre de la calle"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Número Exterior</Label>
-              <Input
-                value={formData.domicilio?.numero_exterior || ''}
-                onChange={(e) => handleDomicilioChange('numero_exterior', e.target.value)}
-                placeholder="No. Exterior"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Número Interior</Label>
-              <Input
-                value={formData.domicilio?.numero_interior || ''}
-                onChange={(e) => handleDomicilioChange('numero_interior', e.target.value)}
-                placeholder="No. Interior"
-              />
-            </div>
           </div>
         </div>
       </CardContent>
