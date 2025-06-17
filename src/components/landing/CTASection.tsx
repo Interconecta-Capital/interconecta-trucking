@@ -30,11 +30,11 @@ const CTASection = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <a href="#contacto">
+            <Link to="/auth/trial">
               <Button variant="outline" className="btn-premium border border-gray-60 hover:border-pure-white text-pure-white hover:bg-white/10 px-8 py-4 text-base font-semibold rounded-12 interactive">
                 <span>Agendar demo personal</span>
               </Button>
-            </a>
+            </Link>
           </div>
           
         </div>

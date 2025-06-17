@@ -1,5 +1,7 @@
+
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { Bot, Upload, Zap, FileText, Building, Users, TrendingUp, Shield, Sparkles } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const FeaturesSection = () => {
   const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
@@ -76,36 +78,57 @@ const FeaturesSection = () => {
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-8">
-          {mainFeatures.map((feature, index) => {
-            const IconComponent = feature.icon;
-            return (
-              <div
-                key={index}
-                className={`card-premium p-8 text-center relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
-                  feature.highlighted ? 'border-2 border-blue-interconecta' : ''
-                } ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}
-                style={{ transitionDelay: `${index * 0.1}s` }}
-              >
-                
-                {/* Icon */}
-                <div className="w-20 h-20 bg-blue-light rounded-16 flex items-center justify-center mx-auto mb-6 transition-all duration-300 hover:bg-blue-interconecta hover:scale-110 group">
-                  <IconComponent className="h-10 w-10 text-blue-interconecta group-hover:text-pure-white transition-colors duration-300" />
-                </div>
-                
-                {/* Content */}
-                <h3 className="text-subtitle font-medium text-pure-black mb-4 hover:text-blue-interconecta transition-colors duration-300">
-                  {feature.title}
-                </h3>
-                
-                <p className="text-gray-60 leading-relaxed">
-                  {feature.description}
-                </p>
-                
-              </div>
-            );
-          })}
+        {/* Mac-style Window with Carousel */}
+        <div className={`relative card-premium p-6 shadow-xl overflow-hidden max-w-6xl mx-auto ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+          
+          {/* Mac Window Header */}
+          <div className="flex items-center gap-2 pb-4 border-b border-gray-20 mb-8">
+            <div className="w-3 h-3 rounded-full bg-red-400"></div>
+            <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <div className="ml-auto text-sm font-semibold text-gray-70">Características — Interconecta Trucking</div>
+          </div>
+
+          {/* Carousel */}
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {mainFeatures.map((feature, index) => {
+                const IconComponent = feature.icon;
+                return (
+                  <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                    <div className={`card-premium p-8 text-center relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full ${
+                      feature.highlighted ? 'border-2 border-blue-interconecta' : ''
+                    }`}>
+                      
+                      {/* Icon */}
+                      <div className="w-16 h-16 bg-blue-light rounded-16 flex items-center justify-center mx-auto mb-6 transition-all duration-300 hover:bg-blue-interconecta hover:scale-110 group">
+                        <IconComponent className="h-8 w-8 text-blue-interconecta group-hover:text-pure-white transition-colors duration-300" />
+                      </div>
+                      
+                      {/* Content */}
+                      <h3 className="text-lg font-semibold text-pure-black mb-4 hover:text-blue-interconecta transition-colors duration-300">
+                        {feature.title}
+                      </h3>
+                      
+                      <p className="text-gray-60 leading-relaxed text-sm">
+                        {feature.description}
+                      </p>
+                      
+                    </div>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            <CarouselPrevious className="left-4" />
+            <CarouselNext className="right-4" />
+          </Carousel>
+          
         </div>
         
       </div>

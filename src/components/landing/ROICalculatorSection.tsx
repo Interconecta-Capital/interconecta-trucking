@@ -42,98 +42,108 @@ const ROICalculatorSection = () => {
           </p>
         </div>
 
-        {/* Calculator Card */}
-        <div className={`card-premium p-10 shadow-xl ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        {/* Calculator Card with Mac Window Style */}
+        <div className={`card-premium shadow-xl overflow-hidden ${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           
+          {/* Mac Window Header */}
+          <div className="flex items-center gap-2 p-4 border-b border-gray-20 bg-gray-05">
+            <div className="w-3 h-3 rounded-full bg-red-400"></div>
+            <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <div className="ml-auto text-sm font-semibold text-gray-70">Calculadora de ROI — Interconecta Trucking</div>
+          </div>
+
           {/* Calculator Header */}
-          <div className="bg-blue-interconecta text-pure-white p-6 rounded-t-16 -m-10 mb-8">
+          <div className="bg-blue-interconecta text-pure-white p-6">
             <div className="flex items-center justify-center gap-3">
               <BarChart3 className="h-6 w-6" />
               <h3 className="text-subtitle font-bold">Calculadora de ROI</h3>
             </div>
           </div>
 
-          {/* Inputs */}
-          <div className="grid md:grid-cols-2 gap-8 mb-10">
-            <div>
-              <label className="block text-body font-semibold text-gray-70 mb-4">
-                Número de viajes por mes: {viajesPorMes}
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="300"
-                value={viajesPorMes}
-                onChange={(e) => setViajesPorMes(parseInt(e.target.value))}
-                className="w-full h-2 bg-blue-light rounded-lg appearance-none cursor-pointer slider"
-              />
-              <div className="flex justify-between text-sm text-gray-50 mt-2">
-                <span>5</span>
-                <span>300</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-body font-semibold text-gray-70 mb-4">
-                Multas SAT evitadas por mes: {multasEvitadas}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="10"
-                value={multasEvitadas}
-                onChange={(e) => setMultasEvitadas(parseInt(e.target.value))}
-                className="w-full h-2 bg-blue-light rounded-lg appearance-none cursor-pointer slider"
-              />
-              <div className="flex justify-between text-sm text-gray-50 mt-2">
-                <span>0</span>
-                <span>10</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Results */}
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Savings Calculation */}
-            <div>
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <BarChart3 className="h-6 w-6 text-blue-interconecta" />
-                  <span className="text-subtitle font-bold text-gray-70">Ahorro Anual Estimado</span>
-                </div>
-                <div className="text-2xl font-extrabold text-blue-interconecta text-mono">
-                  ${ahorroAnual.toLocaleString()} MXN
-                </div>
-                <div className="text-body text-gray-60">
-                  ${ahorroMensual.toLocaleString()} MXN por mes
+          <div className="p-10">
+            {/* Inputs */}
+            <div className="grid md:grid-cols-2 gap-8 mb-10">
+              <div>
+                <label className="block text-body font-semibold text-gray-70 mb-4">
+                  Número de viajes por mes: {viajesPorMes}
+                </label>
+                <input
+                  type="range"
+                  min="5"
+                  max="300"
+                  value={viajesPorMes}
+                  onChange={(e) => setViajesPorMes(parseInt(e.target.value))}
+                  className="w-full h-2 bg-blue-light rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-sm text-gray-50 mt-2">
+                  <span>5</span>
+                  <span>300</span>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gray-05 rounded-8">
-                  <span className="text-body-sm text-gray-70">Ahorro en tiempo:</span>
-                  <span className="font-semibold text-pure-black">${(ahorroTiempo * 12 * 350).toLocaleString()} MXN</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-05 rounded-8">
-                  <span className="text-body-sm text-gray-70">Multas evitadas:</span>
-                  <span className="font-semibold text-pure-black">${(ahorroMultas * 12).toLocaleString()} MXN</span>
+              <div>
+                <label className="block text-body font-semibold text-gray-70 mb-4">
+                  Multas SAT evitadas por mes: {multasEvitadas}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  value={multasEvitadas}
+                  onChange={(e) => setMultasEvitadas(parseInt(e.target.value))}
+                  className="w-full h-2 bg-blue-light rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-sm text-gray-50 mt-2">
+                  <span>0</span>
+                  <span>10</span>
                 </div>
               </div>
             </div>
 
-            {/* Benefits Stats */}
-            <div>
-              <div className="grid grid-cols-2 gap-4">
-                {beneficios.map((beneficio, index) => (
-                  <div key={index} className="text-center p-4 card-premium">
-                    <div className="text-lg font-bold text-blue-interconecta text-mono mb-2">
-                      {beneficio.value}
-                    </div>
-                    <div className="text-caption text-gray-60">
-                      {beneficio.label}
-                    </div>
+            {/* Results */}
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Savings Calculation */}
+              <div>
+                <div className="text-center mb-6">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <BarChart3 className="h-6 w-6 text-blue-interconecta" />
+                    <span className="text-subtitle font-bold text-gray-70">Ahorro Anual Estimado</span>
                   </div>
-                ))}
+                  <div className="text-xl font-extrabold text-blue-interconecta text-mono">
+                    ${ahorroAnual.toLocaleString()} MXN
+                  </div>
+                  <div className="text-body text-gray-60">
+                    ${ahorroMensual.toLocaleString()} MXN por mes
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-05 rounded-8">
+                    <span className="text-body-sm text-gray-70">Ahorro en tiempo:</span>
+                    <span className="font-semibold text-pure-black">${(ahorroTiempo * 12 * 350).toLocaleString()} MXN</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-05 rounded-8">
+                    <span className="text-body-sm text-gray-70">Multas evitadas:</span>
+                    <span className="font-semibold text-pure-black">${(ahorroMultas * 12).toLocaleString()} MXN</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Benefits Stats */}
+              <div>
+                <div className="grid grid-cols-2 gap-4">
+                  {beneficios.map((beneficio, index) => (
+                    <div key={index} className="text-center p-4 card-premium">
+                      <div className="text-lg font-bold text-blue-interconecta text-mono mb-2">
+                        {beneficio.value}
+                      </div>
+                      <div className="text-caption text-gray-60">
+                        {beneficio.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

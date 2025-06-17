@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
@@ -154,10 +155,10 @@ const NewPricingSection = () => {
               {/* CTA Button */}
               <Link to="/auth/trial" className="block">
                 <Button 
-                  className={`w-full py-3 text-base font-semibold rounded-12 interactive ${
+                  className={`w-full py-3 text-base font-semibold rounded-12 interactive transition-all duration-300 ${
                     plan.buttonVariant === 'primary' 
-                      ? 'btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white' 
-                      : 'btn-premium border border-blue-interconecta text-blue-interconecta hover:bg-blue-light hover:text-blue-interconecta'
+                      ? 'btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white border-0' 
+                      : 'btn-premium bg-pure-white border-2 border-blue-interconecta text-blue-interconecta hover:bg-blue-light hover:text-blue-interconecta'
                   }`}
                 >
                   {plan.name === "Plan Enterprise Sin Límites" ? (
