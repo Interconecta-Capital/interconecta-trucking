@@ -26,6 +26,16 @@ interface OptimizedCartaPorteStepContentProps {
   onStepChange: (step: number) => void;
   onXMLGenerated: (xml: string) => void;
   onTimbrado: (data: any) => void;
+  xmlGenerado?: string | null;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  } | null;
+  onCalculoRutaUpdate?: (datos: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+  }) => void;
 }
 
 const LoadingFallback = memo(() => (
@@ -53,6 +63,9 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
   onStepChange,
   onXMLGenerated,
   onTimbrado,
+  xmlGenerado,
+  datosCalculoRuta,
+  onCalculoRutaUpdate,
 }) => {
   const renderStepContent = () => {
     switch (currentStep) {
@@ -118,6 +131,8 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
               cartaPorteId={currentCartaPorteId}
               onXMLGenerated={onXMLGenerated}
               onTimbrado={onTimbrado}
+              xmlGenerado={xmlGenerado}
+              datosCalculoRuta={datosCalculoRuta}
             />
           </Suspense>
         );
