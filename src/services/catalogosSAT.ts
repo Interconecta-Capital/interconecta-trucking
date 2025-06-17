@@ -83,7 +83,7 @@ export class CatalogosSATService {
     try {
       let query = supabase
         .from('cat_clave_prod_serv_cp')
-        .select('clave_prod_serv as clave, descripcion, incluye_iva, fecha_inicio_vigencia, fecha_fin_vigencia')
+        .select('clave_prod_serv, descripcion, incluye_iva, fecha_inicio_vigencia, fecha_fin_vigencia')
         .order('clave_prod_serv');
 
       if (termino && termino.length >= 2) {
@@ -97,7 +97,14 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_prod_serv,
+        descripcion: item.descripcion,
+        incluye_iva: item.incluye_iva,
+        fecha_inicio_vigencia: item.fecha_inicio_vigencia,
+        fecha_fin_vigencia: item.fecha_fin_vigencia
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -118,7 +125,7 @@ export class CatalogosSATService {
     try {
       let query = supabase
         .from('cat_clave_unidad')
-        .select('clave_unidad as clave, nombre, descripcion, simbolo, fecha_inicio_vigencia, fecha_fin_vigencia')
+        .select('clave_unidad, nombre, descripcion, simbolo, fecha_inicio_vigencia, fecha_fin_vigencia')
         .order('clave_unidad');
 
       if (termino && termino.length >= 2) {
@@ -132,7 +139,15 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_unidad,
+        nombre: item.nombre,
+        descripcion: item.descripcion,
+        simbolo: item.simbolo,
+        fecha_inicio_vigencia: item.fecha_inicio_vigencia,
+        fecha_fin_vigencia: item.fecha_fin_vigencia
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -153,7 +168,7 @@ export class CatalogosSATService {
     try {
       let query = supabase
         .from('cat_material_peligroso')
-        .select('clave_material as clave, descripcion, clase_division, grupo_embalaje, instrucciones_embalaje, peligro_secundario')
+        .select('clave_material, descripcion, clase_division, grupo_embalaje, instrucciones_embalaje, peligro_secundario')
         .order('clave_material');
 
       if (termino && termino.length >= 2) {
@@ -167,7 +182,15 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_material,
+        descripcion: item.descripcion,
+        clase_division: item.clase_division,
+        grupo_embalaje: item.grupo_embalaje,
+        instrucciones_embalaje: item.instrucciones_embalaje,
+        peligro_secundario: item.peligro_secundario
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -188,7 +211,7 @@ export class CatalogosSATService {
     try {
       const { data, error } = await supabase
         .from('cat_config_autotransporte')
-        .select('clave_config as clave, descripcion, remolque, semirremolque')
+        .select('clave_config, descripcion, remolque, semirremolque')
         .order('clave_config');
 
       if (error) {
@@ -196,7 +219,13 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_config,
+        descripcion: item.descripcion,
+        remolque: item.remolque,
+        semirremolque: item.semirremolque
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -217,7 +246,7 @@ export class CatalogosSATService {
     try {
       const { data, error } = await supabase
         .from('cat_figura_transporte')
-        .select('clave_figura as clave, descripcion, persona_fisica, persona_moral')
+        .select('clave_figura, descripcion, persona_fisica, persona_moral')
         .order('clave_figura');
 
       if (error) {
@@ -225,7 +254,13 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_figura,
+        descripcion: item.descripcion,
+        persona_fisica: item.persona_fisica,
+        persona_moral: item.persona_moral
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -246,7 +281,7 @@ export class CatalogosSATService {
     try {
       const { data, error } = await supabase
         .from('cat_tipo_permiso')
-        .select('clave_permiso as clave, descripcion, transporte_carga, transporte_pasajeros')
+        .select('clave_permiso, descripcion, transporte_carga, transporte_pasajeros')
         .order('clave_permiso');
 
       if (error) {
@@ -254,7 +289,13 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_permiso,
+        descripcion: item.descripcion,
+        transporte_carga: item.transporte_carga,
+        transporte_pasajeros: item.transporte_pasajeros
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -275,7 +316,7 @@ export class CatalogosSATService {
     try {
       const { data, error } = await supabase
         .from('cat_tipo_embalaje')
-        .select('clave_embalaje as clave, descripcion')
+        .select('clave_embalaje, descripcion')
         .order('clave_embalaje');
 
       if (error) {
@@ -283,7 +324,11 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_embalaje,
+        descripcion: item.descripcion
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -304,7 +349,7 @@ export class CatalogosSATService {
     try {
       let query = supabase
         .from('cat_subtipo_remolque')
-        .select('clave_subtipo as clave, descripcion')
+        .select('clave_subtipo, descripcion')
         .order('clave_subtipo');
 
       if (termino && termino.length >= 2) {
@@ -318,7 +363,11 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_subtipo,
+        descripcion: item.descripcion
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
@@ -339,7 +388,7 @@ export class CatalogosSATService {
     try {
       let query = supabase
         .from('cat_estado')
-        .select('clave_estado as clave, descripcion')
+        .select('clave_estado, descripcion')
         .order('descripcion');
 
       if (termino && termino.length >= 1) {
@@ -353,7 +402,11 @@ export class CatalogosSATService {
         return [];
       }
 
-      const result = data || [];
+      const result = (data || []).map(item => ({
+        clave: item.clave_estado,
+        descripcion: item.descripcion
+      }));
+      
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     } catch (error) {
