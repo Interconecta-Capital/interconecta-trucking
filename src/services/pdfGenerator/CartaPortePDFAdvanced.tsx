@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -362,7 +361,6 @@ export class CartaPortePDFAdvanced {
     const rightColumn = pageWidth / 2 + 10;
 
     data.forEach((item, index) => {
-      const currentY = startY + (index * itemHeight);
       const column = index % 2 === 0 ? leftColumn : rightColumn;
       const adjustedY = Math.floor(index / 2) * itemHeight + startY;
 
@@ -394,7 +392,7 @@ export class CartaPortePDFAdvanced {
     doc.line(15, footerY - 5, doc.internal.pageSize.width - 15, footerY - 5);
     
     doc.text('Documento generado automáticamente', 15, footerY);
-    doc.text(`Página ${doc.internal.getCurrentPageInfo().pageNumber}`, doc.internal.pageSize.width - 15, footerY, { align: 'right' });
+    doc.text('Página 1', doc.internal.pageSize.width - 15, footerY, { align: 'right' });
   }
 
   static descargarPDF(blob: Blob, filename?: string) {
