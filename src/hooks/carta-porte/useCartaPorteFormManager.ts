@@ -9,9 +9,15 @@ import { useBorradorRecovery } from './useBorradorRecovery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
 
-// Extender CartaPorteData para incluir currentStep
-interface CartaPorteDataWithStep extends CartaPorteData {
+// Extender CartaPorteData para incluir datos persistidos
+interface CartaPorteDataWithPersistence extends CartaPorteData {
   currentStep?: number;
+  xmlGenerado?: string;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  };
 }
 
 // Estado inicial unificado y por defecto
@@ -48,11 +54,23 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
   
+  // Estados para datos persistidos
+  const [xmlGenerado, setXmlGenerado] = useState<string | null>(null);
+  const [datosCalculoRuta, setDatosCalculoRuta] = useState<{
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  } | null>(null);
+  
   const { getValidationSummary } = useCartaPorteValidation();
 
   // Auto-save mejorado
   const { isAutoSaving, lastSaved } = useCartaPorteAutoSave({
-    formData,
+    formData: {
+      ...formData,
+      xmlGenerado,
+      datosCalculoRuta
+    } as CartaPorteDataWithPersistence,
     currentCartaPorteId: currentCartaPorteId || undefined,
     onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
     enabled: true
@@ -63,6 +81,52 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // El resumen de validación ahora depende directamente del estado unificado
   const validationSummary = getValidationSummary(formData);
+
+  // Cargar datos existentes al montar el componente
+  useEffect(() => {
+    if (currentCartaPorteId && !borradorCargado) {
+      loadCartaPorteData(currentCartaPorteId);
+    }
+  }, [currentCartaPorteId]);
+
+  const loadCartaPorteData = useCallback(async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('cartas_porte')
+        .select('datos_formulario')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.datos_formulario) {
+        const savedData = data.datos_formulario as CartaPorteDataWithPersistence;
+        
+        // Restaurar datos del formulario
+        setFormData({
+          ...initialCartaPorteData,
+          ...savedData
+        });
+
+        // Restaurar estados persistidos
+        if (savedData.xmlGenerado) {
+          setXmlGenerado(savedData.xmlGenerado);
+        }
+        
+        if (savedData.datosCalculoRuta) {
+          setDatosCalculoRuta(savedData.datosCalculoRuta);
+        }
+
+        if (savedData.currentStep !== undefined) {
+          setCurrentStep(savedData.currentStep);
+        }
+
+        setBorradorCargado(true);
+      }
+    } catch (error) {
+      console.error('Error cargando datos de carta porte:', error);
+    }
+  }, []);
 
   // Handler de cambio unificado y estable
   const handleConfiguracionChange = useCallback((updates: Partial<CartaPorteData>) => {
@@ -86,15 +150,46 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setFormData(prev => ({ ...prev, figuras }));
   }, []);
 
+  // Funciones para manejar XML generado
+  const handleXMLGenerated = useCallback((xml: string) => {
+    setXmlGenerado(xml);
+    // Auto-guardar cuando se genera XML
+    handleGuardarCartaPorteOficial();
+  }, []);
+
+  // Funciones para manejar cálculos de ruta
+  const handleCalculoRutaUpdate = useCallback((datos: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+  }) => {
+    setDatosCalculoRuta({
+      ...datos,
+      calculadoEn: new Date().toISOString()
+    });
+    // Auto-guardar cuando se actualiza cálculo de ruta
+    handleGuardarCartaPorteOficial();
+  }, []);
+
   // Manejar aceptación de borrador
   const handleAcceptBorrador = useCallback(() => {
     const { data, id } = acceptBorrador();
     if (data) {
-      setFormData(data);
+      const savedData = data as CartaPorteDataWithPersistence;
+      setFormData(savedData);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
-      if ((data as CartaPorteDataWithStep).currentStep !== undefined) {
-        setCurrentStep((data as CartaPorteDataWithStep).currentStep!);
+      
+      // Restaurar datos persistidos
+      if (savedData.xmlGenerado) {
+        setXmlGenerado(savedData.xmlGenerado);
+      }
+      
+      if (savedData.datosCalculoRuta) {
+        setDatosCalculoRuta(savedData.datosCalculoRuta);
+      }
+      
+      if (savedData.currentStep !== undefined) {
+        setCurrentStep(savedData.currentStep);
       }
     }
   }, [acceptBorrador]);
@@ -106,9 +201,11 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setCurrentStep(0);
     setCurrentCartaPorteId(null);
     setBorradorCargado(false);
+    setXmlGenerado(null);
+    setDatosCalculoRuta(null);
   }, [rejectBorrador]);
   
-  // Guardar como carta porte oficial (no borrador)
+  // Guardar como carta porte oficial (no borrador) - mejorado
   const handleGuardarCartaPorteOficial = useCallback(async () => {
     if (!user?.id) {
       toast.error('Usuario no autenticado');
@@ -119,10 +216,18 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     
     setIsGuardando(true);
     try {
-      // Generar folio único
+      // Generar folio único si no existe
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // Preparar datos para la carta porte oficial - convertir a JSON compatible
+      // Preparar datos completos incluyendo XML y cálculos de ruta
+      const datosCompletos: CartaPorteDataWithPersistence = {
+        ...formData,
+        currentStep,
+        xmlGenerado,
+        datosCalculoRuta
+      };
+      
+      // Preparar datos para la carta porte oficial
       const cartaPorteData = {
         folio,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -132,8 +237,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         nombre_receptor: formData.nombreReceptor || '',
         transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
-        status: 'borrador', // Inicia como borrador hasta que se genere XML
-        datos_formulario: JSON.parse(JSON.stringify(formData)), // Asegurar compatibilidad con JSON
+        status: xmlGenerado ? 'generado' : 'borrador',
+        datos_formulario: JSON.parse(JSON.stringify(datosCompletos)),
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -178,7 +283,19 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentCartaPorteId, user?.id, isGuardando]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
+
+  // Guardar y salir - mejorado
+  const handleGuardarYSalir = useCallback(async () => {
+    try {
+      await handleGuardarCartaPorteOficial();
+      // Navegar a la lista de cartas porte
+      window.location.href = '/cartas-porte';
+    } catch (error) {
+      console.error('Error guardando carta porte:', error);
+      // No navegar si hay error
+    }
+  }, [handleGuardarCartaPorteOficial]);
 
   // Lógica de borrador (mantenida para compatibilidad)
   const handleGuardarBorrador = useCallback(async () => {
@@ -186,9 +303,11 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     
     setIsGuardando(true);
     try {
-      const datosCompletos: CartaPorteDataWithStep = {
+      const datosCompletos: CartaPorteDataWithPersistence = {
         ...formData,
         currentStep,
+        xmlGenerado,
+        datosCalculoRuta
       };
       
       const nuevoId = await BorradorService.guardarBorrador(datosCompletos, currentCartaPorteId || undefined);
@@ -205,7 +324,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentStep, currentCartaPorteId, isGuardando]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando]);
 
   const handleLimpiarBorrador = useCallback(async () => {
     try {
@@ -216,6 +335,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setCurrentCartaPorteId(null);
       setBorradorCargado(false);
       setUltimoGuardado(null);
+      setXmlGenerado(null);
+      setDatosCalculoRuta(null);
       
       toast.success('Borrador eliminado correctamente');
     } catch (error) {
@@ -247,6 +368,10 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     validationSummary,
     isGuardando: isGuardando || isAutoSaving,
     
+    // Estados persistidos
+    xmlGenerado,
+    datosCalculoRuta,
+    
     // Dialog de recuperación
     showRecoveryDialog,
     borradorData,
@@ -262,6 +387,11 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     handleConfiguracionChange,
     handleGuardarBorrador,
     handleGuardarCartaPorteOficial,
+    handleGuardarYSalir,
     handleLimpiarBorrador,
+    
+    // Nuevos handlers para datos persistidos
+    handleXMLGenerated,
+    handleCalculoRutaUpdate,
   };
 }

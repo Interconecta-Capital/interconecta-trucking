@@ -7,15 +7,12 @@ import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
 import { BorradorRecoveryDialog } from '../BorradorRecoveryDialog';
 import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
-import { useNavigate } from 'react-router-dom';
 
 interface OptimizedCartaPorteFormProps {
   cartaPorteId?: string;
 }
 
 const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorteId }) => {
-  const navigate = useNavigate();
-  
   const {
     configuracion,
     ubicaciones,
@@ -28,6 +25,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     ultimoGuardado,
     validationSummary,
     isGuardando,
+    xmlGenerado,
+    datosCalculoRuta,
     
     // Dialog de recuperación
     showRecoveryDialog,
@@ -43,7 +42,10 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleConfiguracionChange,
     handleGuardarBorrador,
     handleGuardarCartaPorteOficial,
+    handleGuardarYSalir,
     handleLimpiarBorrador,
+    handleXMLGenerated,
+    handleCalculoRutaUpdate,
   } = useCartaPorteFormManager(cartaPorteId);
 
   // Crear un objeto Autotransporte por defecto para evitar errores de tipo
@@ -58,18 +60,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     remolques: []
   }), []);
 
-  // Guardar y salir mejorado - ahora guarda como carta porte oficial
-  const handleGuardarYSalir = useCallback(async () => {
-    try {
-      await handleGuardarCartaPorteOficial();
-      navigate('/cartas-porte');
-    } catch (error) {
-      console.error('Error guardando carta porte:', error);
-      // No navegar si hay error
-    }
-  }, [handleGuardarCartaPorteOficial, navigate]);
-
-  // Manejar navegación entre pasos con validación
+  // Manejar navegación entre pasos con validación mejorada
   const handleStepNavigation = useCallback((targetStep: number) => {
     // Permitir navegación hacia atrás siempre
     if (targetStep < currentStep) {
@@ -114,6 +105,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
           validationSummary={validationSummary}
           currentStep={currentStep}
           onStepClick={handleStepNavigation}
+          xmlGenerado={xmlGenerado}
         />
       </div>
 
@@ -131,8 +123,11 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         onAutotransporteChange={setAutotransporte}
         onFigurasChange={setFiguras}
         onStepChange={setCurrentStep}
-        onXMLGenerated={() => {}}
+        onXMLGenerated={handleXMLGenerated}
         onTimbrado={() => {}}
+        xmlGenerado={xmlGenerado}
+        datosCalculoRuta={datosCalculoRuta}
+        onCalculoRutaUpdate={handleCalculoRutaUpdate}
       />
 
       <CartaPorteAutoSaveIndicator />

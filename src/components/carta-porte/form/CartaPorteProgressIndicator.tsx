@@ -8,6 +8,7 @@ interface CartaPorteProgressIndicatorProps {
   validationSummary: ValidationSummary;
   currentStep: number;
   onStepClick: (step: number) => void;
+  xmlGenerado?: string | null;
 }
 
 const steps = [
@@ -52,10 +53,20 @@ const steps = [
 export function CartaPorteProgressIndicator({ 
   validationSummary, 
   currentStep, 
-  onStepClick 
+  onStepClick,
+  xmlGenerado 
 }: CartaPorteProgressIndicatorProps) {
   
   const getStepStatus = (step: typeof steps[0]) => {
+    // Para la sección XML, verificar si hay XML generado
+    if (step.key === 'xml') {
+      if (xmlGenerado) {
+        return 'completed';
+      } else {
+        return 'pending';
+      }
+    }
+    
     const sectionStatus = validationSummary.sectionStatus[step.key];
     
     if (step.id < currentStep) {
@@ -106,7 +117,7 @@ export function CartaPorteProgressIndicator({
     // Para avanzar, verificar que los pasos anteriores no estén vacíos
     for (let i = 0; i < stepId; i++) {
       const step = steps[i];
-      if (validationSummary.sectionStatus[step.key] === 'empty') {
+      if (step.key !== 'xml' && validationSummary.sectionStatus[step.key] === 'empty') {
         return false;
       }
     }
@@ -115,6 +126,19 @@ export function CartaPorteProgressIndicator({
   };
 
   const getNextStepMessage = () => {
+    // Si todas las secciones principales están completas
+    const mainSectionsComplete = steps.slice(0, 5).every(step => 
+      validationSummary.sectionStatus[step.key] !== 'empty'
+    );
+    
+    if (mainSectionsComplete && !xmlGenerado) {
+      return 'Listo para generar XML';
+    }
+    
+    if (xmlGenerado) {
+      return 'Carta Porte lista para timbrar';
+    }
+    
     const currentStepData = steps[currentStep];
     const nextStepData = steps[currentStep + 1];
     
@@ -140,6 +164,18 @@ export function CartaPorteProgressIndicator({
     }
     
     return `Siguiente paso: ${nextStepData.name}`;
+  };
+
+  // Calcular progreso incluyendo XML
+  const calculateProgress = () => {
+    const completedSections = steps.filter(step => {
+      if (step.key === 'xml') {
+        return xmlGenerado ? 1 : 0;
+      }
+      return validationSummary.sectionStatus[step.key] === 'complete' ? 1 : 0;
+    }).length;
+    
+    return Math.round((completedSections / steps.length) * 100);
   };
 
   return (
@@ -201,7 +237,7 @@ export function CartaPorteProgressIndicator({
 
       {/* Progress Summary */}
       <div className="text-center text-sm text-gray-500">
-        Progreso del formulario: {Math.round((validationSummary.completionPercentage || 0) * 100)}% completado
+        Progreso del formulario: {calculateProgress()}% completado
       </div>
     </div>
   );

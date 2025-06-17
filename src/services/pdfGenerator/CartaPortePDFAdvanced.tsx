@@ -1,7 +1,13 @@
-
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { CartaPorteData } from '@/types/cartaPorte';
+
+// Extender el tipo jsPDF para incluir autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: typeof autoTable;
+  }
+}
 
 export interface AdvancedPDFGenerationResult {
   success: boolean;
@@ -167,7 +173,8 @@ export class CartaPortePDFAdvanced {
       ubicacion.domicilio?.codigo_postal || 'N/A'
     ]);
 
-    (doc as any).autoTable({
+    // Usar autoTable correctamente
+    autoTable(doc, {
       head: [['#', 'Tipo', 'Nombre', 'RFC', 'Ubicación', 'CP']],
       body: ubicacionesData,
       startY: yPosition,
@@ -188,7 +195,7 @@ export class CartaPortePDFAdvanced {
       margin: { left: 15, right: 15 }
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    return doc.lastAutoTable.finalY + 10;
   }
 
   private static addMercanciasSection(doc: jsPDF, data: CartaPorteData, yPosition: number, pageWidth: number, pageHeight: number): number {
@@ -211,7 +218,7 @@ export class CartaPortePDFAdvanced {
       mercancia.valor_mercancia?.toString() || '0'
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [['#', 'Descripción', 'Cantidad', 'Unidad', 'Peso (Kg)', 'Valor']],
       body: mercanciasData,
       startY: yPosition,
@@ -232,7 +239,7 @@ export class CartaPortePDFAdvanced {
       margin: { left: 15, right: 15 }
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    return doc.lastAutoTable.finalY + 10;
   }
 
   private static addAutotransporteSection(doc: jsPDF, data: CartaPorteData, yPosition: number, pageWidth: number, pageHeight: number): number {
@@ -269,7 +276,7 @@ export class CartaPortePDFAdvanced {
         remolque.subtipo_rem || 'N/A'
       ]);
 
-      (doc as any).autoTable({
+      autoTable(doc, {
         head: [['#', 'Placa', 'Subtipo']],
         body: remolquesData,
         startY: yPosition,
@@ -287,7 +294,7 @@ export class CartaPortePDFAdvanced {
         margin: { left: 15, right: 15 }
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition = doc.lastAutoTable.finalY + 10;
     }
 
     return yPosition;
@@ -312,7 +319,7 @@ export class CartaPortePDFAdvanced {
       figura.num_licencia || 'N/A'
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [['#', 'Tipo', 'Nombre', 'RFC', 'Núm. Licencia']],
       body: figurasData,
       startY: yPosition,
@@ -333,7 +340,7 @@ export class CartaPortePDFAdvanced {
       margin: { left: 15, right: 15 }
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    return doc.lastAutoTable.finalY + 10;
   }
 
   private static addSectionTitle(doc: jsPDF, title: string, yPosition: number) {

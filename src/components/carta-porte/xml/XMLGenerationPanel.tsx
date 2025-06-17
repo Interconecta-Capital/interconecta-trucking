@@ -21,13 +21,20 @@ interface XMLGenerationPanelProps {
   cartaPorteId?: string;
   onXMLGenerated?: (xml: string) => void;
   onTimbrado?: (datos: any) => void;
+  xmlGenerado?: string | null;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+  } | null;
 }
 
 export function XMLGenerationPanel({ 
   cartaPorteData, 
   cartaPorteId, 
   onXMLGenerated, 
-  onTimbrado 
+  onTimbrado,
+  xmlGenerado: xmlGeneradoProp,
+  datosCalculoRuta
 }: XMLGenerationPanelProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [autoTimbrado, setAutoTimbrado] = useState(true);
@@ -35,7 +42,7 @@ export function XMLGenerationPanel({
   const {
     isGenerating,
     isTimbring,
-    xmlGenerado,
+    xmlGenerado: xmlGeneradoHook,
     xmlTimbrado,
     datosTimbre,
     generarXML,
@@ -43,6 +50,9 @@ export function XMLGenerationPanel({
     descargarXML,
     validarConexionPAC
   } = useCartaPorteXMLManager();
+
+  // Usar XML del prop si existe, sino el del hook
+  const xmlActual = xmlGeneradoProp || xmlGeneradoHook;
 
   const {
     isGenerating: isGeneratingPDF,
@@ -69,16 +79,19 @@ export function XMLGenerationPanel({
 
   // Auto-timbrado cuando se completan los datos
   useEffect(() => {
-    if (autoTimbrado && cartaPorteCompleta && xmlGenerado && !xmlTimbrado && !isTimbring) {
+    if (autoTimbrado && cartaPorteCompleta && xmlActual && !xmlTimbrado && !isTimbring) {
       console.log('Iniciando auto-timbrado...');
       handleTimbrar();
     }
-  }, [autoTimbrado, cartaPorteCompleta, xmlGenerado, xmlTimbrado, isTimbring]);
+  }, [autoTimbrado, cartaPorteCompleta, xmlActual, xmlTimbrado, isTimbring]);
 
   const handleGenerarXML = async () => {
     const resultado = await generarXML(cartaPorteData);
-    if (resultado.success && resultado.xml && onXMLGenerated) {
-      onXMLGenerated(resultado.xml);
+    if (resultado.success && resultado.xml) {
+      // Notificar al componente padre que se generó XML
+      if (onXMLGenerated) {
+        onXMLGenerated(resultado.xml);
+      }
       
       // Agregar evento de tracking
       if (cartaPorteId) {
@@ -131,7 +144,7 @@ export function XMLGenerationPanel({
     if (xmlTimbrado) {
       return <Badge className="bg-green-100 text-green-800">Timbrado</Badge>;
     }
-    if (xmlGenerado) {
+    if (xmlActual) {
       return <Badge className="bg-blue-100 text-blue-800">XML Generado</Badge>;
     }
     return <Badge variant="outline">Sin procesar</Badge>;
@@ -154,13 +167,13 @@ export function XMLGenerationPanel({
           <CardContent className="space-y-6">
             <XMLSection
               isGenerating={isGenerating}
-              xmlGenerado={xmlGenerado}
+              xmlGenerado={xmlActual}
               onGenerarXML={handleGenerarXML}
               onDescargarXML={() => descargarXML('generado')}
               onRegenerarXML={handleGenerarXML}
             />
 
-            <XMLPreviewSection xmlGenerado={xmlGenerado} />
+            <XMLPreviewSection xmlGenerado={xmlActual} />
 
             <Separator />
 
@@ -176,7 +189,7 @@ export function XMLGenerationPanel({
             <Separator />
 
             <TimbradoSection
-              xmlGenerado={xmlGenerado}
+              xmlGenerado={xmlActual}
               xmlTimbrado={xmlTimbrado}
               datosTimbre={datosTimbre}
               isTimbring={isTimbring}
@@ -195,6 +208,27 @@ export function XMLGenerationPanel({
               onVisualizarPDF={handleVisualizarPDF}
               onDescargarPDF={() => descargarPDF(`carta-porte-${Date.now()}.pdf`)}
             />
+
+            {/* Mostrar información de cálculos de ruta si están disponibles */}
+            {datosCalculoRuta && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Información de Ruta</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {datosCalculoRuta.distanciaTotal && (
+                    <div>
+                      <span className="text-blue-700">Distancia Total:</span>
+                      <span className="ml-2 font-medium">{datosCalculoRuta.distanciaTotal} km</span>
+                    </div>
+                  )}
+                  {datosCalculoRuta.tiempoEstimado && (
+                    <div>
+                      <span className="text-blue-700">Tiempo Estimado:</span>
+                      <span className="ml-2 font-medium">{Math.round(datosCalculoRuta.tiempoEstimado / 60)} horas</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
