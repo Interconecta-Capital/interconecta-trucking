@@ -1,119 +1,81 @@
 
-import React from "react";
-import { PricingCard } from "./PricingCard";
-import { AddOnsSection } from "./AddOnsSection";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 const PricingSection = () => {
   const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
 
-  const plans = [
-    {
-      name: "Plan Esencial SAT",
-      price: "$149 USD/mes + IVA",
-      description: "Ideal para empresas pequeñas que inician con cumplimiento SAT",
-      features: [
-        "Hasta 50 cartas porte mensuales",
-        "Generación automática de XML",
-        "Validación SAT en tiempo real",
-        "Timbrado automático",
-        "Soporte por email"
-      ],
-      buttonText: "Comenzar Prueba",
-      buttonLink: "/auth/trial"
-    },
-    {
-      name: "Plan Gestión IA",
-      price: "$299 USD/mes + IVA",
-      description: "Para empresas en crecimiento que buscan automatización",
-      features: [
-        "Hasta 200 cartas porte mensuales",
-        "Asistente IA para descripciones",
-        "Gestión de ubicaciones inteligente",
-        "Plantillas automatizadas",
-        "Analytics básicos",
-        "Soporte prioritario"
-      ],
-      isPopular: true,
-      buttonText: "Comenzar Prueba",
-      buttonLink: "/auth/trial"
-    },
-    {
-      name: "Plan Automatización Total",
-      price: "$499 USD/mes + IVA",
-      description: "Solución completa para empresas establecidas",
-      features: [
-        "Cartas porte ilimitadas",
-        "IA avanzada para procesamiento",
-        "Integración con sistemas ERP",
-        "API completa disponible",
-        "Analytics avanzados",
-        "Soporte telefónico"
-      ],
-      buttonText: "Comenzar Prueba",
-      buttonLink: "/auth/trial"
-    },
-    {
-      name: "Plan Enterprise Sin Límites",
-      price: "Contactar con ventas",
-      description: "Solución personalizada para grandes empresas",
-      features: [
-        "Todo incluido de planes anteriores",
-        "Implementación personalizada",
-        "Desarrollo de funciones específicas",
-        "SLA garantizado",
-        "Gerente de cuenta dedicado",
-        "Capacitación en sitio"
-      ],
-      isEnterprise: true,
-      buttonText: "Contactar Ventas",
-      buttonLink: "#contacto"
-    }
+  const features = [
+    "Cartas porte ilimitadas con IA",
+    "Timbrado automático SAT",
+    "Dashboard en tiempo real",
+    "Aplicación móvil completa",
+    "Automatización 24/7",
+    "Soporte especializado",
+    "Actualizaciones automáticas",
+    "Respaldo y seguridad total"
   ];
 
   return (
-    <section id="precios" className="py-32 gradient-subtle">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <section id="precios" className="py-32 bg-pure-white">
+      <div className="container mx-auto px-6 max-w-2xl text-center">
         
-        {/* Header */}
-        <div ref={ref} className={`text-center mb-20 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
-          <div className="stagger-item">
-            <div className="inline-flex items-center bg-blue-interconecta/10 border border-blue-interconecta/20 rounded-full px-4 py-2 mb-6">
-              <span className="text-sm font-medium text-blue-interconecta uppercase tracking-wide">
-                Planes Premium
-              </span>
-            </div>
+        {/* Section Header */}
+        <div ref={ref} className={`mb-20 ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+          <div className="inline-flex items-center gap-2 bg-gray-10 border border-gray-20 px-4 py-2 rounded-full text-xs font-bold text-gray-70 uppercase tracking-wide mb-8">
+            <span>💰</span>
+            <span>Precios transparentes</span>
           </div>
           
-          <div className="stagger-item">
-            <h3 className="text-responsive-display font-bold text-gray-90 mb-6">
-              Planes que Protegen tu Negocio
-            </h3>
+          <h2 className="text-display font-bold leading-display tracking-display text-pure-black mb-6">
+            Un precio.<br />
+            Todo incluido.
+          </h2>
+          
+          <p className="text-body-lg text-gray-60 leading-relaxed">
+            Sin sorpresas, sin costos ocultos. Automatización completa por menos de lo que cuesta un solo error del SAT.
+          </p>
+        </div>
+
+        {/* Pricing Card */}
+        <div className={`card-premium p-10 relative border-2 border-blue-interconecta shadow-xl ${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+          
+          {/* Popular Badge */}
+          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-interconecta text-pure-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide">
+            Más popular
           </div>
           
-          <div className="stagger-item">
-            <p className="text-responsive-subtitle text-gray-70 max-w-2xl mx-auto">
-              Elige el plan perfecto para tu empresa y comienza a ahorrar desde el primer día
-            </p>
+          {/* Price */}
+          <div className="flex items-baseline justify-center gap-2 my-6">
+            <span className="text-2xl font-semibold text-gray-60">$</span>
+            <span className="text-[64px] font-extrabold text-pure-black text-mono">4,500</span>
+            <span className="text-lg font-medium text-gray-60">/mes</span>
           </div>
-        </div>
-
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-          {plans.map((plan, index) => (
-            <div
-              key={index}
-              className={`stagger-item ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <PricingCard plan={plan} />
-            </div>
-          ))}
-        </div>
-
-        {/* Add-ons Section */}
-        <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'} stagger-item`} style={{ animationDelay: '0.4s' }}>
-          <AddOnsSection />
+          
+          <p className="text-gray-60 mb-8">Por empresa, cartas porte ilimitadas</p>
+          
+          {/* Features List */}
+          <ul className="text-left mb-10 space-y-4">
+            {features.map((feature, index) => (
+              <li key={index} className="flex items-center gap-3 text-[15px] text-gray-70">
+                <span className="text-blue-interconecta font-bold text-base">✓</span>
+                {feature}
+              </li>
+            ))}
+          </ul>
+          
+          {/* CTA Button */}
+          <Link to="/auth/trial" className="block mb-4">
+            <Button className="btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white w-full py-4 text-base font-semibold rounded-12 interactive">
+              Comenzar prueba gratuita de 30 días
+            </Button>
+          </Link>
+          
+          <p className="text-[13px] text-gray-50">
+            Sin tarjeta de crédito • Sin compromiso • Cancelación inmediata
+          </p>
+          
         </div>
         
       </div>

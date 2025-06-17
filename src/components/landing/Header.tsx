@@ -15,51 +15,48 @@ const Header = () => {
     return null;
   }
 
-  const isScrolled = scrollY > 20;
+  const isScrolled = scrollY > 100;
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-premium ${
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled 
-        ? 'py-3 backdrop-blur-premium bg-pure-white/80 border-b border-gray-20 shadow-sm' 
-        : 'py-5 bg-transparent'
+        ? 'backdrop-blur-premium bg-pure-white/95 border-b border-gray-30' 
+        : 'backdrop-blur-premium bg-pure-white/80 border-b border-gray-20'
     }`}>
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <img 
-              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-              alt="Interconecta Trucking Logo"
-              className="h-8 w-8 rounded-lg"
-            />
-            <h1 className="text-lg font-bold text-gray-90">
-              Interconecta Trucking
-            </h1>
-          </div>
+      <div className="container mx-auto px-6 max-w-screen-xl">
+        <div className="flex justify-between items-center h-16">
           
-          <nav className="hidden md:flex space-x-8">
-            <a href="#características" className="text-gray-70 hover:text-blue-interconecta transition-colors link-premium font-medium">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 text-pure-black no-underline font-bold text-xl tracking-title">
+            <div className="w-8 h-8 bg-blue-interconecta rounded-8 flex items-center justify-center text-pure-white font-bold text-base">
+              I
+            </div>
+            <span>Interconecta</span>
+          </Link>
+          
+          {/* Navigation Menu */}
+          <nav className="hidden md:flex gap-8">
+            <a href="#características" className="text-gray-70 hover:text-pure-black link-premium font-medium text-[15px]">
               Características
             </a>
-            <a href="#beneficios" className="text-gray-70 hover:text-blue-interconecta transition-colors link-premium font-medium">
-              Beneficios
-            </a>
-            <a href="#precios" className="text-gray-70 hover:text-blue-interconecta transition-colors link-premium font-medium">
+            <a href="#precios" className="text-gray-70 hover:text-pure-black link-premium font-medium text-[15px]">
               Precios
             </a>
-            <a href="#contacto" className="text-gray-70 hover:text-blue-interconecta transition-colors link-premium font-medium">
+            <a href="#contacto" className="text-gray-70 hover:text-pure-black link-premium font-medium text-[15px]">
               Contacto
             </a>
           </nav>
           
-          <div className="flex items-center space-x-3">
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3">
             <Link to="/auth/login">
-              <Button variant="outline" className="btn-premium border-blue-interconecta text-blue-interconecta hover:bg-blue-interconecta hover:text-pure-white font-medium">
+              <Button variant="outline" className="btn-premium border-gray-30 text-gray-70 hover:border-blue-interconecta hover:text-blue-interconecta hover:bg-blue-light font-medium">
                 Iniciar Sesión
               </Button>
             </Link>
             <Link to="/auth/trial">
-              <Button className="btn-premium gradient-premium text-pure-white font-medium shadow-premium">
-                Empezar Ahora
+              <Button className="btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white font-semibold text-sm px-5 py-3 rounded-full interactive">
+                Probar gratis
               </Button>
             </Link>
           </div>
