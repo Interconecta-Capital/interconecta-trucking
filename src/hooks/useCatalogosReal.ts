@@ -9,7 +9,7 @@ export const useBuscarProductosServicios = (termino: string = '', enabled: boole
   return useQuery({
     queryKey: ['productos-servicios', termino],
     queryFn: () => CatalogosSATService.obtenerProductosServicios(termino),
-    enabled: enabled && termino.length >= 2,
+    enabled: enabled,
     staleTime: STALE_TIME_SHORT,
   });
 };
@@ -18,7 +18,7 @@ export const useBuscarClaveUnidad = (termino: string = '', enabled: boolean = tr
   return useQuery({
     queryKey: ['unidades', termino],
     queryFn: () => CatalogosSATService.obtenerUnidades(termino),
-    enabled: enabled && termino.length >= 2,
+    enabled: enabled,
     staleTime: STALE_TIME_SHORT,
   });
 };

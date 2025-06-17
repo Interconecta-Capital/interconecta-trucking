@@ -1,11 +1,9 @@
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
+import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, Package } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 
 interface MercanciaMaterialPeligrosoProps {
   formData: any;
@@ -17,82 +15,64 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
-        <AlertTriangle className="h-5 w-5 text-amber-500" />
+        <AlertTriangle className="h-5 w-5 text-orange-500" />
         Material Peligroso y Embalaje
       </h3>
       
-      {/* Tipo de Embalaje - Siempre visible */}
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CatalogoSelectorMejorado
           tipo="embalajes"
           label="Tipo de Embalaje"
           value={formData.embalaje}
           onValueChange={(value) => onFieldChange('embalaje', value)}
-          placeholder="Buscar tipo de embalaje..."
+          placeholder="Seleccionar tipo de embalaje..."
           allowSearch={true}
+          showAllOptions={false}
           showRefresh={true}
         />
-        <p className="text-xs text-gray-500">
-          Tipo de embalaje utilizado para el transporte de la mercancía
-        </p>
+
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="material_peligroso"
+              checked={formData.material_peligroso}
+              onCheckedChange={(checked) => onFieldChange('material_peligroso', checked)}
+            />
+            <Label htmlFor="material_peligroso" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              Esta mercancía es material peligroso
+            </Label>
+          </div>
+
+          {formData.material_peligroso && (
+            <CatalogoSelectorMejorado
+              tipo="materiales_peligrosos"
+              label="Clave de Material Peligroso"
+              value={formData.cve_material_peligroso}
+              onValueChange={(value) => onFieldChange('cve_material_peligroso', value)}
+              placeholder="Buscar material peligroso..."
+              required
+              error={errors.cve_material_peligroso}
+              allowSearch={true}
+              showAllOptions={false}
+              showRefresh={true}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Material Peligroso */}
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="material_peligroso"
-          checked={formData.material_peligroso}
-          onCheckedChange={(checked) => {
-            onFieldChange('material_peligroso', !!checked);
-            // Limpiar campos relacionados si se desmarca
-            if (!checked) {
-              onFieldChange('cve_material_peligroso', '');
-            }
-          }}
-        />
-        <Label htmlFor="material_peligroso" className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          Esta mercancía es material peligroso
-        </Label>
-      </div>
-
-      {formData.material_peligroso && (
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
-            <strong>Material Peligroso:</strong> Se requiere información adicional según la normativa de transporte de materiales peligrosos.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {formData.material_peligroso && (
-        <div className="grid grid-cols-1 gap-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <CatalogoSelectorMejorado
-            tipo="materiales_peligrosos"
-            label="Clave de Material Peligroso *"
-            value={formData.cve_material_peligroso}
-            onValueChange={(value) => onFieldChange('cve_material_peligroso', value)}
-            placeholder="Buscar material peligroso..."
-            required={formData.material_peligroso}
-            error={errors.cve_material_peligroso}
-            allowSearch={true}
-            showRefresh={true}
-          />
-
-          <div className="bg-white p-3 rounded border border-amber-200">
-            <h4 className="text-sm font-medium text-amber-800 mb-2 flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Requisitos Adicionales
-            </h4>
-            <ul className="text-xs text-amber-700 space-y-1">
-              <li>• El embalaje debe ser compatible con el material peligroso</li>
-              <li>• Se requiere documentación especial de transporte</li>
-              <li>• Verificar restricciones de rutas y horarios</li>
-              <li>• El conductor debe tener capacitación específica</li>
-            </ul>
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div className="flex items-start gap-2">
+          <Package className="h-5 w-5 text-orange-600 mt-0.5" />
+          <div className="text-sm text-orange-800">
+            <p className="font-medium">Información sobre Embalaje:</p>
+            <p className="mt-1">
+              El tipo de embalaje utilizado para el transporte de la mercancía debe cumplir con las regulaciones SAT.
+              Si la mercancía es material peligroso, debe especificar la clave correspondiente.
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

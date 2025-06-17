@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -56,10 +55,10 @@ export function CatalogoSelectorMejorado({
   
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Si showAllOptions es true, siempre habilitar la query sin condiciones de búsqueda
+  // Configuración mejorada para habilitar queries
   const queryEnabled = !disabled && (
     showAllOptions || 
-    (tipo !== 'materiales_peligrosos' || debouncedSearch.length >= 2)
+    (tipo === 'materiales_peligrosos' ? debouncedSearch.length >= 2 : true)
   );
   
   // Para showAllOptions, usar string vacío para obtener todas las opciones
@@ -143,6 +142,9 @@ export function CatalogoSelectorMejorado({
     if (showAllOptions) return placeholder;
     if (tipo === 'materiales_peligrosos' && debouncedSearch.length < 2) {
       return 'Escribe al menos 2 caracteres para buscar';
+    }
+    if (options.length === 0 && !isLoading) {
+      return 'No hay datos disponibles';
     }
     return placeholder;
   };
