@@ -1,3 +1,4 @@
+
 import { useCallback, useRef } from 'react';
 import { useCartaPorteFormState } from '@/hooks/carta-porte/useCartaPorteFormState';
 import { useCartaPorteIntegration } from '@/hooks/carta-porte/useCartaPorteIntegration';
@@ -108,7 +109,6 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     saveCartaPorte,
     createNewCartaPorte,
     resetForm,
-    clearSavedData,
   } = integrationResult;
 
   // Enhanced updateFormData con mejor manejo
@@ -147,9 +147,6 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
     
     // Validaciones y capacidades IA
     ...validationData,
-    
-    // Auto-save
-    clearSavedData,
     
     // Estados de sincronización
     isCreating: false,
