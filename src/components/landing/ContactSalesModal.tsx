@@ -9,7 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Phone, Mail, Building2, Send } from "lucide-react";
 
-export const ContactSalesModal = () => {
+interface ContactSalesModalProps {
+  children?: React.ReactNode;
+}
+
+export const ContactSalesModal = ({ children }: ContactSalesModalProps) => {
   const [formData, setFormData] = useState({
     nombre: '',
     empresa: '',
@@ -52,9 +56,11 @@ export const ContactSalesModal = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="btn-premium border border-gray-60 hover:border-pure-white text-pure-white hover:bg-white/10 px-8 py-4 text-base font-semibold rounded-12 interactive">
-          <span>Contactar Ventas</span>
-        </Button>
+        {children || (
+          <Button variant="outline" className="btn-premium border border-gray-60 hover:border-pure-white text-pure-white hover:bg-white/10 px-8 py-4 text-base font-semibold rounded-12 interactive">
+            <span>Contactar Ventas</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-pure-white border-0 shadow-2xl">
         
