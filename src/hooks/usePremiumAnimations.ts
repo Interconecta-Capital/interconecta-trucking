@@ -14,7 +14,6 @@ export const usePremiumAnimations = () => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('revealed');
-            // Unobserve after revealing to improve performance
             observerRef.current?.unobserve(entry.target);
           }
         });
@@ -25,7 +24,6 @@ export const usePremiumAnimations = () => {
       }
     );
 
-    // Observe all scroll-reveal elements
     const scrollRevealElements = document.querySelectorAll('.scroll-reveal');
     scrollRevealElements.forEach(el => {
       if (observerRef.current) {
@@ -43,19 +41,18 @@ export const usePremiumAnimations = () => {
 
     const updateNav = () => {
       const scrollY = window.scrollY;
+      const navElement = nav as HTMLElement;
       
-      // Add scrolled class for backdrop effect
       if (scrollY > 100) {
         nav.classList.add('scrolled');
       } else {
         nav.classList.remove('scrolled');
       }
 
-      // Auto-hide navigation on scroll down (except at top)
       if (scrollY > lastScrollY && scrollY > 200) {
-        nav.style.transform = 'translateY(-100%)';
+        navElement.style.transform = 'translateY(-100%)';
       } else {
-        nav.style.transform = 'translateY(0)';
+        navElement.style.transform = 'translateY(0)';
       }
 
       lastScrollY = scrollY;
@@ -77,27 +74,20 @@ export const usePremiumAnimations = () => {
   }, []);
 
   const setupInteractiveElements = useCallback(() => {
-    // Add click feedback for interactive elements
     const interactiveElements = document.querySelectorAll('.interactive');
     
     interactiveElements.forEach(element => {
       const handleClick = () => {
-        // Visual feedback
-        element.style.transform = 'scale(0.98)';
+        const htmlElement = element as HTMLElement;
+        htmlElement.style.transform = 'scale(0.98)';
         setTimeout(() => {
-          element.style.transform = '';
+          htmlElement.style.transform = '';
         }, 150);
       };
 
       element.addEventListener('click', handleClick);
-      
-      // Cleanup function would be returned from useEffect
-      return () => {
-        element.removeEventListener('click', handleClick);
-      };
     });
 
-    // Keyboard navigation support
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
         document.body.classList.add('using-keyboard');
@@ -124,11 +114,12 @@ export const usePremiumAnimations = () => {
       
       const updateCounter = () => {
         start += increment;
+        const htmlElement = element as HTMLElement;
         if (start < target) {
-          element.textContent = Math.floor(start) + suffix;
+          htmlElement.textContent = Math.floor(start) + suffix;
           requestAnimationFrame(updateCounter);
         } else {
-          element.textContent = target + suffix;
+          htmlElement.textContent = target + suffix;
         }
       };
       
@@ -143,13 +134,15 @@ export const usePremiumAnimations = () => {
             numbers.forEach(num => {
               const text = num.textContent || '';
               if (text.includes('$2.5M')) {
-                num.textContent = '$2.5M';
+                const htmlElement = num as HTMLElement;
+                htmlElement.textContent = '$2.5M';
               } else if (text.includes('500+')) {
                 animateCounter(num, 500, '+');
               } else if (text.includes('99.9%')) {
                 animateCounter(num, 99.9, '%');
               } else if (text.includes('15 min')) {
-                num.textContent = '15 min';
+                const htmlElement = num as HTMLElement;
+                htmlElement.textContent = '15 min';
               }
             });
             statsObserver.unobserve(entry.target);
@@ -169,13 +162,11 @@ export const usePremiumAnimations = () => {
   }, []);
 
   useEffect(() => {
-    // Initialize all animations and effects
     initScrollReveal();
     const cleanupNav = setupNavigationEffects();
     const cleanupInteractive = setupInteractiveElements();
     const cleanupCounters = setupCounterAnimations();
 
-    // Cleanup function
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
