@@ -26,7 +26,7 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           <Textarea
             id="descripcion"
             placeholder="Descripción detallada de la mercancía..."
-            value={formData.descripcion}
+            value={formData.descripcion || ''}
             onChange={(e) => onFieldChange('descripcion', e.target.value)}
             className={errors.descripcion ? 'border-red-500' : ''}
             rows={3}
@@ -54,27 +54,27 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
 
         <CatalogoSelectorMejorado
           tipo="productos"
-          label="Clave de Producto/Servicio SAT"
-          value={formData.bienes_transp}
+          label="Clave de Producto/Servicio SAT *"
+          value={formData.bienes_transp || ''}
           onValueChange={(value) => onFieldChange('bienes_transp', value)}
           placeholder="Seleccionar clave SAT..."
           required
           error={errors.bienes_transp}
-          allowSearch={false}
-          showAllOptions={true}
+          allowSearch={true}
+          showAllOptions={false}
           showRefresh={true}
         />
 
         <CatalogoSelectorMejorado
           tipo="unidades"
-          label="Unidad de Medida SAT"
-          value={formData.clave_unidad}
+          label="Unidad de Medida SAT *"
+          value={formData.clave_unidad || ''}
           onValueChange={(value) => onFieldChange('clave_unidad', value)}
           placeholder="Seleccionar unidad..."
           required
           error={errors.clave_unidad}
-          allowSearch={false}
-          showAllOptions={true}
+          allowSearch={true}
+          showAllOptions={false}
           showRefresh={true}
         />
       </div>

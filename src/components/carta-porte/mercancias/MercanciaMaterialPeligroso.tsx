@@ -23,11 +23,11 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
         <CatalogoSelectorMejorado
           tipo="embalajes"
           label="Tipo de Embalaje"
-          value={formData.embalaje}
+          value={formData.embalaje || ''}
           onValueChange={(value) => onFieldChange('embalaje', value)}
           placeholder="Seleccionar tipo de embalaje..."
           allowSearch={true}
-          showAllOptions={false}
+          showAllOptions={true}
           showRefresh={true}
         />
 
@@ -35,7 +35,7 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
           <div className="flex items-center space-x-2">
             <Switch
               id="material_peligroso"
-              checked={formData.material_peligroso}
+              checked={formData.material_peligroso || false}
               onCheckedChange={(checked) => onFieldChange('material_peligroso', checked)}
             />
             <Label htmlFor="material_peligroso" className="flex items-center gap-2">
@@ -47,8 +47,8 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
           {formData.material_peligroso && (
             <CatalogoSelectorMejorado
               tipo="materiales_peligrosos"
-              label="Clave de Material Peligroso"
-              value={formData.cve_material_peligroso}
+              label="Clave de Material Peligroso *"
+              value={formData.cve_material_peligroso || ''}
               onValueChange={(value) => onFieldChange('cve_material_peligroso', value)}
               placeholder="Buscar material peligroso..."
               required

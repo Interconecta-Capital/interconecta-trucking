@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -5,9 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Trash2, Save, X } from 'lucide-react';
-import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 import { AIAssistantButton } from './AIAssistantButton';
-import { useAdaptedCatalogQuery } from '@/components/catalogos/hooks/useAdaptedCatalogQuery';
 import { Mercancia } from '@/hooks/useMercancias';
 
 interface MercanciaFormProps {
@@ -30,39 +30,21 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
       valor_mercancia: 0,
       material_peligroso: false,
       cve_material_peligroso: '',
-      moneda: 'MXN'
+      moneda: 'MXN',
+      embalaje: '',
+      fraccion_arancelaria: '',
+      uuid_comercio_ext: '',
+      codigo_producto: ''
     }
   });
   
-  const [productoSearch, setProductoSearch] = React.useState('');
-  const [unidadSearch, setUnidadSearch] = React.useState('');
-  const [materialSearch, setMaterialSearch] = React.useState('');
-  
   const materialPeligroso = form.watch('material_peligroso') || false;
-  
-  const { data: productos = [], isLoading: loadingProductos } = useAdaptedCatalogQuery(
-    'productos',
-    productoSearch,
-    productoSearch.length >= 2
-  );
-  
-  const { data: unidades = [], isLoading: loadingUnidades } = useAdaptedCatalogQuery(
-    'unidades',
-    unidadSearch,
-    unidadSearch.length >= 2
-  );
-  
-  const { data: materiales = [], isLoading: loadingMateriales } = useAdaptedCatalogQuery(
-    'materiales_peligrosos',
-    materialSearch,
-    materialPeligroso && materialSearch.length >= 2
-  );
 
   const handleAISuggestion = (suggestion: any) => {
     if (suggestion.data) {
       // Apply AI suggestion to form with proper type checking
       Object.entries(suggestion.data).forEach(([key, value]) => {
-        if (key === 'bienes_transp' || key === 'clave_unidad' || key === 'descripcion') {
+        if (key === 'bienes_transp' || key === 'clave_unidad' || key === 'descripcion' || key === 'embalaje') {
           form.setValue(key as keyof Mercancia, String(value));
         } else if (key === 'cantidad' || key === 'peso_kg' || key === 'valor_mercancia') {
           form.setValue(key as keyof Mercancia, Number(value) || 0);
@@ -119,18 +101,17 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
             name="bienes_transp"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Clave Producto/Servicio *</FormLabel>
+                <FormLabel>Clave Producto/Servicio SAT *</FormLabel>
                 <FormControl>
-                  <CatalogoSelector
-                    items={productos}
-                    loading={loadingProductos}
-                    placeholder="Buscar clave de producto..."
+                  <CatalogoSelectorMejorado
+                    tipo="productos"
                     value={field.value}
                     onValueChange={field.onChange}
-                    onSearchChange={setProductoSearch}
-                    searchValue={productoSearch}
-                    allowManualInput={true}
-                    manualInputPlaceholder="Escribir clave manualmente"
+                    placeholder="Seleccionar clave SAT..."
+                    required
+                    allowSearch={true}
+                    showAllOptions={false}
+                    showRefresh={true}
                   />
                 </FormControl>
                 <FormMessage />
@@ -143,18 +124,17 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
             name="clave_unidad"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Clave Unidad *</FormLabel>
+                <FormLabel>Clave Unidad SAT *</FormLabel>
                 <FormControl>
-                  <CatalogoSelector
-                    items={unidades}
-                    loading={loadingUnidades}
-                    placeholder="Buscar unidad..."
+                  <CatalogoSelectorMejorado
+                    tipo="unidades"
                     value={field.value}
                     onValueChange={field.onChange}
-                    onSearchChange={setUnidadSearch}
-                    searchValue={unidadSearch}
-                    allowManualInput={true}
-                    manualInputPlaceholder="Escribir unidad manualmente"
+                    placeholder="Seleccionar unidad..."
+                    required
+                    allowSearch={true}
+                    showAllOptions={false}
+                    showRefresh={true}
                   />
                 </FormControl>
                 <FormMessage />
@@ -171,6 +151,28 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
               <FormLabel>Descripción *</FormLabel>
               <FormControl>
                 <Input placeholder="Descripción de la mercancía" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="embalaje"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Embalaje</FormLabel>
+              <FormControl>
+                <CatalogoSelectorMejorado
+                  tipo="embalajes"
+                  value={field.value || ''}
+                  onValueChange={field.onChange}
+                  placeholder="Seleccionar tipo de embalaje..."
+                  allowSearch={true}
+                  showAllOptions={true}
+                  showRefresh={true}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -267,16 +269,15 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
               <FormItem>
                 <FormLabel>Clave Material Peligroso *</FormLabel>
                 <FormControl>
-                  <CatalogoSelector
-                    items={materiales}
-                    loading={loadingMateriales}
-                    placeholder="Buscar material peligroso..."
-                    value={field.value}
+                  <CatalogoSelectorMejorado
+                    tipo="materiales_peligrosos"
+                    value={field.value || ''}
                     onValueChange={field.onChange}
-                    onSearchChange={setMaterialSearch}
-                    searchValue={materialSearch}
-                    allowManualInput={true}
-                    manualInputPlaceholder="Escribir clave manualmente"
+                    placeholder="Buscar material peligroso..."
+                    required
+                    allowSearch={true}
+                    showAllOptions={false}
+                    showRefresh={true}
                   />
                 </FormControl>
                 <FormMessage />

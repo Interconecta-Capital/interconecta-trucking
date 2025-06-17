@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -16,7 +15,7 @@ export interface Mercancia {
   fraccion_arancelaria?: string;
   embalaje?: string;
   uuid_comercio_ext?: string;
-  codigo_producto?: string; // New field for product ID
+  codigo_producto?: string;
 }
 
 export interface MercanciaConErrores extends Mercancia {

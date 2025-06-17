@@ -10,8 +10,36 @@ interface CatalogItem {
   clave?: string;
 }
 
-export function useAdaptedCatalogQuery(tipo: string, searchTerm: string, enabled: boolean) {
-  const queryResult = useCatalogQuery(tipo, searchTerm, enabled);
+export function useAdaptedCatalogQuery(tipo: string, searchTerm: string, enabled: boolean = true) {
+  // Para catálogos estáticos, siempre habilitar la consulta independientemente del término de búsqueda
+  const staticCatalogs = ['embalajes', 'configuraciones_vehiculares', 'figuras_transporte', 'tipos_permiso', 'remolques', 'estados'];
+  const isStaticCatalog = staticCatalogs.includes(tipo);
+  
+  // Lógica mejorada de habilitación
+  const queryEnabled = useMemo(() => {
+    if (!enabled) return false;
+    
+    // Para catálogos estáticos, siempre cargar
+    if (isStaticCatalog) return true;
+    
+    // Para productos, siempre habilitar (pueden ser muchos)
+    if (tipo === 'productos') return true;
+    
+    // Para unidades, siempre habilitar
+    if (tipo === 'unidades') return true;
+    
+    // Para materiales peligrosos, requerir al menos 2 caracteres
+    if (tipo === 'materiales_peligrosos') {
+      return searchTerm.length >= 2;
+    }
+    
+    return true;
+  }, [enabled, tipo, searchTerm, isStaticCatalog]);
+  
+  // Para catálogos estáticos, usar búsqueda vacía para obtener todos los resultados
+  const effectiveSearchTerm = isStaticCatalog ? '' : searchTerm;
+  
+  const queryResult = useCatalogQuery(tipo, effectiveSearchTerm, queryEnabled);
   
   const adaptedData = useMemo(() => {
     if (!queryResult.data || !Array.isArray(queryResult.data)) {
