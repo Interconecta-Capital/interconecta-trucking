@@ -14,11 +14,13 @@ interface VehiculoFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehiculo?: any;
+  onSuccess?: () => void;
 }
 
-export function VehiculoFormDialog({ open, onOpenChange, vehiculo }: VehiculoFormDialogProps) {
+export function VehiculoFormDialog({ open, onOpenChange, vehiculo, onSuccess }: VehiculoFormDialogProps) {
   const handleSuccess = () => {
     onOpenChange(false);
+    onSuccess?.();
   };
 
   const handleCancel = () => {
