@@ -122,7 +122,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       // Generar folio único
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // Preparar datos para la carta porte oficial
+      // Preparar datos para la carta porte oficial - convertir a JSON compatible
       const cartaPorteData = {
         folio,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -130,10 +130,10 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         nombre_emisor: formData.nombreEmisor || '',
         rfc_receptor: formData.rfcReceptor || '',
         nombre_receptor: formData.nombreReceptor || '',
-        transporte_internacional: formData.transporteInternacional === 'Sí' || false,
+        transporte_internacional: formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true,
         registro_istmo: formData.registroIstmo || false,
         status: 'borrador', // Inicia como borrador hasta que se genere XML
-        datos_formulario: formData,
+        datos_formulario: JSON.parse(JSON.stringify(formData)), // Asegurar compatibilidad con JSON
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

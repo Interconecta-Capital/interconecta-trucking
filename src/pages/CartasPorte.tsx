@@ -12,7 +12,9 @@ import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
+import { CartaPortePDFAdvanced } from '@/services/pdfGenerator/CartaPortePDFAdvanced';
 import { useToast } from '@/hooks/use-toast';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 export default function CartasPorte() {
   const navigate = useNavigate();
@@ -52,7 +54,18 @@ export default function CartasPorte() {
         throw new Error('No se encontraron datos para generar XML');
       }
 
-      const result = await XMLCartaPorteGenerator.generarXML(carta.datos_formulario);
+      // Convertir datos_formulario a CartaPorteData de forma segura
+      let cartaPorteData: CartaPorteData;
+      
+      if (typeof carta.datos_formulario === 'string') {
+        cartaPorteData = JSON.parse(carta.datos_formulario);
+      } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
+      } else {
+        throw new Error('Formato de datos inválido');
+      }
+
+      const result = await XMLCartaPorteGenerator.generarXML(cartaPorteData);
       
       if (result.success && result.xml) {
         await actualizarCartaPorte({
@@ -75,6 +88,46 @@ export default function CartasPorte() {
       console.error('Error regenerando XML:', error);
       toast({
         title: "Error regenerando XML",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleGeneratePDF = async (id: string) => {
+    try {
+      const carta = cartasPorte.find(c => c.id === id);
+      if (!carta || !carta.datos_formulario) {
+        throw new Error('No se encontraron datos para generar PDF');
+      }
+
+      // Convertir datos_formulario a CartaPorteData de forma segura
+      let cartaPorteData: CartaPorteData;
+      
+      if (typeof carta.datos_formulario === 'string') {
+        cartaPorteData = JSON.parse(carta.datos_formulario);
+      } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
+      } else {
+        throw new Error('Formato de datos inválido');
+      }
+
+      const result = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);
+      
+      if (result.success && result.pdfBlob) {
+        CartaPortePDFAdvanced.descargarPDF(result.pdfBlob, `carta-porte-${carta.folio || id}.pdf`);
+        
+        toast({
+          title: "PDF generado",
+          description: "El PDF se ha generado y descargado correctamente.",
+        });
+      } else {
+        throw new Error(result.error || 'Error desconocido generando PDF');
+      }
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast({
+        title: "Error generando PDF",
         description: error instanceof Error ? error.message : "Error desconocido",
         variant: "destructive"
       });
@@ -144,6 +197,7 @@ export default function CartasPorte() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onRegenerateXML={handleRegenerateXML}
+          onGeneratePDF={handleGeneratePDF}
         />
       </div>
     </ProtectedContent>
