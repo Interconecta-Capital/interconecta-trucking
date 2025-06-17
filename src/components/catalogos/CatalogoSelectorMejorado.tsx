@@ -7,7 +7,7 @@ import { CatalogSelect } from './components/CatalogSelect';
 import { CatalogActions } from './components/CatalogActions';
 import { CatalogFeedback } from './components/CatalogFeedback';
 import { useAdaptedCatalogQuery } from './hooks/useAdaptedCatalogQuery';
-import { CatalogsSATService } from '@/services/catalogosSAT';
+import { CatalogosSATService } from '@/services/catalogosSAT';
 
 interface CatalogItem {
   value: string;
@@ -105,7 +105,7 @@ export function CatalogoSelectorMejorado({
   };
 
   const handleRefresh = () => {
-    CatalogsSATService.clearCache();
+    CatalogosSATService.clearCache();
     refetch();
     setLocalError('');
   };
