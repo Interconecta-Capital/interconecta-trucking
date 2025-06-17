@@ -6,13 +6,13 @@ import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { ContactSalesModal } from "@/components/landing/ContactSalesModal";
 
 const CTASection = () => {
-  const { ref, isRevealed } = useIntersectionObserver({ threshold: 0.1 });
+  const { ref, isVisible } = useIntersectionObserver({ threshold: 0.1 });
 
   return (
     <section id="demo" className="py-32 bg-pure-black text-pure-white">
       <div className="container mx-auto px-6 max-w-3xl text-center">
         
-        <div ref={ref} className={`${isRevealed ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
+        <div ref={ref} className={`${isVisible ? 'scroll-reveal revealed' : 'scroll-reveal'}`}>
           
           <h2 className="text-display font-bold leading-display tracking-display text-pure-white mb-6">
             Listo para nunca más<br />
