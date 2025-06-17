@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { CartaPorteHeader } from './CartaPorteHeader';
@@ -81,56 +80,68 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   }, [currentStep, setCurrentStep, validationSummary.sectionStatus]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Dialog de recuperación de borrador */}
-      <BorradorRecoveryDialog
-        open={showRecoveryDialog}
-        borradorData={borradorData}
-        onAccept={handleAcceptBorrador}
-        onReject={handleRejectBorrador}
-      />
-
-      <CartaPorteHeader
-        borradorCargado={borradorCargado}
-        ultimoGuardado={ultimoGuardado}
-        onGuardarBorrador={handleGuardarBorrador}
-        onLimpiarBorrador={handleLimpiarBorrador}
-        onGuardarYSalir={handleGuardarYSalir}
-        isGuardando={isGuardando}
-      />
-
-      {/* Indicador de progreso mejorado */}
-      <div className="mb-6">
-        <CartaPorteProgressIndicator
-          validationSummary={validationSummary}
-          currentStep={currentStep}
-          onStepClick={handleStepNavigation}
-          xmlGenerado={xmlGenerado}
+    <div className="min-h-screen bg-gray-50">
+      {/* Container principal con padding apropiado */}
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Dialog de recuperación de borrador */}
+        <BorradorRecoveryDialog
+          open={showRecoveryDialog}
+          borradorData={borradorData}
+          onAccept={handleAcceptBorrador}
+          onReject={handleRejectBorrador}
         />
+
+        {/* Header fijo mejorado */}
+        <div className="sticky top-0 z-10 bg-gray-50 pb-4">
+          <CartaPorteHeader
+            borradorCargado={borradorCargado}
+            ultimoGuardado={ultimoGuardado}
+            onGuardarBorrador={handleGuardarBorrador}
+            onLimpiarBorrador={handleLimpiarBorrador}
+            onGuardarYSalir={handleGuardarYSalir}
+            isGuardando={isGuardando}
+          />
+
+          {/* Indicador de progreso mejorado con espaciado */}
+          <div className="mt-4">
+            <CartaPorteProgressIndicator
+              validationSummary={validationSummary}
+              currentStep={currentStep}
+              onStepClick={handleStepNavigation}
+              xmlGenerado={xmlGenerado}
+            />
+          </div>
+        </div>
+
+        {/* Contenido principal con mejor espaciado */}
+        <div className="mt-6">
+          <OptimizedCartaPorteStepContent
+            currentStep={currentStep}
+            configuracion={configuracion}
+            ubicaciones={ubicaciones}
+            mercancias={mercancias}
+            autotransporte={autotransporte || defaultAutotransporte}
+            figuras={figuras}
+            currentCartaPorteId={currentCartaPorteId}
+            onConfiguracionChange={handleConfiguracionChange}
+            onUbicacionesChange={setUbicaciones}
+            onMercanciasChange={setMercancias}  
+            onAutotransporteChange={setAutotransporte}
+            onFigurasChange={setFiguras}
+            onStepChange={setCurrentStep}
+            onXMLGenerated={handleXMLGenerated}
+            onTimbrado={() => {}}
+            xmlGenerado={xmlGenerado}
+            datosCalculoRuta={datosCalculoRuta}
+            onCalculoRutaUpdate={handleCalculoRutaUpdate}
+          />
+        </div>
+
+        {/* Auto-save indicator en posición fija */}
+        <div className="fixed bottom-4 right-4 z-20">
+          <CartaPorteAutoSaveIndicator />
+        </div>
       </div>
-
-      <OptimizedCartaPorteStepContent
-        currentStep={currentStep}
-        configuracion={configuracion}
-        ubicaciones={ubicaciones}
-        mercancias={mercancias}
-        autotransporte={autotransporte || defaultAutotransporte}
-        figuras={figuras}
-        currentCartaPorteId={currentCartaPorteId}
-        onConfiguracionChange={handleConfiguracionChange}
-        onUbicacionesChange={setUbicaciones}
-        onMercanciasChange={setMercancias}
-        onAutotransporteChange={setAutotransporte}
-        onFigurasChange={setFiguras}
-        onStepChange={setCurrentStep}
-        onXMLGenerated={handleXMLGenerated}
-        onTimbrado={() => {}}
-        xmlGenerado={xmlGenerado}
-        datosCalculoRuta={datosCalculoRuta}
-        onCalculoRutaUpdate={handleCalculoRutaUpdate}
-      />
-
-      <CartaPorteAutoSaveIndicator />
     </div>
   );
 });
