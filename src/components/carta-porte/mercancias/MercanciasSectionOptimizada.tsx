@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MercanciaFormOptimizada } from './MercanciaFormOptimizada';
-import { Plus, Package, ArrowRight, ArrowLeft, AlertCircle, FileText } from 'lucide-react';
+import { DocumentUploadDialog } from './DocumentUploadDialog';
+import { Plus, Package, ArrowRight, ArrowLeft, AlertCircle, FileText, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface MercanciaCompleta {
   id: string;
@@ -27,12 +28,21 @@ interface MercanciasSectionOptimizadaProps {
   onChange: (data: MercanciaCompleta[]) => void;
   onNext: () => void;
   onPrev: () => void;
+  cartaPorteId?: string;
 }
 
-export function MercanciasSectionOptimizada({ data, onChange, onNext, onPrev }: MercanciasSectionOptimizadaProps) {
+export function MercanciasSectionOptimizada({ 
+  data, 
+  onChange, 
+  onNext, 
+  onPrev, 
+  cartaPorteId 
+}: MercanciasSectionOptimizadaProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const { toast } = useToast();
 
   // Validar que hay al menos una mercancía con datos mínimos
   const isDataComplete = () => {
@@ -125,6 +135,35 @@ export function MercanciasSectionOptimizada({ data, onChange, onNext, onPrev }: 
     setFormErrors([]);
   };
 
+  const handleDocumentProcessed = (mercancias: any[]) => {
+    if (mercancias && mercancias.length > 0) {
+      // Convertir las mercancías procesadas al formato esperado
+      const mercanciasFormateadas = mercancias.map((mercancia, index) => ({
+        id: `imported-${Date.now()}-${index}`,
+        descripcion: mercancia.descripcion || '',
+        bienes_transp: mercancia.bienes_transp || '',
+        clave_unidad: mercancia.clave_unidad || '',
+        cantidad: mercancia.cantidad || 0,
+        peso_kg: mercancia.peso_kg || 0,
+        valor_mercancia: mercancia.valor_mercancia || 0,
+        material_peligroso: mercancia.material_peligroso || false,
+        moneda: mercancia.moneda || 'MXN',
+        cve_material_peligroso: mercancia.cve_material_peligroso,
+        embalaje: mercancia.embalaje,
+        fraccion_arancelaria: mercancia.fraccion_arancelaria,
+        uuid_comercio_ext: mercancia.uuid_comercio_ext
+      }));
+
+      // Agregar las mercancías procesadas a las existentes
+      onChange([...data, ...mercanciasFormateadas]);
+      
+      toast({
+        title: "Mercancías importadas",
+        description: `Se importaron ${mercanciasFormateadas.length} mercancías desde el documento.`,
+      });
+    }
+  };
+
   const calcularTotales = () => {
     return {
       totalCantidad: data.reduce((sum, m) => sum + m.cantidad, 0),
@@ -147,14 +186,26 @@ export function MercanciasSectionOptimizada({ data, onChange, onNext, onPrev }: 
             </CardTitle>
             
             {!showForm && (
-              <Button 
-                type="button"
-                onClick={handleAddMercancia}
-                className="flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Agregar Mercancía</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowUploadDialog(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Importar desde Documento</span>
+                </Button>
+                
+                <Button 
+                  type="button"
+                  onClick={handleAddMercancia}
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Agregar Mercancía</span>
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -191,12 +242,18 @@ export function MercanciasSectionOptimizada({ data, onChange, onNext, onPrev }: 
                 <div className="text-center py-12">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">
-                    No hay mercancías agregadas. Agrega al menos una mercancía para continuar.
+                    No hay mercancías agregadas. Agrega mercancías manualmente o importa desde un documento.
                   </p>
-                  <Button onClick={handleAddMercancia}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar Primera Mercancía
-                  </Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Importar Documento
+                    </Button>
+                    <Button onClick={handleAddMercancia}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Manualmente
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -346,6 +403,14 @@ export function MercanciasSectionOptimizada({ data, onChange, onNext, onPrev }: 
           </Button>
         </div>
       )}
+
+      {/* Dialog de importación de documentos */}
+      <DocumentUploadDialog
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+        onDocumentProcessed={handleDocumentProcessed}
+        cartaPorteId={cartaPorteId}
+      />
     </div>
   );
 }

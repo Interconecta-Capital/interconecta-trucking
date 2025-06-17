@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -6,7 +7,7 @@ import { CatalogSelect } from './components/CatalogSelect';
 import { CatalogActions } from './components/CatalogActions';
 import { CatalogFeedback } from './components/CatalogFeedback';
 import { useAdaptedCatalogQuery } from './hooks/useAdaptedCatalogQuery';
-import { CatalogosSATService } from '@/services/catalogosSAT';
+import { CatalogsSATService } from '@/services/catalogosSAT';
 
 interface CatalogItem {
   value: string;
@@ -29,6 +30,7 @@ interface CatalogoSelectorMejoradoProps {
   disabled?: boolean;
   allowSearch?: boolean;
   showRefresh?: boolean;
+  showAllOptions?: boolean;
   className?: string;
 }
 
@@ -45,6 +47,7 @@ export function CatalogoSelectorMejorado({
   disabled = false,
   allowSearch = true,
   showRefresh = true,
+  showAllOptions = false,
   className
 }: CatalogoSelectorMejoradoProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,8 +56,16 @@ export function CatalogoSelectorMejorado({
   
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  const queryEnabled = !disabled && (tipo !== 'materiales_peligrosos' || debouncedSearch.length >= 2);
-  const { data: options = [], isLoading, error: queryError, refetch } = useAdaptedCatalogQuery(tipo, debouncedSearch, queryEnabled);
+  // Si showAllOptions es true, siempre habilitar la query sin condiciones de búsqueda
+  const queryEnabled = !disabled && (
+    showAllOptions || 
+    (tipo !== 'materiales_peligrosos' || debouncedSearch.length >= 2)
+  );
+  
+  // Para showAllOptions, usar string vacío para obtener todas las opciones
+  const searchQuery = showAllOptions ? '' : debouncedSearch;
+  
+  const { data: options = [], isLoading, error: queryError, refetch } = useAdaptedCatalogQuery(tipo, searchQuery, queryEnabled);
 
   // Handle errors
   useEffect(() => {
@@ -94,7 +105,7 @@ export function CatalogoSelectorMejorado({
   };
 
   const handleRefresh = () => {
-    CatalogosSATService.clearCache();
+    CatalogsSATService.clearCache();
     refetch();
     setLocalError('');
   };
@@ -109,9 +120,14 @@ export function CatalogoSelectorMejorado({
   };
 
   const displayError = error || localError;
-  const showLoading = isLoading && debouncedSearch === searchTerm;
+  const showLoading = isLoading && (showAllOptions || debouncedSearch === searchTerm);
 
   const filteredOptions = useMemo(() => {
+    if (showAllOptions) {
+      // Si showAllOptions es true, mostrar todas las opciones sin filtrado adicional
+      return options;
+    }
+    
     if (!searchTerm || debouncedSearch !== searchTerm) return options;
     
     const term = searchTerm.toLowerCase();
@@ -120,15 +136,19 @@ export function CatalogoSelectorMejorado({
       option.label.toLowerCase().includes(term) ||
       option.descripcion?.toLowerCase().includes(term)
     );
-  }, [options, searchTerm, debouncedSearch]);
+  }, [options, searchTerm, debouncedSearch, showAllOptions]);
 
   const getPlaceholderText = () => {
     if (showLoading) return 'Cargando...';
+    if (showAllOptions) return placeholder;
     if (tipo === 'materiales_peligrosos' && debouncedSearch.length < 2) {
       return 'Escribe al menos 2 caracteres para buscar';
     }
     return placeholder;
   };
+
+  // Si showAllOptions es true, no mostrar búsqueda ni acciones de búsqueda
+  const shouldShowSearchActions = allowSearch && !showAllOptions;
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -142,7 +162,7 @@ export function CatalogoSelectorMejorado({
       <div className="relative">
         <div className="flex gap-2">
           <div className="flex-1">
-            {allowSearch && showSearch ? (
+            {shouldShowSearchActions && showSearch ? (
               <CatalogSearchInput
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
@@ -158,27 +178,29 @@ export function CatalogoSelectorMejorado({
                 showLoading={showLoading}
                 placeholder={getPlaceholderText()}
                 options={filteredOptions}
-                searchTerm={debouncedSearch}
+                searchTerm={showAllOptions ? '' : debouncedSearch}
                 tipo={tipo}
               />
             )}
           </div>
           
-          <CatalogActions
-            allowSearch={allowSearch}
-            showRefresh={showRefresh}
-            showSearch={showSearch}
-            disabled={disabled}
-            showLoading={showLoading}
-            onSearchToggle={handleSearchToggle}
-            onRefresh={handleRefresh}
-          />
+          {shouldShowSearchActions && (
+            <CatalogActions
+              allowSearch={allowSearch}
+              showRefresh={showRefresh}
+              showSearch={showSearch}
+              disabled={disabled}
+              showLoading={showLoading}
+              onSearchToggle={handleSearchToggle}
+              onRefresh={handleRefresh}
+            />
+          )}
         </div>
       </div>
 
       <CatalogFeedback
         error={displayError}
-        searchTerm={debouncedSearch}
+        searchTerm={showAllOptions ? '' : debouncedSearch}
         filteredCount={filteredOptions.length}
         value={value}
         options={options}

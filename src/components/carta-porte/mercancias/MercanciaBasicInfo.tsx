@@ -57,10 +57,11 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           label="Clave de Producto/Servicio SAT"
           value={formData.bienes_transp}
           onValueChange={(value) => onFieldChange('bienes_transp', value)}
-          placeholder="Buscar clave SAT..."
+          placeholder="Seleccionar clave SAT..."
           required
           error={errors.bienes_transp}
-          allowSearch={true}
+          allowSearch={false}
+          showAllOptions={true}
           showRefresh={true}
         />
 
@@ -69,10 +70,11 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           label="Unidad de Medida SAT"
           value={formData.clave_unidad}
           onValueChange={(value) => onFieldChange('clave_unidad', value)}
-          placeholder="Buscar unidad..."
+          placeholder="Seleccionar unidad..."
           required
           error={errors.clave_unidad}
-          allowSearch={true}
+          allowSearch={false}
+          showAllOptions={true}
           showRefresh={true}
         />
       </div>
