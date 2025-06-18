@@ -1,23 +1,8 @@
 
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, AlertCircle, FileText, Settings, MapPin, Package, Truck, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-export interface ValidationSummary {
-  sectionStatus: {
-    configuracion: 'empty' | 'incomplete' | 'complete';
-    ubicaciones: 'empty' | 'incomplete' | 'complete';
-    mercancias: 'empty' | 'incomplete' | 'complete';
-    autotransporte: 'empty' | 'incomplete' | 'complete';
-    figuras: 'empty' | 'incomplete' | 'complete';
-    xml: 'empty' | 'incomplete' | 'complete';
-  };
-  totalErrors: number;
-  totalWarnings: number;
-  isFormComplete: boolean;
-  completionPercentage: number;
-}
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code } from 'lucide-react';
+import type { ValidationSummary } from '@/hooks/carta-porte/useCartaPorteValidation';
 
 interface CartaPorteProgressIndicatorProps {
   validationSummary: ValidationSummary;
@@ -26,178 +11,233 @@ interface CartaPorteProgressIndicatorProps {
   xmlGenerado?: string | null;
 }
 
-// CORREGIDO: Nombres e iconos mejorados
-const stepNames = [
-  { key: 'configuracion', label: 'Configuración', icon: Settings },
-  { key: 'ubicaciones', label: 'Ubicaciones', icon: MapPin },
-  { key: 'mercancias', label: 'Mercancías', icon: Package },
-  { key: 'autotransporte', label: 'Autotransporte', icon: Truck },
-  { key: 'figuras', label: 'Figuras', icon: Users },
-  { key: 'xml', label: 'XML', icon: FileText }
+const steps = [
+  { 
+    id: 0, 
+    name: 'Configuración', 
+    icon: FileText,
+    key: 'configuracion' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 1, 
+    name: 'Ubicaciones', 
+    icon: MapPin,
+    key: 'ubicaciones' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 2, 
+    name: 'Mercancías', 
+    icon: Package,
+    key: 'mercancias' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 3, 
+    name: 'Autotransporte', 
+    icon: Truck,
+    key: 'autotransporte' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 4, 
+    name: 'Figuras', 
+    icon: Users,
+    key: 'figuras' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 5, 
+    name: 'XML', 
+    icon: Code,
+    key: 'xml' as keyof ValidationSummary['sectionStatus']
+  }
 ];
 
-export function CartaPorteProgressIndicator({
-  validationSummary,
-  currentStep,
+export function CartaPorteProgressIndicator({ 
+  validationSummary, 
+  currentStep, 
   onStepClick,
-  xmlGenerado
+  xmlGenerado 
 }: CartaPorteProgressIndicatorProps) {
-  const getStepStatus = (stepIndex: number) => {
-    const stepKey = stepNames[stepIndex].key as keyof typeof validationSummary.sectionStatus;
-    
-    // Caso especial para XML
-    if (stepKey === 'xml') {
-      return xmlGenerado ? 'complete' : 'empty';
+  
+  const getStepStatus = (step: typeof steps[0]) => {
+    // Para la sección XML, verificar si hay XML generado
+    if (step.key === 'xml') {
+      if (xmlGenerado) {
+        return 'completed';
+      } else {
+        return 'pending';
+      }
     }
     
-    return validationSummary.sectionStatus[stepKey];
-  };
-
-  const getStepIcon = (stepIndex: number, status: string) => {
-    if (status === 'complete') {
-      return CheckCircle;
-    } else if (status === 'incomplete') {
-      return AlertCircle;
+    const sectionStatus = validationSummary.sectionStatus[step.key];
+    
+    if (step.id < currentStep) {
+      return sectionStatus === 'complete' ? 'completed' : 'completed-warning';
     }
-    return stepNames[stepIndex].icon;
-  };
-
-  // CORREGIDO: Colores mejorados y más vibrantes
-  const getStepColor = (stepIndex: number, status: string) => {
-    if (stepIndex === currentStep) {
-      return 'text-blue-700 bg-blue-100 border-blue-300 hover:bg-blue-150 shadow-md';
-    } else if (status === 'complete') {
-      return 'text-green-700 bg-green-100 border-green-300 hover:bg-green-150';
-    } else if (status === 'incomplete') {
-      return 'text-amber-700 bg-amber-100 border-amber-300 hover:bg-amber-150';
+    
+    if (step.id === currentStep) {
+      return 'current';
     }
-    return 'text-gray-600 bg-white border-gray-300 hover:bg-gray-50';
+    
+    return sectionStatus === 'empty' ? 'pending' : 'ready';
   };
 
-  // CORREGIDO: Calcular progreso con mejor lógica
+  const getStepIcon = (step: typeof steps[0], status: string) => {
+    const IconComponent = step.icon;
+    
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'completed-warning':
+        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+      case 'current':
+        return <IconComponent className="h-5 w-5 text-blue-600" />;
+      default:
+        return <IconComponent className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  const getStepBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Completo</Badge>;
+      case 'completed-warning':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Revisar</Badge>;
+      case 'current':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Actual</Badge>;
+      case 'ready':
+        return <Badge variant="outline">Listo</Badge>;
+      default:
+        return <Badge variant="outline" className="text-gray-500">Pendiente</Badge>;
+    }
+  };
+
+  const canNavigateTo = (stepId: number) => {
+    // Permitir navegación hacia atrás siempre
+    if (stepId <= currentStep) return true;
+    
+    // Para avanzar, verificar que los pasos anteriores no estén vacíos
+    for (let i = 0; i < stepId; i++) {
+      const step = steps[i];
+      if (step.key !== 'xml' && validationSummary.sectionStatus[step.key] === 'empty') {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const getNextStepMessage = () => {
+    // Si todas las secciones principales están completas
+    const mainSectionsComplete = steps.slice(0, 5).every(step => 
+      validationSummary.sectionStatus[step.key] !== 'empty'
+    );
+    
+    if (mainSectionsComplete && !xmlGenerado) {
+      return 'Listo para generar XML';
+    }
+    
+    if (xmlGenerado) {
+      return 'Carta Porte lista para timbrar';
+    }
+    
+    const currentStepData = steps[currentStep];
+    const nextStepData = steps[currentStep + 1];
+    
+    if (!nextStepData) return null;
+    
+    const currentSectionStatus = validationSummary.sectionStatus[currentStepData.key];
+    
+    if (currentSectionStatus === 'empty') {
+      switch (currentStepData.key) {
+        case 'configuracion':
+          return 'Complete los datos del emisor y receptor';
+        case 'ubicaciones':
+          return 'Agregue las ubicaciones de origen y destino';
+        case 'mercancias':
+          return 'Agregue al menos una mercancía';
+        case 'autotransporte':
+          return 'Complete los datos del vehículo';
+        case 'figuras':
+          return 'Agregue al menos una figura de transporte';
+        default:
+          return `Complete la sección ${currentStepData.name}`;
+      }
+    }
+    
+    return `Siguiente paso: ${nextStepData.name}`;
+  };
+
+  // Calcular progreso incluyendo XML
   const calculateProgress = () => {
-    const statuses = Object.values(validationSummary.sectionStatus);
-    const completedSections = statuses.filter(s => s === 'complete').length;
-    const incompleteSections = statuses.filter(s => s === 'incomplete').length;
+    const completedSections = steps.filter(step => {
+      if (step.key === 'xml') {
+        return xmlGenerado ? 1 : 0;
+      }
+      return validationSummary.sectionStatus[step.key] === 'complete' ? 1 : 0;
+    }).length;
     
-    // Dar peso parcial a secciones incompletas
-    const totalProgress = (completedSections * 100) + (incompleteSections * 50);
-    return Math.round(totalProgress / statuses.length);
+    return Math.round((completedSections / steps.length) * 100);
   };
-
-  const progressPercentage = calculateProgress();
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
-      {/* CORREGIDO: Header mejorado */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Progreso de la Carta Porte
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Completa todas las secciones para generar el XML
-          </p>
-        </div>
-        <div className="text-right">
-          <span className="text-2xl font-bold text-blue-600">
-            {progressPercentage}%
-          </span>
-          <p className="text-xs text-gray-500">Completado</p>
-        </div>
-      </div>
-
-      {/* CORREGIDO: Barra de progreso con colores mejorados */}
-      <div className="mb-6">
-        <Progress 
-          value={progressPercentage} 
-          className="h-3 bg-gray-100"
-        />
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>Inicio</span>
-          <span>XML Listo</span>
-        </div>
-      </div>
-
-      {/* CORREGIDO: Steps con diseño mejorado */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {stepNames.map((step, index) => {
-          const status = getStepStatus(index);
-          const StepIcon = getStepIcon(index, status);
-          const stepColorClass = getStepColor(index, status);
-          const isClickable = index < 5; // XML no es clickeable
-
+    <div className="w-full space-y-4">
+      {/* Progress Bar */}
+      <div className="flex items-center justify-between">
+        {steps.map((step, index) => {
+          const status = getStepStatus(step);
+          const isClickable = canNavigateTo(step.id);
+          
           return (
-            <button
-              key={step.key}
-              onClick={() => isClickable && onStepClick(index)}
-              disabled={!isClickable}
-              className={cn(
-                "flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200",
-                stepColorClass,
-                isClickable 
-                  ? "cursor-pointer shadow-sm hover:shadow-md transform hover:-translate-y-0.5" 
-                  : "cursor-not-allowed opacity-75",
-                "min-h-[90px] relative"
-              )}
-            >
-              {/* CORREGIDO: Icono con mejor estilo */}
-              <StepIcon className="w-6 h-6 mb-2 flex-shrink-0" />
-              
-              {/* CORREGIDO: Texto mejorado */}
-              <span className="text-xs font-medium text-center leading-tight px-1">
-                {step.label}
-              </span>
-              
-              {/* CORREGIDO: Indicador de paso actual mejorado */}
-              {index === currentStep && (
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+            <React.Fragment key={step.id}>
+              <div className="flex flex-col items-center space-y-2">
+                <button
+                  onClick={() => isClickable && onStepClick(step.id)}
+                  disabled={!isClickable}
+                  className={`
+                    flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all
+                    ${isClickable ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-50'}
+                    ${status === 'completed' ? 'border-green-600 bg-green-50' : ''}
+                    ${status === 'completed-warning' ? 'border-yellow-600 bg-yellow-50' : ''}
+                    ${status === 'current' ? 'border-blue-600 bg-blue-50' : ''}
+                    ${status === 'pending' || status === 'ready' ? 'border-gray-300 bg-gray-50' : ''}
+                  `}
+                >
+                  {getStepIcon(step, status)}
+                </button>
+                
+                <div className="text-center">
+                  <div className={`text-sm font-medium ${
+                    status === 'current' ? 'text-blue-900' : 
+                    status === 'completed' ? 'text-green-900' :
+                    status === 'completed-warning' ? 'text-yellow-900' :
+                    'text-gray-600'
+                  }`}>
+                    {step.name}
+                  </div>
+                  {getStepBadge(status)}
                 </div>
-              )}
+              </div>
               
-              {/* CORREGIDO: Badge de estado */}
-              {status === 'complete' && index !== currentStep && (
-                <div className="absolute -top-1 -right-1">
-                  <CheckCircle className="w-4 h-4 text-green-600 bg-white rounded-full" />
-                </div>
+              {index < steps.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 ${
+                  step.id < currentStep ? 'bg-green-300' : 'bg-gray-200'
+                }`} />
               )}
-            </button>
+            </React.Fragment>
           );
         })}
       </div>
 
-      {/* CORREGIDO: Estadísticas mejoradas */}
-      <div className="flex flex-wrap gap-6 mt-6 pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-green-600" />
-          <span className="text-sm font-medium text-gray-700">
-            {Object.values(validationSummary.sectionStatus).filter(s => s === 'complete').length} Completadas
-          </span>
+      {/* Next Step Message */}
+      {getNextStepMessage() && (
+        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+          <Clock className="h-4 w-4" />
+          <span>{getNextStepMessage()}</span>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-amber-600" />
-          <span className="text-sm font-medium text-gray-700">
-            {Object.values(validationSummary.sectionStatus).filter(s => s === 'incomplete').length} En Progreso
-          </span>
-        </div>
+      )}
 
-        <div className="flex items-center gap-2">
-          <Circle className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-medium text-gray-700">
-            {Object.values(validationSummary.sectionStatus).filter(s => s === 'empty').length} Pendientes
-          </span>
-        </div>
-
-        {xmlGenerado && (
-          <div className="flex items-center gap-2 ml-auto">
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-700">
-              XML Generado ✓
-            </span>
-          </div>
-        )}
+      {/* Progress Summary */}
+      <div className="text-center text-sm text-gray-500">
+        Progreso del formulario: {calculateProgress()}% completado
       </div>
     </div>
   );

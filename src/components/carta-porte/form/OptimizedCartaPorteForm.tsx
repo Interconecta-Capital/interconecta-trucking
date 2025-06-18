@@ -48,7 +48,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleCalculoRutaUpdate,
   } = useCartaPorteFormManager(cartaPorteId);
 
-  // CORREGIDO: Autotransporte por defecto mejorado
+  // Crear un objeto Autotransporte por defecto para evitar errores de tipo
   const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
     placa_vm: '',
     anio_modelo_vm: new Date().getFullYear(),
@@ -60,10 +60,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     remolques: []
   }), []);
 
-  // CORREGIDO: Navegación mejorada con mejor validación
+  // Manejar navegación entre pasos con validación mejorada
   const handleStepNavigation = useCallback((targetStep: number) => {
-    console.log('🔄 Navegando al paso:', targetStep);
-    
     // Permitir navegación hacia atrás siempre
     if (targetStep < currentStep) {
       setCurrentStep(targetStep);
@@ -75,7 +73,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     const currentSectionKey = currentSectionKeys[currentStep];
     
     if (currentSectionKey && validationSummary.sectionStatus[currentSectionKey] === 'empty') {
-      console.log('⚠️ No se puede avanzar, sección actual vacía:', currentSectionKey);
+      // No permitir avanzar si la sección actual está vacía
       return;
     }
 
@@ -83,70 +81,56 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   }, [currentStep, setCurrentStep, validationSummary.sectionStatus]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* CORREGIDO: Container principal con mejor diseño */}
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Dialog de recuperación de borrador */}
-        <BorradorRecoveryDialog
-          open={showRecoveryDialog}
-          borradorData={borradorData}
-          onAccept={handleAcceptBorrador}
-          onReject={handleRejectBorrador}
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Dialog de recuperación de borrador */}
+      <BorradorRecoveryDialog
+        open={showRecoveryDialog}
+        borradorData={borradorData}
+        onAccept={handleAcceptBorrador}
+        onReject={handleRejectBorrador}
+      />
+
+      <CartaPorteHeader
+        borradorCargado={borradorCargado}
+        ultimoGuardado={ultimoGuardado}
+        onGuardarBorrador={handleGuardarBorrador}
+        onLimpiarBorrador={handleLimpiarBorrador}
+        onGuardarYSalir={handleGuardarYSalir}
+        isGuardando={isGuardando}
+      />
+
+      {/* Indicador de progreso mejorado */}
+      <div className="mb-6">
+        <CartaPorteProgressIndicator
+          validationSummary={validationSummary}
+          currentStep={currentStep}
+          onStepClick={handleStepNavigation}
+          xmlGenerado={xmlGenerado}
         />
-
-        {/* CORREGIDO: Header mejorado con mejor fondo */}
-        <div className="sticky top-0 z-10 bg-gradient-to-br from-gray-50 to-blue-50 pb-4">
-          <CartaPorteHeader
-            borradorCargado={borradorCargado}
-            ultimoGuardado={ultimoGuardado}
-            onGuardarBorrador={handleGuardarBorrador}
-            onLimpiarBorrador={handleLimpiarBorrador}
-            onGuardarYSalir={handleGuardarYSalir}
-            isGuardando={isGuardando}
-          />
-
-          {/* CORREGIDO: Indicador de progreso con mejor espaciado */}
-          <div className="mt-4">
-            <CartaPorteProgressIndicator
-              validationSummary={validationSummary}
-              currentStep={currentStep}
-              onStepClick={handleStepNavigation}
-              xmlGenerado={xmlGenerado}
-            />
-          </div>
-        </div>
-
-        {/* CORREGIDO: Contenido principal con sombra mejorada */}
-        <div className="mt-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <OptimizedCartaPorteStepContent
-              currentStep={currentStep}
-              configuracion={configuracion}
-              ubicaciones={ubicaciones}
-              mercancias={mercancias}
-              autotransporte={autotransporte || defaultAutotransporte}
-              figuras={figuras}
-              currentCartaPorteId={currentCartaPorteId}
-              onConfiguracionChange={handleConfiguracionChange}
-              onUbicacionesChange={setUbicaciones}
-              onMercanciasChange={setMercancias}  
-              onAutotransporteChange={setAutotransporte}
-              onFigurasChange={setFiguras}
-              onStepChange={setCurrentStep}
-              onXMLGenerated={handleXMLGenerated}
-              onTimbrado={() => {}}
-              xmlGenerado={xmlGenerado}
-              datosCalculoRuta={datosCalculoRuta}
-              onCalculoRutaUpdate={handleCalculoRutaUpdate}
-            />
-          </div>
-        </div>
-
-        {/* CORREGIDO: Auto-save indicator mejorado */}
-        <div className="fixed bottom-6 right-6 z-20">
-          <CartaPorteAutoSaveIndicator />
-        </div>
       </div>
+
+      <OptimizedCartaPorteStepContent
+        currentStep={currentStep}
+        configuracion={configuracion}
+        ubicaciones={ubicaciones}
+        mercancias={mercancias}
+        autotransporte={autotransporte || defaultAutotransporte}
+        figuras={figuras}
+        currentCartaPorteId={currentCartaPorteId}
+        onConfiguracionChange={handleConfiguracionChange}
+        onUbicacionesChange={setUbicaciones}
+        onMercanciasChange={setMercancias}
+        onAutotransporteChange={setAutotransporte}
+        onFigurasChange={setFiguras}
+        onStepChange={setCurrentStep}
+        onXMLGenerated={handleXMLGenerated}
+        onTimbrado={() => {}}
+        xmlGenerado={xmlGenerado}
+        datosCalculoRuta={datosCalculoRuta}
+        onCalculoRutaUpdate={handleCalculoRutaUpdate}
+      />
+
+      <CartaPorteAutoSaveIndicator />
     </div>
   );
 });

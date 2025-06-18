@@ -9,7 +9,18 @@ import { useBorradorRecovery } from './useBorradorRecovery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
 
-// Estado inicial simplificado y corregido
+// Extender CartaPorteData para incluir datos persistidos
+interface CartaPorteDataWithPersistence extends CartaPorteData {
+  currentStep?: number;
+  xmlGenerado?: string;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  };
+}
+
+// Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
   tipoCfdi: 'Traslado',
   transporteInternacional: 'No',
@@ -43,7 +54,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
   
-  // Estados para datos persistidos - CORREGIDO
+  // Estados para datos persistidos
   const [xmlGenerado, setXmlGenerado] = useState<string | null>(null);
   const [datosCalculoRuta, setDatosCalculoRuta] = useState<{
     distanciaTotal?: number;
@@ -53,24 +64,25 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   
   const { getValidationSummary } = useCartaPorteValidation();
 
-  // CORREGIDO: Auto-save mejorado sin causar loops
+  // Auto-save mejorado
   const { isAutoSaving, lastSaved } = useCartaPorteAutoSave({
     formData: {
       ...formData,
       xmlGenerado,
       datosCalculoRuta
-    },
+    } as CartaPorteDataWithPersistence,
     currentCartaPorteId: currentCartaPorteId || undefined,
     onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
     enabled: true
   });
 
-  // Recuperación de borrador - CORREGIDO
+  // Recuperación de borrador
   const { showRecoveryDialog, borradorData, acceptBorrador, rejectBorrador } = useBorradorRecovery(cartaPorteId);
 
+  // El resumen de validación ahora depende directamente del estado unificado
   const validationSummary = getValidationSummary(formData);
 
-  // CORREGIDO: Cargar datos existentes al montar
+  // Cargar datos existentes al montar el componente
   useEffect(() => {
     if (currentCartaPorteId && !borradorCargado) {
       loadCartaPorteData(currentCartaPorteId);
@@ -79,23 +91,16 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   const loadCartaPorteData = useCallback(async (id: string) => {
     try {
-      console.log('🔄 Cargando carta porte:', id);
       const { data, error } = await supabase
         .from('cartas_porte')
         .select('datos_formulario')
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error('❌ Error cargando carta porte:', error);
-        return;
-      }
+      if (error) throw error;
 
       if (data?.datos_formulario) {
-        // CORREGIDO: Manejo seguro de datos JSON
-        const savedData = typeof data.datos_formulario === 'object' && data.datos_formulario !== null 
-          ? data.datos_formulario as any 
-          : {};
+        const savedData = data.datos_formulario as CartaPorteDataWithPersistence;
         
         // Restaurar datos del formulario
         setFormData({
@@ -103,99 +108,93 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           ...savedData
         });
 
-        // CORREGIDO: Restaurar estados persistidos con validación
-        if (savedData.xmlGenerado && typeof savedData.xmlGenerado === 'string') {
+        // Restaurar estados persistidos
+        if (savedData.xmlGenerado) {
           setXmlGenerado(savedData.xmlGenerado);
         }
         
-        if (savedData.datosCalculoRuta && typeof savedData.datosCalculoRuta === 'object') {
+        if (savedData.datosCalculoRuta) {
           setDatosCalculoRuta(savedData.datosCalculoRuta);
         }
 
-        if (savedData.currentStep && typeof savedData.currentStep === 'number') {
+        if (savedData.currentStep !== undefined) {
           setCurrentStep(savedData.currentStep);
         }
 
         setBorradorCargado(true);
-        console.log('✅ Datos cargados correctamente');
       }
     } catch (error) {
-      console.error('❌ Error cargando datos de carta porte:', error);
+      console.error('Error cargando datos de carta porte:', error);
     }
   }, []);
 
-  // CORREGIDO: Handler de cambio estable
+  // Handler de cambio unificado y estable
   const handleConfiguracionChange = useCallback((updates: Partial<CartaPorteData>) => {
-    console.log('📝 Actualizando configuración:', updates);
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // CORREGIDO: Setters estables para cada sección
+  // Setters estables para cada sección del formulario
   const setUbicaciones = useCallback((ubicaciones: UbicacionCompleta[]) => {
-    console.log('📍 Actualizando ubicaciones:', ubicaciones.length);
     setFormData(prev => ({ ...prev, ubicaciones }));
   }, []);
 
   const setMercancias = useCallback((mercancias: MercanciaCompleta[]) => {
-    console.log('📦 Actualizando mercancías:', mercancias.length);
     setFormData(prev => ({ ...prev, mercancias }));
   }, []);
   
   const setAutotransporte = useCallback((autotransporte: AutotransporteCompleto) => {
-    console.log('🚛 Actualizando autotransporte');
     setFormData(prev => ({ ...prev, autotransporte }));
   }, []);
 
   const setFiguras = useCallback((figuras: FiguraCompleta[]) => {
-    console.log('👥 Actualizando figuras:', figuras.length);
     setFormData(prev => ({ ...prev, figuras }));
   }, []);
 
-  // CORREGIDO: Función para manejar XML generado
+  // Funciones para manejar XML generado
   const handleXMLGenerated = useCallback((xml: string) => {
-    console.log('📄 XML generado');
     setXmlGenerado(xml);
+    // Auto-guardar cuando se genera XML
     handleGuardarCartaPorteOficial();
   }, []);
 
-  // CORREGIDO: Funciones para manejar cálculos de ruta
+  // Funciones para manejar cálculos de ruta
   const handleCalculoRutaUpdate = useCallback((datos: {
     distanciaTotal?: number;
     tiempoEstimado?: number;
   }) => {
-    console.log('🛣️ Actualizando cálculo de ruta:', datos);
     setDatosCalculoRuta({
       ...datos,
       calculadoEn: new Date().toISOString()
     });
+    // Auto-guardar cuando se actualiza cálculo de ruta
+    handleGuardarCartaPorteOficial();
   }, []);
 
-  // CORREGIDO: Manejar aceptación de borrador
+  // Manejar aceptación de borrador
   const handleAcceptBorrador = useCallback(() => {
     const { data, id } = acceptBorrador();
     if (data) {
-      setFormData(data);
+      const savedData = data as CartaPorteDataWithPersistence;
+      setFormData(savedData);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
       
-      // CORREGIDO: Restaurar datos persistidos de manera segura
-      if (data.xmlGenerado) {
-        setXmlGenerado(data.xmlGenerado);
+      // Restaurar datos persistidos
+      if (savedData.xmlGenerado) {
+        setXmlGenerado(savedData.xmlGenerado);
       }
       
-      if (data.datosCalculoRuta) {
-        setDatosCalculoRuta(data.datosCalculoRuta);
+      if (savedData.datosCalculoRuta) {
+        setDatosCalculoRuta(savedData.datosCalculoRuta);
       }
       
-      if (data.currentStep !== undefined) {
-        setCurrentStep(data.currentStep);
+      if (savedData.currentStep !== undefined) {
+        setCurrentStep(savedData.currentStep);
       }
-      
-      console.log('✅ Borrador aceptado y cargado');
     }
   }, [acceptBorrador]);
 
-  // CORREGIDO: Manejar rechazo de borrador
+  // Manejar rechazo de borrador
   const handleRejectBorrador = useCallback(() => {
     rejectBorrador();
     setFormData(initialCartaPorteData);
@@ -204,87 +203,72 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setBorradorCargado(false);
     setXmlGenerado(null);
     setDatosCalculoRuta(null);
-    console.log('🗑️ Borrador rechazado, formulario limpiado');
   }, [rejectBorrador]);
   
-  // CORREGIDO: Guardar como carta porte oficial - SIMPLIFICADO Y ROBUSTO
+  // Guardar como carta porte oficial (no borrador) - mejorado
   const handleGuardarCartaPorteOficial = useCallback(async () => {
     if (!user?.id) {
       toast.error('Usuario no autenticado');
       return;
     }
 
-    if (isGuardando) {
-      console.log('⏳ Ya se está guardando, evitando duplicado');
-      return;
-    }
+    if (isGuardando) return;
     
     setIsGuardando(true);
     try {
-      console.log('💾 Iniciando guardado oficial...');
+      // Generar folio único si no existe
+      const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // CORREGIDO: Preparar datos completos como JSON serializable
-      const datosCompletos = JSON.parse(JSON.stringify({
+      // Preparar datos completos incluyendo XML y cálculos de ruta
+      const datosCompletos: CartaPorteDataWithPersistence = {
         ...formData,
         currentStep,
         xmlGenerado,
         datosCalculoRuta
-      }));
+      };
       
       // Preparar datos para la carta porte oficial
       const cartaPorteData = {
+        folio,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
-        rfc_emisor: formData.rfcEmisor || 'TEMP',
-        nombre_emisor: formData.nombreEmisor || 'Sin nombre',
-        rfc_receptor: formData.rfcReceptor || 'TEMP', 
-        nombre_receptor: formData.nombreReceptor || 'Sin nombre',
-        transporte_internacional: Boolean(formData.transporteInternacional === 'Sí'),
-        registro_istmo: Boolean(formData.registroIstmo),
+        rfc_emisor: formData.rfcEmisor || '',
+        nombre_emisor: formData.nombreEmisor || '',
+        rfc_receptor: formData.rfcReceptor || '',
+        nombre_receptor: formData.nombreReceptor || '',
+        transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
+        registro_istmo: formData.registroIstmo || false,
         status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: datosCompletos,
+        datos_formulario: JSON.parse(JSON.stringify(datosCompletos)),
         usuario_id: user.id,
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
       let savedId = currentCartaPorteId;
 
       if (currentCartaPorteId) {
-        // Actualizar existente
-        console.log('📝 Actualizando carta porte existente:', currentCartaPorteId);
+        // Actualizar carta porte existente
         const { error } = await supabase
           .from('cartas_porte')
-          .update(cartaPorteData)
-          .eq('id', currentCartaPorteId)
-          .eq('usuario_id', user.id);
+          .update({
+            ...cartaPorteData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentCartaPorteId);
 
-        if (error) {
-          console.error('❌ Error actualizando:', error);
-          throw error;
-        }
+        if (error) throw error;
       } else {
-        // Crear nueva
-        console.log('➕ Creando nueva carta porte');
-        const insertData = {
-          ...cartaPorteData,
-          created_at: new Date().toISOString(),
-          folio: `CP-${Date.now().toString().slice(-8)}`
-        };
-        
+        // Crear nueva carta porte
         const { data: nuevaCarta, error } = await supabase
           .from('cartas_porte')
-          .insert(insertData)
-          .select('id')
+          .insert(cartaPorteData)
+          .select()
           .single();
 
-        if (error) {
-          console.error('❌ Error creando:', error);
-          throw error;
-        }
-        
-        if (nuevaCarta?.id) {
+        if (error) throw error;
+        if (nuevaCarta) {
           savedId = nuevaCarta.id;
           setCurrentCartaPorteId(nuevaCarta.id);
-          console.log('✅ Nueva carta porte creada:', nuevaCarta.id);
         }
       }
       
@@ -292,76 +276,72 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       toast.success('Carta porte guardada correctamente');
       
       return savedId;
-    } catch (error: any) {
-      console.error('❌ Error guardando carta porte:', error);
-      toast.error(`Error al guardar: ${error.message || 'Error desconocido'}`);
+    } catch (error) {
+      console.error('Error guardando carta porte:', error);
+      toast.error('Error al guardar la carta porte');
       throw error;
     } finally {
       setIsGuardando(false);
     }
   }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
 
-  // CORREGIDO: Guardar y salir
+  // Guardar y salir - mejorado
   const handleGuardarYSalir = useCallback(async () => {
     try {
-      console.log('💾🚪 Guardando y saliendo...');
       await handleGuardarCartaPorteOficial();
-      
-      toast.success('Guardado exitoso. Redirigiendo...');
-      
-      // Delay para mostrar el toast
-      setTimeout(() => {
-        window.location.href = '/cartas-porte';
-      }, 1500);
+      // Navegar a la lista de cartas porte
+      window.location.href = '/cartas-porte';
     } catch (error) {
-      console.error('❌ Error guardando y saliendo:', error);
+      console.error('Error guardando carta porte:', error);
+      // No navegar si hay error
     }
   }, [handleGuardarCartaPorteOficial]);
 
-  // CORREGIDO: Guardar borrador - SIMPLIFICADO
+  // Lógica de borrador (mantenida para compatibilidad)
   const handleGuardarBorrador = useCallback(async () => {
-    if (isGuardando) {
-      console.log('⏳ Ya se está guardando borrador');
-      return;
-    }
+    if (isGuardando) return;
     
-    console.log('💾 Guardando borrador...');
-    
+    setIsGuardando(true);
     try {
-      await handleGuardarCartaPorteOficial();
-      setBorradorCargado(true);
-      toast.success('Borrador guardado correctamente');
-    } catch (error: any) {
-      console.error('❌ Error guardando borrador:', error);
-      toast.error(`Error al guardar el borrador: ${error.message}`);
-    }
-  }, [isGuardando, handleGuardarCartaPorteOficial]);
-
-  // CORREGIDO: Limpiar borrador
-  const handleLimpiarBorrador = useCallback(async () => {
-    try {
-      console.log('🗑️ Limpiando borrador...');
+      const datosCompletos: CartaPorteDataWithPersistence = {
+        ...formData,
+        currentStep,
+        xmlGenerado,
+        datosCalculoRuta
+      };
       
-      if (currentCartaPorteId) {
-        await BorradorService.limpiarBorrador(currentCartaPorteId);
-      } else {
-        localStorage.removeItem('carta_porte_borrador');
+      const nuevoId = await BorradorService.guardarBorrador(datosCompletos, currentCartaPorteId || undefined);
+      
+      if (nuevoId && nuevoId !== currentCartaPorteId) {
+        setCurrentCartaPorteId(nuevoId);
       }
       
-      // Reset completo
+      setUltimoGuardado(new Date());
+      toast.success('Borrador guardado correctamente');
+    } catch (error) {
+      console.error('Error guardando borrador:', error);
+      toast.error('Error al guardar el borrador');
+    } finally {
+      setIsGuardando(false);
+    }
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando]);
+
+  const handleLimpiarBorrador = useCallback(async () => {
+    try {
+      await BorradorService.limpiarBorrador(currentCartaPorteId || undefined);
+      
       setFormData(initialCartaPorteData);
       setCurrentStep(0);
       setCurrentCartaPorteId(null);
       setBorradorCargado(false);
+      setUltimoGuardado(null);
       setXmlGenerado(null);
       setDatosCalculoRuta(null);
-      setUltimoGuardado(null);
       
-      toast.success('Borrador limpiado correctamente');
-      console.log('✅ Borrador limpiado');
-    } catch (error: any) {
-      console.error('❌ Error limpiando borrador:', error);
-      toast.error(`Error al limpiar el borrador: ${error.message}`);
+      toast.success('Borrador eliminado correctamente');
+    } catch (error) {
+      console.error('Error limpiando borrador:', error);
+      toast.error('Error al eliminar el borrador');
     }
   }, [currentCartaPorteId]);
 
@@ -398,7 +378,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     handleAcceptBorrador,
     handleRejectBorrador,
     
-    // Setters y Handlers
+    // Setters y Handlers estables
     setUbicaciones,
     setMercancias,
     setAutotransporte,
@@ -409,6 +389,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     handleGuardarCartaPorteOficial,
     handleGuardarYSalir,
     handleLimpiarBorrador,
+    
+    // Nuevos handlers para datos persistidos
     handleXMLGenerated,
     handleCalculoRutaUpdate,
   };

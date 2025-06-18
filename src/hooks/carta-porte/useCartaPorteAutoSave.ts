@@ -1,130 +1,106 @@
 
-import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { CartaPorteData } from '@/types/cartaPorte';
+import { BorradorService } from '@/services/borradorService';
+import { toast } from 'sonner';
 
 interface UseCartaPorteAutoSaveOptions {
-  formData: any;
+  formData: CartaPorteData;
   currentCartaPorteId?: string;
-  onCartaPorteIdChange: (id: string) => void;
-  enabled: boolean;
-  intervalMs?: number;
+  onCartaPorteIdChange?: (id: string) => void;
+  enabled?: boolean;
 }
 
-export const useCartaPorteAutoSave = ({
-  formData,
+export const useCartaPorteAutoSave = ({ 
+  formData, 
   currentCartaPorteId,
   onCartaPorteIdChange,
-  enabled,
-  intervalMs = 30000 // 30 segundos
+  enabled = true
 }: UseCartaPorteAutoSaveOptions) => {
-  const { user } = useAuth();
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
   const lastDataRef = useRef<string>('');
-
-  const hasSignificantData = (data: any): boolean => {
-    return !!(
-      data.rfcEmisor || 
-      data.rfcReceptor || 
-      (data.ubicaciones && data.ubicaciones.length > 0) ||
-      (data.mercancias && data.mercancias.length > 0) ||
-      data.autotransporte?.placa_vm ||
-      (data.figuras && data.figuras.length > 0)
-    );
-  };
-
-  const autoSave = async () => {
-    if (!enabled || !user?.id || isAutoSaving) {
-      return;
-    }
-
-    // Verificar si hay datos significativos
-    if (!hasSignificantData(formData)) {
-      return;
-    }
-
-    // Verificar si los datos han cambiado
+  
+  // Auto-guardado mejorado
+  const autoSave = useCallback(async () => {
+    if (!enabled || isAutoSaving) return;
+    
     const currentDataString = JSON.stringify(formData);
-    if (lastDataRef.current === currentDataString) {
-      return;
-    }
-
+    if (currentDataString === lastDataRef.current || !formData) return;
+    
+    // Verificar que hay datos significativos
+    const hasSignificantData = !!(
+      formData.rfcEmisor || 
+      formData.rfcReceptor || 
+      (formData.ubicaciones && formData.ubicaciones.length > 0) ||
+      (formData.mercancias && formData.mercancias.length > 0) ||
+      formData.autotransporte?.placa_vm ||
+      (formData.figuras && formData.figuras.length > 0)
+    );
+    
+    if (!hasSignificantData) return;
+    
     setIsAutoSaving(true);
     try {
-      const cartaPorteData = {
-        tipo_cfdi: formData.tipoCfdi || 'Traslado',
-        rfc_emisor: formData.rfcEmisor || 'TEMP',
-        nombre_emisor: formData.nombreEmisor || 'Sin nombre',
-        rfc_receptor: formData.rfcReceptor || 'TEMP',
-        nombre_receptor: formData.nombreReceptor || 'Sin nombre',
-        transporte_internacional: Boolean(formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true),
-        registro_istmo: Boolean(formData.registroIstmo),
-        status: 'borrador',
-        datos_formulario: formData,
-        usuario_id: user.id,
-        updated_at: new Date().toISOString()
-      };
-
-      if (currentCartaPorteId) {
-        // Actualizar existente
-        const { error } = await supabase
-          .from('cartas_porte')
-          .update(cartaPorteData)
-          .eq('id', currentCartaPorteId)
-          .eq('usuario_id', user.id);
-
-        if (error) throw error;
-      } else {
-        // Crear nuevo
-        const { data: newData, error } = await supabase
-          .from('cartas_porte')
-          .insert({
-            ...cartaPorteData,
-            created_at: new Date().toISOString(),
-            folio: `CP-${Date.now().toString().slice(-8)}`
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        
-        if (newData?.id) {
-          onCartaPorteIdChange(newData.id);
-        }
+      const nuevoId = await BorradorService.guardarBorrador(formData, currentCartaPorteId);
+      
+      if (nuevoId && nuevoId !== currentCartaPorteId && onCartaPorteIdChange) {
+        onCartaPorteIdChange(nuevoId);
       }
-
+      
       lastDataRef.current = currentDataString;
       setLastSaved(new Date());
-      console.log('Auto-save completado exitosamente');
+      console.log('Auto-guardado completado:', new Date().toLocaleTimeString());
     } catch (error) {
-      console.error('Error en auto-save:', error);
+      console.error('Error en auto-guardado:', error);
     } finally {
       setIsAutoSaving(false);
     }
-  };
+  }, [formData, currentCartaPorteId, enabled, isAutoSaving, onCartaPorteIdChange]);
 
+  // Efecto para auto-guardado con debounce
   useEffect(() => {
     if (!enabled) return;
 
-    // Limpiar timeout anterior
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Establecer nuevo timeout
-    timeoutRef.current = setTimeout(autoSave, intervalMs);
+    timeoutRef.current = setTimeout(() => {
+      autoSave();
+    }, 3000); // Auto-guardar cada 3 segundos
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [formData, enabled, intervalMs]);
+  }, [formData, autoSave, enabled]);
+
+  // Guardar antes de salir de la página
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (enabled && formData) {
+        // Intentar guardado síncrono antes de salir
+        BorradorService.guardarBorradorAutomatico(formData, currentCartaPorteId);
+        e.preventDefault();
+        e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [formData, currentCartaPorteId, enabled]);
+
+  // Función para forzar guardado manual
+  const forceSave = useCallback(async () => {
+    await autoSave();
+  }, [autoSave]);
 
   return {
     isAutoSaving,
-    lastSaved
+    lastSaved,
+    forceSave
   };
 };
