@@ -23,7 +23,7 @@ npm install
 
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones de APIs y base de datos
+# Editar .env con tus configuraciones de APIs, base de datos y credenciales de Supabase
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
@@ -31,6 +31,8 @@ npm run dev
 # Paso 6: Para producción
 npm run build
 npm run preview
+
+El paso de build genera automáticamente el cliente de Supabase usando las variables de entorno.
 
 # Paso 7: Verificar código (linting)
 npm run lint
@@ -120,6 +122,10 @@ WHATSAPP_WEBHOOK_URL=tu_webhook_url
 # Google Services
 GOOGLE_API_KEY=tu_clave_google
 GOOGLE_CLIENT_ID=tu_client_id
+
+# Supabase
+VITE_SUPABASE_URL=tu_supabase_url
+VITE_SUPABASE_ANON_KEY=tu_supabase_anon_key
 
 # Entorno
 NODE_ENV=production
