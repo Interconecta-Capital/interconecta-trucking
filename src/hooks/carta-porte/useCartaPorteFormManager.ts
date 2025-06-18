@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -121,7 +120,16 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       if (error) throw error;
 
       if (data?.datos_formulario) {
-        const savedData = deserializeCartaPorteData(data.datos_formulario);
+        // CORREGIDO: Deserializar correctamente sin problemas de tipo
+        const savedData: CartaPorteData = {
+          ...initialCartaPorteData,
+          ...data.datos_formulario,
+          // Asegurar tipos correctos para campos específicos
+          ubicaciones: data.datos_formulario.ubicaciones || [],
+          mercancias: data.datos_formulario.mercancias || [],
+          figuras: data.datos_formulario.figuras || [],
+          autotransporte: data.datos_formulario.autotransporte || initialCartaPorteData.autotransporte
+        };
         
         console.log('✅ Datos cargados exitosamente:', {
           hasXML: !!savedData.xmlGenerado,
@@ -224,7 +232,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const handleAcceptBorrador = useCallback(() => {
     const { data, id } = acceptBorrador();
     if (data) {
-      const savedData = deserializeCartaPorteData(data);
+      const savedData: CartaPorteData = { ...initialCartaPorteData, ...data };
       setFormData(savedData);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
@@ -254,7 +262,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     clearSessionData();
   }, [rejectBorrador, clearSessionData]);
   
-  // Guardar como carta porte oficial (CORREGIDO para evitar problemas de tipo)
+  // CORREGIDO: Guardar como carta porte oficial sin problemas de tipo
   const handleGuardarCartaPorteOficial = useCallback(async () => {
     if (!user?.id) {
       toast.error('Usuario no autenticado');
@@ -283,13 +291,29 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         mercanciasCount: datosCompletos.mercancias?.length || 0
       });
 
-      // Serialize data for Supabase - CORREGIDO
-      const serializedData = serializeCartaPorteData(datosCompletos);
-      
       // Generar folio único si no existe
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // Preparar datos para la carta porte oficial - CORREGIDO tipos
+      // CORREGIDO: Preparar datos sin problemas de tipo usando Record<string, any>
+      const datosFormulario: Record<string, any> = {
+        tipoCfdi: formData.tipoCfdi || 'Traslado',
+        transporteInternacional: formData.transporteInternacional,
+        version: formData.version || '4.0',
+        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
+        rfcEmisor: formData.rfcEmisor || '',
+        nombreEmisor: formData.nombreEmisor || '',
+        rfcReceptor: formData.rfcReceptor || '',
+        nombreReceptor: formData.nombreReceptor || '',
+        ubicaciones: formData.ubicaciones || [],
+        mercancias: formData.mercancias || [],
+        autotransporte: formData.autotransporte || defaultAutotransporte,
+        figuras: formData.figuras || [],
+        currentStep,
+        xmlGenerado,
+        datosCalculoRuta
+      };
+      
+      // Preparar datos para la carta porte oficial
       const cartaPorteData = {
         folio,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -299,8 +323,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         nombre_receptor: formData.nombreReceptor || '',
         transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
-        status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: serializedData as any, // Cast para evitar error de tipo
+        status: xmlGenerado ? 'completado' : 'borrador', // CORREGIDO: Cambiar status según XML
+        datos_formulario: datosFormulario,
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -315,7 +339,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           .update({
             ...cartaPorteData,
             updated_at: new Date().toISOString()
-          } as any) // Cast para evitar error de tipo
+          })
           .eq('id', currentCartaPorteId);
 
         if (error) throw error;
@@ -324,7 +348,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         // Crear nueva carta porte
         const { data: nuevaCarta, error } = await supabase
           .from('cartas_porte')
-          .insert(cartaPorteData as any) // Cast para evitar error de tipo
+          .insert(cartaPorteData)
           .select()
           .single();
 
@@ -347,7 +371,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando, defaultAutotransporte]);
 
   // Guardar y salir mejorado con navegación React Router CORREGIDO  
   const handleGuardarYSalir = useCallback(async () => {
