@@ -1,8 +1,10 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
+import { useCartaPortePersistence } from './useCartaPortePersistence';
 import { toast } from 'sonner';
 import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { useBorradorRecovery } from './useBorradorRecovery';
@@ -60,13 +62,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
   
-  // Estados para datos persistidos (ahora como parte del formData)
-  const [xmlGenerado, setXmlGenerado] = useState<string | null>(formData.xmlGenerado || null);
-  const [datosCalculoRuta, setDatosCalculoRuta] = useState<{
-    distanciaTotal?: number;
-    tiempoEstimado?: number;
-    calculadoEn?: string;
-  } | null>(formData.datosCalculoRuta || null);
+  // Estados para datos persistidos usando el hook de persistencia
+  const {
+    xmlGenerado,
+    datosCalculoRuta,
+    saveXML,
+    saveRouteData,
+    clearSessionData
+  } = useCartaPortePersistence(currentCartaPorteId || undefined);
   
   const { getValidationSummary } = useCartaPorteValidation();
 
@@ -129,13 +132,13 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         // Restaurar todos los datos incluidos XML y cálculos de ruta
         setFormData(savedData);
 
-        // Restaurar estados locales desde los datos persistidos
+        // Persistir datos en sesión
         if (savedData.xmlGenerado) {
-          setXmlGenerado(savedData.xmlGenerado);
+          saveXML(savedData.xmlGenerado);
         }
         
         if (savedData.datosCalculoRuta) {
-          setDatosCalculoRuta(savedData.datosCalculoRuta);
+          saveRouteData(savedData.datosCalculoRuta);
         }
 
         if (savedData.currentStep !== undefined) {
@@ -148,7 +151,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       console.error('❌ Error cargando datos de carta porte:', error);
       toast.error('Error al cargar los datos de la carta porte');
     }
-  }, []);
+  }, [saveXML, saveRouteData]);
 
   // Handler de cambio unificado y estable
   const handleConfiguracionChange = useCallback((updates: Partial<CartaPorteData>) => {
@@ -187,26 +190,35 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Funciones para manejar XML generado con persistencia
   const handleXMLGenerated = useCallback((xml: string) => {
-    console.log('📄 XML generado, guardando en estado...');
-    setXmlGenerado(xml);
+    console.log('📄 XML generado, guardando en persistencia...');
+    saveXML(xml);
     // Auto-guardar inmediatamente cuando se genera XML
     setTimeout(() => handleGuardarCartaPorteOficial(), 100);
-  }, []);
+  }, [saveXML]);
 
-  // Funciones para manejar cálculos de ruta con persistencia
+  // Funciones para manejar cálculos de ruta con persistencia MEJORADA
   const handleCalculoRutaUpdate = useCallback((datos: {
     distanciaTotal?: number;
     tiempoEstimado?: number;
   }) => {
-    console.log('🗺️ Actualizando cálculo de ruta:', datos);
+    console.log('🗺️ Actualizando y persistiendo cálculo de ruta:', datos);
     const newDatosRuta = {
       ...datos,
       calculadoEn: new Date().toISOString()
     };
-    setDatosCalculoRuta(newDatosRuta);
+    
+    // Persistir inmediatamente
+    saveRouteData(newDatosRuta);
+    
+    // Actualizar estado local
+    setFormData(prev => ({
+      ...prev,
+      datosCalculoRuta: newDatosRuta
+    }));
+    
     // Auto-guardar cuando se actualiza cálculo de ruta
     setTimeout(() => handleGuardarCartaPorteOficial(), 100);
-  }, []);
+  }, [saveRouteData]);
 
   // Manejar aceptación de borrador
   const handleAcceptBorrador = useCallback(() => {
@@ -217,20 +229,20 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
       
-      // Restaurar datos persistidos
+      // Persistir datos recuperados
       if (savedData.xmlGenerado) {
-        setXmlGenerado(savedData.xmlGenerado);
+        saveXML(savedData.xmlGenerado);
       }
       
       if (savedData.datosCalculoRuta) {
-        setDatosCalculoRuta(savedData.datosCalculoRuta);
+        saveRouteData(savedData.datosCalculoRuta);
       }
       
       if (savedData.currentStep !== undefined) {
         setCurrentStep(savedData.currentStep);
       }
     }
-  }, [acceptBorrador]);
+  }, [acceptBorrador, saveXML, saveRouteData]);
 
   // Manejar rechazo de borrador
   const handleRejectBorrador = useCallback(() => {
@@ -239,11 +251,10 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setCurrentStep(0);
     setCurrentCartaPorteId(null);
     setBorradorCargado(false);
-    setXmlGenerado(null);
-    setDatosCalculoRuta(null);
-  }, [rejectBorrador]);
+    clearSessionData();
+  }, [rejectBorrador, clearSessionData]);
   
-  // Guardar como carta porte oficial (mejorado con persistencia completa)
+  // Guardar como carta porte oficial (CORREGIDO para evitar problemas de tipo)
   const handleGuardarCartaPorteOficial = useCallback(async () => {
     if (!user?.id) {
       toast.error('Usuario no autenticado');
@@ -272,13 +283,13 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         mercanciasCount: datosCompletos.mercancias?.length || 0
       });
 
-      // Serialize data for Supabase
+      // Serialize data for Supabase - CORREGIDO
       const serializedData = serializeCartaPorteData(datosCompletos);
       
       // Generar folio único si no existe
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // Preparar datos para la carta porte oficial
+      // Preparar datos para la carta porte oficial - CORREGIDO tipos
       const cartaPorteData = {
         folio,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -289,7 +300,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
         status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: serializedData, // Now properly serialized
+        datos_formulario: serializedData as any, // Cast para evitar error de tipo
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -304,7 +315,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           .update({
             ...cartaPorteData,
             updated_at: new Date().toISOString()
-          })
+          } as any) // Cast para evitar error de tipo
           .eq('id', currentCartaPorteId);
 
         if (error) throw error;
@@ -313,7 +324,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         // Crear nueva carta porte
         const { data: nuevaCarta, error } = await supabase
           .from('cartas_porte')
-          .insert(cartaPorteData)
+          .insert(cartaPorteData as any) // Cast para evitar error de tipo
           .select()
           .single();
 
@@ -338,23 +349,30 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     }
   }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
 
-  // Guardar y salir mejorado con navegación React Router
+  // Guardar y salir mejorado con navegación React Router CORREGIDO  
   const handleGuardarYSalir = useCallback(async () => {
     try {
       console.log('💾🚪 Guardando y saliendo...');
-      await handleGuardarCartaPorteOficial();
+      const savedId = await handleGuardarCartaPorteOficial();
       
-      // Usar navegación React Router en lugar de window.location.href
-      toast.success('Carta porte guardada. Redirigiendo...');
-      setTimeout(() => {
-        navigate('/cartas-porte', { replace: true });
-      }, 500);
+      if (savedId) {
+        // Limpiar datos de sesión ya que se guardó exitosamente
+        clearSessionData();
+        
+        // Usar navegación React Router
+        toast.success('Carta porte guardada exitosamente');
+        
+        // Navegar después de un breve delay para que el usuario vea el mensaje
+        setTimeout(() => {
+          navigate('/cartas-porte', { replace: true });
+        }, 1000);
+      }
       
     } catch (error) {
       console.error('❌ Error guardando carta porte:', error);
-      toast.error('Error al guardar. No se puede salir.');
+      toast.error('Error al guardar. No se puede salir. Verifica los datos.');
     }
-  }, [handleGuardarCartaPorteOficial, navigate]);
+  }, [handleGuardarCartaPorteOficial, navigate, clearSessionData]);
 
   // Lógica de borrador (mantenido para compatibilidad)
   const handleGuardarBorrador = useCallback(async () => {
@@ -394,15 +412,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setCurrentCartaPorteId(null);
       setBorradorCargado(false);
       setUltimoGuardado(null);
-      setXmlGenerado(null);
-      setDatosCalculoRuta(null);
+      clearSessionData();
       
       toast.success('Borrador eliminado correctamente');
     } catch (error) {
       console.error('Error limpiando borrador:', error);
       toast.error('Error al eliminar el borrador');
     }
-  }, [currentCartaPorteId]);
+  }, [currentCartaPorteId, clearSessionData]);
 
   // Actualizar último guardado cuando hay auto-save
   useEffect(() => {

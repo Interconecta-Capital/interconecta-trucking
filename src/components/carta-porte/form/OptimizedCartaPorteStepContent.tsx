@@ -1,51 +1,36 @@
 
-import React, { memo, lazy, Suspense } from 'react';
-import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
-
-// Lazy loading de componentes pesados con default export
-const ConfiguracionInicial = lazy(() => import('../ConfiguracionInicial').then(module => ({ default: module.ConfiguracionInicial })));
-const UbicacionesSection = lazy(() => import('../UbicacionesSection').then(module => ({ default: module.UbicacionesSection })));
-const MercanciasSection = lazy(() => import('../MercanciasSection').then(module => ({ default: module.MercanciasSection })));
-const AutotransporteSection = lazy(() => import('../AutotransporteSection').then(module => ({ default: module.AutotransporteSection })));
-const FigurasTransporteSection = lazy(() => import('../FigurasTransporteSection').then(module => ({ default: module.FigurasTransporteSection })));
-const XMLGenerationPanel = lazy(() => import('../xml/XMLGenerationPanel').then(module => ({ default: module.XMLGenerationPanel })));
+import React, { memo } from 'react';
+import { ConfiguracionInicial } from '../ConfiguracionInicial';
+import { UbicacionesSection } from '../UbicacionesSection';
+import { MercanciasSection } from '../MercanciasSection';
+import { AutotransporteSection } from '../AutotransporteSection';
+import { FigurasTransporteSection } from '../FigurasTransporteSection';
+import { SimplifiedXMLGenerationPanel } from '../xml/SimplifiedXMLGenerationPanel';
+import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 
 interface OptimizedCartaPorteStepContentProps {
   currentStep: number;
   configuracion: CartaPorteData;
-  ubicaciones: any[];
+  ubicaciones: UbicacionCompleta[];
   mercancias: MercanciaCompleta[];
   autotransporte: AutotransporteCompleto;
   figuras: FiguraCompleta[];
-  currentCartaPorteId: string | null;
-  onConfiguracionChange: (data: Partial<CartaPorteData>) => void;
-  onUbicacionesChange: (ubicaciones: any[]) => void;
+  currentCartaPorteId?: string | null;
+  onConfiguracionChange: (config: Partial<CartaPorteData>) => void;
+  onUbicacionesChange: (ubicaciones: UbicacionCompleta[]) => void;
   onMercanciasChange: (mercancias: MercanciaCompleta[]) => void;
   onAutotransporteChange: (autotransporte: AutotransporteCompleto) => void;
   onFigurasChange: (figuras: FiguraCompleta[]) => void;
   onStepChange: (step: number) => void;
   onXMLGenerated: (xml: string) => void;
-  onTimbrado: (data: any) => void;
+  onTimbrado: () => void;
   xmlGenerado?: string | null;
   datosCalculoRuta?: {
     distanciaTotal?: number;
     tiempoEstimado?: number;
-    calculadoEn?: string;
   } | null;
-  onCalculoRutaUpdate?: (datos: {
-    distanciaTotal?: number;
-    tiempoEstimado?: number;
-  }) => void;
+  onCalculoRutaUpdate: (datos: { distanciaTotal?: number; tiempoEstimado?: number }) => void;
 }
-
-const LoadingFallback = memo(() => (
-  <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    <p className="ml-2">Cargando sección...</p>
-  </div>
-));
-
-LoadingFallback.displayName = 'LoadingFallback';
 
 const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>(({
   currentStep,
@@ -63,89 +48,110 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
   onStepChange,
   onXMLGenerated,
   onTimbrado,
-  xmlGenerado,
+  xmlGenera 
   datosCalculoRuta,
-  onCalculoRutaUpdate,
+  onCalculoRutaUpdate
 }) => {
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <ConfiguracionInicial
-              data={configuracion}
-              onChange={onConfiguracionChange}
-              onNext={() => onStepChange(1)}
-            />
-          </Suspense>
-        );
-      case 1:
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <UbicacionesSection
-              data={ubicaciones}
-              onChange={onUbicacionesChange}
-              onNext={() => onStepChange(2)}
-              onPrev={() => onStepChange(0)}
-            />
-          </Suspense>
-        );
-      case 2:
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <MercanciasSection
-              data={mercancias}
-              onChange={onMercanciasChange}
-              onNext={() => onStepChange(3)}
-              onPrev={() => onStepChange(1)}
-            />
-          </Suspense>
-        );
-      case 3:
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <AutotransporteSection
-              data={autotransporte}
-              onChange={onAutotransporteChange}
-              onNext={() => onStepChange(4)}
-              onPrev={() => onStepChange(2)}
-            />
-          </Suspense>
-        );
-      case 4:
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <FigurasTransporteSection
-              data={figuras}
-              onChange={onFigurasChange}
-              onPrev={() => onStepChange(3)}
-              onNext={() => onStepChange(5)}
-            />
-          </Suspense>
-        );
-      case 5:
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <XMLGenerationPanel
-              cartaPorteData={configuracion}
-              cartaPorteId={currentCartaPorteId}
-              onXMLGenerated={onXMLGenerated}
-              onTimbrado={onTimbrado}
-              xmlGenerado={xmlGenerado}
-              datosCalculoRuta={datosCalculoRuta}
-            />
-          </Suspense>
-        );
-      default:
-        return null;
-    }
+
+  const handleNextStep = () => {
+    onStepChange(currentStep + 1);
   };
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      {renderStepContent()}
-    </div>
-  );
+  const handlePrevStep = () => {
+    onStepChange(currentStep - 1);
+  };
+
+  // Renderizar el contenido según el paso actual
+  switch (currentStep) {
+    case 0:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <ConfiguracionInicial
+            data={configuracion}
+            onChange={onConfiguracionChange}
+            onNext={handleNextStep}
+          />
+        </div>
+      );
+
+    case 1:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <UbicacionesSection
+            data={ubicaciones}
+            onChange={(newUbicaciones) => {
+              onUbicacionesChange(newUbicaciones);
+              // Auto-calcular distancia si hay ubicaciones válidas
+              if (newUbicaciones.length >= 2) {
+                console.log('🔄 Ubicaciones actualizadas, preparando cálculo de ruta...');
+              }
+            }}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+            cartaPorteId={currentCartaPorteId || undefined}
+            // Pasar callback para persistir cálculos de ruta
+            onDistanceCalculated={onCalculoRutaUpdate}
+          />
+        </div>
+      );
+
+    case 2:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <MercanciasSection
+            data={mercancias}
+            onChange={onMercanciasChange}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        </div>
+      );
+
+    case 3:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <AutotransporteSection
+            data={autotransporte}
+            onChange={onAutotransporteChange}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        </div>
+      );
+
+    case 4:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <FigurasTransporteSection
+            data={figuras}
+            onChange={onFigurasChange}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        </div>
+      );
+
+    case 5:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <SimplifiedXMLGenerationPanel
+            cartaPorteData={configuracion}
+            cartaPorteId={currentCartaPorteId || undefined}
+            onXMLGenerated={onXMLGenerated}
+            onTimbrado={onTimbrado}
+            xmlGenerado={xmlGenerado}
+            datosCalculoRuta={datosCalculoRuta}
+          />
+        </div>
+      );
+
+    default:
+      return (
+        <div className="text-center p-8">
+          <p className="text-gray-500">Paso no encontrado</p>
+        </div>
+      );
+  }
 });
 
 OptimizedCartaPorteStepContent.displayName = 'OptimizedCartaPorteStepContent';

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
@@ -19,6 +18,7 @@ interface UbicacionesSectionOptimizadaProps {
   onNext: () => void;
   onPrev: () => void;
   cartaPorteId?: string;
+  onDistanceCalculated?: (distancia: number, tiempo: number) => void;
 }
 
 export function UbicacionesSectionOptimizada({ 
@@ -26,7 +26,8 @@ export function UbicacionesSectionOptimizada({
   onChange, 
   onNext, 
   onPrev,
-  cartaPorteId 
+  cartaPorteId,
+  onDistanceCalculated 
 }: UbicacionesSectionOptimizadaProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -202,23 +203,29 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
-  // Manejar cálculo de distancia total
+  // Manejar cálculo de distancia total MEJORADO
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
     setIsCalculatingDistance(true);
     try {
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
       
-      console.log('✅ Distancia guardada:', { distancia, tiempo });
+      // Notificar al componente padre para persistir
+      if (onDistanceCalculated) {
+        onDistanceCalculated(distancia, tiempo);
+      }
+      
+      console.log('✅ Distancia calculada y persistida:', { distancia, tiempo });
       
       toast({
-        title: "Distancia calculada",
+        title: "Distancia calculada exitosamente",
         description: `Distancia total: ${distancia} km. Tiempo estimado: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
       });
     } catch (error) {
+      console.error('Error procesando cálculo de distancia:', error);
       toast({
         title: "Error",
-        description: "Error al calcular la distancia total.",
+        description: "Error al procesar el cálculo de distancia.",
         variant: "destructive"
       });
     } finally {
@@ -267,21 +274,23 @@ export function UbicacionesSectionOptimizada({
 
   if (showForm) {
     return (
-      <UbicacionesFormSection
-        formErrors={formErrors}
-        editingIndex={editingIndex}
-        ubicaciones={ubicaciones}
-        onSave={handleGuardarUbicacion}
-        onCancel={handleCancelarForm}
-        onSaveToFavorites={handleSaveToFavorites}
-        generarId={generarIdUbicacion}
-        ubicacionesFrecuentes={ubicacionesFrecuentes}
-      />
+      <div className="bg-white">
+        <UbicacionesFormSection
+          formErrors={formErrors}
+          editingIndex={editingIndex}
+          ubicaciones={ubicaciones}
+          onSave={handleGuardarUbicacion}
+          onCancel={handleCancelarForm}
+          onSaveToFavorites={handleSaveToFavorites}
+          generarId={generarIdUbicacion}
+          ubicacionesFrecuentes={ubicacionesFrecuentes}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-white">
       <UbicacionesHeader
         ubicacionesCount={ubicaciones.length}
         canCalculateDistances={canCalculateDistances}
@@ -295,7 +304,7 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Calculadora de distancia mejorada */}
+      {/* Calculadora de distancia mejorada con persistencia */}
       {canCalculateDistances && (
         <DistanceCalculator
           ubicaciones={ubicaciones}
@@ -306,7 +315,7 @@ export function UbicacionesSectionOptimizada({
         />
       )}
 
-      <CardContent>
+      <CardContent className="bg-white">
         <UbicacionesList
           ubicaciones={ubicaciones}
           onEditarUbicacion={handleEditarUbicacion}
