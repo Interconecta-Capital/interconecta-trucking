@@ -18,7 +18,7 @@ interface UbicacionesSectionOptimizadaProps {
   onNext: () => void;
   onPrev: () => void;
   cartaPorteId?: string;
-  onDistanceCalculated?: (datos: { distanciaTotal?: number; tiempoEstimado?: number }) => void;
+  onDistanceCalculated?: (distancia: number, tiempo: number) => void;
 }
 
 export function UbicacionesSectionOptimizada({ 
@@ -203,19 +203,16 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
-  // Manejar cálculo de distancia total MEJORADO - Updated to match interface
+  // Manejar cálculo de distancia total MEJORADO
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
     setIsCalculatingDistance(true);
     try {
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
       
-      // Notificar al componente padre para persistir - Updated to use object format
+      // Notificar al componente padre para persistir
       if (onDistanceCalculated) {
-        onDistanceCalculated({
-          distanciaTotal: distancia,
-          tiempoEstimado: tiempo
-        });
+        onDistanceCalculated(distancia, tiempo);
       }
       
       console.log('✅ Distancia calculada y persistida:', { distancia, tiempo });

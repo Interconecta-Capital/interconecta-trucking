@@ -9,7 +9,6 @@ interface UbicacionesSectionProps {
   onNext: () => void;
   onPrev: () => void;
   cartaPorteId?: string;
-  onDistanceCalculated?: (datos: { distanciaTotal?: number; tiempoEstimado?: number }) => void;
 }
 
 export function UbicacionesSection({ 
@@ -17,8 +16,7 @@ export function UbicacionesSection({
   onChange, 
   onNext, 
   onPrev, 
-  cartaPorteId,
-  onDistanceCalculated
+  cartaPorteId 
 }: UbicacionesSectionProps) {
   return (
     <Card>
@@ -28,7 +26,6 @@ export function UbicacionesSection({
         onNext={onNext}
         onPrev={onPrev}
         cartaPorteId={cartaPorteId}
-        onDistanceCalculated={onDistanceCalculated}
       />
     </Card>
   );
