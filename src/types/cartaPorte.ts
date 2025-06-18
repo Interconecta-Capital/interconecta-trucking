@@ -21,6 +21,7 @@ export interface CartaPorteData {
   pais_origen_destino?: string;
   via_entrada_salida?: string;
   folio?: string;
+  idCCP?: string;
   cartaPorteId?: string;
   
   // Campos para persistencia de estado

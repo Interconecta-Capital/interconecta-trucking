@@ -49,6 +49,7 @@ serve(async (req) => {
     const cadenaOriginal = meta.cadena_original ?? '';
     const selloDigital = meta.sello_digital ?? '';
     let qrCode: string | undefined = meta.qrCode || meta.qr_code;
+    let idCCP: string | undefined = meta.idCCP;
 
     let formData: any = {};
     try {
@@ -59,9 +60,15 @@ serve(async (req) => {
       formData = {};
     }
 
-    if (!qrCode && data.xml_generado) {
-      const match = data.xml_generado.match(/QRCode="([^"]+)"/);
-      if (match) qrCode = match[1];
+    if (data.xml_generado) {
+      if (!qrCode) {
+        const matchQR = data.xml_generado.match(/QRCode="([^"]+)"/);
+        if (matchQR) qrCode = matchQR[1];
+      }
+      if (!idCCP) {
+        const matchId = data.xml_generado.match(/IdCCP="([^"]+)"/);
+        if (matchId) idCCP = matchId[1];
+      }
     }
 
     const pdfDoc = await PDFDocument.create();
@@ -83,6 +90,7 @@ serve(async (req) => {
 
     drawText('Carta Porte', { bold: true, size: 18 });
     if (data.uuid_fiscal) drawText(`UUID: ${data.uuid_fiscal}`);
+    if (idCCP) drawText(`IdCCP: ${idCCP}`);
     if (selloDigital) drawText(`Sello Digital: ${selloDigital}`, { size: 8 });
     if (cadenaOriginal) drawText(`Cadena Original: ${cadenaOriginal}`, { size: 8 });
     y -= 10;
@@ -142,6 +150,7 @@ serve(async (req) => {
         success: true,
         pdfBase64,
         uuid: data.uuid_fiscal,
+        idCCP,
         selloDigital,
         cadenaOriginal,
         qrCode,

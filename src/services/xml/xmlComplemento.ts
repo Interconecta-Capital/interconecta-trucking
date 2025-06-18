@@ -13,18 +13,23 @@ export class XMLComplementoBuilder {
     const distanciaTotal =
       data.totalDistRec ?? XMLUtils.calcularDistanciaTotal(data.ubicaciones || []);
     
-    return `<cartaporte31:CartaPorte 
-      Version="3.1" 
+    const id = data.idCCP || XMLUtils.generarIdCCP();
+    data.idCCP = id;
+    const regimenes = XMLUtils.construirRegimenesAduaneros(data);
+
+    return `<cartaporte31:CartaPorte
+      Version="3.1"
       TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
+      IdCCP="${id}"
       ${data.transporteInternacional ? XMLUtils.construirAtributosInternacionales(data) : ''}
-      ${data.regimenAduanero ? `RegimenAduanero="${data.regimenAduanero}"` : ''}
       TotalDistRec="${distanciaTotal}">
-      
+
+      ${regimenes}
       ${this.construirUbicaciones(data.ubicaciones || [])}
       ${this.construirMercancias(data.mercancias || [])}
       ${this.construirFiguraTransporte(data.figuras || [])}
       ${this.construirAutotransporte(data.autotransporte)}
-      
+
     </cartaporte31:CartaPorte>`;
   }
 
@@ -82,6 +87,7 @@ export class XMLComplementoBuilder {
         ${mercancia.moneda ? `Moneda="${mercancia.moneda}"` : ''}
         ${mercancia.material_peligroso ? `MaterialPeligroso="Sí"` : ''}
         ${mercancia.cve_material_peligroso ? `CveMaterialPeligroso="${mercancia.cve_material_peligroso}"` : ''}
+        ${mercancia.fraccion_arancelaria ? `FraccionArancelaria="${mercancia.fraccion_arancelaria}"` : ''}
         ${mercancia.embalaje ? `Embalaje="${mercancia.embalaje}"` : ''} />`;
     }).join('\n      ');
 
@@ -140,7 +146,8 @@ export class XMLComplementoBuilder {
       <cartaporte31:IdentificacionVehicular
         ConfigVehicular="${autotransporte.config_vehicular || ''}"
         PlacaVM="${autotransporte.placa_vm || ''}"
-        AnioModeloVM="${autotransporte.anio_modelo_vm || ''}" />
+        AnioModeloVM="${autotransporte.anio_modelo_vm || ''}"
+        ${autotransporte.peso_bruto_vehicular ? `PesoBrutoVehicular="${autotransporte.peso_bruto_vehicular}"` : ''} />
         
       ${this.construirSeguros(autotransporte)}
       ${this.construirRemolques(autotransporte.remolques)}
