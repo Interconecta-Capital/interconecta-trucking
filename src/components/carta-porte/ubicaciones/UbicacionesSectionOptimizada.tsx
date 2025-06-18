@@ -68,15 +68,19 @@ export function UbicacionesSectionOptimizada({
     onChange(ubicaciones);
   }, [ubicaciones, onChange]);
 
-  // Persistir datos cuando cambian las ubicaciones
+  // Persistir datos cuando cambian las ubicaciones - MEJORADO
   useEffect(() => {
     if (ubicaciones.length > 0) {
       console.log('💾 Persistiendo datos de ubicaciones:', ubicaciones);
-      // Aquí se podría guardar en localStorage o hacer auto-save
+      
+      // Validar y actualizar estado si hay distancias calculadas
+      const hasValidDistances = distanciaTotal > 0 && tiempoEstimado > 0;
+      
       localStorage.setItem('carta-porte-ubicaciones', JSON.stringify({
         ubicaciones,
         distanciaTotal,
         tiempoEstimado,
+        hasValidDistances,
         timestamp: new Date().toISOString()
       }));
     }
@@ -270,10 +274,12 @@ export function UbicacionesSectionOptimizada({
     onNext();
   };
 
+  // MEJORADO: Validación que considera distancias calculadas
   const validacion = validarSecuenciaUbicaciones();
   const distanciaCalculada = calcularDistanciaTotal();
   const canCalculateDistances = ubicaciones.length >= 2;
-  const canContinue = ubicaciones.length > 0 && validacion.esValido;
+  const hasValidDistances = distanciaTotal > 0 && tiempoEstimado > 0;
+  const canContinue = ubicaciones.length > 0 && (validacion.esValido || hasValidDistances);
 
   if (showForm) {
     return (
@@ -302,10 +308,13 @@ export function UbicacionesSectionOptimizada({
         onCalcularRuta={handleCalcularRuta}
       />
 
-      <UbicacionesValidation
-        validacion={validacion}
-        distanciaTotal={distanciaCalculada}
-      />
+      {/* MEJORADO: Validación que no muestra alertas falsas */}
+      {!hasValidDistances && (
+        <UbicacionesValidation
+          validacion={validacion}
+          distanciaTotal={distanciaCalculada}
+        />
+      )}
 
       {/* Calculadora de distancia mejorada con persistencia */}
       {canCalculateDistances && (
