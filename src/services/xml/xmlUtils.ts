@@ -26,13 +26,13 @@ export class XMLUtils {
   }
 
   static construirAtributosInternacionales(data: CartaPorteData): string {
-    let attrs = '';
-    if (data.transporteInternacional) {
-      attrs += `EntradaSalidaMerc="${data.entradaSalidaMerc || ''}" `;
-      attrs += `PaisOrigenDestino="${data.pais_origen_destino || ''}" `;
-      attrs += `ViaEntradaSalida="${data.via_entrada_salida || ''}" `;
-    }
-    return attrs;
+    if (!data.transporteInternacional) return '';
+
+    return (
+      `EntradaSalidaMerc="${data.entradaSalidaMerc ?? ''}" ` +
+      `PaisOrigenDestino="${data.pais_origen_destino ?? ''}" ` +
+      `ViaEntradaSalida="${data.via_entrada_salida ?? ''}" `
+    );
   }
 
   static getTipoFiguraDescripcion(tipo: string): string {
@@ -57,14 +57,9 @@ export const getUbicacionDestino = (data: any) => {
 };
 
 export const buildComplementoCartaPorte = (data: any): string => {
-  const origen = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Origen');
-  const destino = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Destino');
-  
-  return `<cartaporte31:CartaPorte 
+  return `<cartaporte31:CartaPorte
     Version="3.1"
     TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
-    EntradaSalidaMerc="${data.entradaSalidaMerc || 'Entrada'}"
-    PaisOrigenDestino="${origen?.domicilio?.pais || 'MEX'}"
-    ViaEntradaSalida="${destino?.domicilio?.pais || 'MEX'}"
-    TotalDistRec="${data.totalDistRec || 0}" />`;
+    ${XMLUtils.construirAtributosInternacionales(data)}
+    TotalDistRec="${data.totalDistRec ?? 0}" />`;
 };
