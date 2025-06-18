@@ -47,10 +47,15 @@ export class CartaPortePDFTemplate {
   private addConfigurationSection(data: CartaPorteData) {
     this.addSectionHeader('CONFIGURACIÓN INICIAL');
     
+    // Convert transporteInternacional to string
+    const transporteInternacionalStr = typeof data.transporteInternacional === 'boolean' 
+      ? (data.transporteInternacional ? 'Sí' : 'No') 
+      : (data.transporteInternacional || 'No');
+    
     // Información básica en recuadros
     this.addInfoBox([
       { label: 'Tipo CFDI', value: data.tipoCfdi || '' },
-      { label: 'Transporte Internacional', value: data.transporteInternacional || 'No' },
+      { label: 'Transporte Internacional', value: transporteInternacionalStr },
       { label: 'Versión', value: data.version || '4.0' }
     ], 2);
 
@@ -81,14 +86,14 @@ export class CartaPortePDFTemplate {
         
         this.doc.setFontSize(10);
         this.doc.setFont('helvetica', 'bold');
-        this.doc.text(`${index + 1}. ${ubicacion.tipoUbicacion || ''}`, this.margin + 5, this.currentY + 7);
+        this.doc.text(`${index + 1}. ${ubicacion.tipo_ubicacion || ''}`, this.margin + 5, this.currentY + 7);
         
         this.doc.setFont('helvetica', 'normal');
-        this.doc.text(`RFC: ${ubicacion.rfcRemitenteDestinatario || ''}`, this.margin + 5, this.currentY + 14);
-        this.doc.text(`Nombre: ${ubicacion.nombreRemitenteDestinatario || ''}`, this.margin + 5, this.currentY + 21);
+        this.doc.text(`RFC: ${ubicacion.rfc_remitente_destinatario || ''}`, this.margin + 5, this.currentY + 14);
+        this.doc.text(`Nombre: ${ubicacion.nombre_remitente_destinatario || ''}`, this.margin + 5, this.currentY + 21);
         
         if (ubicacion.domicilio) {
-          const direccion = `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numExterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''} ${ubicacion.domicilio.codigoPostal || ''}`;
+          const direccion = `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''} ${ubicacion.domicilio.codigo_postal || ''}`;
           this.doc.text(`Dirección: ${direccion}`, this.margin + 5, this.currentY + 28);
         }
         
@@ -118,8 +123,8 @@ export class CartaPortePDFTemplate {
         this.doc.text(`${index + 1}. ${mercancia.descripcion || 'Sin descripción'}`, this.margin + 5, this.currentY + 7);
         
         this.doc.setFont('helvetica', 'normal');
-        this.doc.text(`Cantidad: ${mercancia.cantidad || 0} ${mercancia.unidad || ''}`, this.margin + 5, this.currentY + 14);
-        this.doc.text(`Peso: ${mercancia.pesoKg || 0} kg`, this.margin + 5, this.currentY + 21);
+        this.doc.text(`Cantidad: ${mercancia.cantidad || 0} ${mercancia.clave_unidad || ''}`, this.margin + 5, this.currentY + 14);
+        this.doc.text(`Peso: ${mercancia.peso_kg || 0} kg`, this.margin + 5, this.currentY + 21);
         
         this.currentY += 30;
       });
@@ -170,10 +175,10 @@ export class CartaPortePDFTemplate {
         
         this.doc.setFontSize(10);
         this.doc.setFont('helvetica', 'bold');
-        this.doc.text(`${index + 1}. ${figura.tipoFigura || ''}`, this.margin + 5, this.currentY + 7);
+        this.doc.text(`${index + 1}. ${figura.tipo_figura || ''}`, this.margin + 5, this.currentY + 7);
         
         this.doc.setFont('helvetica', 'normal');
-        this.doc.text(`RFC: ${figura.rfc || ''} - ${figura.nombre || ''}`, this.margin + 5, this.currentY + 14);
+        this.doc.text(`RFC: ${figura.rfc_figura || ''} - ${figura.nombre_figura || ''}`, this.margin + 5, this.currentY + 14);
         
         this.currentY += 25;
       });
@@ -215,7 +220,7 @@ export class CartaPortePDFTemplate {
       const x = this.margin + 5 + col * columnWidth;
       const y = this.currentY + 6 + row * 8;
       
-      this.doc.setFont('helvet#ica', 'bold');
+      this.doc.setFont('helvetica', 'bold');
       this.doc.text(`${item.label}:`, x, y);
       this.doc.setFont('helvetica', 'normal');
       this.doc.text(item.value, x + 35, y);
