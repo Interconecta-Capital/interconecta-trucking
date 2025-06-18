@@ -53,7 +53,8 @@ export function PDFGenerationPanel({
 
       // Encabezado
       addText('CARTA PORTE - COMPLEMENTO CFDI', 20, 18, 'bold');
-      addText(`Folio: CP-${Date.now().toString().slice(-8)}`, 20, 12);
+      const folio = cartaPorteData.folio || `CP-${Date.now().toString().slice(-8)}`;
+      addText(`Folio: ${folio}`, 20, 12);
       addText(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 20, 12);
       addSeparator();
 

@@ -11,12 +11,12 @@ export class XMLUtils {
 
   static obtenerCodigoPostalExpedicion(data: CartaPorteData): string {
     const origen = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Origen');
-    return origen?.domicilio?.codigo_postal || '01000';
+    return origen?.domicilio?.codigo_postal || '';
   }
 
   static obtenerCodigoPostalReceptor(data: CartaPorteData): string {
     const destino = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Destino');
-    return destino?.domicilio?.codigo_postal || '01000';
+    return destino?.domicilio?.codigo_postal || '';
   }
 
   static calcularDistanciaTotal(ubicaciones: UbicacionCompleta[]): number {
@@ -48,12 +48,12 @@ export class XMLUtils {
 
 export const getUbicacionOrigen = (data: any) => {
   const origen = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Origen');
-  return origen?.domicilio?.codigo_postal || '01000';
+  return origen?.domicilio?.codigo_postal || '';
 };
 
 export const getUbicacionDestino = (data: any) => {
   const destino = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Destino');
-  return destino?.domicilio?.codigo_postal || '01000';
+  return destino?.domicilio?.codigo_postal || '';
 };
 
 export const buildComplementoCartaPorte = (data: any): string => {

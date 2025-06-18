@@ -37,6 +37,6 @@ export class XMLConceptosBuilder {
 
   private static obtenerCodigoPostalReceptor(data: CartaPorteData): string {
     const destino = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Destino');
-    return destino?.domicilio?.codigo_postal || '01000';
+    return destino?.domicilio?.codigo_postal || '';
   }
 }
