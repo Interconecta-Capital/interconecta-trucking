@@ -296,7 +296,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         hasRouteData: !!datosCompletos.datosCalculoRuta,
         currentStep: datosCompletos.currentStep,
         ubicacionesCount: datosCompletos.ubicaciones?.length || 0,
-        mercanciasCount: datosCompletas.mercancias?.length || 0
+        mercanciasCount: datosCompletos.mercancias?.length || 0
       });
 
       // Generar folio único si no existe
