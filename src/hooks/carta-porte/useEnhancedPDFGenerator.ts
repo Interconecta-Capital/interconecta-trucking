@@ -1,6 +1,8 @@
 
 import { useState, useCallback } from 'react';
-import { CartaPorteData } from '@/types/cartaPorte';
+import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
+import { Ubicacion } from '@/types/ubicaciones';
+import { mapUbicacionToCompleta } from './mapUbicacionToCompleta';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 
@@ -25,6 +27,12 @@ export function useEnhancedPDFGenerator() {
     setIsGenerating(true);
     try {
       console.log('📄 Generando PDF completo de carta porte...');
+
+      const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub =>
+        (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(ub as Ubicacion)
+      );
+
+      const data = { ...cartaPorteData, ubicaciones };
       
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.width;
@@ -78,23 +86,23 @@ export function useEnhancedPDFGenerator() {
 
       // Información del CFDI
       addText('INFORMACIÓN DEL CFDI', margin, 14, 'bold');
-      addText(`Tipo de CFDI: ${cartaPorteData.tipoCfdi || 'Traslado'}`, margin + 5, 11);
-      addText(`Versión Carta Porte: ${cartaPorteData.cartaPorteVersion || '3.1'}`, margin + 5, 11);
-      addText(`Transporte Internacional: ${cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí' ? 'Sí' : 'No'}`, margin + 5, 11);
-      if (cartaPorteData.registroIstmo) {
+      addText(`Tipo de CFDI: ${data.tipoCfdi || 'Traslado'}`, margin + 5, 11);
+      addText(`Versión Carta Porte: ${data.cartaPorteVersion || '3.1'}`, margin + 5, 11);
+      addText(`Transporte Internacional: ${data.transporteInternacional === true || data.transporteInternacional === 'Sí' ? 'Sí' : 'No'}`, margin + 5, 11);
+      if (data.registroIstmo) {
         addText(`Registro ISTMO: Sí`, margin + 5, 11);
       }
       addSeparator();
 
       // Emisor y Receptor
       addText('DATOS DEL EMISOR', margin, 14, 'bold');
-      addText(`RFC: ${cartaPorteData.rfcEmisor || 'No especificado'}`, margin + 5, 11);
-      addText(`Nombre/Razón Social: ${cartaPorteData.nombreEmisor || 'No especificado'}`, margin + 5, 11);
+      addText(`RFC: ${data.rfcEmisor || 'No especificado'}`, margin + 5, 11);
+      addText(`Nombre/Razón Social: ${data.nombreEmisor || 'No especificado'}`, margin + 5, 11);
       yPosition += 5;
 
       addText('DATOS DEL RECEPTOR', margin, 14, 'bold');
-      addText(`RFC: ${cartaPorteData.rfcReceptor || 'No especificado'}`, margin + 5, 11);
-      addText(`Nombre/Razón Social: ${cartaPorteData.nombreReceptor || 'No especificado'}`, margin + 5, 11);
+      addText(`RFC: ${data.rfcReceptor || 'No especificado'}`, margin + 5, 11);
+      addText(`Nombre/Razón Social: ${data.nombreReceptor || 'No especificado'}`, margin + 5, 11);
       addSeparator();
 
       // Información de Ruta (si está disponible)
@@ -112,11 +120,11 @@ export function useEnhancedPDFGenerator() {
       }
 
       // Página 2: Ubicaciones
-      if (cartaPorteData.ubicaciones && cartaPorteData.ubicaciones.length > 0) {
+      if (data.ubicaciones && data.ubicaciones.length > 0) {
         checkPageBreak(40);
         addText('UBICACIONES DEL TRAYECTO', margin, 14, 'bold');
-        
-        cartaPorteData.ubicaciones.forEach((ubicacion, index) => {
+
+        data.ubicaciones.forEach((ubicacion, index) => {
           checkPageBreak(35);
           addText(`${index + 1}. ${ubicacion.tipo_ubicacion}: ${ubicacion.id_ubicacion}`, margin + 5, 12, 'bold');
           
@@ -149,11 +157,11 @@ export function useEnhancedPDFGenerator() {
       }
 
       // Página 3: Mercancías
-      if (cartaPorteData.mercancias && cartaPorteData.mercancias.length > 0) {
+      if (data.mercancias && data.mercancias.length > 0) {
         checkPageBreak(40);
         addText('MERCANCÍAS TRANSPORTADAS', margin, 14, 'bold');
         
-        cartaPorteData.mercancias.forEach((mercancia, index) => {
+        data.mercancias.forEach((mercancia, index) => {
           checkPageBreak(25);
           addText(`${index + 1}. ${mercancia.bienes_transp}`, margin + 5, 12, 'bold');
           
@@ -181,10 +189,10 @@ export function useEnhancedPDFGenerator() {
       }
 
       // Página 4: Autotransporte
-      if (cartaPorteData.autotransporte && cartaPorteData.autotransporte.placa_vm) {
+      if (data.autotransporte && data.autotransporte.placa_vm) {
         checkPageBreak(40);
         addText('INFORMACIÓN DEL AUTOTRANSPORTE', margin, 14, 'bold');
-        const auto = cartaPorteData.autotransporte;
+        const auto = data.autotransporte;
         
         addText(`Placa del Vehículo: ${auto.placa_vm}`, margin + 5, 11);
         addText(`Configuración Vehicular: ${auto.config_vehicular}`, margin + 5, 11);
@@ -211,11 +219,11 @@ export function useEnhancedPDFGenerator() {
       }
 
       // Página 5: Figuras de Transporte
-      if (cartaPorteData.figuras && cartaPorteData.figuras.length > 0) {
+      if (data.figuras && data.figuras.length > 0) {
         checkPageBreak(40);
         addText('FIGURAS DE TRANSPORTE', margin, 14, 'bold');
         
-        cartaPorteData.figuras.forEach((figura, index) => {
+        data.figuras.forEach((figura, index) => {
           checkPageBreak(20);
           addText(`${index + 1}. ${figura.tipo_figura}`, margin + 5, 12, 'bold');
           addText(`RFC: ${figura.rfc_figura}`, margin + 10, 10);
