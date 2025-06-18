@@ -29,7 +29,7 @@ describe('PAC integrations', () => {
     const xmlB64 = btoa(unescape(encodeURIComponent(sampleXml)));
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: true,
-      text: async () => `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><stampResponse xmlns=\"http://facturacion.finkok.com/stamp\"><stampResult><xml>${xmlB64}</xml><UUID>UUID123</UUID></stampResult></stampResponse></soap:Body></soap:Envelope>`
+      text: async () => `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><stampResponse xmlns="http://facturacion.finkok.com/stamp"><stampResult><xml>${xmlB64}</xml><UUID>UUID123</UUID></stampResult></stampResponse></soap:Body></soap:Envelope>`
     })) as any);
 
     const result = await manager.timbrarConFailover(sampleXml, { ambiente: 'sandbox', maxRetries: 1, timeoutMs: 5000, preferredProvider: 'finkok' });
@@ -43,7 +43,7 @@ describe('PAC integrations', () => {
     const xmlB64 = btoa(unescape(encodeURIComponent(sampleXml)));
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: true,
-      text: async () => `<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><TimbrarResponse><TimbrarResult><xml>${xmlB64}</xml><UUID>ECODEXUUID</UUID></TimbrarResult></TimbrarResponse></soap:Body></soap:Envelope>`
+      text: async () => `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TimbrarResponse><TimbrarResult><xml>${xmlB64}</xml><UUID>ECODEXUUID</UUID></TimbrarResult></TimbrarResponse></soap:Body></soap:Envelope>`
     })) as any);
 
     const result = await manager.timbrarConFailover(sampleXml, { ambiente: 'sandbox', maxRetries: 1, timeoutMs: 5000, preferredProvider: 'ecodex' });

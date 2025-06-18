@@ -71,9 +71,7 @@ export interface UbicacionCompleta {
   };
 }
 
-export interface AutotransporteCompleta extends AutotransporteCompleto {
-  // Extend with any additional properties if needed
-}
+export type AutotransporteCompleta = AutotransporteCompleto;
 
 export interface AutotransporteData extends AutotransporteCompleto {
   // Alias for compatibility

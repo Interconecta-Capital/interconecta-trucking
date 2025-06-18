@@ -37,6 +37,9 @@ npm run lint
 
 # Paso 8: Formatear código
 npm run format
+
+# Paso 9: Ejecutar pruebas
+npm run test
 Edición Directa en GitHub
 
 Navega a los archivos que deseas modificar
@@ -155,6 +158,9 @@ npm install @interconecta/api-client
 # Linting y formato
 npm run lint
 npm run format
+
+# Pruebas
+npm run test
 
 # Análisis de bundle
 npm run analyze
