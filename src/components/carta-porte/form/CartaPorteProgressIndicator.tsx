@@ -63,17 +63,17 @@ export function CartaPorteProgressIndicator({
 
   const getStepColor = (stepIndex: number, status: string) => {
     if (stepIndex === currentStep) {
-      return 'text-blue-600 bg-blue-50 border-blue-200';
+      return 'text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100';
     } else if (status === 'complete') {
-      return 'text-green-600 bg-green-50 border-green-200';
+      return 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100';
     } else if (status === 'incomplete') {
-      return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      return 'text-orange-600 bg-orange-50 border-orange-200 hover:bg-orange-100';
     }
-    return 'text-gray-400 bg-gray-50 border-gray-200';
+    return 'text-gray-500 bg-white border-gray-200 hover:bg-gray-50';
   };
 
   return (
-    <div className="bg-white rounded-lg border p-4 mb-6 shadow-sm">
+    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
       {/* Header del progreso */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
@@ -84,15 +84,15 @@ export function CartaPorteProgressIndicator({
         </span>
       </div>
 
-      {/* Barra de progreso */}
+      {/* Barra de progreso con mejor diseño */}
       <div className="mb-6">
         <Progress 
           value={validationSummary.completionPercentage} 
-          className="h-2"
+          className="h-3 bg-gray-100"
         />
       </div>
 
-      {/* Steps responsivos */}
+      {/* Steps responsivos con mejor diseño */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {stepNames.map((step, index) => {
           const status = getStepStatus(index);
@@ -109,7 +109,7 @@ export function CartaPorteProgressIndicator({
                 "flex flex-col items-center p-3 rounded-lg border-2 transition-all duration-200",
                 stepColorClass,
                 isClickable 
-                  ? "hover:shadow-md cursor-pointer" 
+                  ? "cursor-pointer shadow-sm" 
                   : "cursor-not-allowed opacity-75",
                 "min-h-[80px]"
               )}
@@ -136,7 +136,7 @@ export function CartaPorteProgressIndicator({
         </div>
         
         <div className="flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-yellow-600" />
+          <AlertCircle className="w-4 h-4 text-orange-600" />
           <span className="text-sm text-gray-600">
             {Object.values(validationSummary.sectionStatus).filter(s => s === 'incomplete').length} Incompletas
           </span>

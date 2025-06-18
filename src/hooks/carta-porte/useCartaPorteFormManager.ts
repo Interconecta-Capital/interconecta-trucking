@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -54,7 +53,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
   
-  // Estados para datos persistidos
+  // Estados para datos persistidos con mejor manejo
   const [xmlGenerado, setXmlGenerado] = useState<string | null>(null);
   const [datosCalculoRuta, setDatosCalculoRuta] = useState<{
     distanciaTotal?: number;
@@ -64,7 +63,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   
   const { getValidationSummary } = useCartaPorteValidation();
 
-  // Auto-save mejorado - CORREGIDO para que funcione
+  // Auto-save mejorado
   const { isAutoSaving, lastSaved } = useCartaPorteAutoSave({
     formData: {
       ...formData,
@@ -135,6 +134,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Setters estables para cada sección del formulario
   const setUbicaciones = useCallback((ubicaciones: UbicacionCompleta[]) => {
+    console.log('📍 Actualizando ubicaciones:', ubicaciones);
     setFormData(prev => ({ ...prev, ubicaciones }));
   }, []);
 
@@ -153,21 +153,19 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   // Funciones para manejar XML generado
   const handleXMLGenerated = useCallback((xml: string) => {
     setXmlGenerado(xml);
-    // Auto-guardar cuando se genera XML
     handleGuardarCartaPorteOficial();
   }, []);
 
-  // Funciones para manejar cálculos de ruta
+  // Funciones mejoradas para manejar cálculos de ruta
   const handleCalculoRutaUpdate = useCallback((datos: {
     distanciaTotal?: number;
     tiempoEstimado?: number;
   }) => {
+    console.log('🛣️ Actualizando cálculo de ruta:', datos);
     setDatosCalculoRuta({
       ...datos,
       calculadoEn: new Date().toISOString()
     });
-    // Auto-guardar cuando se actualiza cálculo de ruta
-    handleGuardarCartaPorteOficial();
   }, []);
 
   // Manejar aceptación de borrador
@@ -205,7 +203,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setDatosCalculoRuta(null);
   }, [rejectBorrador]);
   
-  // Guardar como carta porte oficial (no borrador) - MEJORADO
+  // Guardar como carta porte oficial (no borrador) - MEJORADO con mejor manejo de datos
   const handleGuardarCartaPorteOficial = useCallback(async () => {
     if (!user?.id) {
       toast.error('Usuario no autenticado');
@@ -224,7 +222,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         datosCalculoRuta
       };
       
-      // Preparar datos para la carta porte oficial - FIXED: Cast to any for Json compatibility
+      // Preparar datos para la carta porte oficial - MEJORADO
       const cartaPorteData = {
         folio: currentCartaPorteId ? undefined : `CP-${Date.now().toString().slice(-8)}`,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -244,7 +242,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
       if (currentCartaPorteId) {
         // Actualizar carta porte existente
-        console.log('Actualizando carta porte existente:', currentCartaPorteId);
+        console.log('📝 Actualizando carta porte existente:', currentCartaPorteId);
         const { error } = await supabase
           .from('cartas_porte')
           .update(cartaPorteData)
@@ -252,12 +250,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           .eq('usuario_id', user.id);
 
         if (error) {
-          console.error('Error actualizando carta porte:', error);
+          console.error('❌ Error actualizando carta porte:', error);
           throw error;
         }
       } else {
-        // Crear nueva carta porte - FIXED: Proper data structure
-        console.log('Creando nueva carta porte');
+        // Crear nueva carta porte - MEJORADO
+        console.log('➕ Creando nueva carta porte');
         const insertData = {
           ...cartaPorteData,
           created_at: new Date().toISOString(),
@@ -271,14 +269,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           .single();
 
         if (error) {
-          console.error('Error creando carta porte:', error);
+          console.error('❌ Error creando carta porte:', error);
           throw error;
         }
         
         if (nuevaCarta?.id) {
           savedId = nuevaCarta.id;
           setCurrentCartaPorteId(nuevaCarta.id);
-          console.log('Nueva carta porte creada:', nuevaCarta.id);
+          console.log('✅ Nueva carta porte creada:', nuevaCarta.id);
         }
       }
       
@@ -287,7 +285,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       
       return savedId;
     } catch (error: any) {
-      console.error('Error guardando carta porte:', error);
+      console.error('❌ Error guardando carta porte:', error);
       toast.error(`Error al guardar: ${error.message || 'Error desconocido'}`);
       throw error;
     } finally {
@@ -340,7 +338,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     }
   }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando, handleGuardarCartaPorteOficial]);
 
-  // FIXED: Implement missing handleLimpiarBorrador function
+  // Mejorar el guardado de borrador
   const handleLimpiarBorrador = useCallback(async () => {
     try {
       if (currentCartaPorteId) {
@@ -409,9 +407,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     handleGuardarBorrador,
     handleGuardarCartaPorteOficial,
     handleGuardarYSalir,
-    handleLimpiarBorrador, // Now properly implemented
+    handleLimpiarBorrador,
     
-    // Nuevos handlers para datos persistidos
+    // Handlers mejorados para datos persistidos
     handleXMLGenerated,
     handleCalculoRutaUpdate,
   };
