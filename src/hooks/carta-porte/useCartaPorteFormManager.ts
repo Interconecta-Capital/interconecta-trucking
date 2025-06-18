@@ -2,6 +2,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
+import { Ubicacion } from '@/types/ubicaciones';
+import { mapUbicacionToCompleta } from './mapUbicacionToCompleta';
 import { BorradorService } from '@/services/borradorService';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { useCartaPortePersistence } from './useCartaPortePersistence';
@@ -160,8 +162,11 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   }, []);
 
   // Setters estables para cada sección del formulario
-  const setUbicaciones = useCallback((ubicaciones: UbicacionCompleta[]) => {
-    setFormData(prev => ({ ...prev, ubicaciones }));
+  const setUbicaciones = useCallback((ubicaciones: (Ubicacion | UbicacionCompleta)[]) => {
+    const completas = ubicaciones.map(ub =>
+      (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(ub as Ubicacion)
+    );
+    setFormData(prev => ({ ...prev, ubicaciones: completas }));
   }, []);
 
   const setMercancias = useCallback((mercancias: MercanciaCompleta[]) => {
@@ -270,6 +275,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       // Preparar datos completos con estado actual
       const datosCompletos: CartaPorteData = {
         ...formData,
+        ubicaciones: (formData.ubicaciones || []).map(ub =>
+          (ub as any).tipo_ubicacion ? ub as UbicacionCompleta : mapUbicacionToCompleta(ub as Ubicacion)
+        ),
         currentStep,
         xmlGenerado,
         datosCalculoRuta
@@ -382,6 +390,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     try {
       const datosCompletos: CartaPorteData = {
         ...formData,
+        ubicaciones: (formData.ubicaciones || []).map(ub =>
+          (ub as any).tipo_ubicacion ? ub as UbicacionCompleta : mapUbicacionToCompleta(ub as Ubicacion)
+        ),
         currentStep,
         xmlGenerado,
         datosCalculoRuta
