@@ -37,7 +37,6 @@ export function UbicacionesSectionOptimizada({
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [showViajeModal, setShowViajeModal] = useState(false);
-  const [hasValidCalculations, setHasValidCalculations] = useState(false); // NUEVO: Flag para cálculos válidos
   
   const { toast } = useToast();
   const { createViaje, isCreating } = useViajeCreation();
@@ -74,15 +73,18 @@ export function UbicacionesSectionOptimizada({
     if (ubicaciones.length > 0) {
       console.log('💾 Persistiendo datos de ubicaciones:', ubicaciones);
       
+      // Validar y actualizar estado si hay distancias calculadas
+      const hasValidDistances = distanciaTotal > 0 && tiempoEstimado > 0;
+      
       localStorage.setItem('carta-porte-ubicaciones', JSON.stringify({
         ubicaciones,
         distanciaTotal,
         tiempoEstimado,
-        hasValidCalculations,
+        hasValidDistances,
         timestamp: new Date().toISOString()
       }));
     }
-  }, [ubicaciones, distanciaTotal, tiempoEstimado, hasValidCalculations]);
+  }, [ubicaciones, distanciaTotal, tiempoEstimado]);
 
   const handleAgregarUbicacion = () => {
     setEditingIndex(null);
@@ -205,15 +207,14 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
-  // CORREGIDO: Manejar cálculo de distancia total con flag de validez
+  // Manejar cálculo de distancia total MEJORADO - Updated to match interface
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
     setIsCalculatingDistance(true);
     try {
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
-      setHasValidCalculations(true); // NUEVO: Marcar como válido
       
-      // Notificar al componente padre para persistir
+      // Notificar al componente padre para persistir - Updated to use object format
       if (onDistanceCalculated) {
         onDistanceCalculated({
           distanciaTotal: distancia,
@@ -273,13 +274,12 @@ export function UbicacionesSectionOptimizada({
     onNext();
   };
 
-  // CORREGIDO: Validación que NO muestra alertas falsas cuando hay cálculos válidos
+  // MEJORADO: Validación que considera distancias calculadas
   const validacion = validarSecuenciaUbicaciones();
   const distanciaCalculada = calcularDistanciaTotal();
   const canCalculateDistances = ubicaciones.length >= 2;
-  
-  // MEJORADO: Solo permitir continuar si hay ubicaciones Y (validación correcta O cálculos válidos)
-  const canContinue = ubicaciones.length > 0 && (validacion.esValido || hasValidCalculations);
+  const hasValidDistances = distanciaTotal > 0 && tiempoEstimado > 0;
+  const canContinue = ubicaciones.length > 0 && (validacion.esValido || hasValidDistances);
 
   if (showForm) {
     return (
@@ -308,8 +308,8 @@ export function UbicacionesSectionOptimizada({
         onCalcularRuta={handleCalcularRuta}
       />
 
-      {/* CORREGIDO: Solo mostrar validación si NO hay cálculos válidos */}
-      {!hasValidCalculations && ubicaciones.length > 0 && (
+      {/* MEJORADO: Validación que no muestra alertas falsas */}
+      {!hasValidDistances && (
         <UbicacionesValidation
           validacion={validacion}
           distanciaTotal={distanciaCalculada}
