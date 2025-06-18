@@ -90,17 +90,20 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         onReject={handleRejectBorrador}
       />
 
-      <CartaPorteHeader
-        borradorCargado={borradorCargado}
-        ultimoGuardado={ultimoGuardado}
-        onGuardarBorrador={handleGuardarBorrador}
-        onLimpiarBorrador={handleLimpiarBorrador}
-        onGuardarYSalir={handleGuardarYSalir}
-        isGuardando={isGuardando}
-      />
+      {/* Header con mejor espaciado */}
+      <div className="mb-8">
+        <CartaPorteHeader
+          borradorCargado={borradorCargado}
+          ultimoGuardado={ultimoGuardado}
+          onGuardarBorrador={handleGuardarBorrador}
+          onLimpiarBorrador={handleLimpiarBorrador}
+          onGuardarYSalir={handleGuardarYSalir}
+          isGuardando={isGuardando}
+        />
+      </div>
 
-      {/* Indicador de progreso mejorado */}
-      <div className="mb-6">
+      {/* Indicador de progreso con más margen */}
+      <div className="mb-8 bg-white rounded-lg shadow-sm border p-6">
         <CartaPorteProgressIndicator
           validationSummary={validationSummary}
           currentStep={currentStep}
@@ -109,6 +112,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         />
       </div>
 
+      {/* Contenido del paso actual */}
       <OptimizedCartaPorteStepContent
         currentStep={currentStep}
         configuracion={configuracion}
@@ -130,7 +134,10 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         onCalculoRutaUpdate={handleCalculoRutaUpdate}
       />
 
-      <CartaPorteAutoSaveIndicator />
+      {/* Indicador de auto-guardado */}
+      <div className="mt-8">
+        <CartaPorteAutoSaveIndicator />
+      </div>
     </div>
   );
 });

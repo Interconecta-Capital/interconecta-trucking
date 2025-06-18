@@ -1,7 +1,6 @@
 
-import { useState, useCallback } from 'react';
-import { XMLValidator, ValidationResult } from '@/services/xmlValidator';
-import { useToast } from '@/hooks/use-toast';
+import { useMemo } from 'react';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 export interface ValidationSummary {
   sectionStatus: {
@@ -12,209 +11,180 @@ export interface ValidationSummary {
     figuras: 'empty' | 'incomplete' | 'complete';
     xml: 'empty' | 'incomplete' | 'complete';
   };
-  totalErrors: number;
-  totalWarnings: number;
-  isFormComplete: boolean;
-  completionPercentage: number;
+  overallProgress: number;
+  missingFields: {
+    configuracion: string[];
+    ubicaciones: string[];
+    mercancias: string[];
+    autotransporte: string[];
+    figuras: string[];
+  };
+  completedSections: number;
+  totalSections: number;
 }
 
 export const useCartaPorteValidation = () => {
-  const [validationResults, setValidationResults] = useState<ValidationResult | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const { toast } = useToast();
+  const getValidationSummary = useMemo(() => {
+    return (formData: CartaPorteData): ValidationSummary => {
+      console.log('🔍 Validando datos del formulario:', {
+        hasEmisor: !!formData.rfcEmisor,
+        hasReceptor: !!formData.rfcReceptor,
+        ubicacionesCount: formData.ubicaciones?.length || 0,
+        mercanciasCount: formData.mercancias?.length || 0,
+        hasAutotransporte: !!formData.autotransporte?.placa_vm,
+        figurasCount: formData.figuras?.length || 0
+      });
 
-  const getValidationSummary = useCallback((formData: any): ValidationSummary => {
-    const summary: ValidationSummary = {
-      sectionStatus: {
-        configuracion: 'empty',
-        ubicaciones: 'empty',
-        mercancias: 'empty',
-        autotransporte: 'empty',
-        figuras: 'empty',
-        xml: 'empty'
-      },
-      totalErrors: 0,
-      totalWarnings: 0,
-      isFormComplete: false,
-      completionPercentage: 0
-    };
-
-    // Configuración
-    if (formData.rfcEmisor && formData.rfcReceptor) {
-      summary.sectionStatus.configuracion = 'complete';
-    } else if (formData.rfcEmisor || formData.rfcReceptor) {
-      summary.sectionStatus.configuracion = 'incomplete';
-    }
-
-    // Ubicaciones
-    if (formData.ubicaciones?.length >= 2) {
-      summary.sectionStatus.ubicaciones = 'complete';
-    } else if (formData.ubicaciones?.length > 0) {
-      summary.sectionStatus.ubicaciones = 'incomplete';
-    }
-
-    // Mercancías
-    if (formData.mercancias?.length > 0) {
-      summary.sectionStatus.mercancias = 'complete';
-    }
-
-    // Autotransporte
-    if (formData.autotransporte?.placa_vm) {
-      summary.sectionStatus.autotransporte = 'complete';
-    }
-
-    // Figuras
-    if (formData.figuras?.length > 0) {
-      summary.sectionStatus.figuras = 'complete';
-    }
-
-    // XML (se establecerá externamente)
-    summary.sectionStatus.xml = 'empty';
-
-    // Calcular porcentaje de completitud
-    const completeSections = Object.values(summary.sectionStatus).filter(status => status === 'complete').length;
-    const totalSections = Object.keys(summary.sectionStatus).length;
-    summary.completionPercentage = Math.round((completeSections / totalSections) * 100);
-
-    // Calcular si el formulario está completo
-    summary.isFormComplete = completeSections >= 5; // Sin contar XML
-
-    return summary;
-  }, []);
-
-  const validateCartaPorte = useCallback(async (cartaPorteData: any) => {
-    setIsValidating(true);
-    
-    try {
-      // Validar reglas de negocio
-      const businessValidation = XMLValidator.validateBusinessRules(cartaPorteData);
-      
-      setValidationResults(businessValidation);
-      
-      if (businessValidation.isValid) {
-        toast({
-          title: "Validación exitosa",
-          description: "La Carta Porte cumple con todas las validaciones requeridas.",
-        });
-      } else {
-        toast({
-          title: "Errores de validación",
-          description: `Se encontraron ${businessValidation.errors.length} errores que deben corregirse.`,
-          variant: "destructive"
-        });
-      }
-      
-      if (businessValidation.warnings.length > 0) {
-        toast({
-          title: "Advertencias",
-          description: `${businessValidation.warnings.length} advertencias encontradas.`,
-          variant: "default"
-        });
-      }
-      
-      return businessValidation;
-    } catch (error) {
-      console.error('Error en validación:', error);
-      const errorResult: ValidationResult = {
-        isValid: false,
-        errors: ['Error interno de validación'],
-        warnings: []
+      const missingFields = {
+        configuracion: [] as string[],
+        ubicaciones: [] as string[],
+        mercancias: [] as string[],
+        autotransporte: [] as string[],
+        figuras: [] as string[]
       };
-      setValidationResults(errorResult);
-      return errorResult;
-    } finally {
-      setIsValidating(false);
-    }
-  }, [toast]);
 
-  const validateXML = useCallback((xmlObject: any) => {
-    setIsValidating(true);
-    
-    try {
-      const xmlValidation = XMLValidator.validateCartaPorteXML(xmlObject);
-      setValidationResults(xmlValidation);
+      // Validar Configuración
+      let configuracionStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
+      if (!formData.rfcEmisor) missingFields.configuracion.push('RFC del Emisor');
+      if (!formData.nombreEmisor) missingFields.configuracion.push('Nombre del Emisor');
+      if (!formData.rfcReceptor) missingFields.configuracion.push('RFC del Receptor');
+      if (!formData.nombreReceptor) missingFields.configuracion.push('Nombre del Receptor');
       
-      if (xmlValidation.isValid) {
-        toast({
-          title: "XML válido",
-          description: "El XML generado cumple con el esquema SAT.",
-        });
+      if (formData.rfcEmisor || formData.rfcReceptor) {
+        configuracionStatus = missingFields.configuracion.length === 0 ? 'complete' : 'incomplete';
+      }
+
+      // Validar Ubicaciones
+      let ubicacionesStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
+      const ubicaciones = formData.ubicaciones || [];
+      
+      if (ubicaciones.length === 0) {
+        missingFields.ubicaciones.push('Agregar al menos una ubicación de origen');
+        missingFields.ubicaciones.push('Agregar al menos una ubicación de destino');
       } else {
-        toast({
-          title: "XML inválido",
-          description: "El XML no cumple con el esquema requerido por el SAT.",
-          variant: "destructive"
+        const hasOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
+        const hasDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
+        
+        if (!hasOrigen) missingFields.ubicaciones.push('Ubicación de Origen');
+        if (!hasDestino) missingFields.ubicaciones.push('Ubicación de Destino');
+        
+        // Validar domicilios completos
+        ubicaciones.forEach((ub, index) => {
+          if (!ub.domicilio?.codigo_postal) {
+            missingFields.ubicaciones.push(`Código postal en ubicación ${index + 1}`);
+          }
+          if (!ub.domicilio?.calle) {
+            missingFields.ubicaciones.push(`Calle en ubicación ${index + 1}`);
+          }
+          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso') {
+            missingFields.ubicaciones.push(`RFC en ubicación ${index + 1}`);
+          }
         });
+        
+        ubicacionesStatus = missingFields.ubicaciones.length === 0 ? 'complete' : 'incomplete';
+      }
+
+      // Validar Mercancías
+      let mercanciasStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
+      const mercancias = formData.mercancias || [];
+      
+      if (mercancias.length === 0) {
+        missingFields.mercancias.push('Agregar al menos una mercancía');
+      } else {
+        mercancias.forEach((merc, index) => {
+          if (!merc.bienes_transp) {
+            missingFields.mercancias.push(`Clave de producto en mercancía ${index + 1}`);
+          }
+          if (!merc.cantidad || merc.cantidad <= 0) {
+            missingFields.mercancias.push(`Cantidad en mercancía ${index + 1}`);
+          }
+          if (!merc.peso_kg || merc.peso_kg <= 0) {
+            missingFields.mercancias.push(`Peso en mercancía ${index + 1}`);
+          }
+        });
+        
+        mercanciasStatus = missingFields.mercancias.length === 0 ? 'complete' : 'incomplete';
+      }
+
+      // Validar Autotransporte
+      let autotransporteStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
+      const auto = formData.autotransporte;
+      
+      if (!auto?.placa_vm) {
+        missingFields.autotransporte.push('Placa del vehículo');
+      }
+      if (!auto?.config_vehicular) {
+        missingFields.autotransporte.push('Configuración vehicular');
+      }
+      if (!auto?.perm_sct) {
+        missingFields.autotransporte.push('Permiso SCT');
+      }
+      if (!auto?.num_permiso_sct) {
+        missingFields.autotransporte.push('Número de permiso SCT');
+      }
+      if (!auto?.asegura_resp_civil) {
+        missingFields.autotransporte.push('Aseguradora');
+      }
+      if (!auto?.poliza_resp_civil) {
+        missingFields.autotransporte.push('Póliza de seguro');
       }
       
-      return xmlValidation;
-    } catch (error) {
-      console.error('Error validando XML:', error);
-      const errorResult: ValidationResult = {
-        isValid: false,
-        errors: ['Error validando estructura XML'],
-        warnings: []
+      if (auto?.placa_vm) {
+        autotransporteStatus = missingFields.autotransporte.length === 0 ? 'complete' : 'incomplete';
+      }
+
+      // Validar Figuras
+      let figurasStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
+      const figuras = formData.figuras || [];
+      
+      if (figuras.length === 0) {
+        missingFields.figuras.push('Agregar al menos una figura de transporte');
+      } else {
+        figuras.forEach((figura, index) => {
+          if (!figura.rfc_figura) {
+            missingFields.figuras.push(`RFC en figura ${index + 1}`);
+          }
+          if (!figura.nombre_figura) {
+            missingFields.figuras.push(`Nombre en figura ${index + 1}`);
+          }
+          if (!figura.tipo_figura) {
+            missingFields.figuras.push(`Tipo de figura ${index + 1}`);
+          }
+        });
+        
+        figurasStatus = missingFields.figuras.length === 0 ? 'complete' : 'incomplete';
+      }
+
+      const sectionStatus = {
+        configuracion: configuracionStatus,
+        ubicaciones: ubicacionesStatus,
+        mercancias: mercanciasStatus,
+        autotransporte: autotransporteStatus,
+        figuras: figurasStatus,
+        xml: 'empty' as const
       };
-      setValidationResults(errorResult);
-      return errorResult;
-    } finally {
-      setIsValidating(false);
-    }
-  }, [toast]);
 
-  const validateComplete = useCallback((formData: any) => {
-    const summary = getValidationSummary(formData);
-    return {
-      isValid: summary.isFormComplete,
-      errors: summary.totalErrors > 0 ? ['Hay errores en el formulario'] : [],
-      warnings: summary.totalWarnings > 0 ? ['Hay advertencias en el formulario'] : [],
-      completionPercentage: summary.completionPercentage
-    };
-  }, [getValidationSummary]);
+      const completedSections = Object.values(sectionStatus).filter(status => status === 'complete').length;
+      const totalSections = Object.keys(sectionStatus).length - 1; // Excluir XML del conteo
+      const overallProgress = Math.round((completedSections / totalSections) * 100);
 
-  const validateSection = useCallback((sectionKey: string, sectionData: any) => {
-    // Validación básica por sección
-    let isValid = false;
-    
-    switch (sectionKey) {
-      case 'configuracion':
-        isValid = sectionData.rfcEmisor && sectionData.rfcReceptor;
-        break;
-      case 'ubicaciones':
-        isValid = Array.isArray(sectionData) && sectionData.length >= 2;
-        break;
-      case 'mercancias':
-        isValid = Array.isArray(sectionData) && sectionData.length > 0;
-        break;
-      case 'autotransporte':
-        isValid = sectionData && sectionData.placa_vm;
-        break;
-      case 'figuras':
-        isValid = Array.isArray(sectionData) && sectionData.length > 0;
-        break;
-      default:
-        isValid = true;
-    }
+      console.log('📊 Resultado de validación:', {
+        completedSections,
+        totalSections,
+        overallProgress,
+        sectionStatus,
+        totalMissingFields: Object.values(missingFields).flat().length
+      });
 
-    return {
-      isValid,
-      errors: isValid ? [] : [`Sección ${sectionKey} incompleta`],
-      warnings: []
+      return {
+        sectionStatus,
+        overallProgress,
+        missingFields,
+        completedSections,
+        totalSections
+      };
     };
   }, []);
 
-  const clearValidation = useCallback(() => {
-    setValidationResults(null);
-  }, []);
-
-  return {
-    validationResults,
-    isValidating,
-    validateCartaPorte,
-    validateXML,
-    validateComplete,
-    validateSection,
-    clearValidation,
-    getValidationSummary
-  };
+  return { getValidationSummary };
 };

@@ -21,6 +21,16 @@ export interface CartaPorteData {
   pais_origen_destino?: string;
   via_entrada_salida?: string;
   cartaPorteId?: string;
+  
+  // Campos para persistencia de estado
+  xmlGenerado?: string;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  };
+  currentStep?: number;
+  
   // Add missing properties for version management
   regimenAduanero?: string;
   regimenesAduaneros?: string[];

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +14,7 @@ import { TimbradoSection } from './sections/TimbradoSection';
 import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection';
 import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
+import { PDFGenerationPanel } from './PDFGenerationPanel';
 
 interface XMLGenerationPanelProps {
   cartaPorteData: CartaPorteData;
@@ -197,6 +197,14 @@ export function XMLGenerationPanel({
               onValidarConexionPAC={validarConexionPAC}
               onTimbrar={handleTimbrar}
               onDescargarTimbrado={() => descargarXML('timbrado')}
+            />
+
+            <Separator />
+
+            {/* PDF Generation Panel - Nueva sección */}
+            <PDFGenerationPanel
+              cartaPorteData={cartaPorteData}
+              xmlGenerado={xmlActual}
             />
 
             <Separator />
