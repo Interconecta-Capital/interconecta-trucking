@@ -25,15 +25,37 @@ export class XMLUtils {
     }, 0) || 0;
   }
 
+  static generarIdCCP(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    // Fallback UUID v4
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
   static construirAtributosInternacionales(data: CartaPorteData): string {
     if (!data.transporteInternacional) return '';
 
     return (
       `EntradaSalidaMerc="${data.entradaSalidaMerc ?? ''}" ` +
       `PaisOrigenDestino="${data.pais_origen_destino ?? ''}" ` +
-      `ViaEntradaSalida="${data.via_entrada_salida ?? ''}" ` +
-      (data.regimenAduanero ? `RegimenAduanero="${data.regimenAduanero}" ` : '')
+      `ViaEntradaSalida="${data.via_entrada_salida ?? ''}" `
     );
+  }
+
+  static construirRegimenesAduaneros(data: CartaPorteData): string {
+    const regs = data.regimenesAduaneros || [];
+    if (!regs.length) return '';
+
+    const items = regs
+      .slice(0, 10)
+      .map(r => `<cartaporte31:RegimenAduanero RegimenAduanero="${r}" />`)
+      .join('\n      ');
+    return `<cartaporte31:RegimenesAduaneros>\n      ${items}\n    </cartaporte31:RegimenesAduaneros>`;
   }
 
   static getTipoFiguraDescripcion(tipo: string): string {
@@ -58,10 +80,16 @@ export const getUbicacionDestino = (data: any) => {
 };
 
 export const buildComplementoCartaPorte = (data: any): string => {
+  const id = data.idCCP || XMLUtils.generarIdCCP();
+  data.idCCP = id;
+  const regimenes = XMLUtils.construirRegimenesAduaneros(data);
+
   return `<cartaporte31:CartaPorte
     Version="3.1"
     TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
+    IdCCP="${id}"
     ${XMLUtils.construirAtributosInternacionales(data)}
-    ${data.regimenAduanero ? `RegimenAduanero="${data.regimenAduanero}"` : ''}
-    TotalDistRec="${data.totalDistRec ?? 0}" />`;
+    TotalDistRec="${data.totalDistRec ?? 0}">
+    ${regimenes}
+  </cartaporte31:CartaPorte>`;
 };
