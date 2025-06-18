@@ -48,7 +48,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleCalculoRutaUpdate,
   } = useCartaPorteFormManager(cartaPorteId);
 
-  // Crear un objeto Autotransporte por defecto para evitar errores de tipo
+  // CORREGIDO: Autotransporte por defecto mejorado
   const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
     placa_vm: '',
     anio_modelo_vm: new Date().getFullYear(),
@@ -60,8 +60,10 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     remolques: []
   }), []);
 
-  // Manejar navegación entre pasos con validación mejorada
+  // CORREGIDO: Navegación mejorada con mejor validación
   const handleStepNavigation = useCallback((targetStep: number) => {
+    console.log('🔄 Navegando al paso:', targetStep);
+    
     // Permitir navegación hacia atrás siempre
     if (targetStep < currentStep) {
       setCurrentStep(targetStep);
@@ -73,7 +75,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     const currentSectionKey = currentSectionKeys[currentStep];
     
     if (currentSectionKey && validationSummary.sectionStatus[currentSectionKey] === 'empty') {
-      // No permitir avanzar si la sección actual está vacía
+      console.log('⚠️ No se puede avanzar, sección actual vacía:', currentSectionKey);
       return;
     }
 
@@ -81,8 +83,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   }, [currentStep, setCurrentStep, validationSummary.sectionStatus]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Container principal con padding apropiado */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* CORREGIDO: Container principal con mejor diseño */}
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Dialog de recuperación de borrador */}
         <BorradorRecoveryDialog
@@ -92,8 +94,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
           onReject={handleRejectBorrador}
         />
 
-        {/* Header fijo mejorado */}
-        <div className="sticky top-0 z-10 bg-gray-50 pb-4">
+        {/* CORREGIDO: Header mejorado con mejor fondo */}
+        <div className="sticky top-0 z-10 bg-gradient-to-br from-gray-50 to-blue-50 pb-4">
           <CartaPorteHeader
             borradorCargado={borradorCargado}
             ultimoGuardado={ultimoGuardado}
@@ -103,7 +105,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
             isGuardando={isGuardando}
           />
 
-          {/* Indicador de progreso mejorado con espaciado */}
+          {/* CORREGIDO: Indicador de progreso con mejor espaciado */}
           <div className="mt-4">
             <CartaPorteProgressIndicator
               validationSummary={validationSummary}
@@ -114,32 +116,34 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
           </div>
         </div>
 
-        {/* Contenido principal con mejor espaciado */}
+        {/* CORREGIDO: Contenido principal con sombra mejorada */}
         <div className="mt-6">
-          <OptimizedCartaPorteStepContent
-            currentStep={currentStep}
-            configuracion={configuracion}
-            ubicaciones={ubicaciones}
-            mercancias={mercancias}
-            autotransporte={autotransporte || defaultAutotransporte}
-            figuras={figuras}
-            currentCartaPorteId={currentCartaPorteId}
-            onConfiguracionChange={handleConfiguracionChange}
-            onUbicacionesChange={setUbicaciones}
-            onMercanciasChange={setMercancias}  
-            onAutotransporteChange={setAutotransporte}
-            onFigurasChange={setFiguras}
-            onStepChange={setCurrentStep}
-            onXMLGenerated={handleXMLGenerated}
-            onTimbrado={() => {}}
-            xmlGenerado={xmlGenerado}
-            datosCalculoRuta={datosCalculoRuta}
-            onCalculoRutaUpdate={handleCalculoRutaUpdate}
-          />
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <OptimizedCartaPorteStepContent
+              currentStep={currentStep}
+              configuracion={configuracion}
+              ubicaciones={ubicaciones}
+              mercancias={mercancias}
+              autotransporte={autotransporte || defaultAutotransporte}
+              figuras={figuras}
+              currentCartaPorteId={currentCartaPorteId}
+              onConfiguracionChange={handleConfiguracionChange}
+              onUbicacionesChange={setUbicaciones}
+              onMercanciasChange={setMercancias}  
+              onAutotransporteChange={setAutotransporte}
+              onFigurasChange={setFiguras}
+              onStepChange={setCurrentStep}
+              onXMLGenerated={handleXMLGenerated}
+              onTimbrado={() => {}}
+              xmlGenerado={xmlGenerado}
+              datosCalculoRuta={datosCalculoRuta}
+              onCalculoRutaUpdate={handleCalculoRutaUpdate}
+            />
+          </div>
         </div>
 
-        {/* Auto-save indicator en posición fija */}
-        <div className="fixed bottom-4 right-4 z-20">
+        {/* CORREGIDO: Auto-save indicator mejorado */}
+        <div className="fixed bottom-6 right-6 z-20">
           <CartaPorteAutoSaveIndicator />
         </div>
       </div>

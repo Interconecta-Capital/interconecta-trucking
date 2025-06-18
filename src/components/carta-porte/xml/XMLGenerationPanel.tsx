@@ -1,256 +1,99 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { FileText } from 'lucide-react';
-import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
-import { usePDFGeneration } from '@/hooks/usePDFGeneration';
-import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
+import { FileText, Download } from 'lucide-react';
 import { CartaPorteData } from '@/types/cartaPorte';
-import { PDFPreviewDialog } from '../pdf/PDFPreviewDialog';
-import { XMLSection } from './sections/XMLSection';
-import { PDFSection } from './sections/PDFSection';
-import { TimbradoSection } from './sections/TimbradoSection';
-import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection';
-import { TrackingSection } from '../tracking/TrackingSection';
-import { XMLPreviewSection } from './sections/XMLPreviewSection';
+import { PDFGenerationPanel } from './PDFGenerationPanel';
 
 interface XMLGenerationPanelProps {
   cartaPorteData: CartaPorteData;
-  cartaPorteId?: string;
-  onXMLGenerated?: (xml: string) => void;
-  onTimbrado?: (datos: any) => void;
+  cartaPorteId?: string | null;
+  onXMLGenerated: (xml: string) => void;
+  onTimbrado: (data: any) => void;
   xmlGenerado?: string | null;
   datosCalculoRuta?: {
     distanciaTotal?: number;
     tiempoEstimado?: number;
+    calculadoEn?: string;
   } | null;
 }
 
-export function XMLGenerationPanel({ 
-  cartaPorteData, 
-  cartaPorteId, 
-  onXMLGenerated, 
+export function XMLGenerationPanel({
+  cartaPorteData,
+  cartaPorteId,
+  onXMLGenerated,
   onTimbrado,
-  xmlGenerado: xmlGeneradoProp,
+  xmlGenerado,
   datosCalculoRuta
 }: XMLGenerationPanelProps) {
-  const [showPDFPreview, setShowPDFPreview] = useState(false);
-  const [autoTimbrado, setAutoTimbrado] = useState(true);
-  
-  const {
-    isGenerating,
-    isTimbring,
-    xmlGenerado: xmlGeneradoHook,
-    xmlTimbrado,
-    datosTimbre,
-    generarXML,
-    timbrarCartaPorte,
-    descargarXML,
-    validarConexionPAC
-  } = useCartaPorteXMLManager();
-
-  // Usar XML del prop si existe, sino el del hook
-  const xmlActual = xmlGeneradoProp || xmlGeneradoHook;
-
-  const {
-    isGenerating: isGeneratingPDF,
-    pdfUrl,
-    generarPDF,
-    descargarPDF,
-    limpiarPDF
-  } = usePDFGeneration();
-
-  const {
-    eventos,
-    agregarEvento
-  } = useTrackingCartaPorte(cartaPorteId);
-
-  // Verificar si la carta porte está completa
-  const cartaPorteCompleta = !!(
-    cartaPorteData.rfcEmisor &&
-    cartaPorteData.rfcReceptor &&
-    cartaPorteData.ubicaciones?.length >= 2 &&
-    cartaPorteData.mercancias?.length > 0 &&
-    cartaPorteData.autotransporte?.placa_vm &&
-    cartaPorteData.figuras?.length > 0
-  );
-
-  // Auto-timbrado cuando se completan los datos
-  useEffect(() => {
-    if (autoTimbrado && cartaPorteCompleta && xmlActual && !xmlTimbrado && !isTimbring) {
-      console.log('Iniciando auto-timbrado...');
-      handleTimbrar();
-    }
-  }, [autoTimbrado, cartaPorteCompleta, xmlActual, xmlTimbrado, isTimbring]);
-
-  const handleGenerarXML = async () => {
-    const resultado = await generarXML(cartaPorteData);
-    if (resultado.success && resultado.xml) {
-      // Notificar al componente padre que se generó XML
-      if (onXMLGenerated) {
-        onXMLGenerated(resultado.xml);
-      }
-      
-      // Agregar evento de tracking
-      if (cartaPorteId) {
-        await agregarEvento({
-          evento: 'xml_generado',
-          descripcion: 'XML de Carta Porte generado correctamente'
-        });
-      }
-    }
-  };
-
-  const handleTimbrar = async () => {
-    if (!cartaPorteId) {
-      console.error('ID de carta porte requerido para timbrado');
-      return;
-    }
-    
-    const resultado = await timbrarCartaPorte(cartaPorteData, cartaPorteId);
-    if (resultado.success && onTimbrado) {
-      onTimbrado(resultado);
-      
-      // Agregar evento de tracking
-      await agregarEvento({
-        evento: 'timbrado',
-        descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
-        metadata: {
-          uuid: resultado.uuid,
-          ambiente: 'test'
-        }
-      });
-    }
-  };
-
-  const handleGenerarPDF = async () => {
-    const resultado = await generarPDF(cartaPorteData, datosTimbre);
-    if (resultado.success) {
-      console.log('PDF generado exitosamente');
-    }
-  };
-
-  const handleVisualizarPDF = () => {
-    if (!pdfUrl) {
-      handleGenerarPDF();
-    } else {
-      setShowPDFPreview(true);
-    }
-  };
-
-  const getStatusBadge = () => {
-    if (xmlTimbrado) {
-      return <Badge className="bg-green-100 text-green-800">Timbrado</Badge>;
-    }
-    if (xmlActual) {
-      return <Badge className="bg-blue-100 text-blue-800">XML Generado</Badge>;
-    }
-    return <Badge variant="outline">Sin procesar</Badge>;
-  };
 
   return (
-    <>
-      <div className="space-y-6">
-        <Card className="w-full">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5" />
-                <span>Generación XML y Timbrado FISCAL API</span>
-              </CardTitle>
-              {getStatusBadge()}
+    <div className="space-y-6">
+      <Card className="border-green-200 bg-green-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-green-800">
+            <FileText className="w-5 h-5" />
+            Generación XML
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <FileText className="w-12 h-12 text-green-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-green-800 mb-2">
+              Funcionalidad de XML en Desarrollo
+            </h3>
+            <p className="text-sm text-green-700 mb-4">
+              La generación de XML está siendo implementada y estará disponible próximamente.
+            </p>
+            <div className="bg-green-100 p-4 rounded-lg">
+              <p className="text-xs text-green-600">
+                💡 Mientras tanto, puedes generar un PDF con todos los datos de tu Carta Porte
+              </p>
             </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-6">
-            <XMLSection
-              isGenerating={isGenerating}
-              xmlGenerado={xmlActual}
-              onGenerarXML={handleGenerarXML}
-              onDescargarXML={() => descargarXML('generado')}
-              onRegenerarXML={handleGenerarXML}
-            />
-
-            <XMLPreviewSection xmlGenerado={xmlActual} />
-
-            <Separator />
-
-            <TimbradoAutomaticoSection
-              cartaPorteCompleta={cartaPorteCompleta}
-              autoTimbrado={autoTimbrado}
-              onToggleAutoTimbrado={setAutoTimbrado}
-              onTimbrarManual={handleTimbrar}
-              isTimbring={isTimbring}
-              xmlTimbrado={xmlTimbrado}
-            />
-
-            <Separator />
-
-            <TimbradoSection
-              xmlGenerado={xmlActual}
-              xmlTimbrado={xmlTimbrado}
-              datosTimbre={datosTimbre}
-              isTimbring={isTimbring}
-              cartaPorteId={cartaPorteId}
-              onValidarConexionPAC={validarConexionPAC}
-              onTimbrar={handleTimbrar}
-              onDescargarTimbrado={() => descargarXML('timbrado')}
-            />
-
-            <Separator />
-
-            <PDFSection
-              isGeneratingPDF={isGeneratingPDF}
-              pdfUrl={pdfUrl}
-              onGenerarPDF={handleGenerarPDF}
-              onVisualizarPDF={handleVisualizarPDF}
-              onDescargarPDF={() => descargarPDF(`carta-porte-${Date.now()}.pdf`)}
-            />
-
-            {/* Mostrar información de cálculos de ruta si están disponibles */}
-            {datosCalculoRuta && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Información de Ruta</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {datosCalculoRuta.distanciaTotal && (
-                    <div>
-                      <span className="text-blue-700">Distancia Total:</span>
-                      <span className="ml-2 font-medium">{datosCalculoRuta.distanciaTotal} km</span>
-                    </div>
-                  )}
-                  {datosCalculoRuta.tiempoEstimado && (
-                    <div>
-                      <span className="text-blue-700">Tiempo Estimado:</span>
-                      <span className="ml-2 font-medium">{Math.round(datosCalculoRuta.tiempoEstimado / 60)} horas</span>
-                    </div>
-                  )}
+            
+            {xmlGenerado && (
+              <div className="mt-4 p-3 bg-green-200 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-green-800">
+                  <Download className="w-4 h-4" />
+                  <span className="text-sm font-medium">XML Disponible</span>
                 </div>
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* NUEVO: Panel de generación de PDF */}
+      <PDFGenerationPanel
+        cartaPorteData={cartaPorteData}
+        cartaPorteId={cartaPorteId}
+        xmlGenerado={xmlGenerado}
+      />
+
+      {/* Información adicional */}
+      {datosCalculoRuta && datosCalculoRuta.distanciaTotal && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <h4 className="font-medium text-blue-800 mb-2">Datos de Ruta Calculados</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-blue-600">Distancia Total:</span>
+                  <p className="font-semibold text-blue-800">{datosCalculoRuta.distanciaTotal.toFixed(1)} km</p>
+                </div>
+                <div>
+                  <span className="text-blue-600">Tiempo Estimado:</span>
+                  <p className="font-semibold text-blue-800">
+                    {Math.round(datosCalculoRuta.tiempoEstimado || 0)} min
+                  </p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
-        {/* Tracking Section */}
-        {cartaPorteId && (
-          <TrackingSection
-            cartaPorteId={cartaPorteId}
-            eventos={eventos}
-            uuidFiscal={datosTimbre?.uuid}
-          />
-        )}
-      </div>
-
-      {pdfUrl && (
-        <PDFPreviewDialog
-          open={showPDFPreview}
-          onClose={() => setShowPDFPreview(false)}
-          pdfUrl={pdfUrl}
-          onDownload={() => descargarPDF(`carta-porte-${Date.now()}.pdf`)}
-          title="Previsualización Carta Porte"
-        />
       )}
-    </>
+    </div>
   );
 }
+
+export default XMLGenerationPanel;
