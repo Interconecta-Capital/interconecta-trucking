@@ -10,18 +10,18 @@ import { useToast } from '@/hooks/use-toast';
 
 interface MapVisualizationProps {
   ubicaciones: any[];
-  rutaCalculada?: any;
+  ruta_calculada?: any;
   isVisible: boolean;
   onClose?: () => void;
   onScreenshotSaved?: (screenshotUrl: string) => void;
 }
 
-export function MapVisualization({ 
-  ubicaciones, 
-  rutaCalculada, 
-  isVisible, 
+export function MapVisualization({
+  ubicaciones,
+  ruta_calculada,
+  isVisible,
   onClose,
-  onScreenshotSaved 
+  onScreenshotSaved
 }: MapVisualizationProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -76,7 +76,7 @@ export function MapVisualization({
     };
   }, [isVisible, tokenConfigured, mapboxToken]);
 
-  // Add markers for ubicaciones - CORREGIDO: Usar propiedades correctas
+  // Add markers for ubicaciones
   useEffect(() => {
     if (!map.current || !tokenConfigured || mapError) return;
 
@@ -89,14 +89,13 @@ export function MapVisualization({
       let validCoordinates = 0;
 
       ubicaciones.forEach((ubicacion, index) => {
-        // CORREGIDO: Usar snake_case para las propiedades
         if (ubicacion.coordenadas && ubicacion.coordenadas.lng && ubicacion.coordenadas.lat) {
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
             `<div class="p-2">
-              <h4 class="font-semibold">${ubicacion.nombre_remitente_destinatario || 'Sin nombre'}</h4>
-              <p class="text-sm">${ubicacion.domicilio?.calle || ''} ${ubicacion.domicilio?.numero_exterior || ''}</p>
+              <h4 class="font-semibold">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</h4>
+              <p class="text-sm">${ubicacion.domicilio?.calle || ''} ${ubicacion.domicilio?.numExterior || ''}</p>
               <p class="text-sm">${ubicacion.domicilio?.municipio || ''}, ${ubicacion.domicilio?.estado || ''}</p>
-              <p class="text-xs text-gray-600">${ubicacion.tipo_ubicacion || ''}</p>
+              <p class="text-xs text-gray-600">${ubicacion.tipoUbicacion || ''}</p>
             </div>`
           );
 
@@ -128,11 +127,11 @@ export function MapVisualization({
 
   // Draw route if available
   useEffect(() => {
-    if (!map.current || !rutaCalculada || !tokenConfigured || mapError) return;
+    if (!map.current || !ruta_calculada || !tokenConfigured || mapError) return;
 
     try {
       const drawRoute = () => {
-        if (rutaCalculada.geometry) {
+        if (ruta_calculada.geometry) {
           if (map.current!.getSource('route')) {
             map.current!.removeLayer('route');
             map.current!.removeSource('route');
@@ -143,7 +142,7 @@ export function MapVisualization({
             data: {
               type: 'Feature',
               properties: {},
-              geometry: rutaCalculada.geometry
+              geometry: ruta_calculada.geometry
             }
           });
 
@@ -173,42 +172,30 @@ export function MapVisualization({
     } catch (error) {
       console.error('Error dibujando ruta:', error);
     }
-  }, [rutaCalculada, tokenConfigured, mapError]);
+  }, [ruta_calculada, tokenConfigured, mapError]);
 
-  // CORREGIDO: Captura de screenshot mejorada
   const takeScreenshot = async () => {
     if (!map.current || isTakingScreenshot) return;
 
     setIsTakingScreenshot(true);
     try {
-      // Wait a moment for the map to settle
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = map.current.getCanvas();
-      
-      // Crear un canvas más grande para mejor calidad
-      const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height;
-      const ctx = exportCanvas.getContext('2d');
-      
-      if (ctx) {
-        ctx.drawImage(canvas, 0, 0);
-        
-        // Agregar información adicional
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(10, 10, 300, 60);
-        ctx.fillStyle = 'white';
-        ctx.font = '14px Arial';
-        ctx.fillText('Ruta Carta Porte', 20, 30);
-        ctx.font = '12px Arial';
-        ctx.fillText(`Generado: ${new Date().toLocaleString()}`, 20, 45);
-        ctx.fillText(`Ubicaciones: ${ubicaciones.length}`, 20, 60);
+      const ctx = canvas.getContext('2d');
+      if (ctx && ruta_calculada) {
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px sans-serif';
+        ctx.fillText(
+          `Distancia: ${ruta_calculada.distance || 0} km - Tiempo: ${ruta_calculada.duration || 0} min`,
+          10,
+          canvas.height - 10
+        );
       }
-      
-      const dataURL = exportCanvas.toDataURL('image/png', 1.0);
-      
-      // Create a download link
+
+      const dataURL = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `ruta-carta-porte-${Date.now()}.png`;
       link.href = dataURL;
@@ -216,21 +203,20 @@ export function MapVisualization({
       link.click();
       document.body.removeChild(link);
 
-      // Notify parent component
       if (onScreenshotSaved) {
         onScreenshotSaved(dataURL);
       }
 
       toast({
-        title: "Captura guardada",
-        description: "La imagen de la ruta se ha guardado exitosamente",
+        title: 'Captura guardada',
+        description: 'La imagen de la ruta se ha guardado exitosamente',
       });
     } catch (error) {
       console.error('Error tomando captura:', error);
       toast({
-        title: "Error",
-        description: "No se pudo tomar la captura de la ruta",
-        variant: "destructive"
+        title: 'Error',
+        description: 'No se pudo tomar la captura de la ruta',
+        variant: 'destructive',
       });
     } finally {
       setIsTakingScreenshot(false);
@@ -271,17 +257,7 @@ export function MapVisualization({
           {mapError ? (
             <Alert className="mb-4">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                {mapError}
-                <div className="mt-2 text-sm">
-                  <p>Posibles soluciones:</p>
-                  <ul className="list-disc ml-4">
-                    <li>Verifica tu conexión a internet</li>
-                    <li>Recarga la página</li>
-                    <li>Verifica que las ubicaciones tengan coordenadas válidas</li>
-                  </ul>
-                </div>
-              </AlertDescription>
+              <AlertDescription>{mapError}</AlertDescription>
             </Alert>
           ) : null}
           
@@ -300,16 +276,16 @@ export function MapVisualization({
             style={{ minHeight: '400px' }}
           />
           
-          {rutaCalculada && !mapError && (
+          {ruta_calculada && !mapError && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Distancia Total:</span>
-                  <span className="ml-2 font-medium">{rutaCalculada.distance || 0} km</span>
+                  <span className="ml-2 font-medium">{ruta_calculada.distance || 0} km</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Tiempo Estimado:</span>
-                  <span className="ml-2 font-medium">{rutaCalculada.duration || 0} min</span>
+                  <span className="ml-2 font-medium">{ruta_calculada.duration || 0} min</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Ubicaciones:</span>

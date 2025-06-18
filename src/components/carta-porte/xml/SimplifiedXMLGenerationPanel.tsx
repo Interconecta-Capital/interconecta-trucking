@@ -50,13 +50,7 @@ export function SimplifiedXMLGenerationPanel({
     validarConexionPAC
   } = useCartaPorteXMLManager();
 
-  const { 
-    isGenerating: isGeneratingPDF, 
-    pdfData, 
-    generateAndPersistPDF,
-    restorePDFFromDB 
-  } = useEnhancedPDFPersistence(cartaPorteId);
-  
+  const { generateAndPersistPDF, pdfUrl, isSaving } = useEnhancedPDFPersistence(cartaPorteId);
   const { saveXML, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
 
   const {
@@ -64,7 +58,7 @@ export function SimplifiedXMLGenerationPanel({
     agregarEvento
   } = useTrackingCartaPorte(cartaPorteId);
 
-  // Usar XML del prop si existe, sino el del hook, sino el persistido
+  // Usar XML del prop si existe, sino el del hook,  sino el persistido
   const xmlActual = xmlGeneradoProp || xmlGeneradoHook || xmlPersistido;
 
   // Verificar si la carta porte está completa
@@ -76,13 +70,6 @@ export function SimplifiedXMLGenerationPanel({
     cartaPorteData.autotransporte?.placa_vm &&
     cartaPorteData.figuras?.length > 0
   );
-
-  // Restaurar PDF al cargar el componente
-  useEffect(() => {
-    if (cartaPorteId) {
-      restorePDFFromDB();
-    }
-  }, [cartaPorteId, restorePDFFromDB]);
 
   // Auto-timbrado cuando se completan los datos
   useEffect(() => {
@@ -136,16 +123,13 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleGenerarPDF = async () => {
-    const resultado = await generateAndPersistPDF(cartaPorteData, datosCalculoRuta);
-    if (resultado) {
-      console.log(`PDF generado y persistido: ${resultado.pages} páginas`);
-    }
+    await generateAndPersistPDF(cartaPorteData, datosCalculoRuta);
   };
 
   const handleDescargarPDF = () => {
-    if (pdfData.url && pdfData.blob) {
+    if (pdfUrl) {
       const link = document.createElement('a');
-      link.href = pdfData.url;
+      link.href = pdfUrl;
       link.download = `carta-porte-completa-${Date.now()}.pdf`;
       document.body.appendChild(link);
       link.click();
@@ -154,8 +138,8 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleVisualizarPDF = () => {
-    if (pdfData.url) {
-      window.open(pdfData.url, '_blank');
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
     }
   };
 
@@ -219,17 +203,18 @@ export function SimplifiedXMLGenerationPanel({
 
           <Separator />
 
+          {/* Sección de PDF Mejorada */}
           <Card className="border-purple-200 bg-purple-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-purple-800">
                   <FileText className="h-5 w-5" />
-                  <span>Representación Impresa</span>
+                  <span>Representación Impresa Completa</span>
                 </div>
-                {pdfData.url && (
+                {pdfUrl && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    Generado
+                    Disponible
                   </Badge>
                 )}
               </CardTitle>
@@ -239,18 +224,18 @@ export function SimplifiedXMLGenerationPanel({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Button
                   onClick={handleGenerarPDF}
-                  disabled={isGeneratingPDF}
+                  disabled={isSaving}
                   className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
                 >
-                  {isGeneratingPDF ? (
+                  {isSaving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Zap className="h-4 w-4" />
                   )}
-                  {isGeneratingPDF ? 'Generando...' : 'Generar PDF'}
+                  {isSaving ? 'Generando...' : 'Generar PDF'}
                 </Button>
-                
-                {pdfData.url && (
+
+                {pdfUrl && (
                   <>
                     <Button
                       variant="outline"
@@ -260,7 +245,7 @@ export function SimplifiedXMLGenerationPanel({
                       <Eye className="h-4 w-4" />
                       Previsualizar
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       onClick={handleDescargarPDF}
@@ -273,30 +258,38 @@ export function SimplifiedXMLGenerationPanel({
                 )}
               </div>
 
+              {/* Mostrar información de cálculos de ruta si están disponibles */}
               {datosCalculoRuta && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Información de Ruta</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">Información de Ruta Incluida</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     {datosCalculoRuta.distanciaTotal && (
                       <div>
-                        <span className="text-blue-700">Distancia:</span>
+                        <span className="text-blue-700">Distancia Total:</span>
                         <span className="ml-2 font-medium">{datosCalculoRuta.distanciaTotal} km</span>
                       </div>
                     )}
                     {datosCalculoRuta.tiempoEstimado && (
                       <div>
-                        <span className="text-blue-700">Tiempo:</span>
+                        <span className="text-blue-700">Tiempo Estimado:</span>
                         <span className="ml-2 font-medium">{Math.round(datosCalculoRuta.tiempoEstimado / 60)} horas</span>
                       </div>
                     )}
                   </div>
                 </div>
               )}
+
+              <div className="text-xs text-gray-600 bg-white p-3 rounded border">
+                <strong>PDF Completo y Persistente:</strong> Este PDF incluye toda la información
+                de la Carta Porte y se almacena de forma segura en la base de datos
+                para que puedas recuperarlo al cambiar de módulo.
+              </div>
             </CardContent>
           </Card>
         </CardContent>
       </Card>
 
+      {/* Tracking Section */}
       {cartaPorteId && (
         <TrackingSection
           cartaPorteId={cartaPorteId}
