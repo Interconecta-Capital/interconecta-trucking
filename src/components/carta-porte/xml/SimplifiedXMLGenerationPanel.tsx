@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { FileText, Download, Eye, Loader2, CheckCircle, Zap } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
-import { useEnhancedPDFGenerator } from '@/hooks/carta-porte/useEnhancedPDFGenerator';
+import { useEnhancedPDFPersistence } from '@/hooks/carta-porte/useEnhancedPDFPersistence';
 import { useCartaPortePersistence } from '@/hooks/carta-porte/useCartaPortePersistence';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { XMLSection } from './sections/XMLSection';
@@ -50,8 +50,8 @@ export function SimplifiedXMLGenerationPanel({
     validarConexionPAC
   } = useCartaPorteXMLManager();
 
-  const { generateCompletePDF, isGenerating: isGeneratingPDF, pdfData } = useEnhancedPDFGenerator();
-  const { saveXML, savePDF, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
+  const { generateAndPersistPDF, pdfUrl, isSaving } = useEnhancedPDFPersistence(cartaPorteId);
+  const { saveXML, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
 
   const {
     eventos,
@@ -123,18 +123,13 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleGenerarPDF = async () => {
-    const resultado = await generateCompletePDF(cartaPorteData, datosCalculoRuta);
-    if (resultado) {
-      // Persistir PDF inmediatamente
-      savePDF(resultado.url, resultado.blob);
-      console.log(`PDF completo generado y persistido: ${resultado.pages} páginas`);
-    }
+    await generateAndPersistPDF(cartaPorteData, datosCalculoRuta);
   };
 
   const handleDescargarPDF = () => {
-    if (pdfData.url) {
+    if (pdfUrl) {
       const link = document.createElement('a');
-      link.href = pdfData.url;
+      link.href = pdfUrl;
       link.download = `carta-porte-completa-${Date.now()}.pdf`;
       document.body.appendChild(link);
       link.click();
@@ -143,8 +138,8 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleVisualizarPDF = () => {
-    if (pdfData.url) {
-      window.open(pdfData.url, '_blank');
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
     }
   };
 
@@ -216,10 +211,10 @@ export function SimplifiedXMLGenerationPanel({
                   <FileText className="h-5 w-5" />
                   <span>Representación Impresa Completa</span>
                 </div>
-                {pdfData.url && (
+                {pdfUrl && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    {pdfData.pages} páginas
+                    Disponible
                   </Badge>
                 )}
               </CardTitle>
@@ -229,18 +224,18 @@ export function SimplifiedXMLGenerationPanel({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Button
                   onClick={handleGenerarPDF}
-                  disabled={isGeneratingPDF}
+                  disabled={isSaving}
                   className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
                 >
-                  {isGeneratingPDF ? (
+                  {isSaving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Zap className="h-4 w-4" />
                   )}
-                  {isGeneratingPDF ? 'Generando...' : 'Generar PDF'}
+                  {isSaving ? 'Generando...' : 'Generar PDF'}
                 </Button>
-                
-                {pdfData.url && (
+
+                {pdfUrl && (
                   <>
                     <Button
                       variant="outline"
@@ -250,7 +245,7 @@ export function SimplifiedXMLGenerationPanel({
                       <Eye className="h-4 w-4" />
                       Previsualizar
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       onClick={handleDescargarPDF}
@@ -285,9 +280,9 @@ export function SimplifiedXMLGenerationPanel({
               )}
 
               <div className="text-xs text-gray-600 bg-white p-3 rounded border">
-                <strong>PDF Completo y Persistente:</strong> Este PDF incluye toda la información 
-                de la Carta Porte en múltiples páginas organizadas. Se mantiene disponible 
-                durante toda tu sesión.
+                <strong>PDF Completo y Persistente:</strong> Este PDF incluye toda la información
+                de la Carta Porte y se almacena de forma segura en la base de datos
+                para que puedas recuperarlo al cambiar de módulo.
               </div>
             </CardContent>
           </Card>
