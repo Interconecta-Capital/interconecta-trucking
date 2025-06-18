@@ -34,6 +34,8 @@ const initialCartaPorteData: CartaPorteData = {
     remolques: []
   },
   figuras: [],
+  totalDistRec: 0,
+  regimenAduanero: '',
   currentStep: 0,
   xmlGenerado: undefined,
   datosCalculoRuta: undefined,

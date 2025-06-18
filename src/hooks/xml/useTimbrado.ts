@@ -18,7 +18,7 @@ export const useTimbrado = () => {
     setIsTimbring(true);
     try {
       // Validar XML antes del timbrado
-      const validacion = TimbradoService.validarXMLAntesDelTimbrado(xml);
+      const validacion = TimbradoService.validarXMLAntesDelTimbrado(xml, cartaPorteData);
       if (!validacion.isValid) {
         toast({
           title: "XML inválido para timbrado",
