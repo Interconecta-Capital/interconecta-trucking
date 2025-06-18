@@ -9,6 +9,7 @@ import { UbicacionesFormSection } from './UbicacionesFormSection';
 import { DistanceCalculator } from './DistanceCalculator';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
+import { mapCompletaToUbicacion } from '@/hooks/carta-porte/mapCompletaToUbicacion';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -59,7 +60,10 @@ export function UbicacionesSectionOptimizada({
   // Sincronizar con props data
   useEffect(() => {
     if (data && data.length > 0) {
-      setUbicaciones(data);
+      const mapped = data.map((u) =>
+        (u as any).tipo_ubicacion ? mapCompletaToUbicacion(u) : u
+      );
+      setUbicaciones(mapped);
     }
   }, [data, setUbicaciones]);
 
