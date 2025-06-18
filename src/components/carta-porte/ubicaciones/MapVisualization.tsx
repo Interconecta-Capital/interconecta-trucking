@@ -10,18 +10,18 @@ import { useToast } from '@/hooks/use-toast';
 
 interface MapVisualizationProps {
   ubicaciones: any[];
-  ruta_calculada?: any;
+  rutaCalculada?: any;
   isVisible: boolean;
   onClose?: () => void;
   onScreenshotSaved?: (screenshotUrl: string) => void;
 }
 
-export function MapVisualization({
-  ubicaciones,
-  ruta_calculada,
-  isVisible,
+export function MapVisualization({ 
+  ubicaciones, 
+  rutaCalculada, 
+  isVisible, 
   onClose,
-  onScreenshotSaved
+  onScreenshotSaved 
 }: MapVisualizationProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -127,11 +127,11 @@ export function MapVisualization({
 
   // Draw route if available
   useEffect(() => {
-    if (!map.current || !ruta_calculada || !tokenConfigured || mapError) return;
+    if (!map.current || !rutaCalculada || !tokenConfigured || mapError) return;
 
     try {
       const drawRoute = () => {
-        if (ruta_calculada.geometry) {
+        if (rutaCalculada.geometry) {
           if (map.current!.getSource('route')) {
             map.current!.removeLayer('route');
             map.current!.removeSource('route');
@@ -142,7 +142,7 @@ export function MapVisualization({
             data: {
               type: 'Feature',
               properties: {},
-              geometry: ruta_calculada.geometry
+              geometry: rutaCalculada.geometry
             }
           });
 
@@ -172,30 +172,20 @@ export function MapVisualization({
     } catch (error) {
       console.error('Error dibujando ruta:', error);
     }
-  }, [ruta_calculada, tokenConfigured, mapError]);
+  }, [rutaCalculada, tokenConfigured, mapError]);
 
   const takeScreenshot = async () => {
     if (!map.current || isTakingScreenshot) return;
 
     setIsTakingScreenshot(true);
     try {
+      // Wait a moment for the map to settle
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = map.current.getCanvas();
-      const ctx = canvas.getContext('2d');
-      if (ctx && ruta_calculada) {
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px sans-serif';
-        ctx.fillText(
-          `Distancia: ${ruta_calculada.distance || 0} km - Tiempo: ${ruta_calculada.duration || 0} min`,
-          10,
-          canvas.height - 10
-        );
-      }
-
       const dataURL = canvas.toDataURL('image/png');
+      
+      // Create a download link
       const link = document.createElement('a');
       link.download = `ruta-carta-porte-${Date.now()}.png`;
       link.href = dataURL;
@@ -203,20 +193,21 @@ export function MapVisualization({
       link.click();
       document.body.removeChild(link);
 
+      // Notify parent component
       if (onScreenshotSaved) {
         onScreenshotSaved(dataURL);
       }
 
       toast({
-        title: 'Captura guardada',
-        description: 'La imagen de la ruta se ha guardado exitosamente',
+        title: "Captura guardada",
+        description: "La imagen de la ruta se ha guardado exitosamente",
       });
     } catch (error) {
       console.error('Error tomando captura:', error);
       toast({
-        title: 'Error',
-        description: 'No se pudo tomar la captura de la ruta',
-        variant: 'destructive',
+        title: "Error",
+        description: "No se pudo tomar la captura de la ruta",
+        variant: "destructive"
       });
     } finally {
       setIsTakingScreenshot(false);
@@ -276,16 +267,16 @@ export function MapVisualization({
             style={{ minHeight: '400px' }}
           />
           
-          {ruta_calculada && !mapError && (
+          {rutaCalculada && !mapError && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Distancia Total:</span>
-                  <span className="ml-2 font-medium">{ruta_calculada.distance || 0} km</span>
+                  <span className="ml-2 font-medium">{rutaCalculada.distance || 0} km</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Tiempo Estimado:</span>
-                  <span className="ml-2 font-medium">{ruta_calculada.duration || 0} min</span>
+                  <span className="ml-2 font-medium">{rutaCalculada.duration || 0} min</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Ubicaciones:</span>

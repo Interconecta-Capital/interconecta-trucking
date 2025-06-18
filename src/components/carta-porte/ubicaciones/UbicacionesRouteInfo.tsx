@@ -4,20 +4,20 @@ import { MapVisualization } from './MapVisualization';
 
 interface UbicacionesRouteInfoProps {
   showMap: boolean;
-  ruta_calculada: any;
+  rutaCalculada: any;
   ubicaciones: any[];
 }
 
-export function UbicacionesRouteInfo({ showMap, ruta_calculada, ubicaciones }: UbicacionesRouteInfoProps) {
-  if (!showMap || !ruta_calculada) {
+export function UbicacionesRouteInfo({ showMap, rutaCalculada, ubicaciones }: UbicacionesRouteInfoProps) {
+  if (!showMap || !rutaCalculada) {
     return null;
   }
 
   return (
     <div className="mt-6">
-      <MapVisualization
+      <MapVisualization 
         ubicaciones={ubicaciones}
-        ruta_calculada={ruta_calculada}
+        rutaCalculada={rutaCalculada}
         isVisible={showMap}
       />
     </div>
