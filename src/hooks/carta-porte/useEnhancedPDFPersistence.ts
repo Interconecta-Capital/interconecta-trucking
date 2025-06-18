@@ -31,7 +31,6 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
     try {
       console.log('📄 Generando PDF avanzado...');
       
-      // Usar el generador avanzado
       const resultado = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);
       
       if (!resultado.success || !resultado.pdfBlob || !resultado.pdfUrl) {
@@ -42,10 +41,10 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
       const base64Data = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(resultado.pdfBlob!); // CORREGIDO: usar resultado en lugar de result
+        reader.readAsDataURL(resultado.pdfBlob!);
       });
 
-      // CORREGIDO: Preparar datos para serialización JSON segura
+      // Preparar datos para serialización JSON segura
       const pdfInfo = {
         url: resultado.pdfUrl,
         base64Data,
@@ -54,7 +53,7 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
         routeData: datosRuta || {}
       };
 
-      // CORREGIDO: Obtener datos actuales y actualizar solo el campo pdfPersistido
+      // Obtener datos actuales y actualizar solo el campo pdfPersistido
       const { data: currentData, error: fetchError } = await supabase
         .from('cartas_porte')
         .select('datos_formulario')
@@ -66,11 +65,15 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
       // Parsear datos actuales de forma segura
       let currentFormData: any = {};
       try {
-        currentFormData = typeof currentData?.datos_formulario === 'string' 
-          ? JSON.parse(currentData.datos_formulario)
-          : currentData?.datos_formulario || {};
+        if (currentData?.datos_formulario) {
+          if (typeof currentData.datos_formulario === 'string') {
+            currentFormData = JSON.parse(currentData.datos_formulario);
+          } else {
+            currentFormData = currentData.datos_formulario as any;
+          }
+        }
       } catch (parseError) {
-        console.warn('Error parsing current form data, using empty object:', parseError);
+        console.warn('Error parsing current form data:', parseError);
       }
 
       // Combinar datos actuales con nueva información de PDF
@@ -125,34 +128,35 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
 
       if (error || !data?.datos_formulario) return;
 
-      // CORREGIDO: Parsear datos de forma segura
+      // Parsear datos de forma segura
       let formData: any = {};
       try {
-        formData = typeof data.datos_formulario === 'string' 
-          ? JSON.parse(data.datos_formulario)
-          : data.datos_formulario;
+        if (typeof data.datos_formulario === 'string') {
+          formData = JSON.parse(data.datos_formulario);
+        } else {
+          formData = data.datos_formulario as any;
+        }
       } catch (parseError) {
         console.error('Error parsing form data:', parseError);
         return;
       }
 
-      // CORREGIDO: Verificar si existe pdfPersistido de forma segura
-      if (!formData || typeof formData !== 'object' || !formData.pdfPersistido) {
+      // Verificar si existe pdfPersistido de forma segura
+      const pdfPersistido = formData?.pdfPersistido;
+      if (!pdfPersistido || typeof pdfPersistido !== 'object') {
         return;
       }
-
-      const pdfInfo = formData.pdfPersistido;
       
       // Recrear blob desde base64
-      const response = await fetch(pdfInfo.base64Data);
+      const response = await fetch(pdfPersistido.base64Data);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
 
       setPdfData({
         url,
         blob,
-        pages: pdfInfo.pages || 1,
-        generatedAt: pdfInfo.generatedAt
+        pages: pdfPersistido.pages || 1,
+        generatedAt: pdfPersistido.generatedAt
       });
 
       console.log('✅ PDF restaurado desde base de datos');

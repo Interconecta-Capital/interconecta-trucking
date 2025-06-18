@@ -50,7 +50,6 @@ export function SimplifiedXMLGenerationPanel({
     validarConexionPAC
   } = useCartaPorteXMLManager();
 
-  // CORREGIDO: Usar el hook de persistencia real
   const { 
     isGenerating: isGeneratingPDF, 
     pdfData, 
@@ -58,14 +57,14 @@ export function SimplifiedXMLGenerationPanel({
     restorePDFFromDB 
   } = useEnhancedPDFPersistence(cartaPorteId);
   
-  const { saveXML, savePDF, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
+  const { saveXML, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
 
   const {
     eventos,
     agregarEvento
   } = useTrackingCartaPorte(cartaPorteId);
 
-  // Usar XML del prop si existe, sino el del hook,  sino el persistido
+  // Usar XML del prop si existe, sino el del hook, sino el persistido
   const xmlActual = xmlGeneradoProp || xmlGeneradoHook || xmlPersistido;
 
   // Verificar si la carta porte está completa
@@ -136,11 +135,10 @@ export function SimplifiedXMLGenerationPanel({
     }
   };
 
-  // CORREGIDO: Usar el generador avanzado con persistencia
   const handleGenerarPDF = async () => {
     const resultado = await generateAndPersistPDF(cartaPorteData, datosCalculoRuta);
     if (resultado) {
-      console.log(`PDF avanzado generado y persistido: ${resultado.pages} páginas`);
+      console.log(`PDF generado y persistido: ${resultado.pages} páginas`);
     }
   };
 
@@ -221,18 +219,17 @@ export function SimplifiedXMLGenerationPanel({
 
           <Separator />
 
-          {/* Sección de PDF Mejorada con Persistencia */}
           <Card className="border-purple-200 bg-purple-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-purple-800">
                   <FileText className="h-5 w-5" />
-                  <span>Representación Impresa Avanzada</span>
+                  <span>Representación Impresa</span>
                 </div>
                 {pdfData.url && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    Generado ({pdfData.generatedAt ? new Date(pdfData.generatedAt).toLocaleString() : 'Ahora'})
+                    Generado
                   </Badge>
                 )}
               </CardTitle>
@@ -250,7 +247,7 @@ export function SimplifiedXMLGenerationPanel({
                   ) : (
                     <Zap className="h-4 w-4" />
                   )}
-                  {isGeneratingPDF ? 'Generando...' : 'Generar PDF Avanzado'}
+                  {isGeneratingPDF ? 'Generando...' : 'Generar PDF'}
                 </Button>
                 
                 {pdfData.url && (
@@ -276,38 +273,30 @@ export function SimplifiedXMLGenerationPanel({
                 )}
               </div>
 
-              {/* Mostrar información de cálculos de ruta si están disponibles */}
               {datosCalculoRuta && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Información de Ruta Incluida</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">Información de Ruta</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     {datosCalculoRuta.distanciaTotal && (
                       <div>
-                        <span className="text-blue-700">Distancia Total:</span>
+                        <span className="text-blue-700">Distancia:</span>
                         <span className="ml-2 font-medium">{datosCalculoRuta.distanciaTotal} km</span>
                       </div>
                     )}
                     {datosCalculoRuta.tiempoEstimado && (
                       <div>
-                        <span className="text-blue-700">Tiempo Estimado:</span>
+                        <span className="text-blue-700">Tiempo:</span>
                         <span className="ml-2 font-medium">{Math.round(datosCalculoRuta.tiempoEstimado / 60)} horas</span>
                       </div>
                     )}
                   </div>
                 </div>
               )}
-
-              <div className="text-xs text-gray-600 bg-white p-3 rounded border">
-                <strong>PDF Avanzado y Persistente:</strong> Este PDF usa diseño profesional con 
-                múltiples páginas, tablas estructuradas y se mantiene disponible incluso si cambias 
-                de módulo o recuperas borradores.
-              </div>
             </CardContent>
           </Card>
         </CardContent>
       </Card>
 
-      {/* Tracking Section */}
       {cartaPorteId && (
         <TrackingSection
           cartaPorteId={cartaPorteId}

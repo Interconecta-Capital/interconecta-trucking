@@ -136,7 +136,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       if (error) throw error;
 
       if (data?.datos_formulario) {
-        // CORREGIDO: Usar función segura de parsing
+        // Usar función segura de parsing
         const savedData = parseCartaPorteData(data.datos_formulario);
         
         console.log('✅ Datos cargados exitosamente:', {
@@ -302,8 +302,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       // Generar folio único si no existe
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // CORREGIDO: Serializar datos de forma segura para Supabase Json
-      const datosFormularioSerialized = JSON.stringify(datosCompletos);
+      // Serializar datos de forma segura para Supabase Json
+      let datosFormularioSerialized: string;
+      try {
+        datosFormularioSerialized = JSON.stringify(datosCompletos);
+      } catch (serializationError) {
+        console.error('Error serializing data:', serializationError);
+        throw new Error('Error al serializar los datos');
+      }
       
       // Preparar datos para la carta porte oficial
       const cartaPorteData = {
