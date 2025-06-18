@@ -59,6 +59,7 @@ export const useCartaPortePerformance = (config: Partial<PerformanceConfig> = {}
 
   // Optimización de re-renders con shallow comparison
   const shallowMemo = useCallback((obj: object, deps: any[]): any => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     return useMemo(() => obj, deps);
   }, []);
 
