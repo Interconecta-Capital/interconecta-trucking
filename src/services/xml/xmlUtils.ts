@@ -31,7 +31,8 @@ export class XMLUtils {
     return (
       `EntradaSalidaMerc="${data.entradaSalidaMerc ?? ''}" ` +
       `PaisOrigenDestino="${data.pais_origen_destino ?? ''}" ` +
-      `ViaEntradaSalida="${data.via_entrada_salida ?? ''}" `
+      `ViaEntradaSalida="${data.via_entrada_salida ?? ''}" ` +
+      (data.regimenAduanero ? `RegimenAduanero="${data.regimenAduanero}" ` : '')
     );
   }
 
@@ -61,5 +62,6 @@ export const buildComplementoCartaPorte = (data: any): string => {
     Version="3.1"
     TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
     ${XMLUtils.construirAtributosInternacionales(data)}
+    ${data.regimenAduanero ? `RegimenAduanero="${data.regimenAduanero}"` : ''}
     TotalDistRec="${data.totalDistRec ?? 0}" />`;
 };
