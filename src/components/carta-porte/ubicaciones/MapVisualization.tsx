@@ -76,7 +76,7 @@ export function MapVisualization({
     };
   }, [isVisible, tokenConfigured, mapboxToken]);
 
-  // Add markers for ubicaciones
+  // Add markers for ubicaciones - CORREGIDO: Usar propiedades correctas
   useEffect(() => {
     if (!map.current || !tokenConfigured || mapError) return;
 
@@ -89,13 +89,14 @@ export function MapVisualization({
       let validCoordinates = 0;
 
       ubicaciones.forEach((ubicacion, index) => {
+        // CORREGIDO: Usar snake_case para las propiedades
         if (ubicacion.coordenadas && ubicacion.coordenadas.lng && ubicacion.coordenadas.lat) {
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
             `<div class="p-2">
-              <h4 class="font-semibold">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</h4>
-              <p class="text-sm">${ubicacion.domicilio?.calle || ''} ${ubicacion.domicilio?.numExterior || ''}</p>
+              <h4 class="font-semibold">${ubicacion.nombre_remitente_destinatario || 'Sin nombre'}</h4>
+              <p class="text-sm">${ubicacion.domicilio?.calle || ''} ${ubicacion.domicilio?.numero_exterior || ''}</p>
               <p class="text-sm">${ubicacion.domicilio?.municipio || ''}, ${ubicacion.domicilio?.estado || ''}</p>
-              <p class="text-xs text-gray-600">${ubicacion.tipoUbicacion || ''}</p>
+              <p class="text-xs text-gray-600">${ubicacion.tipo_ubicacion || ''}</p>
             </div>`
           );
 
@@ -174,6 +175,7 @@ export function MapVisualization({
     }
   }, [rutaCalculada, tokenConfigured, mapError]);
 
+  // CORREGIDO: Captura de screenshot mejorada
   const takeScreenshot = async () => {
     if (!map.current || isTakingScreenshot) return;
 
@@ -183,7 +185,28 @@ export function MapVisualization({
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = map.current.getCanvas();
-      const dataURL = canvas.toDataURL('image/png');
+      
+      // Crear un canvas más grande para mejor calidad
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height;
+      const ctx = exportCanvas.getContext('2d');
+      
+      if (ctx) {
+        ctx.drawImage(canvas, 0, 0);
+        
+        // Agregar información adicional
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(10, 10, 300, 60);
+        ctx.fillStyle = 'white';
+        ctx.font = '14px Arial';
+        ctx.fillText('Ruta Carta Porte', 20, 30);
+        ctx.font = '12px Arial';
+        ctx.fillText(`Generado: ${new Date().toLocaleString()}`, 20, 45);
+        ctx.fillText(`Ubicaciones: ${ubicaciones.length}`, 20, 60);
+      }
+      
+      const dataURL = exportCanvas.toDataURL('image/png', 1.0);
       
       // Create a download link
       const link = document.createElement('a');
@@ -248,7 +271,17 @@ export function MapVisualization({
           {mapError ? (
             <Alert className="mb-4">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{mapError}</AlertDescription>
+              <AlertDescription>
+                {mapError}
+                <div className="mt-2 text-sm">
+                  <p>Posibles soluciones:</p>
+                  <ul className="list-disc ml-4">
+                    <li>Verifica tu conexión a internet</li>
+                    <li>Recarga la página</li>
+                    <li>Verifica que las ubicaciones tengan coordenadas válidas</li>
+                  </ul>
+                </div>
+              </AlertDescription>
             </Alert>
           ) : null}
           

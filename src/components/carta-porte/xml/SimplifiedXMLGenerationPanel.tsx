@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { FileText, Download, Eye, Loader2, CheckCircle, Zap } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
-import { useEnhancedPDFGenerator } from '@/hooks/carta-porte/useEnhancedPDFGenerator';
+import { useEnhancedPDFPersistence } from '@/hooks/carta-porte/useEnhancedPDFPersistence';
 import { useCartaPortePersistence } from '@/hooks/carta-porte/useCartaPortePersistence';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { XMLSection } from './sections/XMLSection';
@@ -50,7 +50,14 @@ export function SimplifiedXMLGenerationPanel({
     validarConexionPAC
   } = useCartaPorteXMLManager();
 
-  const { generateCompletePDF, isGenerating: isGeneratingPDF, pdfData } = useEnhancedPDFGenerator();
+  // CORREGIDO: Usar el hook de persistencia real
+  const { 
+    isGenerating: isGeneratingPDF, 
+    pdfData, 
+    generateAndPersistPDF,
+    restorePDFFromDB 
+  } = useEnhancedPDFPersistence(cartaPorteId);
+  
   const { saveXML, savePDF, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
 
   const {
@@ -70,6 +77,13 @@ export function SimplifiedXMLGenerationPanel({
     cartaPorteData.autotransporte?.placa_vm &&
     cartaPorteData.figuras?.length > 0
   );
+
+  // Restaurar PDF al cargar el componente
+  useEffect(() => {
+    if (cartaPorteId) {
+      restorePDFFromDB();
+    }
+  }, [cartaPorteId, restorePDFFromDB]);
 
   // Auto-timbrado cuando se completan los datos
   useEffect(() => {
@@ -122,17 +136,16 @@ export function SimplifiedXMLGenerationPanel({
     }
   };
 
+  // CORREGIDO: Usar el generador avanzado con persistencia
   const handleGenerarPDF = async () => {
-    const resultado = await generateCompletePDF(cartaPorteData, datosCalculoRuta);
+    const resultado = await generateAndPersistPDF(cartaPorteData, datosCalculoRuta);
     if (resultado) {
-      // Persistir PDF inmediatamente
-      savePDF(resultado.url, resultado.blob);
-      console.log(`PDF completo generado y persistido: ${resultado.pages} páginas`);
+      console.log(`PDF avanzado generado y persistido: ${resultado.pages} páginas`);
     }
   };
 
   const handleDescargarPDF = () => {
-    if (pdfData.url) {
+    if (pdfData.url && pdfData.blob) {
       const link = document.createElement('a');
       link.href = pdfData.url;
       link.download = `carta-porte-completa-${Date.now()}.pdf`;
@@ -208,18 +221,18 @@ export function SimplifiedXMLGenerationPanel({
 
           <Separator />
 
-          {/* Sección de PDF Mejorada */}
+          {/* Sección de PDF Mejorada con Persistencia */}
           <Card className="border-purple-200 bg-purple-50/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-purple-800">
                   <FileText className="h-5 w-5" />
-                  <span>Representación Impresa Completa</span>
+                  <span>Representación Impresa Avanzada</span>
                 </div>
                 {pdfData.url && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    {pdfData.pages} páginas
+                    Generado ({pdfData.generatedAt ? new Date(pdfData.generatedAt).toLocaleString() : 'Ahora'})
                   </Badge>
                 )}
               </CardTitle>
@@ -237,7 +250,7 @@ export function SimplifiedXMLGenerationPanel({
                   ) : (
                     <Zap className="h-4 w-4" />
                   )}
-                  {isGeneratingPDF ? 'Generando...' : 'Generar PDF'}
+                  {isGeneratingPDF ? 'Generando...' : 'Generar PDF Avanzado'}
                 </Button>
                 
                 {pdfData.url && (
@@ -285,9 +298,9 @@ export function SimplifiedXMLGenerationPanel({
               )}
 
               <div className="text-xs text-gray-600 bg-white p-3 rounded border">
-                <strong>PDF Completo y Persistente:</strong> Este PDF incluye toda la información 
-                de la Carta Porte en múltiples páginas organizadas. Se mantiene disponible 
-                durante toda tu sesión.
+                <strong>PDF Avanzado y Persistente:</strong> Este PDF usa diseño profesional con 
+                múltiples páginas, tablas estructuradas y se mantiene disponible incluso si cambias 
+                de módulo o recuperas borradores.
               </div>
             </CardContent>
           </Card>
