@@ -1,4 +1,3 @@
-
 import { useMemo, useCallback } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { useAIValidationEnhanced } from '../ai/useAIValidationEnhanced';
@@ -47,9 +46,7 @@ export const useCartaPorteValidationEnhanced = ({
 }: UseCartaPorteValidationEnhancedOptions) => {
   const { validateComplete: validateTraditional, getValidationSummary } = useCartaPorteValidation();
   
-  // Mock AI validation hook - replace with real implementation when available
   const validateCompleteWithAI = useCallback(async (data: CartaPorteData) => {
-    // Mock implementation
     return {
       isValid: true,
       aiSuggestions: [],
@@ -59,7 +56,6 @@ export const useCartaPorteValidationEnhanced = ({
     };
   }, []);
 
-  // Validaciones por step usando validación tradicional
   const stepValidations: StepValidation = useMemo(() => {
     const summary = getValidationSummary(formData);
     
@@ -72,17 +68,14 @@ export const useCartaPorteValidationEnhanced = ({
     };
   }, [formData, getValidationSummary]);
 
-  // Progreso total basado en validación tradicional
   const totalProgress = useMemo(() => {
     const validSteps = Object.values(stepValidations).filter(Boolean).length;
     return Math.round((validSteps / Object.keys(stepValidations).length) * 100);
   }, [stepValidations]);
 
-  // Validación completa combinada (tradicional + AI)
   const validateComplete = useCallback(async (formDataInput?: CartaPorteData) => {
     const dataToValidate = formDataInput || formData;
     
-    // Validación tradicional (base)
     const traditionalResult = validateTraditional(dataToValidate);
     const summary = getValidationSummary(dataToValidate);
     
@@ -97,10 +90,8 @@ export const useCartaPorteValidationEnhanced = ({
     }
 
     try {
-      // Validación AI si está habilitada
       const aiResult = await validateCompleteWithAI(dataToValidate);
       
-      // Combinar resultados (70% tradicional, 30% AI)
       const combinedScore = Math.round(
         (summary.completionPercentage * 0.7) +
         (aiResult.validationScore * 0.3)
@@ -120,7 +111,6 @@ export const useCartaPorteValidationEnhanced = ({
       };
     } catch (error) {
       console.error('Error in AI validation:', error);
-      // Fallback a validación tradicional
       return {
         ...traditionalResult,
         completionPercentage: summary.completionPercentage,
@@ -132,11 +122,9 @@ export const useCartaPorteValidationEnhanced = ({
     }
   }, [formData, enableAI, validateTraditional, validateCompleteWithAI, getValidationSummary]);
 
-  // Validación AI mejorada (si está habilitada)
   const aiValidation: AIValidationEnhanced | null = useMemo(() => {
     if (!enableAI) return null;
     
-    // Simular validación AI básica para compatibilidad inmediata
     return {
       isValid: Object.values(stepValidations).every(Boolean),
       aiSuggestions: [],

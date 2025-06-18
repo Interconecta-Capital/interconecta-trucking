@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -36,6 +35,19 @@ const initialCartaPorteData: CartaPorteData = {
   currentStep: 0,
   xmlGenerado: undefined,
   datosCalculoRuta: undefined,
+};
+
+// Helper function to serialize CartaPorteData to JSON-safe format
+const serializeCartaPorteData = (data: CartaPorteData): Record<string, any> => {
+  return JSON.parse(JSON.stringify(data));
+};
+
+// Helper function to deserialize from JSON back to CartaPorteData
+const deserializeCartaPorteData = (jsonData: any): CartaPorteData => {
+  return {
+    ...initialCartaPorteData,
+    ...jsonData
+  };
 };
 
 export function useCartaPorteFormManager(cartaPorteId?: string) {
@@ -106,7 +118,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       if (error) throw error;
 
       if (data?.datos_formulario) {
-        const savedData = data.datos_formulario as CartaPorteData;
+        const savedData = deserializeCartaPorteData(data.datos_formulario);
         
         console.log('✅ Datos cargados exitosamente:', {
           hasXML: !!savedData.xmlGenerado,
@@ -115,10 +127,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         });
         
         // Restaurar todos los datos incluidos XML y cálculos de ruta
-        setFormData({
-          ...initialCartaPorteData,
-          ...savedData
-        });
+        setFormData(savedData);
 
         // Restaurar estados locales desde los datos persistidos
         if (savedData.xmlGenerado) {
@@ -203,7 +212,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const handleAcceptBorrador = useCallback(() => {
     const { data, id } = acceptBorrador();
     if (data) {
-      const savedData = data as CartaPorteData;
+      const savedData = deserializeCartaPorteData(data);
       setFormData(savedData);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
@@ -263,6 +272,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         mercanciasCount: datosCompletos.mercancias?.length || 0
       });
 
+      // Serialize data for Supabase
+      const serializedData = serializeCartaPorteData(datosCompletos);
+      
       // Generar folio único si no existe
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
@@ -277,7 +289,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
         status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: datosCompletos, // Incluye XML y cálculos de ruta
+        datos_formulario: serializedData, // Now properly serialized
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

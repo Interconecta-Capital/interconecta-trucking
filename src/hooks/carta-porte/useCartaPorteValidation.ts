@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 
@@ -12,6 +11,7 @@ export interface ValidationSummary {
     xml: 'empty' | 'incomplete' | 'complete';
   };
   overallProgress: number;
+  completionPercentage: number;
   missingFields: {
     configuracion: string[];
     ubicaciones: string[];
@@ -167,11 +167,13 @@ export const useCartaPorteValidation = () => {
       const completedSections = Object.values(sectionStatus).filter(status => status === 'complete').length;
       const totalSections = Object.keys(sectionStatus).length - 1; // Excluir XML del conteo
       const overallProgress = Math.round((completedSections / totalSections) * 100);
+      const completionPercentage = overallProgress;
 
       console.log('📊 Resultado de validación:', {
         completedSections,
         totalSections,
         overallProgress,
+        completionPercentage,
         sectionStatus,
         totalMissingFields: Object.values(missingFields).flat().length
       });
@@ -179,6 +181,7 @@ export const useCartaPorteValidation = () => {
       return {
         sectionStatus,
         overallProgress,
+        completionPercentage,
         missingFields,
         completedSections,
         totalSections
@@ -186,5 +189,17 @@ export const useCartaPorteValidation = () => {
     };
   }, []);
 
-  return { getValidationSummary };
+  // Add missing validateComplete method
+  const validateComplete = useMemo(() => {
+    return (formData: CartaPorteData) => {
+      const summary = getValidationSummary(formData);
+      return {
+        isValid: summary.overallProgress === 100,
+        completionPercentage: summary.completionPercentage,
+        summary
+      };
+    };
+  }, [getValidationSummary]);
+
+  return { getValidationSummary, validateComplete };
 };
