@@ -56,6 +56,14 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
             [keys[1]]: value
           }
         };
+      } else if (keys.length === 2 && keys[0] === 'coordenadas') {
+        return {
+          ...prev,
+          coordenadas: {
+            ...(prev.coordenadas || {}),
+            [keys[1]]: value
+          }
+        };
       }
       return prev;
     });

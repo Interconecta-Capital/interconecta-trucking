@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
+import { CatalogosSATService } from '@/services/catalogosSAT';
 
 interface VehiculoPermitsProps {
   data: AutotransporteCompleto;
@@ -14,6 +15,20 @@ interface VehiculoPermitsProps {
 }
 
 export function VehiculoPermits({ data, onFieldChange }: VehiculoPermitsProps) {
+  const [permisoError, setPermisoError] = useState('');
+
+  useEffect(() => {
+    const validar = async () => {
+      if (!data.perm_sct) {
+        setPermisoError('El tipo de permiso es requerido');
+        return;
+      }
+      const existe = await CatalogosSATService.existeTipoPermiso(data.perm_sct);
+      setPermisoError(existe ? '' : 'Permiso no válido');
+    };
+    validar();
+  }, [data.perm_sct]);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -24,6 +39,7 @@ export function VehiculoPermits({ data, onFieldChange }: VehiculoPermitsProps) {
           onValueChange={(value) => onFieldChange('perm_sct', value)}
           placeholder="Buscar tipo de permiso..."
           required
+          error={permisoError}
         />
 
         <div className="space-y-2">

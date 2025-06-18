@@ -113,6 +113,12 @@ export class CatalogosSATService {
     }
   }
 
+  // Verificar existencia de clave producto/servicio
+  static async existeProductoServicio(clave: string): Promise<boolean> {
+    const productos = await this.obtenerProductosServicios(clave);
+    return productos.some(p => p.clave === clave);
+  }
+
   // Obtener unidades de medida SAT
   static async obtenerUnidades(termino: string = ''): Promise<ClaveUnidad[]> {
     const cacheKey = this.getCacheKey('unidades', termino);
@@ -154,6 +160,12 @@ export class CatalogosSATService {
       console.error('Error in obtenerUnidades:', error);
       return [];
     }
+  }
+
+  // Verificar existencia de una unidad de medida
+  static async existeUnidad(clave: string): Promise<boolean> {
+    const unidades = await this.obtenerUnidades(clave);
+    return unidades.some(u => u.clave === clave);
   }
 
   // Obtener materiales peligrosos
@@ -302,6 +314,12 @@ export class CatalogosSATService {
       console.error('Error in obtenerTiposPermiso:', error);
       return [];
     }
+  }
+
+  // Verificar existencia de un tipo de permiso
+  static async existeTipoPermiso(clave: string): Promise<boolean> {
+    const permisos = await this.obtenerTiposPermiso();
+    return permisos.some(p => p.clave === clave);
   }
 
   // Obtener tipos de embalaje

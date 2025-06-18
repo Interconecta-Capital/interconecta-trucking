@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package } from 'lucide-react';
@@ -7,6 +7,7 @@ import { MercanciaBasicInfo } from './MercanciaBasicInfo';
 import { MercanciaCantidades } from './MercanciaCantidades';
 import { MercanciaMaterialPeligroso } from './MercanciaMaterialPeligroso';
 import { MercanciaComercial } from './MercanciaComercial';
+import { CatalogosSATService } from '@/services/catalogosSAT';
 
 interface MercanciaFormOptimizadaProps {
   mercancia?: any;
@@ -40,6 +41,26 @@ export function MercanciaFormOptimizada({
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    const validar = async () => {
+      if (formData.bienes_transp) {
+        const ok = await CatalogosSATService.existeProductoServicio(formData.bienes_transp);
+        setErrors(prev => ({ ...prev, bienes_transp: ok ? '' : 'Clave no válida' }));
+      }
+    };
+    validar();
+  }, [formData.bienes_transp]);
+
+  useEffect(() => {
+    const validar = async () => {
+      if (formData.clave_unidad) {
+        const ok = await CatalogosSATService.existeUnidad(formData.clave_unidad);
+        setErrors(prev => ({ ...prev, clave_unidad: ok ? '' : 'Unidad no válida' }));
+      }
+    };
+    validar();
+  }, [formData.clave_unidad]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CatalogosSATService } from '@/services/catalogosSAT';
 
 export interface Mercancia {
   id?: string;
@@ -29,8 +30,8 @@ export const useMercancias = () => {
 
   const validarClaveMercancia = useCallback(async (clave: string): Promise<boolean> => {
     try {
-      // Mock validation - replace with real SAT validation
-      return clave.length >= 8;
+      if (!clave) return false;
+      return await CatalogosSATService.existeProductoServicio(clave);
     } catch (error) {
       console.error('Error validando clave de mercancía:', error);
       return false;
@@ -39,8 +40,8 @@ export const useMercancias = () => {
 
   const validarClaveUnidad = useCallback(async (clave: string): Promise<boolean> => {
     try {
-      // Mock validation - replace with real SAT validation  
-      return clave.length >= 3;
+      if (!clave) return false;
+      return await CatalogosSATService.existeUnidad(clave);
     } catch (error) {
       console.error('Error validando clave de unidad:', error);
       return false;
