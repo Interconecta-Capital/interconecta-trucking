@@ -145,7 +145,7 @@ export function SmartUbicacionFormV2({
     // Calle y número exterior (primer fragmento)
     if (addressParts.length > 0) {
       const streetPart = addressParts[0];
-      const numberMatch = streetPart.match(/(.*?)(\d+[a-zA-Z-]*)$/);
+      const numberMatch = streetPart.match(/(.*?)(\d+[a-zA-Z\-]*)$/);
       if (numberMatch) {
         parsedData.calle = numberMatch[1].trim().replace(/[,#]$/, '');
         camposCompletados.add('calle');

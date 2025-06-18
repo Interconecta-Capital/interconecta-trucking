@@ -107,13 +107,12 @@ export class ExcelParser {
           switch (fieldName) {
             case 'cantidad':
             case 'peso_kg':
-            case 'valor_mercancia': {
+            case 'valor_mercancia':
               const numValue = parseFloat(value);
               if (!isNaN(numValue)) {
                 (mercancia as any)[fieldName] = numValue;
               }
               break;
-            }
             case 'material_peligroso':
               (mercancia as any)[fieldName] = Boolean(value);
               break;

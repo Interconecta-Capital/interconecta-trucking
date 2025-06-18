@@ -3,7 +3,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight } from 'lucide-react';
 import { DatosEmisor } from './DatosEmisor';
@@ -68,31 +67,6 @@ export function ConfiguracionPrincipal({
 
         {/* Opciones Especiales */}
         <OpcionesEspeciales data={data} onChange={onChange} />
-
-        {/* Datos adicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Total Distancia Recorrida (km)</Label>
-            <Input
-              type="number"
-              value={data.totalDistRec ?? ''}
-              onChange={(e) =>
-                onChange({ totalDistRec: parseFloat(e.target.value) || 0 })
-              }
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Régimen Aduanero</Label>
-            <Input
-              value={data.regimenAduanero || ''}
-              onChange={(e) =>
-                onChange({ regimenAduanero: e.target.value })
-              }
-              placeholder="Régimen Aduanero"
-            />
-          </div>
-        </div>
 
         <div className="flex justify-end">
           <Button 

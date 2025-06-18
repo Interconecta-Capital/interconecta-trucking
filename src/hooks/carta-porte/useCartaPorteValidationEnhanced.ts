@@ -78,20 +78,10 @@ export const useCartaPorteValidationEnhanced = ({
     
     const traditionalResult = validateTraditional(dataToValidate);
     const summary = getValidationSummary(dataToValidate);
-
-    // Campos adicionales requeridos para generación de XML
-    const extraFieldsValid =
-      dataToValidate.totalDistRec !== undefined &&
-      dataToValidate.totalDistRec > 0 &&
-      !!(dataToValidate.regimenAduanero ||
-        (dataToValidate.regimenesAduaneros && dataToValidate.regimenesAduaneros.length > 0));
-
-    const baseValid = traditionalResult.isValid && extraFieldsValid;
     
     if (!enableAI) {
       return {
         ...traditionalResult,
-        isValid: baseValid,
         completionPercentage: summary.completionPercentage,
         aiEnhancements: null,
         overallScore: summary.completionPercentage,
@@ -109,7 +99,6 @@ export const useCartaPorteValidationEnhanced = ({
 
       return {
         ...traditionalResult,
-        isValid: baseValid,
         completionPercentage: summary.completionPercentage,
         aiEnhancements: {
           suggestions: aiResult.aiSuggestions || [],
@@ -124,7 +113,6 @@ export const useCartaPorteValidationEnhanced = ({
       console.error('Error in AI validation:', error);
       return {
         ...traditionalResult,
-        isValid: baseValid,
         completionPercentage: summary.completionPercentage,
         aiEnhancements: null,
         overallScore: summary.completionPercentage,

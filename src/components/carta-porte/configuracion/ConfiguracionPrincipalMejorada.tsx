@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClienteSelector } from '@/components/crm/ClienteSelector';
 import { ArrowRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { OpcionesEspeciales } from './OpcionesEspeciales';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
@@ -126,31 +125,6 @@ const ConfiguracionPrincipalMejoradaComponent = ({
         </div>
 
         <OpcionesEspeciales data={data} onChange={onChange} />
-
-        {/* Datos adicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Total Distancia Recorrida (km)</Label>
-            <Input
-              type="number"
-              value={data.totalDistRec ?? ''}
-              onChange={(e) =>
-                onChange({ totalDistRec: parseFloat(e.target.value) || 0 })
-              }
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Régimen Aduanero</Label>
-            <Input
-              value={data.regimenAduanero || ''}
-              onChange={(e) =>
-                onChange({ regimenAduanero: e.target.value })
-              }
-              placeholder="Régimen Aduanero"
-            />
-          </div>
-        </div>
 
         <div className="flex justify-end">
           <Button 
