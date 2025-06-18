@@ -206,3 +206,7 @@ Para mantener la calidad del código:
 - Mantén los componentes pequeños y focalizados
 
 ¡Listo para automatizar el transporte de carga con Interconecta Trucking! 🚛📋✨
+
+## Integracion con FISCAL API
+
+Se incluye el servicio `FiscalApiService` para emitir CFDI 4.0 y complementar con Carta Porte 3.1 utilizando FISCAL API. Configure las llaves en `.env` y llame a la función edge `timbrar-invoice` o use el servicio directamente desde el frontend.
