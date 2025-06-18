@@ -85,7 +85,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     },
     currentCartaPorteId: currentCartaPorteId || undefined,
     onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
-    enabled: true
+    enabled: true,
+    userId: user?.id,
+    tenantId: user?.usuario?.tenant_id
   });
 
   // Recuperación de borrador
@@ -304,6 +306,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         status: xmlGenerado ? 'generado' : 'borrador',
         datos_formulario: serializedData as any, // Cast para evitar error de tipo
         usuario_id: user.id,
+        tenant_id: user.usuario?.tenant_id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -391,7 +394,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         datosCalculoRuta
       };
       
-      const nuevoId = await BorradorService.guardarBorrador(datosCompletos, currentCartaPorteId || undefined);
+      const nuevoId = await BorradorService.guardarBorrador(
+        datosCompletos,
+        currentCartaPorteId || undefined,
+        user?.id,
+        user?.usuario?.tenant_id
+      );
       
       if (nuevoId && nuevoId !== currentCartaPorteId) {
         setCurrentCartaPorteId(nuevoId);
