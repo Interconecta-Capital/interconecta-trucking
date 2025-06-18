@@ -21,7 +21,7 @@ export function PDFGenerationPanel({
 }: PDFGenerationPanelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // NUEVO: Generar PDF de Carta Porte
+  // CORREGIDO: Generar PDF de Carta Porte con nombres de propiedades correctos
   const generateCartaPortePDF = useCallback(async () => {
     if (!cartaPorteData) {
       toast.error('No hay datos para generar el PDF');
@@ -73,7 +73,7 @@ export function PDFGenerationPanel({
       pdf.text(`Nombre: ${cartaPorteData.nombreReceptor || 'N/A'}`, 20, yPosition);
       yPosition += 15;
 
-      // Ubicaciones
+      // CORREGIDO: Ubicaciones con nombres de propiedades correctos
       if (cartaPorteData.ubicaciones && cartaPorteData.ubicaciones.length > 0) {
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
@@ -82,8 +82,8 @@ export function PDFGenerationPanel({
 
         const ubicacionesData = cartaPorteData.ubicaciones.map((ub, index) => [
           `${index + 1}`,
-          ub.tipoUbicacion || 'N/A',
-          ub.domicilio?.codigoPostal || 'N/A',
+          ub.tipo_ubicacion || 'N/A',
+          ub.domicilio?.codigo_postal || 'N/A',
           ub.nombre_remitente_destinatario || 'N/A'
         ]);
 

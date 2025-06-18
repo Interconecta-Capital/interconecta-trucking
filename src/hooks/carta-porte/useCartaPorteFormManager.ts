@@ -92,7 +92,10 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       }
 
       if (data?.datos_formulario) {
-        const savedData = data.datos_formulario;
+        // CORREGIDO: Manejo seguro de datos JSON
+        const savedData = typeof data.datos_formulario === 'object' && data.datos_formulario !== null 
+          ? data.datos_formulario as any 
+          : {};
         
         // Restaurar datos del formulario
         setFormData({
@@ -100,16 +103,16 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           ...savedData
         });
 
-        // Restaurar estados persistidos
-        if (savedData.xmlGenerado) {
+        // CORREGIDO: Restaurar estados persistidos con validación
+        if (savedData.xmlGenerado && typeof savedData.xmlGenerado === 'string') {
           setXmlGenerado(savedData.xmlGenerado);
         }
         
-        if (savedData.datosCalculoRuta) {
+        if (savedData.datosCalculoRuta && typeof savedData.datosCalculoRuta === 'object') {
           setDatosCalculoRuta(savedData.datosCalculoRuta);
         }
 
-        if (savedData.currentStep !== undefined) {
+        if (savedData.currentStep && typeof savedData.currentStep === 'number') {
           setCurrentStep(savedData.currentStep);
         }
 
@@ -175,7 +178,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
       
-      // Restaurar datos persistidos
+      // CORREGIDO: Restaurar datos persistidos de manera segura
       if (data.xmlGenerado) {
         setXmlGenerado(data.xmlGenerado);
       }
@@ -220,13 +223,13 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     try {
       console.log('💾 Iniciando guardado oficial...');
       
-      // Preparar datos completos
-      const datosCompletos = {
+      // CORREGIDO: Preparar datos completos como JSON serializable
+      const datosCompletos = JSON.parse(JSON.stringify({
         ...formData,
         currentStep,
         xmlGenerado,
         datosCalculoRuta
-      };
+      }));
       
       // Preparar datos para la carta porte oficial
       const cartaPorteData = {
