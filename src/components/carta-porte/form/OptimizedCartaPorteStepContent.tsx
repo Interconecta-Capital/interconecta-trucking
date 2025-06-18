@@ -48,7 +48,7 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
   onStepChange,
   onXMLGenerated,
   onTimbrado,
-  xmlGenera 
+  xmlGenerado,
   datosCalculoRuta,
   onCalculoRutaUpdate
 }) => {
