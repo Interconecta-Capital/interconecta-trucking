@@ -13,6 +13,7 @@ import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
 import { CartaPortePDFAdvanced } from '@/services/pdfGenerator/CartaPortePDFAdvanced';
+import { CartaPortePDFService } from '@/services/CartaPortePDFService';
 import { useToast } from '@/hooks/use-toast';
 import { CartaPorteData } from '@/types/cartaPorte';
 
@@ -21,6 +22,7 @@ export default function CartasPorte() {
   const { cartasPorte, loading, actualizarCartaPorte, eliminarCartaPorte } = useCartasPorte();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [pdfLinks, setPdfLinks] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   const handleNewCartaPorte = () => {
@@ -101,25 +103,33 @@ export default function CartasPorte() {
         throw new Error('No se encontraron datos para generar PDF');
       }
 
-      // Convertir datos_formulario a CartaPorteData de forma segura
+      if (carta.status?.toLowerCase() === 'timbrada') {
+        const result = await CartaPortePDFService.generate(id);
+        if (result.success && result.pdfUrl) {
+          setPdfLinks(prev => ({ ...prev, [id]: result.pdfUrl! }));
+          toast({
+            title: 'PDF generado',
+            description: 'Haz clic en el enlace para descargar el PDF.',
+          });
+          return;
+        }
+      }
+
+      // Fallback al generador local
       let cartaPorteData: CartaPorteData;
-      
       if (typeof carta.datos_formulario === 'string') {
         cartaPorteData = JSON.parse(carta.datos_formulario);
-      } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
-        cartaPorteData = carta.datos_formulario as CartaPorteData;
       } else {
-        throw new Error('Formato de datos inválido');
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
       }
 
       const result = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);
-      
+
       if (result.success && result.pdfBlob) {
         CartaPortePDFAdvanced.descargarPDF(result.pdfBlob, `carta-porte-${carta.folio || id}.pdf`);
-        
         toast({
-          title: "PDF generado",
-          description: "El PDF se ha generado y descargado correctamente.",
+          title: 'PDF generado',
+          description: 'El PDF se ha generado y descargado correctamente.',
         });
       } else {
         throw new Error(result.error || 'Error desconocido generando PDF');
@@ -127,9 +137,9 @@ export default function CartasPorte() {
     } catch (error) {
       console.error('Error generando PDF:', error);
       toast({
-        title: "Error generando PDF",
-        description: error instanceof Error ? error.message : "Error desconocido",
-        variant: "destructive"
+        title: 'Error generando PDF',
+        description: error instanceof Error ? error.message : 'Error desconocido',
+        variant: 'destructive',
       });
     }
   };
@@ -191,13 +201,14 @@ export default function CartasPorte() {
         )}
 
         {/* Tabla Avanzada */}
-        <CartasPorteTableAdvanced 
+        <CartasPorteTableAdvanced
           cartasPorte={filteredCartas}
           loading={loading}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onRegenerateXML={handleRegenerateXML}
           onGeneratePDF={handleGeneratePDF}
+          pdfLinks={pdfLinks}
         />
       </div>
     </ProtectedContent>
