@@ -38,17 +38,33 @@ const initialCartaPorteData: CartaPorteData = {
   datosCalculoRuta: undefined,
 };
 
-// Helper function to serialize CartaPorteData to JSON-safe format
-const serializeCartaPorteData = (data: CartaPorteData): Record<string, any> => {
-  return JSON.parse(JSON.stringify(data));
-};
-
-// Helper function to deserialize from JSON back to CartaPorteData
-const deserializeCartaPorteData = (jsonData: any): CartaPorteData => {
-  return {
-    ...initialCartaPorteData,
-    ...jsonData
-  };
+// Helper function to safely parse JSON data
+const parseCartaPorteData = (jsonData: any): CartaPorteData => {
+  try {
+    // Si jsonData es un string, parsearlo
+    const parsedData = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+    
+    // Validar que sea un objeto
+    if (!parsedData || typeof parsedData !== 'object') {
+      return initialCartaPorteData;
+    }
+    
+    return {
+      ...initialCartaPorteData,
+      ...parsedData,
+      // Asegurar arrays válidos
+      ubicaciones: Array.isArray(parsedData.ubicaciones) ? parsedData.ubicaciones : [],
+      mercancias: Array.isArray(parsedData.mercancias) ? parsedData.mercancias : [],
+      figuras: Array.isArray(parsedData.figuras) ? parsedData.figuras : [],
+      // Asegurar objeto válido para autotransporte
+      autotransporte: (parsedData.autotransporte && typeof parsedData.autotransporte === 'object') 
+        ? { ...initialCartaPorteData.autotransporte, ...parsedData.autotransporte }
+        : initialCartaPorteData.autotransporte
+    };
+  } catch (error) {
+    console.error('Error parsing CartaPorte data:', error);
+    return initialCartaPorteData;
+  }
 };
 
 export function useCartaPorteFormManager(cartaPorteId?: string) {
@@ -120,16 +136,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       if (error) throw error;
 
       if (data?.datos_formulario) {
-        // CORREGIDO: Deserializar correctamente sin problemas de tipo
-        const savedData: CartaPorteData = {
-          ...initialCartaPorteData,
-          ...data.datos_formulario,
-          // Asegurar tipos correctos para campos específicos
-          ubicaciones: data.datos_formulario.ubicaciones || [],
-          mercancias: data.datos_formulario.mercancias || [],
-          figuras: data.datos_formulario.figuras || [],
-          autotransporte: data.datos_formulario.autotransporte || initialCartaPorteData.autotransporte
-        };
+        // CORREGIDO: Usar función segura de parsing
+        const savedData = parseCartaPorteData(data.datos_formulario);
         
         console.log('✅ Datos cargados exitosamente:', {
           hasXML: !!savedData.xmlGenerado,
@@ -262,7 +270,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     clearSessionData();
   }, [rejectBorrador, clearSessionData]);
   
-  // CORREGIDO: Guardar como carta porte oficial sin problemas de tipo
+  // CORREGIDO: Guardar como carta porte oficial con manejo seguro de tipos
   const handleGuardarCartaPorteOficial = useCallback(async () => {
     if (!user?.id) {
       toast.error('Usuario no autenticado');
@@ -288,30 +296,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         hasRouteData: !!datosCompletos.datosCalculoRuta,
         currentStep: datosCompletos.currentStep,
         ubicacionesCount: datosCompletos.ubicaciones?.length || 0,
-        mercanciasCount: datosCompletos.mercancias?.length || 0
+        mercanciasCount: datosCompletas.mercancias?.length || 0
       });
 
       // Generar folio único si no existe
       const folio = `CP-${Date.now().toString().slice(-8)}`;
       
-      // CORREGIDO: Preparar datos sin problemas de tipo usando Record<string, any>
-      const datosFormulario: Record<string, any> = {
-        tipoCfdi: formData.tipoCfdi || 'Traslado',
-        transporteInternacional: formData.transporteInternacional,
-        version: formData.version || '4.0',
-        cartaPorteVersion: formData.cartaPorteVersion || '3.1',
-        rfcEmisor: formData.rfcEmisor || '',
-        nombreEmisor: formData.nombreEmisor || '',
-        rfcReceptor: formData.rfcReceptor || '',
-        nombreReceptor: formData.nombreReceptor || '',
-        ubicaciones: formData.ubicaciones || [],
-        mercancias: formData.mercancias || [],
-        autotransporte: formData.autotransporte || defaultAutotransporte,
-        figuras: formData.figuras || [],
-        currentStep,
-        xmlGenerado,
-        datosCalculoRuta
-      };
+      // CORREGIDO: Serializar datos de forma segura para Supabase Json
+      const datosFormularioSerialized = JSON.stringify(datosCompletos);
       
       // Preparar datos para la carta porte oficial
       const cartaPorteData = {
@@ -323,8 +315,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         nombre_receptor: formData.nombreReceptor || '',
         transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
-        status: xmlGenerado ? 'completado' : 'borrador', // CORREGIDO: Cambiar status según XML
-        datos_formulario: datosFormulario,
+        status: xmlGenerado ? 'completado' : 'borrador',
+        datos_formulario: datosFormularioSerialized,
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -371,7 +363,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando, defaultAutotransporte]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
 
   // Guardar y salir mejorado con navegación React Router CORREGIDO  
   const handleGuardarYSalir = useCallback(async () => {

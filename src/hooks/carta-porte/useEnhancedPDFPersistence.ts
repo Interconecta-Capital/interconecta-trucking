@@ -42,25 +42,48 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
       const base64Data = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(result.pdfBlob!);
+        reader.readAsDataURL(resultado.pdfBlob!); // CORREGIDO: usar resultado en lugar de result
       });
 
-      // Guardar en la base de datos
+      // CORREGIDO: Preparar datos para serialización JSON segura
       const pdfInfo = {
         url: resultado.pdfUrl,
         base64Data,
-        pages: 1, // CartaPortePDFAdvanced no retorna páginas, pero podemos calcular
+        pages: 1,
         generatedAt: new Date().toISOString(),
-        routeData: datosRuta
+        routeData: datosRuta || {}
       };
 
+      // CORREGIDO: Obtener datos actuales y actualizar solo el campo pdfPersistido
+      const { data: currentData, error: fetchError } = await supabase
+        .from('cartas_porte')
+        .select('datos_formulario')
+        .eq('id', cartaPorteId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Parsear datos actuales de forma segura
+      let currentFormData: any = {};
+      try {
+        currentFormData = typeof currentData?.datos_formulario === 'string' 
+          ? JSON.parse(currentData.datos_formulario)
+          : currentData?.datos_formulario || {};
+      } catch (parseError) {
+        console.warn('Error parsing current form data, using empty object:', parseError);
+      }
+
+      // Combinar datos actuales con nueva información de PDF
+      const updatedFormData = {
+        ...currentFormData,
+        pdfPersistido: pdfInfo
+      };
+
+      // Guardar en la base de datos como string JSON
       const { error } = await supabase
         .from('cartas_porte')
         .update({
-          datos_formulario: {
-            ...cartaPorteData,
-            pdfPersistido: pdfInfo
-          }
+          datos_formulario: JSON.stringify(updatedFormData)
         })
         .eq('id', cartaPorteId);
 
@@ -100,9 +123,25 @@ export function useEnhancedPDFPersistence(cartaPorteId?: string) {
         .eq('id', cartaPorteId)
         .single();
 
-      if (error || !data?.datos_formulario?.pdfPersistido) return;
+      if (error || !data?.datos_formulario) return;
 
-      const pdfInfo = data.datos_formulario.pdfPersistido;
+      // CORREGIDO: Parsear datos de forma segura
+      let formData: any = {};
+      try {
+        formData = typeof data.datos_formulario === 'string' 
+          ? JSON.parse(data.datos_formulario)
+          : data.datos_formulario;
+      } catch (parseError) {
+        console.error('Error parsing form data:', parseError);
+        return;
+      }
+
+      // CORREGIDO: Verificar si existe pdfPersistido de forma segura
+      if (!formData || typeof formData !== 'object' || !formData.pdfPersistido) {
+        return;
+      }
+
+      const pdfInfo = formData.pdfPersistido;
       
       // Recrear blob desde base64
       const response = await fetch(pdfInfo.base64Data);
