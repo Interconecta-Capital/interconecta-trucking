@@ -23,7 +23,7 @@ npm install
 
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones de APIs y base de datos
+# Editar .env con tus configuraciones de Supabase, APIs y base de datos
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
@@ -108,6 +108,10 @@ al inicio de `DocumentProcessor` para asegurar su correcto funcionamiento.
 Variables de Entorno Requeridas
 env# Base de datos
 DATABASE_URL=postgresql://usuario:password@host:puerto/dbname
+
+# Supabase
+VITE_SUPABASE_URL=tu_url_supabase
+VITE_SUPABASE_KEY=tu_clave_supabase
 
 # APIs de IA
 OPENAI_API_KEY=tu_clave_openai
