@@ -2,6 +2,10 @@ export interface CartaPortePDFResult {
   success: boolean;
   pdfBlob?: Blob;
   pdfUrl?: string;
+  uuid?: string;
+  selloDigital?: string;
+  cadenaOriginal?: string;
+  qrCode?: string;
   error?: string;
 }
 
@@ -20,16 +24,29 @@ export class CartaPortePDFService {
         return { success: false, error: error.message };
       }
 
-      if (!data || !data.pdfBase64) {
+      if (!data || (!data.pdfBase64 && !data.pdfUrl)) {
         return { success: false, error: 'PDF no generado' };
       }
 
-      const byteCharacters = atob(data.pdfBase64);
-      const byteNumbers = new Array(byteCharacters.length).fill(0).map((_, i) => byteCharacters.charCodeAt(i));
-      const pdfBlob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
-      const pdfUrl = URL.createObjectURL(pdfBlob);
+      let pdfBlob: Blob | undefined;
+      let pdfUrl: string | undefined = data.pdfUrl;
 
-      return { success: true, pdfBlob, pdfUrl };
+      if (data.pdfBase64) {
+        const byteCharacters = atob(data.pdfBase64);
+        const byteNumbers = new Array(byteCharacters.length).fill(0).map((_, i) => byteCharacters.charCodeAt(i));
+        pdfBlob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/pdf' });
+        pdfUrl = URL.createObjectURL(pdfBlob);
+      }
+
+      return {
+        success: true,
+        pdfBlob,
+        pdfUrl,
+        uuid: data.uuid,
+        selloDigital: data.selloDigital,
+        cadenaOriginal: data.cadenaOriginal,
+        qrCode: data.qrCode
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido generando PDF';
       return { success: false, error: message };
