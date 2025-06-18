@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 export interface TimbradoRequest {
   xmlContent: string;
@@ -24,7 +25,7 @@ export interface TimbradoResponse {
 export class TimbradoService {
   private static readonly TIMBRADO_ENDPOINT = 'timbrar-carta-porte';
 
-  static validarXMLAntesDelTimbrado(xml: string): { isValid: boolean; errors: string[] } {
+  static validarXMLAntesDelTimbrado(xml: string, data?: CartaPorteData): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (!xml.trim()) {
@@ -37,6 +38,15 @@ export class TimbradoService {
 
     if (!xml.includes('cfdi:Comprobante')) {
       errors.push('El XML no tiene la estructura de comprobante fiscal válida');
+    }
+
+    if (data) {
+      if (!data.totalDistRec) {
+        errors.push('TotalDistRec es obligatorio');
+      }
+      if (!data.regimenAduanero) {
+        errors.push('RegimenAduanero es obligatorio');
+      }
     }
 
     return {

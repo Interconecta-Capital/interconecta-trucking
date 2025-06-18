@@ -28,6 +28,8 @@ const initialData: CartaPorteData = {
     remolques: []
   },
   figuras: [],
+  totalDistRec: 0,
+  regimenAduanero: '',
 };
 
 // Validaciones básicas y estables

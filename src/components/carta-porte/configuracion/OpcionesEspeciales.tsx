@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { CartaPorteData } from '@/types/cartaPorte';
 
 interface OpcionesEspecialesProps {
@@ -146,6 +147,28 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
           </div>
         </div>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+        <div>
+          <Label htmlFor="total-dist-rec">Distancia Total Recorrida (km)</Label>
+          <Input
+            id="total-dist-rec"
+            type="number"
+            value={data.totalDistRec || ''}
+            onChange={e => handleFieldChange('totalDistRec', Number(e.target.value))}
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <Label htmlFor="regimen-aduanero">Régimen Aduanero</Label>
+          <Input
+            id="regimen-aduanero"
+            value={data.regimenAduanero || ''}
+            onChange={e => handleFieldChange('regimenAduanero', e.target.value)}
+            placeholder="Regimen"
+          />
+        </div>
+      </div>
     </div>
   );
 };

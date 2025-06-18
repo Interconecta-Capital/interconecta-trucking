@@ -11,12 +11,14 @@ export class XMLComplementoBuilder {
 
   private static construirCartaPorte(data: CartaPorteData): string {
     const distanciaTotal = XMLUtils.calcularDistanciaTotal(data.ubicaciones || []);
-    
-    return `<cartaporte31:CartaPorte 
-      Version="3.1" 
+    const totalDist = data.totalDistRec || distanciaTotal;
+
+    return `<cartaporte31:CartaPorte
+      Version="3.1"
       TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
       ${data.transporteInternacional ? XMLUtils.construirAtributosInternacionales(data) : ''}
-      TotalDistRec="${distanciaTotal}">
+      TotalDistRec="${totalDist}"
+      ${data.regimenAduanero ? `RegimenAduanero="${data.regimenAduanero}"` : ''}>
       
       ${this.construirUbicaciones(data.ubicaciones || [])}
       ${this.construirMercancias(data.mercancias || [])}
