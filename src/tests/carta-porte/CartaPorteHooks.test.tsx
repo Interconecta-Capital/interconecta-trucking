@@ -148,20 +148,10 @@ describe('CartaPorte Hooks - Robust Testing', () => {
         const validation = result.current.validateComplete(mockCartaPorteData);
         
         expect(validation.isValid).toBeDefined();
-        expect(validation.errors).toBeDefined();
         expect(validation.completionPercentage).toBeDefined();
-      });
-    });
-
-    test('should validate sections correctly', () => {
-      const { result } = renderHook(() => useCartaPorteValidation());
-      
-      act(() => {
-        const validation = result.current.validateSection('mercancias', [
-          { descripcion: 'Test Mercancia', cantidad: 1 }
-        ]);
-        
-        expect(validation.isValid).toBeDefined();
+        expect(validation.summary).toBeDefined();
+        expect(validation.summary.sectionStatus).toBeDefined();
+        expect(validation.summary.missingFields).toBeDefined();
       });
     });
 
@@ -173,6 +163,36 @@ describe('CartaPorte Hooks - Robust Testing', () => {
         
         expect(summary).toBeDefined();
         expect(summary.completionPercentage).toBeDefined();
+        expect(summary.sectionStatus).toBeDefined();
+        expect(summary.missingFields).toBeDefined();
+        expect(summary.overallProgress).toBeDefined();
+      });
+    });
+
+    test('should handle empty data validation', () => {
+      const { result } = renderHook(() => useCartaPorteValidation());
+      
+      const emptyData: CartaPorteData = {
+        ubicaciones: [],
+        mercancias: [],
+        figuras: [],
+        autotransporte: {
+          placa_vm: '',
+          anio_modelo_vm: new Date().getFullYear(),
+          config_vehicular: '',
+          perm_sct: '',
+          num_permiso_sct: '',
+          asegura_resp_civil: '',
+          poliza_resp_civil: '',
+          remolques: []
+        }
+      };
+      
+      act(() => {
+        const summary = result.current.getValidationSummary(emptyData);
+        
+        expect(summary.overallProgress).toBe(0);
+        expect(summary.completedSections).toBe(0);
       });
     });
   });
