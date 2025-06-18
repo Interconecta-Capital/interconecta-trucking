@@ -9,17 +9,13 @@ interface UseCartaPorteAutoSaveOptions {
   currentCartaPorteId?: string;
   onCartaPorteIdChange?: (id: string) => void;
   enabled?: boolean;
-  userId?: string;
-  tenantId?: string;
 }
 
-export const useCartaPorteAutoSave = ({
-  formData,
+export const useCartaPorteAutoSave = ({ 
+  formData, 
   currentCartaPorteId,
   onCartaPorteIdChange,
-  enabled = true,
-  userId,
-  tenantId
+  enabled = true
 }: UseCartaPorteAutoSaveOptions) => {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -47,12 +43,7 @@ export const useCartaPorteAutoSave = ({
     
     setIsAutoSaving(true);
     try {
-      const nuevoId = await BorradorService.guardarBorrador(
-        formData,
-        currentCartaPorteId,
-        userId,
-        tenantId
-      );
+      const nuevoId = await BorradorService.guardarBorrador(formData, currentCartaPorteId);
       
       if (nuevoId && nuevoId !== currentCartaPorteId && onCartaPorteIdChange) {
         onCartaPorteIdChange(nuevoId);
@@ -66,7 +57,7 @@ export const useCartaPorteAutoSave = ({
     } finally {
       setIsAutoSaving(false);
     }
-  }, [formData, currentCartaPorteId, enabled, isAutoSaving, onCartaPorteIdChange, userId, tenantId]);
+  }, [formData, currentCartaPorteId, enabled, isAutoSaving, onCartaPorteIdChange]);
 
   // Efecto para auto-guardado con debounce
   useEffect(() => {
@@ -92,12 +83,7 @@ export const useCartaPorteAutoSave = ({
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (enabled && formData) {
         // Intentar guardado síncrono antes de salir
-        BorradorService.guardarBorradorAutomatico(
-          formData,
-          currentCartaPorteId,
-          userId,
-          tenantId
-        );
+        BorradorService.guardarBorradorAutomatico(formData, currentCartaPorteId);
         e.preventDefault();
         e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
       }
@@ -105,7 +91,7 @@ export const useCartaPorteAutoSave = ({
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [formData, currentCartaPorteId, enabled, userId, tenantId]);
+  }, [formData, currentCartaPorteId, enabled]);
 
   // Función para forzar guardado manual
   const forceSave = useCallback(async () => {

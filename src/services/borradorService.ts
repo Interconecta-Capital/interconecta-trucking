@@ -12,20 +12,9 @@ export class BorradorService {
   private static isAutoSaving = false;
 
   // Guardar borrador en Supabase y localStorage como respaldo
-  static async guardarBorrador(
-    datos: any,
-    cartaPorteId?: string,
-    usuarioId?: string,
-    tenantId?: string
-  ): Promise<string | null> {
+  static async guardarBorrador(datos: any, cartaPorteId?: string): Promise<string | null> {
     try {
       const now = new Date().toISOString();
-
-      if (!usuarioId) {
-        const { data } = await supabase.auth.getUser();
-        usuarioId = data.user?.id;
-        tenantId = tenantId || (data.user?.user_metadata as any)?.tenant_id;
-      }
       
       // Si tenemos un ID, actualizar; si no, crear nuevo
       if (cartaPorteId) {
@@ -35,8 +24,6 @@ export class BorradorService {
             datos_formulario: datos,
             status: 'borrador',
             updated_at: now,
-            usuario_id: usuarioId,
-            tenant_id: tenantId,
             // Extraer campos principales para búsqueda
             rfc_emisor: datos.rfcEmisor || datos.configuracion?.emisor?.rfc || '',
             nombre_emisor: datos.nombreEmisor || datos.configuracion?.emisor?.nombre || '',
@@ -58,8 +45,6 @@ export class BorradorService {
             status: 'borrador',
             created_at: now,
             updated_at: now,
-            usuario_id: usuarioId,
-            tenant_id: tenantId,
             rfc_emisor: datos.rfcEmisor || datos.configuracion?.emisor?.rfc || '',
             nombre_emisor: datos.nombreEmisor || datos.configuracion?.emisor?.nombre || '',
             rfc_receptor: datos.rfcReceptor || datos.configuracion?.receptor?.rfc || '',
@@ -142,17 +127,12 @@ export class BorradorService {
   }
 
   // Guardado automático mejorado
-  static async guardarBorradorAutomatico(
-    datos: any,
-    cartaPorteId?: string,
-    usuarioId?: string,
-    tenantId?: string
-  ): Promise<string | null> {
+  static async guardarBorradorAutomatico(datos: any, cartaPorteId?: string): Promise<string | null> {
     if (this.isAutoSaving) return cartaPorteId || null;
     
     this.isAutoSaving = true;
     try {
-      const nuevoId = await this.guardarBorrador(datos, cartaPorteId, usuarioId, tenantId);
+      const nuevoId = await this.guardarBorrador(datos, cartaPorteId);
       console.log('Auto-guardado completado');
       return nuevoId;
     } catch (error) {

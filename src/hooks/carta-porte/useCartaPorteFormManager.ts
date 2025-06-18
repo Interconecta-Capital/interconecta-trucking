@@ -10,7 +10,6 @@ import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { useBorradorRecovery } from './useBorradorRecovery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
-import { useQueryClient } from '@tanstack/react-query';
 
 // Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
@@ -56,7 +55,6 @@ const deserializeCartaPorteData = (jsonData: any): CartaPorteData => {
 export function useCartaPorteFormManager(cartaPorteId?: string) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<CartaPorteData>(initialCartaPorteData);
   const [currentStep, setCurrentStep] = useState(0);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | null>(cartaPorteId || null);
@@ -85,9 +83,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     },
     currentCartaPorteId: currentCartaPorteId || undefined,
     onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
-    enabled: true,
-    userId: user?.id,
-    tenantId: user?.usuario?.tenant_id
+    enabled: true
   });
 
   // Recuperación de borrador
@@ -306,7 +302,6 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         status: xmlGenerado ? 'generado' : 'borrador',
         datos_formulario: serializedData as any, // Cast para evitar error de tipo
         usuario_id: user.id,
-        tenant_id: user.usuario?.tenant_id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -343,8 +338,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       
       setUltimoGuardado(new Date());
       toast.success('Carta porte guardada correctamente');
-      queryClient.invalidateQueries({ queryKey: ['cartas-porte', user?.id] });
-
+      
       return savedId;
     } catch (error) {
       console.error('❌ Error guardando carta porte:', error);
@@ -353,7 +347,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando, queryClient]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
 
   // Guardar y salir mejorado con navegación React Router CORREGIDO  
   const handleGuardarYSalir = useCallback(async () => {
@@ -364,8 +358,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       if (savedId) {
         // Limpiar datos de sesión ya que se guardó exitosamente
         clearSessionData();
-        queryClient.invalidateQueries({ queryKey: ['cartas-porte', user?.id] });
-
+        
         // Usar navegación React Router
         toast.success('Carta porte guardada exitosamente');
         
@@ -379,7 +372,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       console.error('❌ Error guardando carta porte:', error);
       toast.error('Error al guardar. No se puede salir. Verifica los datos.');
     }
-  }, [handleGuardarCartaPorteOficial, navigate, clearSessionData, queryClient, user?.id]);
+  }, [handleGuardarCartaPorteOficial, navigate, clearSessionData]);
 
   // Lógica de borrador (mantenido para compatibilidad)
   const handleGuardarBorrador = useCallback(async () => {
@@ -394,12 +387,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         datosCalculoRuta
       };
       
-      const nuevoId = await BorradorService.guardarBorrador(
-        datosCompletos,
-        currentCartaPorteId || undefined,
-        user?.id,
-        user?.usuario?.tenant_id
-      );
+      const nuevoId = await BorradorService.guardarBorrador(datosCompletos, currentCartaPorteId || undefined);
       
       if (nuevoId && nuevoId !== currentCartaPorteId) {
         setCurrentCartaPorteId(nuevoId);
