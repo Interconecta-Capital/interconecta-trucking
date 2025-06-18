@@ -197,6 +197,8 @@ export type Database = {
           uuid_fiscal: string | null
           via_entrada_salida: string | null
           xml_generado: string | null
+          pdf_path: string | null
+          timbre_data: Json | null
         }
         Insert: {
           created_at?: string | null
@@ -222,6 +224,8 @@ export type Database = {
           uuid_fiscal?: string | null
           via_entrada_salida?: string | null
           xml_generado?: string | null
+          pdf_path?: string | null
+          timbre_data?: Json | null
         }
         Update: {
           created_at?: string | null
@@ -247,6 +251,8 @@ export type Database = {
           uuid_fiscal?: string | null
           via_entrada_salida?: string | null
           xml_generado?: string | null
+          pdf_path?: string | null
+          timbre_data?: Json | null
         }
         Relationships: [
           {
