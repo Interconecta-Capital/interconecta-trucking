@@ -20,6 +20,7 @@ export interface CartaPorteData {
   figuras?: FiguraCompleta[];
   pais_origen_destino?: string;
   via_entrada_salida?: string;
+  folio?: string;
   cartaPorteId?: string;
   
   // Campos para persistencia de estado

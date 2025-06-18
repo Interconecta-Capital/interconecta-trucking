@@ -44,7 +44,7 @@ export class XMLCartaPorteGenerator {
 
   private static construirXML(data: CartaPorteData): string {
     const fechaActual = new Date().toISOString();
-    const folio = XMLUtils.generarFolio();
+    const folio = data.folio || XMLUtils.generarFolio();
     const version = data.cartaPorteVersion || '3.1';
     
     // Obtener namespaces según versión

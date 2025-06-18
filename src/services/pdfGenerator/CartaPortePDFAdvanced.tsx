@@ -122,7 +122,7 @@ export class CartaPortePDFAdvanced {
   }
 
   private static addGeneralInfo(doc: jsPDF, data: CartaPorteData, yPosition: number, pageWidth: number): number {
-    const folio = `CP-${Date.now().toString().slice(-8)}`;
+    const folio = data.folio || `CP-${Date.now().toString().slice(-8)}`;
     
     this.addSectionTitle(doc, 'Información General', yPosition);
     yPosition += 10;

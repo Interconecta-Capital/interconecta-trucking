@@ -34,6 +34,7 @@ const initialCartaPorteData: CartaPorteData = {
     remolques: []
   },
   figuras: [],
+  folio: undefined,
   currentStep: 0,
   xmlGenerado: undefined,
   datosCalculoRuta: undefined,
@@ -114,7 +115,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       console.log('🔄 Cargando datos de carta porte:', id);
       const { data, error } = await supabase
         .from('cartas_porte')
-        .select('datos_formulario')
+        .select('datos_formulario, folio')
         .eq('id', id)
         .single();
 
@@ -122,6 +123,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
       if (data?.datos_formulario) {
         const savedData = deserializeCartaPorteData(data.datos_formulario);
+        if (data.folio) {
+          savedData.folio = data.folio;
+        }
         
         console.log('✅ Datos cargados exitosamente:', {
           hasXML: !!savedData.xmlGenerado,
@@ -286,8 +290,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       // Serialize data for Supabase - CORREGIDO
       const serializedData = serializeCartaPorteData(datosCompletos);
       
-      // Generar folio único si no existe
-      const folio = `CP-${Date.now().toString().slice(-8)}`;
+      // Generar folio único solo la primera vez
+      let folio = formData.folio;
+      if (!folio) {
+        folio = `CP-${Date.now().toString().slice(-8)}`;
+        setFormData(prev => ({ ...prev, folio }));
+      }
       
       // Preparar datos para la carta porte oficial - CORREGIDO tipos
       const cartaPorteData = {
