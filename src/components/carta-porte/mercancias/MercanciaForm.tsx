@@ -5,6 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Save, X } from 'lucide-react';
 import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
 import { AIAssistantButton } from './AIAssistantButton';
@@ -37,7 +38,8 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
       descripcion_detallada: '',
       numero_piezas: undefined,
       tipo_embalaje: '',
-      regimen_aduanero: ''
+      regimen_aduanero: '',
+      codigo_producto: ''
     }
   });
   
@@ -160,6 +162,43 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
           )}
         />
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="fraccion_arancelaria"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fracción Arancelaria</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="8 dígitos (ej: 12345678)" 
+                    maxLength={8}
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="regimen_aduanero"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Régimen Aduanero</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Ej: A1, B1, etc." 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="embalaje"
@@ -242,6 +281,63 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
             )}
           />
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="numero_piezas"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Número de Piezas</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="Cantidad de piezas"
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="uuid_comercio_ext"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>UUID Comercio Exterior</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Para operaciones de comercio exterior"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="descripcion_detallada"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descripción Detallada</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Descripción más específica de la mercancía..."
+                  rows={3}
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
