@@ -9,6 +9,7 @@ import { ArrowRight } from 'lucide-react';
 import { DatosEmisor } from './DatosEmisor';
 import { DatosReceptor } from './DatosReceptor';
 import { OpcionesEspeciales } from './OpcionesEspeciales';
+import { RegimenesAduanerosList } from './RegimenesAduanerosList';
 import { CartaPorteData } from '../CartaPorteForm';
 
 interface ConfiguracionPrincipalProps {
@@ -18,17 +19,21 @@ interface ConfiguracionPrincipalProps {
   isFormValid: boolean;
 }
 
-export function ConfiguracionPrincipal({ 
-  data, 
-  onChange, 
-  onNext, 
-  isFormValid 
+export function ConfiguracionPrincipal({
+  data,
+  onChange,
+  onNext,
+  isFormValid
 }: ConfiguracionPrincipalProps) {
   const handleTipoCfdiChange = (value: string) => {
     if (value === 'Ingreso' || value === 'Traslado') {
       onChange({ tipoCfdi: value });
     }
   };
+
+  const isTransporteInternacional =
+    data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
+  const isVersion31 = data.cartaPorteVersion === '3.1';
 
   return (
     <Card>
@@ -70,16 +75,23 @@ export function ConfiguracionPrincipal({
         <OpcionesEspeciales data={data} onChange={onChange} />
 
         {/* Datos adicionales */}
-        <div className="space-y-2">
-          <Label>Régimen Aduanero</Label>
-          <Input
-            value={data.regimenAduanero || ''}
-            onChange={(e) =>
-              onChange({ regimenAduanero: e.target.value })
-            }
-            placeholder="Régimen Aduanero"
+        {!isTransporteInternacional && (
+          <div className="space-y-2">
+            <Label>Régimen Aduanero</Label>
+            <Input
+              value={data.regimenAduanero || ''}
+              onChange={(e) => onChange({ regimenAduanero: e.target.value })}
+              placeholder="Régimen Aduanero"
+            />
+          </div>
+        )}
+
+        {isVersion31 && isTransporteInternacional && (
+          <RegimenesAduanerosList
+            regimenes={data.regimenesAduaneros || []}
+            onChange={(regs) => onChange({ regimenesAduaneros: regs })}
           />
-        </div>
+        )}
 
         <div className="flex justify-end">
           <Button 

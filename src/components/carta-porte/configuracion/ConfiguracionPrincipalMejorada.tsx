@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { OpcionesEspeciales } from './OpcionesEspeciales';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
+import { RegimenesAduanerosList } from './RegimenesAduanerosList';
 
 interface ConfiguracionPrincipalMejoradaProps {
   data: CartaPorteData;
@@ -71,6 +72,10 @@ const ConfiguracionPrincipalMejoradaComponent = ({
     });
   };
 
+  const isTransporteInternacional =
+    data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
+  const isVersion31 = data.cartaPorteVersion === '3.1';
+
   const isFormCompleto = () => {
     return !!(data.tipoCfdi && data.rfcEmisor && data.nombreEmisor && data.rfcReceptor && data.nombreReceptor);
   };
@@ -128,16 +133,23 @@ const ConfiguracionPrincipalMejoradaComponent = ({
         <OpcionesEspeciales data={data} onChange={onChange} />
 
         {/* Datos adicionales */}
-        <div className="space-y-2">
-          <Label>Régimen Aduanero</Label>
-          <Input
-            value={data.regimenAduanero || ''}
-            onChange={(e) =>
-              onChange({ regimenAduanero: e.target.value })
-            }
-            placeholder="Régimen Aduanero"
+        {!isTransporteInternacional && (
+          <div className="space-y-2">
+            <Label>Régimen Aduanero</Label>
+            <Input
+              value={data.regimenAduanero || ''}
+              onChange={(e) => onChange({ regimenAduanero: e.target.value })}
+              placeholder="Régimen Aduanero"
+            />
+          </div>
+        )}
+
+        {isVersion31 && isTransporteInternacional && (
+          <RegimenesAduanerosList
+            regimenes={data.regimenesAduaneros || []}
+            onChange={(regs) => onChange({ regimenesAduaneros: regs })}
           />
-        </div>
+        )}
 
         <div className="flex justify-end">
           <Button 

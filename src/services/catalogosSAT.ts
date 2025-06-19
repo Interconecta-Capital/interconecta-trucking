@@ -432,4 +432,37 @@ export class CatalogosSATService {
       return [];
     }
   }
+
+  // Obtener regímenes aduaneros
+  static async obtenerRegimenesAduaneros(): Promise<CatalogoItem[]> {
+    const cacheKey = this.getCacheKey('regimenes_aduaneros');
+    const cached = cache.get(cacheKey);
+
+    if (cached && this.isCacheValid(cached.timestamp)) {
+      return cached.data;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('cat_regimen_aduanero')
+        .select('clave_regimen, descripcion')
+        .order('clave_regimen');
+
+      if (error) {
+        console.error('Error fetching regimenes aduaneros:', error);
+        return [];
+      }
+
+      const result = (data || []).map(item => ({
+        clave: item.clave_regimen,
+        descripcion: item.descripcion
+      }));
+
+      cache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
+    } catch (error) {
+      console.error('Error in obtenerRegimenesAduaneros:', error);
+      return [];
+    }
+  }
 }
