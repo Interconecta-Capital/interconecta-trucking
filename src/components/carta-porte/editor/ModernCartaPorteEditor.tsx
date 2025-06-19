@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Save, 
   ArrowLeft, 
@@ -13,7 +12,6 @@ import {
   AlertCircle, 
   Clock,
   Eye,
-  Download,
   Settings,
   MapPin,
   Package,
@@ -342,7 +340,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       {sections.find(s => s.key === activeSection)?.icon && (
-                        <sections.find(s => s.key === activeSection)!.icon className="h-5 w-5" />
+                        React.createElement(sections.find(s => s.key === activeSection)!.icon, { className: "h-5 w-5" })
                       )}
                       {sections.find(s => s.key === activeSection)?.title}
                     </CardTitle>
@@ -351,7 +349,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                     </p>
                   </div>
                   {sections.find(s => s.key === activeSection)?.isValid && (
-                    <Badge variant="success" className="flex items-center gap-1">
+                    <Badge variant="secondary" className="flex items-center gap-1 text-green-700 bg-green-100">
                       <CheckCircle className="h-3 w-3" />
                       Completa
                     </Badge>
