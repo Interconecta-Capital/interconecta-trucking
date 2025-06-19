@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
 import { UbicacionesList } from './UbicacionesList';
@@ -38,6 +38,11 @@ export function UbicacionesSectionOptimizada({
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [showViajeModal, setShowViajeModal] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Referencias para evitar loops infinitos
+  const lastOnChangeRef = useRef<string>('');
+  const isUpdatingFromPropsRef = useRef(false);
   
   const { toast } = useToast();
   const { createViaje, isCreating } = useViajeCreation();
@@ -57,52 +62,102 @@ export function UbicacionesSectionOptimizada({
     ubicacionesFrecuentes
   } = useUbicaciones();
 
-  // Sincronizar con props data de manera más estable
+  // SOLUCIÓN 1: Inicialización única desde localStorage y props
   useEffect(() => {
-    console.log('🔄 Sincronizando data props:', data?.length || 0, 'ubicaciones');
-    if (data && Array.isArray(data)) {
-      // Solo actualizar si realmente hay diferencias
-      const currentIds = ubicaciones.map(u => u.idUbicacion).sort();
-      const newIds = data.map(u => u.idUbicacion).sort();
+    if (!isInitialized) {
+      console.log('🔄 Inicializando ubicaciones por primera vez');
       
-      if (JSON.stringify(currentIds) !== JSON.stringify(newIds)) {
-        console.log('📍 Actualizando ubicaciones por cambio en props');
-        setUbicaciones(data);
-      }
-    }
-  }, [data]);
-
-  // Sincronizar cambios hacia el componente padre de manera más estable
-  useEffect(() => {
-    console.log('💾 Verificando si sincronizar ubicaciones hacia padre:', ubicaciones?.length || 0);
-    if (ubicaciones && Array.isArray(ubicaciones)) {
-      // Evitar loops infinitos verificando si hay cambios reales
-      const currentData = JSON.stringify(data || []);
-      const newData = JSON.stringify(ubicaciones);
-      
-      if (currentData !== newData) {
-        console.log('💾 Sincronizando ubicaciones hacia padre');
-        onChange(ubicaciones);
-      }
-    }
-  }, [ubicaciones]);
-
-  // Persistir datos cuando cambian las ubicaciones (con protección)
-  useEffect(() => {
-    if (ubicaciones && ubicaciones.length > 0) {
-      console.log('💾 Persistiendo datos de ubicaciones:', ubicaciones.length);
       try {
-        localStorage.setItem('carta-porte-ubicaciones', JSON.stringify({
+        // Primero intentar cargar desde localStorage
+        const savedData = localStorage.getItem('carta-porte-ubicaciones');
+        let ubicacionesIniciales = [];
+        
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (parsed.ubicaciones && Array.isArray(parsed.ubicaciones)) {
+            ubicacionesIniciales = parsed.ubicaciones;
+            console.log('📍 Cargadas desde localStorage:', ubicacionesIniciales.length);
+            
+            // También restaurar distancias si existen
+            if (parsed.distanciaTotal) setDistanciaTotal(parsed.distanciaTotal);
+            if (parsed.tiempoEstimado) setTiempoEstimado(parsed.tiempoEstimado);
+          }
+        }
+        
+        // Si no hay datos en localStorage pero sí en props, usar props
+        if (ubicacionesIniciales.length === 0 && data && data.length > 0) {
+          ubicacionesIniciales = data;
+          console.log('📍 Cargadas desde props:', ubicacionesIniciales.length);
+        }
+        
+        // Establecer ubicaciones iniciales si las hay
+        if (ubicacionesIniciales.length > 0) {
+          isUpdatingFromPropsRef.current = true;
+          setUbicaciones(ubicacionesIniciales);
+          
+          // Notificar al padre inmediatamente
+          const signature = JSON.stringify(ubicacionesIniciales.map(u => u.idUbicacion).sort());
+          lastOnChangeRef.current = signature;
+          onChange(ubicacionesIniciales);
+        }
+        
+        setIsInitialized(true);
+        console.log('✅ Inicialización completada');
+      } catch (error) {
+        console.error('❌ Error en inicialización:', error);
+        setIsInitialized(true);
+      }
+    }
+  }, [data, isInitialized, setUbicaciones, onChange]);
+
+  // SOLUCIÓN 2: Sincronización unidireccional desde hook hacia padre (NO loops)
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    // Evitar updates circulares
+    if (isUpdatingFromPropsRef.current) {
+      isUpdatingFromPropsRef.current = false;
+      return;
+    }
+    
+    console.log('💾 Sincronizando ubicaciones hacia padre:', ubicaciones?.length || 0);
+    
+    if (ubicaciones && Array.isArray(ubicaciones)) {
+      const currentSignature = JSON.stringify(ubicaciones.map(u => u.idUbicacion).sort());
+      
+      // Solo actualizar si realmente hay cambios
+      if (lastOnChangeRef.current !== currentSignature) {
+        lastOnChangeRef.current = currentSignature;
+        onChange(ubicaciones);
+        console.log('✅ Padre actualizado con', ubicaciones.length, 'ubicaciones');
+      }
+    }
+  }, [ubicaciones, onChange, isInitialized]);
+
+  // SOLUCIÓN 3: Persistencia mejorada en localStorage con debounce
+  useEffect(() => {
+    if (!isInitialized || !ubicaciones || ubicaciones.length === 0) return;
+    
+    console.log('💾 Guardando en localStorage:', ubicaciones.length, 'ubicaciones');
+    
+    // Debounce para evitar guardados excesivos
+    const timeoutId = setTimeout(() => {
+      try {
+        const dataToSave = {
           ubicaciones,
           distanciaTotal,
           tiempoEstimado,
           timestamp: new Date().toISOString()
-        }));
+        };
+        localStorage.setItem('carta-porte-ubicaciones', JSON.stringify(dataToSave));
+        console.log('✅ Datos persistidos correctamente');
       } catch (error) {
         console.warn('⚠️ Error persistiendo en localStorage:', error);
       }
-    }
-  }, [ubicaciones, distanciaTotal, tiempoEstimado]);
+    }, 500); // 500ms debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [ubicaciones, distanciaTotal, tiempoEstimado, isInitialized]);
 
   const handleAgregarUbicacion = () => {
     console.log('➕ Iniciando agregar ubicación');
@@ -128,7 +183,7 @@ export function UbicacionesSectionOptimizada({
   };
 
   const handleGuardarUbicacion = (ubicacionData: any) => {
-    console.log('💾 === INICIANDO GUARDAR UBICACIÓN (MEJORADO) ===');
+    console.log('💾 === GUARDANDO UBICACIÓN (ESTABLE) ===');
     console.log('📍 Datos recibidos:', ubicacionData);
     
     try {
@@ -240,18 +295,16 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
-  // Manejar cálculo de distancia total PROTEGIDO
+  // SOLUCIÓN 4: Manejo de distancia mejorado y estable
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
-    console.log('📏 === CÁLCULO DE DISTANCIA (PROTEGIDO) ===');
-    console.log('📍 Distancia recibida:', distancia, 'km');
-    console.log('⏱️ Tiempo recibido:', tiempo, 'minutos');
+    console.log('📏 Distancia calculada:', { distancia, tiempo });
     
     try {
       setIsCalculatingDistance(true);
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
       
-      // Notificar al componente padre para persistir
+      // Notificar al componente padre
       if (onDistanceCalculated) {
         onDistanceCalculated({
           distanciaTotal: distancia,
@@ -259,7 +312,7 @@ export function UbicacionesSectionOptimizada({
         });
       }
       
-      console.log('✅ Distancia calculada y persistida:', { distancia, tiempo });
+      console.log('✅ Distancia procesada exitosamente');
       
       toast({
         title: "Distancia calculada exitosamente",
@@ -320,8 +373,21 @@ export function UbicacionesSectionOptimizada({
     ubicacionesCount: ubicaciones.length,
     validacion,
     canCalculateDistances,
-    canContinue
+    canContinue,
+    isInitialized
   });
+
+  // No renderizar hasta que esté inicializado
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Cargando ubicaciones...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showForm) {
     return (
@@ -355,7 +421,7 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Calculadora de distancia mejorada con protección de errores */}
+      {/* Calculadora de distancia mejorada y estable */}
       {canCalculateDistances && (
         <DistanceCalculator
           ubicaciones={ubicaciones}
