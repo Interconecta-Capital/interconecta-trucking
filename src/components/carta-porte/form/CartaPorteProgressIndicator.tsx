@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code, ShieldCheck } from 'lucide-react';
@@ -10,6 +11,11 @@ interface CartaPorteProgressIndicatorProps {
   xmlGenerado?: string | null;
   xmlTimbrado?: string | null;
   datosTimbre?: any;
+  configuracion?: any;
+  ubicaciones?: any[];
+  mercancias?: any[];
+  autotransporte?: any;
+  figuras?: any[];
 }
 
 const steps = [
@@ -27,15 +33,15 @@ const steps = [
   },
   { 
     id: 2, 
-    name: 'Mercancías', 
-    icon: Package,
-    key: 'mercancias' as const
-  },
-  { 
-    id: 3, 
     name: 'Autotransporte', 
     icon: Truck,
     key: 'autotransporte' as const
+  },
+  { 
+    id: 3, 
+    name: 'Mercancías', 
+    icon: Package,
+    key: 'mercancias' as const
   },
   { 
     id: 4, 
@@ -57,58 +63,92 @@ const steps = [
   }
 ];
 
-type StepKey = typeof steps[number]['key'];
-
 export function CartaPorteProgressIndicator({ 
   validationSummary, 
   currentStep, 
   onStepClick,
   xmlGenerado,
   xmlTimbrado,
-  datosTimbre
+  datosTimbre,
+  configuracion,
+  ubicaciones = [],
+  mercancias = [],
+  autotransporte,
+  figuras = []
 }: CartaPorteProgressIndicatorProps) {
   
+  const validateSectionData = (stepKey: string) => {
+    switch (stepKey) {
+      case 'configuracion':
+        return !!(
+          configuracion?.rfcEmisor &&
+          configuracion?.nombreEmisor &&
+          configuracion?.rfcReceptor &&
+          configuracion?.nombreReceptor &&
+          configuracion?.uso_cfdi
+        );
+      
+      case 'ubicaciones':
+        const hasOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
+        const hasDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
+        const ubicacionesCompletas = ubicaciones.every(u => 
+          u.domicilio?.codigo_postal && 
+          u.domicilio?.municipio && 
+          u.domicilio?.calle
+        );
+        return hasOrigen && hasDestino && ubicacionesCompletas && ubicaciones.length >= 2;
+      
+      case 'autotransporte':
+        return !!(
+          autotransporte?.placa_vm &&
+          autotransporte?.config_vehicular &&
+          autotransporte?.perm_sct &&
+          autotransporte?.asegura_resp_civil &&
+          autotransporte?.poliza_resp_civil &&
+          autotransporte?.peso_bruto_vehicular > 0
+        );
+      
+      case 'mercancias':
+        const mercanciasCompletas = mercancias.every(m => 
+          m.descripcion && 
+          m.bienes_transp && 
+          m.clave_unidad && 
+          m.cantidad > 0 && 
+          m.peso_kg > 0
+        );
+        return mercancias.length > 0 && mercanciasCompletas;
+      
+      case 'figuras':
+        const figurasCompletas = figuras.every(f => 
+          f.tipo_figura && 
+          f.nombre_figura && 
+          f.rfc_figura
+        );
+        return figuras.length > 0 && figurasCompletas;
+      
+      case 'xml':
+        return !!xmlGenerado;
+      
+      case 'pdf_fiscal':
+        return !!(xmlTimbrado && datosTimbre?.uuid);
+      
+      default:
+        return false;
+    }
+  };
+  
   const getStepStatus = (step: typeof steps[0]) => {
-    // Para la sección XML
-    if (step.key === 'xml') {
-      if (xmlGenerado) {
-        return 'completed';
-      } else {
-        return 'pending';
-      }
+    const isComplete = validateSectionData(step.key);
+    
+    if (step.id < currentStep) {
+      return isComplete ? 'completed' : 'completed-warning';
     }
     
-    // Para la sección PDF Fiscal
-    if (step.key === 'pdf_fiscal') {
-      if (xmlTimbrado && datosTimbre?.uuid && datosTimbre?.idCCP) {
-        return 'completed';
-      } else if (xmlGenerado) {
-        return 'ready';
-      } else {
-        return 'pending';
-      }
+    if (step.id === currentStep) {
+      return 'current';
     }
     
-    // Para las secciones principales del formulario
-    const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
-      'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
-    ];
-    
-    if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
-      const sectionStatus = validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']];
-      
-      if (step.id < currentStep) {
-        return sectionStatus === 'complete' ? 'completed' : 'completed-warning';
-      }
-      
-      if (step.id === currentStep) {
-        return 'current';
-      }
-      
-      return sectionStatus === 'empty' ? 'pending' : 'ready';
-    }
-    
-    return 'pending';
+    return isComplete ? 'ready' : 'pending';
   };
 
   const getStepIcon = (step: typeof steps[0], status: string) => {
@@ -131,7 +171,7 @@ export function CartaPorteProgressIndicator({
       case 'completed':
         return <Badge variant="default" className="bg-green-100 text-green-800">Completo</Badge>;
       case 'completed-warning':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Revisar</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Incompleto</Badge>;
       case 'current':
         return <Badge variant="default" className="bg-blue-100 text-blue-800">Actual</Badge>;
       case 'ready':
@@ -142,105 +182,21 @@ export function CartaPorteProgressIndicator({
   };
 
   const canNavigateTo = (stepId: number) => {
-    // Permitir navegación hacia atrás siempre
     if (stepId <= currentStep) return true;
     
-    // Para avanzar, verificar que los pasos anteriores no estén vacíos
+    // Verificar que los pasos anteriores estén completos
     for (let i = 0; i < stepId; i++) {
       const step = steps[i];
-      const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
-        'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
-      ];
-      
-      if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
-        if (validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']] === 'empty') {
-          return false;
-        }
+      if (!validateSectionData(step.key)) {
+        return false;
       }
     }
     
     return true;
   };
 
-  const getNextStepMessage = () => {
-    // Si todas las secciones principales están completas
-    const mainSectionsComplete = steps.slice(0, 5).every(step => {
-      const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
-        'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
-      ];
-      
-      if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
-        return validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']] !== 'empty';
-      }
-      return true;
-    });
-    
-    if (mainSectionsComplete && !xmlGenerado) {
-      return 'Listo para generar XML';
-    }
-    
-    if (xmlGenerado && !xmlTimbrado) {
-      return 'Listo para timbrar';
-    }
-    
-    if (xmlTimbrado && datosTimbre?.uuid) {
-      return 'Carta Porte timbrada - PDF fiscal disponible';
-    }
-    
-    const currentStepData = steps[currentStep];
-    const nextStepData = steps[currentStep + 1];
-    
-    if (!nextStepData) return null;
-    
-    const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
-      'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
-    ];
-    
-    if (mainSectionKeys.includes(currentStepData.key as keyof ValidationSummary['sectionStatus'])) {
-      const currentSectionStatus = validationSummary.sectionStatus[currentStepData.key as keyof ValidationSummary['sectionStatus']];
-      
-      if (currentSectionStatus === 'empty') {
-        switch (currentStepData.key) {
-          case 'configuracion':
-            return 'Complete los datos del emisor y receptor';
-          case 'ubicaciones':
-            return 'Agregue las ubicaciones de origen y destino';
-          case 'mercancias':
-            return 'Agregue al menos una mercancía';
-          case 'autotransporte':
-            return 'Complete los datos del vehículo';
-          case 'figuras':
-            return 'Agregue al menos una figura de transporte';
-          default:
-            return `Complete la sección ${currentStepData.name}`;
-        }
-      }
-    }
-    
-    return `Siguiente paso: ${nextStepData.name}`;
-  };
-
-  // Calcular progreso incluyendo XML y PDF fiscal
   const calculateProgress = () => {
-    const completedSections = steps.filter(step => {
-      if (step.key === 'xml') {
-        return xmlGenerado ? 1 : 0;
-      }
-      if (step.key === 'pdf_fiscal') {
-        return xmlTimbrado && datosTimbre?.uuid ? 1 : 0;
-      }
-      
-      const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
-        'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
-      ];
-      
-      if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
-        return validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']] === 'complete' ? 1 : 0;
-      }
-      
-      return 0;
-    }).length;
-    
+    const completedSections = steps.filter(step => validateSectionData(step.key)).length;
     return Math.round((completedSections / steps.length) * 100);
   };
 
@@ -292,14 +248,6 @@ export function CartaPorteProgressIndicator({
           );
         })}
       </div>
-
-      {/* Next Step Message */}
-      {getNextStepMessage() && (
-        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-          <Clock className="h-4 w-4" />
-          <span>{getNextStepMessage()}</span>
-        </div>
-      )}
 
       {/* Progress Summary */}
       <div className="text-center text-sm text-gray-500">

@@ -2,8 +2,8 @@
 import React, { memo, useMemo } from 'react';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
 import { UbicacionesSectionOptimizada } from '../ubicaciones/UbicacionesSectionOptimizada';
-import { MercanciasSection } from '../MercanciasSection';
 import { AutotransporteSection } from '../AutotransporteSection';
+import { MercanciasSection } from '../MercanciasSection';
 import { FigurasTransporteSection } from '../FigurasTransporteSection';
 import { SimplifiedXMLGenerationPanel } from '../xml/SimplifiedXMLGenerationPanel';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -70,7 +70,7 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
 
   // Renderizar el contenido según el paso actual
   switch (currentStep) {
-    case 0:
+    case 0: // Configuración
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <ConfiguracionInicial
@@ -81,7 +81,7 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         </div>
       );
 
-    case 1:
+    case 1: // Ubicaciones
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <UbicacionesSectionOptimizada
@@ -95,24 +95,12 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         </div>
       );
 
-    case 2:
-      return (
-        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-          <MercanciasSection
-            data={mercancias}
-            onChange={onMercanciasChange}
-            onNext={handleNextStep}
-            onPrev={handlePrevStep}
-          />
-        </div>
-      );
-
-    case 3:
+    case 2: // Autotransporte (NUEVO ORDEN)
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <AutotransporteSection
             data={autotransporte}
-            pesoTotalMercancias={pesoTotalMercancias}
+            pesoTotalMercancias={0} // No hay mercancías aún
             onChange={onAutotransporteChange}
             onNext={handleNextStep}
             onPrev={handlePrevStep}
@@ -120,7 +108,20 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         </div>
       );
 
-    case 4:
+    case 3: // Mercancías (NUEVO ORDEN)
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <MercanciasSection
+            data={mercancias}
+            onChange={onMercanciasChange}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+            autotransporte={autotransporte} // Pasar datos del autotransporte para validaciones
+          />
+        </div>
+      );
+
+    case 4: // Figuras
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <FigurasTransporteSection
@@ -132,7 +133,7 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         </div>
       );
 
-    case 5:
+    case 5: // XML
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <SimplifiedXMLGenerationPanel

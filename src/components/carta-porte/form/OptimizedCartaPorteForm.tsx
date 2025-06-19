@@ -71,49 +71,28 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     }
 
     // Para avanzar, verificar que el paso actual tenga datos mínimos
-    const currentSectionKeys = ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'];
-    const currentSectionKey = currentSectionKeys[currentStep];
+    const validations = {
+      0: () => !!(configuracion.rfcEmisor && configuracion.rfcReceptor && configuracion.uso_cfdi),
+      1: () => ubicaciones.length >= 2 && ubicaciones.some(u => u.tipo_ubicacion === 'Origen') && ubicaciones.some(u => u.tipo_ubicacion === 'Destino'),
+      2: () => !!(autotransporte?.placa_vm && autotransporte?.config_vehicular),
+      3: () => mercancias.length > 0,
+      4: () => figuras.length > 0
+    };
+
+    const currentStepValid = validations[currentStep as keyof typeof validations]?.() ?? true;
     
-    if (currentSectionKey && validationSummary?.sectionStatus[currentSectionKey] === 'empty') {
-      // No permitir avanzar si la sección actual está vacía
-      return;
+    if (!currentStepValid) {
+      return; // No permitir avanzar si el paso actual no es válido
     }
 
     setCurrentStep(targetStep);
-  }, [currentStep, setCurrentStep, validationSummary]);
+  }, [currentStep, setCurrentStep, configuracion, ubicaciones, autotransporte, mercancias, figuras]);
 
   // Fix: Include version in configuracion object
   const enhancedConfiguracion = useMemo(() => ({
     ...configuracion,
     version: configuracion.cartaPorteVersion || '3.1'
   }), [configuracion]);
-
-  // Create a proper ValidationSummary object with all required properties
-  const enhancedValidationSummary = useMemo(() => {
-    const baseValidation = validationSummary || { sectionStatus: {} };
-    
-    return {
-      sectionStatus: {
-        configuracion: (baseValidation.sectionStatus as any)?.configuracion || 'empty',
-        ubicaciones: (baseValidation.sectionStatus as any)?.ubicaciones || 'empty',
-        mercancias: (baseValidation.sectionStatus as any)?.mercancias || 'empty',
-        autotransporte: (baseValidation.sectionStatus as any)?.autotransporte || 'empty',
-        figuras: (baseValidation.sectionStatus as any)?.figuras || 'empty',
-        xml: 'empty' as const
-      },
-      overallProgress: 0,
-      completionPercentage: 0,
-      missingFields: {
-        configuracion: [],
-        ubicaciones: [],
-        mercancias: [],
-        autotransporte: [],
-        figuras: []
-      },
-      completedSections: 0,
-      totalSections: 5
-    };
-  }, [validationSummary]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -139,13 +118,31 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         />
       </div>
 
-      {/* Indicador de progreso con más margen */}
+      {/* Indicador de progreso con validación mejorada */}
       <div className="mb-8 bg-white rounded-lg shadow-sm border p-6">
         <CartaPorteProgressIndicator
-          validationSummary={enhancedValidationSummary}
+          validationSummary={validationSummary || {
+            sectionStatus: {},
+            overallProgress: 0,
+            completionPercentage: 0,
+            missingFields: {
+              configuracion: [],
+              ubicaciones: [],
+              mercancias: [],
+              autotransporte: [],
+              figuras: []
+            },
+            completedSections: 0,
+            totalSections: 5
+          }}
           currentStep={currentStep}
           onStepClick={handleStepNavigation}
           xmlGenerado={xmlGenerado}
+          configuracion={enhancedConfiguracion}
+          ubicaciones={ubicaciones}
+          mercancias={mercancias}
+          autotransporte={autotransporte}
+          figuras={figuras}
         />
       </div>
 
