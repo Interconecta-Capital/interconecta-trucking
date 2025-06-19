@@ -5,20 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Infinity } from 'lucide-react';
 
 interface LimitUsageIndicatorProps {
-  resource: 'cartas_porte' | 'conductores' | 'vehiculos' | 'socios';
+  resourceType: 'cartas_porte' | 'conductores' | 'vehiculos' | 'socios';
   className?: string;
   showDetails?: boolean;
 }
 
 export const LimitUsageIndicator = ({ 
-  resource, 
+  resourceType, 
   className, 
   showDetails = true 
 }: LimitUsageIndicatorProps) => {
   const { obtenerUsoActual } = usePermisosSubscripcion();
   const uso = obtenerUsoActual();
   
-  const resourceData = uso[resource];
+  const resourceData = uso[resourceType];
   const isUnlimited = resourceData.limite === null;
   const percentage = isUnlimited ? 0 : (resourceData.usado / resourceData.limite) * 100;
   const isNearLimit = percentage >= 80;
@@ -84,17 +84,17 @@ export const LimitUsageIndicator = ({
           <div className="space-y-1">
             {isAtLimit && (
               <p className="text-xs text-red-600 font-medium">
-                ¡Has alcanzado el límite de {resourceNames[resource]}!
+                ¡Has alcanzado el límite de {resourceNames[resourceType]}!
               </p>
             )}
             {isNearLimit && !isAtLimit && (
               <p className="text-xs text-orange-600 font-medium">
-                Te estás acercando al límite de {resourceNames[resource]}
+                Te estás acercando al límite de {resourceNames[resourceType]}
               </p>
             )}
             {!isNearLimit && (
               <p className="text-xs text-green-600">
-                Tienes {resourceData.limite - resourceData.usado} {resourceNames[resource]} disponibles
+                Tienes {resourceData.limite - resourceData.usado} {resourceNames[resourceType]} disponibles
               </p>
             )}
           </div>

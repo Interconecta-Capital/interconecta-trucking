@@ -24,8 +24,8 @@ export default function CartasPorte() {
 
   const filteredCartasPorte = cartasPorte.filter(carta =>
     carta.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    carta.emisor_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    carta.receptor_nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+    carta.nombre_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    carta.nombre_receptor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

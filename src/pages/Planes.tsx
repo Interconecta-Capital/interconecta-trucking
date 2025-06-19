@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlanesCard } from '@/components/suscripcion/PlanesCard';
 import { EstadoSuscripcion } from '@/components/suscripcion/EstadoSuscripcion';
 import { PlanSummaryCard } from '@/components/suscripcion/PlanSummaryCard';
 import { ProtectedContent } from '@/components/ProtectedContent';
@@ -14,7 +13,7 @@ export default function Planes() {
   const [activeTab, setActiveTab] = useState('actual');
 
   return (
-    <ProtectedContent requiredFeature="planes">
+    <ProtectedContent requiredFeature="cartas_porte">
       <div className="container mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -76,7 +75,23 @@ export default function Planes() {
           </TabsContent>
 
           <TabsContent value="planes" className="space-y-6">
-            <PlanesCard />
+            <Card>
+              <CardHeader>
+                <CardTitle>Planes Disponibles</CardTitle>
+                <CardDescription>
+                  Selecciona el plan que mejor se adapte a tus necesidades
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Próximamente</h3>
+                  <p className="text-muted-foreground">
+                    Los planes adicionales estarán disponibles pronto
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="facturacion" className="space-y-6">

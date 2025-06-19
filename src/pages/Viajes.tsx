@@ -38,7 +38,7 @@ export default function Viajes() {
           </div>
           <ProtectedActions
             action="create"
-            resource="viajes"
+            resource="cartas_porte"
             onAction={handleNuevoViaje}
             buttonText="Programar Viaje"
           />
@@ -46,7 +46,7 @@ export default function Viajes() {
 
         {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LimitUsageIndicator resourceType="viajes" className="md:col-span-2" />
+          <LimitUsageIndicator resourceType="cartas_porte" className="md:col-span-2" />
         </div>
 
         {/* Filtros y búsqueda */}
@@ -79,19 +79,19 @@ export default function Viajes() {
           </TabsList>
 
           <TabsContent value="activos">
-            <ViajesActivos searchTerm={searchTerm} />
+            <ViajesActivos />
           </TabsContent>
 
           <TabsContent value="programados">
-            <ProgramacionViajes searchTerm={searchTerm} />
+            <ProgramacionViajes />
           </TabsContent>
 
           <TabsContent value="historial">
-            <HistorialViajes searchTerm={searchTerm} />
+            <HistorialViajes />
           </TabsContent>
 
           <TabsContent value="documentos">
-            <DocumentosVista searchTerm={searchTerm} />
+            <DocumentosVista />
           </TabsContent>
         </Tabs>
 
