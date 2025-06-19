@@ -1,8 +1,9 @@
+
 import { Ubicacion } from '@/types/ubicaciones';
 import { UbicacionCompleta } from '@/types/cartaPorte';
 
 /**
- * Convierte una ubicaci\u00f3n del formato usado en los formularios
+ * Convierte una ubicación del formato usado en los formularios
  * al formato completo requerido por el generador de XML/PDF.
  */
 export function mapUbicacionToCompleta(ubicacion: Ubicacion): UbicacionCompleta {
@@ -19,8 +20,8 @@ export function mapUbicacionToCompleta(ubicacion: Ubicacion): UbicacionCompleta 
     kilometro: (ubicacion as any).kilometro,
     coordenadas: ubicacion.coordenadas
       ? {
-          latitud: (ubicacion.coordenadas as any).latitud ?? ubicacion.coordenadas.lat ?? 0,
-          longitud: (ubicacion.coordenadas as any).longitud ?? ubicacion.coordenadas.lng ?? 0,
+          latitud: ubicacion.coordenadas.latitud ?? 0,
+          longitud: ubicacion.coordenadas.longitud ?? 0,
         }
       : undefined,
     domicilio: {

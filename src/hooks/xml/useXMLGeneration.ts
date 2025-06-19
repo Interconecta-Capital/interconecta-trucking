@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { XMLCartaPorteGenerator, XMLGenerationResult } from '@/services/xml/xmlGenerator';
-import { CartaPorteData, UbicacionCompleta } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
 import { Ubicacion } from '@/types/ubicaciones';
 import { mapUbicacionToCompleta } from '@/hooks/carta-porte/mapUbicacionToCompleta';
 import { supabase } from '@/integrations/supabase/client';

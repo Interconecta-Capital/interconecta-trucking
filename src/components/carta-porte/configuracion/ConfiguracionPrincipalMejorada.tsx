@@ -27,8 +27,8 @@ export function ConfiguracionPrincipalMejorada({
   isFormValid
 }: ConfiguracionPrincipalMejoradaProps) {
   
-  const validacionEmisor = data.rfcEmisor ? RFCValidator.validarRFC(data.rfcEmisor) : { esValido: false };
-  const validacionReceptor = data.rfcReceptor ? RFCValidator.validarRFC(data.rfcReceptor) : { esValido: false };
+  const validacionEmisor = data.rfcEmisor ? RFCValidator.validarRFC(data.rfcEmisor) : { esValido: false, mensaje: '' };
+  const validacionReceptor = data.rfcReceptor ? RFCValidator.validarRFC(data.rfcReceptor) : { esValido: false, mensaje: '' };
 
   const handleTransporteInternacionalChange = (value: boolean) => {
     onChange({ 

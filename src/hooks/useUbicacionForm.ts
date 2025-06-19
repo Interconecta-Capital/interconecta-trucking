@@ -60,7 +60,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
         return {
           ...prev,
           coordenadas: {
-            ...(prev.coordenadas || {}),
+            ...(prev.coordenadas || { latitud: 0, longitud: 0 }),
             [keys[1]]: value
           }
         };

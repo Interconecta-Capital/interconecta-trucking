@@ -43,6 +43,9 @@ export function CartaPorteTabContent({
     handleTabChange(targetStep);
   };
 
+  // Calcular peso total de mercancías
+  const pesoTotalMercancias = (cachedFormData.mercancias || []).reduce((sum, m) => sum + (m.peso_kg || 0), 0);
+
   return (
     <div className="p-6">
       <TabsContent value="configuracion">
@@ -74,6 +77,7 @@ export function CartaPorteTabContent({
       <TabsContent value="autotransporte">
         <AutotransporteSection
           data={cachedFormData.autotransporte}
+          pesoTotalMercancias={pesoTotalMercancias}
           onChange={handleAutotransporteChange}
           onNext={() => handleNextStep('figuras')}
           onPrev={() => handlePrevStep('mercancias')}

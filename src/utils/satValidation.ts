@@ -38,7 +38,7 @@ export class SATValidation {
   }
 
   // *** VALIDACIÓN MEJORADA: Productos del catálogo CP ***
-  static async validarProductoServicioCP(clave: string): ValidationResult {
+  static async validarProductoServicioCP(clave: string): Promise<ValidationResult> {
     if (!clave) {
       return { isValid: false, message: "Clave de producto/servicio es requerida" };
     }
