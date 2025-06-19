@@ -16,7 +16,7 @@ interface MercanciaCompleta {
   cantidad: number;
   peso_kg: number;
   valor_mercancia?: number; // FIXED: Made optional to match global type
-  material_peligroso: boolean;
+  material_peligroso?: boolean; // FIXED: Made optional to match global type
   moneda: string;
   cve_material_peligroso?: string;
   embalaje?: string;
