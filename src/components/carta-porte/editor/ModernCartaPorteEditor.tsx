@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -203,11 +204,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   };
 
   const renderActiveSection = () => {
-    const activeConfig = sections.find(s => s.key === activeSection);
-    if (!activeConfig) return null;
-
-    const Component = activeConfig.component;
-    
+    // Special case for GeneracionSection which has different props
     if (activeSection === 'generacion') {
       return (
         <GeneracionSection
@@ -224,17 +221,17 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       );
     }
 
-    // For all other sections, use the generic props pattern
+    // For all other sections, use the standard props pattern
     if (activeSection === 'configuracion') {
-      return <Component data={configuracion} onChange={handleConfiguracionChange} />;
+      return <ConfiguracionGeneralSection data={configuracion} onChange={handleConfiguracionChange} />;
     } else if (activeSection === 'ubicaciones') {
-      return <Component data={ubicaciones} onChange={setUbicaciones} />;
+      return <UbicacionesSection data={ubicaciones} onChange={setUbicaciones} />;
     } else if (activeSection === 'mercancias') {
-      return <Component data={mercancias} onChange={setMercancias} />;
+      return <MercanciasSection data={mercancias} onChange={setMercancias} />;
     } else if (activeSection === 'autotransporte') {
-      return <Component data={autotransporte || defaultAutotransporte} onChange={setAutotransporte} />;
+      return <AutotransporteSection data={autotransporte || defaultAutotransporte} onChange={setAutotransporte} />;
     } else if (activeSection === 'figuras') {
-      return <Component data={figuras} onChange={setFiguras} />;
+      return <FigurasTransporteSection data={figuras} onChange={setFiguras} />;
     }
 
     return null;
