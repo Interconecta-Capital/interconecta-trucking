@@ -16,6 +16,12 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
   const [materialesSearch, setMaterialesSearch] = useState('');
   const materialesQuery = useCatalogosHibrido('materiales_peligrosos', materialesSearch);
 
+  console.log('🔍 MaterPelig - Materiales query:', {
+    isLoading: materialesQuery.isLoading,
+    dataLength: materialesQuery.data?.length || 0,
+    error: materialesQuery.error
+  });
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -42,11 +48,12 @@ export function MercanciaMaterialPeligroso({ formData, errors, onFieldChange }: 
           <CatalogSelect
             value={formData.cve_material_peligroso || ''}
             onValueChange={(value) => {
+              console.log('🔄 Material peligroso seleccionado:', value);
               onFieldChange('cve_material_peligroso', value);
               setMaterialesSearch('');
             }}
-            disabled={materialesQuery.isPending}
-            showLoading={materialesQuery.isPending}
+            disabled={materialesQuery.isLoading}
+            showLoading={materialesQuery.isLoading}
             placeholder="Buscar material peligroso..."
             options={materialesQuery.data || []}
             searchTerm={materialesSearch}

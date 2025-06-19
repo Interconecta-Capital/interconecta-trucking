@@ -24,6 +24,18 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
   const unidadesQuery = useCatalogosHibrido('unidades', unidadesSearch);
   const embalajesQuery = useCatalogosHibrido('embalajes', embalajesSearch);
 
+  console.log('🔍 MercanciaBasicInfo - Productos query:', {
+    isLoading: productosQuery.isLoading,
+    dataLength: productosQuery.data?.length || 0,
+    error: productosQuery.error
+  });
+
+  console.log('🔍 MercanciaBasicInfo - Unidades query:', {
+    isLoading: unidadesQuery.isLoading,
+    dataLength: unidadesQuery.data?.length || 0,
+    error: unidadesQuery.error
+  });
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -37,11 +49,12 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           <CatalogSelect
             value={formData.bienes_transp || ''}
             onValueChange={(value) => {
+              console.log('🔄 Producto seleccionado:', value);
               onFieldChange('bienes_transp', value);
               setProductosSearch('');
             }}
-            disabled={productosQuery.isPending}
-            showLoading={productosQuery.isPending}
+            disabled={productosQuery.isLoading}
+            showLoading={productosQuery.isLoading}
             placeholder="Buscar clave SAT..."
             options={productosQuery.data || []}
             searchTerm={productosSearch}
@@ -57,11 +70,12 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
           <CatalogSelect
             value={formData.clave_unidad || ''}
             onValueChange={(value) => {
+              console.log('🔄 Unidad seleccionada:', value);
               onFieldChange('clave_unidad', value);
               setUnidadesSearch('');
             }}
-            disabled={unidadesQuery.isPending}
-            showLoading={unidadesQuery.isPending}
+            disabled={unidadesQuery.isLoading}
+            showLoading={unidadesQuery.isLoading}
             placeholder="Buscar unidad..."
             options={unidadesQuery.data || []}
             searchTerm={unidadesSearch}
@@ -92,11 +106,12 @@ export function MercanciaBasicInfo({ formData, errors, onFieldChange }: Mercanci
         <CatalogSelect
           value={formData.embalaje || ''}
           onValueChange={(value) => {
+            console.log('🔄 Embalaje seleccionado:', value);
             onFieldChange('embalaje', value);
             setEmbalajesSearch('');
           }}
-          disabled={embalajesQuery.isPending}
-          showLoading={embalajesQuery.isPending}
+          disabled={embalajesQuery.isLoading}
+          showLoading={embalajesQuery.isLoading}
           placeholder="Buscar tipo de embalaje..."
           options={embalajesQuery.data || []}
           searchTerm={embalajesSearch}

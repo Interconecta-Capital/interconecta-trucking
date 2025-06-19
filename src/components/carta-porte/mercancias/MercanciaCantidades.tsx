@@ -29,9 +29,14 @@ export function MercanciaCantidades({ formData, errors, onFieldChange }: Mercanc
             id="cantidad"
             type="number"
             placeholder="0"
-            value={formData.cantidad || 0}
-            onChange={(e) => onFieldChange('cantidad', parseFloat(e.target.value) || 0)}
+            value={formData.cantidad || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              onFieldChange('cantidad', value ? parseFloat(value) : 0);
+            }}
             className={errors.cantidad ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
+            min="0"
+            step="0.01"
           />
           {errors.cantidad && (
             <p className="text-sm text-red-500">{errors.cantidad}</p>
@@ -48,9 +53,13 @@ export function MercanciaCantidades({ formData, errors, onFieldChange }: Mercanc
             type="number"
             placeholder="0.00"
             step="0.01"
-            value={formData.peso_kg || 0}
-            onChange={(e) => onFieldChange('peso_kg', parseFloat(e.target.value) || 0)}
+            value={formData.peso_kg || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              onFieldChange('peso_kg', value ? parseFloat(value) : 0);
+            }}
             className={errors.peso_kg ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
+            min="0"
           />
           {errors.peso_kg && (
             <p className="text-sm text-red-500">{errors.peso_kg}</p>
@@ -67,9 +76,13 @@ export function MercanciaCantidades({ formData, errors, onFieldChange }: Mercanc
             type="number"
             placeholder="0.00"
             step="0.01"
-            value={formData.valor_mercancia || 0}
-            onChange={(e) => onFieldChange('valor_mercancia', parseFloat(e.target.value) || 0)}
+            value={formData.valor_mercancia || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              onFieldChange('valor_mercancia', value ? parseFloat(value) : 0);
+            }}
             className={errors.valor_mercancia ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
+            min="0"
           />
           {errors.valor_mercancia && (
             <p className="text-sm text-red-500">{errors.valor_mercancia}</p>
