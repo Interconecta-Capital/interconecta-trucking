@@ -3,6 +3,7 @@ export interface RFCValidationResult {
   esValido: boolean;
   mensaje?: string;
   errores?: string[];
+  tipo?: 'fisica' | 'moral';
 }
 
 export class RFCValidator {
@@ -27,18 +28,23 @@ export class RFCValidator {
       };
     }
 
+    // Detectar tipo de persona basado en la longitud
+    const tipo = rfcLimpio.length === 12 ? 'fisica' : 'moral';
+
     // Validar dígito verificador
     if (!this.validarDigitoVerificador(rfcLimpio)) {
       return {
         esValido: false,
         mensaje: 'Dígito verificador inválido',
-        errores: ['El dígito verificador del RFC no es correcto']
+        errores: ['El dígito verificador del RFC no es correcto'],
+        tipo
       };
     }
 
     return {
       esValido: true,
-      mensaje: 'RFC válido'
+      mensaje: 'RFC válido',
+      tipo
     };
   }
 

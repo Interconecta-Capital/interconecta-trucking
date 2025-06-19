@@ -7,6 +7,7 @@ interface CodigoPostalSelectorProps {
   value: string;
   onChange: (value: string) => void;
   onLocationUpdate?: (data: any) => void;
+  onPostalDataChange?: (data: any) => void;
   required?: boolean;
   error?: string;
 }
@@ -15,18 +16,27 @@ export function CodigoPostalSelector({
   value,
   onChange,
   onLocationUpdate,
+  onPostalDataChange,
   required = false,
   error
 }: CodigoPostalSelectorProps) {
   const handleChange = (newValue: string) => {
     onChange(newValue);
     // Simular actualización de ubicación
-    if (onLocationUpdate && newValue.length === 5) {
-      onLocationUpdate({
+    if (newValue.length === 5) {
+      const locationData = {
         estado: 'Estado detectado',
         municipio: 'Municipio detectado',
         colonia: 'Colonia detectada'
-      });
+      };
+      
+      if (onLocationUpdate) {
+        onLocationUpdate(locationData);
+      }
+      
+      if (onPostalDataChange) {
+        onPostalDataChange(locationData);
+      }
     }
   };
 

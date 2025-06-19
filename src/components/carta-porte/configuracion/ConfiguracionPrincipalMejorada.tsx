@@ -171,7 +171,7 @@ export function ConfiguracionPrincipalMejorada({
             <RegimenesAduanerosList
               regimenes={data.regimenesAduaneros || []}
               onChange={(regimenes) => onChange({ regimenesAduaneros: regimenes })}
-              transporteInternacional={data.transporteInternacional}
+              transporteInternacional={Boolean(data.transporteInternacional)}
             />
           )}
         </CardContent>

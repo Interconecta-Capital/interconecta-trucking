@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-import { RFCValidator } from '@/utils/rfcValidation';
+import { RFCValidator, RFCValidationResult } from '@/utils/rfcValidation';
 
 interface DatosEmisorProps {
   rfcEmisor: string;
@@ -19,7 +19,10 @@ export function DatosEmisor({
   onRFCChange, 
   onNombreChange 
 }: DatosEmisorProps) {
-  const [validacionEmisor, setValidacionEmisor] = React.useState({ esValido: true, errores: [] });
+  const [validacionEmisor, setValidacionEmisor] = React.useState<RFCValidationResult>({ 
+    esValido: true, 
+    errores: [] 
+  });
 
   const handleRFCChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rfc = e.target.value.toUpperCase();
@@ -27,7 +30,10 @@ export function DatosEmisor({
     
     if (rfc.length > 0) {
       const validation = RFCValidator.validarRFC(rfc);
-      setValidacionEmisor(validation);
+      setValidacionEmisor({
+        ...validation,
+        errores: validation.errores || []
+      });
     } else {
       setValidacionEmisor({ esValido: true, errores: [] });
     }

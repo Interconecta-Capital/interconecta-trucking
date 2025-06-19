@@ -164,7 +164,7 @@ export function EnhancedMercanciaForm({
           {/* Claves SAT */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <CatalogoSelectorMejorado
-              tipo="productos_ccp"
+              tipo="productos"
               label="Clave Bienes Transporte CCP *"
               value={formData.bienes_transp}
               onValueChange={(value) => handleFieldChange('bienes_transp', value)}

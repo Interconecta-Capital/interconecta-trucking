@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-import { RFCValidator } from '@/utils/rfcValidation';
+import { RFCValidator, RFCValidationResult } from '@/utils/rfcValidation';
 
 interface DatosReceptorProps {
   rfcReceptor: string;
@@ -19,7 +19,10 @@ export function DatosReceptor({
   onRFCChange, 
   onNombreChange 
 }: DatosReceptorProps) {
-  const [validacionReceptor, setValidacionReceptor] = React.useState({ esValido: true, errores: [] });
+  const [validacionReceptor, setValidacionReceptor] = React.useState<RFCValidationResult>({ 
+    esValido: true, 
+    errores: [] 
+  });
 
   const handleRFCChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rfc = e.target.value.toUpperCase();
@@ -27,7 +30,10 @@ export function DatosReceptor({
     
     if (rfc.length > 0) {
       const validation = RFCValidator.validarRFC(rfc);
-      setValidacionReceptor(validation);
+      setValidacionReceptor({
+        ...validation,
+        errores: validation.errores || []
+      });
     } else {
       setValidacionReceptor({ esValido: true, errores: [] });
     }

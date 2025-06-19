@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Search, AlertCircle, Star, CheckCircle } from 'lucide-react';
-import { RFCValidator } from '@/utils/rfcValidation';
+import { RFCValidator, RFCValidationResult } from '@/utils/rfcValidation';
 
 interface UbicacionRFCSectionProps {
   rfc: string;
   nombre: string;
-  rfcValidation: ReturnType<typeof RFCValidator.validarRFC>;
+  rfcValidation: RFCValidationResult;
   onRFCChange: (rfc: string) => void;
   onNombreChange: (nombre: string) => void;
   onSaveToFavorites: () => void;
@@ -50,7 +50,7 @@ export function UbicacionRFCSection({
           )}
         </div>
         
-        {showValidation && !rfcValidation.esValido && rfcValidation.errores.length > 0 && (
+        {showValidation && !rfcValidation.esValido && rfcValidation.errores && rfcValidation.errores.length > 0 && (
           <Alert variant="destructive" className="mt-2">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
