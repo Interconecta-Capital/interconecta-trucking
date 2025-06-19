@@ -28,14 +28,14 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     remolques: []
   };
 
-  // FIXED: Ensure all fields are properly typed and valor_mercancia remains optional
-  const mercanciasCompletas: MercanciaCompleta[] = data.map(mercancia => ({
+  // FIXED: Ensure all fields are properly typed and valor_mercancia is provided as number
+  const mercanciasCompletas = data.map(mercancia => ({
     ...mercancia,
     descripcion: mercancia.descripcion || 'Sin descripción',
     cantidad: mercancia.cantidad || 1,
     clave_unidad: mercancia.clave_unidad || 'KGM',
-    peso_kg: mercancia.peso_kg || 0
-    // valor_mercancia se mantiene como está (opcional)
+    peso_kg: mercancia.peso_kg || 0,
+    valor_mercancia: mercancia.valor_mercancia || 0 // Ensure valor_mercancia is always a number
   }));
 
   return (
