@@ -131,9 +131,14 @@ export function UbicacionesSectionOptimizada({
         errores.push('La calle es requerida');
       }
 
-      if ((ubicacionData.tipoUbicacion === 'Origen' || ubicacionData.tipoUbicacion === 'Destino') && 
+      if ((ubicacionData.tipoUbicacion === 'Origen' || ubicacionData.tipoUbicacion === 'Destino') &&
           !ubicacionData.fechaHoraSalidaLlegada) {
         errores.push(`La fecha y hora ${ubicacionData.tipoUbicacion === 'Origen' ? 'de salida' : 'de llegada'} es requerida`);
+      }
+
+      if ((ubicacionData.tipoUbicacion === 'Destino' || ubicacionData.tipoUbicacion === 'Paso Intermedio') &&
+          (!ubicacionData.distanciaRecorrida || ubicacionData.distanciaRecorrida <= 0)) {
+        errores.push('La distancia recorrida es requerida');
       }
 
       if (errores.length > 0) {

@@ -50,7 +50,10 @@ export function UbicacionDomicilioFormOptimizado({
         domicilio={domicilioUnificado}
         onDomicilioChange={handleDomicilioChange}
         onDireccionCompleta={handleDireccionCompleta}
-        mostrarDistancia={true}
+        mostrarDistancia={
+          formData.tipoUbicacion === 'Destino' ||
+          formData.tipoUbicacion === 'Paso Intermedio'
+        }
         distanciaRecorrida={formData.distanciaRecorrida}
         onDistanciaChange={handleDistanciaChange}
         camposOpcionales={['numInterior', 'referencia']}
