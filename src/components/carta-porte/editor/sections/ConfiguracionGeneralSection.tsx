@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Upload, Users } from 'lucide-react';
-import { PlantillasSelector } from '../../plantillas/PlantillasSelector';
 import { DocumentUploadDialog } from '../../mercancias/DocumentUploadDialog';
 import { useState } from 'react';
 
@@ -17,7 +16,6 @@ interface ConfiguracionGeneralSectionProps {
 }
 
 export function ConfiguracionGeneralSection({ data, onChange }: ConfiguracionGeneralSectionProps) {
-  const [showPlantillas, setShowPlantillas] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
 
   const handleFieldChange = (field: string, value: string | boolean) => {
@@ -35,14 +33,6 @@ export function ConfiguracionGeneralSection({ data, onChange }: ConfiguracionGen
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowPlantillas(true)}
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              Cargar desde Plantilla
-            </Button>
             <Button
               variant="outline"
               onClick={() => setShowDocumentUpload(true)}
@@ -284,33 +274,13 @@ export function ConfiguracionGeneralSection({ data, onChange }: ConfiguracionGen
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      {showPlantillas && (
-        <PlantillasSelector
-          onSelectPlantilla={(plantilla) => {
-            onChange({
-              rfcEmisor: plantilla.rfc_emisor,
-              nombreEmisor: plantilla.nombre_emisor,
-              rfcReceptor: plantilla.rfc_receptor,
-              nombreReceptor: plantilla.nombre_receptor,
-              tipoCfdi: plantilla.tipo_cfdi,
-              transporteInternacional: plantilla.transporte_internacional,
-              registroIstmo: plantilla.registro_istmo,
-              cartaPorteVersion: plantilla.carta_porte_version || '3.1'
-            });
-            setShowPlantillas(false);
-          }}
-          onClose={() => setShowPlantillas(false)}
-        />
-      )}
-
+      {/* Dialog */}
       {showDocumentUpload && (
         <DocumentUploadDialog
           open={showDocumentUpload}
           onOpenChange={setShowDocumentUpload}
           onDocumentProcessed={(mercancias) => {
             if (Array.isArray(mercancias) && mercancias.length > 0) {
-              // Esto se manejará en el hook principal del formulario
               console.log('Mercancías cargadas:', mercancias);
             }
             setShowDocumentUpload(false);

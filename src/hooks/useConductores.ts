@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface Conductor {
+export interface Conductor {
   id: string;
   nombre: string;
   rfc?: string;
@@ -104,10 +104,6 @@ export function useConductores() {
       throw error;
     }
   };
-
-  useEffect(() => {
-    fetchConductores();
-  }, []);
 
   return {
     conductores,

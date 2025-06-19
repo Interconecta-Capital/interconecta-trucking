@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,10 +103,10 @@ export function MercanciasSection({ data, onChange }: MercanciasSectionProps) {
                   <CardTitle className="text-lg flex items-center gap-2">
                     Mercancía {index + 1}
                     {mercancia.material_peligroso && (
-                      <AlertTriangle className="h-4 w-4 text-orange-500" title="Material Peligroso" />
+                      <AlertTriangle className="h-4 w-4 text-orange-500" />
                     )}
                     {mercancia.especie_protegida && (
-                      <AlertTriangle className="h-4 w-4 text-red-500" title="Especie Protegida" />
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
                     )}
                   </CardTitle>
                   <Button

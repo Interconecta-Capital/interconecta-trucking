@@ -116,7 +116,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       icon: FileText,
       description: 'XML, PDF y Timbrado Fiscal',
       component: GeneracionSection,
-      isValid: validationSummary.sectionStatus.generacion === 'complete'
+      isValid: validationSummary.sectionStatus.xml === 'complete'
     }
   ];
 
@@ -165,47 +165,42 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
 
     const Component = activeConfig.component;
     
-    const sectionProps = {
-      configuracion: {
-        data: configuracion,
-        onChange: handleConfiguracionChange
-      },
-      ubicaciones: {
-        data: ubicaciones,
-        onChange: setUbicaciones
-      },
-      mercancias: {
-        data: mercancias,
-        onChange: setMercancias
-      },
-      autotransporte: {
-        data: autotransporte,
-        onChange: setAutotransporte
-      },
-      figuras: {
-        data: figuras,
-        onChange: setFiguras
-      },
-      generacion: {
-        cartaPorteData: {
-          ...configuracion,
-          ubicaciones,
-          mercancias,
-          autotransporte,
-          figuras
-        },
-        cartaPorteId: currentCartaPorteId,
-        onXMLGenerated: (xml: string) => {
-          console.log('XML generado:', xml);
-        },
-        onTimbrado: () => {
-          console.log('CFDI timbrado');
-          navigate('/cartas-porte');
-        }
-      }
+    const commonProps = {
+      data: activeSection === 'configuracion' ? configuracion : 
+            activeSection === 'ubicaciones' ? ubicaciones :
+            activeSection === 'mercancias' ? mercancias :
+            activeSection === 'autotransporte' ? autotransporte :
+            activeSection === 'figuras' ? figuras : null,
+      onChange: activeSection === 'configuracion' ? handleConfiguracionChange :
+                activeSection === 'ubicaciones' ? setUbicaciones :
+                activeSection === 'mercancias' ? setMercancias :
+                activeSection === 'autotransporte' ? setAutotransporte :
+                activeSection === 'figuras' ? setFiguras : () => {}
     };
 
-    return <Component {...sectionProps[activeSection]} />;
+    if (activeSection === 'generacion') {
+      return (
+        <GeneracionSection
+          cartaPorteData={{
+            ...configuracion,
+            ubicaciones,
+            mercancias,
+            autotransporte,
+            figuras
+          }}
+          cartaPorteId={currentCartaPorteId}
+          onXMLGenerated={(xml: string) => {
+            console.log('XML generado:', xml);
+          }}
+          onTimbrado={() => {
+            console.log('CFDI timbrado');
+            navigate('/cartas-porte');
+          }}
+        />
+      );
+    }
+
+    return <Component {...commonProps} />;
   };
 
   if (!borradorCargado && documentId) {

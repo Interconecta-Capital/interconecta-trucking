@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CartaPorteForm } from '@/components/carta-porte/CartaPorteForm';
+import { ModernCartaPorteEditor } from '@/components/carta-porte/editor/ModernCartaPorteEditor';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -13,7 +13,7 @@ interface CartaPorteFormModalProps {
 export function CartaPorteFormModal({ open, onOpenChange }: CartaPorteFormModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0">
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold">Nueva Carta Porte</DialogTitle>
@@ -27,8 +27,8 @@ export function CartaPorteFormModal({ open, onOpenChange }: CartaPorteFormModalP
             </Button>
           </div>
         </DialogHeader>
-        <div className="p-6 pt-0">
-          <CartaPorteForm />
+        <div className="flex-1 overflow-hidden">
+          <ModernCartaPorteEditor />
         </div>
       </DialogContent>
     </Dialog>
