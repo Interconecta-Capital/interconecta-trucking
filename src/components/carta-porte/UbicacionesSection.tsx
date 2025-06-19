@@ -321,7 +321,7 @@ export function UbicacionesSection({
         onOpenChange={setIsDialogOpen}
         ubicacion={editingUbicacion}
         onSave={handleSaveUbicacion}
-        existingUbicaciones={data}
+        mode={editingUbicacion ? 'edit' : 'add'}
       />
     </div>
   );

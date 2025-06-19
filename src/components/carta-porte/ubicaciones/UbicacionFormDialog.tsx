@@ -11,7 +11,8 @@ interface UbicacionFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onSave: (ubicacion: UbicacionCompleta) => void;
   ubicacion?: UbicacionCompleta;
-  mode: 'add' | 'edit';
+  mode?: 'add' | 'edit';
+  existingUbicaciones?: UbicacionCompleta[];
 }
 
 export function UbicacionFormDialog({
@@ -19,7 +20,8 @@ export function UbicacionFormDialog({
   onOpenChange,
   onSave,
   ubicacion,
-  mode
+  mode = 'add',
+  existingUbicaciones = []
 }: UbicacionFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,7 +83,7 @@ export function UbicacionFormDialog({
         <div className="space-y-4">
           <UbicacionFormOptimizado
             ubicacion={currentUbicacion}
-            onChange={setCurrentUbicacion}
+            onUbicacionChange={setCurrentUbicacion}
           />
 
           <div className="flex justify-end space-x-2">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,7 +81,7 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
     }
   };
 
-  // Convert remolques to ensure compatibility
+  // Fix remolques conversion to ensure compatibility
   const convertedRemolques: Remolque[] = (data.remolques || []).map(remolque => ({
     id: remolque.id,
     placa: remolque.placa,
@@ -91,7 +90,13 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
   }));
 
   const handleRemolquesChange = (newRemolques: Remolque[]) => {
-    handleFieldChange('remolques', newRemolques);
+    // Convert back to ensure both properties are set
+    const convertedBack = newRemolques.map(remolque => ({
+      ...remolque,
+      subtipo_rem: remolque.subtipo_rem || remolque.subtipo_remolque || '',
+      subtipo_remolque: remolque.subtipo_remolque || remolque.subtipo_rem || ''
+    }));
+    handleFieldChange('remolques', convertedBack);
   };
 
   const isVehiculoCompleto = data.placa_vm && data.anio_modelo_vm && data.config_vehicular;

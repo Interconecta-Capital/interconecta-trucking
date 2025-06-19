@@ -91,6 +91,13 @@ export interface PermisoSEMARNAT {
   observaciones?: string;
 }
 
+export interface ValidacionSATv31 {
+  errores: string[];
+  advertencias: string[];
+  esValido: boolean;
+  scoreComplitud: number;
+}
+
 export interface CartaPorteData {
   version: string;
   transporte_internacional?: string;
@@ -123,6 +130,15 @@ export interface CartaPorteData {
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
+  
+  // Missing properties
+  cartaPorteId?: string;
+  idCCP?: string;
+  regimen_fiscal_emisor?: string;
+  domicilio_fiscal_emisor?: any;
+  regimen_fiscal_receptor?: string;
+  domicilio_fiscal_receptor?: any;
+  datosCalculoRuta?: any;
 }
 
 export interface UbicacionCompleta extends Ubicacion {
@@ -168,6 +184,10 @@ export interface FiguraCompleta extends FiguraTransporte {
   domicilio?: any;
   residencia_fiscal_figura?: string;
   num_reg_id_trib_figura?: string;
+  operador_sct?: boolean;
+  tipo_licencia?: string;
+  vigencia_licencia?: string;
+  curp?: string;
 }
 
 export interface MercanciaCompleta {
