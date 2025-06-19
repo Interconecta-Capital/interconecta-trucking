@@ -12,6 +12,7 @@ export type Database = {
       autotransporte: {
         Row: {
           anio_modelo_vm: number | null
+          asegura_carga: string | null
           asegura_med_ambiente: string | null
           asegura_resp_civil: string | null
           carga_maxima: number | null
@@ -20,17 +21,22 @@ export type Database = {
           created_at: string | null
           id: string
           num_permiso_sct: string | null
+          numero_serie_vin: string | null
           perm_sct: string | null
-          peso_bruto_vehicular: number | null
+          peso_bruto_vehicular: number
           placa_vm: string | null
+          poliza_carga: string | null
           poliza_med_ambiente: string | null
           poliza_resp_civil: string | null
           tarjeta_circulacion: string | null
           tipo_carroceria: string | null
+          vigencia_med_ambiente: string | null
+          vigencia_resp_civil: string | null
           vigencia_tarjeta_circulacion: string | null
         }
         Insert: {
           anio_modelo_vm?: number | null
+          asegura_carga?: string | null
           asegura_med_ambiente?: string | null
           asegura_resp_civil?: string | null
           carga_maxima?: number | null
@@ -39,17 +45,22 @@ export type Database = {
           created_at?: string | null
           id?: string
           num_permiso_sct?: string | null
+          numero_serie_vin?: string | null
           perm_sct?: string | null
-          peso_bruto_vehicular?: number | null
+          peso_bruto_vehicular: number
           placa_vm?: string | null
+          poliza_carga?: string | null
           poliza_med_ambiente?: string | null
           poliza_resp_civil?: string | null
           tarjeta_circulacion?: string | null
           tipo_carroceria?: string | null
+          vigencia_med_ambiente?: string | null
+          vigencia_resp_civil?: string | null
           vigencia_tarjeta_circulacion?: string | null
         }
         Update: {
           anio_modelo_vm?: number | null
+          asegura_carga?: string | null
           asegura_med_ambiente?: string | null
           asegura_resp_civil?: string | null
           carga_maxima?: number | null
@@ -58,13 +69,17 @@ export type Database = {
           created_at?: string | null
           id?: string
           num_permiso_sct?: string | null
+          numero_serie_vin?: string | null
           perm_sct?: string | null
-          peso_bruto_vehicular?: number | null
+          peso_bruto_vehicular?: number
           placa_vm?: string | null
+          poliza_carga?: string | null
           poliza_med_ambiente?: string | null
           poliza_resp_civil?: string | null
           tarjeta_circulacion?: string | null
           tipo_carroceria?: string | null
+          vigencia_med_ambiente?: string | null
+          vigencia_resp_civil?: string | null
           vigencia_tarjeta_circulacion?: string | null
         }
         Relationships: [
@@ -192,6 +207,8 @@ export type Database = {
           created_at: string | null
           datos_formulario: Json | null
           distancia_total: number | null
+          domicilio_fiscal_emisor: Json | null
+          domicilio_fiscal_receptor: Json | null
           entrada_salida_merc: string | null
           fecha_timbrado: string | null
           folio: string | null
@@ -202,6 +219,8 @@ export type Database = {
           numero_total_mercancias: number | null
           pais_origen_destino: string | null
           peso_bruto_total: number | null
+          regimen_fiscal_emisor: string | null
+          regimen_fiscal_receptor: string | null
           regimenes_aduaneros: Json | null
           registro_istmo: boolean | null
           rfc_emisor: string
@@ -213,6 +232,7 @@ export type Database = {
           ubicacion_polo_destino: string | null
           ubicacion_polo_origen: string | null
           updated_at: string | null
+          uso_cfdi: string | null
           usuario_id: string | null
           uuid_fiscal: string | null
           version_carta_porte: string | null
@@ -223,6 +243,8 @@ export type Database = {
           created_at?: string | null
           datos_formulario?: Json | null
           distancia_total?: number | null
+          domicilio_fiscal_emisor?: Json | null
+          domicilio_fiscal_receptor?: Json | null
           entrada_salida_merc?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
@@ -233,6 +255,8 @@ export type Database = {
           numero_total_mercancias?: number | null
           pais_origen_destino?: string | null
           peso_bruto_total?: number | null
+          regimen_fiscal_emisor?: string | null
+          regimen_fiscal_receptor?: string | null
           regimenes_aduaneros?: Json | null
           registro_istmo?: boolean | null
           rfc_emisor: string
@@ -244,6 +268,7 @@ export type Database = {
           ubicacion_polo_destino?: string | null
           ubicacion_polo_origen?: string | null
           updated_at?: string | null
+          uso_cfdi?: string | null
           usuario_id?: string | null
           uuid_fiscal?: string | null
           version_carta_porte?: string | null
@@ -254,6 +279,8 @@ export type Database = {
           created_at?: string | null
           datos_formulario?: Json | null
           distancia_total?: number | null
+          domicilio_fiscal_emisor?: Json | null
+          domicilio_fiscal_receptor?: Json | null
           entrada_salida_merc?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
@@ -264,6 +291,8 @@ export type Database = {
           numero_total_mercancias?: number | null
           pais_origen_destino?: string | null
           peso_bruto_total?: number | null
+          regimen_fiscal_emisor?: string | null
+          regimen_fiscal_receptor?: string | null
           regimenes_aduaneros?: Json | null
           registro_istmo?: boolean | null
           rfc_emisor?: string
@@ -275,6 +304,7 @@ export type Database = {
           ubicacion_polo_destino?: string | null
           ubicacion_polo_origen?: string | null
           updated_at?: string | null
+          uso_cfdi?: string | null
           usuario_id?: string | null
           uuid_fiscal?: string | null
           version_carta_porte?: string | null
@@ -939,6 +969,47 @@ export type Database = {
         }
         Relationships: []
       }
+      documentacion_aduanera: {
+        Row: {
+          aduana_despacho: string | null
+          created_at: string | null
+          fecha_expedicion: string | null
+          folio_documento: string
+          id: string
+          mercancia_id: string | null
+          rfc_importador: string | null
+          tipo_documento: string
+        }
+        Insert: {
+          aduana_despacho?: string | null
+          created_at?: string | null
+          fecha_expedicion?: string | null
+          folio_documento: string
+          id?: string
+          mercancia_id?: string | null
+          rfc_importador?: string | null
+          tipo_documento: string
+        }
+        Update: {
+          aduana_despacho?: string | null
+          created_at?: string | null
+          fecha_expedicion?: string | null
+          folio_documento?: string
+          id?: string
+          mercancia_id?: string | null
+          rfc_importador?: string | null
+          tipo_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentacion_aduanera_mercancia_id_fkey"
+            columns: ["mercancia_id"]
+            isOneToOne: false
+            referencedRelation: "mercancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos_entidades: {
         Row: {
           activo: boolean
@@ -1183,38 +1254,50 @@ export type Database = {
         Row: {
           carta_porte_id: string | null
           created_at: string | null
+          curp: string | null
           domicilio: Json | null
           id: string
           nombre_figura: string | null
           num_licencia: string | null
           num_reg_id_trib_figura: string | null
+          operador_sct: boolean | null
           residencia_fiscal_figura: string | null
           rfc_figura: string | null
           tipo_figura: string | null
+          tipo_licencia: string | null
+          vigencia_licencia: string | null
         }
         Insert: {
           carta_porte_id?: string | null
           created_at?: string | null
+          curp?: string | null
           domicilio?: Json | null
           id?: string
           nombre_figura?: string | null
           num_licencia?: string | null
           num_reg_id_trib_figura?: string | null
+          operador_sct?: boolean | null
           residencia_fiscal_figura?: string | null
           rfc_figura?: string | null
           tipo_figura?: string | null
+          tipo_licencia?: string | null
+          vigencia_licencia?: string | null
         }
         Update: {
           carta_porte_id?: string | null
           created_at?: string | null
+          curp?: string | null
           domicilio?: Json | null
           id?: string
           nombre_figura?: string | null
           num_licencia?: string | null
           num_reg_id_trib_figura?: string | null
+          operador_sct?: boolean | null
           residencia_fiscal_figura?: string | null
           rfc_figura?: string | null
           tipo_figura?: string | null
+          tipo_licencia?: string | null
+          vigencia_licencia?: string | null
         }
         Relationships: [
           {
@@ -1277,16 +1360,23 @@ export type Database = {
           created_at: string | null
           cve_material_peligroso: string | null
           descripcion: string | null
+          descripcion_detallada: string | null
           dimensiones: Json | null
+          documentacion_aduanera: Json | null
           embalaje: string | null
+          especie_protegida: boolean | null
           fraccion_arancelaria: string | null
           id: string
           material_peligroso: boolean | null
           moneda: string | null
           numero_piezas: number | null
+          peso_bruto_total: number | null
           peso_kg: number | null
+          peso_neto_total: number | null
           regimen_aduanero: string | null
+          requiere_cites: boolean | null
           tipo_embalaje: string | null
+          unidad_peso_bruto: string | null
           uuid_comercio_ext: string | null
           valor_mercancia: number | null
         }
@@ -1298,16 +1388,23 @@ export type Database = {
           created_at?: string | null
           cve_material_peligroso?: string | null
           descripcion?: string | null
+          descripcion_detallada?: string | null
           dimensiones?: Json | null
+          documentacion_aduanera?: Json | null
           embalaje?: string | null
+          especie_protegida?: boolean | null
           fraccion_arancelaria?: string | null
           id?: string
           material_peligroso?: boolean | null
           moneda?: string | null
           numero_piezas?: number | null
+          peso_bruto_total?: number | null
           peso_kg?: number | null
+          peso_neto_total?: number | null
           regimen_aduanero?: string | null
+          requiere_cites?: boolean | null
           tipo_embalaje?: string | null
+          unidad_peso_bruto?: string | null
           uuid_comercio_ext?: string | null
           valor_mercancia?: number | null
         }
@@ -1319,16 +1416,23 @@ export type Database = {
           created_at?: string | null
           cve_material_peligroso?: string | null
           descripcion?: string | null
+          descripcion_detallada?: string | null
           dimensiones?: Json | null
+          documentacion_aduanera?: Json | null
           embalaje?: string | null
+          especie_protegida?: boolean | null
           fraccion_arancelaria?: string | null
           id?: string
           material_peligroso?: boolean | null
           moneda?: string | null
           numero_piezas?: number | null
+          peso_bruto_total?: number | null
           peso_kg?: number | null
+          peso_neto_total?: number | null
           regimen_aduanero?: string | null
+          requiere_cites?: boolean | null
           tipo_embalaje?: string | null
+          unidad_peso_bruto?: string | null
           uuid_comercio_ext?: string | null
           valor_mercancia?: number | null
         }
@@ -1433,6 +1537,53 @@ export type Database = {
             columns: ["suscripcion_id"]
             isOneToOne: false
             referencedRelation: "suscripciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permisos_semarnat: {
+        Row: {
+          autoridad_expedidora: string | null
+          created_at: string | null
+          fecha_expedicion: string
+          fecha_vencimiento: string
+          id: string
+          mercancia_id: string | null
+          numero_permiso: string
+          observaciones: string | null
+          tipo_permiso: string
+          vigente: boolean | null
+        }
+        Insert: {
+          autoridad_expedidora?: string | null
+          created_at?: string | null
+          fecha_expedicion: string
+          fecha_vencimiento: string
+          id?: string
+          mercancia_id?: string | null
+          numero_permiso: string
+          observaciones?: string | null
+          tipo_permiso: string
+          vigente?: boolean | null
+        }
+        Update: {
+          autoridad_expedidora?: string | null
+          created_at?: string | null
+          fecha_expedicion?: string
+          fecha_vencimiento?: string
+          id?: string
+          mercancia_id?: string | null
+          numero_permiso?: string
+          observaciones?: string | null
+          tipo_permiso?: string
+          vigente?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permisos_semarnat_mercancia_id_fkey"
+            columns: ["mercancia_id"]
+            isOneToOne: false
+            referencedRelation: "mercancias"
             referencedColumns: ["id"]
           },
         ]
@@ -1685,6 +1836,41 @@ export type Database = {
           metadata?: Json | null
         }
         Relationships: []
+      }
+      regimenes_aduaneros: {
+        Row: {
+          carta_porte_id: string | null
+          clave_regimen: string
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          orden_secuencia: number | null
+        }
+        Insert: {
+          carta_porte_id?: string | null
+          clave_regimen: string
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          orden_secuencia?: number | null
+        }
+        Update: {
+          carta_porte_id?: string | null
+          clave_regimen?: string
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          orden_secuencia?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regimenes_aduaneros_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       remolques: {
         Row: {
@@ -2559,6 +2745,10 @@ export type Database = {
         }[]
       }
       validate_carta_porte_v31: {
+        Args: { carta_porte_data: Json }
+        Returns: Json
+      }
+      validate_carta_porte_v31_compliance: {
         Args: { carta_porte_data: Json }
         Returns: Json
       }

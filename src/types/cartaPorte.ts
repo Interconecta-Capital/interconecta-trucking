@@ -1,3 +1,4 @@
+
 export interface CartaPorteData {
   // Identificadores únicos
   id?: string;
@@ -10,28 +11,54 @@ export interface CartaPorteData {
   tipoCreacion?: 'plantilla' | 'carga' | 'manual';
   tipoCfdi?: 'Ingreso' | 'Traslado';
   
-  // Datos fiscales del emisor y receptor
+  // Datos fiscales del emisor y receptor (ACTUALIZADOS v3.1)
   rfcEmisor?: string;
   nombreEmisor?: string;
   rfcReceptor?: string;
   nombreReceptor?: string;
   
-  // Uso del CFDI - Agregado
-  uso_cfdi?: string;
+  // NUEVOS CAMPOS OBLIGATORIOS v3.1
+  uso_cfdi?: string; // Obligatorio para receptor
+  regimen_fiscal_emisor?: string; // Obligatorio
+  regimen_fiscal_receptor?: string; // Obligatorio
+  domicilio_fiscal_emisor?: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+  };
+  domicilio_fiscal_receptor?: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+  };
   
   // Configuración de transporte
   transporteInternacional?: string | boolean;
-  transporte_internacional?: boolean; // Alias para compatibilidad
+  transporte_internacional?: boolean;
   registroIstmo?: boolean;
-  registro_istmo?: boolean; // Alias para compatibilidad
+  registro_istmo?: boolean;
   entradaSalidaMerc?: string;
   paisOrigenDestino?: string;
   viaEntradaSalida?: string;
   viaTransporte?: string;
   
-  // Regímenes aduaneros (diferente entre versiones)
-  regimenAduanero?: string; // v3.0 (string único)
-  regimenesAduaneros?: string[]; // v3.1 (array)
+  // Regímenes aduaneros v3.1 (ACTUALIZADO)
+  regimenAduanero?: string; // v3.0 (deprecated)
+  regimenesAduaneros?: Array<{
+    clave_regimen: string;
+    descripcion?: string;
+    orden_secuencia: number;
+  }>; // v3.1 (hasta 10 regímenes)
   
   // Totales calculados automáticamente
   totalDistRec?: number;
@@ -43,15 +70,6 @@ export interface CartaPorteData {
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
-  
-  // Campos específicos de versión 3.1
-  version31Fields?: {
-    transporteEspecializado?: boolean;
-    tipoCarroceria?: string;
-    registroISTMO?: boolean;
-    remolquesCCP?: RemolqueCCP[];
-    [key: string]: any;
-  };
   
   // Estado y persistencia
   xmlGenerado?: string;
@@ -66,13 +84,13 @@ export interface CartaPorteData {
 export interface UbicacionCompleta {
   id: string;
   tipo_ubicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
-  id_ubicacion: string;
+  id_ubicacion: string; // FORMATO VALIDADO: OR000001, DE000001
   rfc_remitente_destinatario?: string;
   nombre_remitente_destinatario?: string;
-  fecha_hora_salida_llegada?: string;
-  distancia_recorrida?: number;
+  fecha_hora_salida_llegada?: string; // OBLIGATORIO v3.1
+  distancia_recorrida?: number; // OBLIGATORIO para destino
   
-  // Campos nuevos agregados en la migración
+  // Campos existentes
   tipo_estacion?: string;
   numero_estacion?: string;
   kilometro?: number;
@@ -102,14 +120,23 @@ export interface AutotransporteCompleto {
   perm_sct: string;
   num_permiso_sct: string;
   
-  // Seguros
+  // CAMPOS OBLIGATORIOS v3.1
+  peso_bruto_vehicular: number; // OBLIGATORIO
+  numero_serie_vin?: string; // REQUERIDO para identificación
+  
+  // Seguros ACTUALIZADOS
   asegura_resp_civil: string;
   poliza_resp_civil: string;
+  vigencia_resp_civil?: string; // NUEVO - obligatorio
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
+  vigencia_med_ambiente?: string; // NUEVO - condicional
   
-  // Campos nuevos agregados en la migración
-  peso_bruto_vehicular?: number; // Obligatorio en v3.1
+  // Seguros opcionales mejorados
+  asegura_carga?: string; // NUEVO - recomendado
+  poliza_carga?: string; // NUEVO - recomendado
+  
+  // Campos técnicos adicionales
   tipo_carroceria?: string;
   carga_maxima?: number;
   tarjeta_circulacion?: string;
@@ -118,7 +145,6 @@ export interface AutotransporteCompleto {
   // Información adicional del vehículo
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
-  numero_serie_vin?: string;
   capacidad_carga?: number;
   vigencia_permiso?: string;
   numero_permisos_adicionales?: string[];
@@ -132,22 +158,6 @@ export interface AutotransporteCompleto {
   
   // Remolques (nueva estructura)
   remolques?: RemolqueCCP[];
-  
-  // Campos de compatibilidad (para evitar breaking changes)
-  placaVm?: string;
-  configuracionVehicular?: string;
-  seguro?: {
-    aseguradora: string;
-    poliza: string;
-    vigencia: string;
-  };
-}
-
-export interface RemolqueCCP {
-  id?: string;
-  placa: string;
-  subtipo_rem: string;
-  autotransporte_id?: string;
 }
 
 export interface FiguraCompleta {
@@ -155,13 +165,16 @@ export interface FiguraCompleta {
   tipo_figura: string;
   rfc_figura: string;
   nombre_figura: string;
+  
+  // CAMPOS OBLIGATORIOS ACTUALIZADOS v3.1
   num_licencia?: string;
+  tipo_licencia?: string; // OBLIGATORIO para conductores
+  vigencia_licencia?: string; // OBLIGATORIO para conductores
+  operador_sct?: boolean; // OBLIGATORIO para operadores
+  curp?: string; // OBLIGATORIO para personas físicas
+  
   residencia_fiscal_figura?: string;
   num_reg_id_trib_figura?: string;
-  curp?: string;
-  tipo_licencia?: string;
-  vigencia_licencia?: string;
-  operador_sct?: boolean;
   
   domicilio: {
     pais: string;
@@ -176,36 +189,49 @@ export interface FiguraCompleta {
   };
 }
 
-// FIXED: Ensure valor_mercancia is consistently optional across all definitions
+// INTERFAZ ACTUALIZADA PARA v3.1 CON FAUNA SILVESTRE
 export interface MercanciaCompleta {
   id: string;
   bienes_transp: string;
-  descripcion: string; // Obligatorio
-  cantidad: number; // Obligatorio
-  clave_unidad: string; // Obligatorio
-  peso_kg: number; // Obligatorio
-  valor_mercancia?: number; // FIXED: Consistently optional
+  descripcion: string; // Básica
+  descripcion_detallada?: string; // NUEVA - obligatoria para especies protegidas
+  cantidad: number;
+  clave_unidad: string;
+  peso_kg: number; // Peso unitario
+  
+  // CAMPOS PESO ACTUALIZADOS v3.1
+  peso_bruto_total?: number; // NUEVO - peso total de esta mercancía
+  peso_neto_total?: number; // NUEVO - peso neto
+  unidad_peso_bruto?: string; // DEFAULT 'KGM'
+  
+  valor_mercancia?: number;
   moneda?: string;
   
-  // Campos de comercio exterior
-  fraccion_arancelaria?: string; // Obligatorio en v3.1
+  // Campos de comercio exterior ACTUALIZADOS
+  fraccion_arancelaria?: string; // Opcional en v3.1
   uuid_comercio_exterior?: string;
-  regimen_aduanero?: string; // Nuevo campo
+  regimen_aduanero?: string;
+  documentacion_aduanera?: DocumentacionAduanera[]; // NUEVA estructura
   
   // Material peligroso
   material_peligroso?: boolean;
   cve_material_peligroso?: string;
   
-  // Embalaje (campos nuevos)
+  // Embalaje
   embalaje?: string;
   tipo_embalaje?: string;
   material_embalaje?: string;
   descripcion_embalaje?: string;
-  numero_piezas?: number; // Nuevo campo
+  numero_piezas?: number;
+  
+  // NUEVOS CAMPOS FAUNA SILVESTRE
+  especie_protegida?: boolean; // NUEVO
+  requiere_cites?: boolean; // NUEVO
+  permisos_semarnat?: PermisoSEMARNAT[]; // NUEVO
   
   // Peso y dimensiones
-  peso_bruto_total?: number;
-  unidad_peso_bruto?: string;
+  peso_bruto_total_mercancia?: number;
+  unidad_peso_bruto_mercancia?: string;
   dimensiones?: {
     largo: number;
     ancho: number;
@@ -214,25 +240,84 @@ export interface MercanciaCompleta {
   };
 }
 
-// Tipos para catálogos SAT
-export interface CatalogoEmbalaje {
-  clave: string;
-  descripcion: string;
+// NUEVAS INTERFACES v3.1
+export interface DocumentacionAduanera {
+  id?: string;
+  tipo_documento: string; // 'pedimento', 'cove', etc.
+  folio_documento: string;
+  rfc_importador?: string;
+  fecha_expedicion?: string;
+  aduana_despacho?: string;
 }
 
-export interface CatalogoCarroceria {
-  clave: string;
-  descripcion: string;
+export interface PermisoSEMARNAT {
+  id?: string;
+  tipo_permiso: 'traslado' | 'aprovechamiento' | 'legal_procedencia';
+  numero_permiso: string;
+  fecha_expedicion: string;
+  fecha_vencimiento: string;
+  autoridad_expedidora: string;
+  observaciones?: string;
+  vigente: boolean;
 }
 
-export interface CatalogoTipoLicencia {
+export interface RemolqueCCP {
+  id?: string;
+  placa: string;
+  subtipo_rem: string;
+  autotransporte_id?: string;
+}
+
+// Nuevos tipos para validación SAT v3.1
+export interface ValidacionSATv31 {
+  valido: boolean;
+  errores: string[];
+  warnings: string[];
+  score: number;
+  campos_faltantes?: string[];
+  recomendaciones?: string[];
+}
+
+// Tipos para catálogos SAT actualizados
+export interface CatalogoUsosCFDI {
   clave: string;
   descripcion: string;
-  aplica_federal?: boolean;
+  aplica_persona_fisica: boolean;
+  aplica_persona_moral: boolean;
+  fecha_inicio_vigencia: string;
+  fecha_fin_vigencia?: string;
+}
+
+export interface CatalogoRegimenFiscal {
+  clave: string;
+  descripcion: string;
+  aplica_persona_fisica: boolean;
+  aplica_persona_moral: boolean;
+  fecha_inicio_vigencia: string;
+  fecha_fin_vigencia?: string;
 }
 
 // Alias para compatibilidad
 export type AutotransporteCompleta = AutotransporteCompleto;
 export interface AutotransporteData extends AutotransporteCompleto {
   remolques: RemolqueCCP[];
+}
+
+// Tipos específicos para fauna silvestre
+export interface FaunaSilvestre extends MercanciaCompleta {
+  especie_protegida: true;
+  descripcion_detallada: string; // Obligatoria
+  permisos_semarnat: PermisoSEMARNAT[]; // Obligatorios
+  identificadores_individuales?: {
+    microchip?: string;
+    anillo?: string;
+    tatuaje?: string;
+    otros?: string;
+  };
+  caracteristicas_fisicas?: {
+    sexo?: 'Macho' | 'Hembra' | 'Indeterminado';
+    edad_aproximada?: string;
+    peso_individual?: number;
+    condiciones_salud?: string;
+  };
 }
