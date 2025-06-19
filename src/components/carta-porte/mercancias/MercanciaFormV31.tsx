@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,7 @@ export function MercanciaFormV31({ mercancia, onSave, onCancel, index }: Mercanc
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [currentMercancia, setCurrentMercancia] = useState<MercanciaCompleta>(
     mercancia || {
+      id: crypto.randomUUID(), // Add the required id field
       descripcion: '',
       bienes_transp: '',
       cantidad: 1,
