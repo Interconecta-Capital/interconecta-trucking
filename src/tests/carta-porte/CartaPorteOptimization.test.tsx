@@ -1,6 +1,9 @@
+
 import { render } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { vi, describe, test, expect } from 'vitest';
 import { CartaPorteData } from '@/types/cartaPorte';
+import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
 
 const mockCartaPorteData: CartaPorteData = {
   tipoCreacion: 'manual',
@@ -9,12 +12,12 @@ const mockCartaPorteData: CartaPorteData = {
   nombreEmisor: 'Test Company',
   rfcReceptor: 'RECV123456789',
   nombreReceptor: 'Receiver Company',
-  transporteInternacional: 'No', // Changed to string
+  transporteInternacional: 'No',
   cartaPorteVersion: '3.1',
   ubicaciones: [
     {
       id: 'ubicacion1',
-      tipo_ubicacion: 'Origen', // Fixed property name
+      tipo_ubicacion: 'Origen',
       rfc: 'TEST123456789',
       nombre: 'Test Location',
       domicilio: {
@@ -30,7 +33,7 @@ const mockCartaPorteData: CartaPorteData = {
     },
     {
       id: 'ubicacion2',
-      tipo_ubicacion: 'Destino', // Fixed property name
+      tipo_ubicacion: 'Destino',
       rfc: 'RECV123456789',
       nombre: 'Destination Location',
       domicilio: {
@@ -51,9 +54,9 @@ const mockCartaPorteData: CartaPorteData = {
       bienes_transp: 'Test Product',
       descripcion: 'Test product description',
       cantidad: 100,
-      clave_unidad: 'KGM', // Added missing property
+      clave_unidad: 'KGM',
       peso_kg: 1000,
-      unidad_peso_bruto: 'KGM', // Added missing property
+      unidad_peso_bruto: 'KGM',
       valor_mercancia: 50000,
       moneda: 'MXN'
     }

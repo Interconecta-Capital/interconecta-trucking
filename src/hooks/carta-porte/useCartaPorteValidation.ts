@@ -2,6 +2,19 @@
 import { useMemo } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 
+export interface ValidationSummary {
+  sectionStatus: {
+    configuracion: 'empty' | 'incomplete' | 'complete';
+    ubicaciones: 'empty' | 'incomplete' | 'complete';
+    mercancias: 'empty' | 'incomplete' | 'complete';
+    autotransporte: 'empty' | 'incomplete' | 'complete';
+    figuras: 'empty' | 'incomplete' | 'complete';
+  };
+  completionPercentage: number;
+  totalErrors: number;
+  isFormComplete: boolean;
+}
+
 export const useCartaPorteValidation = () => {
   const validateBasic = (data: Partial<CartaPorteData>) => {
     const errors: string[] = [];
@@ -44,7 +57,6 @@ export const useCartaPorteValidation = () => {
         errors.push(`Fecha y hora es requerida en ubicación ${index + 1}`);
       }
       
-      // Fixed comparison - removed invalid tipo_ubicacion check
       if (ubicacion.rfc_remitente_destinatario && ubicacion.tipo_ubicacion !== 'Origen' && ubicacion.tipo_ubicacion !== 'Destino') {
         errors.push(`RFC remitente/destinatario solo es válido para ubicaciones de Origen o Destino`);
       }
@@ -132,6 +144,45 @@ export const useCartaPorteValidation = () => {
     };
   };
 
+  const getValidationSummary = (data: Partial<CartaPorteData>): ValidationSummary => {
+    const basicValidation = validateBasic(data);
+    const ubicacionesValidation = validateUbicaciones(data.ubicaciones);
+    const mercanciasValidation = validateMercancias(data.mercancias);
+    const autotransporteValidation = validateAutotransporte(data.autotransporte);
+    const figurasValidation = validateFiguras(data.figuras);
+
+    const getSectionStatus = (isValid: boolean, hasData: boolean) => {
+      if (!hasData) return 'empty';
+      return isValid ? 'complete' : 'incomplete';
+    };
+
+    const sectionStatus = {
+      configuracion: getSectionStatus(basicValidation.isValid, !!(data.rfcEmisor || data.rfcReceptor)),
+      ubicaciones: getSectionStatus(ubicacionesValidation.isValid, (data.ubicaciones?.length || 0) > 0),
+      mercancias: getSectionStatus(mercanciasValidation.isValid, (data.mercancias?.length || 0) > 0),
+      autotransporte: getSectionStatus(autotransporteValidation.isValid, !!data.autotransporte),
+      figuras: getSectionStatus(figurasValidation.isValid, (data.figuras?.length || 0) > 0),
+    };
+
+    const completedSections = Object.values(sectionStatus).filter(status => status === 'complete').length;
+    const completionPercentage = Math.round((completedSections / 5) * 100);
+
+    const totalErrors = [
+      ...basicValidation.errors,
+      ...ubicacionesValidation.errors,
+      ...mercanciasValidation.errors,
+      ...autotransporteValidation.errors,
+      ...figurasValidation.errors
+    ].length;
+
+    return {
+      sectionStatus,
+      completionPercentage,
+      totalErrors,
+      isFormComplete: completedSections === 5
+    };
+  };
+
   const validateComplete = (data: Partial<CartaPorteData>) => {
     const basicValidation = validateBasic(data);
     const ubicacionesValidation = validateUbicaciones(data.ubicaciones);
@@ -166,6 +217,7 @@ export const useCartaPorteValidation = () => {
     validateMercancias,
     validateAutotransporte,
     validateFiguras,
-    validateComplete
+    validateComplete,
+    getValidationSummary
   };
 };

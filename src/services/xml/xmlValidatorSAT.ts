@@ -1,4 +1,3 @@
-
 import { CartaPorteData } from '@/types/cartaPorte';
 
 export interface ValidationError {
@@ -349,5 +348,21 @@ export class XMLValidatorSAT {
   private static validarCodigoPostal(cp: string): boolean {
     const cpRegex = /^[0-9]{5}$/;
     return cpRegex.test(cp);
+  }
+
+  private static validateTransporteInternacional(data: CartaPorteData): ValidationError[] {
+    const errors: ValidationError[] = [];
+    
+    if (data.transporteInternacional === 'Sí') {
+      if (!data.entrada_salida_merc) {
+        errors.push({
+          codigo: 'CCP_TRANSPORT_INT_001',
+          mensaje: 'EntradaSalidaMerc es requerido para transporte internacional',
+          seccion: 'TransporteInternacional'
+        });
+      }
+    }
+    
+    return errors;
   }
 }
