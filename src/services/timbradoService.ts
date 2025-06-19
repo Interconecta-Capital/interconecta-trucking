@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CSDSigningService } from './csd/CSDSigningService';
 
@@ -23,6 +22,9 @@ export interface TimbradoResponse {
     rfc: string;
     nombre: string;
   };
+  fechaTimbrado?: string;
+  pdf?: Blob;
+  details?: any;
 }
 
 export interface XMLValidation {
@@ -108,6 +110,7 @@ export class TimbradoService {
     // Simular respuesta exitosa
     const uuid = this.generarUUID();
     const folio = `CP${Date.now().toString().slice(-6)}`;
+    const fechaTimbrado = new Date().toISOString();
     
     // Generar QR code simulado
     const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
@@ -117,9 +120,10 @@ export class TimbradoService {
       uuid,
       xmlTimbrado: this.insertarDatosTimbrado(data.xml, uuid, folio),
       qrCode,
-      cadenaOriginal: `||1.1|${uuid}|${new Date().toISOString()}|${data.rfc}||`,
+      cadenaOriginal: `||1.1|${uuid}|${fechaTimbrado}|${data.rfc}||`,
       selloDigital: 'ABC123XYZ789',
-      folio
+      folio,
+      fechaTimbrado
     };
   }
 

@@ -133,6 +133,15 @@ export function TimbradoPanel({
     return <XCircle className="h-5 w-5 text-red-600" />;
   };
 
+  const formatFechaTimbrado = (fechaTimbrado?: string) => {
+    if (!fechaTimbrado) return 'No disponible';
+    try {
+      return new Date(fechaTimbrado).toLocaleString();
+    } catch {
+      return fechaTimbrado;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -175,7 +184,7 @@ export function TimbradoPanel({
                       <div className="font-medium">Timbrado exitoso</div>
                       <div className="text-sm">
                         <div>UUID: {timbradoResult.uuid}</div>
-                        <div>Fecha: {timbradoResult.fechaTimbrado}</div>
+                        <div>Fecha: {formatFechaTimbrado(timbradoResult.fechaTimbrado)}</div>
                       </div>
                     </div>
                   </AlertDescription>
