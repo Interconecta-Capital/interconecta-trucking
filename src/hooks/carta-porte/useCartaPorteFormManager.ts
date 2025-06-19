@@ -222,7 +222,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     // Actualizar estado local
     setFormData(prev => ({
       ...prev,
-      datosCalculoRuta: newDatosRuta
+      datosCalculoRuta: newDatosRuta,
+      totalDistRec: datos.distanciaTotal ?? prev.totalDistRec
     }));
     
     // Auto-guardar cuando se actualiza cálculo de ruta
