@@ -82,7 +82,17 @@ export function UbicacionFormDialog({
       ...prev,
       domicilio: {
         ...prev.domicilio,
-        [campo]: valor
+        // Map the unified form field names to our ubicacion structure
+        ...(campo === 'codigoPostal' ? { codigo_postal: valor } : {}),
+        ...(campo === 'numExterior' ? { numero_exterior: valor } : {}),
+        ...(campo === 'numInterior' ? { numero_interior: valor } : {}),
+        ...(campo === 'pais' ? { pais: valor } : {}),
+        ...(campo === 'estado' ? { estado: valor } : {}),
+        ...(campo === 'municipio' ? { municipio: valor } : {}),
+        ...(campo === 'localidad' ? { localidad: valor } : {}),
+        ...(campo === 'colonia' ? { colonia: valor } : {}),
+        ...(campo === 'calle' ? { calle: valor } : {}),
+        ...(campo === 'referencia' ? { referencia: valor } : {})
       }
     }));
   };
@@ -151,6 +161,20 @@ export function UbicacionFormDialog({
   const getSuggestions = () => {
     if (!formData.tipo_ubicacion) return [];
     return UbicacionIdGenerator.getSuggestions(formData.tipo_ubicacion, ubicacionesExistentes);
+  };
+
+  // Convert ubicacion domicilio to unified form format
+  const domicilioUnificado: DomicilioUnificado = {
+    pais: formData.domicilio?.pais || 'México',
+    codigoPostal: formData.domicilio?.codigo_postal || '',
+    estado: formData.domicilio?.estado || '',
+    municipio: formData.domicilio?.municipio || '',
+    localidad: formData.domicilio?.localidad || '',
+    colonia: formData.domicilio?.colonia || '',
+    calle: formData.domicilio?.calle || '',
+    numExterior: formData.domicilio?.numero_exterior || '',
+    numInterior: formData.domicilio?.numero_interior || '',
+    referencia: formData.domicilio?.referencia || ''
   };
 
   return (
@@ -257,10 +281,7 @@ export function UbicacionFormDialog({
             <Label className="text-base font-medium">Domicilio *</Label>
             <div className="mt-2">
               <FormularioDomicilioUnificado
-                domicilio={{
-                  ...formData.domicilio,
-                  numExterior: formData.domicilio?.numero_exterior || ''
-                }}
+                domicilio={domicilioUnificado}
                 onDomicilioChange={handleDomicilioChange}
                 camposOpcionales={['numInterior', 'referencia', 'localidad']}
                 errors={errors}
