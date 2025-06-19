@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
@@ -22,6 +23,7 @@ import {
   Users,
   Phone
 } from 'lucide-react';
+import { CSDManagementPanel } from './csd/CSDManagementPanel';
 
 interface SettingsDialogProps {
   open: boolean;

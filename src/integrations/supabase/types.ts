@@ -808,6 +808,92 @@ export type Database = {
         }
         Relationships: []
       }
+      certificados_activos: {
+        Row: {
+          certificado_id: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          certificado_id?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          certificado_id?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificados_activos_certificado_id_fkey"
+            columns: ["certificado_id"]
+            isOneToOne: false
+            referencedRelation: "certificados_digitales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificados_digitales: {
+        Row: {
+          activo: boolean | null
+          archivo_cer_path: string
+          archivo_key_encrypted: boolean | null
+          archivo_key_path: string
+          created_at: string | null
+          fecha_fin_vigencia: string
+          fecha_inicio_vigencia: string
+          id: string
+          nombre_certificado: string
+          numero_certificado: string
+          razon_social: string | null
+          rfc_titular: string
+          updated_at: string | null
+          user_id: string
+          validado: boolean | null
+        }
+        Insert: {
+          activo?: boolean | null
+          archivo_cer_path: string
+          archivo_key_encrypted?: boolean | null
+          archivo_key_path: string
+          created_at?: string | null
+          fecha_fin_vigencia: string
+          fecha_inicio_vigencia: string
+          id?: string
+          nombre_certificado: string
+          numero_certificado: string
+          razon_social?: string | null
+          rfc_titular: string
+          updated_at?: string | null
+          user_id: string
+          validado?: boolean | null
+        }
+        Update: {
+          activo?: boolean | null
+          archivo_cer_path?: string
+          archivo_key_encrypted?: boolean | null
+          archivo_key_path?: string
+          created_at?: string | null
+          fecha_fin_vigencia?: string
+          fecha_inicio_vigencia?: string
+          id?: string
+          nombre_certificado?: string
+          numero_certificado?: string
+          razon_social?: string | null
+          rfc_titular?: string
+          updated_at?: string | null
+          user_id?: string
+          validado?: boolean | null
+        }
+        Relationships: []
+      }
       clientes_proveedores: {
         Row: {
           activo: boolean | null
@@ -2681,6 +2767,20 @@ export type Database = {
       cleanup_expired_grace_users: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_active_certificate: {
+        Args: { user_uuid: string }
+        Returns: {
+          id: string
+          nombre_certificado: string
+          numero_certificado: string
+          rfc_titular: string
+          razon_social: string
+          fecha_inicio_vigencia: string
+          fecha_fin_vigencia: string
+          archivo_cer_path: string
+          archivo_key_path: string
+        }[]
       }
       get_current_user_tenant_id: {
         Args: Record<PropertyKey, never>
