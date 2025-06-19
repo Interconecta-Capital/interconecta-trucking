@@ -15,39 +15,67 @@ import { MercanciaCompleta } from '@/types/cartaPorte';
 import { PermisosSEMARNATSection } from './PermisosSEMARNATSection';
 
 interface MercanciaFormV31Props {
-  mercancia: MercanciaCompleta;
-  onChange: (mercancia: MercanciaCompleta) => void;
-  onSave: () => void;
+  mercancia?: MercanciaCompleta;
+  onSave: (mercancia: MercanciaCompleta) => Promise<boolean>;
   onCancel: () => void;
+  index: number;
 }
 
-export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: MercanciaFormV31Props) {
+export function MercanciaFormV31({ mercancia, onSave, onCancel, index }: MercanciaFormV31Props) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [currentMercancia, setCurrentMercancia] = useState<MercanciaCompleta>(
+    mercancia || {
+      descripcion: '',
+      bienes_transp: '',
+      cantidad: 1,
+      clave_unidad: 'KGM',
+      peso_kg: 0,
+      peso_bruto_total: 0,
+      peso_neto_total: 0,
+      unidad_peso_bruto: 'KGM',
+      valor_mercancia: 0,
+      moneda: 'MXN',
+      material_peligroso: false,
+      especie_protegida: false,
+      uuid_comercio_exterior: '',
+      fraccion_arancelaria: '',
+      cve_material_peligroso: '',
+      tipo_embalaje: '',
+      numero_piezas: 1,
+      descripcion_detallada: '',
+      requiere_cites: false,
+      permisos_semarnat: []
+    }
+  );
 
   const handleFieldChange = (field: keyof MercanciaCompleta, value: any) => {
-    onChange({
-      ...mercancia,
+    setCurrentMercancia(prev => ({
+      ...prev,
       [field]: value
-    });
+    }));
   };
 
   const handleNestedFieldChange = (parentField: keyof MercanciaCompleta, field: string, value: any) => {
-    const currentValue = mercancia[parentField] as any;
-    onChange({
-      ...mercancia,
+    const currentValue = currentMercancia[parentField] as any;
+    setCurrentMercancia(prev => ({
+      ...prev,
       [parentField]: {
         ...currentValue,
         [field]: value
       }
-    });
+    }));
   };
 
   // Handle UUID comercio exterior field
   const handleUUIDChange = (value: string) => {
-    onChange({
-      ...mercancia,
+    setCurrentMercancia(prev => ({
+      ...prev,
       uuid_comercio_exterior: value
-    });
+    }));
+  };
+
+  const handleSave = async () => {
+    await onSave(currentMercancia);
   };
 
   return (
@@ -62,7 +90,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
             <div className="space-y-2">
               <Label>Descripción *</Label>
               <Input
-                value={mercancia.descripcion || ''}
+                value={currentMercancia.descripcion || ''}
                 onChange={(e) => handleFieldChange('descripcion', e.target.value)}
                 placeholder="Descripción general"
                 required
@@ -72,7 +100,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
             <div className="space-y-2">
               <Label>Bienes a Transportar *</Label>
               <Input
-                value={mercancia.bienes_transp || ''}
+                value={currentMercancia.bienes_transp || ''}
                 onChange={(e) => handleFieldChange('bienes_transp', e.target.value)}
                 placeholder="Código de bienes a transportar"
                 required
@@ -88,7 +116,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
                 type="number"
                 min="0"
                 step="0.01"
-                value={mercancia.cantidad || ''}
+                value={currentMercancia.cantidad || ''}
                 onChange={(e) => handleFieldChange('cantidad', parseFloat(e.target.value) || 0)}
                 required
               />
@@ -98,7 +126,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
               <Label>Clave Unidad *</Label>
               <CatalogoSelectorMejorado
                 tipo="unidades"
-                value={mercancia.clave_unidad || ''}
+                value={currentMercancia.clave_unidad || ''}
                 onValueChange={(value) => handleFieldChange('clave_unidad', value)}
                 placeholder="Selecciona unidad..."
                 required
@@ -111,7 +139,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
                 type="number"
                 min="0"
                 step="0.01"
-                value={mercancia.peso_kg || ''}
+                value={currentMercancia.peso_kg || ''}
                 onChange={(e) => handleFieldChange('peso_kg', parseFloat(e.target.value) || 0)}
                 required
               />
@@ -126,7 +154,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
                 type="number"
                 min="0"
                 step="0.01"
-                value={mercancia.peso_bruto_total || ''}
+                value={currentMercancia.peso_bruto_total || ''}
                 onChange={(e) => handleFieldChange('peso_bruto_total', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -137,7 +165,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
                 type="number"
                 min="0"
                 step="0.01"
-                value={mercancia.peso_neto_total || ''}
+                value={currentMercancia.peso_neto_total || ''}
                 onChange={(e) => handleFieldChange('peso_neto_total', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -145,7 +173,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
             <div className="space-y-2">
               <Label>Unidad Peso Bruto</Label>
               <Input
-                value={mercancia.unidad_peso_bruto || 'KGM'}
+                value={currentMercancia.unidad_peso_bruto || 'KGM'}
                 onChange={(e) => handleFieldChange('unidad_peso_bruto', e.target.value)}
                 placeholder="KGM"
               />
@@ -167,7 +195,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
                 type="number"
                 min="0"
                 step="0.01"
-                value={mercancia.valor_mercancia || ''}
+                value={currentMercancia.valor_mercancia || ''}
                 onChange={(e) => handleFieldChange('valor_mercancia', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -175,7 +203,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
             <div className="space-y-2">
               <Label>Moneda</Label>
               <Input
-                value={mercancia.moneda || 'MXN'}
+                value={currentMercancia.moneda || 'MXN'}
                 onChange={(e) => handleFieldChange('moneda', e.target.value)}
                 placeholder="MXN"
               />
@@ -184,7 +212,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
             <div className="space-y-2">
               <Label>UUID Comercio Exterior</Label>
               <Input
-                value={mercancia.uuid_comercio_exterior || ''}
+                value={currentMercancia.uuid_comercio_exterior || ''}
                 onChange={(e) => handleUUIDChange(e.target.value)}
                 placeholder="UUID del complemento"
               />
@@ -194,7 +222,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
           <div className="space-y-2">
             <Label>Fracción Arancelaria (Opcional en v3.1)</Label>
             <Input
-              value={mercancia.fraccion_arancelaria || ''}
+              value={currentMercancia.fraccion_arancelaria || ''}
               onChange={(e) => handleFieldChange('fraccion_arancelaria', e.target.value)}
               placeholder="Ej: 01234567"
             />
@@ -210,18 +238,18 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-2">
             <Switch
-              checked={mercancia.material_peligroso || false}
+              checked={currentMercancia.material_peligroso || false}
               onCheckedChange={(checked) => handleFieldChange('material_peligroso', checked)}
             />
             <Label>¿Es material peligroso?</Label>
           </div>
 
-          {mercancia.material_peligroso && (
+          {currentMercancia.material_peligroso && (
             <div className="space-y-2">
               <Label>Clave Material Peligroso</Label>
               <CatalogoSelectorMejorado
                 tipo="materiales_peligrosos"
-                value={mercancia.cve_material_peligroso || ''}
+                value={currentMercancia.cve_material_peligroso || ''}
                 onValueChange={(value) => handleFieldChange('cve_material_peligroso', value)}
                 placeholder="Selecciona material peligroso..."
               />
@@ -241,13 +269,13 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-2">
             <Switch
-              checked={mercancia.especie_protegida || false}
+              checked={currentMercancia.especie_protegida || false}
               onCheckedChange={(checked) => handleFieldChange('especie_protegida', checked)}
             />
             <Label>¿Es especie protegida?</Label>
           </div>
 
-          {mercancia.especie_protegida && (
+          {currentMercancia.especie_protegida && (
             <>
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
@@ -259,7 +287,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
               <div className="space-y-2">
                 <Label>Descripción Detallada *</Label>
                 <Textarea
-                  value={mercancia.descripcion_detallada || ''}
+                  value={currentMercancia.descripcion_detallada || ''}
                   onChange={(e) => handleFieldChange('descripcion_detallada', e.target.value)}
                   placeholder="Descripción específica de la especie, características, etc."
                   rows={3}
@@ -269,14 +297,14 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
 
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  checked={mercancia.requiere_cites || false}
+                  checked={currentMercancia.requiere_cites || false}
                   onCheckedChange={(checked) => handleFieldChange('requiere_cites', checked)}
                 />
                 <Label>Requiere permiso CITES</Label>
               </div>
 
               <PermisosSEMARNATSection
-                permisos={mercancia.permisos_semarnat || []}
+                permisos={currentMercancia.permisos_semarnat || []}
                 onChange={(permisos) => handleFieldChange('permisos_semarnat', permisos)}
               />
             </>
@@ -295,7 +323,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
               <Label>Tipo Embalaje</Label>
               <CatalogoSelectorMejorado
                 tipo="embalajes"
-                value={mercancia.tipo_embalaje || ''}
+                value={currentMercancia.tipo_embalaje || ''}
                 onValueChange={(value) => handleFieldChange('tipo_embalaje', value)}
                 placeholder="Selecciona tipo..."
               />
@@ -306,7 +334,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
               <Input
                 type="number"
                 min="1"
-                value={mercancia.numero_piezas || ''}
+                value={currentMercancia.numero_piezas || ''}
                 onChange={(e) => handleFieldChange('numero_piezas', parseInt(e.target.value) || 1)}
               />
             </div>
@@ -321,7 +349,7 @@ export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: Merc
         <Button variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button onClick={onSave}>
+        <Button onClick={handleSave}>
           Guardar Mercancía
         </Button>
       </div>
