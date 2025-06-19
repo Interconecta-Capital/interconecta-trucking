@@ -12,7 +12,7 @@ export interface ValidationSAT31Result {
   version31Specific: string[];
 }
 
-export { CartaPorte31Data };
+export type { CartaPorte31Data };
 
 export class SATValidation31Enhanced {
   static async validarCompleta(data: CartaPorte31Data): Promise<ValidationResult> {
