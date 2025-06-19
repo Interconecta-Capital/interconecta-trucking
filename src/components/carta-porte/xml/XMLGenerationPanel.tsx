@@ -272,6 +272,7 @@ export function XMLGenerationPanel({
             <PDFGenerationPanel
               cartaPorteData={cartaPorteData}
               xmlGenerado={xmlFirmado || xmlActual}
+              datosRuta={datosCalculoRuta}
             />
 
             <Separator />
