@@ -22,7 +22,27 @@ const usoFacturaOptions = [
   { value: 'G02', label: 'G02 - Devoluciones, descuentos o bonificaciones' },
   { value: 'G03', label: 'G03 - Gastos en general' },
   { value: 'P01', label: 'P01 - Por definir' },
-  { value: 'S01', label: 'S01 - Sin efectos fiscales' }
+  { value: 'S01', label: 'S01 - Sin efectos fiscales' },
+  { value: 'I01', label: 'I01 - Construcciones' },
+  { value: 'I02', label: 'I02 - Mobiliario y equipo de oficina por inversiones' },
+  { value: 'I03', label: 'I03 - Equipo de transporte' },
+  { value: 'I04', label: 'I04 - Equipo de computo y accesorios' },
+  { value: 'I05', label: 'I05 - Dados, troqueles, moldes, matrices y herramental' },
+  { value: 'I06', label: 'I06 - Comunicaciones telefónicas' },
+  { value: 'I07', label: 'I07 - Comunicaciones satelitales' },
+  { value: 'I08', label: 'I08 - Otra maquinaria y equipo' },
+  { value: 'D01', label: 'D01 - Honorarios médicos, dentales y gastos hospitalarios' },
+  { value: 'D02', label: 'D02 - Gastos médicos por incapacidad o discapacidad' },
+  { value: 'D03', label: 'D03 - Gastos funerales' },
+  { value: 'D04', label: 'D04 - Donativos' },
+  { value: 'D05', label: 'D05 - Intereses reales efectivamente pagados por créditos hipotecarios' },
+  { value: 'D06', label: 'D06 - Aportaciones voluntarias al SAR' },
+  { value: 'D07', label: 'D07 - Primas por seguros de gastos médicos' },
+  { value: 'D08', label: 'D08 - Gastos de transportación escolar obligatoria' },
+  { value: 'D09', label: 'D09 - Depósitos en cuentas para el ahorro, primas que tengan como base planes de pensiones' },
+  { value: 'D10', label: 'D10 - Pagos por servicios educativos (colegiaturas)' },
+  { value: 'CP01', label: 'CP01 - Pagos' },
+  { value: 'CN01', label: 'CN01 - Nómina' }
 ];
 
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
@@ -37,6 +57,10 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
 
   const rfcEmisorValidation = validateRFC(data.rfcEmisor || '');
   const rfcReceptorValidation = validateRFC(data.rfcReceptor || '');
+
+  // Convert transporteInternacional to boolean for Switch component
+  const isTransporteInternacional = Boolean(data.transporteInternacional === true || data.transporteInternacional === 'Sí');
+  const isRegistroIstmo = Boolean(data.registroIstmo === true || data.registro_istmo === true);
 
   const canContinue = data.rfcEmisor && 
                      data.nombreEmisor && 
@@ -164,13 +188,13 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
             <div className="flex items-center space-x-2">
               <Switch
                 id="transporte-internacional"
-                checked={data.transporteInternacional || false}
+                checked={isTransporteInternacional}
                 onCheckedChange={(checked) => handleChange('transporteInternacional', checked)}
               />
               <Label htmlFor="transporte-internacional">Transporte Internacional</Label>
             </div>
             
-            {data.transporteInternacional && (
+            {isTransporteInternacional && (
               <Alert className="border-blue-200 bg-blue-50">
                 <AlertTriangle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
@@ -182,7 +206,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
             <div className="flex items-center space-x-2">
               <Switch
                 id="registro-istmo"
-                checked={data.registroIstmo || false}
+                checked={isRegistroIstmo}
                 onCheckedChange={(checked) => handleChange('registroIstmo', checked)}
               />
               <Label htmlFor="registro-istmo">Registro ISTMO</Label>
