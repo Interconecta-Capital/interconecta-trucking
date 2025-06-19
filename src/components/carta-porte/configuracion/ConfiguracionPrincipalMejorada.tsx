@@ -128,28 +128,15 @@ const ConfiguracionPrincipalMejoradaComponent = ({
         <OpcionesEspeciales data={data} onChange={onChange} />
 
         {/* Datos adicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Total Distancia Recorrida (km)</Label>
-            <Input
-              type="number"
-              value={data.totalDistRec ?? ''}
-              onChange={(e) =>
-                onChange({ totalDistRec: parseFloat(e.target.value) || 0 })
-              }
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Régimen Aduanero</Label>
-            <Input
-              value={data.regimenAduanero || ''}
-              onChange={(e) =>
-                onChange({ regimenAduanero: e.target.value })
-              }
-              placeholder="Régimen Aduanero"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Régimen Aduanero</Label>
+          <Input
+            value={data.regimenAduanero || ''}
+            onChange={(e) =>
+              onChange({ regimenAduanero: e.target.value })
+            }
+            placeholder="Régimen Aduanero"
+          />
         </div>
 
         <div className="flex justify-end">
