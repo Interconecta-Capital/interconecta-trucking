@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CartaPorteData, MercanciaCompleta, UbicacionCompleta, AutotransporteCompleto, FiguraCompleta } from '@/types/cartaPorte';
 
@@ -37,8 +36,14 @@ export interface SmartValidationResult {
   realTimeAlerts: ValidationIssue[];
 }
 
+interface CacheEntry {
+  result: SmartValidationResult;
+  timestamp: number;
+  hash: string;
+}
+
 export class SmartValidationService {
-  private static validationCache = new Map<string, SmartValidationResult>();
+  private static validationCache = new Map<string, CacheEntry>();
   private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
   static async validateCartaPorteInteligente(data: CartaPorteData): Promise<SmartValidationResult> {
@@ -186,14 +191,14 @@ export class SmartValidationService {
       }
 
       return {
-        aiInsights: aiResult.insights || {
+        aiInsights: aiResult?.insights || {
           riskLevel: 'medium',
           compliancePrediction: 75,
           optimizationSuggestions: [],
           timbradoProbability: 70
         },
-        recommendations: aiResult.recommendations || [],
-        issues: aiResult.issues || []
+        recommendations: aiResult?.recommendations || [],
+        issues: aiResult?.issues || []
       };
 
     } catch (error) {
@@ -400,10 +405,4 @@ export class SmartValidationService {
     this.validationCache.clear();
     console.log('🗑️ Cache de validaciones limpiado');
   }
-}
-
-interface CacheEntry {
-  result: SmartValidationResult;
-  timestamp: number;
-  hash: string;
 }

@@ -11,7 +11,7 @@ export interface VehiculoGuardado {
   tipo?: string;
   estado: 'disponible' | 'en_ruta' | 'mantenimiento' | 'fuera_servicio';
   ubicacion_actual?: string;
-  datos_completos: AutotransporteCompleto;
+  datos_completos: import('./cartaPorte').AutotransporteCompleto;
   created_at: string;
   updated_at: string;
 }

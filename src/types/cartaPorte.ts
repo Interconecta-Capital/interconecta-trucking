@@ -13,7 +13,7 @@ export interface Domicilio {
 }
 
 export interface Ubicacion {
-  tipo_estacion: string;
+  tipo_estacion?: string;
   nombre_estacion?: string;
   rfc_remitente_destinatario?: string;
   id_ubicacion?: string;
@@ -161,7 +161,6 @@ export interface UbicacionCompleta extends Ubicacion {
     latitud: number;
     longitud: number;
   };
-  tipo_estacion?: string;
 }
 
 export interface AutotransporteCompleto extends Autotransporte {
