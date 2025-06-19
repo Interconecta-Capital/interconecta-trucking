@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -39,12 +40,12 @@ export class CartaPorteFiscalPDF {
   };
 
   private static readonly LAYOUT = {
-    margin: 15,
-    headerHeight: 70,
-    footerHeight: 60,
-    sectionSpacing: 12,
-    qrSize: 76, // 2.7cm aprox
-    lineHeight: 5
+    margin: 10,
+    headerHeight: 60,
+    footerHeight: 50,
+    sectionSpacing: 8,
+    qrSize: 60,
+    lineHeight: 4
   };
 
   static async generateFiscalPDF(
@@ -89,10 +90,10 @@ export class CartaPorteFiscalPDF {
       );
 
       // 2. EMISOR Y RECEPTOR
-      yPosition = this.addEmisorReceptor(doc, pageWidth, yPosition, cartaPorteData);
+      yPosition = this.addEmisorReceptor(doc, pageWidth, pageHeight, yPosition, cartaPorteData);
 
       // 3. INFORMACIÓN GENERAL DEL CFDI
-      yPosition = this.addInformacionGeneral(doc, pageWidth, yPosition, cartaPorteData);
+      yPosition = this.addInformacionGeneral(doc, pageWidth, pageHeight, yPosition, cartaPorteData);
 
       // 4. UBICACIONES (ORIGEN Y DESTINO)
       yPosition = this.addUbicacionesCompletas(doc, pageWidth, pageHeight, yPosition, cartaPorteData);
@@ -165,7 +166,7 @@ export class CartaPorteFiscalPDF {
       console.log('🔗 Generando QR con URL:', qrUrl);
 
       return await QRCode.toDataURL(qrUrl, {
-        width: 300,
+        width: 200,
         margin: 1,
         color: {
           dark: '#000000',
@@ -179,49 +180,6 @@ export class CartaPorteFiscalPDF {
     }
   }
 
-  private static addUbicacionesCompletas(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
-    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 60);
-    
-    this.addSectionTitle(doc, '3. UBICACIONES (ORIGEN Y DESTINO)', yPosition);
-    yPosition += 10;
-
-    if (!cartaPorteData.ubicaciones || cartaPorteData.ubicaciones.length === 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('No hay ubicaciones registradas', this.LAYOUT.margin + 5, yPosition);
-      return yPosition + 15;
-    }
-
-    const headers = ['Tipo', 'ID Ubicación', 'Nombre/RFC', 'Domicilio Completo', 'Fecha/Hora', 'Distancia'];
-    const tableData = [headers];
-
-    cartaPorteData.ubicaciones.forEach(ubicacion => {
-      const domicilio = ubicacion.domicilio ? 
-        `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''}, CP ${ubicacion.domicilio.codigo_postal || ''}`.trim() : 
-        'N/A';
-      
-      const nombreRFC = `${ubicacion.nombre_remitente_destinatario || 'N/A'}\nRFC: ${ubicacion.rfc_remitente_destinatario || 'N/A'}`;
-
-      const fechaHora = ubicacion.fecha_hora_salida_llegada ? 
-        new Date(ubicacion.fecha_hora_salida_llegada).toLocaleString('es-MX') : 
-        'N/A';
-
-      const distancia = ubicacion.distancia_recorrida ? `${ubicacion.distancia_recorrida} km` : 'N/A';
-
-      tableData.push([
-        ubicacion.tipo_ubicacion || 'N/A',
-        ubicacion.id_ubicacion || 'N/A',
-        nombreRFC,
-        domicilio,
-        fechaHora,
-        distancia
-      ]);
-    });
-
-    yPosition = this.addTable(doc, pageWidth, yPosition, tableData, true, 7);
-    return yPosition + this.LAYOUT.sectionSpacing;
-  }
-
   private static addFiscalHeader(
     doc: jsPDF,
     pageWidth: number,
@@ -233,17 +191,17 @@ export class CartaPorteFiscalPDF {
   ): number {
     // Fondo del header
     doc.setFillColor(247, 250, 252);
-    doc.rect(this.LAYOUT.margin, yPosition - 5, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'F');
+    doc.rect(this.LAYOUT.margin, yPosition - 3, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'F');
     
     // Borde
     doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.rect(this.LAYOUT.margin, yPosition - 5, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'S');
+    doc.setLineWidth(0.3);
+    doc.rect(this.LAYOUT.margin, yPosition - 3, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'S');
 
-    // Logo de la empresa
+    // Logo de la empresa (más pequeño y posicionado mejor)
     if (logo) {
       try {
-        doc.addImage(logo, 'PNG', this.LAYOUT.margin + 5, yPosition, 40, 20);
+        doc.addImage(logo, 'PNG', this.LAYOUT.margin + 3, yPosition, 25, 15);
       } catch (error) {
         console.error('Error agregando logo:', error);
       }
@@ -251,38 +209,67 @@ export class CartaPorteFiscalPDF {
 
     // Título principal
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(11);
     doc.setTextColor(26, 54, 93);
-    doc.text('REPRESENTACIÓN IMPRESA DE UN CFDI DE TRASLADO', pageWidth / 2, yPosition + 8, { align: 'center' });
-    doc.text('CON COMPLEMENTO CARTA PORTE 3.1', pageWidth / 2, yPosition + 15, { align: 'center' });
+    doc.text('REPRESENTACIÓN IMPRESA DE UN CFDI DE TRASLADO', pageWidth / 2, yPosition + 6, { align: 'center' });
+    doc.text('CON COMPLEMENTO CARTA PORTE 3.1', pageWidth / 2, yPosition + 11, { align: 'center' });
 
-    // Datos fiscales críticos
+    // Datos fiscales críticos (en dos columnas para mejor aprovechamiento)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(7);
     doc.setTextColor(26, 32, 44);
 
-    let infoY = yPosition + 25;
-    doc.text(`FOLIO FISCAL (UUID): ${datosTimbre.uuid}`, this.LAYOUT.margin + 5, infoY);
-    infoY += 5;
-    doc.text(`IdCCP: ${datosTimbre.idCCP}`, this.LAYOUT.margin + 5, infoY);
-    infoY += 5;
+    let infoY = yPosition + 18;
+    const leftCol = this.LAYOUT.margin + 5;
+    const rightCol = pageWidth / 2 + 5;
+
+    // Columna izquierda
+    doc.text(`FOLIO FISCAL (UUID):`, leftCol, infoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(datosTimbre.uuid, leftCol + 35, infoY);
+    infoY += 4;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`IdCCP:`, leftCol, infoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(datosTimbre.idCCP, leftCol + 15, infoY);
+    infoY += 4;
     
     if (cartaPorteData.folio) {
-      doc.text(`FOLIO INTERNO: ${cartaPorteData.folio}`, this.LAYOUT.margin + 5, infoY);
-      infoY += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.text(`FOLIO INTERNO:`, leftCol, infoY);
+      doc.setFont('helvetica', 'normal');
+      doc.text(cartaPorteData.folio, leftCol + 25, infoY);
+      infoY += 4;
     }
+
+    // Columna derecha
+    infoY = yPosition + 18;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`NO. CERT. SAT:`, rightCol, infoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(datosTimbre.noCertificadoSAT, rightCol + 25, infoY);
+    infoY += 4;
     
-    doc.text(`NO. CERTIFICADO SAT: ${datosTimbre.noCertificadoSAT}`, this.LAYOUT.margin + 5, infoY);
-    infoY += 5;
-    doc.text(`NO. CERTIFICADO EMISOR: ${datosTimbre.noCertificadoEmisor}`, this.LAYOUT.margin + 5, infoY);
-    infoY += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`NO. CERT. EMISOR:`, rightCol, infoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(datosTimbre.noCertificadoEmisor, rightCol + 30, infoY);
+    infoY += 4;
     
     const fechaEmision = datosTimbre.fechaEmision || new Date().toISOString();
-    doc.text(`FECHA EMISIÓN: ${new Date(fechaEmision).toLocaleString('es-MX')}`, this.LAYOUT.margin + 5, infoY);
-    infoY += 5;
-    doc.text(`FECHA TIMBRADO: ${new Date(datosTimbre.fechaTimbrado).toLocaleString('es-MX')}`, this.LAYOUT.margin + 5, infoY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`FECHA EMISIÓN:`, rightCol, infoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(new Date(fechaEmision).toLocaleString('es-MX'), rightCol + 25, infoY);
+    infoY += 4;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`FECHA TIMBRADO:`, rightCol, infoY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(new Date(datosTimbre.fechaTimbrado).toLocaleString('es-MX'), rightCol + 27, infoY);
 
-    // Código QR en esquina superior derecha (OBLIGATORIO)
+    // Código QR en esquina superior derecha (más pequeño)
     if (qrCode) {
       try {
         doc.addImage(qrCode, 'PNG', pageWidth - this.LAYOUT.margin - this.LAYOUT.qrSize, yPosition, this.LAYOUT.qrSize, this.LAYOUT.qrSize);
@@ -294,9 +281,11 @@ export class CartaPorteFiscalPDF {
     return yPosition + this.LAYOUT.headerHeight + this.LAYOUT.sectionSpacing;
   }
 
-  private static addEmisorReceptor(doc: jsPDF, pageWidth: number, yPosition: number, cartaPorteData: CartaPorteData): number {
+  private static addEmisorReceptor(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 30);
+    
     this.addSectionTitle(doc, '1. EMISOR Y RECEPTOR', yPosition);
-    yPosition += 10;
+    yPosition += 8;
 
     const tableData = [
       ['CONCEPTO', 'EMISOR', 'RECEPTOR'],
@@ -304,13 +293,15 @@ export class CartaPorteFiscalPDF {
       ['RFC', cartaPorteData.rfcEmisor || 'N/A', cartaPorteData.rfcReceptor || 'N/A']
     ];
 
-    yPosition = this.addTable(doc, pageWidth, yPosition, tableData, true);
+    yPosition = this.addResponsiveTable(doc, pageWidth, yPosition, tableData, true);
     return yPosition + this.LAYOUT.sectionSpacing;
   }
 
-  private static addInformacionGeneral(doc: jsPDF, pageWidth: number, yPosition: number, cartaPorteData: CartaPorteData): number {
+  private static addInformacionGeneral(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 30);
+    
     this.addSectionTitle(doc, '2. INFORMACIÓN GENERAL DEL CFDI Y CARTA PORTE', yPosition);
-    yPosition += 10;
+    yPosition += 8;
 
     const totalDistancia = cartaPorteData.ubicaciones?.reduce((sum, ub) => sum + (ub.distancia_recorrida || 0), 0) || 0;
     const totalMercancias = cartaPorteData.mercancias?.length || 0;
@@ -327,63 +318,104 @@ export class CartaPorteFiscalPDF {
     return yPosition + this.LAYOUT.sectionSpacing;
   }
 
+  private static addUbicacionesCompletas(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 40);
+    
+    this.addSectionTitle(doc, '3. UBICACIONES (ORIGEN Y DESTINO)', yPosition);
+    yPosition += 8;
+
+    if (!cartaPorteData.ubicaciones || cartaPorteData.ubicaciones.length === 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('No hay ubicaciones registradas', this.LAYOUT.margin + 5, yPosition);
+      return yPosition + 15;
+    }
+
+    // Tabla más compacta y responsiva
+    const headers = ['Tipo', 'ID', 'Nombre/RFC', 'Domicilio', 'Fecha/Hora', 'Dist.'];
+    const tableData = [headers];
+
+    cartaPorteData.ubicaciones.forEach(ubicacion => {
+      const domicilio = ubicacion.domicilio ? 
+        `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''}, CP ${ubicacion.domicilio.codigo_postal || ''}`.trim() : 
+        'N/A';
+      
+      const nombreRFC = `${ubicacion.nombre_remitente_destinatario || 'N/A'} / ${ubicacion.rfc_remitente_destinatario || 'N/A'}`;
+
+      const fechaHora = ubicacion.fecha_hora_salida_llegada ? 
+        new Date(ubicacion.fecha_hora_salida_llegada).toLocaleDateString('es-MX') : 
+        'N/A';
+
+      const distancia = ubicacion.distancia_recorrida ? `${ubicacion.distancia_recorrida}km` : 'N/A';
+
+      tableData.push([
+        ubicacion.tipo_ubicacion || 'N/A',
+        ubicacion.id_ubicacion || 'N/A',
+        nombreRFC,
+        domicilio,
+        fechaHora,
+        distancia
+      ]);
+    });
+
+    yPosition = this.addResponsiveTable(doc, pageWidth, yPosition, tableData, true);
+    return yPosition + this.LAYOUT.sectionSpacing;
+  }
+
   private static addMercanciasCompletas(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
-    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 60);
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 40);
     
     this.addSectionTitle(doc, '4. MERCANCÍAS', yPosition);
-    yPosition += 10;
+    yPosition += 8;
 
     if (!cartaPorteData.mercancias || cartaPorteData.mercancias.length === 0) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.text('No hay mercancías registradas', this.LAYOUT.margin + 5, yPosition);
       return yPosition + 15;
     }
 
-    const headers = ['BienesTransp', 'Descripción Completa', 'Cantidad', 'Unidad', 'Peso (Kg)', 'Valor'];
+    const headers = ['Clave', 'Descripción', 'Cant.', 'Unidad', 'Peso(Kg)', 'Valor'];
     const tableData = [headers];
 
     cartaPorteData.mercancias.forEach(mercancia => {
-      // Asegurar descripción completa sin cortes
-      const descripcionCompleta = mercancia.descripcion || 'N/A';
-      
       tableData.push([
         mercancia.bienes_transp || 'N/A',
-        descripcionCompleta,
+        mercancia.descripcion || 'N/A',
         mercancia.cantidad?.toString() || '0',
         mercancia.clave_unidad || 'N/A',
         mercancia.peso_kg?.toString() || '0',
-        `$${mercancia.valor_mercancia || 0} ${mercancia.moneda || 'MXN'}`
+        `$${mercancia.valor_mercancia || 0}`
       ]);
     });
 
-    yPosition = this.addTable(doc, pageWidth, yPosition, tableData, true, 7);
+    yPosition = this.addResponsiveTable(doc, pageWidth, yPosition, tableData, true);
     return yPosition + this.LAYOUT.sectionSpacing;
   }
 
   private static addAutotransporteCompleto(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
-    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 50);
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 35);
     
     this.addSectionTitle(doc, '5. AUTOTRANSPORTE', yPosition);
-    yPosition += 10;
+    yPosition += 8;
 
     if (!cartaPorteData.autotransporte) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.text('No hay datos de autotransporte registrados', this.LAYOUT.margin + 5, yPosition);
       return yPosition + 15;
     }
 
     const auto = cartaPorteData.autotransporte;
     const autoData = [
-      ['Tipo de Permiso SCT:', auto.perm_sct || 'N/A'],
-      ['Número de Permiso SCT:', auto.num_permiso_sct || 'N/A'],
-      ['Configuración Vehicular:', auto.config_vehicular || 'N/A'],
-      ['Placa del Vehículo:', auto.placa_vm || 'N/A'],
-      ['Año del Modelo:', auto.anio_modelo_vm?.toString() || 'N/A'],
-      ['Peso Bruto Vehicular:', `${auto.peso_bruto_vehicular || 0} toneladas`],
+      ['Tipo Permiso SCT:', auto.perm_sct || 'N/A'],
+      ['Número Permiso SCT:', auto.num_permiso_sct || 'N/A'],
+      ['Config. Vehicular:', auto.config_vehicular || 'N/A'],
+      ['Placa Vehículo:', auto.placa_vm || 'N/A'],
+      ['Año Modelo:', auto.anio_modelo_vm?.toString() || 'N/A'],
+      ['Peso Bruto Vehicular:', `${auto.peso_bruto_vehicular || 0} ton`],
       ['Aseguradora:', auto.asegura_resp_civil || 'N/A'],
-      ['Número de Póliza:', auto.poliza_resp_civil || 'N/A']
+      ['Póliza:', auto.poliza_resp_civil || 'N/A']
     ];
 
     yPosition = this.addInfoGrid(doc, pageWidth, yPosition, autoData);
@@ -391,19 +423,19 @@ export class CartaPorteFiscalPDF {
   }
 
   private static addFigurasTransporte(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
-    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 40);
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 30);
     
     this.addSectionTitle(doc, '6. FIGURAS DE TRANSPORTE', yPosition);
-    yPosition += 10;
+    yPosition += 8;
 
     if (!cartaPorteData.figuras || cartaPorteData.figuras.length === 0) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.text('No hay figuras de transporte registradas', this.LAYOUT.margin + 5, yPosition);
       return yPosition + 15;
     }
 
-    const headers = ['Tipo de Figura', 'Nombre', 'RFC', 'Número de Licencia'];
+    const headers = ['Tipo', 'Nombre', 'RFC', 'Licencia'];
     const tableData = [headers];
 
     cartaPorteData.figuras.forEach(figura => {
@@ -415,69 +447,69 @@ export class CartaPorteFiscalPDF {
       ]);
     });
 
-    yPosition = this.addTable(doc, pageWidth, yPosition, tableData, true);
+    yPosition = this.addResponsiveTable(doc, pageWidth, yPosition, tableData, true);
     return yPosition + this.LAYOUT.sectionSpacing;
   }
 
   private static addFooterWithDigitalSeals(doc: jsPDF, pageWidth: number, pageHeight: number, datosTimbre: FiscalPDFOptions['datosTimbre']): void {
-    const footerY = pageHeight - this.LAYOUT.footerHeight - 10;
+    const footerY = pageHeight - this.LAYOUT.footerHeight - 5;
     
     // Línea separadora
     doc.setDrawColor(26, 54, 93);
-    doc.setLineWidth(1);
-    doc.line(this.LAYOUT.margin, footerY - 5, pageWidth - this.LAYOUT.margin, footerY - 5);
+    doc.setLineWidth(0.5);
+    doc.line(this.LAYOUT.margin, footerY - 3, pageWidth - this.LAYOUT.margin, footerY - 3);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setTextColor(26, 54, 93);
     doc.text('SELLOS DIGITALES Y VALIDACIÓN FISCAL', this.LAYOUT.margin, footerY);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
+    doc.setFontSize(5);
     doc.setTextColor(26, 32, 44);
     
-    let sealY = footerY + 8;
+    let sealY = footerY + 5;
     
-    // Sello Digital del CFDI
+    // Sello Digital del CFDI (truncado para que quepa)
     doc.setFont('helvetica', 'bold');
-    doc.text('Sello Digital del CFDI:', this.LAYOUT.margin, sealY);
+    doc.text('Sello CFDI:', this.LAYOUT.margin, sealY);
     doc.setFont('helvetica', 'normal');
-    const selloLines = doc.splitTextToSize(datosTimbre.selloDigital, pageWidth - this.LAYOUT.margin * 2);
-    doc.text(selloLines, this.LAYOUT.margin, sealY + 3);
-    sealY += Math.max(8, selloLines.length * 2);
+    const selloCorto = datosTimbre.selloDigital.substring(0, 120) + '...';
+    doc.text(selloCorto, this.LAYOUT.margin + 15, sealY);
+    sealY += 4;
     
-    // Sello Digital del SAT
+    // Sello Digital del SAT (truncado)
     doc.setFont('helvetica', 'bold');
-    doc.text('Sello Digital del SAT:', this.LAYOUT.margin, sealY);
+    doc.text('Sello SAT:', this.LAYOUT.margin, sealY);
     doc.setFont('helvetica', 'normal');
-    const selloSATLines = doc.splitTextToSize(datosTimbre.selloSAT, pageWidth - this.LAYOUT.margin * 2);
-    doc.text(selloSATLines, this.LAYOUT.margin, sealY + 3);
-    sealY += Math.max(8, selloSATLines.length * 2);
+    const selloSATCorto = datosTimbre.selloSAT.substring(0, 120) + '...';
+    doc.text(selloSATCorto, this.LAYOUT.margin + 15, sealY);
+    sealY += 4;
     
-    // Cadena Original
+    // Cadena Original (truncada)
     doc.setFont('helvetica', 'bold');
-    doc.text('Cadena Original del Complemento:', this.LAYOUT.margin, sealY);
+    doc.text('Cadena Original:', this.LAYOUT.margin, sealY);
     doc.setFont('helvetica', 'normal');
-    const cadenaLines = doc.splitTextToSize(datosTimbre.cadenaOriginal, pageWidth - this.LAYOUT.margin * 2);
-    doc.text(cadenaLines, this.LAYOUT.margin, sealY + 3);
+    const cadenaCorta = datosTimbre.cadenaOriginal.substring(0, 100) + '...';
+    doc.text(cadenaCorta, this.LAYOUT.margin + 20, sealY);
 
     // Leyenda fiscal obligatoria
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(7);
     doc.setTextColor(56, 161, 105);
-    doc.text('Este documento es una representación impresa de un CFDI', pageWidth / 2, pageHeight - 5, { align: 'center' });
+    doc.text('Este documento es una representación impresa de un CFDI', pageWidth / 2, pageHeight - 3, { align: 'center' });
   }
 
   private static addSectionTitle(doc: jsPDF, title: string, yPosition: number): void {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(9);
     doc.setTextColor(26, 54, 93);
     doc.text(title, this.LAYOUT.margin, yPosition);
     
     // Línea decorativa
     doc.setDrawColor(74, 144, 164);
-    doc.setLineWidth(0.8);
-    doc.line(this.LAYOUT.margin, yPosition + 2, this.LAYOUT.margin + doc.getTextWidth(title), yPosition + 2);
+    doc.setLineWidth(0.5);
+    doc.line(this.LAYOUT.margin, yPosition + 1, this.LAYOUT.margin + doc.getTextWidth(title), yPosition + 1);
   }
 
   private static addInfoGrid(doc: jsPDF, pageWidth: number, yPosition: number, data: string[][]): number {
@@ -485,13 +517,14 @@ export class CartaPorteFiscalPDF {
     
     data.forEach((row, index) => {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(74, 85, 104);
-      doc.text(row[0], this.LAYOUT.margin + 5, yPosition);
+      doc.text(row[0], this.LAYOUT.margin + 3, yPosition);
       
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(26, 32, 44);
-      doc.text(row[1], this.LAYOUT.margin + columnWidth, yPosition);
+      const valueText = row[1].length > 30 ? row[1].substring(0, 27) + '...' : row[1];
+      doc.text(valueText, this.LAYOUT.margin + columnWidth, yPosition);
       
       yPosition += this.LAYOUT.lineHeight;
     });
@@ -499,10 +532,16 @@ export class CartaPorteFiscalPDF {
     return yPosition;
   }
 
-  private static addTable(doc: jsPDF, pageWidth: number, yPosition: number, data: string[][], hasHeader: boolean = false, fontSize: number = 8): number {
+  private static addResponsiveTable(doc: jsPDF, pageWidth: number, yPosition: number, data: string[][], hasHeader: boolean = false): number {
     const tableWidth = pageWidth - (this.LAYOUT.margin * 2);
-    const columnWidth = tableWidth / data[0].length;
-    const rowHeight = 6;
+    const columnCount = data[0].length;
+    
+    // Anchos de columna adaptativos
+    const columnWidths = columnCount === 6 ? 
+      [20, 15, 45, 60, 25, 25] : // Para ubicaciones
+      [tableWidth / columnCount, tableWidth / columnCount, tableWidth / columnCount, tableWidth / columnCount]; // Para otras tablas
+    
+    const rowHeight = 5;
     
     data.forEach((row, rowIndex) => {
       const isHeader = hasHeader && rowIndex === 0;
@@ -510,40 +549,44 @@ export class CartaPorteFiscalPDF {
       if (isHeader) {
         // Fondo del header
         doc.setFillColor(26, 54, 93);
-        doc.rect(this.LAYOUT.margin, yPosition - rowHeight + 2, tableWidth, rowHeight, 'F');
+        doc.rect(this.LAYOUT.margin, yPosition - rowHeight + 1, tableWidth, rowHeight, 'F');
         
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(fontSize);
+        doc.setFontSize(6);
         doc.setTextColor(255, 255, 255);
       } else {
         // Fila alternada
         if (rowIndex % 2 === 0) {
           doc.setFillColor(247, 250, 252);
-          doc.rect(this.LAYOUT.margin, yPosition - rowHeight + 2, tableWidth, rowHeight, 'F');
+          doc.rect(this.LAYOUT.margin, yPosition - rowHeight + 1, tableWidth, rowHeight, 'F');
         }
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(fontSize - 1);
+        doc.setFontSize(5.5);
         doc.setTextColor(26, 32, 44);
       }
       
       // Bordes
       doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.3);
-      doc.rect(this.LAYOUT.margin, yPosition - rowHeight + 2, tableWidth, rowHeight, 'S');
+      doc.setLineWidth(0.2);
+      doc.rect(this.LAYOUT.margin, yPosition - rowHeight + 1, tableWidth, rowHeight, 'S');
       
-      // Contenido de las celdas
+      // Contenido de las celdas con texto truncado
+      let cellX = this.LAYOUT.margin + 1;
       row.forEach((cell, colIndex) => {
-        const cellX = this.LAYOUT.margin + (colIndex * columnWidth) + 2;
-        const maxWidth = columnWidth - 4;
-        const cellText = cell.length > 35 ? cell.substring(0, 32) + '...' : cell;
-        doc.text(cellText, cellX, yPosition - 2);
+        const maxWidth = columnWidths[colIndex] - 2;
+        const maxChars = Math.floor(maxWidth / 1.5); // Estimación de caracteres
+        const cellText = cell.length > maxChars ? cell.substring(0, maxChars - 3) + '...' : cell;
+        
+        doc.text(cellText, cellX, yPosition - 1);
         
         // Líneas verticales
         if (colIndex < row.length - 1) {
-          doc.line(this.LAYOUT.margin + ((colIndex + 1) * columnWidth), yPosition - rowHeight + 2, 
-                  this.LAYOUT.margin + ((colIndex + 1) * columnWidth), yPosition + 2);
+          doc.line(cellX + columnWidths[colIndex] - 1, yPosition - rowHeight + 1, 
+                  cellX + columnWidths[colIndex] - 1, yPosition + 1);
         }
+        
+        cellX += columnWidths[colIndex];
       });
       
       yPosition += rowHeight;
@@ -557,17 +600,17 @@ export class CartaPorteFiscalPDF {
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(74, 85, 104);
       const text = `Página ${i} de ${totalPages}`;
-      doc.text(text, doc.internal.pageSize.width - this.LAYOUT.margin, doc.internal.pageSize.height - 15, { align: 'right' });
+      doc.text(text, doc.internal.pageSize.width - this.LAYOUT.margin, doc.internal.pageSize.height - 10, { align: 'right' });
     }
   }
 
   private static checkPageBreak(doc: jsPDF, yPosition: number, pageHeight: number, requiredSpace: number): number {
-    if (yPosition + requiredSpace > pageHeight - this.LAYOUT.footerHeight - 20) {
+    if (yPosition + requiredSpace > pageHeight - this.LAYOUT.footerHeight - 15) {
       doc.addPage();
-      return this.LAYOUT.margin + 10;
+      return this.LAYOUT.margin + 5;
     }
     return yPosition;
   }
