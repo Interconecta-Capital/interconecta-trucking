@@ -1,17 +1,29 @@
 
+// Tipo para resultado de validación RFC
+export interface RFCValidationResult {
+  esValido: boolean;
+  mensaje: string;
+  tipo?: 'fisica' | 'moral';
+  errores?: string[];
+}
+
 export class RFCValidator {
   private static readonly RFC_REGEX_FISICA = /^[A-Z&Ñ]{4}[0-9]{6}[A-Z0-9]{3}$/;
   private static readonly RFC_REGEX_MORAL = /^[A-Z&Ñ]{3}[0-9]{6}[A-Z0-9]{3}$/;
 
-  static validarRFC(rfc: string): { esValido: boolean; mensaje: string; tipo?: 'fisica' | 'moral' } {
+  static validarRFC(rfc: string): RFCValidationResult {
     if (!rfc) {
-      return { esValido: false, mensaje: 'RFC requerido' };
+      return { esValido: false, mensaje: 'RFC requerido', errores: ['RFC requerido'] };
     }
 
     const rfcLimpio = rfc.replace(/\s/g, '').toUpperCase();
 
     if (rfcLimpio.length < 12 || rfcLimpio.length > 13) {
-      return { esValido: false, mensaje: 'RFC debe tener 12 o 13 caracteres' };
+      return { 
+        esValido: false, 
+        mensaje: 'RFC debe tener 12 o 13 caracteres',
+        errores: ['RFC debe tener 12 o 13 caracteres']
+      };
     }
 
     // Verificar si es persona física (13 caracteres)
@@ -24,7 +36,11 @@ export class RFCValidator {
       return { esValido: true, mensaje: 'RFC válido', tipo: 'moral' };
     }
 
-    return { esValido: false, mensaje: 'Formato de RFC inválido' };
+    return { 
+      esValido: false, 
+      mensaje: 'Formato de RFC inválido',
+      errores: ['Formato de RFC inválido']
+    };
   }
 
   static formatearRFC(rfc: string): string {

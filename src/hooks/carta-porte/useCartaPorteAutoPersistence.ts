@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface AutoPersistenceOptions {
   cartaPorteId?: string;
-  autoSaveInterval?: number; // milisegundos
+  autoSaveInterval?: number;
   onSaveSuccess?: () => void;
   onSaveError?: (error: string) => void;
 }
@@ -18,7 +17,7 @@ export function useCartaPorteAutoPersistence(
 ) {
   const { 
     cartaPorteId, 
-    autoSaveInterval = 30000, // 30 segundos por defecto
+    autoSaveInterval = 30000,
     onSaveSuccess,
     onSaveError 
   } = options;
@@ -30,7 +29,6 @@ export function useCartaPorteAutoPersistence(
   const autoSaveTimerRef = useRef<NodeJS.Timeout>();
   const isSavingRef = useRef(false);
 
-  // Generar signature de los datos para detectar cambios
   const generateDataSignature = useCallback((data: CartaPorteData): string => {
     return JSON.stringify({
       rfcEmisor: data.rfcEmisor,
@@ -46,7 +44,6 @@ export function useCartaPorteAutoPersistence(
     });
   }, []);
 
-  // Función para guardar en Supabase
   const saveToSupabase = useCallback(async (data: CartaPorteData): Promise<boolean> => {
     if (!user || !cartaPorteId || isSavingRef.current) {
       return false;
@@ -55,7 +52,7 @@ export function useCartaPorteAutoPersistence(
     isSavingRef.current = true;
 
     try {
-      // Serializar datos de forma segura
+      // Serializar datos de forma segura para Supabase
       const serializedData = {
         tipoCreacion: data.tipoCreacion || 'manual',
         tipoCfdi: data.tipoCfdi || 'Traslado',
@@ -66,10 +63,10 @@ export function useCartaPorteAutoPersistence(
         transporteInternacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
         registroIstmo: Boolean(data.registroIstmo),
         cartaPorteVersion: data.cartaPorteVersion || '3.1',
-        ubicaciones: Array.isArray(data.ubicaciones) ? data.ubicaciones : [],
-        mercancias: Array.isArray(data.mercancias) ? data.mercancias : [],
-        autotransporte: data.autotransporte || {},
-        figuras: Array.isArray(data.figuras) ? data.figuras : [],
+        ubicaciones: JSON.parse(JSON.stringify(data.ubicaciones || [])),
+        mercancias: JSON.parse(JSON.stringify(data.mercancias || [])),
+        autotransporte: JSON.parse(JSON.stringify(data.autotransporte || {})),
+        figuras: JSON.parse(JSON.stringify(data.figuras || [])),
         xmlGenerado: data.xmlGenerado,
         datosCalculoRuta: data.datosCalculoRuta
       };
@@ -113,15 +110,11 @@ export function useCartaPorteAutoPersistence(
   useEffect(() => {
     const currentSignature = generateDataSignature(formData);
     
-    // Si los datos han cambiado, programar auto-guardado
     if (currentSignature !== lastSavedRef.current && cartaPorteId) {
-      
-      // Limpiar timer anterior
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
       }
 
-      // Programar nuevo auto-guardado
       autoSaveTimerRef.current = setTimeout(() => {
         saveToSupabase(formData).then(success => {
           if (success) {
@@ -164,12 +157,11 @@ export function useCartaPorteAutoPersistence(
         return null;
       }
 
-      // Deserializar datos
-      const recoveredData = {
+      const recoveredData: CartaPorteData = {
         ...data.datos_formulario,
         xmlGenerado: data.xml_generado,
         cartaPorteId: id
-      } as CartaPorteData;
+      };
 
       return recoveredData;
 
