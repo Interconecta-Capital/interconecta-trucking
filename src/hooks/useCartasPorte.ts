@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,8 @@ export interface CartaPorte {
   fecha_timbrado?: string;
   tenant_id?: string;
   datos_formulario?: any;
+  id_ccp?: string; // Add missing IdCCP property
+  version_carta_porte?: string;
   created_at: string;
   updated_at: string;
 }

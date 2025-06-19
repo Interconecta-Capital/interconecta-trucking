@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -10,6 +9,7 @@ import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { useBorradorRecovery } from './useBorradorRecovery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
+import { UUIDService } from '@/services/uuidService';
 
 // Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
@@ -61,6 +61,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const [borradorCargado, setBorradorCargado] = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
+  const [idCCP, setIdCCP] = useState<string>(''); // Add idCCP state
   
   // Estados para datos persistidos usando el hook de persistencia
   const {
@@ -88,6 +89,15 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Recuperación de borrador
   const { showRecoveryDialog, borradorData, acceptBorrador, rejectBorrador } = useBorradorRecovery(cartaPorteId);
+
+  // Generate IdCCP when creating new carta porte
+  useEffect(() => {
+    if (!currentCartaPorteId && !idCCP) {
+      const newIdCCP = UUIDService.generateValidIdCCP();
+      setIdCCP(newIdCCP);
+      console.log('[CartaPorteForm] IdCCP generado automáticamente:', newIdCCP);
+    }
+  }, [currentCartaPorteId, idCCP]);
 
   // El resumen de validación ahora depende directamente del estado unificado
   const validationSummary = getValidationSummary(formData);
@@ -280,7 +290,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         hasRouteData: !!datosCompletos.datosCalculoRuta,
         currentStep: datosCompletos.currentStep,
         ubicacionesCount: datosCompletos.ubicaciones?.length || 0,
-        mercanciasCount: datosCompletos.mercancias?.length || 0
+        mercanciasCount: datosCompletos.mercancias?.length || 0,
+        idCCP: idCCP
       });
 
       // Serialize data for Supabase - CORREGIDO
@@ -302,6 +313,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         status: xmlGenerado ? 'generado' : 'borrador',
         datos_formulario: serializedData as any, // Cast para evitar error de tipo
         usuario_id: user.id,
+        id_ccp: idCCP, // Include IdCCP in the data
+        version_carta_porte: '3.1', // Ensure version 3.1
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -347,7 +360,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando, idCCP]);
 
   // Guardar y salir mejorado con navegación React Router CORREGIDO  
   const handleGuardarYSalir = useCallback(async () => {
@@ -439,6 +452,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     // Estado de la UI
     currentStep,
     currentCartaPorteId,
+    idCCP, // Expose idCCP property
     borradorCargado,
     ultimoGuardado,
     validationSummary,
