@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Plus, FileText, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -119,11 +120,15 @@ export default function CartasPorte() {
 
       // Fallback al generador local
       let cartaPorteData: CartaPorteData;
-      if (typeof carta.datos_formulario === 'string') {
-        const parsed = JSON.parse(carta.datos_formulario);
+      const datosFormulario = carta.datos_formulario;
+      
+      if (typeof datosFormulario === 'string') {
+        const parsed = JSON.parse(datosFormulario);
         cartaPorteData = { version: '3.1', ...parsed } as CartaPorteData;
+      } else if (typeof datosFormulario === 'object' && datosFormulario !== null) {
+        cartaPorteData = { version: '3.1', ...datosFormulario } as CartaPorteData;
       } else {
-        cartaPorteData = { version: '3.1', ...carta.datos_formulario } as CartaPorteData;
+        throw new Error('Formato de datos inválido');
       }
 
       const result = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);
@@ -176,7 +181,7 @@ export default function CartasPorte() {
       figuras: []
     };
 
-    // Add any additional spread properties if cartaPorte has them
+    // Add any additional properties if cartaPorte has them
     if (cartaPorte.datos_formulario && typeof cartaPorte.datos_formulario === 'object') {
       Object.assign(cartaPorteData, cartaPorte.datos_formulario);
     }

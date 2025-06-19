@@ -31,7 +31,7 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
       }
 
       // Buscar último borrador guardado localmente
-      const ultimoBorrador = BorradorService.cargarBorrador();
+      const ultimoBorrador = await BorradorService.cargarBorrador();
       if (ultimoBorrador) {
         // Verificar que tiene datos significativos
         const data = ultimoBorrador;

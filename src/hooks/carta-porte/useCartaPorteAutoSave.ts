@@ -43,10 +43,10 @@ export const useCartaPorteAutoSave = ({
     
     setIsAutoSaving(true);
     try {
-      const nuevoId = await BorradorService.guardarBorrador(formData);
+      const result = await BorradorService.guardarBorrador(formData);
       
-      if (nuevoId && nuevoId !== currentCartaPorteId && onCartaPorteIdChange) {
-        onCartaPorteIdChange(nuevoId);
+      if (result && typeof result === 'string' && result !== currentCartaPorteId && onCartaPorteIdChange) {
+        onCartaPorteIdChange(result);
       }
       
       lastDataRef.current = currentDataString;
