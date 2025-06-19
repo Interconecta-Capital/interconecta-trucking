@@ -1,4 +1,3 @@
-
 import { renderHook, act } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
@@ -18,11 +17,11 @@ vi.mock('@/services/borradorService', () => ({
 }));
 
 const mockCartaPorteData: CartaPorteData = {
-  tipoCreacion: 'manual',
+  id: 'test-id',
   tipoCfdi: 'Traslado',
   rfcEmisor: 'XAXX010101000',
   nombreEmisor: 'Test Emisor',
-  rfcReceptor: 'XBXX010101000',
+  rfcReceptor: 'XAXX010101001',
   nombreReceptor: 'Test Receptor',
   transporteInternacional: false,
   registroIstmo: false,
@@ -30,16 +29,18 @@ const mockCartaPorteData: CartaPorteData = {
   ubicaciones: [],
   mercancias: [],
   autotransporte: {
-    placa_vm: 'ABC123',
-    anio_modelo_vm: 2020,
+    placa_vm: 'TEST123',
+    anio_modelo_vm: 2023,
     config_vehicular: 'C2',
     perm_sct: 'TPAF01',
     num_permiso_sct: '123456',
-    asegura_resp_civil: 'Test Insurance',
+    asegura_resp_civil: 'Aseguradora Test',
     poliza_resp_civil: 'POL123',
+    peso_bruto_vehicular: 5000,
     remolques: []
   },
-  figuras: []
+  figuras: [],
+  currentStep: 0
 };
 
 describe('CartaPorte Hooks - Robust Testing', () => {

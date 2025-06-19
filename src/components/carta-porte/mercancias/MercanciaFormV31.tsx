@@ -1,347 +1,330 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, Save, X } from 'lucide-react';
-import { MercanciaCompleta, PermisoSEMARNAT } from '@/types/cartaPorte';
 import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
+import { MercanciaCompleta } from '@/types/cartaPorte';
 import { PermisosSEMARNATSection } from './PermisosSEMARNATSection';
 
 interface MercanciaFormV31Props {
-  mercancia?: MercanciaCompleta;
-  onSave: (data: MercanciaCompleta) => Promise<boolean>;
+  mercancia: MercanciaCompleta;
+  onChange: (mercancia: MercanciaCompleta) => void;
+  onSave: () => void;
   onCancel: () => void;
-  index: number;
 }
 
-export function MercanciaFormV31({ mercancia, onSave, onCancel, index }: MercanciaFormV31Props) {
-  const [formData, setFormData] = useState<MercanciaCompleta>({
-    id: mercancia?.id || crypto.randomUUID(),
-    bienes_transp: mercancia?.bienes_transp || '',
-    descripcion: mercancia?.descripcion || '',
-    descripcion_detallada: mercancia?.descripcion_detallada || '',
-    cantidad: mercancia?.cantidad || 1,
-    clave_unidad: mercancia?.clave_unidad || 'H87',
-    peso_kg: mercancia?.peso_kg || 0,
-    peso_bruto_total: mercancia?.peso_bruto_total || 0,
-    peso_neto_total: mercancia?.peso_neto_total || 0,
-    unidad_peso_bruto: mercancia?.unidad_peso_bruto || 'KGM',
-    valor_mercancia: mercancia?.valor_mercancia || 0,
-    moneda: mercancia?.moneda || 'MXN',
-    fraccion_arancelaria: mercancia?.fraccion_arancelaria || '',
-    uuid_comercio_exterior: mercancia?.uuid_comercio_exterior || '',
-    material_peligroso: mercancia?.material_peligroso || false,
-    cve_material_peligroso: mercancia?.cve_material_peligroso || '',
-    embalaje: mercancia?.embalaje || '',
-    numero_piezas: mercancia?.numero_piezas || 1,
-    especie_protegida: mercancia?.especie_protegida || false,
-    requiere_cites: mercancia?.requiere_cites || false,
-    permisos_semarnat: mercancia?.permisos_semarnat || [],
-    documentacion_aduanera: mercancia?.documentacion_aduanera || []
-  });
+export function MercanciaFormV31({ mercancia, onChange, onSave, onCancel }: MercanciaFormV31Props) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleInputChange = (field: keyof MercanciaCompleta, value: any) => {
-    setFormData(prev => ({
-      ...prev,
+  const handleFieldChange = (field: keyof MercanciaCompleta, value: any) => {
+    onChange({
+      ...mercancia,
       [field]: value
-    }));
-
-    // Auto-calcular peso bruto total si cambia cantidad o peso unitario
-    if (field === 'cantidad' || field === 'peso_kg') {
-      const cantidad = field === 'cantidad' ? value : formData.cantidad;
-      const pesoUnitario = field === 'peso_kg' ? value : formData.peso_kg;
-      const pesoBrutoTotal = cantidad * pesoUnitario;
-      
-      setFormData(prev => ({
-        ...prev,
-        peso_bruto_total: pesoBrutoTotal,
-        peso_neto_total: pesoBrutoTotal * 0.95 // Estimación
-      }));
-    }
+    });
   };
 
-  const handlePermisosSEMARNATChange = (permisos: PermisoSEMARNAT[]) => {
-    setFormData(prev => ({
-      ...prev,
-      permisos_semarnat: permisos
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const success = await onSave(formData);
-      if (success) {
-        // El componente padre manejará el cierre del formulario
+  const handleNestedFieldChange = (parentField: keyof MercanciaCompleta, field: string, value: any) => {
+    const currentValue = mercancia[parentField] as any;
+    onChange({
+      ...mercancia,
+      [parentField]: {
+        ...currentValue,
+        [field]: value
       }
-    } catch (error) {
-      console.error('Error saving mercancia:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
-  const isEspecieProtegida = formData.especie_protegida;
+  // Handle UUID comercio exterior field
+  const handleUUIDChange = (value: string) => {
+    onChange({
+      ...mercancia,
+      uuid_comercio_exterior: value
+    });
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <span>Mercancía #{index + 1}</span>
-            {isEspecieProtegida && (
-              <Shield className="h-4 w-4 text-green-600" />
-            )}
-          </CardTitle>
+          <CardTitle>Información Básica de la Mercancía v3.1</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Información Básica */}
+          {/* Descripción básica */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="bienes_transp">Clave Producto/Servicio SAT *</Label>
-              <CatalogoSelectorMejorado
-                tipo="productos_servicios_cp"
-                value={formData.bienes_transp}
-                onValueChange={(value) => handleInputChange('bienes_transp', value)}
-                placeholder="Selecciona producto..."
+            <div className="space-y-2">
+              <Label>Descripción *</Label>
+              <Input
+                value={mercancia.descripcion || ''}
+                onChange={(e) => handleFieldChange('descripcion', e.target.value)}
+                placeholder="Descripción general"
                 required
               />
             </div>
 
-            <div>
-              <Label htmlFor="clave_unidad">Unidad de Medida *</Label>
+            <div className="space-y-2">
+              <Label>Bienes a Transportar *</Label>
+              <Input
+                value={mercancia.bienes_transp || ''}
+                onChange={(e) => handleFieldChange('bienes_transp', e.target.value)}
+                placeholder="Código de bienes a transportar"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Cantidad y unidades */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Cantidad *</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={mercancia.cantidad || ''}
+                onChange={(e) => handleFieldChange('cantidad', parseFloat(e.target.value) || 0)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Clave Unidad *</Label>
               <CatalogoSelectorMejorado
-                tipo="unidades_medida"
-                value={formData.clave_unidad}
-                onValueChange={(value) => handleInputChange('clave_unidad', value)}
+                tipo="unidades"
+                value={mercancia.clave_unidad || ''}
+                onValueChange={(value) => handleFieldChange('clave_unidad', value)}
                 placeholder="Selecciona unidad..."
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="descripcion">Descripción Básica *</Label>
-            <Input
-              id="descripcion"
-              value={formData.descripcion}
-              onChange={(e) => handleInputChange('descripcion', e.target.value)}
-              placeholder="Descripción general del bien"
-              required
-            />
-          </div>
-
-          {/* Cantidades y Pesos */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="cantidad">Cantidad *</Label>
+            <div className="space-y-2">
+              <Label>Peso (kg) *</Label>
               <Input
-                id="cantidad"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={formData.cantidad}
-                onChange={(e) => handleInputChange('cantidad', parseFloat(e.target.value) || 0)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="peso_kg">Peso Unitario (kg) *</Label>
-              <Input
-                id="peso_kg"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={formData.peso_kg}
-                onChange={(e) => handleInputChange('peso_kg', parseFloat(e.target.value) || 0)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="peso_bruto_total">Peso Bruto Total (kg) *</Label>
-              <Input
-                id="peso_bruto_total"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={formData.peso_bruto_total}
-                onChange={(e) => handleInputChange('peso_bruto_total', parseFloat(e.target.value) || 0)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Valor Comercial */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="valor_mercancia">Valor Mercancía</Label>
-              <Input
-                id="valor_mercancia"
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.valor_mercancia}
-                onChange={(e) => handleInputChange('valor_mercancia', parseFloat(e.target.value) || 0)}
+                value={mercancia.peso_kg || ''}
+                onChange={(e) => handleFieldChange('peso_kg', parseFloat(e.target.value) || 0)}
+                required
               />
-            </div>
-
-            <div>
-              <Label htmlFor="moneda">Moneda</Label>
-              <Select
-                value={formData.moneda}
-                onValueChange={(value) => handleInputChange('moneda', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
-                  <SelectItem value="USD">USD - Dólar Americano</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
-          {/* Especies Protegidas */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="especie_protegida"
-                checked={formData.especie_protegida}
-                onCheckedChange={(checked) => handleInputChange('especie_protegida', checked)}
-              />
-              <Label htmlFor="especie_protegida" className="flex items-center space-x-2">
-                <Shield className="h-4 w-4" />
-                <span>Especie Protegida (Fauna Silvestre)</span>
-              </Label>
-            </div>
-
-            {isEspecieProtegida && (
-              <>
-                <Alert className="border-green-200 bg-green-50">
-                  <Shield className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">
-                    <strong>Fauna Silvestre:</strong> Esta mercancía requiere descripción detallada y permisos SEMARNAT vigentes.
-                  </AlertDescription>
-                </Alert>
-
-                <div>
-                  <Label htmlFor="descripcion_detallada">Descripción Detallada * (mín. 50 caracteres)</Label>
-                  <Textarea
-                    id="descripcion_detallada"
-                    value={formData.descripcion_detallada}
-                    onChange={(e) => handleInputChange('descripcion_detallada', e.target.value)}
-                    placeholder="Ej: Jaguar (Panthera onca), Macho, 5 años, microchip 985100012345678, amparado por Autorización SEMARNAT..."
-                    minLength={50}
-                    required={isEspecieProtegida}
-                    className="min-h-[100px]"
-                  />
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {formData.descripcion_detallada?.length || 0}/50 caracteres mínimos
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="requiere_cites"
-                    checked={formData.requiere_cites}
-                    onCheckedChange={(checked) => handleInputChange('requiere_cites', checked)}
-                  />
-                  <Label htmlFor="requiere_cites">Requiere Permiso CITES</Label>
-                </div>
-
-                <PermisosSEMARNATSection
-                  permisos={formData.permisos_semarnat || []}
-                  onChange={handlePermisosSEMARNATChange}
-                  required={isEspecieProtegida}
-                />
-              </>
-            )}
-          </div>
-
-          {/* Material Peligroso */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="material_peligroso"
-                checked={formData.material_peligroso}
-                onCheckedChange={(checked) => handleInputChange('material_peligroso', checked)}
-              />
-              <Label htmlFor="material_peligroso">Material Peligroso</Label>
-            </div>
-
-            {formData.material_peligroso && (
-              <div>
-                <Label htmlFor="cve_material_peligroso">Clave Material Peligroso *</Label>
-                <CatalogoSelectorMejorado
-                  tipo="materiales_peligrosos"
-                  value={formData.cve_material_peligroso}
-                  onValueChange={(value) => handleInputChange('cve_material_peligroso', value)}
-                  placeholder="Selecciona material peligroso..."
-                  required={formData.material_peligroso}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Comercio Exterior */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fraccion_arancelaria">Fracción Arancelaria</Label>
+          {/* Pesos totales v3.1 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Peso Bruto Total</Label>
               <Input
-                id="fraccion_arancelaria"
-                value={formData.fraccion_arancelaria}
-                onChange={(e) => handleInputChange('fraccion_arancelaria', e.target.value)}
-                placeholder="8 dígitos"
-                maxLength={8}
+                type="number"
+                min="0"
+                step="0.01"
+                value={mercancia.peso_bruto_total || ''}
+                onChange={(e) => handleFieldChange('peso_bruto_total', parseFloat(e.target.value) || 0)}
               />
             </div>
 
-            <div>
-              <Label htmlFor="uuid_comercio_exterior">UUID Comercio Exterior</Label>
+            <div className="space-y-2">
+              <Label>Peso Neto Total</Label>
               <Input
-                id="uuid_comercio_exterior"
-                value={formData.uuid_comercio_exterior}
-                onChange={(e) => handleInputChange('uuid_comercio_exterior', e.target.value)}
-                placeholder="UUID del complemento de comercio exterior"
+                type="number"
+                min="0"
+                step="0.01"
+                value={mercancia.peso_neto_total || ''}
+                onChange={(e) => handleFieldChange('peso_neto_total', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Unidad Peso Bruto</Label>
+              <Input
+                value={mercancia.unidad_peso_bruto || 'KGM'}
+                onChange={(e) => handleFieldChange('unidad_peso_bruto', e.target.value)}
+                placeholder="KGM"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Botones de Acción */}
-      <div className="flex justify-end space-x-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
-          <X className="h-4 w-4 mr-2" />
+      {/* Información Comercial */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Información Comercial</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Valor Mercancía</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={mercancia.valor_mercancia || ''}
+                onChange={(e) => handleFieldChange('valor_mercancia', parseFloat(e.target.value) || 0)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Moneda</Label>
+              <Input
+                value={mercancia.moneda || 'MXN'}
+                onChange={(e) => handleFieldChange('moneda', e.target.value)}
+                placeholder="MXN"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>UUID Comercio Exterior</Label>
+              <Input
+                value={mercancia.uuid_comercio_exterior || ''}
+                onChange={(e) => handleUUIDChange(e.target.value)}
+                placeholder="UUID del complemento"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Fracción Arancelaria (Opcional en v3.1)</Label>
+            <Input
+              value={mercancia.fraccion_arancelaria || ''}
+              onChange={(e) => handleFieldChange('fraccion_arancelaria', e.target.value)}
+              placeholder="Ej: 01234567"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Material Peligroso */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Material Peligroso</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={mercancia.material_peligroso || false}
+              onCheckedChange={(checked) => handleFieldChange('material_peligroso', checked)}
+            />
+            <Label>¿Es material peligroso?</Label>
+          </div>
+
+          {mercancia.material_peligroso && (
+            <div className="space-y-2">
+              <Label>Clave Material Peligroso</Label>
+              <CatalogoSelectorMejorado
+                tipo="materiales_peligrosos"
+                value={mercancia.cve_material_peligroso || ''}
+                onValueChange={(value) => handleFieldChange('cve_material_peligroso', value)}
+                placeholder="Selecciona material peligroso..."
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Fauna Silvestre v3.1 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <span>Fauna Silvestre v3.1</span>
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={mercancia.especie_protegida || false}
+              onCheckedChange={(checked) => handleFieldChange('especie_protegida', checked)}
+            />
+            <Label>¿Es especie protegida?</Label>
+          </div>
+
+          {mercancia.especie_protegida && (
+            <>
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  **v3.1**: Para especies protegidas se requiere descripción detallada y permisos SEMARNAT válidos.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Label>Descripción Detallada *</Label>
+                <Textarea
+                  value={mercancia.descripcion_detallada || ''}
+                  onChange={(e) => handleFieldChange('descripcion_detallada', e.target.value)}
+                  placeholder="Descripción específica de la especie, características, etc."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={mercancia.requiere_cites || false}
+                  onCheckedChange={(checked) => handleFieldChange('requiere_cites', checked)}
+                />
+                <Label>Requiere permiso CITES</Label>
+              </div>
+
+              <PermisosSEMARNATSection
+                permisos={mercancia.permisos_semarnat || []}
+                onChange={(permisos) => handleFieldChange('permisos_semarnat', permisos)}
+              />
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Embalaje */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Embalaje</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Tipo Embalaje</Label>
+              <CatalogoSelectorMejorado
+                tipo="embalajes"
+                value={mercancia.tipo_embalaje || ''}
+                onValueChange={(value) => handleFieldChange('tipo_embalaje', value)}
+                placeholder="Selecciona tipo..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Número de Piezas</Label>
+              <Input
+                type="number"
+                min="1"
+                value={mercancia.numero_piezas || ''}
+                onChange={(e) => handleFieldChange('numero_piezas', parseInt(e.target.value) || 1)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Botones de acción */}
+      <div className="flex justify-end space-x-4">
+        <Button variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {isSubmitting ? 'Guardando...' : 'Guardar Mercancía'}
+        <Button onClick={onSave}>
+          Guardar Mercancía
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

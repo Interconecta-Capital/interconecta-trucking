@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -75,7 +74,7 @@ export function PlantillaCard({
     return {
       ubicaciones: data.ubicaciones?.length || 0,
       mercancias: data.mercancias?.length || 0,
-      tieneTransporte: !!data.autotransporte?.placaVm,
+      tieneTransporte: !!data.autotransporte?.placa_vm,
       figuras: data.figuras?.length || 0
     };
   };

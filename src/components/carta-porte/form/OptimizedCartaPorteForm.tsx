@@ -81,6 +81,20 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setCurrentStep(targetStep);
   }, [currentStep, setCurrentStep, validationSummary]);
 
+  // Create a proper ValidationSummary object with all required properties
+  const enhancedValidationSummary = useMemo(() => {
+    const baseValidation = validationSummary || { sectionStatus: {} };
+    
+    return {
+      sectionStatus: baseValidation.sectionStatus,
+      overallProgress: 0,
+      completionPercentage: 0,
+      missingFields: [],
+      completedSections: 0,
+      totalSections: 5
+    };
+  }, [validationSummary]);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Dialog de recuperación de borrador */}
@@ -96,9 +110,9 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         <CartaPorteHeader
           borradorCargado={borradorCargado}
           ultimoGuardado={ultimoGuardado}
-          onGuardarBorrador={handleGuardarBorrador}
+          onGuardarBorrador={async () => await handleGuardarBorrador()}
           onLimpiarBorrador={handleLimpiarBorrador}
-          onGuardarYSalir={handleGuardarYSalir}
+          onGuardarYSalir={async () => await handleGuardarYSalir()}
           isGuardando={isGuardando}
         />
       </div>
@@ -106,7 +120,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
       {/* Indicador de progreso con más margen */}
       <div className="mb-8 bg-white rounded-lg shadow-sm border p-6">
         <CartaPorteProgressIndicator
-          validationSummary={validationSummary || { sectionStatus: {} }}
+          validationSummary={enhancedValidationSummary}
           currentStep={currentStep}
           onStepClick={handleStepNavigation}
           xmlGenerado={xmlGenerado}

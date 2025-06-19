@@ -31,7 +31,13 @@ export function useVersionManager({
       
       // RegimenAduanero (string) → RegimenesAduaneros (array)
       if (migratedData.regimenAduanero && !migratedData.regimenesAduaneros) {
-        migratedData.regimenesAduaneros = [migratedData.regimenAduanero];
+        migratedData.regimenesAduaneros = [
+          {
+            clave_regimen: migratedData.regimenAduanero,
+            descripcion: '',
+            orden_secuencia: 1
+          }
+        ];
         delete migratedData.regimenAduanero;
       }
       
@@ -41,25 +47,14 @@ export function useVersionManager({
         fraccion_arancelaria: mercancia.fraccion_arancelaria || ''
       })) || [];
       
-      // Agregar campos nuevos de 3.1 con valores por defecto
-      migratedData.version31Fields = {
-        transporteEspecializado: false,
-        tipoCarroceria: '',
-        registroISTMO: migratedData.registroIstmo || false,
-        ...migratedData.version31Fields
-      };
-      
     } else if (version === '3.1' && newVersion === '3.0') {
       // Migración de 3.1 a 3.0
       
       // RegimenesAduaneros (array) → RegimenAduanero (string)
       if (migratedData.regimenesAduaneros?.length > 0) {
-        migratedData.regimenAduanero = migratedData.regimenesAduaneros[0];
+        migratedData.regimenAduanero = migratedData.regimenesAduaneros[0].clave_regimen;
         delete migratedData.regimenesAduaneros;
       }
-      
-      // Remover campos específicos de 3.1
-      delete migratedData.version31Fields;
       
       // FraccionArancelaria opcional en 3.0
       migratedData.mercancias = migratedData.mercancias?.map(mercancia => ({
@@ -112,8 +107,7 @@ export function useVersionManager({
       'regimenesAduaneros',
       'transporteEspecializado',
       'tipoCarroceria',
-      'remolquesCCP',
-      'version31Fields'
+      'remolquesCCP'
     ];
     
     const version30OnlyFields = [

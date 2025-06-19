@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,7 +18,7 @@ const initialData: CartaPorteData = {
   mercancias: [],
   autotransporte: {
     placa_vm: '',
-    anio_modelo_vm: 0,
+    anio_modelo_vm: new Date().getFullYear(),
     config_vehicular: '',
     perm_sct: '',
     num_permiso_sct: '',

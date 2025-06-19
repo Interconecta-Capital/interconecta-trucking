@@ -1,3 +1,4 @@
+
 import { useMemo, useRef } from 'react';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -65,6 +66,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           num_permiso_sct: '',
           asegura_resp_civil: '',
           poliza_resp_civil: '',
+          peso_bruto_vehicular: 0,
         },
         figuras: formData.figuras || [],
         cartaPorteId: formData.cartaPorteId,
@@ -99,6 +101,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           num_permiso_sct: '',
           asegura_resp_civil: '',
           poliza_resp_civil: '',
+          peso_bruto_vehicular: 0,
         },
         figuras: formData.figuras || [],
         cartaPorteId: formData.cartaPorteId,
@@ -156,6 +159,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           num_permiso_sct: '',
           asegura_resp_civil: '',
           poliza_resp_civil: '',
+          peso_bruto_vehicular: 0,
         },
         figuras: [],
         tipoCreacion: formData.tipoCreacion || 'manual',

@@ -1,4 +1,3 @@
-
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
@@ -262,6 +261,29 @@ export const useSATValidation31 = () => {
       toast.error(`Error: ${error.message}`);
     }
   });
+
+  const validateRegimenesAduaneros = useCallback((data: CartaPorteData): ValidationResult => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (data.transporteInternacional) {
+      if (!data.regimenesAduaneros || data.regimenesAduaneros.length === 0) {
+        errors.push('Para transporte internacional se requiere al menos un régimen aduanero');
+      } else {
+        data.regimenesAduaneros.forEach((regimen, index) => {
+          if (!regimen.clave_regimen) {
+            errors.push(`Régimen aduanero ${index + 1}: falta clave de régimen`);
+          }
+        });
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }, []);
 
   return {
     validacionBasica,
