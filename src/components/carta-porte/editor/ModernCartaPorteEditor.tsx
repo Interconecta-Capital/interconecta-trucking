@@ -160,6 +160,19 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     }
   };
 
+  const handleBackToList = () => {
+    navigate('/cartas-porte');
+  };
+
+  const handleSaveAndExit = async () => {
+    try {
+      await handleGuardarYSalir();
+      navigate('/cartas-porte');
+    } catch (error) {
+      console.error('Error guardando y saliendo:', error);
+    }
+  };
+
   // Create a complete default autotransporte object
   const defaultAutotransporte: AutotransporteCompleto = {
     placa_vm: '',
@@ -258,10 +271,10 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/cartas-porte')}
+                onClick={handleBackToList}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
+                Volver a Lista
               </Button>
 
               <div className="flex items-center gap-3">
@@ -316,7 +329,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
               )}
 
               <Button
-                onClick={handleGuardarYSalir}
+                onClick={handleSaveAndExit}
                 disabled={isGuardando}
                 className="flex items-center gap-2"
               >

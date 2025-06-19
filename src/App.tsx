@@ -37,7 +37,7 @@ const App = () => (
               </BaseLayout>
             } />
             
-            {/* Nueva ruta unificada de Cartas Porte */}
+            {/* Ruta principal de Cartas Porte - SOLO para gestión/listado */}
             <Route path="/cartas-porte" element={
               <BaseLayout>
                 <CartasPorteUnified />
@@ -80,13 +80,13 @@ const App = () => (
               </BaseLayout>
             } />
             
-            {/* Editor de Carta Porte (sin layout para pantalla completa) */}
+            {/* Editor de Carta Porte - PANTALLA COMPLETA sin layout para todos los módulos */}
             <Route path="/carta-porte/editor/:id" element={<CartaPorteEditor />} />
             <Route path="/carta-porte/editor" element={<CartaPorteEditor />} />
             
-            {/* Redirección de rutas antiguas */}
+            {/* Redirección de rutas antiguas al nuevo sistema unificado */}
             <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
-            <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor" replace />} />
+            <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor/:id" replace />} />
             
             {/* Redirección por defecto */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

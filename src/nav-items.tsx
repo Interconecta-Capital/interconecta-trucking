@@ -24,6 +24,10 @@ import Planes from "./pages/Planes";
 
 /**
  * Central place for defining the navigation items. Used for navigation components and routing.
+ * 
+ * IMPORTANTE: 
+ * - /cartas-porte = Gestión y listado de documentos
+ * - /carta-porte/editor = Editor completo con todos los módulos (ubicaciones, mercancías, figuras, etc.)
  */
 export const navItems = [
   {
@@ -43,6 +47,7 @@ export const navItems = [
     to: "/cartas-porte",
     icon: <FileTextIcon className="h-4 w-4" />,
     page: <CartasPorteUnified />,
+    description: "Gestión y listado de documentos de Carta Porte"
   },
   {
     title: "Editor Carta Porte",
@@ -50,6 +55,7 @@ export const navItems = [
     icon: <FileTextIcon className="h-4 w-4" />,
     page: <CartaPorteEditor />,
     hideFromNav: true,
+    description: "Editor completo con módulos: ubicaciones, mercancías, figuras, autotransporte"
   },
   {
     title: "Vehículos",
