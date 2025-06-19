@@ -1,8 +1,8 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { AutoRouteCalculator } from '../../ubicaciones/AutoRouteCalculator';
+import { EnhancedMapVisualization } from '../../ubicaciones/EnhancedMapVisualization';
+import { UbicacionesSectionOptimizada } from '../../ubicaciones/UbicacionesSectionOptimizada';
 
 interface UbicacionesSectionProps {
   data: any[];
@@ -10,58 +10,71 @@ interface UbicacionesSectionProps {
 }
 
 export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) {
-  const addUbicacion = () => {
-    const nuevaUbicacion = {
-      id: crypto.randomUUID(),
-      tipo_ubicacion: data.length === 0 ? 'origen' : 'destino',
-      rfc: '',
-      nombre: '',
-      fecha_llegada_salida: '',
-      distancia_recorrida: 0
-    };
+  const [showMap, setShowMap] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [routeGeometry, setRouteGeometry] = useState<any>(null);
+  const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
+  const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
+
+  // Manejar cálculo de distancia desde AutoRouteCalculator
+  const handleDistanceCalculated = (distancia: number, tiempo: number, geometry: any) => {
+    console.log('✅ Distancia calculada en UbicacionesSection:', { distancia, tiempo });
     
-    onChange([...data, nuevaUbicacion]);
+    setDistanciaTotal(distancia);
+    setTiempoEstimado(tiempo);
+    setRouteGeometry(geometry);
+    setShowMap(true);
+
+    // Actualizar el destino con la distancia calculada
+    const updatedData = data.map(ubicacion => {
+      if (ubicacion.tipoUbicacion === 'Destino') {
+        return {
+          ...ubicacion,
+          distanciaRecorrida: distancia
+        };
+      }
+      return ubicacion;
+    });
+
+    onChange(updatedData);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-gray-600">
-          Configure al menos un origen y un destino para el transporte.
-        </p>
-        <Button onClick={addUbicacion} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Agregar Ubicación
-        </Button>
-      </div>
+      {/* Calculadora automática de ruta */}
+      <AutoRouteCalculator
+        ubicaciones={data}
+        onDistanceCalculated={handleDistanceCalculated}
+        distanciaTotal={distanciaTotal}
+        tiempoEstimado={tiempoEstimado}
+      />
 
-      {data.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-gray-500">No hay ubicaciones configuradas</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Agregue al menos una ubicación de origen y una de destino
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {data.map((ubicacion, index) => (
-            <Card key={ubicacion.id || index}>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Ubicación {index + 1} - {ubicacion.tipo_ubicacion || 'Sin definir'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">
-                  Configuración de ubicación pendiente de implementación completa
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/* Mapa mejorado con ruta */}
+      {showMap && (
+        <EnhancedMapVisualization
+          ubicaciones={data}
+          routeGeometry={routeGeometry}
+          distanciaTotal={distanciaTotal}
+          tiempoEstimado={tiempoEstimado}
+          isVisible={showMap}
+          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+          isFullscreen={isMapFullscreen}
+        />
       )}
+
+      {/* Sección optimizada de ubicaciones */}
+      <UbicacionesSectionOptimizada
+        data={data}
+        onChange={onChange}
+        onNext={() => {}}
+        onPrev={() => {}}
+        cartaPorteId={undefined}
+        onDistanceCalculated={(datos) => {
+          if (datos.distanciaTotal && datos.tiempoEstimado) {
+            handleDistanceCalculated(datos.distanciaTotal, datos.tiempoEstimado, routeGeometry);
+          }
+        }}
+      />
     </div>
   );
 }
