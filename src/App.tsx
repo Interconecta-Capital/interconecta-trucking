@@ -85,7 +85,6 @@ const App = () => (
             <Route path="/carta-porte/editor" element={<CartaPorteEditor />} />
             
             {/* Redirección de rutas antiguas */}
-            <Route path="/borradores" element={<Navigate to="/cartas-porte" replace />} />
             <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
             <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor" replace />} />
             
