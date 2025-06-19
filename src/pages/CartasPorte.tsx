@@ -5,27 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CartasPorteTable } from '@/components/cartas-porte/CartasPorteTable';
 import { CartasPorteFilters } from '@/components/cartas-porte/CartasPorteFilters';
-import { useCartasPorte } from '@/hooks/useCartasPorte';
+import { useCartaPorteLifecycle } from '@/hooks/cartaPorte/useCartaPorteLifecycle';
 import { useNavigate } from 'react-router-dom';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { useEffect } from 'react';
 
 export default function CartasPorte() {
-  const { cartasPorte, loading } = useCartasPorte();
+  const { cartasPorte, isLoading, listarCartasPorte } = useCartaPorteLifecycle();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    listarCartasPorte();
+  }, [listarCartasPorte]);
 
   const handleNewCartaPorte = () => {
     navigate('/carta-porte/nuevo');
   };
 
   const filteredCartasPorte = cartasPorte.filter(carta =>
-    carta.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    carta.nombre_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    carta.nombre_receptor?.toLowerCase().includes(searchTerm.toLowerCase())
+    carta.id_ccp?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    carta.nombre_documento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    carta.rfc_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    carta.rfc_receptor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -58,7 +64,7 @@ export default function CartasPorte() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por folio, emisor o receptor..."
+              placeholder="Buscar por IdCCP, nombre, emisor o receptor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -81,7 +87,7 @@ export default function CartasPorte() {
         {/* Tabla */}
         <CartasPorteTable 
           cartasPorte={filteredCartasPorte}
-          loading={loading}
+          loading={isLoading}
         />
       </div>
     </ProtectedContent>
