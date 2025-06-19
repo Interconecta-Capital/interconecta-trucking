@@ -187,7 +187,7 @@ export function CartaPorteProgressIndicator({
           const isClickable = canNavigateTo(step.id);
           
           return (
-            <React.Fragment key={step.id}>
+            <div key={step.id} className="flex items-center">
               <div className="flex flex-col items-center space-y-2">
                 <button
                   onClick={() => isClickable && onStepClick(step.id)}
@@ -222,7 +222,7 @@ export function CartaPorteProgressIndicator({
                   step.id < currentStep ? 'bg-green-300' : 'bg-gray-200'
                 }`} />
               )}
-            </React.Fragment>
+            </div>
           );
         })}
       </div>
