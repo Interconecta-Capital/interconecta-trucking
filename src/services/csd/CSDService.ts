@@ -26,14 +26,18 @@ export class CSDService {
    */
   static async getActiveCertificate(): Promise<CertificadoDigital | null> {
     const { data, error } = await supabase
-      .rpc('get_active_certificate');
+      .from('certificados_digitales')
+      .select('*')
+      .eq('activo', true)
+      .eq('validado', true)
+      .single();
 
     if (error) {
       console.error('Error fetching active certificate:', error);
       return null;
     }
 
-    return data?.[0] || null;
+    return data || null;
   }
 
   /**
