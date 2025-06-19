@@ -7,9 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Save, X } from 'lucide-react';
-import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
+import { CatalogSelect } from '@/components/catalogos/components/CatalogSelect';
+import { useCatalogosHibrido } from '@/hooks/useCatalogosHibrido';
 import { AIAssistantButton } from './AIAssistantButton';
 import { Mercancia } from '@/hooks/useMercancias';
+import { useState } from 'react';
 
 interface MercanciaFormProps {
   index: number;
@@ -44,6 +46,18 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
   });
   
   const materialPeligroso = form.watch('material_peligroso') || false;
+
+  // Search states for catalogs
+  const [productosSearch, setProductosSearch] = useState('');
+  const [unidadesSearch, setUnidadesSearch] = useState('');
+  const [embalajesSearch, setEmbalajesSearch] = useState('');
+  const [materialesSearch, setMaterialesSearch] = useState('');
+
+  // Catalog queries
+  const productosQuery = useCatalogosHibrido('productos', productosSearch);
+  const unidadesQuery = useCatalogosHibrido('unidades', unidadesSearch);
+  const embalajesQuery = useCatalogosHibrido('embalajes', embalajesSearch);
+  const materialesQuery = useCatalogosHibrido('materiales_peligrosos', materialesSearch);
 
   const handleAISuggestion = (suggestion: any) => {
     if (suggestion.data) {
@@ -108,15 +122,15 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
               <FormItem>
                 <FormLabel>Clave Producto/Servicio SAT *</FormLabel>
                 <FormControl>
-                  <CatalogoSelectorMejorado
-                    tipo="productos"
+                  <CatalogSelect
                     value={field.value}
                     onValueChange={field.onChange}
-                    placeholder="Seleccionar clave SAT..."
-                    required
-                    allowSearch={true}
-                    showAllOptions={false}
-                    showRefresh={true}
+                    disabled={productosQuery.isPending}
+                    showLoading={productosQuery.isPending}
+                    placeholder="Buscar clave SAT..."
+                    options={productosQuery.data || []}
+                    searchTerm={productosSearch}
+                    tipo="productos"
                   />
                 </FormControl>
                 <FormMessage />
@@ -131,15 +145,15 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
               <FormItem>
                 <FormLabel>Clave Unidad SAT *</FormLabel>
                 <FormControl>
-                  <CatalogoSelectorMejorado
-                    tipo="unidades"
+                  <CatalogSelect
                     value={field.value}
                     onValueChange={field.onChange}
-                    placeholder="Seleccionar unidad..."
-                    required
-                    allowSearch={true}
-                    showAllOptions={false}
-                    showRefresh={true}
+                    disabled={unidadesQuery.isPending}
+                    showLoading={unidadesQuery.isPending}
+                    placeholder="Buscar unidad..."
+                    options={unidadesQuery.data || []}
+                    searchTerm={unidadesSearch}
+                    tipo="unidades"
                   />
                 </FormControl>
                 <FormMessage />
@@ -206,14 +220,15 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
             <FormItem>
               <FormLabel>Tipo de Embalaje</FormLabel>
               <FormControl>
-                <CatalogoSelectorMejorado
-                  tipo="embalajes"
+                <CatalogSelect
                   value={field.value || ''}
                   onValueChange={field.onChange}
-                  placeholder="Seleccionar tipo de embalaje..."
-                  allowSearch={true}
-                  showAllOptions={true}
-                  showRefresh={true}
+                  disabled={embalajesQuery.isPending}
+                  showLoading={embalajesQuery.isPending}
+                  placeholder="Buscar tipo de embalaje..."
+                  options={embalajesQuery.data || []}
+                  searchTerm={embalajesSearch}
+                  tipo="embalajes"
                 />
               </FormControl>
               <FormMessage />
@@ -368,15 +383,15 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
               <FormItem>
                 <FormLabel>Clave Material Peligroso *</FormLabel>
                 <FormControl>
-                  <CatalogoSelectorMejorado
-                    tipo="materiales_peligrosos"
+                  <CatalogSelect
                     value={field.value || ''}
                     onValueChange={field.onChange}
+                    disabled={materialesQuery.isPending}
+                    showLoading={materialesQuery.isPending}
                     placeholder="Buscar material peligroso..."
-                    required
-                    allowSearch={true}
-                    showAllOptions={false}
-                    showRefresh={true}
+                    options={materialesQuery.data || []}
+                    searchTerm={materialesSearch}
+                    tipo="materiales_peligrosos"
                   />
                 </FormControl>
                 <FormMessage />
