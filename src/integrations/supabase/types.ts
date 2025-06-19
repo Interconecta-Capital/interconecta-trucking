@@ -125,6 +125,42 @@ export type Database = {
         }
         Relationships: []
       }
+      borradores_carta_porte: {
+        Row: {
+          auto_saved: boolean
+          created_at: string
+          datos_formulario: Json
+          id: string
+          nombre_borrador: string
+          ultima_edicion: string
+          updated_at: string
+          user_id: string
+          version_formulario: string
+        }
+        Insert: {
+          auto_saved?: boolean
+          created_at?: string
+          datos_formulario?: Json
+          id?: string
+          nombre_borrador?: string
+          ultima_edicion?: string
+          updated_at?: string
+          user_id: string
+          version_formulario?: string
+        }
+        Update: {
+          auto_saved?: boolean
+          created_at?: string
+          datos_formulario?: Json
+          id?: string
+          nombre_borrador?: string
+          ultima_edicion?: string
+          updated_at?: string
+          user_id?: string
+          version_formulario?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           created_at: string | null
@@ -202,18 +238,68 @@ export type Database = {
           },
         ]
       }
+      carta_porte_documentos: {
+        Row: {
+          activo: boolean
+          carta_porte_id: string
+          contenido_blob: string | null
+          contenido_path: string | null
+          created_at: string
+          fecha_generacion: string
+          id: string
+          metadatos: Json | null
+          tipo_documento: string
+          version_documento: string
+        }
+        Insert: {
+          activo?: boolean
+          carta_porte_id: string
+          contenido_blob?: string | null
+          contenido_path?: string | null
+          created_at?: string
+          fecha_generacion?: string
+          id?: string
+          metadatos?: Json | null
+          tipo_documento: string
+          version_documento?: string
+        }
+        Update: {
+          activo?: boolean
+          carta_porte_id?: string
+          contenido_blob?: string | null
+          contenido_path?: string | null
+          created_at?: string
+          fecha_generacion?: string
+          id?: string
+          metadatos?: Json | null
+          tipo_documento?: string
+          version_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carta_porte_documentos_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cartas_porte: {
         Row: {
+          borrador_origen_id: string | null
           created_at: string | null
           datos_formulario: Json | null
           distancia_total: number | null
           domicilio_fiscal_emisor: Json | null
           domicilio_fiscal_receptor: Json | null
           entrada_salida_merc: string | null
+          es_plantilla: boolean | null
           fecha_timbrado: string | null
           folio: string | null
           id: string
           id_ccp: string | null
+          nombre_documento: string | null
           nombre_emisor: string | null
           nombre_receptor: string | null
           numero_total_mercancias: number | null
@@ -236,20 +322,24 @@ export type Database = {
           usuario_id: string | null
           uuid_fiscal: string | null
           version_carta_porte: string | null
+          version_documento: string | null
           via_entrada_salida: string | null
           xml_generado: string | null
         }
         Insert: {
+          borrador_origen_id?: string | null
           created_at?: string | null
           datos_formulario?: Json | null
           distancia_total?: number | null
           domicilio_fiscal_emisor?: Json | null
           domicilio_fiscal_receptor?: Json | null
           entrada_salida_merc?: string | null
+          es_plantilla?: boolean | null
           fecha_timbrado?: string | null
           folio?: string | null
           id?: string
           id_ccp?: string | null
+          nombre_documento?: string | null
           nombre_emisor?: string | null
           nombre_receptor?: string | null
           numero_total_mercancias?: number | null
@@ -272,20 +362,24 @@ export type Database = {
           usuario_id?: string | null
           uuid_fiscal?: string | null
           version_carta_porte?: string | null
+          version_documento?: string | null
           via_entrada_salida?: string | null
           xml_generado?: string | null
         }
         Update: {
+          borrador_origen_id?: string | null
           created_at?: string | null
           datos_formulario?: Json | null
           distancia_total?: number | null
           domicilio_fiscal_emisor?: Json | null
           domicilio_fiscal_receptor?: Json | null
           entrada_salida_merc?: string | null
+          es_plantilla?: boolean | null
           fecha_timbrado?: string | null
           folio?: string | null
           id?: string
           id_ccp?: string | null
+          nombre_documento?: string | null
           nombre_emisor?: string | null
           nombre_receptor?: string | null
           numero_total_mercancias?: number | null
@@ -308,10 +402,18 @@ export type Database = {
           usuario_id?: string | null
           uuid_fiscal?: string | null
           version_carta_porte?: string | null
+          version_documento?: string | null
           via_entrada_salida?: string | null
           xml_generado?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cartas_porte_borrador_origen_id_fkey"
+            columns: ["borrador_origen_id"]
+            isOneToOne: false
+            referencedRelation: "borradores_carta_porte"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cartas_porte_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -2767,6 +2869,10 @@ export type Database = {
       cleanup_expired_grace_users: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generar_id_ccp_unico: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_active_certificate: {
         Args: { user_uuid: string }
