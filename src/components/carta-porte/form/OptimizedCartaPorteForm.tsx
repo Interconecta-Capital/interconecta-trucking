@@ -61,6 +61,15 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     remolques: []
   }), []);
 
+  // Wrapper functions to match expected signatures for the header component
+  const handleGuardarBorradorWrapper = useCallback(async (): Promise<void> => {
+    await handleGuardarBorrador();
+  }, [handleGuardarBorrador]);
+
+  const handleLimpiarBorradorWrapper = useCallback(async (): Promise<void> => {
+    await handleLimpiarBorrador();
+  }, [handleLimpiarBorrador]);
+
   // Manejar navegación entre pasos con validación mejorada
   const handleStepNavigation = useCallback((targetStep: number) => {
     // Permitir navegación hacia atrás siempre
@@ -97,8 +106,8 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
           borradorCargado={borradorCargado}
           ultimoGuardado={ultimoGuardado}
           idCCP={idCCP}
-          onGuardarBorrador={handleGuardarBorrador}
-          onLimpiarBorrador={handleLimpiarBorrador}
+          onGuardarBorrador={handleGuardarBorradorWrapper}
+          onLimpiarBorrador={handleLimpiarBorradorWrapper}
           onGuardarYSalir={handleGuardarYSalir}
           isGuardando={isGuardando}
         />
