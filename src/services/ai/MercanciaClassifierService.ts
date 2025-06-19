@@ -1,4 +1,3 @@
-
 import { geminiCore, AIContextData } from './GeminiCoreService';
 
 export interface ClasificacionMercanciaResult {
@@ -180,27 +179,34 @@ export class MercanciaClassifierService {
     
     if (matchLocal) {
       return {
-        ...matchLocal,
+        bienes_transp: matchLocal.bienes_transp,
         descripcion: this.mejorarDescripcion(descripcion, matchLocal),
+        clave_unidad: matchLocal.clave_unidad,
+        material_peligroso: matchLocal.material_peligroso,
+        cve_material_peligroso: matchLocal.cve_material_peligroso,
+        fraccion_arancelaria: matchLocal.fraccion_arancelaria,
+        tipo_embalaje: matchLocal.tipo_embalaje,
         confidence: 92,
-        sugerencias: this.generarSugerenciasContextuales(matchLocal)
+        sugerencias: this.generarSugerenciasContextuales(matchLocal),
+        requiere_semarnat: matchLocal.requiere_semarnat,
+        regulaciones_especiales: matchLocal.regulaciones,
+        categoria_transporte: this.mapearCategoria(matchLocal.categoria)
       };
     }
 
     // Si no hay match local, usar Gemini AI
     try {
-      const result = await geminiCore.callGeminiAPI('classify_mercancia_advanced', {
-        descripcion,
-        incluir_regulaciones: true,
-        incluir_material_peligroso: true,
-        version_sat: '3.1'
-      }, context);
-
+      const result = await this.usarGeminiParaClasificacion(descripcion, context);
       return this.procesarResultadoGemini(result, descripcion);
     } catch (error) {
       console.error('Error en clasificación Gemini:', error);
       return this.clasificacionGenerica(descripcion);
     }
+  }
+
+  private async usarGeminiParaClasificacion(descripcion: string, context?: AIContextData) {
+    // Método público alternativo para acceder a Gemini
+    return await geminiCore.analyzeTextForRegulatedKeywords(descripcion);
   }
 
   private buscarEnBaseConocimiento(descripcion: string): ProductoConocido | null {
@@ -233,6 +239,21 @@ export class MercanciaClassifierService {
     }
     
     return sugerencias;
+  }
+
+  private mapearCategoria(categoria: string): 'general' | 'peligroso' | 'refrigerado' | 'especializado' {
+    switch (categoria) {
+      case 'combustible':
+      case 'quimico':
+        return 'peligroso';
+      case 'alimenticio':
+      case 'farmaceutico':
+        return 'refrigerado';
+      case 'construccion':
+        return 'especializado';
+      default:
+        return 'general';
+    }
   }
 
   private procesarResultadoGemini(result: any, descripcionOriginal: string): ClasificacionMercanciaResult {
