@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,7 @@ interface Plantilla {
   es_publica: boolean;
   uso_count: number;
   created_at: string;
+  updated_at: string;
 }
 
 export function usePlantillas() {
@@ -31,7 +33,17 @@ export function usePlantillas() {
         .order('uso_count', { ascending: false });
 
       if (error) throw error;
-      setPlantillas(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        template_data: typeof item.template_data === 'string' 
+          ? JSON.parse(item.template_data) 
+          : item.template_data as CartaPorteData,
+        updated_at: item.updated_at || item.created_at
+      }));
+      
+      setPlantillas(transformedData);
     } catch (err) {
       console.error('Error fetching plantillas:', err);
       setError('Error al cargar plantillas');

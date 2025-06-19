@@ -209,7 +209,14 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       return (
         <GeneracionSection
           cartaPorteData={{
-            ...configuracion,
+            rfcEmisor: configuracion.rfcEmisor,
+            nombreEmisor: configuracion.nombreEmisor,
+            rfcReceptor: configuracion.rfcReceptor,
+            nombreReceptor: configuracion.nombreReceptor,
+            tipoCfdi: configuracion.tipoCfdi,
+            cartaPorteVersion: configuracion.cartaPorteVersion,
+            transporteInternacional: configuracion.transporteInternacional,
+            registroIstmo: configuracion.registroIstmo,
             ubicaciones,
             mercancias,
             autotransporte: autotransporte || defaultAutotransporte,

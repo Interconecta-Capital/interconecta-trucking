@@ -92,7 +92,21 @@ export function MercanciaFormCompleta({
   const onSubmit = async (data: MercanciaFormData) => {
     try {
       const mercanciaCompleta: MercanciaCompleta = {
-        ...data,
+        id: data.id,
+        bienes_transp: data.bienes_transp,
+        descripcion: data.descripcion,
+        cantidad: data.cantidad,
+        clave_unidad: data.clave_unidad,
+        peso_kg: data.peso_kg,
+        moneda: data.moneda,
+        valor_mercancia: data.valor_mercancia,
+        material_peligroso: data.material_peligroso,
+        especie_protegida: data.especie_protegida,
+        fraccion_arancelaria: data.fraccion_arancelaria,
+        regimen_aduanero: data.regimen_aduanero,
+        cve_material_peligroso: data.cve_material_peligroso,
+        descripcion_detallada: data.descripcion_detallada,
+        tipo_embalaje: data.tipo_embalaje,
         dimensiones: dimensiones.largo > 0 || dimensiones.ancho > 0 || dimensiones.alto > 0 
           ? dimensiones 
           : undefined

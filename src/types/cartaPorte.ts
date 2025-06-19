@@ -1,4 +1,3 @@
-
 export interface CartaPorteData {
   // Configuración General
   rfcEmisor?: string;

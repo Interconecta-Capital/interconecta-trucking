@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +18,8 @@ import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection'
 import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
 import { PDFGenerationPanel } from './PDFGenerationPanel';
-import { XMLCartaPorteGenerator } from '@/hooks/xml/XMLCartaPorteGenerator';
-import { toast } from 'react-toastify';
+import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
+import { toast } from 'sonner';
 
 interface XMLGenerationPanelProps {
   cartaPorteData: CartaPorteData;
@@ -43,9 +44,9 @@ export function XMLGenerationPanel({
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [autoTimbrado, setAutoTimbrado] = useState(true);
   const [generatedXML, setGeneratedXML] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const {
-    isGenerating,
     isTimbring,
     xmlGenerado: xmlGeneradoHook,
     xmlTimbrado,
@@ -69,7 +70,7 @@ export function XMLGenerationPanel({
   } = useXMLSigning();
 
   // Usar XML del prop si existe, sino el del hook
-  const xmlActual = xmlGeneradoProp || xmlGeneradoHook;
+  const xmlActual = xmlGeneradoProp || xmlGeneradoHook || generatedXML;
 
   const {
     isGenerating: isGeneratingPDF,
@@ -150,7 +151,7 @@ export function XMLGenerationPanel({
       return;
     }
     
-    const resultado = await timbrarCartaPorte(cartaPorteData, cartaPorteId);
+    const resultado = await timbrarCartaPorte(cartaPorteData);
     if (resultado.success && onTimbrado) {
       onTimbrado(resultado);
       
