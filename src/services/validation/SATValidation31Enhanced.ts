@@ -1,4 +1,3 @@
-
 import { CatalogosSATService } from "@/services/catalogosSAT";
 
 export interface CartaPorte31Data {
@@ -14,6 +13,12 @@ export interface CartaPorte31Data {
   autotransporte: any;
   figuras: any[];
   tipoCfdi?: string;
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+    [key: string]: any;
+  };
 }
 
 export interface ValidationSAT31Result {
