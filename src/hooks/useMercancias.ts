@@ -45,10 +45,16 @@ export interface Mercancia {
   documentacion_aduanera?: any[];
 }
 
+export interface MercanciaConErrores extends Mercancia {
+  fila?: number;
+  errores?: string[];
+}
+
 interface ImportResult {
   importadas: number;
   errores: number;
   detalles?: string[];
+  mercanciasConErrores: MercanciaConErrores[];
 }
 
 export const useMercancias = () => {
@@ -77,10 +83,11 @@ export const useMercancias = () => {
     try {
       let importadas = 0;
       let errores = 0;
+      const mercanciasConErrores: MercanciaConErrores[] = [];
       
       const mercanciasFormateadas: MercanciaCompleta[] = [];
       
-      for (const mercancia of nuevasMercancias) {
+      for (const [index, mercancia] of nuevasMercancias.entries()) {
         try {
           const mercanciaFormateada: MercanciaCompleta = {
             id: crypto.randomUUID(),
@@ -102,16 +109,29 @@ export const useMercancias = () => {
           importadas++;
         } catch (error) {
           console.error('Error formateando mercancía:', error);
+          mercanciasConErrores.push({
+            ...mercancia,
+            fila: index + 1,
+            errores: [error instanceof Error ? error.message : 'Error desconocido']
+          });
           errores++;
         }
       }
       
       setMercancias(prev => [...prev, ...mercanciasFormateadas]);
       
-      return { importadas, errores };
+      return { importadas, errores, mercanciasConErrores };
     } catch (error) {
       console.error('Error importando mercancías:', error);
-      return { importadas: 0, errores: nuevasMercancias.length };
+      return { 
+        importadas: 0, 
+        errores: nuevasMercancias.length,
+        mercanciasConErrores: nuevasMercancias.map((m, index) => ({
+          ...m,
+          fila: index + 1,
+          errores: ['Error durante la importación']
+        }))
+      };
     } finally {
       setIsLoading(false);
     }

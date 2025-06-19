@@ -6,7 +6,7 @@ import { SmartMercanciaForm } from './mercancias/SmartMercanciaForm';
 import { MercanciasListWrapper } from './mercancias/MercanciasListWrapper';
 import { ImportDialog } from './mercancias/ImportDialog';
 import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
-import { useMercancias, Mercancia } from '@/hooks/useMercancias';
+import { useMercancias, Mercancia, MercanciaConErrores } from '@/hooks/useMercancias';
 import { useAIContext } from '@/hooks/ai/useAIContext';
 import { geminiCore } from '@/services/ai/GeminiCoreService';
 import { MercanciaCompleta } from '@/types/cartaPorte';
@@ -276,6 +276,16 @@ export function SmartMercanciasSection({
 
   const canContinue = data.length > 0;
 
+  // Handle import with proper type conversion
+  const handleImportMercancias = async (nuevasMercancias: Mercancia[]): Promise<{
+    importadas: number;
+    errores: number;
+    mercanciasConErrores: MercanciaConErrores[];
+  }> => {
+    const result = await importarMercancias(nuevasMercancias);
+    return result;
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -439,7 +449,7 @@ export function SmartMercanciasSection({
       <ImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
-        onImport={importarMercancias}
+        onImport={handleImportMercancias}
       />
 
       <DocumentUploadDialog
