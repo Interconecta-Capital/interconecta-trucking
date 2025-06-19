@@ -60,10 +60,9 @@ export function UbicacionesSectionOptimizada({
     handleSaveUbicacion(ubicacion);
   };
 
-  // Handle edit - pass UbicacionCompleta directly since that's what we have
+  // Handle edit - pass UbicacionCompleta directly since handleEditUbicacion expects UbicacionCompleta
   const handleEditUbicacionWrapper = (ubicacionCompleta: UbicacionCompleta) => {
-    const ubicacion = convertToUbicacion(ubicacionCompleta);
-    handleEditUbicacion(ubicacion);
+    handleEditUbicacion(ubicacionCompleta);
   };
 
   return (
