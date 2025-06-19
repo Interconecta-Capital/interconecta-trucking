@@ -21,14 +21,20 @@ interface ProfessionalPDFSectionProps {
     noCertificadoSAT?: string;
     noCertificadoEmisor?: string;
   } | null;
+  /** URL del logo de la empresa emisora */
+  companyLogoUrl?: string;
+  /** URL del logo del cliente opcional */
+  clientLogoUrl?: string;
   onPDFGenerated?: (pdfUrl: string) => void;
 }
 
-export function ProfessionalPDFSection({ 
-  cartaPorteData, 
+export function ProfessionalPDFSection({
+  cartaPorteData,
   xmlTimbrado,
   datosTimbre,
-  onPDFGenerated 
+  companyLogoUrl,
+  clientLogoUrl,
+  onPDFGenerated
 }: ProfessionalPDFSectionProps) {
   const {
     isGenerating,
@@ -41,7 +47,9 @@ export function ProfessionalPDFSection({
   const handleGeneratePDF = async () => {
     const result = await generateProfessionalPDF(cartaPorteData, {
       xmlTimbrado: xmlTimbrado || undefined,
-      datosTimbre: datosTimbre || undefined
+      datosTimbre: datosTimbre || undefined,
+      companyLogoUrl,
+      clientLogoUrl
     });
     
     if (result?.success && result.pdfUrl && onPDFGenerated) {

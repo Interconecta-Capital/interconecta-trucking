@@ -15,6 +15,10 @@ export interface ProfessionalPDFOptions {
     noCertificadoSAT?: string;
     noCertificadoEmisor?: string;
   };
+  /** URL del logo de la empresa emisora */
+  companyLogoUrl?: string;
+  /** URL del logo del cliente opcional */
+  clientLogoUrl?: string;
 }
 
 export interface ProfessionalPDFResult {
@@ -38,7 +42,7 @@ export class CartaPorteProfessionalPDF {
     white: '#ffffff'
   };
 
-  private static readonly LOGO_URL = '/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png';
+  private static readonly DEFAULT_LOGO_URL = '/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png';
 
   private static readonly LAYOUT = {
     margin: 20,
@@ -65,8 +69,9 @@ export class CartaPorteProfessionalPDF {
     }
   }
 
-  private static async loadLogo(): Promise<string> {
-    return this.fetchAsDataURL(this.LOGO_URL);
+  private static async loadLogo(url?: string): Promise<string> {
+    const finalUrl = url || this.DEFAULT_LOGO_URL;
+    return this.fetchAsDataURL(finalUrl);
   }
 
   static async generateProfessionalPDF(
@@ -81,8 +86,9 @@ export class CartaPorteProfessionalPDF {
       let yPosition = this.LAYOUT.margin;
       let currentPage = 1;
 
-      // Cargar logo de la empresa
-      const logoData = await this.loadLogo();
+      // Cargar logos de la empresa y del cliente si están disponibles
+      const companyLogoData = await this.loadLogo(options.companyLogoUrl);
+      const clientLogoData = options.clientLogoUrl ? await this.loadLogo(options.clientLogoUrl) : '';
 
       // Generar código QR si tenemos los datos necesarios
       let qrCodeDataURL = '';
@@ -98,7 +104,8 @@ export class CartaPorteProfessionalPDF {
         cartaPorteData,
         options.datosTimbre,
         qrCodeDataURL,
-        logoData
+        companyLogoData,
+        clientLogoData
       );
 
       // 2. INFORMACIÓN GENERAL DEL CFDI
@@ -181,7 +188,8 @@ export class CartaPorteProfessionalPDF {
     cartaPorteData: CartaPorteData,
     datosTimbre?: any,
     qrCode?: string,
-    logo?: string
+    companyLogo?: string,
+    clientLogo?: string
   ): number {
     // Fondo del header
     doc.setFillColor(247, 250, 252); // background
@@ -192,12 +200,20 @@ export class CartaPorteProfessionalPDF {
     doc.setLineWidth(0.5);
     doc.rect(this.LAYOUT.margin, yPosition - 5, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'S');
 
-    // Logo
-    if (logo) {
+    // Logos de empresa y cliente
+    if (companyLogo) {
       try {
-        doc.addImage(logo, 'PNG', this.LAYOUT.margin + 2, yPosition, 30, 15);
+        doc.addImage(companyLogo, 'PNG', this.LAYOUT.margin + 2, yPosition, 30, 15);
       } catch (error) {
-        console.error('Error agregando logo al PDF:', error);
+        console.error('Error agregando logo de empresa al PDF:', error);
+      }
+    }
+
+    if (clientLogo) {
+      try {
+        doc.addImage(clientLogo, 'PNG', this.LAYOUT.margin + 35, yPosition, 30, 15);
+      } catch (error) {
+        console.error('Error agregando logo de cliente al PDF:', error);
       }
     }
 
