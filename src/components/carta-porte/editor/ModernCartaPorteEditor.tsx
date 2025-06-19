@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -225,6 +226,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       );
     }
 
+    // For all other sections, use the generic props pattern
     const commonProps = {
       data: activeSection === 'configuracion' ? configuracion : 
             activeSection === 'ubicaciones' ? ubicaciones :
@@ -426,3 +428,4 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     </div>
   );
 }
+
