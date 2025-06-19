@@ -118,7 +118,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   const progress = calculateProgress();
 
   const getDocumentStatus = () => {
-    if (progress === 100) return { status: 'complete', label: 'Completo', variant: 'success' as const };
+    if (progress === 100) return { status: 'complete', label: 'Completo', variant: 'default' as const };
     if (progress > 50) return { status: 'progress', label: 'En Progreso', variant: 'default' as const };
     return { status: 'draft', label: 'Borrador', variant: 'secondary' as const };
   };

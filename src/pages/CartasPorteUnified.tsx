@@ -199,7 +199,7 @@ export default function CartasPorteUnified() {
     const statusConfig = {
       draft: { label: 'Borrador', variant: 'secondary' as const },
       active: { label: 'Activa', variant: 'default' as const },
-      timbrado: { label: 'Timbrada', variant: 'success' as const },
+      timbrado: { label: 'Timbrada', variant: 'outline' as const },
       cancelado: { label: 'Cancelada', variant: 'destructive' as const }
     };
 
