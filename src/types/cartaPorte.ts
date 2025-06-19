@@ -98,7 +98,11 @@ export interface CartaPorteData {
   cartaPorteVersion?: string;
   tipoCfdi?: string;
   regimenAduanero?: string;
-  regimenesAduaneros?: string[];
+  regimenesAduaneros?: Array<{
+    clave_regimen: string;
+    descripcion?: string;
+    orden_secuencia: number;
+  }>;
   paisOrigenDestino?: string;
   viaEntradaSalida?: string;
   entradaSalidaMerc?: string;
@@ -112,11 +116,13 @@ export interface CartaPorteData {
 export interface UbicacionCompleta extends Ubicacion {
   id?: string;
   carta_porte_id?: string;
-  tipo_ubicacion?: string;
+  tipo_ubicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
+  tipoUbicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
   nombre_remitente_destinatario?: string;
   fecha_hora_salida_llegada?: string;
   numero_estacion?: string;
   kilometro?: number;
+  ordenSecuencia?: number;
   coordenadas?: {
     latitud: number;
     longitud: number;
@@ -138,7 +144,7 @@ export interface AutotransporteCompleto extends Autotransporte {
     alto?: number;
   };
   vigencia_permiso?: string;
-  numero_permisos_adicionales?: string;
+  numero_permisos_adicionales?: string | string[];
   carga_maxima?: number;
   asegura_carga?: string;
   poliza_carga?: string;

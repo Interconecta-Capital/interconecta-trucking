@@ -10,11 +10,16 @@ import { AutotransporteCompleto } from '@/types/cartaPorte';
 interface AutotransporteFormProps {
   data: AutotransporteCompleto;
   onChange: (autotransporte: AutotransporteCompleto) => void;
+  pesoTotalMercancias?: number;
+  onRemolqueAdd?: () => void;
+  onRemolqueUpdate?: (index: number, remolque: any) => void;
+  onRemolqueDelete?: (index: number) => void;
 }
 
 export function AutotransporteForm({
   data,
-  onChange
+  onChange,
+  pesoTotalMercancias = 0
 }: AutotransporteFormProps) {
   const [formData, setFormData] = useState<AutotransporteCompleto>(data);
 

@@ -2,7 +2,7 @@
 export interface Remolque {
   id?: string;
   subtipo_remolque: string;
-  subtipo_rem: string;
+  subtipo_rem?: string;
   placa: string;
 }
 
@@ -29,7 +29,7 @@ export interface AutotransporteData {
   modelo_vehiculo?: string;
   numero_serie_vin?: string;
   vigencia_permiso?: string;
-  numero_permisos_adicionales?: string;
+  numero_permisos_adicionales?: string | string[];
   carga_maxima?: number;
   remolques: Remolque[];
 }
