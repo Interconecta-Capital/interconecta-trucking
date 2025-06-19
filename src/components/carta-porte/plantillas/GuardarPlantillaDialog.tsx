@@ -59,7 +59,7 @@ export function GuardarPlantillaDialog({
     return {
       ubicaciones: cartaPorteData.ubicaciones?.length || 0,
       mercancias: cartaPorteData.mercancias?.length || 0,
-      tieneTransporte: !!cartaPorteData.autotransporte?.placaVm,
+      tieneTransporte: !!cartaPorteData.autotransporte?.placa_vm, // Fixed property name
       figuras: cartaPorteData.figuras?.length || 0
     };
   };

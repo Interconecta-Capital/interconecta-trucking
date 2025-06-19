@@ -75,7 +75,7 @@ export function PlantillaCard({
     return {
       ubicaciones: data.ubicaciones?.length || 0,
       mercancias: data.mercancias?.length || 0,
-      tieneTransporte: !!data.autotransporte?.placaVm,
+      tieneTransporte: !!data.autotransporte?.placa_vm, // Fixed property name
       figuras: data.figuras?.length || 0
     };
   };
