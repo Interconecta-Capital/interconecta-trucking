@@ -201,10 +201,10 @@ export const useCartaPorteVersionMigration = () => {
 
       if (error) throw error;
       
-      // Properly type cast the validation result
+      // Fix property names to match ValidationResult interface
       const validationResult = data as unknown as ValidationResult;
-      if (!validationResult.valido) {
-        throw new Error(`Errores de validación: ${validationResult.errores.join(', ')}`);
+      if (!validationResult.isValid) {
+        throw new Error(`Errores de validación: ${validationResult.errors.join(', ')}`);
       }
 
       // Si la validación pasa, actualizar la versión

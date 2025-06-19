@@ -14,7 +14,7 @@ export class XMLValidation {
       const erroresValidacion = await SATValidation.validarCartaPorteCompleta(data);
       const errors = erroresValidacion
         .filter(e => !e.isValid)
-        .map(e => e.message || 'Error de validación');
+        .flatMap(e => e.errors);
 
       return {
         isValid: errors.length === 0,

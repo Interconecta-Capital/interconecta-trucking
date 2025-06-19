@@ -1,4 +1,3 @@
-
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
@@ -19,6 +18,7 @@ export const useSATValidation31 = () => {
       
       ubicaciones: data.ubicaciones?.map(ub => ({
         id: ub.id_ubicacion || ub.id || '',
+        id_ubicacion: ub.id_ubicacion || ub.id || '', // Ensure this field is included
         tipo_ubicacion: ub.tipo_ubicacion,
         coordenadas: ub.coordenadas ? {
           latitud: ub.coordenadas.latitud,
@@ -184,8 +184,11 @@ export const useSATValidation31 = () => {
       const errors: string[] = [];
       
       cartaPorteData.mercancias?.forEach((mercancia, index) => {
-        // Fix the boolean/string comparison
-        if (mercancia.material_peligroso === true || mercancia.material_peligroso === 'Sí') {
+        // Fix the boolean comparison - check for boolean true or string 'Sí'
+        const isMaterialPeligroso = mercancia.material_peligroso === true || 
+                                  (typeof mercancia.material_peligroso === 'string' && mercancia.material_peligroso === 'Sí');
+        
+        if (isMaterialPeligroso) {
           if (!mercancia.cve_material_peligroso) {
             errors.push(`Falta clave de material peligroso en mercancía ${index + 1}`);
           }
