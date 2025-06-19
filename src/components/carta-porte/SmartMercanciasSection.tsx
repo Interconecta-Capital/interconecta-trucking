@@ -21,6 +21,48 @@ interface SmartMercanciasSectionProps {
   onPrev: () => void;
 }
 
+// Helper function to convert Mercancia to MercanciaCompleta
+const convertToMercanciaCompleta = (mercancia: Mercancia): MercanciaCompleta => {
+  return {
+    id: mercancia.id || crypto.randomUUID(),
+    descripcion: mercancia.descripcion || '',
+    bienes_transp: mercancia.bienes_transp || '',
+    clave_unidad: mercancia.clave_unidad || 'KGM',
+    cantidad: mercancia.cantidad || 1,
+    peso_kg: mercancia.peso_kg || 0,
+    valor_mercancia: mercancia.valor_mercancia,
+    material_peligroso: mercancia.material_peligroso,
+    moneda: mercancia.moneda,
+    cve_material_peligroso: mercancia.cve_material_peligroso,
+    embalaje: mercancia.embalaje,
+    fraccion_arancelaria: mercancia.fraccion_arancelaria,
+    uuid_comercio_ext: mercancia.uuid_comercio_ext,
+    carta_porte_id: mercancia.carta_porte_id,
+    numero_autorizacion: mercancia.numero_autorizacion,
+    folio_acreditacion: mercancia.folio_acreditacion,
+    requiere_semarnat: mercancia.requiere_semarnat,
+    categoria_transporte: mercancia.categoria_transporte,
+    regulaciones_especiales: mercancia.regulaciones_especiales,
+    temperatura_transporte: mercancia.temperatura_transporte,
+    tipo_refrigeracion: mercancia.tipo_refrigeracion,
+    dimensiones_especiales: mercancia.dimensiones_especiales,
+    peso_especial: mercancia.peso_especial,
+    peso_bruto_total: mercancia.peso_bruto_total,
+    descripcion_detallada: mercancia.descripcion_detallada,
+    especie_protegida: mercancia.especie_protegida,
+    tipo_embalaje: mercancia.tipo_embalaje,
+    material_embalaje: mercancia.material_embalaje,
+    unidad_peso_bruto: mercancia.unidad_peso_bruto,
+    dimensiones: mercancia.dimensiones,
+    uuid_comercio_exterior: mercancia.uuid_comercio_exterior,
+    peso_neto_total: mercancia.peso_neto_total,
+    numero_piezas: mercancia.numero_piezas,
+    requiere_cites: mercancia.requiere_cites,
+    permisos_semarnat: mercancia.permisos_semarnat || [],
+    documentacion_aduanera: mercancia.documentacion_aduanera || []
+  };
+};
+
 export function SmartMercanciasSection({ 
   data, 
   ubicaciones, 
@@ -48,45 +90,7 @@ export function SmartMercanciasSection({
 
   // Sync with prop data when there are changes
   React.useEffect(() => {
-    // Convert Mercancia to MercanciaCompleta by ensuring all required properties exist
-    const mercanciasCompletas: MercanciaCompleta[] = mercancias.map(m => ({
-      id: m.id || crypto.randomUUID(),
-      descripcion: m.descripcion || '',
-      bienes_transp: m.bienes_transp || '',
-      clave_unidad: m.clave_unidad || 'KGM',
-      cantidad: m.cantidad || 1,
-      peso_kg: m.peso_kg || 0,
-      valor_mercancia: m.valor_mercancia,
-      material_peligroso: m.material_peligroso,
-      moneda: m.moneda,
-      cve_material_peligroso: m.cve_material_peligroso,
-      embalaje: m.embalaje,
-      fraccion_arancelaria: m.fraccion_arancelaria,
-      uuid_comercio_ext: m.uuid_comercio_ext,
-      carta_porte_id: m.carta_porte_id,
-      numero_autorizacion: m.numero_autorizacion,
-      folio_acreditacion: m.folio_acreditacion,
-      requiere_semarnat: m.requiere_semarnat,
-      categoria_transporte: m.categoria_transporte,
-      regulaciones_especiales: m.regulaciones_especiales,
-      temperatura_transporte: m.temperatura_transporte,
-      tipo_refrigeracion: m.tipo_refrigeracion,
-      dimensiones_especiales: m.dimensiones_especiales,
-      peso_especial: m.peso_especial,
-      peso_bruto_total: m.peso_bruto_total,
-      descripcion_detallada: m.descripcion_detallada,
-      especie_protegida: m.especie_protegida,
-      tipo_embalaje: m.tipo_embalaje,
-      material_embalaje: m.material_embalaje,
-      unidad_peso_bruto: m.unidad_peso_bruto,
-      dimensiones: m.dimensiones,
-      uuid_comercio_exterior: m.uuid_comercio_exterior,
-      peso_neto_total: m.peso_neto_total,
-      numero_piezas: m.numero_piezas,
-      requiere_cites: m.requiere_cites,
-      permisos_semarnat: m.permisos_semarnat,
-      documentacion_aduanera: m.documentacion_aduanera
-    }));
+    const mercanciasCompletas: MercanciaCompleta[] = mercancias.map(convertToMercanciaCompleta);
     onChange(mercanciasCompletas);
   }, [mercancias, onChange]);
 
@@ -308,7 +312,7 @@ export function SmartMercanciasSection({
           {showForm ? (
             <SmartMercanciaForm
               index={editingIndex >= 0 ? editingIndex : mercancias.length}
-              mercancia={editingMercancia}
+              mercancia={editingMercancia ? convertToMercanciaCompleta(editingMercancia) : undefined}
               onSave={handleSaveMercancia}
               onCancel={handleCancelForm}
               onRemove={editingIndex >= 0 ? () => handleRemoveMercancia(editingIndex) : undefined}
@@ -316,8 +320,13 @@ export function SmartMercanciasSection({
             />
           ) : (
             <MercanciasListWrapper
-              mercancias={mercancias}
-              onEdit={handleEditMercancia}
+              mercancias={mercancias.map(convertToMercanciaCompleta)}
+              onEdit={(mercancia) => {
+                const mercanciaOriginal = mercancias.find(m => m.id === mercancia.id);
+                if (mercanciaOriginal) {
+                  handleEditMercancia(mercanciaOriginal);
+                }
+              }}
               onDelete={eliminarMercancia}
               isLoading={isLoading}
             />

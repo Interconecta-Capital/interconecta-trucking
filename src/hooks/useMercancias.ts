@@ -1,6 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CatalogosSATService } from '@/services/catalogosSAT';
+import { MercanciaCompleta, PermisoSEMARNAT } from '@/types/cartaPorte';
 
 export interface Mercancia {
   id?: string;
@@ -19,6 +21,32 @@ export interface Mercancia {
   codigo_producto?: string;
   numero_autorizacion?: string;
   folio_acreditacion?: string;
+  carta_porte_id?: string;
+  requiere_semarnat?: boolean;
+  categoria_transporte?: 'general' | 'peligroso' | 'refrigerado' | 'especializado';
+  regulaciones_especiales?: string[];
+  temperatura_transporte?: string;
+  tipo_refrigeracion?: string;
+  dimensiones_especiales?: string;
+  peso_especial?: string;
+  peso_bruto_total?: number;
+  descripcion_detallada?: string;
+  especie_protegida?: boolean;
+  tipo_embalaje?: string;
+  material_embalaje?: string;
+  unidad_peso_bruto?: string;
+  dimensiones?: {
+    largo?: number;
+    ancho?: number;
+    alto?: number;
+    unidad?: string;
+  };
+  uuid_comercio_exterior?: string;
+  peso_neto_total?: number;
+  numero_piezas?: number;
+  requiere_cites?: boolean;
+  permisos_semarnat?: PermisoSEMARNAT[];
+  documentacion_aduanera?: any[];
 }
 
 export interface MercanciaConErrores extends Mercancia {

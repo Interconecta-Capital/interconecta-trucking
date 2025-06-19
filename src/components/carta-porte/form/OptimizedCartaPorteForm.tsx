@@ -1,12 +1,12 @@
 
 import React, { memo, useMemo, useCallback } from 'react';
-import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
+import { useOptimizedCartaPorteFormManager } from '@/hooks/carta-porte/useOptimizedCartaPorteFormManager';
 import { CartaPorteHeader } from './CartaPorteHeader';
 import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
 import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
 import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
 import { BorradorRecoveryDialog } from '../BorradorRecoveryDialog';
-import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface OptimizedCartaPorteFormProps {
   cartaPorteId?: string;
@@ -46,7 +46,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     handleLimpiarBorrador,
     handleXMLGenerated,
     handleCalculoRutaUpdate,
-  } = useCartaPorteFormManager(cartaPorteId);
+  } = useOptimizedCartaPorteFormManager(cartaPorteId);
 
   // Crear un objeto Autotransporte por defecto para evitar errores de tipo
   const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
@@ -109,19 +109,6 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     };
   }, [validationSummary]);
 
-  // Fix async function signature
-  const handleGuardarBorradorAsync = useCallback(async () => {
-    await handleGuardarBorrador();
-  }, [handleGuardarBorrador]);
-
-  const handleGuardarYSalirAsync = useCallback(async () => {
-    await handleGuardarYSalir();
-  }, [handleGuardarYSalir]);
-
-  const handleLimpiarBorradorAsync = useCallback(async () => {
-    await handleLimpiarBorrador();
-  }, [handleLimpiarBorrador]);
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Dialog de recuperación de borrador */}
@@ -137,9 +124,9 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         <CartaPorteHeader
           borradorCargado={borradorCargado}
           ultimoGuardado={ultimoGuardado}
-          onGuardarBorrador={handleGuardarBorradorAsync}
-          onLimpiarBorrador={handleLimpiarBorradorAsync}
-          onGuardarYSalir={handleGuardarYSalirAsync}
+          onGuardarBorrador={handleGuardarBorrador}
+          onLimpiarBorrador={handleLimpiarBorrador}
+          onGuardarYSalir={handleGuardarYSalir}
           isGuardando={isGuardando}
         />
       </div>
