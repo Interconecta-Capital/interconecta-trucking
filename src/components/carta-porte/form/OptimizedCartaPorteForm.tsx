@@ -82,6 +82,12 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     setCurrentStep(targetStep);
   }, [currentStep, setCurrentStep, validationSummary]);
 
+  // Fix: Include version in configuracion object
+  const enhancedConfiguracion = useMemo(() => ({
+    ...configuracion,
+    version: configuracion.cartaPorteVersion || '3.1'
+  }), [configuracion]);
+
   // Create a proper ValidationSummary object with all required properties
   const enhancedValidationSummary = useMemo(() => {
     const baseValidation = validationSummary || { sectionStatus: {} };
@@ -144,7 +150,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
       {/* Contenido del paso actual */}
       <OptimizedCartaPorteStepContent
         currentStep={currentStep}
-        configuracion={configuracion}
+        configuracion={enhancedConfiguracion}
         ubicaciones={ubicaciones}
         mercancias={mercancias}
         autotransporte={autotransporte || defaultAutotransporte}

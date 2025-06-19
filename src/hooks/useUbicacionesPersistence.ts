@@ -1,105 +1,99 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Ubicacion } from '@/types/ubicaciones';
+import { UbicacionCompleta } from '@/types/cartaPorte';
+import { Ubicacion, Coordinates } from '@/types/ubicaciones';
 
-interface UseUbicacionesPersistenceProps {
-  cartaPorteId?: string;
-}
+export const useUbicacionesPersistence = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export const useUbicacionesPersistence = ({ cartaPorteId }: UseUbicacionesPersistenceProps) => {
-  const [loadingUbicaciones, setLoadingUbicaciones] = useState(false);
-  const [savingUbicaciones, setSavingUbicaciones] = useState(false);
-
-  const loadUbicaciones = useCallback(async () => {
-    if (!cartaPorteId) return [];
-
-    setLoadingUbicaciones(true);
+  const saveUbicaciones = useCallback(async (ubicaciones: UbicacionCompleta[], cartaPorteId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase
-        .from('ubicaciones')
-        .select('*')
-        .eq('carta_porte_id', cartaPorteId)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching ubicaciones:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching ubicaciones:', error);
-      return [];
-    } finally {
-      setLoadingUbicaciones(false);
-    }
-  }, [cartaPorteId]);
-
-  const saveUbicaciones = useCallback(async (ubicaciones: Ubicacion[]) => {
-    if (!cartaPorteId) return;
-
-    setSavingUbicaciones(true);
-    try {
-      // Delete existing ubicaciones for this carta_porte_id
-      const { error: deleteError } = await supabase
+      // Delete existing ubicaciones
+      await supabase
         .from('ubicaciones')
         .delete()
         .eq('carta_porte_id', cartaPorteId);
 
-      if (deleteError) {
-        console.error('Error deleting existing ubicaciones:', deleteError);
-        throw deleteError;
-      }
+      // Prepare data for insertion with proper Json conversion
+      const ubicacionesData = ubicaciones.map(ubicacion => ({
+        carta_porte_id: cartaPorteId,
+        id_ubicacion: ubicacion.id_ubicacion,
+        tipo_ubicacion: ubicacion.tipo_ubicacion,
+        rfc_remitente_destinatario: ubicacion.rfc_remitente_destinatario || '',
+        nombre_remitente_destinatario: ubicacion.nombre_remitente_destinatario || '',
+        fecha_hora_salida_llegada: ubicacion.fecha_hora_salida_llegada,
+        distancia_recorrida: ubicacion.distancia_recorrida || 0,
+        tipo_estacion: ubicacion.tipo_estacion || '1',
+        numero_estacion: ubicacion.numero_estacion,
+        kilometro: ubicacion.kilometro,
+        coordenadas: ubicacion.coordenadas ? JSON.parse(JSON.stringify(ubicacion.coordenadas)) : null,
+        domicilio: JSON.parse(JSON.stringify(ubicacion.domicilio))
+      }));
 
-      // Map Ubicacion type to the structure expected by Supabase
-      const ubicacionesToInsert = ubicaciones.map(ubicacion => mapUbicacionToSupabase(ubicacion, cartaPorteId));
-
-      // Insert the new set of ubicaciones
       const { error: insertError } = await supabase
         .from('ubicaciones')
-        .insert(ubicacionesToInsert);
+        .insert(ubicacionesData);
 
-      if (insertError) {
-        console.error('Error inserting ubicaciones:', insertError);
-        throw insertError;
-      }
-    } catch (error) {
-      console.error('Error saving ubicaciones:', error);
+      if (insertError) throw insertError;
+
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setSavingUbicaciones(false);
+      setIsLoading(false);
     }
-  }, [cartaPorteId]);
+  }, []);
+
+  const loadUbicaciones = useCallback(async (cartaPorteId: string): Promise<UbicacionCompleta[]> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('ubicaciones')
+        .select('*')
+        .eq('carta_porte_id', cartaPorteId)
+        .order('tipo_ubicacion');
+
+      if (fetchError) throw fetchError;
+
+      const ubicaciones: UbicacionCompleta[] = (data || []).map(item => ({
+        id: item.id,
+        id_ubicacion: item.id_ubicacion,
+        tipo_ubicacion: item.tipo_ubicacion,
+        rfc_remitente_destinatario: item.rfc_remitente_destinatario,
+        nombre_remitente_destinatario: item.nombre_remitente_destinatario,
+        fecha_hora_salida_llegada: item.fecha_hora_salida_llegada,
+        distancia_recorrida: item.distancia_recorrida,
+        tipo_estacion: item.tipo_estacion || '1',
+        numero_estacion: item.numero_estacion,
+        kilometro: item.kilometro,
+        coordenadas: item.coordenadas as Coordinates,
+        domicilio: item.domicilio,
+        carta_porte_id: item.carta_porte_id
+      }));
+
+      return ubicaciones;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   return {
-    loadingUbicaciones,
-    savingUbicaciones,
-    loadUbicaciones,
     saveUbicaciones,
+    loadUbicaciones,
+    isLoading,
+    error
   };
 };
-
-const mapUbicacionToSupabase = (ubicacion: Ubicacion, cartaPorteId: string) => ({
-  carta_porte_id: cartaPorteId,
-  id_ubicacion: ubicacion.idUbicacion,
-  tipo_ubicacion: ubicacion.tipoUbicacion,
-  rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario,
-  nombre_remitente_destinatario: ubicacion.nombreRemitenteDestinatario,
-  fecha_hora_salida_llegada: ubicacion.fechaHoraSalidaLlegada,
-  distancia_recorrida: ubicacion.distanciaRecorrida,
-  coordenadas: ubicacion.coordenadas,
-  tipo_estacion: ubicacion.tipoEstacion,
-  numero_estacion: ubicacion.numeroEstacion,
-  kilometro: ubicacion.kilometro,
-  domicilio: {
-    pais: ubicacion.domicilio.pais,
-    codigoPostal: ubicacion.domicilio.codigoPostal,
-    estado: ubicacion.domicilio.estado,
-    municipio: ubicacion.domicilio.municipio,
-    colonia: ubicacion.domicilio.colonia,
-    calle: ubicacion.domicilio.calle,
-    numExterior: ubicacion.domicilio.numExterior,
-    numInterior: ubicacion.domicilio.numInterior,
-    referencia: ubicacion.domicilio.referencia,
-    localidad: ubicacion.domicilio.localidad || '', // Add localidad with default
-  }
-});

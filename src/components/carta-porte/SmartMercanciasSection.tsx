@@ -30,9 +30,9 @@ const convertToMercanciaCompleta = (mercancia: Mercancia): MercanciaCompleta => 
     clave_unidad: mercancia.clave_unidad || 'KGM',
     cantidad: mercancia.cantidad || 1,
     peso_kg: mercancia.peso_kg || 0,
-    valor_mercancia: mercancia.valor_mercancia,
-    material_peligroso: mercancia.material_peligroso,
-    moneda: mercancia.moneda,
+    valor_mercancia: mercancia.valor_mercancia || 0,
+    material_peligroso: mercancia.material_peligroso || false,
+    moneda: mercancia.moneda || 'MXN',
     cve_material_peligroso: mercancia.cve_material_peligroso,
     embalaje: mercancia.embalaje,
     fraccion_arancelaria: mercancia.fraccion_arancelaria,
@@ -40,26 +40,67 @@ const convertToMercanciaCompleta = (mercancia: Mercancia): MercanciaCompleta => 
     carta_porte_id: mercancia.carta_porte_id,
     numero_autorizacion: mercancia.numero_autorizacion,
     folio_acreditacion: mercancia.folio_acreditacion,
-    requiere_semarnat: mercancia.requiere_semarnat,
+    requiere_semarnat: mercancia.requiere_semarnat || false,
     categoria_transporte: mercancia.categoria_transporte,
-    regulaciones_especiales: mercancia.regulaciones_especiales,
+    regulaciones_especiales: mercancia.regulaciones_especiales || [],
     temperatura_transporte: mercancia.temperatura_transporte,
     tipo_refrigeracion: mercancia.tipo_refrigeracion,
     dimensiones_especiales: mercancia.dimensiones_especiales,
     peso_especial: mercancia.peso_especial,
     peso_bruto_total: mercancia.peso_bruto_total,
     descripcion_detallada: mercancia.descripcion_detallada,
-    especie_protegida: mercancia.especie_protegida,
+    especie_protegida: mercancia.especie_protegida || false,
     tipo_embalaje: mercancia.tipo_embalaje,
     material_embalaje: mercancia.material_embalaje,
     unidad_peso_bruto: mercancia.unidad_peso_bruto,
     dimensiones: mercancia.dimensiones,
-    uuid_comercio_exterior: mercancia.uuid_comercio_exterior,
+    uuid_comercio_exterior: mercancia.uuid_comercio_ext, // Map from uuid_comercio_ext
     peso_neto_total: mercancia.peso_neto_total,
     numero_piezas: mercancia.numero_piezas,
-    requiere_cites: mercancia.requiere_cites,
+    requiere_cites: mercancia.requiere_cites || false,
     permisos_semarnat: mercancia.permisos_semarnat || [],
     documentacion_aduanera: mercancia.documentacion_aduanera || []
+  };
+};
+
+// Helper function to convert MercanciaCompleta to Mercancia
+const convertToMercancia = (mercanciaCompleta: MercanciaCompleta): Mercancia => {
+  return {
+    id: mercanciaCompleta.id,
+    descripcion: mercanciaCompleta.descripcion,
+    bienes_transp: mercanciaCompleta.bienes_transp,
+    clave_unidad: mercanciaCompleta.clave_unidad,
+    cantidad: mercanciaCompleta.cantidad,
+    peso_kg: mercanciaCompleta.peso_kg,
+    valor_mercancia: mercanciaCompleta.valor_mercancia || 0,
+    material_peligroso: mercanciaCompleta.material_peligroso || false,
+    moneda: mercanciaCompleta.moneda || 'MXN',
+    cve_material_peligroso: mercanciaCompleta.cve_material_peligroso,
+    embalaje: mercanciaCompleta.embalaje,
+    fraccion_arancelaria: mercanciaCompleta.fraccion_arancelaria,
+    uuid_comercio_ext: mercanciaCompleta.uuid_comercio_exterior,
+    carta_porte_id: mercanciaCompleta.carta_porte_id,
+    numero_autorizacion: mercanciaCompleta.numero_autorizacion,
+    folio_acreditacion: mercanciaCompleta.folio_acreditacion,
+    requiere_semarnat: mercanciaCompleta.requiere_semarnat,
+    categoria_transporte: mercanciaCompleta.categoria_transporte,
+    regulaciones_especiales: mercanciaCompleta.regulaciones_especiales,
+    temperatura_transporte: mercanciaCompleta.temperatura_transporte,
+    tipo_refrigeracion: mercanciaCompleta.tipo_refrigeracion,
+    dimensiones_especiales: mercanciaCompleta.dimensiones_especiales,
+    peso_especial: mercanciaCompleta.peso_especial,
+    peso_bruto_total: mercanciaCompleta.peso_bruto_total,
+    descripcion_detallada: mercanciaCompleta.descripcion_detallada,
+    especie_protegida: mercanciaCompleta.especie_protegida,
+    tipo_embalaje: mercanciaCompleta.tipo_embalaje,
+    material_embalaje: mercanciaCompleta.material_embalaje,
+    unidad_peso_bruto: mercanciaCompleta.unidad_peso_bruto,
+    dimensiones: mercanciaCompleta.dimensiones,
+    peso_neto_total: mercanciaCompleta.peso_neto_total,
+    numero_piezas: mercanciaCompleta.numero_piezas,
+    requiere_cites: mercanciaCompleta.requiere_cites,
+    permisos_semarnat: mercanciaCompleta.permisos_semarnat,
+    documentacion_aduanera: mercanciaCompleta.documentacion_aduanera
   };
 };
 
@@ -123,9 +164,10 @@ export function SmartMercanciasSection({
     }
   };
 
-  const handleEditMercancia = (mercancia: Mercancia) => {
-    const index = mercancias.findIndex(m => m.id === mercancia.id);
-    setEditingMercancia(mercancia);
+  const handleEditMercancia = (mercancia: MercanciaCompleta) => {
+    const mercanciaToEdit = convertToMercancia(mercancia);
+    const index = data.findIndex(m => m.id === mercancia.id);
+    setEditingMercancia(mercanciaToEdit);
     setEditingIndex(index);
     setShowForm(true);
   };
@@ -311,7 +353,6 @@ export function SmartMercanciasSection({
         <CardContent>
           {showForm ? (
             <SmartMercanciaForm
-              index={editingIndex >= 0 ? editingIndex : mercancias.length}
               mercancia={editingMercancia ? convertToMercanciaCompleta(editingMercancia) : undefined}
               onSave={handleSaveMercancia}
               onCancel={handleCancelForm}
@@ -320,13 +361,8 @@ export function SmartMercanciasSection({
             />
           ) : (
             <MercanciasListWrapper
-              mercancias={mercancias.map(convertToMercanciaCompleta)}
-              onEdit={(mercancia) => {
-                const mercanciaOriginal = mercancias.find(m => m.id === mercancia.id);
-                if (mercanciaOriginal) {
-                  handleEditMercancia(mercanciaOriginal);
-                }
-              }}
+              mercancias={data}
+              onEdit={handleEditMercancia}
               onDelete={eliminarMercancia}
               isLoading={isLoading}
             />

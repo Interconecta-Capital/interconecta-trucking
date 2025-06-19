@@ -13,6 +13,7 @@ export interface Domicilio {
 }
 
 export interface Coordinates {
+  [key: string]: any; // Make it compatible with Json type
   latitud: number;
   longitud: number;
 }

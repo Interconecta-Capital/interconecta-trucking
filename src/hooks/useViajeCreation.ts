@@ -1,103 +1,84 @@
 
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Ubicacion } from '@/types/ubicaciones';
+import { UbicacionCompleta } from '@/types/cartaPorte';
+import { Coordinates } from '@/types/ubicaciones';
 
-interface CreateViajeParams {
+interface ViajeData {
   cartaPorteId: string;
-  ubicaciones: Ubicacion[];
-  distanciaTotal?: number;
-  tiempoEstimado?: number;
+  conductorId?: string;
+  vehiculoId?: string;
+  ubicaciones: UbicacionCompleta[];
+  distanciaTotal: number;
+  tiempoEstimado: number;
 }
 
 export const useViajeCreation = () => {
   const [isCreating, setIsCreating] = useState(false);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
-  const createViaje = useMutation({
-    mutationFn: async (params: CreateViajeParams) => {
-      setIsCreating(true);
-      console.log('🚛 Creando viaje:', params);
+  const createViaje = async (data: ViajeData) => {
+    setIsCreating(true);
+    setError(null);
 
-      const origen = params.ubicaciones.find(u => u.tipoUbicacion === 'Origen');
-      const destino = params.ubicaciones.find(u => u.tipoUbicacion === 'Destino');
+    try {
+      const origen = data.ubicaciones.find(u => u.tipo_ubicacion === 'Origen');
+      const destino = data.ubicaciones.find(u => u.tipo_ubicacion === 'Destino');
 
       if (!origen || !destino) {
-        throw new Error('Se requiere al menos un origen y un destino para crear el viaje');
+        throw new Error('Se requiere al menos un origen y un destino');
       }
 
-      // Calcular fechas programadas
-      const fechaInicioProgramada = origen.fechaHoraSalidaLlegada 
-        ? new Date(origen.fechaHoraSalidaLlegada).toISOString()
-        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // Mañana por defecto
-
-      const fechaFinProgramada = destino.fechaHoraSalidaLlegada
-        ? new Date(destino.fechaHoraSalidaLlegada).toISOString()
-        : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // Pasado mañana por defecto
-
-      // Crear tracking data con información de la ruta
-      const trackingData = {
-        ubicaciones: params.ubicaciones.map(ub => ({
-          tipo: ub.tipoUbicacion,
-          nombre: ub.nombreRemitenteDestinatario,
-          direccion: `${ub.domicilio.calle} ${ub.domicilio.numExterior}, ${ub.domicilio.municipio}, ${ub.domicilio.estado}`,
-          codigoPostal: ub.domicilio.codigoPostal,
-          fechaEstimada: ub.fechaHoraSalidaLlegada,
-          coordenadas: ub.coordenadas
+      // Convert Coordinates to Json compatible format
+      const rutaCalculada = {
+        ubicaciones: data.ubicaciones.map(ubicacion => ({
+          tipo: ubicacion.tipo_ubicacion,
+          nombre: ubicacion.nombre_remitente_destinatario || 'Sin nombre',
+          direccion: `${ubicacion.domicilio.calle}, ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}`,
+          codigoPostal: ubicacion.domicilio.codigo_postal,
+          fechaEstimada: ubicacion.fecha_hora_salida_llegada || new Date().toISOString(),
+          coordenadas: ubicacion.coordenadas ? JSON.parse(JSON.stringify(ubicacion.coordenadas)) : null
         })),
-        distanciaTotal: params.distanciaTotal,
-        tiempoEstimado: params.tiempoEstimado,
+        distanciaTotal: data.distanciaTotal,
+        tiempoEstimado: data.tiempoEstimado,
         fechaCalculada: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const viajeData = {
+        carta_porte_id: data.cartaPorteId,
+        conductor_id: data.conductorId,
+        vehiculo_id: data.vehiculoId,
+        origen: `${origen.domicilio.municipio}, ${origen.domicilio.estado}`,
+        destino: `${destino.domicilio.municipio}, ${destino.domicilio.estado}`,
+        fecha_inicio_programada: origen.fecha_hora_salida_llegada || new Date().toISOString(),
+        fecha_fin_programada: destino.fecha_hora_salida_llegada || new Date().toISOString(),
+        distancia_km: data.distanciaTotal,
+        tiempo_estimado_horas: Math.round(data.tiempoEstimado / 60),
+        estado: 'programado',
+        ruta_calculada: JSON.parse(JSON.stringify(rutaCalculada))
+      };
+
+      const { data: viaje, error: insertError } = await supabase
         .from('viajes')
-        .insert({
-          carta_porte_id: params.cartaPorteId,
-          origen: `${origen.domicilio.municipio}, ${origen.domicilio.estado}`,
-          destino: `${destino.domicilio.municipio}, ${destino.domicilio.estado}`,
-          estado: 'programado', // Estado inicial: programado (equivale a "planificación")
-          fecha_inicio_programada: fechaInicioProgramada,
-          fecha_fin_programada: fechaFinProgramada,
-          observaciones: `Viaje creado desde Carta Porte. Distancia: ${params.distanciaTotal || 'No calculada'} km`,
-          tracking_data: trackingData,
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        })
+        .insert([viajeData])
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creando viaje:', error);
-        throw error;
-      }
+      if (insertError) throw insertError;
 
-      console.log('✅ Viaje creado exitosamente:', data);
-      return data;
-    },
-    onSuccess: (viaje) => {
-      toast({
-        title: "Viaje creado",
-        description: `El viaje desde ${viaje.origen} hasta ${viaje.destino} ha sido guardado en el módulo de Viajes.`,
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Error al crear viaje:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo crear el viaje",
-        variant: "destructive"
-      });
-    },
-    onSettled: () => {
+      return viaje;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error creating viaje';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
       setIsCreating(false);
     }
-  });
+  };
 
   return {
-    createViaje: createViaje.mutate,
+    createViaje,
     isCreating,
-    viajeCreado: createViaje.data
+    error
   };
 };

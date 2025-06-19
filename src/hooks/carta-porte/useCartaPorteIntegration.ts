@@ -1,8 +1,8 @@
-
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { useCartaPorteSync } from './useCartaPorteSync';
 import { supabase } from '@/integrations/supabase/client';
+import { CartaPorteData, AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface UseCartaPorteIntegrationOptions {
   formData: CartaPorteFormData;
@@ -72,6 +72,19 @@ export const useCartaPorteIntegration = ({
 
   // Crear nueva carta porte
   const createNewCartaPorte = useCallback(async (initialData?: Partial<CartaPorteFormData>) => {
+    const getDefaultAutotransporte = (): AutotransporteCompleto => ({
+      placa_vm: '',
+      anio_modelo_vm: new Date().getFullYear(),
+      config_vehicular: '',
+      perm_sct: '',
+      num_permiso_sct: '',
+      asegura_resp_civil: '',
+      poliza_resp_civil: '',
+      peso_bruto_vehicular: 0,
+      capacidad_carga: 0, // Add missing property
+      remolques: []
+    });
+
     const newFormData: CartaPorteFormData = {
       configuracion: {
         version: '3.1',
@@ -81,17 +94,7 @@ export const useCartaPorteIntegration = ({
       },
       ubicaciones: [],
       mercancias: [],
-      autotransporte: {
-        placa_vm: '',
-        anio_modelo_vm: 0,
-        config_vehicular: '',
-        perm_sct: '',
-        num_permiso_sct: '',
-        asegura_resp_civil: '',
-        poliza_resp_civil: '',
-        peso_bruto_vehicular: 0,
-        remolques: []
-      },
+      autotransporte: getDefaultAutotransporte(),
       figuras: [],
       tipoCreacion: 'manual',
       tipoCfdi: 'Traslado',
