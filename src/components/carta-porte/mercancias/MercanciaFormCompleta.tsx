@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -325,7 +324,7 @@ export function MercanciaFormCompleta({
               {esComercioExterior && (
                 <FormField
                   control={form.control}
-                  name="uuid_comercio_ext"
+                  name="uuid_comercio_exterior"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>UUID Comercio Exterior</FormLabel>

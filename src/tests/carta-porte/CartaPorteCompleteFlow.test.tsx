@@ -13,15 +13,14 @@ const mockCartaPorteData: CartaPorteData = {
   nombreEmisor: 'Test Emisor SA',
   rfcReceptor: 'XBXX010101000',
   nombreReceptor: 'Test Receptor SA',
-  transporteInternacional: 'No', // Changed to string
+  transporteInternacional: false,
   registroIstmo: false,
   cartaPorteVersion: '3.1',
   ubicaciones: [
     {
       id: 'loc1',
-      tipo_ubicacion: 'Origen', // Fixed property name
-      rfc: 'XAXX010101000',
-      nombre: 'Test Location',
+      tipo_ubicacion: 'Origen',
+      id_ubicacion: 'loc1',
       domicilio: {
         pais: 'México',
         codigo_postal: '01000',
@@ -30,8 +29,7 @@ const mockCartaPorteData: CartaPorteData = {
         colonia: 'Centro',
         calle: 'Test Street',
         numero_exterior: '123'
-      },
-      fecha_hora_salida_llegada: new Date().toISOString()
+      }
     }
   ],
   mercancias: [
@@ -40,9 +38,7 @@ const mockCartaPorteData: CartaPorteData = {
       bienes_transp: 'Test Product',
       descripcion: 'Producto de prueba',
       cantidad: 10,
-      clave_unidad: 'KGM', // Added missing property
       peso_kg: 100,
-      unidad_peso_bruto: 'KGM', // Added missing property
       valor_mercancia: 1000,
       moneda: 'MXN'
     }

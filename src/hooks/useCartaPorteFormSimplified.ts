@@ -12,7 +12,7 @@ const initialData: CartaPorteData = {
   nombreEmisor: '',
   rfcReceptor: '',
   nombreReceptor: '',
-  transporteInternacional: 'No', // Changed to string
+  transporteInternacional: false,
   registroIstmo: false,
   cartaPorteVersion: '3.1',
   ubicaciones: [],
@@ -56,7 +56,7 @@ const serializeForSupabase = (data: CartaPorteData) => {
       nombreEmisor: data.nombreEmisor || '',
       rfcReceptor: data.rfcReceptor || '',
       nombreReceptor: data.nombreReceptor || '',
-      transporteInternacional: data.transporteInternacional === 'Sí' ? 'Sí' : 'No', // Fixed comparison
+      transporteInternacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
       registroIstmo: Boolean(data.registroIstmo),
       cartaPorteVersion: data.cartaPorteVersion || '3.1',
       ubicaciones: Array.isArray(data.ubicaciones) ? data.ubicaciones : [],
@@ -90,7 +90,7 @@ const deserializeFromSupabase = (data: unknown): CartaPorteData => {
       nombreEmisor: rawData.nombreEmisor || '',
       rfcReceptor: rawData.rfcReceptor || '',
       nombreReceptor: rawData.nombreReceptor || '',
-      transporteInternacional: rawData.transporteInternacional || 'No', // Ensure string
+      transporteInternacional: Boolean(rawData.transporteInternacional),
       registroIstmo: Boolean(rawData.registroIstmo),
       cartaPorteVersion: rawData.cartaPorteVersion || '3.1',
       ubicaciones: Array.isArray(rawData.ubicaciones) ? rawData.ubicaciones : [],
@@ -166,7 +166,7 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
           nombre_emisor: newFormData.nombreEmisor,
           nombre_receptor: newFormData.nombreReceptor,
           tipo_cfdi: newFormData.tipoCfdi,
-          transporte_internacional: newFormData.transporteInternacional === 'Sí', // Fixed comparison
+          transporte_internacional: Boolean(newFormData.transporteInternacional === 'Sí' || newFormData.transporteInternacional === true),
           registro_istmo: Boolean(newFormData.registroIstmo),
           status: 'borrador'
         })
@@ -209,7 +209,7 @@ export function useCartaPorteFormSimplified({ cartaPorteId }: UseCartaPorteFormO
           rfc_receptor: formData.rfcReceptor || 'TEMP',
           nombre_receptor: formData.nombreReceptor,
           tipo_cfdi: formData.tipoCfdi,
-          transporte_internacional: formData.transporteInternacional === 'Sí', // Fixed comparison
+          transporte_internacional: Boolean(formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true),
           registro_istmo: Boolean(formData.registroIstmo),
           updated_at: new Date().toISOString()
         })

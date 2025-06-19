@@ -1,4 +1,3 @@
-
 import { useMemo, useRef } from 'react';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -24,7 +23,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
       formData.nombreEmisor || '',
       formData.rfcReceptor || '',
       formData.nombreReceptor || '',
-      String(formData.transporteInternacional || 'No'),
+      String(formData.transporteInternacional || false),
       String(formData.registroIstmo || false),
       formData.cartaPorteVersion || '3.1',
       String(formData.ubicaciones?.length || 0),
@@ -50,7 +49,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         nombreEmisor: formData.nombreEmisor || '',
         rfcReceptor: formData.rfcReceptor || '',
         nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || 'No', // Ensure string
+        transporteInternacional: formData.transporteInternacional || false,
         registroIstmo: formData.registroIstmo || false,
         cartaPorteVersion: formData.cartaPorteVersion || '3.1',
         ubicaciones: formData.ubicaciones || [],
@@ -84,7 +83,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         nombreEmisor: formData.nombreEmisor || '',
         rfcReceptor: formData.rfcReceptor || '',
         nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || 'No', // Ensure string
+        transporteInternacional: formData.transporteInternacional || false,
         registroIstmo: formData.registroIstmo || false,
         cartaPorteVersion: formData.cartaPorteVersion || '3.1',
         ubicaciones: formData.ubicaciones || [],
@@ -165,7 +164,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         nombreEmisor: formData.nombreEmisor || '',
         rfcReceptor: formData.rfcReceptor || '',
         nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || 'No',
+        transporteInternacional: formData.transporteInternacional || false,
         registroIstmo: formData.registroIstmo || false,
         cartaPorteVersion: formData.cartaPorteVersion || '3.1',
         cartaPorteId: formData.cartaPorteId,

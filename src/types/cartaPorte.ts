@@ -1,99 +1,82 @@
 
 export interface CartaPorteData {
-  tipoCfdi?: 'Ingreso' | 'Traslado';
-  transporteInternacional?: string; // Changed from string | boolean to string
+  tipoRelacion?: string;
   version?: string;
+  transporteInternacional?: string | boolean;
+  entradaSalidaMerc?: string;
+  viaTransporte?: string;
+  totalDistRec?: number;
+  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
   cartaPorteVersion?: '3.0' | '3.1';
+  tipoCfdi?: 'Ingreso' | 'Traslado';
   rfcEmisor?: string;
   nombreEmisor?: string;
   rfcReceptor?: string;
   nombreReceptor?: string;
-  ubicaciones?: UbicacionCompleta[];
+  registroIstmo?: boolean;
   mercancias?: MercanciaCompleta[];
+  ubicaciones?: UbicacionCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
-  currentStep?: number;
+  pais_origen_destino?: string;
+  via_entrada_salida?: string;
+  cartaPorteId?: string;
+  
+  // Campos para persistencia de estado
   xmlGenerado?: string;
   datosCalculoRuta?: {
     distanciaTotal?: number;
     tiempoEstimado?: number;
     calculadoEn?: string;
   };
-  // Nuevas propiedades para transporte internacional
-  entradaSalidaMerc?: string;
-  viaTransporte?: string;
-  pais_origen_destino?: string;
-  via_entrada_salida?: string;
-  registroIstmo?: boolean;
-  // Missing properties that are being used
-  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
-  cartaPorteId?: string;
+  currentStep?: number;
+  
+  // Add missing properties for version management
   regimenAduanero?: string;
   regimenesAduaneros?: string[];
   version31Fields?: {
     transporteEspecializado?: boolean;
     tipoCarroceria?: string;
     registroISTMO?: boolean;
+    [key: string]: any;
   };
 }
 
 export interface UbicacionCompleta {
   id: string;
-  tipo_ubicacion: 'Origen' | 'Destino' | 'Intermedio';
-  rfc: string;
-  nombre: string;
-  domicilio: {
-    calle: string;
-    numero_exterior: string;
-    numero_interior?: string;
-    codigo_postal: string;
-    colonia: string;
-    municipio: string;
-    estado: string;
-    pais: string;
-  };
-  fecha_hora_salida_llegada: string;
-  // Add missing properties that are being used
+  tipo_ubicacion: string;
+  id_ubicacion: string;
+  rfc_remitente_destinatario?: string;
+  nombre_remitente_destinatario?: string;
+  fecha_hora_salida_llegada?: string;
+  distancia_recorrida?: number;
+  tipo_estacion?: string;
+  numero_estacion?: string;
+  kilometro?: number;
   coordenadas?: {
     latitud: number;
     longitud: number;
   };
-  rfc_remitente_destinatario?: string;
-  nombre_remitente_destinatario?: string;
-  distancia_recorrida?: number;
+  domicilio: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+    referencia?: string;
+  };
 }
 
-export interface MercanciaCompleta {
-  id: string;
-  bienes_transp: string;
-  descripcion?: string;
-  cantidad: number;
-  clave_unidad: string;
-  peso_kg: number;
-  unidad_peso_bruto: string;
-  valor_mercancia: number;
-  moneda: string;
-  material_peligroso?: boolean;
-  numero_piezas?: number;
-  peso_bruto_total?: number;
-  peso_neto_total?: number;
-  fraccion_arancelaria?: string;
-  uuid_comercio_ext?: string;
-  tipo_embalaje?: string;
-  material_embalaje?: string;
-  regimen_aduanero?: string;
-  descripcion_detallada?: string;
-  requiere_cites?: boolean;
-  embalaje?: string;
-  cve_material_peligroso?: string;
-  especie_protegida?: boolean;
-  dimensiones?: {
-    largo: number;
-    ancho: number;
-    alto: number;
-    unidad: string;
-  };
-  documentacion_aduanera?: any[];
+export interface AutotransporteCompleta extends AutotransporteCompleto {
+  // Extend with any additional properties if needed
+}
+
+export interface AutotransporteData extends AutotransporteCompleto {
+  // Alias for compatibility
+  remolques: any[];
 }
 
 export interface AutotransporteCompleto {
@@ -104,16 +87,15 @@ export interface AutotransporteCompleto {
   num_permiso_sct: string;
   asegura_resp_civil: string;
   poliza_resp_civil: string;
-  remolques?: RemolqueCompleto[];
-  // Add missing properties that are being used in various components
+  asegura_med_ambiente?: string;
+  poliza_med_ambiente?: string;
+  remolques?: any[];
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
   numero_serie_vin?: string;
   tipo_carroceria?: string;
   capacidad_carga?: number;
   peso_bruto_vehicular?: number;
-  asegura_med_ambiente?: string;
-  poliza_med_ambiente?: string;
   vigencia_permiso?: string;
   numero_permisos_adicionales?: string[];
   dimensiones?: {
@@ -121,12 +103,14 @@ export interface AutotransporteCompleto {
     ancho: number;
     alto: number;
   };
-}
-
-export interface RemolqueCompleto {
-  id: string;
-  placa: string;
-  subtipo_rem: string;
+  // Add placaVm for compatibility
+  placaVm?: string;
+  configuracionVehicular?: string;
+  seguro?: {
+    aseguradora: string;
+    poliza: string;
+    vigencia: string;
+  };
 }
 
 export interface FiguraCompleta {
@@ -135,11 +119,65 @@ export interface FiguraCompleta {
   rfc_figura: string;
   nombre_figura: string;
   num_licencia?: string;
-  tipo_licencia?: string;
+  residencia_fiscal_figura?: string;
+  num_reg_id_trib_figura?: string;
   curp?: string;
+  tipo_licencia?: string;
   vigencia_licencia?: string;
   operador_sct?: boolean;
-  num_reg_id_trib_figura?: string;
-  residencia_fiscal_figura?: string;
-  domicilio?: any;
+  domicilio: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+    referencia?: string;
+  };
+}
+
+export interface MercanciaCompleta {
+  id: string;
+  bienes_transp: string;
+  descripcion?: string;
+  cantidad?: number;
+  clave_unidad?: string;
+  peso_kg?: number;
+  valor_mercancia?: number;
+  moneda?: string;
+  fraccion_arancelaria?: string;
+  uuid_comercio_exterior?: string;
+  material_peligroso?: boolean;
+  cve_material_peligroso?: string;
+  embalaje?: string;
+  tipo_embalaje?: string;
+  material_embalaje?: string;
+  descripcion_embalaje?: string;
+  peso_bruto_total?: number;
+  unidad_peso_bruto?: string;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+    unidad?: string;
+  };
+}
+
+// Additional catalog interfaces
+export interface CatalogoEmbalaje {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoCarroceria {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoTipoLicencia {
+  clave: string;
+  descripcion: string;
+  aplica_federal?: boolean;
 }
