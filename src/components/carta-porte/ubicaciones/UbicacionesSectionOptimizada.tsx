@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
 import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
 import { UbicacionesNavigation } from './UbicacionesNavigation';
-import { UbicacionesRouteInfo } from './UbicacionesRouteInfo';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
-import { DistanceCalculator } from './DistanceCalculator';
+import { AutoRouteCalculator } from './AutoRouteCalculator';
+import { GoogleMapVisualization } from './GoogleMapVisualization';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
@@ -33,12 +32,14 @@ export function UbicacionesSectionOptimizada({
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [showViajeModal, setShowViajeModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [routeData, setRouteData] = useState<any>(null);
   
   // Referencias para evitar loops infinitos
   const lastOnChangeRef = useRef<string>('');
@@ -56,9 +57,6 @@ export function UbicacionesSectionOptimizada({
     generarIdUbicacion,
     validarSecuenciaUbicaciones,
     calcularDistanciaTotal,
-    calcularDistanciasAutomaticas,
-    calcularRutaCompleta,
-    rutaCalculada,
     ubicacionesFrecuentes
   } = useUbicaciones();
 
@@ -262,47 +260,20 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  const handleCalcularDistancias = async () => {
-    try {
-      await calcularDistanciasAutomaticas();
-      toast({
-        title: "Distancias calculadas",
-        description: "Las distancias han sido calculadas automáticamente.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error al calcular las distancias.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleCalcularRuta = async () => {
-    try {
-      await calcularRutaCompleta();
-      setShowMap(true);
-      toast({
-        title: "Ruta calculada",
-        description: "La ruta ha sido calculada y visualizada en el mapa.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error al calcular la ruta.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // SOLUCIÓN 4: Manejo de distancia mejorado y estable
-  const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
-    console.log('📏 Distancia calculada:', { distancia, tiempo });
+  // Manejo mejorado de cálculo de distancia con Google Maps
+  const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
+    console.log('📏 Distancia calculada con Google Maps:', { distancia, tiempo });
     
     try {
       setIsCalculatingDistance(true);
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
+      setRouteData({
+        distance_km: distancia,
+        duration_minutes: tiempo,
+        google_data: routeGeometry?.google_data
+      });
+      setShowMap(true);
       
       // Notificar al componente padre
       if (onDistanceCalculated) {
@@ -312,11 +283,11 @@ export function UbicacionesSectionOptimizada({
         });
       }
       
-      console.log('✅ Distancia procesada exitosamente');
+      console.log('✅ Distancia y ruta procesadas exitosamente');
       
       toast({
-        title: "Distancia calculada exitosamente",
-        description: `Distancia total: ${distancia} km. Tiempo estimado: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
+        title: "Ruta calculada exitosamente",
+        description: `Distancia: ${distancia} km. Tiempo: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
       });
     } catch (error) {
       console.error('❌ Error procesando cálculo de distancia:', error);
@@ -412,8 +383,8 @@ export function UbicacionesSectionOptimizada({
         ubicacionesCount={ubicaciones.length}
         canCalculateDistances={canCalculateDistances}
         onAgregarUbicacion={handleAgregarUbicacion}
-        onCalcularDistancias={handleCalcularDistancias}
-        onCalcularRuta={handleCalcularRuta}
+        onCalcularDistancias={() => {}} // Removed since AutoRouteCalculator handles this
+        onCalcularRuta={() => {}} // Removed since AutoRouteCalculator handles this
       />
 
       <UbicacionesValidation
@@ -421,14 +392,25 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Calculadora de distancia mejorada y estable */}
+      {/* Calculadora automática de rutas con Google Maps */}
       {canCalculateDistances && (
-        <DistanceCalculator
+        <AutoRouteCalculator
           ubicaciones={ubicaciones}
           onDistanceCalculated={handleDistanceCalculated}
           distanciaTotal={distanciaTotal}
           tiempoEstimado={tiempoEstimado}
           isCalculating={isCalculatingDistance}
+        />
+      )}
+
+      {/* Mapa de Google Maps integrado */}
+      {showMap && ubicaciones.length >= 2 && (
+        <GoogleMapVisualization
+          ubicaciones={ubicaciones}
+          routeData={routeData}
+          isVisible={showMap}
+          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+          isFullscreen={isMapFullscreen}
         />
       )}
 
@@ -438,12 +420,6 @@ export function UbicacionesSectionOptimizada({
           onEditarUbicacion={handleEditarUbicacion}
           onEliminarUbicacion={handleEliminarUbicacion}
           onAgregarUbicacion={handleAgregarUbicacion}
-        />
-
-        <UbicacionesRouteInfo
-          showMap={showMap}
-          rutaCalculada={rutaCalculada}
-          ubicaciones={ubicaciones}
         />
 
         <UbicacionesNavigation

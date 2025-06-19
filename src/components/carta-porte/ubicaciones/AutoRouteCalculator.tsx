@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Route, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useRouteCalculation } from '@/hooks/useRouteCalculation';
+import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation';
 import { Ubicacion } from '@/types/ubicaciones';
 import { RouteCalculationStatus } from './RouteCalculationStatus';
 import { RouteMetricsDisplay } from './RouteMetricsDisplay';
@@ -22,7 +22,7 @@ export function AutoRouteCalculator({
   distanciaTotal,
   tiempoEstimado
 }: AutoRouteCalculatorProps) {
-  const { calculateRoute, isCalculating, routeData, error } = useRouteCalculation();
+  const { calculateRoute, isCalculating, routeData, error } = useGoogleRouteCalculation();
   const [autoCalculationDone, setAutoCalculationDone] = useState(false);
   const [lastCalculationHash, setLastCalculationHash] = useState<string>('');
 
@@ -93,7 +93,7 @@ export function AutoRouteCalculator({
       
       // Solo calcular si las ubicaciones han cambiado y no tenemos distancia calculada
       if (currentHash !== lastCalculationHash && (!distanciaTotal || distanciaTotal === 0)) {
-        console.log('🔄 Auto-calculando ruta por cambio en ubicaciones');
+        console.log('🔄 Auto-calculando ruta con Google Maps por cambio en ubicaciones');
         
         try {
           // Geocodificar ubicaciones
@@ -112,17 +112,17 @@ export function AutoRouteCalculator({
             if (coords) waypoints.push(coords);
           }
 
-          console.log('🚀 Iniciando cálculo con Mapbox:', { origenCoords, destinoCoords, waypoints });
+          console.log('🚀 Iniciando cálculo con Google Maps:', { origenCoords, destinoCoords, waypoints });
 
           // Calcular ruta
           const result = await calculateRoute(origenCoords, destinoCoords, waypoints);
           
           if (result && result.success) {
-            console.log('✅ Ruta calculada exitosamente, notificando componente padre');
+            console.log('✅ Ruta calculada exitosamente con Google Maps, notificando componente padre');
             onDistanceCalculated(
               result.distance_km,
               result.duration_minutes,
-              result.route_geometry
+              result
             );
             setAutoCalculationDone(true);
             setLastCalculationHash(currentHash);
@@ -130,7 +130,7 @@ export function AutoRouteCalculator({
             console.warn('⚠️ Cálculo de ruta falló, pero manteniendo ubicaciones');
           }
         } catch (error) {
-          console.error('❌ Error en auto-cálculo (no crítico):', error);
+          console.error('❌ Error en auto-cálculo con Google Maps (no crítico):', error);
           // No lanzamos el error para evitar que se pierdan las ubicaciones
         }
       }
@@ -163,13 +163,13 @@ export function AutoRouteCalculator({
         onDistanceCalculated(
           result.distance_km,
           result.duration_minutes,
-          result.route_geometry
+          result
         );
         setAutoCalculationDone(true);
         setLastCalculationHash(createLocationHash());
       }
     } catch (error) {
-      console.error('❌ Error en recálculo manual:', error);
+      console.error('❌ Error en recálculo manual con Google Maps:', error);
     }
   };
 
@@ -189,7 +189,7 @@ export function AutoRouteCalculator({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-gray-800">
           <Route className="h-5 w-5" />
-          Cálculo Automático de Ruta
+          Cálculo Automático de Ruta - Google Maps
           {autoCalculationDone && !error && (
             <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800 border-green-200">
               <CheckCircle className="h-3 w-3 mr-1" />
