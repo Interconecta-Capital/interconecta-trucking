@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { Ubicacion } from '@/types/ubicaciones';
 import { mapUbicacionToCompleta } from './mapUbicacionToCompleta';
+import { mapCompletaToUbicacion } from './mapCompletaToUbicacion';
 import { BorradorService } from '@/services/borradorService';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { useCartaPortePersistence } from './useCartaPortePersistence';
@@ -291,8 +292,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
             return ub as UbicacionCompleta;
           }
-          // Convert from Ubicacion if needed
-          return mapUbicacionToCompleta(ub as Ubicacion);
+          // Convert from Ubicacion if needed using the proper mapper
+          return mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta));
         }),
         currentStep,
         xmlGenerado,
@@ -409,7 +410,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
           if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
             return ub as UbicacionCompleta;
           }
-          return mapUbicacionToCompleta(ub as Ubicacion);
+          return mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta));
         }),
         currentStep,
         xmlGenerado,

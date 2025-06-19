@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
 import { Ubicacion } from '@/types/ubicaciones';
 import { mapUbicacionToCompleta } from './mapUbicacionToCompleta';
+import { mapCompletaToUbicacion } from './mapCompletaToUbicacion';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 
@@ -27,14 +28,14 @@ export function useEnhancedPDFGenerator() {
     try {
       console.log('📄 Generando PDF completo de carta porte...');
 
-      // Fixed type conversion issue with proper type checking
+      // Fixed type conversion issue with proper type checking and mapping
       const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub => {
         // Check if it's already UbicacionCompleta by checking for snake_case properties
         if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
           return ub as UbicacionCompleta;
         }
-        // Otherwise convert from Ubicacion to UbicacionCompleta
-        return mapUbicacionToCompleta(ub as Ubicacion);
+        // Otherwise convert properly using the mapper functions
+        return mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta));
       });
 
       const data = { ...cartaPorteData, ubicaciones };
