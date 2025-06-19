@@ -80,10 +80,10 @@ export function PredictiveMonitoringDashboard() {
   };
 
   const performanceData = metrics?.performanceIndicators ? [
-    { name: 'Eficiencia Combustible', value: metrics.performanceIndicators.fuelEfficiencyTrend, color: '#8884d8' },
-    { name: 'Tiempo Entrega', value: Math.abs(metrics.performanceIndicators.deliveryTimeTrend), color: '#82ca9d' },
-    { name: 'Satisfacción Cliente', value: metrics.performanceIndicators.customerSatisfactionTrend, color: '#ffc658' },
-    { name: 'Costos Mantenimiento', value: Math.abs(metrics.performanceIndicators.maintenanceCostTrend), color: '#ff7300' }
+    { name: 'Eficiencia Combustible', value: metrics.performanceIndicators.fuelEfficiency, color: '#8884d8' },
+    { name: 'Tiempo Entrega', value: metrics.performanceIndicators.maintenanceScore, color: '#82ca9d' },
+    { name: 'Satisfacción Cliente', value: metrics.performanceIndicators.complianceScore, color: '#ffc658' },
+    { name: 'Costos Mantenimiento', value: metrics.performanceIndicators.routeOptimization, color: '#ff7300' }
   ] : [];
 
   const recommendations = getAutomatedRecommendations();
@@ -169,7 +169,7 @@ export function PredictiveMonitoringDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Vehículos Activos</p>
-                <p className="text-2xl font-bold">{realTimeStatus?.vehiclesActive || 0}</p>
+                <p className="text-2xl font-bold">{realTimeStatus?.vehiclesTracked || 0}</p>
               </div>
               <Truck className="h-8 w-8 text-blue-500" />
             </div>
@@ -180,8 +180,8 @@ export function PredictiveMonitoringDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Rutas en Progreso</p>
-                <p className="text-2xl font-bold">{realTimeStatus?.routesInProgress || 0}</p>
+                <p className="text-sm text-muted-foreground">Sistema en Línea</p>
+                <p className="text-2xl font-bold">{Math.round((realTimeStatus?.systemHealth || 0))}%</p>
               </div>
               <Activity className="h-8 w-8 text-purple-500" />
             </div>
@@ -208,11 +208,11 @@ export function PredictiveMonitoringDashboard() {
                       <div>
                         <strong>{alert.title}</strong>
                         <p className="mt-1">{alert.description}</p>
-                        <p className="text-sm mt-2 font-medium">⚡ {alert.estimatedImpact}</p>
+                        <p className="text-sm mt-2 font-medium">⚡ ${alert.estimatedCost?.toLocaleString() || 'N/A'}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">
-                          {Math.round(alert.probability * 100)}%
+                          {Math.round((alert.confidence || 0) * 100)}%
                         </Badge>
                         <Button 
                           size="sm" 
@@ -287,7 +287,7 @@ export function PredictiveMonitoringDashboard() {
                         </div>
                         <p className="text-sm text-muted-foreground">{alert.description}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {alert.predictedTimeframe} • {Math.round(alert.probability * 100)}% probabilidad
+                          {alert.predictedDate.toLocaleDateString()} • {Math.round((alert.confidence || 0) * 100)}% confianza
                         </p>
                       </div>
                     </div>
@@ -373,13 +373,13 @@ export function PredictiveMonitoringDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{metric.name}</span>
                     <div className="flex items-center gap-1">
-                      {metric.value > 0 ? (
+                      {metric.value > 50 ? (
                         <TrendingUp className="h-4 w-4 text-green-500" />
                       ) : (
                         <TrendingDown className="h-4 w-4 text-red-500" />
                       )}
-                      <span className={`text-sm font-bold ${metric.value > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {metric.value > 0 ? '+' : ''}{metric.value.toFixed(1)}%
+                      <span className={`text-sm font-bold ${metric.value > 50 ? 'text-green-600' : 'text-red-600'}`}>
+                        {metric.value}%
                       </span>
                     </div>
                   </div>

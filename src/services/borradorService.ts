@@ -116,14 +116,34 @@ export class BorradorService {
 
       const { data: borradores, error } = await supabase
         .from('cartas_porte')
-        .select('id, usuario_id as user_id, datos_formulario, status, nombre_emisor as nombre_borrador, nombre_receptor as descripcion, created_at, updated_at')
+        .select(`
+          id, 
+          usuario_id, 
+          datos_formulario, 
+          status, 
+          nombre_emisor, 
+          nombre_receptor, 
+          created_at, 
+          updated_at
+        `)
         .eq('usuario_id', user.id)
         .eq('status', 'borrador')
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
 
-      return { success: true, borradores: borradores || [] };
+      const mappedBorradores: BorradorCartaPorte[] = (borradores || []).map(item => ({
+        id: item.id,
+        user_id: item.usuario_id,
+        datos_formulario: item.datos_formulario,
+        status: item.status,
+        nombre_borrador: item.nombre_emisor,
+        descripcion: item.nombre_receptor,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      return { success: true, borradores: mappedBorradores };
     } catch (error) {
       console.error('Error listando borradores:', error);
       return { 
@@ -173,12 +193,32 @@ export class BorradorService {
         .update(updateData)
         .eq('id', borradorId)
         .eq('status', 'borrador')
-        .select('id, usuario_id as user_id, datos_formulario, status, nombre_emisor as nombre_borrador, nombre_receptor as descripcion, created_at, updated_at')
+        .select(`
+          id, 
+          usuario_id, 
+          datos_formulario, 
+          status, 
+          nombre_emisor, 
+          nombre_receptor, 
+          created_at, 
+          updated_at
+        `)
         .single();
 
       if (error) throw error;
 
-      return { success: true, borrador };
+      const mappedBorrador: BorradorCartaPorte = {
+        id: borrador.id,
+        user_id: borrador.usuario_id,
+        datos_formulario: borrador.datos_formulario,
+        status: borrador.status,
+        nombre_borrador: borrador.nombre_emisor,
+        descripcion: borrador.nombre_receptor,
+        created_at: borrador.created_at,
+        updated_at: borrador.updated_at
+      };
+
+      return { success: true, borrador: mappedBorrador };
     } catch (error) {
       console.error('Error actualizando borrador:', error);
       return { 

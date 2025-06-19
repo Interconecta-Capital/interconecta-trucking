@@ -63,7 +63,7 @@ describe('useCartaPorteMappers', () => {
     const { result } = renderHook(() => useCartaPorteMappers());
     
     await act(async () => {
-      await result.current.saveToDatabase();
+      await result.current.saveToDatabase('test-user-id');
     });
     
     expect(result.current.isLoading).toBe(false);
