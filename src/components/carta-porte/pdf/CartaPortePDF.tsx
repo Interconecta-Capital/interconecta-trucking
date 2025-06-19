@@ -133,75 +133,95 @@ const styles = StyleSheet.create({
   }
 });
 
-export const CartaPortePDF = ({ cartaPorteData, datosTimbre, qrCodeDataURL, logoBase64 }: any) => (
-  <Document title={`Carta Porte - ${cartaPorteData.folio}`}> 
-    <Page size="LETTER" style={styles.page}>
-      <View style={styles.header}>
-        {logoBase64 && <Image style={styles.logo} src={logoBase64} />}
-        <View style={styles.issuerInfo}>
-          <Text style={styles.issuerName}>{cartaPorteData.emisor.nombreRazonSocial}</Text>
-          <Text>RFC: {cartaPorteData.emisor.rfc}</Text>
-          <Text></Text>
-        </View>
-      </View>
+export const CartaPortePDF = ({ cartaPorteData, datosTimbre, qrCodeDataURL, logoBase64 }: any) => {
+  // Safely extract emisor and receptor data with defaults
+  const emisor = {
+    nombreRazonSocial: cartaPorteData?.nombreEmisor || cartaPorteData?.emisor?.nombreRazonSocial || 'Emisor no especificado',
+    rfc: cartaPorteData?.rfcEmisor || cartaPorteData?.emisor?.rfc || 'RFC no especificado'
+  };
 
-      <Text style={{ fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}>
-        CARTA PORTE - CFDI DE TRASLADO
-      </Text>
+  const receptor = {
+    nombreRazonSocial: cartaPorteData?.nombreReceptor || cartaPorteData?.receptor?.nombreRazonSocial || 'Receptor no especificado',
+    rfc: cartaPorteData?.rfcReceptor || cartaPorteData?.receptor?.rfc || 'RFC no especificado'
+  };
 
-      <View style={styles.mainInfoGrid}>
-        <View style={styles.infoColumn}>
-          <Text style={styles.sectionTitle}>Receptor</Text>
-          <Text><Text style={styles.fieldLabel}>Nombre:</Text> {cartaPorteData.receptor.nombreRazonSocial}</Text>
-          <Text><Text style={styles.fieldLabel}>RFC:</Text> {cartaPorteData.receptor.rfc}</Text>
-        </View>
-        <View style={styles.infoColumn}>
-          <Text style={styles.sectionTitle}>Comprobante Fiscal</Text>
-          <Text><Text style={styles.fieldLabel}>Folio Fiscal (UUID):</Text> {datosTimbre?.uuid || 'N/A'}</Text>
-          <Text><Text style={styles.fieldLabel}>IdCCP:</Text> {datosTimbre?.idCCP || 'N/A'}</Text>
-          <Text><Text style={styles.fieldLabel}>Fecha Emisión:</Text> {new Date().toLocaleDateString('es-MX')}</Text>
-          <Text><Text style={styles.fieldLabel}>Fecha Timbrado:</Text> {datosTimbre?.fechaTimbrado || 'N/A'}</Text>
-        </View>
-      </View>
+  const mercancias = cartaPorteData?.mercancias || [];
+  const folio = cartaPorteData?.folio || 'Sin folio';
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mercancías Transportadas</Text>
-        <View style={styles.table}>
-          <View style={[styles.tableRow, styles.tableHeader]}>
-            <View style={[styles.tableCol, { width: '15%' }]}><Text>Clave SAT</Text></View>
-            <View style={[styles.tableCol, { width: '45%' }]}><Text>Descripción</Text></View>
-            <View style={[styles.tableCol, { width: '15%' }]}><Text>Cantidad</Text></View>
-            <View style={[styles.tableCol, { width: '25%' }]}><Text>Peso (Kg)</Text></View>
+  return (
+    <Document title={`Carta Porte - ${folio}`}> 
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.header}>
+          {logoBase64 && <Image style={styles.logo} src={logoBase64} />}
+          <View style={styles.issuerInfo}>
+            <Text style={styles.issuerName}>{emisor.nombreRazonSocial}</Text>
+            <Text>RFC: {emisor.rfc}</Text>
+            <Text></Text>
           </View>
-          {cartaPorteData.mercancias.map((item: any, index: number) => (
-            <View style={styles.tableRow} key={index}>
-              <View style={[styles.tableCol, { width: '15%' }]}><Text>{item.claveProdServSAT}</Text></View>
-              <View style={[styles.tableCol, { width: '45%' }]}><Text>{item.descripcion}</Text></View>
-              <View style={[styles.tableCol, { width: '15%' }]}><Text>{item.cantidad}</Text></View>
-              <View style={[styles.tableCol, { width: '25%' }]}><Text>{item.pesoEnKg}</Text></View>
+        </View>
+
+        <Text style={{ fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}>
+          CARTA PORTE - CFDI DE TRASLADO
+        </Text>
+
+        <View style={styles.mainInfoGrid}>
+          <View style={styles.infoColumn}>
+            <Text style={styles.sectionTitle}>Receptor</Text>
+            <Text><Text style={styles.fieldLabel}>Nombre:</Text> {receptor.nombreRazonSocial}</Text>
+            <Text><Text style={styles.fieldLabel}>RFC:</Text> {receptor.rfc}</Text>
+          </View>
+          <View style={styles.infoColumn}>
+            <Text style={styles.sectionTitle}>Comprobante Fiscal</Text>
+            <Text><Text style={styles.fieldLabel}>Folio Fiscal (UUID):</Text> {datosTimbre?.uuid || 'N/A'}</Text>
+            <Text><Text style={styles.fieldLabel}>IdCCP:</Text> {datosTimbre?.idCCP || 'N/A'}</Text>
+            <Text><Text style={styles.fieldLabel}>Fecha Emisión:</Text> {new Date().toLocaleDateString('es-MX')}</Text>
+            <Text><Text style={styles.fieldLabel}>Fecha Timbrado:</Text> {datosTimbre?.fechaTimbrado || 'N/A'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Mercancías Transportadas</Text>
+          <View style={styles.table}>
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              <View style={[styles.tableCol, { width: '15%' }]}><Text>Clave SAT</Text></View>
+              <View style={[styles.tableCol, { width: '45%' }]}><Text>Descripción</Text></View>
+              <View style={[styles.tableCol, { width: '15%' }]}><Text>Cantidad</Text></View>
+              <View style={[styles.tableCol, { width: '25%' }]}><Text>Peso (Kg)</Text></View>
             </View>
-          ))}
+            {mercancias.length > 0 ? mercancias.map((item: any, index: number) => (
+              <View style={styles.tableRow} key={index}>
+                <View style={[styles.tableCol, { width: '15%' }]}><Text>{item?.bienes_transp || item?.claveProdServSAT || 'N/A'}</Text></View>
+                <View style={[styles.tableCol, { width: '45%' }]}><Text>{item?.descripcion || 'Sin descripción'}</Text></View>
+                <View style={[styles.tableCol, { width: '15%' }]}><Text>{item?.cantidad || '0'}</Text></View>
+                <View style={[styles.tableCol, { width: '25%' }]}><Text>{item?.peso_kg || item?.pesoEnKg || '0'}</Text></View>
+              </View>
+            )) : (
+              <View style={styles.tableRow}>
+                <View style={[styles.tableCol, { width: '100%' }]}><Text>No se han especificado mercancías</Text></View>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <View style={styles.qrCode}>
-          {qrCodeDataURL && <Image style={{ width: '100%', height: '100%' }} src={qrCodeDataURL} />}
+        <View style={styles.footer}>
+          <View style={styles.qrCode}>
+            {qrCodeDataURL && <Image style={{ width: '100%', height: '100%' }} src={qrCodeDataURL} />}
+          </View>
+          <View style={styles.fiscalSeals}>
+            <Text style={styles.sealText}><Text style={{ fontWeight: 'bold' }}>Sello Digital CFDI:</Text> {datosTimbre?.selloDigital || 'N/A'}</Text>
+            <Text style={styles.sealText}><Text style={{ fontWeight: 'bold' }}>Sello Digital SAT:</Text> {datosTimbre?.selloSAT || 'N/A'}</Text>
+            <Text style={styles.sealText}><Text style={{ fontWeight: 'bold' }}>Cadena Original:</Text> {datosTimbre?.cadenaOriginal || 'N/A'}</Text>
+          </View>
         </View>
-        <View style={styles.fiscalSeals}>
-          <Text style={styles.sealText}><Text style={{ fontWeight: 'bold' }}>Sello Digital CFDI:</Text> {datosTimbre?.selloDigital || 'N/A'}</Text>
-          <Text style={styles.sealText}><Text style={{ fontWeight: 'bold' }}>Sello Digital SAT:</Text> {datosTimbre?.selloSAT || 'N/A'}</Text>
-          <Text style={styles.sealText}><Text style={{ fontWeight: 'bold' }}>Cadena Original:</Text> {datosTimbre?.cadenaOriginal || 'N/A'}</Text>
-        </View>
-      </View>
 
-      <Text style={styles.legend}>Este documento es una representación impresa de un CFDI</Text>
+        <Text style={styles.legend}>Este documento es una representación impresa de un CFDI</Text>
 
-      <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
-        `${pageNumber} / ${totalPages}`
-      )} fixed />
-    </Page>
-  </Document>
-);
+        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
+          `${pageNumber} / ${totalPages}`
+        )} fixed />
+      </Page>
+    </Document>
+  );
+};
 
 export default CartaPortePDF;
