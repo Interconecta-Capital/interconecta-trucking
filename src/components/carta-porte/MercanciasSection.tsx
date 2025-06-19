@@ -28,8 +28,7 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     remolques: []
   };
 
-  // Asegurar que todas las mercancías tengan TODOS los campos obligatorios
-  // valor_mercancia es opcional, así que no necesita valor por defecto
+  // FIXED: Ensure all fields are properly typed and valor_mercancia remains optional
   const mercanciasCompletas = data.map(mercancia => ({
     ...mercancia,
     descripcion: mercancia.descripcion || 'Sin descripción',
@@ -37,7 +36,7 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     clave_unidad: mercancia.clave_unidad || 'KGM',
     peso_kg: mercancia.peso_kg || 0
     // valor_mercancia se mantiene como está (opcional)
-  }));
+  })) as MercanciaCompleta[];
 
   return (
     <div className="space-y-6">

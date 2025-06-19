@@ -1,4 +1,3 @@
-
 export interface CartaPorteData {
   // Identificadores únicos
   id?: string;
@@ -177,7 +176,7 @@ export interface FiguraCompleta {
   };
 }
 
-// CORREGIDO: Definir MercanciaCompleta con tipos consistentes - valor_mercancia es opcional
+// FIXED: Ensure valor_mercancia is consistently optional across all definitions
 export interface MercanciaCompleta {
   id: string;
   bienes_transp: string;
@@ -185,7 +184,7 @@ export interface MercanciaCompleta {
   cantidad: number; // Obligatorio
   clave_unidad: string; // Obligatorio
   peso_kg: number; // Obligatorio
-  valor_mercancia?: number; // Opcional - CORREGIDO
+  valor_mercancia?: number; // FIXED: Consistently optional
   moneda?: string;
   
   // Campos de comercio exterior
