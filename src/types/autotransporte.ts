@@ -20,17 +20,16 @@ export interface AutotransporteData {
   vigencia_tarjeta_circulacion?: string;
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
+  vigencia_med_ambiente?: string;
+  asegura_carga?: string;
+  poliza_carga?: string;
   peso_bruto_vehicular: number;
   capacidad_carga: number;
-  remolques: Remolque[];
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
   numero_serie_vin?: string;
-  dimensiones?: {
-    largo?: number;
-    ancho?: number;
-    alto?: number;
-  };
   vigencia_permiso?: string;
   numero_permisos_adicionales?: string;
+  carga_maxima?: number;
+  remolques: Remolque[];
 }

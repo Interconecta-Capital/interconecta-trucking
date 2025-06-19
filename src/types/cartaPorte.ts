@@ -45,6 +45,7 @@ export interface Autotransporte {
   vigencia_tarjeta_circulacion?: string;
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
+  vigencia_med_ambiente?: string;
 }
 
 export interface Remolque {
@@ -85,6 +86,7 @@ export interface CartaPorteData {
   entrada_salida_mercancia?: string;
   via_entrada_salida?: string;
   total_distancia_recorrida?: number;
+  totalDistRec?: number;
   registro_istmo?: string | boolean;
   registroIstmo?: string | boolean;
   rfcEmisor?: string;
@@ -96,6 +98,11 @@ export interface CartaPorteData {
   cartaPorteVersion?: string;
   tipoCfdi?: string;
   regimenAduanero?: string;
+  regimenesAduaneros?: string[];
+  paisOrigenDestino?: string;
+  viaEntradaSalida?: string;
+  entradaSalidaMerc?: string;
+  viaTransporte?: string;
   ubicaciones?: UbicacionCompleta[];
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
@@ -133,12 +140,16 @@ export interface AutotransporteCompleto extends Autotransporte {
   vigencia_permiso?: string;
   numero_permisos_adicionales?: string;
   carga_maxima?: number;
+  asegura_carga?: string;
+  poliza_carga?: string;
 }
 
 export interface FiguraCompleta extends FiguraTransporte {
   id?: string;
   carta_porte_id?: string;
   domicilio?: any;
+  residencia_fiscal_figura?: string;
+  num_reg_id_trib_figura?: string;
 }
 
 export interface MercanciaCompleta {
