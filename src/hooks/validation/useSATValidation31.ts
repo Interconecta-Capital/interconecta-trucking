@@ -1,3 +1,5 @@
+
+import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
@@ -45,7 +47,7 @@ export const useSATValidation31 = () => {
         })) || []
       },
       
-      regimenAduanero: data.regimenesAduaneros?.[0],
+      regimenAduanero: data.regimenesAduaneros?.[0]?.clave_regimen || '',
       regimenesAduaneros: data.regimenesAduaneros || []
     };
   };
@@ -281,7 +283,8 @@ export const useSATValidation31 = () => {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
+      score: errors.length === 0 ? 100 : 0
     };
   }, []);
 
@@ -304,5 +307,6 @@ export const useSATValidation31 = () => {
     // Métodos de validación directa
     validarBasico: validacionBasica.mutateAsync,
     validarCompleto: validacionCompleta.mutateAsync,
+    validateRegimenesAduaneros,
   };
 };

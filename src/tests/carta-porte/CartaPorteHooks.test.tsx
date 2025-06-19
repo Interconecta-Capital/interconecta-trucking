@@ -1,3 +1,4 @@
+
 import { renderHook, act } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
@@ -185,6 +186,7 @@ describe('CartaPorte Hooks - Robust Testing', () => {
           num_permiso_sct: '',
           asegura_resp_civil: '',
           poliza_resp_civil: '',
+          peso_bruto_vehicular: 0,
           remolques: []
         }
       };

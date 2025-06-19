@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +25,7 @@ const initialData: CartaPorteData = {
     num_permiso_sct: '',
     asegura_resp_civil: '',
     poliza_resp_civil: '',
+    peso_bruto_vehicular: 0,
     remolques: []
   },
   figuras: [],

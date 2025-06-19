@@ -86,7 +86,14 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     const baseValidation = validationSummary || { sectionStatus: {} };
     
     return {
-      sectionStatus: baseValidation.sectionStatus,
+      sectionStatus: {
+        configuracion: baseValidation.sectionStatus?.configuracion || 'empty',
+        ubicaciones: baseValidation.sectionStatus?.ubicaciones || 'empty',
+        mercancias: baseValidation.sectionStatus?.mercancias || 'empty',
+        autotransporte: baseValidation.sectionStatus?.autotransporte || 'empty',
+        figuras: baseValidation.sectionStatus?.figuras || 'empty',
+        xml: 'empty' as const
+      },
       overallProgress: 0,
       completionPercentage: 0,
       missingFields: [],
