@@ -1,4 +1,5 @@
 
+
 // Tipos específicos para validación SAT v3.1
 export interface CartaPorte31Data {
   rfcEmisor?: string;
@@ -50,18 +51,8 @@ export interface CartaPorte31Data {
     regimen_aduanero?: string;
   }>;
   
-  autotransporte?: {
-    placa_vm: string;
-    peso_bruto_vehicular?: number;
-    tipo_carroceria?: string;
-    carga_maxima?: number;
-    tarjeta_circulacion?: string;
-    vigencia_tarjeta_circulacion?: string;
-    remolques?: Array<{
-      placa: string;
-      subtipo_rem: string;
-    }>;
-  };
+  // Use the complete AutotransporteCompleto type instead of custom type
+  autotransporte?: import('@/types/cartaPorte').AutotransporteCompleto;
   
   figuras?: Array<{
     rfc_figura: string;
@@ -90,3 +81,4 @@ export interface ValidationResult {
   isValid: boolean;
   errors: string[];
 }
+
