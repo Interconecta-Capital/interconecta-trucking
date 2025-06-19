@@ -1,15 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, ArrowRight, Building2, FileText, User, Globe } from 'lucide-react';
-import { RFCValidator } from '@/utils/rfcValidation';
+import { ArrowRight, Settings } from 'lucide-react';
 import { CartaPorteData } from '@/types/cartaPorte';
+import { ConfiguracionPrincipal } from './configuracion/ConfiguracionPrincipal';
 
 interface ConfiguracionInicialProps {
   data: CartaPorteData;
@@ -17,235 +12,48 @@ interface ConfiguracionInicialProps {
   onNext: () => void;
 }
 
-const usoFacturaOptions = [
-  { value: 'G01', label: 'G01 - Adquisición de mercancías' },
-  { value: 'G02', label: 'G02 - Devoluciones, descuentos o bonificaciones' },
-  { value: 'G03', label: 'G03 - Gastos en general' },
-  { value: 'P01', label: 'P01 - Por definir' },
-  { value: 'S01', label: 'S01 - Sin efectos fiscales' },
-  { value: 'I01', label: 'I01 - Construcciones' },
-  { value: 'I02', label: 'I02 - Mobiliario y equipo de oficina por inversiones' },
-  { value: 'I03', label: 'I03 - Equipo de transporte' },
-  { value: 'I04', label: 'I04 - Equipo de computo y accesorios' },
-  { value: 'I05', label: 'I05 - Dados, troqueles, moldes, matrices y herramental' },
-  { value: 'I06', label: 'I06 - Comunicaciones telefónicas' },
-  { value: 'I07', label: 'I07 - Comunicaciones satelitales' },
-  { value: 'I08', label: 'I08 - Otra maquinaria y equipo' },
-  { value: 'D01', label: 'D01 - Honorarios médicos, dentales y gastos hospitalarios' },
-  { value: 'D02', label: 'D02 - Gastos médicos por incapacidad o discapacidad' },
-  { value: 'D03', label: 'D03 - Gastos funerales' },
-  { value: 'D04', label: 'D04 - Donativos' },
-  { value: 'D05', label: 'D05 - Intereses reales efectivamente pagados por créditos hipotecarios' },
-  { value: 'D06', label: 'D06 - Aportaciones voluntarias al SAR' },
-  { value: 'D07', label: 'D07 - Primas por seguros de gastos médicos' },
-  { value: 'D08', label: 'D08 - Gastos de transportación escolar obligatoria' },
-  { value: 'D09', label: 'D09 - Depósitos en cuentas para el ahorro, primas que tengan como base planes de pensiones' },
-  { value: 'D10', label: 'D10 - Pagos por servicios educativos (colegiaturas)' },
-  { value: 'CP01', label: 'CP01 - Pagos' },
-  { value: 'CN01', label: 'CN01 - Nómina' }
-];
-
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
-  const handleChange = (field: keyof CartaPorteData, value: any) => {
-    onChange({ [field]: value });
+  const isValid = () => {
+    const hasBasicInfo = data.rfcEmisor && data.nombreEmisor && data.rfcReceptor && data.nombreReceptor;
+    const hasTransportInfo = data.cartaPorteVersion && data.uso_cfdi;
+    
+    // Convertir a boolean para comparación consistente
+    const transporteInt = typeof data.transporteInternacional === 'string' 
+      ? data.transporteInternacional === 'true' || data.transporteInternacional === 'Sí'
+      : Boolean(data.transporteInternacional);
+    
+    const registroIstmo = typeof data.registroIstmo === 'string'
+      ? data.registroIstmo === 'true' || data.registroIstmo === 'Sí'
+      : Boolean(data.registroIstmo);
+
+    return hasBasicInfo && hasTransportInfo;
   };
 
-  const validateRFC = (rfc: string) => {
-    if (!rfc) return null;
-    return RFCValidator.validarRFC(rfc);
+  const handleNext = () => {
+    if (isValid()) {
+      onNext();
+    }
   };
-
-  const rfcEmisorValidation = validateRFC(data.rfcEmisor || '');
-  const rfcReceptorValidation = validateRFC(data.rfcReceptor || '');
-
-  // Convert transporteInternacional to boolean for Switch component
-  const isTransporteInternacional = Boolean(data.transporteInternacional === true || data.transporteInternacional === 'Sí');
-  const isRegistroIstmo = Boolean(data.registroIstmo === true || data.registro_istmo === true);
-
-  const canContinue = data.rfcEmisor && 
-                     data.nombreEmisor && 
-                     data.rfcReceptor && 
-                     data.nombreReceptor &&
-                     rfcEmisorValidation?.esValido &&
-                     rfcReceptorValidation?.esValido;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Configuración Inicial del CFDI
+            <Settings className="h-5 w-5" />
+            Configuración Inicial
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Emisor */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Emisor
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rfcEmisor">RFC del emisor *</Label>
-                <Input
-                  id="rfcEmisor"
-                  value={data.rfcEmisor || ''}
-                  onChange={(e) => handleChange('rfcEmisor', e.target.value.toUpperCase())}
-                  placeholder="XAXX010101000"
-                  className={rfcEmisorValidation && !rfcEmisorValidation.esValido ? 'border-red-500' : ''}
-                />
-                {rfcEmisorValidation && !rfcEmisorValidation.esValido && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      RFC del emisor inválido: {rfcEmisorValidation.mensaje}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="nombreEmisor">Nombre del emisor *</Label>
-                <Input
-                  id="nombreEmisor"
-                  value={data.nombreEmisor || ''}
-                  onChange={(e) => handleChange('nombreEmisor', e.target.value)}
-                  placeholder="Razón social del emisor"
-                />
-              </div>
-            </div>
-          </div>
+        <CardContent>
+          <ConfiguracionPrincipal
+            data={data}
+            onChange={onChange}
+          />
 
-          {/* Receptor */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Receptor
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rfcReceptor">RFC del receptor *</Label>
-                <Input
-                  id="rfcReceptor"
-                  value={data.rfcReceptor || ''}
-                  onChange={(e) => handleChange('rfcReceptor', e.target.value.toUpperCase())}
-                  placeholder="XAXX010101000"
-                  className={rfcReceptorValidation && !rfcReceptorValidation.esValido ? 'border-red-500' : ''}
-                />
-                {rfcReceptorValidation && !rfcReceptorValidation.esValido && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      RFC del receptor inválido: {rfcReceptorValidation.mensaje}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="nombreReceptor">Nombre del receptor *</Label>
-                <Input
-                  id="nombreReceptor"
-                  value={data.nombreReceptor || ''}
-                  onChange={(e) => handleChange('nombreReceptor', e.target.value)}
-                  placeholder="Razón social del receptor"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Uso de Factura */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Uso de la Factura</h3>
-            <div className="space-y-2">
-              <Label htmlFor="usoFactura">Uso que dará el receptor a esta factura *</Label>
-              <Select
-                value={data.uso_cfdi || ''}
-                onValueChange={(value) => handleChange('uso_cfdi', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona el uso de la factura" />
-                </SelectTrigger>
-                <SelectContent>
-                  {usoFacturaOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Configuración del Transporte */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Configuración del Transporte
-            </h3>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="transporte-internacional"
-                checked={isTransporteInternacional}
-                onCheckedChange={(checked) => handleChange('transporteInternacional', checked)}
-              />
-              <Label htmlFor="transporte-internacional">Transporte Internacional</Label>
-            </div>
-            
-            {isTransporteInternacional && (
-              <Alert className="border-blue-200 bg-blue-50">
-                <AlertTriangle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  **Versión 3.1**: Para transporte internacional, puede registrar hasta 10 regímenes aduaneros diferentes.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="registro-istmo"
-                checked={isRegistroIstmo}
-                onCheckedChange={(checked) => handleChange('registroIstmo', checked)}
-              />
-              <Label htmlFor="registro-istmo">Registro ISTMO</Label>
-            </div>
-          </div>
-
-          {/* Información adicional */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="folio">Folio interno (opcional)</Label>
-              <Input
-                id="folio"
-                value={data.folio || ''}
-                onChange={(e) => handleChange('folio', e.target.value)}
-                placeholder="CP-001"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="version">Versión Carta Porte</Label>
-              <Select
-                value={data.cartaPorteVersion || '3.1'}
-                onValueChange={(value) => handleChange('cartaPorteVersion', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3.1">3.1 (Actual)</SelectItem>
-                  <SelectItem value="3.0">3.0 (Anterior)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-6">
             <Button 
-              onClick={onNext} 
-              disabled={!canContinue}
+              onClick={handleNext} 
+              disabled={!isValid()}
               className="flex items-center gap-2"
             >
               Continuar a Ubicaciones

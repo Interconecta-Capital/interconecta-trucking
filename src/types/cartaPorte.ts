@@ -1,4 +1,3 @@
-
 export interface Domicilio {
   calle: string;
   numero_exterior?: string;
@@ -81,12 +80,12 @@ export interface FiguraTransporte {
 export interface CartaPorteData {
   version: string;
   transporte_internacional?: string;
-  transporteInternacional?: string;
+  transporteInternacional?: string | boolean;
   entrada_salida_mercancia?: string;
   via_entrada_salida?: string;
   total_distancia_recorrida?: number;
-  registro_istmo?: string;
-  registroIstmo?: string;
+  registro_istmo?: string | boolean;
+  registroIstmo?: string | boolean;
   rfcEmisor?: string;
   nombreEmisor?: string;
   rfcReceptor?: string;
@@ -94,6 +93,8 @@ export interface CartaPorteData {
   uso_cfdi?: string;
   folio?: string;
   cartaPorteVersion?: string;
+  tipoCfdi?: string;
+  regimenAduanero?: string;
   ubicaciones?: UbicacionCompleta[];
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
@@ -118,15 +119,27 @@ export interface AutotransporteCompleto extends Autotransporte {
   peso_bruto_vehicular: number;
   capacidad_carga: number;
   remolques: Remolque[];
+  marca_vehiculo?: string;
+  modelo_vehiculo?: string;
+  numero_serie_vin?: string;
+  dimensiones?: {
+    largo?: number;
+    ancho?: number;
+    alto?: number;
+  };
+  vigencia_permiso?: string;
+  numero_permisos_adicionales?: string;
+  carga_maxima?: number;
 }
 
 export interface FiguraCompleta extends FiguraTransporte {
   id?: string;
   carta_porte_id?: string;
+  domicilio?: any;
 }
 
 export interface MercanciaCompleta {
-  id?: string;
+  id: string;
   descripcion: string;
   bienes_transp: string;
   clave_unidad: string;
@@ -140,17 +153,16 @@ export interface MercanciaCompleta {
   fraccion_arancelaria?: string;
   uuid_comercio_ext?: string;
   carta_porte_id?: string;
-  // Campos SEMARNAT dinámicos
   numero_autorizacion?: string;
   folio_acreditacion?: string;
-  // Campos adicionales para IA
   requiere_semarnat?: boolean;
   categoria_transporte?: 'general' | 'peligroso' | 'refrigerado' | 'especializado';
   regulaciones_especiales?: string[];
-  // Campos de refrigeración
   temperatura_transporte?: string;
   tipo_refrigeracion?: string;
-  // Campos especializados
   dimensiones_especiales?: string;
   peso_especial?: string;
+  peso_bruto_total?: number;
+  descripcion_detallada?: string;
+  especie_protegida?: boolean;
 }
