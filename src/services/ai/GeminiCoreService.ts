@@ -232,6 +232,50 @@ export class GeminiCoreService {
     }
   }
 
+  async analyzeTextForRegulatedKeywords(
+    text: string,
+    context?: AIContextData
+  ): Promise<{ regulatedKeywords: string[]; hasRegulatedKeywords: boolean }> {
+    try {
+      const result = await this.callGeminiAPI(
+        'analyze_regulated_keywords',
+        { text },
+        context
+      );
+
+      return (
+        result || { regulatedKeywords: [], hasRegulatedKeywords: false }
+      );
+    } catch (error) {
+      console.error('[GeminiCore] Error analyzing text:', error);
+      return { regulatedKeywords: [], hasRegulatedKeywords: false };
+    }
+  }
+
+  async generateLegalDescription(
+    descripcion: string,
+    numeroAutorizacion: string,
+    folioAcreditacion: string,
+    context?: AIContextData
+  ): Promise<string> {
+    try {
+      const result = await this.callGeminiAPI(
+        'generate_legal_description',
+        {
+          descripcion,
+          numeroAutorizacion,
+          folioAcreditacion
+        },
+        context
+      );
+
+      return result?.descripcion || '';
+    } catch (error) {
+      console.error('[GeminiCore] Error generating legal description:', error);
+      return '';
+    }
+  }
+
   clearCache(): void {
     this.cache.clear();
   }
