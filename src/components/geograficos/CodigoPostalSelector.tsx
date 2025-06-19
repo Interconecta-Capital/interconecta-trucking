@@ -8,13 +8,15 @@ interface CodigoPostalSelectorProps {
   onChange: (value: string) => void;
   onLocationUpdate?: (data: any) => void;
   required?: boolean;
+  error?: string;
 }
 
 export function CodigoPostalSelector({
   value,
   onChange,
   onLocationUpdate,
-  required = false
+  required = false,
+  error
 }: CodigoPostalSelectorProps) {
   const handleChange = (newValue: string) => {
     onChange(newValue);
@@ -39,7 +41,11 @@ export function CodigoPostalSelector({
         maxLength={5}
         pattern="[0-9]{5}"
         required={required}
+        className={error ? 'border-red-500' : ''}
       />
+      {error && (
+        <p className="text-sm text-red-600 mt-1">{error}</p>
+      )}
     </div>
   );
 }

@@ -146,7 +146,7 @@ export function ConfiguracionPrincipalMejorada({
             <div className="flex items-center space-x-2">
               <Switch
                 id="transporteInternacional"
-                checked={data.transporteInternacional === true}
+                checked={Boolean(data.transporteInternacional)}
                 onCheckedChange={handleTransporteInternacionalChange}
               />
               <Label htmlFor="transporteInternacional">Transporte Internacional</Label>
@@ -155,7 +155,7 @@ export function ConfiguracionPrincipalMejorada({
             <div className="flex items-center space-x-2">
               <Switch
                 id="registroIstmo"
-                checked={data.registroIstmo === true}
+                checked={Boolean(data.registroIstmo)}
                 onCheckedChange={(checked) => onChange({ registroIstmo: checked })}
               />
               <Label htmlFor="registroIstmo">Registro ISTMO</Label>

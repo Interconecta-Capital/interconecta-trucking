@@ -1,3 +1,4 @@
+
 import { Ubicacion } from '@/types/ubicaciones';
 import { UbicacionCompleta } from '@/types/cartaPorte';
 
@@ -9,12 +10,12 @@ export function mapCompletaToUbicacion(ubicacion: UbicacionCompleta): Ubicacion 
   return {
     id: ubicacion.id,
     idUbicacion: ubicacion.id_ubicacion,
-    tipoUbicacion: ubicacion.tipo_ubicacion as any,
+    tipoUbicacion: ubicacion.tipo_ubicacion as 'Origen' | 'Destino' | 'Paso Intermedio',
     rfcRemitenteDestinatario: ubicacion.rfc_remitente_destinatario,
     nombreRemitenteDestinatario: ubicacion.nombre_remitente_destinatario,
     fechaHoraSalidaLlegada: ubicacion.fecha_hora_salida_llegada,
     distanciaRecorrida: ubicacion.distancia_recorrida,
-    ordenSecuencia: (ubicacion as any).orden_secuencia,
+    ordenSecuencia: (ubicacion as any).orden_secuencia || 1,
     coordenadas: ubicacion.coordenadas
       ? {
           latitud: ubicacion.coordenadas.latitud,

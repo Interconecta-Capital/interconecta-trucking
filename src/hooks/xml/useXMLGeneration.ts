@@ -5,6 +5,7 @@ import { XMLCartaPorteGenerator, XMLGenerationResult } from '@/services/xml/xmlG
 import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
 import { Ubicacion } from '@/types/ubicaciones';
 import { mapUbicacionToCompleta } from '@/hooks/carta-porte/mapUbicacionToCompleta';
+import { mapCompletaToUbicacion } from '@/hooks/carta-porte/mapCompletaToUbicacion';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useXMLGeneration = () => {
@@ -18,7 +19,7 @@ export const useXMLGeneration = () => {
       console.log('Iniciando generación de XML para Carta Porte');
 
       const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub =>
-        (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(ub as Ubicacion)
+        (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta))
       );
 
       const data = { ...cartaPorteData, ubicaciones };

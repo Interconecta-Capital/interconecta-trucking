@@ -2,16 +2,51 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getCatalogoEstatico } from '@/data/catalogosSATEstaticos';
 
-interface CatalogoSATResponse {
+export interface CatalogoSATResponse {
   success: boolean;
   data: CatalogoSATItem[];
   error?: string;
 }
 
-interface CatalogoSATItem {
+export interface CatalogoSATItem {
   clave: string;
   descripcion: string;
 }
+
+// Export types for adapters
+export interface ProductoServicio {
+  clave: string;
+  descripcion: string;
+}
+
+export interface ClaveUnidad {
+  clave: string;
+  nombre: string;
+  descripcion: string;
+}
+
+export interface MaterialPeligroso {
+  clave: string;
+  descripcion: string;
+}
+
+export interface ConfiguracionVehicular {
+  clave: string;
+  descripcion: string;
+}
+
+export interface FiguraTransporte {
+  clave: string;
+  descripcion: string;
+}
+
+export interface TipoPermiso {
+  clave: string;
+  descripcion: string;
+}
+
+// Alias for backward compatibility
+export type CatalogoItem = CatalogoSATItem;
 
 export class CatalogosSATService {
   // Cache en memoria para reducir llamadas
@@ -45,7 +80,7 @@ export class CatalogosSATService {
       // Intentar obtener datos de Supabase
       const { data, error } = await supabase
         .from('cat_clave_prod_serv_cp')
-        .select('clave_prod_serv as clave, descripcion')
+        .select('clave_prod_serv, descripcion')
         .limit(100);
 
       if (error) {
@@ -54,7 +89,7 @@ export class CatalogosSATService {
       }
 
       const formattedData = (data || []).map(item => ({
-        clave: item.clave,
+        clave: item.clave_prod_serv,
         descripcion: item.descripcion
       }));
 
@@ -68,6 +103,12 @@ export class CatalogosSATService {
       console.error('Error en getProductosServicios:', error);
       return this.getFallbackData('productos', search);
     }
+  }
+
+  // Alias methods for backward compatibility
+  static async obtenerProductosServicios(search?: string): Promise<CatalogoSATItem[]> {
+    const result = await this.getProductosServicios(search);
+    return result.data;
   }
 
   // Obtener unidades de medida
@@ -84,7 +125,7 @@ export class CatalogosSATService {
 
       const { data, error } = await supabase
         .from('cat_clave_unidad')
-        .select('clave_unidad as clave, descripcion')
+        .select('clave_unidad, descripcion')
         .limit(100);
 
       if (error) {
@@ -93,7 +134,7 @@ export class CatalogosSATService {
       }
 
       const formattedData = (data || []).map(item => ({
-        clave: item.clave,
+        clave: item.clave_unidad,
         descripcion: item.descripcion
       }));
 
@@ -107,6 +148,11 @@ export class CatalogosSATService {
       console.error('Error en getUnidadesMedida:', error);
       return this.getFallbackData('unidades', search);
     }
+  }
+
+  static async obtenerUnidades(search?: string): Promise<CatalogoSATItem[]> {
+    const result = await this.getUnidadesMedida(search);
+    return result.data;
   }
 
   // *** CORRECCIÓN: Obtener regímenes aduaneros (usar datos estáticos mientras se configura la base) ***
@@ -135,6 +181,92 @@ export class CatalogosSATService {
       console.error('Error en getRegimenesAduaneros:', error);
       return this.getFallbackData('regimenes_aduaneros', search);
     }
+  }
+
+  static async obtenerRegimenesAduaneros(search?: string): Promise<CatalogoSATItem[]> {
+    const result = await this.getRegimenesAduaneros(search);
+    return result.data;
+  }
+
+  // Add missing methods that other files expect
+  static async obtenerTiposEmbalaje(): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('tipos_embalaje');
+    return staticData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
+  }
+
+  static async obtenerMaterialesPeligrosos(search?: string): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('materiales_peligrosos');
+    let filteredData = staticData;
+    if (search && search.length >= 2) {
+      const searchLower = search.toLowerCase();
+      filteredData = staticData.filter(item => 
+        item.label.toLowerCase().includes(searchLower) ||
+        item.descripcion.toLowerCase().includes(searchLower)
+      );
+    }
+    return filteredData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
+  }
+
+  static async obtenerConfiguracionesVehiculares(): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('configuraciones_vehiculares');
+    return staticData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
+  }
+
+  static async obtenerFigurasTransporte(): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('figuras_transporte');
+    return staticData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
+  }
+
+  static async obtenerTiposPermiso(): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('tipos_permiso');
+    return staticData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
+  }
+
+  static async obtenerSubtiposRemolque(search?: string): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('remolques');
+    let filteredData = staticData;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredData = staticData.filter(item => 
+        item.label.toLowerCase().includes(searchLower) ||
+        item.descripcion.toLowerCase().includes(searchLower)
+      );
+    }
+    return filteredData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
+  }
+
+  static async obtenerEstados(search?: string): Promise<CatalogoSATItem[]> {
+    const staticData = getCatalogoEstatico('estados');
+    let filteredData = staticData;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredData = staticData.filter(item => 
+        item.label.toLowerCase().includes(searchLower) ||
+        item.descripcion.toLowerCase().includes(searchLower)
+      );
+    }
+    return filteredData.map(item => ({
+      clave: item.clave,
+      descripcion: item.descripcion
+    }));
   }
 
   // Función de respaldo usando datos estáticos
@@ -197,6 +329,16 @@ export class CatalogosSATService {
       return result.data.some(item => item.clave === clave);
     } catch (error) {
       console.error('Error validando régimen aduanero:', error);
+      return false;
+    }
+  }
+
+  static async existeTipoPermiso(clave: string): Promise<boolean> {
+    try {
+      const data = await this.obtenerTiposPermiso();
+      return data.some(item => item.clave === clave);
+    } catch (error) {
+      console.error('Error validando tipo de permiso:', error);
       return false;
     }
   }
