@@ -2492,10 +2492,6 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
-      check_superuser_safe_v2: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
       cleanup_expired_grace_users: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2529,24 +2525,12 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
-      get_user_tenant_safe_v2: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      is_superuser: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
       is_superuser_safe: {
         Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_user_admin: {
-        Args: { user_uuid: string }
         Returns: boolean
       }
       log_security_event: {
