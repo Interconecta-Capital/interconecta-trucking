@@ -58,10 +58,10 @@ export function MercanciasListWrapper({
                         Material Peligroso
                       </Badge>
                     )}
-                    {mercancia.codigo_producto && (
+                    {mercancia.bienes_transp && (
                       <Badge variant="outline" className="text-xs">
                         <Hash className="h-3 w-3 mr-1" />
-                        {mercancia.codigo_producto}
+                        {mercancia.bienes_transp}
                       </Badge>
                     )}
                   </div>

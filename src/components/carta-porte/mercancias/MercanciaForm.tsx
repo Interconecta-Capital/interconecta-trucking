@@ -34,7 +34,10 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
       embalaje: '',
       fraccion_arancelaria: '',
       uuid_comercio_ext: '',
-      codigo_producto: ''
+      descripcion_detallada: '',
+      numero_piezas: undefined,
+      tipo_embalaje: '',
+      regimen_aduanero: ''
     }
   });
   
