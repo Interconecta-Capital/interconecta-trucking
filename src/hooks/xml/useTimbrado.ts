@@ -13,7 +13,8 @@ export const useTimbrado = () => {
   const timbrarCartaPorte = async (
     xml: string,
     cartaPorteData: CartaPorteData, 
-    cartaPorteId: string
+    cartaPorteId: string,
+    usarCSD: boolean = true
   ): Promise<TimbradoResponse> => {
     setIsTimbring(true);
     try {
@@ -35,10 +36,11 @@ export const useTimbrado = () => {
       const timbradoRequest = {
         xmlContent: TimbradoService.formatearXMLParaTimbrado(xml),
         cartaPorteId,
-        rfcEmisor: cartaPorteData.rfcEmisor
+        rfcEmisor: cartaPorteData.rfcEmisor,
+        usarCSD // Nueva opción para usar CSD
       };
 
-      console.log('Iniciando proceso de timbrado...');
+      console.log('Iniciando proceso de timbrado con CSD:', usarCSD);
       const resultado = await TimbradoService.timbrarCartaPorte(timbradoRequest);
 
       if (resultado.success) {
@@ -48,12 +50,17 @@ export const useTimbrado = () => {
           qrCode: resultado.qrCode,
           cadenaOriginal: resultado.cadenaOriginal,
           selloDigital: resultado.selloDigital,
-          folio: resultado.folio
+          folio: resultado.folio,
+          certificadoUsado: resultado.certificadoUsado
         });
+
+        const descripcion = resultado.certificadoUsado 
+          ? `UUID: ${resultado.uuid} | Certificado: ${resultado.certificadoUsado.numero}`
+          : `UUID: ${resultado.uuid}`;
 
         toast({
           title: "Carta Porte timbrada exitosamente",
-          description: `UUID: ${resultado.uuid}`,
+          description: descripcion,
         });
       } else {
         toast({

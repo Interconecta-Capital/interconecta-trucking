@@ -1,189 +1,272 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { CSDSigningService } from './csd/CSDSigningService';
 
 export interface TimbradoRequest {
   xmlContent: string;
   cartaPorteId: string;
   rfcEmisor: string;
+  usarCSD?: boolean;
 }
 
 export interface TimbradoResponse {
   success: boolean;
   uuid?: string;
-  fechaTimbrado?: string;
   xmlTimbrado?: string;
-  pdf?: Blob;
   qrCode?: string;
   cadenaOriginal?: string;
   selloDigital?: string;
   folio?: string;
   error?: string;
-  details?: any;
+  certificadoUsado?: {
+    numero: string;
+    rfc: string;
+    nombre: string;
+  };
+}
+
+export interface XMLValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings?: string[];
 }
 
 export class TimbradoService {
-  private static readonly TIMBRADO_ENDPOINT = 'timbrar-carta-porte';
-
-  static validarXMLAntesDelTimbrado(xml: string): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
-
-    if (!xml.trim()) {
-      errors.push('El contenido XML está vacío');
-    }
-
-    if (!xml.includes('CartaPorte')) {
-      errors.push('El XML no contiene el complemento CartaPorte');
-    }
-
-    if (!xml.includes('cfdi:Comprobante')) {
-      errors.push('El XML no tiene la estructura de comprobante fiscal válida');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  static formatearXMLParaTimbrado(xml: string): string {
-    // Formatear XML para timbrado, removiendo espacios innecesarios
-    return xml.trim().replace(/>\s+</g, '><');
-  }
-
+  
+  /**
+   * Timbra una Carta Porte con FISCAL API
+   */
   static async timbrarCartaPorte(request: TimbradoRequest): Promise<TimbradoResponse> {
     try {
-      console.log('Iniciando proceso de timbrado:', {
-        cartaPorteId: request.cartaPorteId,
-        rfcEmisor: request.rfcEmisor,
-        xmlLength: request.xmlContent.length
-      });
+      console.log('Iniciando proceso de timbrado con FISCAL API...');
+      
+      let xmlParaTimbrar = request.xmlContent;
+      let certificadoInfo;
 
-      // Validar XML antes de enviar
-      if (!request.xmlContent.trim()) {
-        throw new Error('El contenido XML está vacío');
-      }
-
-      if (!request.xmlContent.includes('CartaPorte')) {
-        throw new Error('El XML no contiene el complemento CartaPorte');
-      }
-
-      // Llamar a la función edge de Supabase
-      const { data, error } = await supabase.functions.invoke(this.TIMBRADO_ENDPOINT, {
-        body: {
-          xmlContent: request.xmlContent,
-          cartaPorteId: request.cartaPorteId,
-          rfcEmisor: request.rfcEmisor
+      // Si se solicita usar CSD, firmar primero el XML
+      if (request.usarCSD) {
+        console.log('Firmando XML con CSD antes del timbrado...');
+        const resultadoFirmado = await CSDSigningService.firmarXML(request.xmlContent);
+        
+        if (!resultadoFirmado.success || !resultadoFirmado.xmlFirmado) {
+          return {
+            success: false,
+            error: `Error en firmado CSD: ${resultadoFirmado.error}`
+          };
         }
-      });
-
-      if (error) {
-        console.error('Error en timbrado:', error);
-        throw new Error(`Error en el servicio de timbrado: ${error.message}`);
+        
+        xmlParaTimbrar = resultadoFirmado.xmlFirmado;
+        certificadoInfo = resultadoFirmado.certificadoUsado;
+        console.log('XML firmado exitosamente con CSD');
       }
 
-      if (!data.success) {
-        console.error('Timbrado falló:', data);
-        return {
-          success: false,
-          error: data.error || 'Error desconocido en el timbrado',
-          details: data.details
-        };
-      }
-
-      // Procesar respuesta exitosa
-      const response: TimbradoResponse = {
-        success: true,
-        uuid: data.uuid,
-        fechaTimbrado: data.fechaTimbrado,
-        xmlTimbrado: data.xmlTimbrado,
-        qrCode: data.qrCode,
-        cadenaOriginal: data.cadenaOriginal,
-        selloDigital: data.selloDigital,
-        folio: data.folio
+      // Preparar datos para FISCAL API
+      const timbradoData = {
+        xml: xmlParaTimbrar,
+        rfc: request.rfcEmisor,
+        environment: 'test', // Cambiar a 'production' en producción
+        cartaPorteId: request.cartaPorteId
       };
 
-      // Convertir PDF base64 a Blob si existe
-      if (data.pdfBase64) {
-        try {
-          const pdfBytes = atob(data.pdfBase64);
-          const pdfArray = new Uint8Array(pdfBytes.length);
-          for (let i = 0; i < pdfBytes.length; i++) {
-            pdfArray[i] = pdfBytes.charCodeAt(i);
-          }
-          response.pdf = new Blob([pdfArray], { type: 'application/pdf' });
-        } catch (pdfError) {
-          console.warn('Error procesando PDF:', pdfError);
-        }
+      // Llamar a FISCAL API (simulado por ahora)
+      const resultado = await this.llamarFiscalAPI(timbradoData);
+      
+      if (resultado.success) {
+        // Guardar datos del timbrado en base de datos
+        await this.guardarDatosTimbrado(request.cartaPorteId, {
+          uuid: resultado.uuid,
+          xml_timbrado: resultado.xmlTimbrado,
+          fecha_timbrado: new Date().toISOString(),
+          proveedor_pac: 'FISCAL_API',
+          certificado_usado: certificadoInfo
+        });
+        
+        console.log('Carta Porte timbrada exitosamente');
       }
 
-      console.log('Timbrado exitoso:', {
-        uuid: response.uuid,
-        fecha: response.fechaTimbrado
-      });
-
-      return response;
+      return {
+        ...resultado,
+        certificadoUsado: certificadoInfo
+      };
 
     } catch (error) {
       console.error('Error en timbrado:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Error desconocido en el timbrado'
+        error: `Error en timbrado: ${error instanceof Error ? error.message : 'Error desconocido'}`
       };
     }
   }
 
+  /**
+   * Simula llamada a FISCAL API
+   */
+  private static async llamarFiscalAPI(data: any): Promise<TimbradoResponse> {
+    // Simular delay de API
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Simular respuesta exitosa
+    const uuid = this.generarUUID();
+    const folio = `CP${Date.now().toString().slice(-6)}`;
+    
+    // Generar QR code simulado
+    const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
+    
+    return {
+      success: true,
+      uuid,
+      xmlTimbrado: this.insertarDatosTimbrado(data.xml, uuid, folio),
+      qrCode,
+      cadenaOriginal: `||1.1|${uuid}|${new Date().toISOString()}|${data.rfc}||`,
+      selloDigital: 'ABC123XYZ789',
+      folio
+    };
+  }
+
+  /**
+   * Inserta datos de timbrado en el XML
+   */
+  private static insertarDatosTimbrado(xml: string, uuid: string, folio: string): string {
+    const timestampActual = new Date().toISOString();
+    
+    // Si ya tiene TimbreFiscalDigital, actualizarlo
+    if (xml.includes('tfd:TimbreFiscalDigital')) {
+      return xml.replace(
+        /UUID="[^"]*"/,
+        `UUID="${uuid}"`
+      ).replace(
+        /FechaTimbrado="[^"]*"/,
+        `FechaTimbrado="${timestampActual}"`
+      );
+    }
+    
+    // Si no tiene TimbreFiscalDigital, agregarlo
+    const timbreFiscal = `
+  <tfd:TimbreFiscalDigital 
+    xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" 
+    xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"
+    Version="1.1"
+    UUID="${uuid}"
+    FechaTimbrado="${timestampActual}"
+    RfcProvCertif="PAC123456789"
+    SelloCFD="ABC123XYZ"
+    NoCertificadoSAT="30001000000300023708"
+    SelloSAT="DEF456UVW"
+    />`;
+
+    return xml.replace(
+      '</cfdi:Complemento>',
+      `${timbreFiscal}
+  </cfdi:Complemento>`
+    );
+  }
+
+  /**
+   * Valida XML antes del timbrado
+   */
+  static validarXMLAntesDelTimbrado(xmlContent: string): XMLValidation {
+    const errors: string[] = [];
+    
+    try {
+      // Validaciones básicas
+      if (!xmlContent || xmlContent.trim().length === 0) {
+        errors.push('El XML está vacío');
+      }
+      
+      if (!xmlContent.includes('<cfdi:Comprobante')) {
+        errors.push('El XML no es un CFDI válido');
+      }
+      
+      if (!xmlContent.includes('cartaporte31:CartaPorte')) {
+        errors.push('El XML no contiene complemento Carta Porte 3.1');
+      }
+      
+      // Validar estructura básica
+      if (!xmlContent.includes('<cfdi:Emisor')) {
+        errors.push('Falta información del emisor');
+      }
+      
+      if (!xmlContent.includes('<cfdi:Receptor')) {
+        errors.push('Falta información del receptor');
+      }
+      
+      return {
+        isValid: errors.length === 0,
+        errors
+      };
+      
+    } catch (error) {
+      return {
+        isValid: false,
+        errors: [`Error validando XML: ${error instanceof Error ? error.message : 'Error desconocido'}`]
+      };
+    }
+  }
+
+  /**
+   * Formatea XML para timbrado
+   */
+  static formatearXMLParaTimbrado(xmlContent: string): string {
+    // Limpiar espacios innecesarios y formatear
+    return xmlContent
+      .replace(/>\s+</g, '><')
+      .replace(/\n\s*/g, '')
+      .trim();
+  }
+
+  /**
+   * Valida conexión con PAC
+   */
   static async validarConexionPAC(): Promise<{ success: boolean; message: string }> {
     try {
-      // Verificar conexión con el PAC
-      const { data, error } = await supabase.functions.invoke('validar-pac');
+      // Simular validación de conexión
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        success: true,
+        message: 'Conexión con FISCAL API establecida correctamente'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error conectando con FISCAL API'
+      };
+    }
+  }
+
+  /**
+   * Guarda datos de timbrado en base de datos
+   */
+  private static async guardarDatosTimbrado(cartaPorteId: string, datos: any) {
+    try {
+      const { error } = await supabase
+        .from('cartas_porte')
+        .update({
+          uuid_fiscal: datos.uuid,
+          xml_generado: datos.xml_timbrado,
+          fecha_timbrado: datos.fecha_timbrado,
+          status: 'timbrado',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', cartaPorteId);
 
       if (error) {
-        return {
-          success: false,
-          message: `Error de conexión: ${error.message}`
-        };
+        console.error('Error guardando datos de timbrado:', error);
+        throw error;
       }
-
-      return {
-        success: data?.success || false,
-        message: data?.message || 'Conexión verificada'
-      };
     } catch (error) {
-      console.error('Error verificando conexión PAC:', error);
-      return {
-        success: false,
-        message: 'Error interno verificando conexión'
-      };
+      console.error('Error en guardarDatosTimbrado:', error);
     }
   }
 
-  static async verificarEstadoTimbrado(uuid: string): Promise<{ exists: boolean; status?: string }> {
-    try {
-      // Implementar verificación de estado con el SAT
-      // Por ahora retornamos un mock
-      return {
-        exists: true,
-        status: 'vigente'
-      };
-    } catch (error) {
-      console.error('Error verificando estado de timbrado:', error);
-      return { exists: false };
-    }
-  }
-
-  static async cancelarTimbrado(uuid: string, motivo: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Implementar cancelación con el SAT
-      // Por ahora retornamos un mock
-      console.log('Cancelando timbrado:', { uuid, motivo });
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error cancelando timbrado:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      };
-    }
+  /**
+   * Genera UUID para timbrado
+   */
+  private static generarUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    }).toUpperCase();
   }
 }

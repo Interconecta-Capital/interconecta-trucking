@@ -1,14 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { FileText } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
+import { useXMLSigning } from '@/hooks/xml/useXMLSigning';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
 import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { PDFPreviewDialog } from '../pdf/PDFPreviewDialog';
 import { XMLSection } from './sections/XMLSection';
+import { CSDSigningSection } from './sections/CSDSigningSection';
 import { PDFSection } from './sections/PDFSection';
 import { TimbradoSection } from './sections/TimbradoSection';
 import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection';
@@ -50,6 +53,18 @@ export function XMLGenerationPanel({
     descargarXML,
     validarConexionPAC
   } = useCartaPorteXMLManager();
+
+  // Hook para firmado CSD
+  const {
+    isSigning,
+    xmlFirmado,
+    infoFirmado,
+    certificadoActivo,
+    firmarXML,
+    validarXMLFirmado,
+    descargarXMLFirmado,
+    limpiarDatosFirmado
+  } = useXMLSigning();
 
   // Usar XML del prop si existe, sino el del hook
   const xmlActual = xmlGeneradoProp || xmlGeneradoHook;
@@ -103,6 +118,26 @@ export function XMLGenerationPanel({
     }
   };
 
+  const handleFirmarXML = async () => {
+    const xmlParaFirmar = xmlActual;
+    if (!xmlParaFirmar) {
+      console.error('No hay XML disponible para firmar');
+      return;
+    }
+    
+    const resultado = await firmarXML(xmlParaFirmar);
+    if (resultado.success && cartaPorteId) {
+      await agregarEvento({
+        evento: 'xml_firmado',
+        descripcion: 'XML firmado digitalmente con CSD',
+        metadata: {
+          certificado: resultado.certificadoUsado?.numero,
+          rfc: resultado.certificadoUsado?.rfc
+        }
+      });
+    }
+  };
+
   const handleTimbrar = async () => {
     if (!cartaPorteId) {
       console.error('ID de carta porte requerido para timbrado');
@@ -144,8 +179,11 @@ export function XMLGenerationPanel({
     if (xmlTimbrado) {
       return <Badge className="bg-green-100 text-green-800">Timbrado</Badge>;
     }
+    if (xmlFirmado) {
+      return <Badge className="bg-blue-100 text-blue-800">Firmado CSD</Badge>;
+    }
     if (xmlActual) {
-      return <Badge className="bg-blue-100 text-blue-800">XML Generado</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800">XML Generado</Badge>;
     }
     return <Badge variant="outline">Sin procesar</Badge>;
   };
@@ -158,7 +196,7 @@ export function XMLGenerationPanel({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <FileText className="h-5 w-5" />
-                <span>Generación XML y Timbrado FISCAL API</span>
+                <span>Generación XML y Firmado Digital</span>
               </CardTitle>
               {getStatusBadge()}
             </div>
@@ -177,6 +215,19 @@ export function XMLGenerationPanel({
 
             <Separator />
 
+            <CSDSigningSection
+              xmlGenerado={xmlActual}
+              xmlFirmado={xmlFirmado}
+              certificadoActivo={certificadoActivo}
+              isSigning={isSigning}
+              infoFirmado={infoFirmado}
+              onFirmarXML={handleFirmarXML}
+              onDescargarFirmado={descargarXMLFirmado}
+              onValidarFirmado={() => xmlFirmado && validarXMLFirmado(xmlFirmado)}
+            />
+
+            <Separator />
+
             <TimbradoAutomaticoSection
               cartaPorteCompleta={cartaPorteCompleta}
               autoTimbrado={autoTimbrado}
@@ -189,7 +240,7 @@ export function XMLGenerationPanel({
             <Separator />
 
             <TimbradoSection
-              xmlGenerado={xmlActual}
+              xmlGenerado={xmlFirmado || xmlActual}
               xmlTimbrado={xmlTimbrado}
               datosTimbre={datosTimbre}
               isTimbring={isTimbring}
@@ -201,10 +252,9 @@ export function XMLGenerationPanel({
 
             <Separator />
 
-            {/* PDF Generation Panel - Nueva sección */}
             <PDFGenerationPanel
               cartaPorteData={cartaPorteData}
-              xmlGenerado={xmlActual}
+              xmlGenerado={xmlFirmado || xmlActual}
             />
 
             <Separator />
