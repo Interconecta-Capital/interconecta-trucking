@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 export interface CartaPorteOptimizada {
   id: string;
@@ -15,9 +16,17 @@ export interface CartaPorteOptimizada {
   status: string;
   created_at: string;
   updated_at: string;
+  
+  // Campos nuevos agregados en la migración
+  id_ccp?: string;
+  version_carta_porte?: string;
+  peso_bruto_total?: number;
+  distancia_total?: number;
+  numero_total_mercancias?: number;
+  regimenes_aduaneros?: string[];
 }
 
-// Hook optimizado para cartas de porte con paginación y cache inteligente
+// Hook optimizado con soporte para los nuevos campos de la BD
 export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -34,7 +43,9 @@ export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
         .from('cartas_porte')
         .select(`
           id, folio, usuario_id, rfc_emisor, nombre_emisor,
-          rfc_receptor, nombre_receptor, status, created_at, updated_at
+          rfc_receptor, nombre_receptor, status, created_at, updated_at,
+          id_ccp, version_carta_porte, peso_bruto_total, 
+          distancia_total, numero_total_mercancias, regimenes_aduaneros
         `, { count: 'exact' })
         .eq('usuario_id', user.id)
         .order('created_at', { ascending: false })
@@ -48,18 +59,30 @@ export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
     refetchOnWindowFocus: false,
   });
 
-  // Mutation optimizada para crear carta de porte
+  // Mutation optimizada con soporte para nuevos campos
   const createMutation = useMutation({
-    mutationFn: async (cartaPorteData: any) => {
+    mutationFn: async (cartaPorteData: CartaPorteData) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
+      // Preparar datos con los nuevos campos
+      const insertData = {
+        ...cartaPorteData,
+        usuario_id: user.id,
+        id_ccp: cartaPorteData.idCCP || crypto.randomUUID(),
+        version_carta_porte: cartaPorteData.cartaPorteVersion || '3.1',
+        datos_formulario: cartaPorteData,
+        // Los totales se calcularán automáticamente por el trigger
+      };
+
       const { data, error } = await supabase
         .from('cartas_porte')
-        .insert({
-          ...cartaPorteData,
-          usuario_id: user.id,
-        })
-        .select()
+        .insert(insertData)
+        .select(`
+          id, folio, usuario_id, rfc_emisor, nombre_emisor,
+          rfc_receptor, nombre_receptor, status, created_at, updated_at,
+          id_ccp, version_carta_porte, peso_bruto_total, 
+          distancia_total, numero_total_mercancias
+        `)
         .single();
 
       if (error) throw error;
@@ -70,6 +93,41 @@ export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
       toast.success('Carta de porte creada exitosamente');
     },
     onError: (error: any) => {
+      console.error('Error creando carta de porte:', error);
+      toast.error(`Error: ${error.message}`);
+    }
+  });
+
+  // Mutation para actualizar con validación de versión
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CartaPorteData> }) => {
+      const updateData = {
+        ...data,
+        datos_formulario: data,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: result, error } = await supabase
+        .from('cartas_porte')
+        .update(updateData)
+        .eq('id', id)
+        .select(`
+          id, folio, usuario_id, rfc_emisor, nombre_emisor,
+          rfc_receptor, nombre_receptor, status, created_at, updated_at,
+          id_ccp, version_carta_porte, peso_bruto_total, 
+          distancia_total, numero_total_mercancias
+        `)
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartas-porte-optimized'] });
+      toast.success('Carta de porte actualizada exitosamente');
+    },
+    onError: (error: any) => {
+      console.error('Error actualizando carta de porte:', error);
       toast.error(`Error: ${error.message}`);
     }
   });
@@ -80,11 +138,13 @@ export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
     isLoading,
     error,
     crearCartaPorte: createMutation.mutateAsync,
+    actualizarCartaPorte: updateMutation.mutateAsync,
     isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
   };
 };
 
-// Hook para obtener una carta de porte específica con sus relaciones
+// Hook para obtener una carta de porte específica con nuevos campos
 export const useCartaPorteCompleta = (cartaPorteId?: string) => {
   const { user } = useAuth();
 
@@ -93,7 +153,6 @@ export const useCartaPorteCompleta = (cartaPorteId?: string) => {
     queryFn: async () => {
       if (!cartaPorteId || !user?.id) return null;
 
-      // Query optimizada con todas las relaciones en una sola consulta
       const { data, error } = await supabase
         .from('cartas_porte')
         .select(`
@@ -101,7 +160,10 @@ export const useCartaPorteCompleta = (cartaPorteId?: string) => {
           ubicaciones!inner(*),
           mercancias!inner(*),
           figuras_transporte!inner(*),
-          autotransporte!inner(*)
+          autotransporte!inner(
+            *,
+            remolques_ccp(*)
+          )
         `)
         .eq('id', cartaPorteId)
         .eq('usuario_id', user.id)
@@ -113,4 +175,53 @@ export const useCartaPorteCompleta = (cartaPorteId?: string) => {
     enabled: !!cartaPorteId && !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
+};
+
+// Hook para validar migración entre versiones
+export const useCartaPorteVersionMigration = () => {
+  const queryClient = useQueryClient();
+
+  const validateAndMigrate = useMutation({
+    mutationFn: async ({ cartaPorteId, targetVersion }: { 
+      cartaPorteId: string; 
+      targetVersion: '3.0' | '3.1' 
+    }) => {
+      // Usar la función de validación de la BD
+      const { data, error } = await supabase.rpc('validate_carta_porte_v31', {
+        carta_porte_data: { cartaPorteVersion: targetVersion }
+      });
+
+      if (error) throw error;
+      
+      if (!data.valido) {
+        throw new Error(`Errores de validación: ${data.errores.join(', ')}`);
+      }
+
+      // Si la validación pasa, actualizar la versión
+      const { error: updateError } = await supabase
+        .from('cartas_porte')
+        .update({ 
+          version_carta_porte: targetVersion,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', cartaPorteId);
+
+      if (updateError) throw updateError;
+
+      return { success: true, version: targetVersion };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartas-porte-optimized'] });
+      queryClient.invalidateQueries({ queryKey: ['carta-porte-completa'] });
+      toast.success('Migración de versión completada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(`Error en migración: ${error.message}`);
+    }
+  });
+
+  return {
+    validateAndMigrate: validateAndMigrate.mutateAsync,
+    isValidating: validateAndMigrate.isPending,
+  };
 };

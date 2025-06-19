@@ -1,13 +1,16 @@
+
 import {
   CartaPorteData,
   UbicacionCompleta,
   MercanciaCompleta,
   AutotransporteCompleto,
   FiguraCompleta,
+  RemolqueCCP,
 } from '@/types/cartaPorte';
 
-// Se unifica el tipo de datos del formulario bajo un solo nombre.
+// Tipo unificado para el formulario (basado en la estructura de BD)
 export interface CartaPorteFormData {
+  // Configuración básica
   configuracion: {
     version: '3.0' | '3.1';
     tipoComprobante: string;
@@ -21,10 +24,14 @@ export interface CartaPorteFormData {
       nombre: string;
     };
   };
+  
+  // Datos principales (misma estructura que CartaPorteData)
   ubicaciones: UbicacionCompleta[];
   mercancias: MercanciaCompleta[];
   autotransporte: AutotransporteCompleto;
   figuras: FiguraCompleta[];
+  
+  // Campos de identificación y configuración
   tipoCreacion: 'plantilla' | 'carga' | 'manual';
   tipoCfdi: 'Ingreso' | 'Traslado';
   rfcEmisor: string;
@@ -35,97 +42,54 @@ export interface CartaPorteFormData {
   registroIstmo: boolean;
   cartaPorteVersion: '3.0' | '3.1';
   cartaPorteId?: string;
+  idCCP?: string;
+  
+  // Campos específicos por versión
+  regimenAduanero?: string; // v3.0
+  regimenesAduaneros?: string[]; // v3.1
 }
 
-// Funciones de conversión (antes en cartaPorteDataConverters.ts)
-const convertUbicacionesToSimple = (ubicaciones: UbicacionCompleta[]) => {
-  return ubicaciones.map(ubicacion => ({
-    id: ubicacion.id || '',
-    tipo:
-      ubicacion.tipo_ubicacion === 'Origen'
-        ? 'origen'
-        : ubicacion.tipo_ubicacion === 'Destino'
-        ? 'destino'
-        : 'origen',
-    direccion: `${ubicacion.domicilio?.calle || ''} ${
-      ubicacion.domicilio?.numero_exterior || ''
-    }`,
-    codigoPostal: ubicacion.domicilio?.codigo_postal || '',
-    estado: ubicacion.domicilio?.estado || '',
-    municipio: ubicacion.domicilio?.municipio || '',
-    coordenadas: ubicacion.coordenadas,
-  }));
-};
-
-const convertMercanciasToSimple = (mercancias: MercanciaCompleta[]) => {
-  return mercancias.map(mercancia => ({
-    id: mercancia.id || '',
-    descripcion: mercancia.descripcion || '',
-    cantidad: mercancia.cantidad || 0,
-    unidadMedida: mercancia.clave_unidad || '',
-    peso: mercancia.peso_kg || 0,
-    valor: mercancia.valor_mercancia || 0,
-    claveProdServ: mercancia.bienes_transp,
-    materialPeligroso: mercancia.material_peligroso,
-    claveMaterialPeligroso: mercancia.cve_material_peligroso,
-    fraccionArancelaria: mercancia.fraccion_arancelaria,
-    tipoEmbalaje: mercancia.tipo_embalaje,
-    dimensiones: mercancia.dimensiones,
-  }));
-};
-
-const convertAutotransporteToSimple = (autotransporte?: AutotransporteCompleto) => {
-  if (!autotransporte) {
-    return {
-      placaVm: '',
-      configuracionVehicular: '',
-      seguro: { aseguradora: '', poliza: '', vigencia: '' },
-    };
-  }
-  return {
-    placaVm: autotransporte.placa_vm || '',
-    configuracionVehicular: autotransporte.config_vehicular || '',
-    anioModelo: autotransporte.anio_modelo_vm || new Date().getFullYear(),
-    seguro: {
-      aseguradora: autotransporte.asegura_resp_civil || '',
-      poliza: autotransporte.poliza_resp_civil || '',
-      vigencia: '', // Este campo no existe en el origen
-    },
-    remolques: autotransporte.remolques?.map(r => ({
-      placa: r.placa,
-      subtipo: r.subtipo_rem,
-    })) || [],
-  };
-};
-
-const convertFigurasToSimple = (figuras: FiguraCompleta[]) => {
-  return figuras.map(figura => ({
-    id: figura.id || '',
-    tipoFigura: figura.tipo_figura || '',
-    rfc: figura.rfc_figura || '',
-    nombre: figura.nombre_figura || '',
-    licencia: figura.num_licencia,
-  }));
-};
-
-// Hook principal de mapeo
+// Hook principal de mapeo con validación de tipos
 export const useCartaPorteMappers = () => {
   const formDataToCartaPorteData = (formData: CartaPorteFormData): CartaPorteData => {
     return {
+      // Identificadores
+      id: formData.cartaPorteId,
+      idCCP: formData.idCCP || formData.cartaPorteId,
+      cartaPorteId: formData.cartaPorteId,
+      
+      // Configuración
       tipoCreacion: formData.tipoCreacion,
       tipoCfdi: formData.tipoCfdi,
+      cartaPorteVersion: formData.cartaPorteVersion,
+      
+      // Emisor y receptor
       rfcEmisor: formData.rfcEmisor,
       nombreEmisor: formData.nombreEmisor,
       rfcReceptor: formData.rfcReceptor,
       nombreReceptor: formData.nombreReceptor,
+      
+      // Transporte
       transporteInternacional: formData.transporteInternacional,
       registroIstmo: formData.registroIstmo,
-      cartaPorteVersion: formData.cartaPorteVersion,
+      
+      // Regímenes aduaneros (manejar diferencias de versión)
+      regimenAduanero: formData.regimenAduanero,
+      regimenesAduaneros: formData.regimenesAduaneros,
+      
+      // Datos principales (estructura directa)
       ubicaciones: formData.ubicaciones,
       mercancias: formData.mercancias,
       autotransporte: formData.autotransporte,
       figuras: formData.figuras,
-      cartaPorteId: formData.cartaPorteId,
+      
+      // Campos específicos de v3.1
+      version31Fields: formData.cartaPorteVersion === '3.1' ? {
+        transporteEspecializado: false,
+        tipoCarroceria: formData.autotransporte?.tipo_carroceria,
+        registroISTMO: formData.registroIstmo,
+        remolquesCCP: formData.autotransporte?.remolques || [],
+      } : undefined,
     };
   };
 
@@ -144,10 +108,14 @@ export const useCartaPorteMappers = () => {
           nombre: cartaPorteData.nombreReceptor || '',
         },
       },
+      
+      // Datos principales (estructura directa)
       ubicaciones: cartaPorteData.ubicaciones || [],
       mercancias: cartaPorteData.mercancias || [],
-      autotransporte: cartaPorteData.autotransporte,
+      autotransporte: cartaPorteData.autotransporte || getDefaultAutotransporte(),
       figuras: cartaPorteData.figuras || [],
+      
+      // Configuración básica
       tipoCreacion: cartaPorteData.tipoCreacion || 'manual',
       tipoCfdi: cartaPorteData.tipoCfdi || 'Traslado',
       rfcEmisor: cartaPorteData.rfcEmisor || '',
@@ -158,11 +126,57 @@ export const useCartaPorteMappers = () => {
       registroIstmo: !!cartaPorteData.registroIstmo,
       cartaPorteVersion: cartaPorteData.cartaPorteVersion || '3.1',
       cartaPorteId: cartaPorteData.cartaPorteId,
+      idCCP: cartaPorteData.idCCP || cartaPorteData.cartaPorteId,
+      
+      // Regímenes aduaneros según versión
+      regimenAduanero: cartaPorteData.regimenAduanero,
+      regimenesAduaneros: cartaPorteData.regimenesAduaneros,
     };
+  };
+
+  // Función helper para autotransporte por defecto
+  const getDefaultAutotransporte = (): AutotransporteCompleto => ({
+    placa_vm: '',
+    anio_modelo_vm: new Date().getFullYear(),
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    peso_bruto_vehicular: 0,
+    remolques: [],
+  });
+
+  // Funciones de validación de migración entre versiones
+  const validateMigrationTo31 = (data: CartaPorteData): string[] => {
+    const errors: string[] = [];
+    
+    // Validar fracción arancelaria obligatoria en v3.1
+    if (data.mercancias?.some(m => !m.fraccion_arancelaria)) {
+      errors.push('Fracción arancelaria es obligatoria en versión 3.1');
+    }
+    
+    // Validar peso bruto vehicular
+    if (!data.autotransporte?.peso_bruto_vehicular) {
+      errors.push('Peso bruto vehicular es obligatorio en versión 3.1');
+    }
+    
+    return errors;
+  };
+
+  const validateMigrationTo30 = (data: CartaPorteData): string[] => {
+    const errors: string[] = [];
+    
+    // Validaciones específicas para migrar a v3.0 si las hubiera
+    // Por ejemplo, verificar que no hay campos exclusivos de v3.1
+    
+    return errors;
   };
 
   return {
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
+    validateMigrationTo31,
+    validateMigrationTo30,
   };
 };
