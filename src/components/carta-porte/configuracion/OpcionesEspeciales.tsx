@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -18,8 +19,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
     };
 
     if (!checked) {
-      updates.pais_origen_destino = '';
-      updates.via_entrada_salida = '';
+      updates.paisOrigenDestino = '';
+      updates.viaEntradaSalida = '';
     }
     
     // Si se activa, preseleccionar valores si no los hay
@@ -71,8 +72,6 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
             <Select 
               value={data.entradaSalidaMerc || ''} 
               onValueChange={(value) => handleFieldChange('entradaSalidaMerc', value)}
-              // SIEMPRE habilitado, no condicionado a isTransporteInternacional
-              // disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -89,8 +88,6 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
             <Select 
               value={data.viaTransporte || ''} 
               onValueChange={(value) => handleFieldChange('viaTransporte', value)}
-              // SIEMPRE habilitado, no condicionado a isTransporteInternacional
-              // disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -113,8 +110,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
           <div>
             <Label htmlFor="pais-origen-destino">País de Origen/Destino</Label>
             <Select 
-              value={data.pais_origen_destino || ''} 
-              onValueChange={(value) => handleFieldChange('pais_origen_destino', value)}
+              value={data.paisOrigenDestino || ''} 
+              onValueChange={(value) => handleFieldChange('paisOrigenDestino', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un país..." />
@@ -131,8 +128,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
           <div>
             <Label htmlFor="via-entrada-salida">Vía de Entrada/Salida</Label>
             <Select 
-              value={data.via_entrada_salida || ''} 
-              onValueChange={(value) => handleFieldChange('via_entrada_salida', value)}
+              value={data.viaEntradaSalida || ''} 
+              onValueChange={(value) => handleFieldChange('viaEntradaSalida', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />

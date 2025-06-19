@@ -76,7 +76,7 @@ export const useCartaPorteValidation = () => {
           if (!ub.domicilio?.calle) {
             missingFields.ubicaciones.push(`Calle en ubicación ${index + 1}`);
           }
-          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso') {
+          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso Intermedio') {
             missingFields.ubicaciones.push(`RFC en ubicación ${index + 1}`);
           }
         });

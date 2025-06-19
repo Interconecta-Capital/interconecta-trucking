@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { CartaPorteData } from '@/types/cartaPorte';
+import { ValidationResult } from '@/types/validationTypes';
 
 export interface CartaPorteOptimizada {
   id: string;
@@ -64,14 +65,19 @@ export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
     mutationFn: async (cartaPorteData: CartaPorteData) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
-      // Preparar datos con los nuevos campos
+      // Preparar datos compatibles con Supabase
       const insertData = {
-        ...cartaPorteData,
         usuario_id: user.id,
+        rfc_emisor: cartaPorteData.rfcEmisor,
+        rfc_receptor: cartaPorteData.rfcReceptor,
+        nombre_emisor: cartaPorteData.nombreEmisor,
+        nombre_receptor: cartaPorteData.nombreReceptor,
+        tipo_cfdi: cartaPorteData.tipoCfdi,
+        transporte_internacional: cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí',
+        registro_istmo: !!cartaPorteData.registroIstmo,
         id_ccp: cartaPorteData.idCCP || crypto.randomUUID(),
         version_carta_porte: cartaPorteData.cartaPorteVersion || '3.1',
-        datos_formulario: cartaPorteData,
-        // Los totales se calcularán automáticamente por el trigger
+        datos_formulario: cartaPorteData as any, // Type assertion para JSON
       };
 
       const { data, error } = await supabase
@@ -102,8 +108,11 @@ export const useOptimizedCartaPorte = (page = 1, limit = 20) => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CartaPorteData> }) => {
       const updateData = {
-        ...data,
-        datos_formulario: data,
+        rfc_emisor: data.rfcEmisor,
+        rfc_receptor: data.rfcReceptor,
+        nombre_emisor: data.nombreEmisor,
+        nombre_receptor: data.nombreReceptor,
+        datos_formulario: data as any, // Type assertion para JSON
         updated_at: new Date().toISOString(),
       };
 
@@ -193,8 +202,9 @@ export const useCartaPorteVersionMigration = () => {
 
       if (error) throw error;
       
-      if (!data.valido) {
-        throw new Error(`Errores de validación: ${data.errores.join(', ')}`);
+      const validationResult = data as ValidationResult;
+      if (!validationResult.valido) {
+        throw new Error(`Errores de validación: ${validationResult.errores.join(', ')}`);
       }
 
       // Si la validación pasa, actualizar la versión

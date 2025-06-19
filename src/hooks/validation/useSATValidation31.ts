@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { SATValidation31Enhanced, ValidationSAT31Result, CartaPorte31Data } from '@/services/validation/SATValidation31Enhanced';
+import { SATValidation31Enhanced, ValidationSAT31Result } from '@/services/validation/SATValidation31Enhanced';
 import { useToast } from '@/hooks/use-toast';
 import { CartaPorteData } from '@/types/cartaPorte';
+import { CartaPorte31Data } from '@/types/validationTypes';
 
 export interface UseSATValidation31Options {
   autoValidate?: boolean;
