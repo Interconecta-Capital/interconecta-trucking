@@ -1,7 +1,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
-import { UbicacionesSection } from '../UbicacionesSection';
+import { UbicacionesSectionOptimizada } from '../ubicaciones/UbicacionesSectionOptimizada';
 import { MercanciasSection } from '../MercanciasSection';
 import { AutotransporteSection } from '../AutotransporteSection';
 import { FigurasTransporteSection } from '../FigurasTransporteSection';
@@ -17,7 +17,7 @@ interface OptimizedCartaPorteStepContentProps {
   figuras: FiguraCompleta[];
   currentCartaPorteId?: string | null;
   onConfiguracionChange: (config: Partial<CartaPorteData>) => void;
-  onUbicacionesChange: (ubicaciones: UbicacionCompleta[]) => void;
+  onUbicacionesChange: (ubicaciones: UbicacionCompleta[], distanciaTotal?: number, tiempoEstimado?: number) => void;
   onMercanciasChange: (mercancias: MercanciaCompleta[]) => void;
   onAutotransporteChange: (autotransporte: AutotransporteCompleto) => void;
   onFigurasChange: (figuras: FiguraCompleta[]) => void;
@@ -59,10 +59,12 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
   );
 
   const handleNextStep = () => {
+    console.log('Avanzando al paso:', currentStep + 1);
     onStepChange(currentStep + 1);
   };
 
   const handlePrevStep = () => {
+    console.log('Retrocediendo al paso:', currentStep - 1);
     onStepChange(currentStep - 1);
   };
 
@@ -82,20 +84,13 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
     case 1:
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-          <UbicacionesSection
-            data={ubicaciones}
-            onChange={(newUbicaciones) => {
-              onUbicacionesChange(newUbicaciones);
-              // Auto-calcular distancia si hay ubicaciones válidas
-              if (newUbicaciones.length >= 2) {
-                console.log('🔄 Ubicaciones actualizadas, preparando cálculo de ruta...');
-              }
-            }}
+          <UbicacionesSectionOptimizada
+            ubicaciones={ubicaciones}
+            distanciaTotal={datosCalculoRuta?.distanciaTotal}
+            tiempoEstimado={datosCalculoRuta?.tiempoEstimado}
+            onChange={onUbicacionesChange}
             onNext={handleNextStep}
             onPrev={handlePrevStep}
-            cartaPorteId={currentCartaPorteId || undefined}
-            // Pasar callback para persistir cálculos de ruta
-            onDistanceCalculated={onCalculoRutaUpdate}
           />
         </div>
       );

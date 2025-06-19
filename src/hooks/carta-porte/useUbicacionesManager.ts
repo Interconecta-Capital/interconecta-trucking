@@ -1,8 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Ubicacion } from '@/types/ubicaciones';
 import { UbicacionCompleta } from '@/types/cartaPorte';
-import { convertToUbicacion, convertToUbicacionCompleta } from '@/components/carta-porte/ubicaciones/utils/ubicacionTypeConverters';
 
 interface UseUbicacionesManagerProps {
   ubicaciones: UbicacionCompleta[];
@@ -11,29 +9,26 @@ interface UseUbicacionesManagerProps {
 
 export const useUbicacionesManager = ({ ubicaciones, onChange }: UseUbicacionesManagerProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUbicacion, setEditingUbicacion] = useState<Ubicacion | null>(null);
+  const [editingUbicacion, setEditingUbicacion] = useState<UbicacionCompleta | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [currentDistanceTotal, setCurrentDistanceTotal] = useState(0);
   const [currentTimeEstimate, setCurrentTimeEstimate] = useState(0);
 
   const handleAddUbicacion = useCallback(() => {
-    const newUbicacion: Ubicacion = {
+    const newUbicacion: UbicacionCompleta = {
       id: crypto.randomUUID(),
-      idUbicacion: '',
-      tipoUbicacion: ubicaciones.length === 0 ? 'Origen' : 'Destino',
-      ordenSecuencia: ubicaciones.length + 1,
-      tipoEstacion: '1',
+      id_ubicacion: '',
+      tipo_ubicacion: ubicaciones.length === 0 ? 'Origen' : 'Destino',
+      tipo_estacion: '01',
+      distancia_recorrida: 0,
       domicilio: {
-        pais: 'México',
-        codigoPostal: '',
+        pais: 'MEX',
+        codigo_postal: '',
         estado: '',
         municipio: '',
         colonia: '',
         calle: '',
-        numExterior: '',
-        numInterior: '',
-        referencia: '',
-        localidad: ''
+        numero_exterior: ''
       }
     };
     setEditingUbicacion(newUbicacion);
@@ -41,21 +36,18 @@ export const useUbicacionesManager = ({ ubicaciones, onChange }: UseUbicacionesM
   }, [ubicaciones.length]);
 
   const handleEditUbicacion = useCallback((ubicacionCompleta: UbicacionCompleta) => {
-    const ubicacion = convertToUbicacion(ubicacionCompleta);
-    setEditingUbicacion(ubicacion);
+    setEditingUbicacion(ubicacionCompleta);
     setIsDialogOpen(true);
   }, []);
 
-  const handleSaveUbicacion = useCallback((ubicacion: Ubicacion) => {
-    const ubicacionCompleta = convertToUbicacionCompleta(ubicacion);
-    
+  const handleSaveUbicacion = useCallback((ubicacion: UbicacionCompleta) => {
     if (editingUbicacion?.id && ubicaciones.find(u => u.id === editingUbicacion.id)) {
       // Actualizar ubicación existente
-      const updatedUbicaciones = ubicaciones.map(u => u.id === ubicacionCompleta.id ? ubicacionCompleta : u);
+      const updatedUbicaciones = ubicaciones.map(u => u.id === ubicacion.id ? ubicacion : u);
       onChange(updatedUbicaciones, currentDistanceTotal, currentTimeEstimate);
     } else {
       // Agregar nueva ubicación
-      const newUbicaciones = [...ubicaciones, ubicacionCompleta];
+      const newUbicaciones = [...ubicaciones, ubicacion];
       onChange(newUbicaciones, currentDistanceTotal, currentTimeEstimate);
     }
     setIsDialogOpen(false);

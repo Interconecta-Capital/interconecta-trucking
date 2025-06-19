@@ -14,26 +14,34 @@ interface ConfiguracionInicialProps {
 
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
   const isValid = () => {
+    // Validación más permisiva para permitir continuar
     const hasBasicInfo = data.rfcEmisor && data.nombreEmisor && data.rfcReceptor && data.nombreReceptor;
-    const hasTransportInfo = data.cartaPorteVersion && data.uso_cfdi;
+    const hasTransportInfo = data.cartaPorteVersion;
     
-    // Convertir a boolean para comparación consistente
-    const transporteInt = typeof data.transporteInternacional === 'string' 
-      ? data.transporteInternacional === 'true' || data.transporteInternacional === 'Sí'
-      : Boolean(data.transporteInternacional);
-    
-    const registroIstmo = typeof data.registroIstmo === 'string'
-      ? data.registroIstmo === 'true' || data.registroIstmo === 'Sí'
-      : Boolean(data.registroIstmo);
+    console.log('Validando configuración:', {
+      hasBasicInfo,
+      hasTransportInfo,
+      rfcEmisor: data.rfcEmisor,
+      nombreEmisor: data.nombreEmisor,
+      rfcReceptor: data.rfcReceptor,
+      nombreReceptor: data.nombreReceptor,
+      cartaPorteVersion: data.cartaPorteVersion
+    });
 
     return hasBasicInfo && hasTransportInfo;
   };
 
   const handleNext = () => {
+    console.log('Intentando continuar con datos:', data);
     if (isValid()) {
+      console.log('Validación exitosa, continuando...');
       onNext();
+    } else {
+      console.log('Validación fallida');
     }
   };
+
+  const valid = isValid();
 
   return (
     <div className="space-y-6">
@@ -53,12 +61,19 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
           <div className="flex justify-end pt-6">
             <Button 
               onClick={handleNext} 
-              disabled={!isValid()}
+              disabled={!valid}
               className="flex items-center gap-2"
             >
               Continuar a Ubicaciones
               <ArrowRight className="h-4 w-4" />
             </Button>
+          </div>
+          
+          {/* Debug info */}
+          <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+            <p>Debug - Válido: {valid ? 'Sí' : 'No'}</p>
+            <p>RFC Emisor: {data.rfcEmisor || 'Vacío'}</p>
+            <p>RFC Receptor: {data.rfcReceptor || 'Vacío'}</p>
           </div>
         </CardContent>
       </Card>

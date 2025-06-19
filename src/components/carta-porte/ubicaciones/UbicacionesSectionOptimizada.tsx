@@ -11,7 +11,6 @@ import { UbicacionesSectionHeader } from './UbicacionesSectionHeader';
 import { UbicacionesValidationPanel } from './UbicacionesValidationPanel';
 import { UbicacionesSectionNavigation } from './UbicacionesSectionNavigation';
 import { useUbicacionesManager } from '@/hooks/carta-porte/useUbicacionesManager';
-import { convertToUbicacion, convertToUbicacionCompleta } from './utils/ubicacionTypeConverters';
 
 interface UbicacionesSectionOptimizadaProps {
   ubicaciones: UbicacionCompleta[];
@@ -51,20 +50,6 @@ export function UbicacionesSectionOptimizada({
     ubicaciones.some(u => u.tipo_ubicacion === 'Destino') &&
     (currentDistanceTotal || distanciaTotal || 0) > 0;
 
-  // Convert editingUbicacion from Ubicacion to UbicacionCompleta for the dialog
-  const editingUbicacionCompleta = editingUbicacion ? convertToUbicacionCompleta(editingUbicacion) : null;
-
-  // Handle save from dialog - convert from UbicacionCompleta to Ubicacion for the manager
-  const handleDialogSave = (ubicacionCompleta: UbicacionCompleta) => {
-    const ubicacion = convertToUbicacion(ubicacionCompleta);
-    handleSaveUbicacion(ubicacion);
-  };
-
-  // Handle edit - pass UbicacionCompleta directly since handleEditUbicacion expects UbicacionCompleta
-  const handleEditUbicacionWrapper = (ubicacionCompleta: UbicacionCompleta) => {
-    handleEditUbicacion(ubicacionCompleta);
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -90,7 +75,7 @@ export function UbicacionesSectionOptimizada({
                     key={ubicacion.id}
                     ubicacion={ubicacion}
                     index={index}
-                    onEdit={() => handleEditUbicacionWrapper(ubicacion)}
+                    onEdit={() => handleEditUbicacion(ubicacion)}
                     onDelete={() => handleDeleteUbicacion(ubicacion.id || '')}
                   />
                 ))}
@@ -135,8 +120,8 @@ export function UbicacionesSectionOptimizada({
       <UbicacionFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        ubicacion={editingUbicacionCompleta}
-        onSave={handleDialogSave}
+        ubicacion={editingUbicacion}
+        onSave={handleSaveUbicacion}
       />
     </div>
   );
