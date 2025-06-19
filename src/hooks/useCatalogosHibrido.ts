@@ -39,6 +39,8 @@ export function useCatalogosHibrido(tipo: string, searchTerm: string = '', enabl
             return await CatalogosSATService.obtenerSubtiposRemolque(searchTerm);
           case 'estados':
             return await CatalogosSATService.obtenerEstados(searchTerm);
+          case 'regimenes_aduaneros':
+            return await CatalogosSATService.obtenerRegimenesAduaneros();
           default:
             return [];
         }

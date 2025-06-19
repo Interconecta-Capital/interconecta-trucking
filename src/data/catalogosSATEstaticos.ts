@@ -113,6 +113,15 @@ export const UNIDADES_MEDIDA_SAT: CatalogoSATItem[] = [
   { clave: "HUR", descripcion: "Hora" }
 ];
 
+// Catálogo de Regímenes Aduaneros (simplificado)
+export const REGIMENES_ADUANEROS_SAT: CatalogoSATItem[] = [
+  { clave: 'A1', descripcion: 'Importación definitiva' },
+  { clave: 'A3', descripcion: 'Importación temporal' },
+  { clave: 'B1', descripcion: 'Exportación definitiva' },
+  { clave: 'B2', descripcion: 'Exportación temporal' },
+  { clave: 'C1', descripcion: 'Transformación o elaboración en recinto fiscalizado' }
+];
+
 // Función helper para formatear items del catálogo
 export const formatCatalogItem = (item: CatalogoSATItem) => ({
   value: item.clave,
@@ -130,6 +139,8 @@ export const getCatalogoEstatico = (tipo: string) => {
       return TIPOS_EMBALAJE_SAT.map(formatCatalogItem);
     case 'unidades':
       return UNIDADES_MEDIDA_SAT.map(formatCatalogItem);
+    case 'regimenes_aduaneros':
+      return REGIMENES_ADUANEROS_SAT.map(formatCatalogItem);
     default:
       return [];
   }
