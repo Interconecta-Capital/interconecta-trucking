@@ -64,7 +64,6 @@ export function MercanciasSection({
     });
   };
 
-  // ✅ FIX: Crear función con la signatura correcta esperada por MercanciaFormV31
   const handleSaveMercanciaWrapper = async (mercanciaData: MercanciaCompleta): Promise<boolean> => {
     try {
       const errors = validateMercanciaV31(mercanciaData);
@@ -76,7 +75,6 @@ export function MercanciasSection({
       setFormErrors([]);
       
       if (editingIndex !== null) {
-        // Editar existente
         const newData = [...data];
         newData[editingIndex] = mercanciaData;
         onChange(newData);
@@ -86,7 +84,6 @@ export function MercanciasSection({
           description: `Se actualizó la mercancía #${editingIndex + 1}`,
         });
       } else {
-        // Agregar nueva
         onChange([...data, mercanciaData]);
         
         toast({
@@ -108,7 +105,6 @@ export function MercanciasSection({
   const validateMercanciaV31 = (mercancia: MercanciaCompleta): string[] => {
     const errors: string[] = [];
     
-    // Validaciones básicas
     if (!mercancia.descripcion?.trim()) {
       errors.push('La descripción es requerida');
     }
@@ -129,12 +125,10 @@ export function MercanciasSection({
       errors.push('El peso unitario debe ser mayor a 0');
     }
 
-    // VALIDACIONES v3.1
     if (!mercancia.peso_bruto_total || mercancia.peso_bruto_total <= 0) {
       errors.push('El peso bruto total es obligatorio en v3.1');
     }
 
-    // Validaciones específicas fauna silvestre
     if (mercancia.especie_protegida) {
       if (!mercancia.descripcion_detallada?.trim() || mercancia.descripcion_detallada.length < 50) {
         errors.push('Especies protegidas requieren descripción detallada (mínimo 50 caracteres)');
@@ -143,7 +137,6 @@ export function MercanciasSection({
       if (!mercancia.permisos_semarnat || mercancia.permisos_semarnat.length === 0) {
         errors.push('Especies protegidas requieren al menos un permiso SEMARNAT');
       } else {
-        // Validar vigencia de permisos
         const now = new Date();
         const permisosVencidos = mercancia.permisos_semarnat.filter(p => 
           new Date(p.fecha_vencimiento) < now
@@ -153,7 +146,6 @@ export function MercanciasSection({
         }
       }
 
-      // Validación CITES si se requiere
       if (mercancia.requiere_cites && !mercancia.documentacion_aduanera?.some(doc => 
         doc.tipo_documento === 'cites'
       )) {
@@ -161,7 +153,6 @@ export function MercanciasSection({
       }
     }
     
-    // Validaciones material peligroso
     if (mercancia.material_peligroso && !mercancia.cve_material_peligroso?.trim()) {
       errors.push('La clave de material peligroso es requerida cuando es material peligroso');
     }
@@ -297,9 +288,9 @@ export function MercanciasSection({
                   {showValidation && (
                     <ValidacionSATv31Component
                       cartaPorteData={{
+                        version: '3.1',
                         cartaPorteVersion: '3.1',
                         mercancias: data,
-                        // Simular otros datos necesarios para validación
                         ubicaciones: [],
                         autotransporte: {} as any,
                         figuras: []
@@ -314,7 +305,6 @@ export function MercanciasSection({
         </CardContent>
       </Card>
 
-      {/* Validación y Navegación */}
       {!showForm && (
         <>
           {!isDataComplete() && data.length > 0 && (

@@ -25,7 +25,7 @@ export function PDFGenerationPanel({
   const generatePDF = async () => {
     if (isGenerating) return;
 
-    const cartaPorteId = cartaPorteData.cartaPorteId;
+    const cartaPorteId = cartaPorteData.cartaPorteId || cartaPorteData.idCCP;
     if (!cartaPorteId) {
       toast.error('ID de Carta Porte requerido para generar el PDF');
       return;
