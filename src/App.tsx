@@ -27,8 +27,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Página de inicio sin layout */}
-            <Route path="/" element={<Index />} />
+            {/* Redirigir página de inicio directamente al dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* Rutas principales con layout completo */}
             <Route path="/dashboard" element={

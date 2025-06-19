@@ -8,6 +8,7 @@ import {
   Shield,
   Truck,
   Users,
+  Plus,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -59,6 +60,15 @@ export const AppSidebar = () => {
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-5 w-5" />
                   <span className="text-sm">Dashboard</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive('/carta-porte/editor')} size="default" tooltip="Nueva Carta Porte">
+                <Link to="/carta-porte/editor">
+                  <Plus className="h-5 w-5" />
+                  <span className="text-sm">Nueva Carta Porte</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
