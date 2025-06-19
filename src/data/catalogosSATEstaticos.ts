@@ -6,34 +6,29 @@ export interface CatalogoSATItem {
 
 // Productos y servicios más comunes del SAT
 export const PRODUCTOS_SERVICIOS_SAT: CatalogoSATItem[] = [
-  { clave: "01010101", descripcion: "No existe en el catálogo" },
-  { clave: "10101500", descripcion: "Animales vivos" },
-  { clave: "10101600", descripcion: "Productos animales" },
-  { clave: "10121700", descripcion: "Cereales" },
-  { clave: "10121800", descripcion: "Frutas y verduras" },
-  { clave: "15101500", descripcion: "Productos lácteos" },
-  { clave: "15101600", descripcion: "Carne y productos cárnicos" },
-  { clave: "15121500", descripcion: "Bebidas" },
-  { clave: "20101600", descripcion: "Productos textiles" },
-  { clave: "23101600", descripcion: "Productos químicos" },
-  { clave: "24101600", descripcion: "Productos de caucho y plástico" },
-  { clave: "25101600", descripcion: "Productos de cuero" },
-  { clave: "26101600", descripcion: "Productos de madera" },
-  { clave: "27101600", descripcion: "Productos de papel" },
-  { clave: "30101600", descripcion: "Productos metálicos" },
-  { clave: "31101600", descripcion: "Maquinaria y equipo" },
-  { clave: "32101600", descripcion: "Equipo electrónico" },
-  { clave: "33101600", descripcion: "Vehículos automotores" },
-  { clave: "39101600", descripcion: "Otros productos manufacturados" },
-  { clave: "43191600", descripcion: "Servicios de construcción" },
-  { clave: "50101600", descripcion: "Servicios de comercio" },
-  { clave: "60101600", descripcion: "Servicios de transporte" },
-  { clave: "70101600", descripcion: "Servicios profesionales" },
-  { clave: "80101600", descripcion: "Servicios de salud" },
-  { clave: "81101600", descripcion: "Servicios educativos" },
-  { clave: "84101600", descripcion: "Servicios de alimentación" },
-  { clave: "85101600", descripcion: "Servicios de entretenimiento" },
-  { clave: "90101600", descripcion: "Servicios gubernamentales" }
+  { clave: '01010101', descripcion: 'No existe en el catálogo' },
+  {
+    clave: '01012100',
+    descripcion: 'Animales vivos de la especie equina, reproductores de raza pura'
+  },
+  { clave: '01012999', descripcion: 'Demás animales vivos de la especie equina' },
+  {
+    clave: '02011000',
+    descripcion: 'Carne de bovino en canal, fresca o refrigerada'
+  },
+  { clave: '08081001', descripcion: 'Manzanas frescas' },
+  { clave: '11010001', descripcion: 'Harina de trigo' },
+  { clave: '15121501', descripcion: 'Aceite de soja, en bruto' },
+  { clave: '22029001', descripcion: 'Bebidas no alcohólicas, excepto jugos' },
+  { clave: '27101911', descripcion: 'Diésel' },
+  {
+    clave: '40111001',
+    descripcion: 'Neumáticos nuevos de caucho para automóviles'
+  },
+  {
+    clave: '78101800',
+    descripcion: 'Servicios de transporte de carga por carretera'
+  }
 ];
 
 // Tipos de embalaje más comunes del SAT
