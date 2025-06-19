@@ -211,7 +211,6 @@ export function SimplifiedXMLGenerationPanel({
             onTimbrarManual={handleTimbrar}
             isTimbring={isTimbring}
             xmlTimbrado={xmlTimbrado}
-            cartaPorteId={cartaPorteIdProp}
           />
 
           <Separator />

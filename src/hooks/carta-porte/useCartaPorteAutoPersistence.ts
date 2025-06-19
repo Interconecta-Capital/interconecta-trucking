@@ -200,7 +200,7 @@ export function useCartaPorteAutoPersistence(
       }
 
       const recoveredData: CartaPorteData = {
-        ...data.datos_formulario,
+        ...(data.datos_formulario as CartaPorteData),
         xmlGenerado: data.xml_generado,
         cartaPorteId: id
       };

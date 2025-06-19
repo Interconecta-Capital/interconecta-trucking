@@ -1,3 +1,4 @@
+
 export interface CartaPorteData {
   // Identificadores únicos
   id?: string;
@@ -181,7 +182,7 @@ export interface MercanciaCompleta {
   bienes_transp: string;
   descripcion?: string;
   cantidad?: number;
-  clave_unidad?: string;
+  clave_unidad: string; // Hacer obligatorio
   peso_kg?: number;
   valor_mercancia?: number;
   moneda?: string;

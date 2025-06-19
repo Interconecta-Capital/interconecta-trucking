@@ -57,18 +57,17 @@ export function ConfiguracionPrincipal({
 
         {/* Datos del Emisor */}
         <DatosEmisor
-          rfcEmisor={data.rfcEmisor || ''}
-          nombreEmisor={data.nombreEmisor || ''}
-          onRFCChange={(rfc) => onChange({ rfcEmisor: rfc })}
-          onNombreChange={(nombre) => onChange({ nombreEmisor: nombre })}
+          data={data}
+          onChange={onChange}
+          onNext={() => {}}
         />
 
         {/* Datos del Receptor */}
         <DatosReceptor
-          rfcReceptor={data.rfcReceptor || ''}
-          nombreReceptor={data.nombreReceptor || ''}
-          onRFCChange={(rfc) => onChange({ rfcReceptor: rfc })}
-          onNombreChange={(nombre) => onChange({ nombreReceptor: nombre })}
+          data={data}
+          onChange={onChange}
+          onNext={() => {}}
+          onPrev={() => {}}
         />
 
         {/* Opciones Especiales */}
