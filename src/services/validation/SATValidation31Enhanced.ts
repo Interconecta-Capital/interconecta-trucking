@@ -1,4 +1,3 @@
-
 import { ValidationResult } from '@/utils/satValidation';
 import { MercanciaCompleta, AutotransporteCompleto, FiguraCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
@@ -15,20 +14,20 @@ export interface ValidationSAT31Result {
 }
 
 export interface CartaPorte31Data {
-  // Campos base
-  rfcEmisor: string;
-  nombreEmisor: string;
-  rfcReceptor: string;
-  nombreReceptor: string;
-  tipoCfdi: string;
-  transporteInternacional: boolean;
-  registroIstmo: boolean;
+  // Campos base - todos opcionales para compatibilidad
+  rfcEmisor?: string;
+  nombreEmisor?: string;
+  rfcReceptor?: string;
+  nombreReceptor?: string;
+  tipoCfdi?: string;
+  transporteInternacional?: boolean;
+  registroIstmo?: boolean;
   
   // Datos extendidos 3.1
-  ubicaciones: UbicacionCompleta[];
-  mercancias: MercanciaCompleta[];
-  autotransporte: AutotransporteCompleto;
-  figuras: FiguraCompleta[];
+  ubicaciones?: UbicacionCompleta[];
+  mercancias?: MercanciaCompleta[];
+  autotransporte?: AutotransporteCompleto;
+  figuras?: FiguraCompleta[];
   
   // Campos específicos 3.1
   version31Fields?: {
@@ -51,20 +50,22 @@ export class SATValidation31Enhanced {
     this.validateBasicFields(data, errors, []);
     
     // Validaciones específicas de ubicaciones 3.1
-    await this.validateUbicaciones31(data.ubicaciones, errors, warnings, []);
+    await this.validateUbicaciones31(data.ubicaciones || [], errors, warnings, []);
     
     // Validaciones específicas de mercancías 3.1
-    await this.validateMercancias31(data.mercancias, errors, warnings, [], []);
+    await this.validateMercancias31(data.mercancias || [], errors, warnings, [], []);
     
     // Validaciones específicas de autotransporte 3.1
-    await this.validateAutotransporte31(data.autotransporte, errors, warnings, [], []);
+    if (data.autotransporte) {
+      await this.validateAutotransporte31(data.autotransporte, errors, warnings, [], []);
+    }
     
     // Validaciones específicas de figuras 3.1
-    await this.validateFiguras31(data.figuras, errors, warnings, []);
+    await this.validateFiguras31(data.figuras || [], errors, warnings, []);
     
     return {
-      valido: errors.length === 0,
-      errores: errors
+      isValid: errors.length === 0,
+      errors: errors
     };
   }
 
@@ -73,7 +74,7 @@ export class SATValidation31Enhanced {
     
     if (data.transporteInternacional) {
       // Validar que hay ubicaciones internacionales
-      const tieneUbicacionInternacional = data.ubicaciones.some(u => 
+      const tieneUbicacionInternacional = data.ubicaciones?.some(u => 
         u.domicilio?.pais && u.domicilio.pais !== 'MEX'
       );
       
@@ -83,8 +84,8 @@ export class SATValidation31Enhanced {
     }
     
     return {
-      valido: errors.length === 0,
-      errores: errors
+      isValid: errors.length === 0,
+      errors: errors
     };
   }
   
@@ -99,16 +100,18 @@ export class SATValidation31Enhanced {
     this.validateBasicFields(data, errors, criticalIssues);
     
     // Validaciones específicas de ubicaciones 3.1
-    await this.validateUbicaciones31(data.ubicaciones, errors, warnings, recommendations);
+    await this.validateUbicaciones31(data.ubicaciones || [], errors, warnings, recommendations);
     
     // Validaciones específicas de mercancías 3.1
-    await this.validateMercancias31(data.mercancias, errors, warnings, recommendations, version31Specific);
+    await this.validateMercancias31(data.mercancias || [], errors, warnings, recommendations, version31Specific);
     
     // Validaciones específicas de autotransporte 3.1
-    await this.validateAutotransporte31(data.autotransporte, errors, warnings, recommendations, version31Specific);
+    if (data.autotransporte) {
+      await this.validateAutotransporte31(data.autotransporte, errors, warnings, recommendations, version31Specific);
+    }
     
     // Validaciones específicas de figuras 3.1
-    await this.validateFiguras31(data.figuras, errors, warnings, recommendations);
+    await this.validateFiguras31(data.figuras || [], errors, warnings, recommendations);
     
     // Validaciones de coherencia entre secciones
     this.validateCoherencia31(data, errors, warnings, recommendations);

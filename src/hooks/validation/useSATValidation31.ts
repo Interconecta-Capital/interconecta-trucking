@@ -95,10 +95,10 @@ export const useSATValidation31 = () => {
       return await SATValidation31Enhanced.validarCompleta(cartaPorte31Data);
     },
     onSuccess: (result) => {
-      if (result.valido) {
+      if (result.isValid) {
         toast.success('Validación básica completada exitosamente');
       } else {
-        toast.error(`Errores encontrados: ${result.errores.length}`);
+        toast.error(`Errores encontrados: ${result.errors.length}`);
       }
     },
     onError: (error: any) => {
@@ -112,10 +112,10 @@ export const useSATValidation31 = () => {
     mutationFn: async (cartaPorteData: CartaPorteData): Promise<ValidationResult> => {
       console.log('Validando distancias...');
       
-      const errores: string[] = [];
+      const errors: string[] = [];
       
       if (!cartaPorteData.ubicaciones || cartaPorteData.ubicaciones.length < 2) {
-        errores.push('Se requieren al menos 2 ubicaciones');
+        errors.push('Se requieren al menos 2 ubicaciones');
       }
       
       const distanciaTotal = cartaPorteData.ubicaciones?.reduce((total, ub) => {
@@ -123,16 +123,16 @@ export const useSATValidation31 = () => {
       }, 0) || 0;
       
       if (distanciaTotal <= 0) {
-        errores.push('La distancia total debe ser mayor a 0');
+        errors.push('La distancia total debe ser mayor a 0');
       }
       
       return {
-        valido: errores.length === 0,
-        errores
+        isValid: errors.length === 0,
+        errors
       };
     },
     onSuccess: (result) => {
-      if (result.valido) {
+      if (result.isValid) {
         toast.success('Validación de distancias completada');
       } else {
         toast.error('Errores en validación de distancias');
@@ -149,22 +149,22 @@ export const useSATValidation31 = () => {
     mutationFn: async (cartaPorteData: CartaPorteData): Promise<ValidationResult> => {
       console.log('Validando códigos postales...');
       
-      const errores: string[] = [];
+      const errors: string[] = [];
       
       cartaPorteData.ubicaciones?.forEach((ubicacion, index) => {
         const cp = ubicacion.domicilio?.codigo_postal;
         if (!cp || !/^\d{5}$/.test(cp)) {
-          errores.push(`Código postal inválido en ubicación ${index + 1}`);
+          errors.push(`Código postal inválido en ubicación ${index + 1}`);
         }
       });
       
       return {
-        valido: errores.length === 0,
-        errores
+        isValid: errors.length === 0,
+        errors
       };
     },
     onSuccess: (result) => {
-      if (result.valido) {
+      if (result.isValid) {
         toast.success('Códigos postales validados correctamente');
       } else {
         toast.error('Errores en códigos postales');
@@ -181,23 +181,24 @@ export const useSATValidation31 = () => {
     mutationFn: async (cartaPorteData: CartaPorteData): Promise<ValidationResult> => {
       console.log('Validando mercancías peligrosas...');
       
-      const errores: string[] = [];
+      const errors: string[] = [];
       
       cartaPorteData.mercancias?.forEach((mercancia, index) => {
-        if (mercancia.material_peligroso === 'Sí' || mercancia.material_peligroso === true) {
+        // Fix the boolean/string comparison
+        if (mercancia.material_peligroso === true || mercancia.material_peligroso === 'Sí') {
           if (!mercancia.cve_material_peligroso) {
-            errores.push(`Falta clave de material peligroso en mercancía ${index + 1}`);
+            errors.push(`Falta clave de material peligroso en mercancía ${index + 1}`);
           }
         }
       });
       
       return {
-        valido: errores.length === 0,
-        errores
+        isValid: errors.length === 0,
+        errors
       };
     },
     onSuccess: (result) => {
-      if (result.valido) {
+      if (result.isValid) {
         toast.success('Mercancías peligrosas validadas');
       } else {
         toast.error('Errores en mercancías peligrosas');
@@ -218,7 +219,7 @@ export const useSATValidation31 = () => {
       return await SATValidation31Enhanced.validarTransporteInternacional(cartaPorte31Data);
     },
     onSuccess: (result) => {
-      if (result.valido) {
+      if (result.isValid) {
         toast.success('Transporte internacional validado');
       } else {
         toast.error('Errores en transporte internacional');
@@ -243,18 +244,18 @@ export const useSATValidation31 = () => {
         validacionTransporteInternacional.mutateAsync(cartaPorteData)
       ]);
       
-      const todosLosErrores = resultados.flatMap(r => r.errores);
+      const todosLosErrores = resultados.flatMap(r => r.errors);
       
       return {
-        valido: todosLosErrores.length === 0,
-        errores: todosLosErrores
+        isValid: todosLosErrores.length === 0,
+        errors: todosLosErrores
       };
     },
     onSuccess: (result) => {
-      if (result.valido) {
+      if (result.isValid) {
         toast.success('¡Validación completa exitosa!');
       } else {
-        toast.error(`Validación completa falló: ${result.errores.length} errores`);
+        toast.error(`Validación completa falló: ${result.errors.length} errores`);
       }
     },
     onError: (error: any) => {

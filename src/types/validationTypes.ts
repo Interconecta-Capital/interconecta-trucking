@@ -78,8 +78,8 @@ export interface CartaPorte31Data {
   regimenesAduaneros?: string[];
 }
 
-// Tipos para resultados de validación de BD
+// Tipos para resultados de validación de BD - using consistent naming
 export interface ValidationResult {
-  valido: boolean;
-  errores: string[];
+  isValid: boolean;
+  errors: string[];
 }
