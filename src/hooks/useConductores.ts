@@ -1,29 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { Conductor } from '@/types/cartaPorte';
 import { toast } from 'sonner';
 
-export interface Conductor {
-  id: string;
-  nombre: string;
-  rfc?: string;
-  curp?: string;
-  num_licencia?: string;
-  tipo_licencia?: string;
-  vigencia_licencia?: string;
-  operador_sct?: boolean;
-  residencia_fiscal?: string;
-  telefono?: string;
-  email?: string;
-  estado: string;
-  direccion?: any;
-  created_at: string;
-  updated_at: string;
-}
-
 export function useConductores() {
+  const { user } = useAuth();
   const [conductores, setConductores] = useState<Conductor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchConductores = async () => {
@@ -105,6 +89,40 @@ export function useConductores() {
     }
   };
 
+  const createMultipleConductores = async (conductoresData: Partial<Conductor>[]) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Ensure each conductor has required fields
+      const conductoresWithDefaults = conductoresData.map(conductor => ({
+        nombre: conductor.nombre || '',
+        user_id: user.id,
+        activo: conductor.activo ?? true,
+        estado: conductor.estado || 'disponible',
+        ...conductor
+      }));
+
+      const { data, error } = await supabase
+        .from('conductores')
+        .insert(conductoresWithDefaults)
+        .select();
+
+      if (error) throw error;
+      
+      toast.success(`${data.length} conductores creados exitosamente`);
+      await fetchConductores();
+      return data;
+    } catch (err) {
+      console.error('Error creating multiple conductores:', err);
+      setError('Error al crear conductores');
+      toast.error('Error al crear conductores');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchConductores();
   }, []);
@@ -116,6 +134,7 @@ export function useConductores() {
     fetchConductores,
     createConductor,
     updateConductor,
-    deleteConductor
+    deleteConductor,
+    createMultipleConductores
   };
 }

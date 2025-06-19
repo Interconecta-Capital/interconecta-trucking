@@ -115,7 +115,7 @@ export function usePlantillas() {
       .insert({
         nombre: nuevoNombre,
         descripcion: plantilla.descripcion,
-        template_data: plantilla.template_data,
+        template_data: JSON.stringify(plantilla.template_data), // Convert to JSON string
         usuario_id: user.id,
         es_publica: false
       });

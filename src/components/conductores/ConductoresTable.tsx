@@ -1,97 +1,94 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2 } from 'lucide-react';
-import { Conductor } from '@/hooks/useConductores';
+import { MoreHorizontal, Edit, Trash, Eye } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Conductor } from '@/types/cartaPorte';
 
 interface ConductoresTableProps {
   conductores: Conductor[];
-  loading: boolean;
-  onView?: (conductor: Conductor) => void;
-  onEdit?: (conductor: Conductor) => void;
-  onDelete?: (id: string) => void;
+  onEdit: (conductor: Conductor) => void;
+  onDelete: (id: string) => void;
+  onView: (conductor: Conductor) => void;
 }
 
-export function ConductoresTable({ conductores, loading, onView, onEdit, onDelete }: ConductoresTableProps) {
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Cargando conductores...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (conductores.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-muted-foreground">
-            No hay conductores registrados
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+export function ConductoresTable({ conductores, onEdit, onDelete, onView }: ConductoresTableProps) {
+  const getEstadoBadge = (estado: string, activo: boolean = true) => {
+    // Use activo property with default value
+    if (!activo) {
+      return <Badge variant="secondary">Inactivo</Badge>;
+    }
+    
+    switch (estado) {
+      case 'disponible':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Disponible</Badge>;
+      case 'en_viaje':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">En Viaje</Badge>;
+      case 'descanso':
+        return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Descanso</Badge>;
+      case 'mantenimiento':
+        return <Badge variant="destructive">Mantenimiento</Badge>;
+      default:
+        return <Badge variant="outline">{estado}</Badge>;
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      {conductores.map((conductor) => (
-        <Card key={conductor.id}>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{conductor.nombre}</CardTitle>
-              <Badge variant={conductor.activo ? 'default' : 'secondary'}>
-                {conductor.estado}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">RFC</p>
-                <p className="font-medium">{conductor.rfc || 'No especificado'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Licencia</p>
-                <p className="font-medium">{conductor.num_licencia || 'No especificado'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Teléfono</p>
-                <p className="font-medium">{conductor.telefono || 'No especificado'}</p>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-4">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => onView?.(conductor)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Ver
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => onEdit?.(conductor)}
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Editar
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => onDelete?.(conductor.id)}
-                disabled={conductor.estado === 'en_viaje'}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Eliminar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <Table>
+      <TableHeader>
+        <TableHead>Nombre</TableHead>
+        <TableHead>RFC</TableHead>
+        <TableHead>Licencia</TableHead>
+        <TableHead>Estado</TableHead>
+        <TableHead className="text-right">Acciones</TableHead>
+      </TableHeader>
+      <TableBody>
+        {conductores.map((conductor) => (
+          <TableRow key={conductor.id}>
+            <TableCell>{conductor.nombre}</TableCell>
+            <TableCell>{conductor.rfc}</TableCell>
+            <TableCell>{conductor.num_licencia}</TableCell>
+            <TableCell>{getEstadoBadge(conductor.estado, conductor.activo)}</TableCell>
+            <TableCell className="text-right">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Abrir menú</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onView(conductor)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(conductor)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDelete(conductor.id)} className="text-red-600">
+                    <Trash className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
