@@ -26,11 +26,18 @@ export const useUbicacionesFrecuentes = () => {
       // Mock implementation - in production this would save to API/storage
       const nuevaUbicacion: UbicacionFrecuente = {
         id: Date.now().toString(),
-        nombreUbicacion,
+        nombre: nombreUbicacion,
+        nombreUbicacion: nombreUbicacion,
         rfcAsociado: ubicacion.rfcRemitenteDestinatario || '',
+        tipo_ubicacion: ubicacion.tipoUbicacion || 'Origen',
+        rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario || '',
+        nombre_remitente_destinatario: nombreUbicacion,
         domicilio: ubicacion.domicilio,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         fechaCreacion: new Date().toISOString(),
-        vecesUsada: 1
+        vecesUsada: 1,
+        uso_count: 1
       };
       
       setUbicacionesFrecuentes(prev => [...prev, nuevaUbicacion]);

@@ -34,6 +34,7 @@ import {
   LineChart,
   Line,
   PieChart as RechartsPieChart,
+  Pie,
   Cell
 } from 'recharts';
 

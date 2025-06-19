@@ -32,6 +32,8 @@ export interface Ubicacion {
 export interface UbicacionFrecuente {
   id: string;
   nombre: string;
+  nombreUbicacion: string; // Added missing property
+  rfcAsociado: string; // Added missing property
   tipo_ubicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
   rfc_remitente_destinatario?: string;
   nombre_remitente_destinatario?: string;
@@ -51,6 +53,8 @@ export interface UbicacionFrecuente {
   usoCount?: number;
   created_at: string;
   updated_at: string;
+  fechaCreacion?: string; // Added for compatibility
+  vecesUsada?: number; // Added for compatibility
 }
 
 export interface Coordinates {
