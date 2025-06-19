@@ -1,3 +1,4 @@
+
 import {
   CartaPorteData,
   UbicacionCompleta,
@@ -118,7 +119,7 @@ export const useCartaPorteMappers = () => {
       nombreEmisor: formData.nombreEmisor,
       rfcReceptor: formData.rfcReceptor,
       nombreReceptor: formData.nombreReceptor,
-      transporteInternacional: formData.transporteInternacional,
+      transporteInternacional: formData.transporteInternacional === true ? 'Sí' : (formData.transporteInternacional || 'No'), // Handle both boolean and string
       registroIstmo: formData.registroIstmo,
       cartaPorteVersion: formData.cartaPorteVersion,
       ubicaciones: formData.ubicaciones,
@@ -154,7 +155,7 @@ export const useCartaPorteMappers = () => {
       nombreEmisor: cartaPorteData.nombreEmisor || '',
       rfcReceptor: cartaPorteData.rfcReceptor || '',
       nombreReceptor: cartaPorteData.nombreReceptor || '',
-      transporteInternacional: cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí',
+      transporteInternacional: cartaPorteData.transporteInternacional || 'No', // Ensure string
       registroIstmo: !!cartaPorteData.registroIstmo,
       cartaPorteVersion: cartaPorteData.cartaPorteVersion || '3.1',
       cartaPorteId: cartaPorteData.cartaPorteId,

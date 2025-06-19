@@ -1,3 +1,4 @@
+
 import { useMemo, useRef } from 'react';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -49,7 +50,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         nombreEmisor: formData.nombreEmisor || '',
         rfcReceptor: formData.rfcReceptor || '',
         nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || false,
+        transporteInternacional: formData.transporteInternacional || 'No', // Ensure string
         registroIstmo: formData.registroIstmo || false,
         cartaPorteVersion: formData.cartaPorteVersion || '3.1',
         ubicaciones: formData.ubicaciones || [],
@@ -83,7 +84,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
         nombreEmisor: formData.nombreEmisor || '',
         rfcReceptor: formData.rfcReceptor || '',
         nombreReceptor: formData.nombreReceptor || '',
-        transporteInternacional: formData.transporteInternacional || false,
+        transporteInternacional: formData.transporteInternacional || 'No', // Ensure string
         registroIstmo: formData.registroIstmo || false,
         cartaPorteVersion: formData.cartaPorteVersion || '3.1',
         ubicaciones: formData.ubicaciones || [],
