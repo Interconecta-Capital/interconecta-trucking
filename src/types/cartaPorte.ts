@@ -19,6 +19,12 @@ export interface CartaPorteData {
     tiempoEstimado?: number;
     calculadoEn?: string;
   };
+  // Nuevas propiedades para transporte internacional
+  entradaSalidaMerc?: string;
+  viaTransporte?: string;
+  pais_origen_destino?: string;
+  via_entrada_salida?: string;
+  registroIstmo?: boolean;
 }
 
 export interface UbicacionCompleta {
@@ -75,6 +81,22 @@ export interface AutotransporteCompleto {
   asegura_resp_civil: string;
   poliza_resp_civil: string;
   remolques?: RemolqueCompleto[];
+  // Nuevas propiedades para autotransporte extendido
+  marca_vehiculo?: string;
+  modelo_vehiculo?: string;
+  numero_serie_vin?: string;
+  tipo_carroceria?: string;
+  capacidad_carga?: number;
+  peso_bruto_vehicular?: number;
+  asegura_med_ambiente?: string;
+  poliza_med_ambiente?: string;
+  vigencia_permiso?: string;
+  numero_permisos_adicionales?: string[];
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+  };
 }
 
 export interface RemolqueCompleto {

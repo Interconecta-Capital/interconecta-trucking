@@ -7,20 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Truck } from 'lucide-react';
 import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
-
-interface Remolque {
-  subtipo_rem: string;
-  placa: string;
-}
+import { RemolqueCompleto } from '@/types/cartaPorte';
 
 interface RemolquesListProps {
-  remolques: Remolque[];
-  onChange: (remolques: Remolque[]) => void;
+  remolques: RemolqueCompleto[];
+  onChange: (remolques: RemolqueCompleto[]) => void;
 }
 
 export function RemolquesList({ remolques, onChange }: RemolquesListProps) {
   const addRemolque = () => {
-    const newRemolque: Remolque = {
+    const newRemolque: RemolqueCompleto = {
+      id: crypto.randomUUID(),
       subtipo_rem: '',
       placa: ''
     };
@@ -32,7 +29,7 @@ export function RemolquesList({ remolques, onChange }: RemolquesListProps) {
     onChange(updatedRemolques);
   };
 
-  const updateRemolque = (index: number, field: string, value: string) => {
+  const updateRemolque = (index: number, field: keyof RemolqueCompleto, value: string) => {
     const updatedRemolques = remolques.map((remolque, i) =>
       i === index ? { ...remolque, [field]: value } : remolque
     );
@@ -66,7 +63,7 @@ export function RemolquesList({ remolques, onChange }: RemolquesListProps) {
       ) : (
         <div className="space-y-4">
           {remolques.map((remolque, index) => (
-            <Card key={index}>
+            <Card key={remolque.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">
