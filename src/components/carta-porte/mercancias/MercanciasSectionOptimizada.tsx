@@ -15,7 +15,7 @@ interface MercanciaCompleta {
   clave_unidad: string;
   cantidad: number;
   peso_kg: number;
-  valor_mercancia: number;
+  valor_mercancia?: number; // FIXED: Made optional to match global type
   material_peligroso: boolean;
   moneda: string;
   cve_material_peligroso?: string;
