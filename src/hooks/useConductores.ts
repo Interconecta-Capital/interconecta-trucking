@@ -97,7 +97,7 @@ export function useConductores() {
     try {
       // Ensure each conductor has required fields and proper structure
       const conductoresWithDefaults = conductoresData.map(conductor => ({
-        nombre: conductor.nombre || '',
+        nombre: conductor.nombre || 'Sin nombre',
         user_id: user.id,
         activo: conductor.activo ?? true,
         estado: conductor.estado || 'disponible',

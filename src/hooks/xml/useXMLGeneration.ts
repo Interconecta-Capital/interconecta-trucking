@@ -1,134 +1,67 @@
 
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { XMLCartaPorteGenerator, XMLGenerationResult } from '@/services/xml/xmlGenerator';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
-import { supabase } from '@/integrations/supabase/client';
+import { CartaPorteData } from '@/types/cartaPorte';
+import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
+import { toast } from 'sonner';
 
-export const useXMLGeneration = () => {
+export interface XMLGenerationResult {
+  success: boolean;
+  xml?: string;
+  errors?: string[];
+  warnings?: string[];
+}
+
+export function useXMLGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [xmlGenerado, setXmlGenerado] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [xmlGenerado, setXMLGenerado] = useState<string | null>(null);
 
   const generarXML = async (cartaPorteData: CartaPorteData): Promise<XMLGenerationResult> => {
     setIsGenerating(true);
     try {
-      console.log('Iniciando generación de XML para Carta Porte');
-      
       const resultado = await XMLCartaPorteGenerator.generarXML(cartaPorteData);
       
       if (resultado.success && resultado.xml) {
-        setXmlGenerado(resultado.xml);
-        
-        // Guardar XML en base de datos si hay un ID de carta porte
-        if (cartaPorteData.cartaPorteId) {
-          await guardarXMLEnBaseDatos(cartaPorteData.cartaPorteId, resultado.xml);
-        }
-        
-        toast({
-          title: "XML generado correctamente",
-          description: "El XML de la Carta Porte ha sido generado según especificaciones SAT 3.1",
-        });
-        
-        if (resultado.warnings && resultado.warnings.length > 0) {
-          toast({
-            title: "Advertencias encontradas",
-            description: resultado.warnings.join(', '),
-            variant: "destructive",
-          });
-        }
+        setXMLGenerado(resultado.xml);
+        toast.success('XML generado correctamente');
       } else {
-        toast({
-          title: "Error en generación XML",
-          description: resultado.errors?.join(', ') || 'Error desconocido',
-          variant: "destructive",
-        });
+        toast.error('Error al generar XML');
       }
       
       return resultado;
     } catch (error) {
       console.error('Error generando XML:', error);
-      toast({
-        title: "Error crítico",
-        description: "No se pudo generar el XML",
-        variant: "destructive",
-      });
-      return {
+      const errorResult = {
         success: false,
-        errors: ['Error crítico en la generación']
+        errors: [`Error interno: ${error instanceof Error ? error.message : 'Error desconocido'}`]
       };
+      toast.error('Error al generar XML');
+      return errorResult;
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const descargarXML = () => {
+  const descargarXML = (tipo: 'generado' | 'firmado' | 'timbrado' = 'generado') => {
     if (!xmlGenerado) {
-      toast({
-        title: "Error",
-        description: "No hay XML generado disponible para descargar",
-        variant: "destructive",
-      });
+      toast.error('No hay XML disponible para descargar');
       return;
     }
 
-    try {
-      const blob = new Blob([xmlGenerado], { type: 'application/xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `carta-porte-generado-${Date.now()}.xml`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Descarga iniciada",
-        description: "XML generado descargado correctamente",
-      });
-    } catch (error) {
-      toast({
-        title: "Error en descarga",
-        description: "No se pudo descargar el archivo XML",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const limpiarXML = () => {
-    setXmlGenerado(null);
-  };
-
-  const guardarXMLEnBaseDatos = async (cartaPorteId: string, xml: string) => {
-    try {
-      const { error } = await supabase
-        .from('cartas_porte')
-        .update({
-          xml_generado: xml,
-          status: 'xml_generado',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', cartaPorteId);
-
-      if (error) {
-        console.error('Error guardando XML en base de datos:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error en guardarXMLEnBaseDatos:', error);
-      // No lanzar error para no interrumpir el flujo principal
-    }
+    const blob = new Blob([xmlGenerado], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `carta-porte-${tipo}-${Date.now()}.xml`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return {
-    // Estados
     isGenerating,
     xmlGenerado,
-    
-    // Funciones
     generarXML,
-    descargarXML,
-    limpiarXML
+    descargarXML
   };
-};
+}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -152,7 +151,7 @@ export function XMLGenerationPanel({
     }
     
     const resultado = await timbrarCartaPorte(cartaPorteData);
-    if (resultado.success && onTimbrado) {
+    if (resultado && resultado.success && onTimbrado) {
       onTimbrado(resultado);
       
       // Agregar evento de tracking solo si el resultado incluye uuid
@@ -170,7 +169,7 @@ export function XMLGenerationPanel({
   };
 
   const handleGenerarPDF = async () => {
-    const resultado = await generarPDF(cartaPorteData, datosTimbre);
+    const resultado = await generarPDF(cartaPorteData);
     if (resultado && resultado.success) {
       console.log('PDF generado exitosamente');
     }
