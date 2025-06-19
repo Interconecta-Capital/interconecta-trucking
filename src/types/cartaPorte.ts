@@ -1,3 +1,4 @@
+
 export interface CartaPorteData {
   // Configuración General
   rfcEmisor?: string;
@@ -14,6 +15,16 @@ export interface CartaPorteData {
   viaTransporte?: string;
   pais_origen_destino?: string;
   via_entrada_salida?: string;
+
+  // Version management fields
+  regimenAduanero?: string;
+  regimenesAduaneros?: string[];
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+    [key: string]: any;
+  };
 
   // Ubicaciones
   ubicaciones?: UbicacionCompleta[];
@@ -46,6 +57,7 @@ export interface UbicacionCompleta {
   rfc: string;
   nombre: string;
   fecha_llegada_salida: string;
+  fecha_hora_salida_llegada?: string; // Add this missing property
   distancia_recorrida: number;
   rfc_remitente_destinatario?: string;
   nombre_remitente_destinatario?: string;
@@ -160,8 +172,20 @@ export interface Conductor {
   residencia_fiscal?: string;
   num_reg_id_trib?: string;
   user_id: string;
-  activo?: boolean;
+  activo?: boolean; // Add this missing property
   estado: string;
   created_at?: string;
   updated_at?: string;
+}
+
+// Export PlantillaData for the plantilla components
+export interface PlantillaData {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  template_data: CartaPorteData;
+  es_publica: boolean;
+  uso_count: number;
+  created_at: string;
+  updated_at: string;
 }

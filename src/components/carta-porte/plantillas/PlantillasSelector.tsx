@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePlantillas, PlantillaData } from '@/hooks/usePlantillas';
+import { usePlantillas } from '@/hooks/usePlantillas';
+import { PlantillaData } from '@/types/cartaPorte';
 import { PlantillaCard } from './PlantillaCard';
 import { 
   Search, 

@@ -15,7 +15,8 @@ import {
   Copy,
   Trash2
 } from 'lucide-react';
-import { PlantillaData, usePlantillas } from '@/hooks/usePlantillas';
+import { PlantillaData } from '@/types/cartaPorte';
+import { usePlantillas } from '@/hooks/usePlantillas';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
