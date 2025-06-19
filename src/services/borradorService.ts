@@ -24,13 +24,13 @@ class BorradorServiceClass {
       const borradorData = {
         id: cartaPorteId || crypto.randomUUID(),
         usuario_id: usuario.data.user.id,
-        datos_formulario: data,
+        datos_formulario: data as any, // Cast to any for Supabase Json compatibility
         estado: 'borrador',
         version_carta_porte: data.cartaPorteVersion || '3.1',
-        rfc_emisor: data.rfcEmisor,
-        rfc_receptor: data.rfcReceptor,
-        nombre_emisor: data.nombreEmisor,
-        nombre_receptor: data.nombreReceptor,
+        rfc_emisor: data.rfcEmisor || '',
+        rfc_receptor: data.rfcReceptor || '',
+        nombre_emisor: data.nombreEmisor || '',
+        nombre_receptor: data.nombreReceptor || '',
         updated_at: new Date().toISOString()
       };
 
@@ -137,6 +137,44 @@ class BorradorServiceClass {
     }
   }
 
+  // Método para cargar el último borrador desde localStorage
+  cargarUltimoBorrador(): { datosFormulario: CartaPorteData; cartaPorteId?: string } | null {
+    try {
+      const borradorKey = 'carta_porte_borrador';
+      const borrador = localStorage.getItem(borradorKey);
+      
+      if (borrador) {
+        const parsed = JSON.parse(borrador);
+        return {
+          datosFormulario: parsed.datosFormulario || parsed,
+          cartaPorteId: parsed.id
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error cargando último borrador:', error);
+      return null;
+    }
+  }
+
+  // Método para guardado automático síncrono
+  guardarBorradorAutomatico(data: CartaPorteData, cartaPorteId?: string): void {
+    try {
+      const fallbackData = {
+        id: cartaPorteId || crypto.randomUUID(),
+        datosFormulario: data,
+        ultimaModificacion: new Date().toISOString(),
+        version: '3.1'
+      };
+      
+      localStorage.setItem('carta_porte_borrador', JSON.stringify(fallbackData));
+      console.log('✅ Borrador guardado automáticamente en localStorage');
+    } catch (error) {
+      console.error('Error en guardado automático:', error);
+    }
+  }
+
   async limpiarBorrador(cartaPorteId: string): Promise<void> {
     try {
       const usuario = await supabase.auth.getUser();
@@ -156,6 +194,7 @@ class BorradorServiceClass {
 
       // También limpiar localStorage
       localStorage.removeItem(`carta-porte-borrador-${cartaPorteId}`);
+      localStorage.removeItem('carta_porte_borrador');
       
       console.log('✅ Borrador eliminado');
     } catch (error) {
