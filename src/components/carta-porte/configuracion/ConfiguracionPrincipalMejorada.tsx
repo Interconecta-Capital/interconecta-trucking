@@ -1,15 +1,17 @@
-import React, { memo } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClienteSelector } from '@/components/crm/ClienteSelector';
-import { ArrowRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { OpcionesEspeciales } from './OpcionesEspeciales';
-import { CartaPorteData } from '@/types/cartaPorte';
-import { ClienteProveedor } from '@/hooks/crm/useClientesProveedores';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { RegimenesAduanerosList } from './RegimenesAduanerosList';
+import { ClienteSelectorConCRM } from '@/components/crm/ClienteSelectorConCRM';
+import { CartaPorteData } from '@/types/cartaPorte';
+import { RFCValidator } from '@/utils/rfcValidation';
 
 interface ConfiguracionPrincipalMejoradaProps {
   data: CartaPorteData;
@@ -18,152 +20,169 @@ interface ConfiguracionPrincipalMejoradaProps {
   isFormValid: boolean;
 }
 
-const ConfiguracionPrincipalMejoradaComponent = ({
+export function ConfiguracionPrincipalMejorada({
   data,
   onChange,
   onNext,
-}: ConfiguracionPrincipalMejoradaProps) => {
-  const handleTipoCfdiChange = (value: string) => {
-    // Solo actualiza tipoCfdi; NO resetear emisor ni receptor
-    if (value === 'Ingreso' || value === 'Traslado') {
-      onChange({
-        tipoCfdi: value,
-        // Ya no se reinician estos campos:
-        // rfcEmisor: '',
-        // nombreEmisor: '',
-        // rfcReceptor: '',
-        // nombreReceptor: '',
-      });
-    }
-  };
+  isFormValid
+}: ConfiguracionPrincipalMejoradaProps) {
+  
+  const validacionEmisor = data.rfcEmisor ? RFCValidator.validarRFC(data.rfcEmisor) : { esValido: false };
+  const validacionReceptor = data.rfcReceptor ? RFCValidator.validarRFC(data.rfcReceptor) : { esValido: false };
 
-  // FIX: Crear objetos ClienteProveedor solo si hay datos completos
-  const emisorValue = (data.rfcEmisor && data.nombreEmisor) ? {
-    id: `emisor-${data.rfcEmisor}`,
-    tipo: 'cliente' as const,
-    rfc: data.rfcEmisor,
-    razon_social: data.nombreEmisor,
-    estatus: "activo" as const,
-    fecha_registro: new Date().toISOString(),
-    user_id: ''
-  } : null;
-
-  const receptorValue = (data.rfcReceptor && data.nombreReceptor) ? {
-    id: `receptor-${data.rfcReceptor}`,
-    tipo: 'cliente' as const,
-    rfc: data.rfcReceptor,
-    razon_social: data.nombreReceptor,
-    estatus: "activo" as const,
-    fecha_registro: new Date().toISOString(),
-    user_id: ''
-  } : null;
-
-  const handleEmisorChange = (emisor: ClienteProveedor | null) => {
-    onChange({
-      rfcEmisor: emisor?.rfc || '',
-      nombreEmisor: emisor?.razon_social || ''
+  const handleTransporteInternacionalChange = (value: boolean) => {
+    onChange({ 
+      transporteInternacional: value,
+      // Si cambia a false, limpiar regímenes aduaneros
+      regimenesAduaneros: value ? (data.regimenesAduaneros || []) : []
     });
-  };
-
-  const handleReceptorChange = (receptor: ClienteProveedor | null) => {
-    onChange({
-      rfcReceptor: receptor?.rfc || '',
-      nombreReceptor: receptor?.razon_social || ''
-    });
-  };
-
-  const isTransporteInternacional =
-    data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
-  const isVersion31 = data.cartaPorteVersion === '3.1';
-
-  const isFormCompleto = () => {
-    return !!(data.tipoCfdi && data.rfcEmisor && data.nombreEmisor && data.rfcReceptor && data.nombreReceptor);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Configuración de la Carta Porte
-          <span className="text-sm font-normal text-green-600">
-            {data.tipoCfdi && `(${data.tipoCfdi})`}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label>Tipo de CFDI *</Label>
-          <Select value={data.tipoCfdi || ''} onValueChange={handleTipoCfdiChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Seleccionar tipo de CFDI..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Traslado">Traslado</SelectItem>
-              <SelectItem value="Ingreso">Ingreso</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Información General del CFDI</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="tipoCfdi">Tipo de CFDI *</Label>
+              <Select
+                value={data.tipoCfdi || ''}
+                onValueChange={(value) => onChange({ tipoCfdi: value as 'Ingreso' | 'Traslado' })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona tipo de CFDI" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Traslado">Traslado</SelectItem>
+                  <SelectItem value="Ingreso">Ingreso</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-2">
-          <ClienteSelector 
-            label="Emisor" 
-            value={emisorValue}
-            onChange={handleEmisorChange}
-            tipo="cliente" 
-            placeholder="Buscar empresa emisora..." 
-            required 
-            showCreateButton 
-            className="w-full" 
-          />
-        </div>
-
-        <div className="space-y-2">
-          <ClienteSelector 
-            label="Receptor" 
-            value={receptorValue}
-            onChange={handleReceptorChange}
-            tipo="cliente" 
-            placeholder="Buscar empresa receptora..." 
-            required 
-            showCreateButton 
-            className="w-full" 
-          />
-        </div>
-
-        <OpcionesEspeciales data={data} onChange={onChange} />
-
-        {/* Datos adicionales */}
-        {!isTransporteInternacional && (
-          <div className="space-y-2">
-            <Label>Régimen Aduanero</Label>
-            <Input
-              value={data.regimenAduanero || ''}
-              onChange={(e) => onChange({ regimenAduanero: e.target.value })}
-              placeholder="Régimen Aduanero"
-            />
+            <div>
+              <Label htmlFor="cartaPorteVersion">Versión Complemento</Label>
+              <Select
+                value={data.cartaPorteVersion || '3.1'}
+                onValueChange={(value) => onChange({ cartaPorteVersion: value as '3.0' | '3.1' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3.1">3.1 (Recomendado)</SelectItem>
+                  <SelectItem value="3.0">3.0</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        {isVersion31 && isTransporteInternacional && (
-          <RegimenesAduanerosList
-            regimenes={data.regimenesAduaneros || []}
-            onChange={(regs) => onChange({ regimenesAduaneros: regs })}
+      <Card>
+        <CardHeader>
+          <CardTitle>Emisor</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ClienteSelectorConCRM
+            tipo="emisor"
+            rfc={data.rfcEmisor || ''}
+            nombre={data.nombreEmisor || ''}
+            onClienteChange={(cliente) => {
+              onChange({
+                rfcEmisor: cliente.rfc,
+                nombreEmisor: cliente.nombre
+              });
+            }}
           />
-        )}
+          
+          {data.rfcEmisor && !validacionEmisor.esValido && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                RFC del emisor inválido: {validacionEmisor.mensaje}
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="flex justify-end">
-          <Button 
-            onClick={onNext} 
-            disabled={!isFormCompleto()} 
-            className="flex items-center space-x-2"
-          >
-            <span>Continuar</span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Receptor</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ClienteSelectorConCRM
+            tipo="receptor"
+            rfc={data.rfcReceptor || ''}
+            nombre={data.nombreReceptor || ''}
+            onClienteChange={(cliente) => {
+              onChange({
+                rfcReceptor: cliente.rfc,
+                nombreReceptor: cliente.nombre
+              });
+            }}
+          />
+          
+          {data.rfcReceptor && !validacionReceptor.esValido && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                RFC del receptor inválido: {validacionReceptor.mensaje}
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Configuración del Transporte</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="transporteInternacional"
+                checked={data.transporteInternacional === true}
+                onCheckedChange={handleTransporteInternacionalChange}
+              />
+              <Label htmlFor="transporteInternacional">Transporte Internacional</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="registroIstmo"
+                checked={data.registroIstmo === true}
+                onCheckedChange={(checked) => onChange({ registroIstmo: checked })}
+              />
+              <Label htmlFor="registroIstmo">Registro ISTMO</Label>
+            </div>
+          </div>
+
+          {/* *** CORRECCIÓN: Mostrar regímenes aduaneros solo si es transporte internacional *** */}
+          {data.transporteInternacional && (
+            <RegimenesAduanerosList
+              regimenes={data.regimenesAduaneros || []}
+              onChange={(regimenes) => onChange({ regimenesAduaneros: regimenes })}
+              transporteInternacional={data.transporteInternacional}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end pt-4">
+        <Button 
+          onClick={onNext} 
+          disabled={!isFormValid}
+          className="flex items-center space-x-2"
+        >
+          <span>Continuar a Ubicaciones</span>
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
-};
-
-export const ConfiguracionPrincipalMejorada = memo(ConfiguracionPrincipalMejoradaComponent);
+}

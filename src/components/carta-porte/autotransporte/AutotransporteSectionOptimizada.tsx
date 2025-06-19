@@ -5,8 +5,8 @@ import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { VehiculoSelector } from './VehiculoSelector';
 import { AutotransporteFormOptimizado } from './AutotransporteFormOptimizado';
+import { AlertaCapacidadVehiculo } from './AlertaCapacidadVehiculo';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
-import { ContextualAlert } from '@/components/ui/contextual-alert';
 
 interface AutotransporteSectionOptimizadaProps {
   data: AutotransporteCompleto;
@@ -23,16 +23,15 @@ export function AutotransporteSectionOptimizada({
   onNext,
   onPrev
 }: AutotransporteSectionOptimizadaProps) {
+  
   const isDataValid = () => {
     return data.placa_vm &&
            data.num_permiso_sct &&
            data.asegura_resp_civil &&
-           data.poliza_resp_civil;
+           data.poliza_resp_civil &&
+           // *** CORRECCIÓN: Validar peso bruto vehicular obligatorio ***
+           data.peso_bruto_vehicular && data.peso_bruto_vehicular > 0;
   };
-
-  const capacidadKg = (data.peso_bruto_vehicular || 0) * 1000;
-  const excedeCapacidad =
-    pesoTotalMercancias > 0 && capacidadKg > 0 && pesoTotalMercancias > capacidadKg;
 
   return (
     <>
@@ -44,11 +43,11 @@ export function AutotransporteSectionOptimizada({
         
         <AutotransporteFormOptimizado data={data} onChange={onChange} />
 
-        {excedeCapacidad && (
-          <ContextualAlert
-            type="warning"
-            message={`El peso total de la carga (${pesoTotalMercancias.toLocaleString('es-MX')} kg) supera la capacidad del vehículo (${capacidadKg.toLocaleString('es-MX')} kg).`}
-            className="mt-2"
+        {/* *** NUEVA FUNCIONALIDAD: Alerta inteligente de capacidad *** */}
+        {data.peso_bruto_vehicular && pesoTotalMercancias > 0 && (
+          <AlertaCapacidadVehiculo
+            pesoTotalMercancias={pesoTotalMercancias}
+            capacidadVehiculoToneladas={data.peso_bruto_vehicular}
           />
         )}
 

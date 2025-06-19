@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Interfaces para los catálogos SAT
@@ -71,9 +70,9 @@ export class CatalogosSATService {
     return Date.now() - timestamp < CACHE_TTL;
   }
 
-  // Obtener productos y servicios SAT
+  // Obtener productos y servicios SAT para Complemento Carta Porte
   static async obtenerProductosServicios(termino: string = ''): Promise<ProductoServicio[]> {
-    const cacheKey = this.getCacheKey('productos', termino);
+    const cacheKey = this.getCacheKey('productos_cp', termino);
     const cached = cache.get(cacheKey);
     
     if (cached && this.isCacheValid(cached.timestamp)) {
@@ -81,6 +80,7 @@ export class CatalogosSATService {
     }
 
     try {
+      // *** USAR CATÁLOGO c_ClaveProdServCP EN LUGAR DEL GENERAL ***
       let query = supabase
         .from('cat_clave_prod_serv_cp')
         .select('clave_prod_serv, descripcion, incluye_iva, fecha_inicio_vigencia, fecha_fin_vigencia')
@@ -93,8 +93,17 @@ export class CatalogosSATService {
       const { data, error } = await query.limit(1000);
 
       if (error) {
-        console.error('Error fetching productos servicios:', error);
-        return [];
+        console.error('Error fetching productos servicios CP:', error);
+        // Fallback a catálogo estático si la base de datos falla
+        const { PRODUCTOS_SERVICIOS_SAT } = await import('@/data/catalogosSATEstaticos');
+        return PRODUCTOS_SERVICIOS_SAT.filter(item => 
+          !termino || 
+          item.clave.toLowerCase().includes(termino.toLowerCase()) ||
+          item.descripcion.toLowerCase().includes(termino.toLowerCase())
+        ).map(item => ({
+          clave: item.clave,
+          descripcion: item.descripcion
+        }));
       }
 
       const result = (data || []).map(item => ({
@@ -109,14 +118,36 @@ export class CatalogosSATService {
       return result;
     } catch (error) {
       console.error('Error in obtenerProductosServicios:', error);
-      return [];
+      // Fallback a catálogo estático
+      const { PRODUCTOS_SERVICIOS_SAT } = await import('@/data/catalogosSATEstaticos');
+      return PRODUCTOS_SERVICIOS_SAT.map(item => ({
+        clave: item.clave,
+        descripcion: item.descripcion
+      }));
     }
   }
 
-  // Verificar existencia de clave producto/servicio
+  // Verificar existencia de clave producto/servicio en catálogo CP
   static async existeProductoServicio(clave: string): Promise<boolean> {
-    const productos = await this.obtenerProductosServicios(clave);
-    return productos.some(p => p.clave === clave);
+    try {
+      const { data, error } = await supabase
+        .from('cat_clave_prod_serv_cp')
+        .select('clave_prod_serv')
+        .eq('clave_prod_serv', clave)
+        .single();
+
+      if (error) {
+        console.error('Error verificando producto servicio:', error);
+        // Fallback a catálogo estático
+        const { PRODUCTOS_SERVICIOS_SAT } = await import('@/data/catalogosSATEstaticos');
+        return PRODUCTOS_SERVICIOS_SAT.some(p => p.clave === clave);
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error in existeProductoServicio:', error);
+      return false;
+    }
   }
 
   // Obtener unidades de medida SAT
@@ -450,7 +481,12 @@ export class CatalogosSATService {
 
       if (error) {
         console.error('Error fetching regimenes aduaneros:', error);
-        return [];
+        // Fallback a catálogo estático
+        const { REGIMENES_ADUANEROS_SAT } = await import('@/data/catalogosSATEstaticos');
+        return REGIMENES_ADUANEROS_SAT.map(item => ({
+          clave: item.clave,
+          descripcion: item.descripcion
+        }));
       }
 
       const result = (data || []).map(item => ({
@@ -462,7 +498,12 @@ export class CatalogosSATService {
       return result;
     } catch (error) {
       console.error('Error in obtenerRegimenesAduaneros:', error);
-      return [];
+      // Fallback a catálogo estático
+      const { REGIMENES_ADUANEROS_SAT } = await import('@/data/catalogosSATEstaticos');
+      return REGIMENES_ADUANEROS_SAT.map(item => ({
+        clave: item.clave,
+        descripcion: item.descripcion
+      }));
     }
   }
 }

@@ -37,6 +37,29 @@ export class SATValidation {
     return { isValid: true };
   }
 
+  // *** VALIDACIÓN MEJORADA: Productos del catálogo CP ***
+  static async validarProductoServicioCP(clave: string): ValidationResult {
+    if (!clave) {
+      return { isValid: false, message: "Clave de producto/servicio es requerida" };
+    }
+
+    try {
+      const existe = await CatalogosSATService.existeProductoServicio(clave);
+      if (!existe) {
+        return { 
+          isValid: false, 
+          message: "Clave no válida en catálogo c_ClaveProdServCP del SAT" 
+        };
+      }
+      return { isValid: true };
+    } catch (error) {
+      return { 
+        isValid: false, 
+        message: "Error al validar la clave con el catálogo SAT" 
+      };
+    }
+  }
+
   // Validar cantidad y peso para mercancías
   static validarCantidadPeso(cantidad?: number, peso?: number): ValidationResult {
     if (cantidad !== undefined && cantidad <= 0) {
@@ -50,14 +73,15 @@ export class SATValidation {
     return { isValid: true };
   }
 
-  // Validar datos de autotransporte
+  // *** VALIDACIÓN MEJORADA: Datos de autotransporte con peso obligatorio ***
   static validarAutotransporte(data: {
     placa?: string;
     anioModelo?: number;
     perm_sct?: string;
     numPermiso?: string;
+    pesoBrutoVehicular?: number;
   }): ValidationResult {
-    const { placa, anioModelo, perm_sct, numPermiso } = data;
+    const { placa, anioModelo, perm_sct, numPermiso, pesoBrutoVehicular } = data;
     
     if (placa && !/^[A-Z0-9-]{5,10}$/.test(placa)) {
       return { isValid: false, message: "Formato de placa inválido" };
@@ -71,45 +95,24 @@ export class SATValidation {
     if (perm_sct && !numPermiso) {
       return { isValid: false, message: "Número de permiso SCT es requerido cuando se especifica el tipo" };
     }
-    
-    return { isValid: true };
-  }
 
-  // Validar figura de transporte
-  static validarFiguraTransporte(data: {
-    tipoFigura?: string;
-    rfc?: string;
-    nombre?: string;
-    numLicencia?: string;
-  }): ValidationResult {
-    const { tipoFigura, rfc, nombre, numLicencia } = data;
-    
-    if (tipoFigura === '01' && !numLicencia) { // Operador
-      return { isValid: false, message: "Número de licencia es requerido para operadores" };
-    }
-    
-    if (rfc) {
-      const rfcValidation = this.validarRFC(rfc);
-      if (!rfcValidation.isValid) {
-        return rfcValidation;
-      }
-    }
-    
-    if (!nombre || nombre.trim().length < 2) {
-      return { isValid: false, message: "Nombre de la figura es requerido" };
+    // *** VALIDACIÓN CRÍTICA: Peso bruto vehicular obligatorio ***
+    if (!pesoBrutoVehicular || pesoBrutoVehicular <= 0) {
+      return { isValid: false, message: "Peso bruto vehicular es obligatorio según normativa 3.1" };
     }
     
     return { isValid: true };
   }
 
-  // Validar ubicación
+  // *** VALIDACIÓN MEJORADA: Ubicación con distancia obligatoria ***
   static validarUbicacion(data: {
     tipoUbicacion?: string;
     codigoPostal?: string;
     fechaHora?: Date | string;
     rfc?: string;
+    distanciaRecorrida?: number;
   }): ValidationResult {
-    const { tipoUbicacion, codigoPostal, fechaHora, rfc } = data;
+    const { tipoUbicacion, codigoPostal, fechaHora, rfc, distanciaRecorrida } = data;
     
     if (!tipoUbicacion) {
       return { isValid: false, message: "Tipo de ubicación es requerido" };
@@ -120,6 +123,15 @@ export class SATValidation {
       if (!cpValidation.isValid) {
         return cpValidation;
       }
+    }
+
+    // *** VALIDACIÓN CRÍTICA: Distancia obligatoria para destinos ***
+    if ((tipoUbicacion === 'Destino' || tipoUbicacion === 'Punto Intermedio') && 
+        (!distanciaRecorrida || distanciaRecorrida <= 0)) {
+      return { 
+        isValid: false, 
+        message: "Distancia recorrida es obligatoria para ubicaciones de destino según normativa 3.1" 
+      };
     }
     
     if (fechaHora) {
@@ -141,7 +153,7 @@ export class SATValidation {
     return { isValid: true };
   }
 
-  // Validar datos completos de Carta Porte
+  // *** VALIDACIÓN MEJORADA: Carta Porte completa con nuevas reglas ***
   static async validarCartaPorteCompleta(data: any): Promise<ValidationResult[]> {
     const errores: ValidationResult[] = [];
     
@@ -163,11 +175,19 @@ export class SATValidation {
         errores.push(rfcValidation);
       }
     }
+
+    // *** VALIDACIÓN: Regímenes aduaneros para transporte internacional ***
+    if (data.transporteInternacional && (!data.regimenesAduaneros || data.regimenesAduaneros.length === 0)) {
+      errores.push({ 
+        isValid: false, 
+        message: "Para transporte internacional debe especificar al menos un régimen aduanero" 
+      });
+    }
     
     // Validar que tenga al menos una ubicación origen y destino
     const ubicaciones = data.ubicaciones || [];
-    const tieneOrigen = ubicaciones.some((u: any) => u.tipoUbicacion === 'Origen');
-    const tieneDestino = ubicaciones.some((u: any) => u.tipoUbicacion === 'Destino');
+    const tieneOrigen = ubicaciones.some((u: any) => u.tipo_ubicacion === 'Origen');
+    const tieneDestino = ubicaciones.some((u: any) => u.tipo_ubicacion === 'Destino');
     
     if (!tieneOrigen) {
       errores.push({ isValid: false, message: "Debe especificar al menos una ubicación de origen" });
@@ -176,15 +196,53 @@ export class SATValidation {
     if (!tieneDestino) {
       errores.push({ isValid: false, message: "Debe especificar al menos una ubicación de destino" });
     }
+
+    // *** VALIDACIÓN: Distancia en destinos ***
+    const destinosSinDistancia = ubicaciones.filter((u: any) => 
+      (u.tipo_ubicacion === 'Destino' || u.tipo_ubicacion === 'Punto Intermedio') &&
+      (!u.distancia_recorrida || u.distancia_recorrida <= 0)
+    );
+    
+    if (destinosSinDistancia.length > 0) {
+      errores.push({ 
+        isValid: false, 
+        message: "Todas las ubicaciones de destino deben tener distancia recorrida según normativa 3.1" 
+      });
+    }
     
     // Validar que tenga al menos una mercancía
     if (!data.mercancias || data.mercancias.length === 0) {
       errores.push({ isValid: false, message: "Debe especificar al menos una mercancía" });
     }
+
+    // *** VALIDACIÓN: Productos del catálogo CP ***
+    for (const mercancia of data.mercancias || []) {
+      if (mercancia.bienes_transp) {
+        const validacion = await this.validarProductoServicioCP(mercancia.bienes_transp);
+        if (!validacion.isValid) {
+          errores.push({ 
+            isValid: false, 
+            message: `Mercancía "${mercancia.descripcion}": ${validacion.message}` 
+          });
+        }
+      }
+    }
     
-    // Validar que tenga información de autotransporte
+    // *** VALIDACIÓN: Autotransporte con peso obligatorio ***
     if (!data.autotransporte) {
       errores.push({ isValid: false, message: "Información de autotransporte es requerida" });
+    } else {
+      const validacionAuto = this.validarAutotransporte({
+        placa: data.autotransporte.placa_vm,
+        anioModelo: data.autotransporte.anio_modelo_vm,
+        perm_sct: data.autotransporte.perm_sct,
+        numPermiso: data.autotransporte.num_permiso_sct,
+        pesoBrutoVehicular: data.autotransporte.peso_bruto_vehicular
+      });
+      
+      if (!validacionAuto.isValid) {
+        errores.push(validacionAuto);
+      }
     }
     
     // Validar que tenga al menos una figura de transporte
