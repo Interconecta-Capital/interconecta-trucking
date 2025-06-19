@@ -33,6 +33,9 @@ export function useRouteCalculation() {
 
     try {
       console.log('🚀 Iniciando cálculo de ruta con Edge Function');
+      console.log('📍 Origen:', origin);
+      console.log('📍 Destino:', destination);
+      console.log('🛤️ Waypoints:', waypoints);
       
       const { data, error: functionError } = await supabase.functions.invoke('calculate-route', {
         body: {
@@ -65,7 +68,12 @@ export function useRouteCalculation() {
       console.error('❌ Error calculando ruta:', err);
       setError(errorMessage);
       
-      toast.error(`Error al calcular ruta: ${errorMessage}`);
+      // Mostrar error más específico según el tipo
+      if (errorMessage.includes('Edge Function returned a non-2xx status')) {
+        toast.error('Error de configuración: Verifica que el token de Mapbox esté configurado correctamente en Supabase');
+      } else {
+        toast.error(`Error al calcular ruta: ${errorMessage}`);
+      }
       return null;
     } finally {
       setIsCalculating(false);

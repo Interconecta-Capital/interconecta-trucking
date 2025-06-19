@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
@@ -56,32 +57,50 @@ export function UbicacionesSectionOptimizada({
     ubicacionesFrecuentes
   } = useUbicaciones();
 
-  // Sincronizar con props data
+  // Sincronizar con props data de manera más estable
   useEffect(() => {
-    console.log('🔄 Sincronizando data props:', data);
-    if (data && data.length > 0) {
-      setUbicaciones(data);
+    console.log('🔄 Sincronizando data props:', data?.length || 0, 'ubicaciones');
+    if (data && Array.isArray(data)) {
+      // Solo actualizar si realmente hay diferencias
+      const currentIds = ubicaciones.map(u => u.idUbicacion).sort();
+      const newIds = data.map(u => u.idUbicacion).sort();
+      
+      if (JSON.stringify(currentIds) !== JSON.stringify(newIds)) {
+        console.log('📍 Actualizando ubicaciones por cambio en props');
+        setUbicaciones(data);
+      }
     }
-  }, [data, setUbicaciones]);
+  }, [data]);
 
-  // Sincronizar cambios hacia el componente padre CON LOGGING MEJORADO
+  // Sincronizar cambios hacia el componente padre de manera más estable
   useEffect(() => {
-    console.log('💾 Sincronizando ubicaciones hacia padre:', ubicaciones);
-    if (ubicaciones.length >= 0) { // Permitir array vacío
-      onChange(ubicaciones);
+    console.log('💾 Verificando si sincronizar ubicaciones hacia padre:', ubicaciones?.length || 0);
+    if (ubicaciones && Array.isArray(ubicaciones)) {
+      // Evitar loops infinitos verificando si hay cambios reales
+      const currentData = JSON.stringify(data || []);
+      const newData = JSON.stringify(ubicaciones);
+      
+      if (currentData !== newData) {
+        console.log('💾 Sincronizando ubicaciones hacia padre');
+        onChange(ubicaciones);
+      }
     }
-  }, [ubicaciones, onChange]);
+  }, [ubicaciones]);
 
-  // Persistir datos cuando cambian las ubicaciones
+  // Persistir datos cuando cambian las ubicaciones (con protección)
   useEffect(() => {
-    if (ubicaciones.length > 0) {
-      console.log('💾 Persistiendo datos de ubicaciones:', ubicaciones);
-      localStorage.setItem('carta-porte-ubicaciones', JSON.stringify({
-        ubicaciones,
-        distanciaTotal,
-        tiempoEstimado,
-        timestamp: new Date().toISOString()
-      }));
+    if (ubicaciones && ubicaciones.length > 0) {
+      console.log('💾 Persistiendo datos de ubicaciones:', ubicaciones.length);
+      try {
+        localStorage.setItem('carta-porte-ubicaciones', JSON.stringify({
+          ubicaciones,
+          distanciaTotal,
+          tiempoEstimado,
+          timestamp: new Date().toISOString()
+        }));
+      } catch (error) {
+        console.warn('⚠️ Error persistiendo en localStorage:', error);
+      }
     }
   }, [ubicaciones, distanciaTotal, tiempoEstimado]);
 
@@ -109,7 +128,7 @@ export function UbicacionesSectionOptimizada({
   };
 
   const handleGuardarUbicacion = (ubicacionData: any) => {
-    console.log('💾 === INICIANDO GUARDAR UBICACIÓN ===');
+    console.log('💾 === INICIANDO GUARDAR UBICACIÓN (MEJORADO) ===');
     console.log('📍 Datos recibidos:', ubicacionData);
     
     try {
@@ -147,7 +166,7 @@ export function UbicacionesSectionOptimizada({
         return;
       }
 
-      // MEJORADO: Asegurar que la ubicación se guarde correctamente
+      // Guardar la ubicación
       if (editingIndex !== null) {
         console.log('✏️ Actualizando ubicación en índice:', editingIndex);
         actualizarUbicacion(editingIndex, ubicacionData);
@@ -164,17 +183,12 @@ export function UbicacionesSectionOptimizada({
         });
       }
       
-      // CRÍTICO: Cerrar el formulario DESPUÉS de guardar
+      // Cerrar el formulario
       setShowForm(false);
       setEditingIndex(null);
       setFormErrors([]);
       
       console.log('✅ Ubicación guardada exitosamente');
-      
-      // Forzar re-validación después de guardar
-      setTimeout(() => {
-        console.log('🔄 Forzando re-validación post-guardado');
-      }, 100);
       
     } catch (error) {
       console.error('❌ Error al guardar ubicación:', error);
@@ -226,14 +240,14 @@ export function UbicacionesSectionOptimizada({
     }
   };
 
-  // Manejar cálculo de distancia total MEJORADO
+  // Manejar cálculo de distancia total PROTEGIDO
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
-    console.log('📏 === INICIANDO CÁLCULO DE DISTANCIA ===');
+    console.log('📏 === CÁLCULO DE DISTANCIA (PROTEGIDO) ===');
     console.log('📍 Distancia recibida:', distancia, 'km');
     console.log('⏱️ Tiempo recibido:', tiempo, 'minutos');
     
-    setIsCalculatingDistance(true);
     try {
+      setIsCalculatingDistance(true);
       setDistanciaTotal(distancia);
       setTiempoEstimado(tiempo);
       
@@ -341,7 +355,7 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Calculadora de distancia mejorada con persistencia */}
+      {/* Calculadora de distancia mejorada con protección de errores */}
       {canCalculateDistances && (
         <DistanceCalculator
           ubicaciones={ubicaciones}

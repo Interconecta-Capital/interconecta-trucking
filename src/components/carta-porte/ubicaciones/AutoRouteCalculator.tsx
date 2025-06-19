@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Route, CheckCircle } from 'lucide-react';
+import { Route, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useRouteCalculation } from '@/hooks/useRouteCalculation';
 import { Ubicacion } from '@/types/ubicaciones';
 import { RouteCalculationStatus } from './RouteCalculationStatus';
@@ -22,7 +22,7 @@ export function AutoRouteCalculator({
   distanciaTotal,
   tiempoEstimado
 }: AutoRouteCalculatorProps) {
-  const { calculateRoute, isCalculating, routeData } = useRouteCalculation();
+  const { calculateRoute, isCalculating, routeData, error } = useRouteCalculation();
   const [autoCalculationDone, setAutoCalculationDone] = useState(false);
   const [lastCalculationHash, setLastCalculationHash] = useState<string>('');
 
@@ -52,7 +52,7 @@ export function AutoRouteCalculator({
     return JSON.stringify(locationData);
   };
 
-  // Función de geocodificación simplificada para coordenadas
+  // Función de geocodificación mejorada para coordenadas
   const geocodeLocation = async (ubicacion: Ubicacion): Promise<{ lat: number; lng: number } | null> => {
     // Si ya tiene coordenadas, usarlas
     if (ubicacion.coordenadas) {
@@ -62,21 +62,25 @@ export function AutoRouteCalculator({
       };
     }
 
-    // Simulación de coordenadas basadas en código postal (esto se puede mejorar)
-    // En un caso real, harías geocodificación aquí
+    // Coordenadas basadas en código postal (simplificado para testing)
     const cpMap: { [key: string]: { lat: number; lng: number } } = {
+      // México principales
       '01000': { lat: 19.4326, lng: -99.1332 }, // CDMX Centro
       '03100': { lat: 19.3927, lng: -99.1588 }, // Del Valle
       '06700': { lat: 19.4284, lng: -99.1676 }, // Roma Norte
       '11000': { lat: 19.4069, lng: -99.1716 }, // San Miguel Chapultepec
+      '62577': { lat: 18.8711, lng: -99.2211 }, // Jiutepec, Morelos
+      '22000': { lat: 32.5149, lng: -117.0382 }, // Tijuana, BC
     };
 
     const coords = cpMap[ubicacion.domicilio.codigoPostal];
     if (coords) {
+      console.log(`📍 Coordenadas encontradas para CP ${ubicacion.domicilio.codigoPostal}:`, coords);
       return coords;
     }
 
     // Coordenadas por defecto para México si no se encuentra
+    console.log(`⚠️ CP ${ubicacion.domicilio.codigoPostal} no encontrado, usando coordenadas por defecto`);
     return { lat: 19.4326, lng: -99.1332 };
   };
 
@@ -97,7 +101,7 @@ export function AutoRouteCalculator({
           const destinoCoords = await geocodeLocation(destino);
           
           if (!origenCoords || !destinoCoords) {
-            console.warn('No se pudieron obtener coordenadas para origen/destino');
+            console.warn('⚠️ No se pudieron obtener coordenadas para origen/destino');
             return;
           }
 
@@ -108,10 +112,13 @@ export function AutoRouteCalculator({
             if (coords) waypoints.push(coords);
           }
 
+          console.log('🚀 Iniciando cálculo con Mapbox:', { origenCoords, destinoCoords, waypoints });
+
           // Calcular ruta
           const result = await calculateRoute(origenCoords, destinoCoords, waypoints);
           
           if (result && result.success) {
+            console.log('✅ Ruta calculada exitosamente, notificando componente padre');
             onDistanceCalculated(
               result.distance_km,
               result.duration_minutes,
@@ -119,15 +126,18 @@ export function AutoRouteCalculator({
             );
             setAutoCalculationDone(true);
             setLastCalculationHash(currentHash);
+          } else {
+            console.warn('⚠️ Cálculo de ruta falló, pero manteniendo ubicaciones');
           }
         } catch (error) {
-          console.error('Error en auto-cálculo:', error);
+          console.error('❌ Error en auto-cálculo (no crítico):', error);
+          // No lanzamos el error para evitar que se pierdan las ubicaciones
         }
       }
     };
 
     // Delay para evitar cálculos excesivos
-    const timeoutId = setTimeout(performAutoCalculation, 1000);
+    const timeoutId = setTimeout(performAutoCalculation, 1500);
     return () => clearTimeout(timeoutId);
   }, [safeUbicaciones, canCalculate, distanciaTotal, lastCalculationHash]);
 
@@ -159,7 +169,7 @@ export function AutoRouteCalculator({
         setLastCalculationHash(createLocationHash());
       }
     } catch (error) {
-      console.error('Error en recálculo manual:', error);
+      console.error('❌ Error en recálculo manual:', error);
     }
   };
 
@@ -180,10 +190,16 @@ export function AutoRouteCalculator({
         <CardTitle className="flex items-center gap-2 text-gray-800">
           <Route className="h-5 w-5" />
           Cálculo Automático de Ruta
-          {autoCalculationDone && (
+          {autoCalculationDone && !error && (
             <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800 border-green-200">
               <CheckCircle className="h-3 w-3 mr-1" />
               Calculada
+            </Badge>
+          )}
+          {error && (
+            <Badge variant="destructive" className="ml-auto">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Error
             </Badge>
           )}
         </CardTitle>
@@ -195,6 +211,15 @@ export function AutoRouteCalculator({
           hasUbicaciones={true}
           canCalculate={true}
         />
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">
+              <AlertTriangle className="h-4 w-4 inline mr-2" />
+              {error}
+            </p>
+          </div>
+        )}
 
         <RouteMetricsDisplay
           distanciaTotal={distanciaTotal || 0}
