@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code, ShieldCheck } from 'lucide-react';
 import type { ValidationSummary } from '@/hooks/carta-porte/useCartaPorteValidation';
 
 interface CartaPorteProgressIndicatorProps {
@@ -9,6 +9,8 @@ interface CartaPorteProgressIndicatorProps {
   currentStep: number;
   onStepClick: (step: number) => void;
   xmlGenerado?: string | null;
+  xmlTimbrado?: string | null;
+  datosTimbre?: any;
 }
 
 const steps = [
@@ -47,6 +49,12 @@ const steps = [
     name: 'XML', 
     icon: Code,
     key: 'xml' as keyof ValidationSummary['sectionStatus']
+  },
+  { 
+    id: 6, 
+    name: 'PDF Fiscal', 
+    icon: ShieldCheck,
+    key: 'pdf_fiscal' as keyof ValidationSummary['sectionStatus']
   }
 ];
 
@@ -54,14 +62,27 @@ export function CartaPorteProgressIndicator({
   validationSummary, 
   currentStep, 
   onStepClick,
-  xmlGenerado 
+  xmlGenerado,
+  xmlTimbrado,
+  datosTimbre
 }: CartaPorteProgressIndicatorProps) {
   
   const getStepStatus = (step: typeof steps[0]) => {
-    // Para la sección XML, verificar si hay XML generado
+    // Para la sección XML
     if (step.key === 'xml') {
       if (xmlGenerado) {
         return 'completed';
+      } else {
+        return 'pending';
+      }
+    }
+    
+    // Para la sección PDF Fiscal
+    if (step.key === 'pdf_fiscal') {
+      if (xmlTimbrado && datosTimbre?.uuid && datosTimbre?.idCCP) {
+        return 'completed';
+      } else if (xmlGenerado) {
+        return 'ready';
       } else {
         return 'pending';
       }
@@ -117,7 +138,7 @@ export function CartaPorteProgressIndicator({
     // Para avanzar, verificar que los pasos anteriores no estén vacíos
     for (let i = 0; i < stepId; i++) {
       const step = steps[i];
-      if (step.key !== 'xml' && validationSummary.sectionStatus[step.key] === 'empty') {
+      if (step.key !== 'xml' && step.key !== 'pdf_fiscal' && validationSummary.sectionStatus[step.key] === 'empty') {
         return false;
       }
     }
@@ -135,8 +156,12 @@ export function CartaPorteProgressIndicator({
       return 'Listo para generar XML';
     }
     
-    if (xmlGenerado) {
-      return 'Carta Porte lista para timbrar';
+    if (xmlGenerado && !xmlTimbrado) {
+      return 'Listo para timbrar';
+    }
+    
+    if (xmlTimbrado && datosTimbre?.uuid) {
+      return 'Carta Porte timbrada - PDF fiscal disponible';
     }
     
     const currentStepData = steps[currentStep];
@@ -166,11 +191,14 @@ export function CartaPorteProgressIndicator({
     return `Siguiente paso: ${nextStepData.name}`;
   };
 
-  // Calcular progreso incluyendo XML
+  // Calcular progreso incluyendo XML y PDF fiscal
   const calculateProgress = () => {
     const completedSections = steps.filter(step => {
       if (step.key === 'xml') {
         return xmlGenerado ? 1 : 0;
+      }
+      if (step.key === 'pdf_fiscal') {
+        return xmlTimbrado && datosTimbre?.uuid ? 1 : 0;
       }
       return validationSummary.sectionStatus[step.key] === 'complete' ? 1 : 0;
     }).length;
