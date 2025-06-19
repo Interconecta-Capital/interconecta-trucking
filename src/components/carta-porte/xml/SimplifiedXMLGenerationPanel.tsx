@@ -30,7 +30,7 @@ interface SimplifiedXMLGenerationPanelProps {
 
 export function SimplifiedXMLGenerationPanel({ 
   cartaPorteData, 
-  cartaPorteId: cartaPorteIdProp, 
+  cartaPorteId, 
   onXMLGenerated, 
   onTimbrado,
   xmlGenerado: xmlGeneradoProp,
@@ -51,14 +51,14 @@ export function SimplifiedXMLGenerationPanel({
   } = useCartaPorteXMLManager();
 
   const { generateCompletePDF, isGenerating: isGeneratingPDF, pdfData } = useEnhancedPDFGenerator();
-  const { saveXML, savePDF, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteIdProp);
+  const { saveXML, savePDF, xmlGenerado: xmlPersistido } = useCartaPortePersistence(cartaPorteId);
 
   const {
     eventos,
     agregarEvento
-  } = useTrackingCartaPorte(cartaPorteIdProp);
+  } = useTrackingCartaPorte(cartaPorteId);
 
-  // Usar XML del prop si existe, sino el del hook, sino el persistido
+  // Usar XML del prop si existe, sino el del hook,  sino el persistido
   const xmlActual = xmlGeneradoProp || xmlGeneradoHook || xmlPersistido;
 
   // Verificar si la carta porte está completa
@@ -73,34 +73,25 @@ export function SimplifiedXMLGenerationPanel({
 
   // Auto-timbrado cuando se completan los datos
   useEffect(() => {
-    // Solo intentar auto-timbrado si tenemos cartaPorteId
-    if (autoTimbrado && cartaPorteCompleta && xmlActual && !xmlTimbrado && !isTimbring && cartaPorteIdProp) {
+    if (autoTimbrado && cartaPorteCompleta && xmlActual && !xmlTimbrado && !isTimbring) {
       console.log('Iniciando auto-timbrado...');
       handleTimbrar();
-    } else if (autoTimbrado && cartaPorteCompleta && xmlActual && !cartaPorteIdProp) {
-      console.log('⚠️ Auto-timbrado no puede proceder: ID de carta porte requerido');
     }
-  }, [autoTimbrado, cartaPorteCompleta, xmlActual, xmlTimbrado, isTimbring, cartaPorteIdProp]);
+  }, [autoTimbrado, cartaPorteCompleta, xmlActual, xmlTimbrado, isTimbring]);
 
   const handleGenerarXML = async () => {
     const resultado = await generarXML(cartaPorteData);
     if (resultado.success && resultado.xml) {
-      // Persistir XML inmediatamente si tenemos ID
-      if (cartaPorteIdProp) {
-        saveXML(resultado.xml);
-      } else {
-        // Guardar en localStorage como fallback
-        localStorage.setItem('xml_generado_temp', resultado.xml);
-        console.log('💾 XML guardado temporalmente en localStorage');
-      }
+      // Persistir XML inmediatamente
+      saveXML(resultado.xml);
       
       // Notificar al componente padre que se generó XML
       if (onXMLGenerated) {
         onXMLGenerated(resultado.xml);
       }
       
-      // Agregar evento de tracking solo si tenemos ID
-      if (cartaPorteIdProp) {
+      // Agregar evento de tracking
+      if (cartaPorteId) {
         await agregarEvento({
           evento: 'xml_generado',
           descripcion: 'XML de Carta Porte generado correctamente'
@@ -110,12 +101,12 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleTimbrar = async () => {
-    if (!cartaPorteIdProp) {
+    if (!cartaPorteId) {
       console.error('ID de carta porte requerido para timbrado');
       return;
     }
     
-    const resultado = await timbrarCartaPorte(cartaPorteData, cartaPorteIdProp);
+    const resultado = await timbrarCartaPorte(cartaPorteData, cartaPorteId);
     if (resultado.success && onTimbrado) {
       onTimbrado(resultado);
       
@@ -134,14 +125,9 @@ export function SimplifiedXMLGenerationPanel({
   const handleGenerarPDF = async () => {
     const resultado = await generateCompletePDF(cartaPorteData, datosCalculoRuta);
     if (resultado) {
-      // Persistir PDF inmediatamente si tenemos ID
-      if (cartaPorteIdProp) {
-        savePDF(resultado.url, resultado.blob);
-      } else {
-        // Al menos mantener el URL en memoria
-        console.log(`PDF generado sin ID: ${resultado.pages} páginas`);
-      }
-      console.log(`PDF completo generado: ${resultado.pages} páginas`);
+      // Persistir PDF inmediatamente
+      savePDF(resultado.url, resultado.blob);
+      console.log(`PDF completo generado y persistido: ${resultado.pages} páginas`);
     }
   };
 
@@ -183,12 +169,6 @@ export function SimplifiedXMLGenerationPanel({
             </CardTitle>
             {getStatusBadge()}
           </div>
-          {!cartaPorteIdProp && (
-            <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-              ⚠️ <strong>Advertencia:</strong> Sin ID de carta porte, la persistencia estará limitada. 
-              Los datos se guardarán temporalmente en el navegador.
-            </div>
-          )}
         </CardHeader>
         
         <CardContent className="space-y-6">
@@ -220,7 +200,7 @@ export function SimplifiedXMLGenerationPanel({
             xmlTimbrado={xmlTimbrado}
             datosTimbre={datosTimbre}
             isTimbring={isTimbring}
-            cartaPorteId={cartaPorteIdProp}
+            cartaPorteId={cartaPorteId}
             onValidarConexionPAC={validarConexionPAC}
             onTimbrar={handleTimbrar}
             onDescargarTimbrado={() => descargarXML('timbrado')}
@@ -306,11 +286,8 @@ export function SimplifiedXMLGenerationPanel({
 
               <div className="text-xs text-gray-600 bg-white p-3 rounded border">
                 <strong>PDF Completo y Persistente:</strong> Este PDF incluye toda la información 
-                de la Carta Porte en múltiples páginas organizadas. 
-                {cartaPorteIdProp ? 
-                  'Se mantiene disponible durante toda tu sesión y se guarda automáticamente.' : 
-                  'Se mantiene disponible durante tu sesión actual.'
-                }
+                de la Carta Porte en múltiples páginas organizadas. Se mantiene disponible 
+                durante toda tu sesión.
               </div>
             </CardContent>
           </Card>
@@ -318,9 +295,9 @@ export function SimplifiedXMLGenerationPanel({
       </Card>
 
       {/* Tracking Section */}
-      {cartaPorteIdProp && (
+      {cartaPorteId && (
         <TrackingSection
-          cartaPorteId={cartaPorteIdProp}
+          cartaPorteId={cartaPorteId}
           eventos={eventos}
           uuidFiscal={datosTimbre?.uuid}
         />

@@ -2,9 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { XMLCartaPorteGenerator, XMLGenerationResult } from '@/services/xml/xmlGenerator';
-import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
-import { mapUbicacionToCompleta } from '@/hooks/carta-porte/mapUbicacionToCompleta';
-import { mapCompletaToUbicacion } from '@/hooks/carta-porte/mapCompletaToUbicacion';
+import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useXMLGeneration = () => {
@@ -16,28 +14,15 @@ export const useXMLGeneration = () => {
     setIsGenerating(true);
     try {
       console.log('Iniciando generación de XML para Carta Porte');
-
-      // Asegurar que las ubicaciones estén en el formato correcto
-      const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub => {
-        // Si ya tiene las propiedades de UbicacionCompleta, usar tal como está
-        if ((ub as any).tipo_ubicacion) {
-          return ub as UbicacionCompleta;
-        }
-        // Si no, convertir desde Ubicacion a UbicacionCompleta
-        const ubicacionSimple = mapCompletaToUbicacion(ub as UbicacionCompleta);
-        return mapUbicacionToCompleta(ubicacionSimple);
-      });
-
-      const data = { ...cartaPorteData, ubicaciones };
-
-      const resultado = await XMLCartaPorteGenerator.generarXML(data);
+      
+      const resultado = await XMLCartaPorteGenerator.generarXML(cartaPorteData);
       
       if (resultado.success && resultado.xml) {
         setXmlGenerado(resultado.xml);
         
         // Guardar XML en base de datos si hay un ID de carta porte
-        if (data.cartaPorteId) {
-          await guardarXMLEnBaseDatos(data.cartaPorteId, resultado.xml);
+        if (cartaPorteData.cartaPorteId) {
+          await guardarXMLEnBaseDatos(cartaPorteData.cartaPorteId, resultado.xml);
         }
         
         toast({

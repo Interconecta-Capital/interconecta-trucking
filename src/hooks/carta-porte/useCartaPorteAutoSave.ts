@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -42,7 +43,11 @@ export const useCartaPorteAutoSave = ({
     
     setIsAutoSaving(true);
     try {
-      await BorradorService.guardarBorrador(formData);
+      const nuevoId = await BorradorService.guardarBorrador(formData, currentCartaPorteId);
+      
+      if (nuevoId && nuevoId !== currentCartaPorteId && onCartaPorteIdChange) {
+        onCartaPorteIdChange(nuevoId);
+      }
       
       lastDataRef.current = currentDataString;
       setLastSaved(new Date());
@@ -78,11 +83,7 @@ export const useCartaPorteAutoSave = ({
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (enabled && formData) {
         // Intentar guardado síncrono antes de salir
-        try {
-          BorradorService.guardarBorrador(formData);
-        } catch (error) {
-          console.error('Error guardando antes de salir:', error);
-        }
+        BorradorService.guardarBorradorAutomatico(formData, currentCartaPorteId);
         e.preventDefault();
         e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
       }

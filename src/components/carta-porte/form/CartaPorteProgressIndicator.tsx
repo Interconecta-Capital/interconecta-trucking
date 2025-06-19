@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code, ShieldCheck } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code } from 'lucide-react';
 import type { ValidationSummary } from '@/hooks/carta-porte/useCartaPorteValidation';
 
 interface CartaPorteProgressIndicatorProps {
@@ -9,13 +9,6 @@ interface CartaPorteProgressIndicatorProps {
   currentStep: number;
   onStepClick: (step: number) => void;
   xmlGenerado?: string | null;
-  xmlTimbrado?: string | null;
-  datosTimbre?: any;
-  configuracion?: any;
-  ubicaciones?: any[];
-  mercancias?: any[];
-  autotransporte?: any;
-  figuras?: any[];
 }
 
 const steps = [
@@ -23,43 +16,37 @@ const steps = [
     id: 0, 
     name: 'Configuración', 
     icon: FileText,
-    key: 'configuracion' as const
+    key: 'configuracion' as keyof ValidationSummary['sectionStatus']
   },
   { 
     id: 1, 
     name: 'Ubicaciones', 
     icon: MapPin,
-    key: 'ubicaciones' as const
+    key: 'ubicaciones' as keyof ValidationSummary['sectionStatus']
   },
   { 
     id: 2, 
-    name: 'Autotransporte', 
-    icon: Truck,
-    key: 'autotransporte' as const
+    name: 'Mercancías', 
+    icon: Package,
+    key: 'mercancias' as keyof ValidationSummary['sectionStatus']
   },
   { 
     id: 3, 
-    name: 'Mercancías', 
-    icon: Package,
-    key: 'mercancias' as const
+    name: 'Autotransporte', 
+    icon: Truck,
+    key: 'autotransporte' as keyof ValidationSummary['sectionStatus']
   },
   { 
     id: 4, 
     name: 'Figuras', 
     icon: Users,
-    key: 'figuras' as const
+    key: 'figuras' as keyof ValidationSummary['sectionStatus']
   },
   { 
     id: 5, 
     name: 'XML', 
     icon: Code,
-    key: 'xml' as const
-  },
-  { 
-    id: 6, 
-    name: 'PDF Fiscal', 
-    icon: ShieldCheck,
-    key: 'pdf_fiscal' as const
+    key: 'xml' as keyof ValidationSummary['sectionStatus']
   }
 ];
 
@@ -67,88 +54,30 @@ export function CartaPorteProgressIndicator({
   validationSummary, 
   currentStep, 
   onStepClick,
-  xmlGenerado,
-  xmlTimbrado,
-  datosTimbre,
-  configuracion,
-  ubicaciones = [],
-  mercancias = [],
-  autotransporte,
-  figuras = []
+  xmlGenerado 
 }: CartaPorteProgressIndicatorProps) {
   
-  const validateSectionData = (stepKey: string) => {
-    switch (stepKey) {
-      case 'configuracion':
-        return !!(
-          configuracion?.rfcEmisor &&
-          configuracion?.nombreEmisor &&
-          configuracion?.rfcReceptor &&
-          configuracion?.nombreReceptor &&
-          configuracion?.uso_cfdi
-        );
-      
-      case 'ubicaciones':
-        const hasOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
-        const hasDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
-        const ubicacionesCompletas = ubicaciones.every(u => 
-          u.domicilio?.codigo_postal && 
-          u.domicilio?.municipio && 
-          u.domicilio?.calle
-        );
-        return hasOrigen && hasDestino && ubicacionesCompletas && ubicaciones.length >= 2;
-      
-      case 'autotransporte':
-        return !!(
-          autotransporte?.placa_vm &&
-          autotransporte?.config_vehicular &&
-          autotransporte?.perm_sct &&
-          autotransporte?.asegura_resp_civil &&
-          autotransporte?.poliza_resp_civil &&
-          autotransporte?.peso_bruto_vehicular > 0
-        );
-      
-      case 'mercancias':
-        const mercanciasCompletas = mercancias.every(m => 
-          m.descripcion && 
-          m.bienes_transp && 
-          m.clave_unidad && 
-          m.cantidad > 0 && 
-          m.peso_kg > 0
-        );
-        return mercancias.length > 0 && mercanciasCompletas;
-      
-      case 'figuras':
-        const figurasCompletas = figuras.every(f => 
-          f.tipo_figura && 
-          f.nombre_figura && 
-          f.rfc_figura
-        );
-        return figuras.length > 0 && figurasCompletas;
-      
-      case 'xml':
-        return !!xmlGenerado;
-      
-      case 'pdf_fiscal':
-        return !!(xmlTimbrado && datosTimbre?.uuid);
-      
-      default:
-        return false;
-    }
-  };
-  
   const getStepStatus = (step: typeof steps[0]) => {
-    const isComplete = validateSectionData(step.key);
+    // Para la sección XML, verificar si hay XML generado
+    if (step.key === 'xml') {
+      if (xmlGenerado) {
+        return 'completed';
+      } else {
+        return 'pending';
+      }
+    }
+    
+    const sectionStatus = validationSummary.sectionStatus[step.key];
     
     if (step.id < currentStep) {
-      return isComplete ? 'completed' : 'completed-warning';
+      return sectionStatus === 'complete' ? 'completed' : 'completed-warning';
     }
     
     if (step.id === currentStep) {
       return 'current';
     }
     
-    return isComplete ? 'ready' : 'pending';
+    return sectionStatus === 'empty' ? 'pending' : 'ready';
   };
 
   const getStepIcon = (step: typeof steps[0], status: string) => {
@@ -171,7 +100,7 @@ export function CartaPorteProgressIndicator({
       case 'completed':
         return <Badge variant="default" className="bg-green-100 text-green-800">Completo</Badge>;
       case 'completed-warning':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Incompleto</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Revisar</Badge>;
       case 'current':
         return <Badge variant="default" className="bg-blue-100 text-blue-800">Actual</Badge>;
       case 'ready':
@@ -182,12 +111,13 @@ export function CartaPorteProgressIndicator({
   };
 
   const canNavigateTo = (stepId: number) => {
+    // Permitir navegación hacia atrás siempre
     if (stepId <= currentStep) return true;
     
-    // Verificar que los pasos anteriores estén completos
+    // Para avanzar, verificar que los pasos anteriores no estén vacíos
     for (let i = 0; i < stepId; i++) {
       const step = steps[i];
-      if (!validateSectionData(step.key)) {
+      if (step.key !== 'xml' && validationSummary.sectionStatus[step.key] === 'empty') {
         return false;
       }
     }
@@ -195,8 +125,56 @@ export function CartaPorteProgressIndicator({
     return true;
   };
 
+  const getNextStepMessage = () => {
+    // Si todas las secciones principales están completas
+    const mainSectionsComplete = steps.slice(0, 5).every(step => 
+      validationSummary.sectionStatus[step.key] !== 'empty'
+    );
+    
+    if (mainSectionsComplete && !xmlGenerado) {
+      return 'Listo para generar XML';
+    }
+    
+    if (xmlGenerado) {
+      return 'Carta Porte lista para timbrar';
+    }
+    
+    const currentStepData = steps[currentStep];
+    const nextStepData = steps[currentStep + 1];
+    
+    if (!nextStepData) return null;
+    
+    const currentSectionStatus = validationSummary.sectionStatus[currentStepData.key];
+    
+    if (currentSectionStatus === 'empty') {
+      switch (currentStepData.key) {
+        case 'configuracion':
+          return 'Complete los datos del emisor y receptor';
+        case 'ubicaciones':
+          return 'Agregue las ubicaciones de origen y destino';
+        case 'mercancias':
+          return 'Agregue al menos una mercancía';
+        case 'autotransporte':
+          return 'Complete los datos del vehículo';
+        case 'figuras':
+          return 'Agregue al menos una figura de transporte';
+        default:
+          return `Complete la sección ${currentStepData.name}`;
+      }
+    }
+    
+    return `Siguiente paso: ${nextStepData.name}`;
+  };
+
+  // Calcular progreso incluyendo XML
   const calculateProgress = () => {
-    const completedSections = steps.filter(step => validateSectionData(step.key)).length;
+    const completedSections = steps.filter(step => {
+      if (step.key === 'xml') {
+        return xmlGenerado ? 1 : 0;
+      }
+      return validationSummary.sectionStatus[step.key] === 'complete' ? 1 : 0;
+    }).length;
+    
     return Math.round((completedSections / steps.length) * 100);
   };
 
@@ -209,7 +187,7 @@ export function CartaPorteProgressIndicator({
           const isClickable = canNavigateTo(step.id);
           
           return (
-            <div key={step.id} className="flex items-center">
+            <React.Fragment key={step.id}>
               <div className="flex flex-col items-center space-y-2">
                 <button
                   onClick={() => isClickable && onStepClick(step.id)}
@@ -244,10 +222,18 @@ export function CartaPorteProgressIndicator({
                   step.id < currentStep ? 'bg-green-300' : 'bg-gray-200'
                 }`} />
               )}
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
+
+      {/* Next Step Message */}
+      {getNextStepMessage() && (
+        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+          <Clock className="h-4 w-4" />
+          <span>{getNextStepMessage()}</span>
+        </div>
+      )}
 
       {/* Progress Summary */}
       <div className="text-center text-sm text-gray-500">

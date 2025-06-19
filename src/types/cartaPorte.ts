@@ -1,242 +1,183 @@
 
-export interface Domicilio {
-  calle: string;
-  numero_exterior?: string;
-  numero_interior?: string;
-  colonia: string;
-  localidad?: string;
-  municipio: string;
-  estado: string;
-  pais: string;
-  codigo_postal: string;
-  referencia?: string;
-}
-
-export interface Ubicacion {
-  tipo_estacion: string;
-  nombre_estacion?: string;
-  rfc_remitente_destinatario?: string;
-  id_ubicacion?: string;
-  distancia_recorrida?: number;
-  domicilio: Domicilio;
-}
-
-export interface Mercancia {
-  bienes_transp: string;
-  clave_unidad: string;
-  cantidad: number;
-  peso_kg: number;
-  descripcion: string;
-  valor_mercancia?: number;
-  moneda?: string;
-}
-
-export interface Autotransporte {
-  perm_sct: string;
-  num_permiso_sct?: string;
-  asegura_resp_civil: string;
-  poliza_resp_civil: string;
-  vigencia_resp_civil?: string;
-  config_vehicular: string;
-  placa_vm: string;
-  anio_modelo_vm: number;
-  tipo_carroceria?: string;
-  tarjeta_circulacion?: string;
-  vigencia_tarjeta_circulacion?: string;
-  asegura_med_ambiente?: string;
-  poliza_med_ambiente?: string;
-  asegura_carga?: string;
-  poliza_carga?: string;
-  vigencia_med_ambiente?: string;
-}
-
-export interface Remolque {
-  id?: string;
-  subtipo_remolque: string;
-  subtipo_rem: string;
-  placa: string;
-}
-
-export interface RegimenAduanero {
-  clave_regimen: string;
-  descripcion?: string;
-  orden_secuencia: number;
-}
-
-export interface FiguraTransporte {
-  tipo_figura: string;
-  rfc_transportista: string;
-  rfc_figura?: string;
-  nombre_figura?: string;
-  num_licencia?: string;
-  nombre_transportista?: string;
-  num_reg_id_trib?: string;
-  residencia_fiscal?: string;
-  nombre_operador?: string;
-  rfc_operador?: string;
-  num_licencia_operador?: string;
-  num_reg_id_trib_operador?: string;
-  residencia_fiscal_operador?: string;
-  nombre_propietario?: string;
-  rfc_propietario?: string;
-  num_reg_id_trib_propietario?: string;
-  residencia_fiscal_propietario?: string;
-  nombre_arrendatario?: string;
-  rfc_arrendatario?: string;
-  num_reg_id_trib_arrendatario?: string;
-  residencia_fiscal_arrendatario?: string;
-  num_reg_id_trib_figura?: string;
-  residencia_fiscal_figura?: string;
-}
-
-export interface PermisoSEMARNAT {
-  id?: string;
-  tipo_permiso: string;
-  numero_permiso: string;
-  fecha_expedicion: string;
-  fecha_vencimiento: string;
-  autoridad_expedidora?: string;
-  vigente?: boolean;
-  observaciones?: string;
-}
-
-export interface ValidacionSATv31 {
-  valido: boolean;
-  errores: string[];
-  warnings: string[];
-  score: number;
-  campos_faltantes: string[];
-  recomendaciones: string[];
-}
-
 export interface CartaPorteData {
-  // Required core properties
-  version: string;
-  
-  // Optional configuration
-  transporte_internacional?: string;
+  tipoRelacion?: string;
+  version?: string;
   transporteInternacional?: string | boolean;
-  entrada_salida_mercancia?: string;
   entradaSalidaMerc?: string;
-  via_entrada_salida?: string;
-  viaEntradaSalida?: string;
   viaTransporte?: string;
-  paisOrigenDestino?: string;
-  pais_origen_destino?: string;
-  total_distancia_recorrida?: number;
-  registro_istmo?: string | boolean;
-  registroIstmo?: string | boolean;
+  totalDistRec?: number;
+  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
+  cartaPorteVersion?: '3.0' | '3.1';
+  tipoCfdi?: 'Ingreso' | 'Traslado';
   rfcEmisor?: string;
   nombreEmisor?: string;
   rfcReceptor?: string;
   nombreReceptor?: string;
-  uso_cfdi?: string;
-  folio?: string;
-  cartaPorteVersion?: string;
-  tipoCfdi?: string;
-  regimenAduanero?: string;
-  regimenesAduaneros?: RegimenAduanero[];
-  ubicaciones?: UbicacionCompleta[];
+  registroIstmo?: boolean;
   mercancias?: MercanciaCompleta[];
+  ubicaciones?: UbicacionCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
-  
-  // Additional properties found in codebase
+  pais_origen_destino?: string;
+  via_entrada_salida?: string;
   cartaPorteId?: string;
-  idCCP?: string;
-  regimen_fiscal_emisor?: string;
-  regimen_fiscal_receptor?: string;
-  domicilio_fiscal_emisor?: Domicilio;
-  domicilio_fiscal_receptor?: Domicilio;
-  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
+  
+  // Campos para persistencia de estado
   xmlGenerado?: string;
-  datosCalculoRuta?: any;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  };
   currentStep?: number;
+  
+  // Add missing properties for version management
+  regimenAduanero?: string;
+  regimenesAduaneros?: string[];
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+    [key: string]: any;
+  };
 }
 
-export interface UbicacionCompleta extends Ubicacion {
-  id?: string;
-  carta_porte_id?: string;
-  tipo_ubicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
+export interface UbicacionCompleta {
+  id: string;
+  tipo_ubicacion: string;
+  id_ubicacion: string;
+  rfc_remitente_destinatario?: string;
   nombre_remitente_destinatario?: string;
   fecha_hora_salida_llegada?: string;
+  distancia_recorrida?: number;
+  tipo_estacion?: string;
   numero_estacion?: string;
   kilometro?: number;
   coordenadas?: {
     latitud: number;
     longitud: number;
   };
+  domicilio: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+    referencia?: string;
+  };
 }
 
-export interface AutotransporteCompleto extends Autotransporte {
-  id?: string;
-  carta_porte_id?: string;
-  peso_bruto_vehicular: number;
-  capacidad_carga: number;
-  remolques: Remolque[];
+export interface AutotransporteCompleta extends AutotransporteCompleto {
+  // Extend with any additional properties if needed
+}
+
+export interface AutotransporteData extends AutotransporteCompleto {
+  // Alias for compatibility
+  remolques: any[];
+}
+
+export interface AutotransporteCompleto {
+  placa_vm: string;
+  anio_modelo_vm: number;
+  config_vehicular: string;
+  perm_sct: string;
+  num_permiso_sct: string;
+  asegura_resp_civil: string;
+  poliza_resp_civil: string;
+  asegura_med_ambiente?: string;
+  poliza_med_ambiente?: string;
+  remolques?: any[];
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
   numero_serie_vin?: string;
-  dimensiones?: {
-    largo?: number;
-    ancho?: number;
-    alto?: number;
-  };
+  tipo_carroceria?: string;
+  capacidad_carga?: number;
+  peso_bruto_vehicular?: number;
   vigencia_permiso?: string;
   numero_permisos_adicionales?: string[];
-  carga_maxima?: number;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+  };
+  // Add placaVm for compatibility
+  placaVm?: string;
+  configuracionVehicular?: string;
+  seguro?: {
+    aseguradora: string;
+    poliza: string;
+    vigencia: string;
+  };
 }
 
-export interface FiguraCompleta extends FiguraTransporte {
-  id?: string;
-  carta_porte_id?: string;
-  domicilio?: any;
-  operador_sct?: boolean;
+export interface FiguraCompleta {
+  id: string;
+  tipo_figura: string;
+  rfc_figura: string;
+  nombre_figura: string;
+  num_licencia?: string;
+  residencia_fiscal_figura?: string;
+  num_reg_id_trib_figura?: string;
+  curp?: string;
   tipo_licencia?: string;
   vigencia_licencia?: string;
-  curp?: string;
+  operador_sct?: boolean;
+  domicilio: {
+    pais: string;
+    codigo_postal: string;
+    estado: string;
+    municipio: string;
+    colonia: string;
+    calle: string;
+    numero_exterior: string;
+    numero_interior?: string;
+    referencia?: string;
+  };
 }
 
 export interface MercanciaCompleta {
   id: string;
-  descripcion: string;
   bienes_transp: string;
-  clave_unidad: string;
-  cantidad: number;
-  peso_kg: number;
+  descripcion?: string;
+  cantidad?: number;
+  clave_unidad?: string;
+  peso_kg?: number;
   valor_mercancia?: number;
-  material_peligroso?: boolean;
   moneda?: string;
+  fraccion_arancelaria?: string;
+  uuid_comercio_exterior?: string;
+  material_peligroso?: boolean;
   cve_material_peligroso?: string;
   embalaje?: string;
-  fraccion_arancelaria?: string;
-  uuid_comercio_ext?: string;
-  carta_porte_id?: string;
-  numero_autorizacion?: string;
-  folio_acreditacion?: string;
-  requiere_semarnat?: boolean;
-  categoria_transporte?: 'general' | 'peligroso' | 'refrigerado' | 'especializado';
-  regulaciones_especiales?: string[];
-  temperatura_transporte?: string;
-  tipo_refrigeracion?: string;
-  dimensiones_especiales?: string;
-  peso_especial?: string;
-  peso_bruto_total?: number;
-  descripcion_detallada?: string;
-  especie_protegida?: boolean;
   tipo_embalaje?: string;
   material_embalaje?: string;
+  descripcion_embalaje?: string;
+  peso_bruto_total?: number;
   unidad_peso_bruto?: string;
   dimensiones?: {
-    largo?: number;
-    ancho?: number;
-    alto?: number;
+    largo: number;
+    ancho: number;
+    alto: number;
     unidad?: string;
   };
-  uuid_comercio_exterior?: string;
-  peso_neto_total?: number;
-  numero_piezas?: number;
-  requiere_cites?: boolean;
-  permisos_semarnat?: PermisoSEMARNAT[];
-  documentacion_aduanera?: any[];
+}
+
+// Additional catalog interfaces
+export interface CatalogoEmbalaje {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoCarroceria {
+  clave: string;
+  descripcion: string;
+}
+
+export interface CatalogoTipoLicencia {
+  clave: string;
+  descripcion: string;
+  aplica_federal?: boolean;
 }

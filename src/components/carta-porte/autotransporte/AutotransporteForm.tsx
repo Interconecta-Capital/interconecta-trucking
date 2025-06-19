@@ -14,20 +14,9 @@ import { AutotransporteCompleto } from '@/types/cartaPorte';
 interface AutotransporteFormProps {
   data: AutotransporteCompleto;
   onChange: (data: AutotransporteCompleto) => void;
-  pesoTotalMercancias?: number;
-  onRemolqueAdd?: () => void;
-  onRemolqueUpdate?: (index: number, remolque: any) => void;
-  onRemolqueDelete?: (index: number) => void;
 }
 
-export function AutotransporteForm({ 
-  data, 
-  onChange, 
-  pesoTotalMercancias = 0,
-  onRemolqueAdd,
-  onRemolqueUpdate,
-  onRemolqueDelete
-}: AutotransporteFormProps) {
+export function AutotransporteForm({ data, onChange }: AutotransporteFormProps) {
   const [showVehiculosGuardados, setShowVehiculosGuardados] = useState(false);
   const [showGuardarModal, setShowGuardarModal] = useState(false);
   const [nombrePerfil, setNombrePerfil] = useState('');
@@ -84,27 +73,15 @@ export function AutotransporteForm({
       return;
     }
 
-    // Convert to AutotransporteData for saving
-    const dataForSaving = {
+    // Ensure remolques is always an array for AutotransporteData compatibility
+    const dataWithRemolques: AutotransporteCompleto & { remolques: any[] } = {
       ...data,
-      num_permiso_sct: data.num_permiso_sct || '',
       remolques: data.remolques || []
     };
 
-    await guardarVehiculo(dataForSaving, nombrePerfil);
+    await guardarVehiculo(dataWithRemolques, nombrePerfil);
     setShowGuardarModal(false);
     setNombrePerfil('');
-  };
-
-  const handleRemolqueListChange = (remolques: any[]) => {
-    onChange({
-      ...data,
-      remolques: remolques.map(r => ({
-        ...r,
-        subtipo_rem: r.subtipo_rem || r.subtipo_remolque,
-        subtipo_remolque: r.subtipo_remolque || r.subtipo_rem
-      }))
-    });
   };
 
   const isVehiculoCompleto = data.placa_vm && data.anio_modelo_vm && data.config_vehicular;
@@ -168,7 +145,7 @@ export function AutotransporteForm({
 
           <RemolquesList
             remolques={data.remolques || []}
-            onChange={handleRemolqueListChange}
+            onChange={(remolques) => handleVehiculoChange({ remolques })}
           />
         </CardContent>
       </Card>

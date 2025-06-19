@@ -76,7 +76,7 @@ export const useCartaPorteValidation = () => {
           if (!ub.domicilio?.calle) {
             missingFields.ubicaciones.push(`Calle en ubicación ${index + 1}`);
           }
-          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso Intermedio') {
+          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso') {
             missingFields.ubicaciones.push(`RFC en ubicación ${index + 1}`);
           }
         });
@@ -127,9 +127,6 @@ export const useCartaPorteValidation = () => {
       }
       if (!auto?.poliza_resp_civil) {
         missingFields.autotransporte.push('Póliza de seguro');
-      }
-      if (!auto?.peso_bruto_vehicular) {
-        missingFields.autotransporte.push('Peso bruto vehicular');
       }
       
       if (auto?.placa_vm) {

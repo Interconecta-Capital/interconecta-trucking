@@ -1,28 +1,14 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { verifyAuth, logSecurityEvent, corsHeaders } from "../_shared/auth.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
-  }
-
-  const { error: authError, user } = await verifyAuth(req);
-  if (authError || !user) {
-    await logSecurityEvent(
-      user?.id ?? 'anonymous',
-      'unauthorized_access',
-      { endpoint: 'consultar-saldo-pac' },
-      req.headers.get('x-forwarded-for') ?? undefined,
-      req.headers.get('user-agent') ?? undefined,
-    );
-    return (
-      authError ??
-      new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    );
   }
 
   try {

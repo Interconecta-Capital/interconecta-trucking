@@ -85,20 +85,3 @@ export const useEstados = (termino: string = '', enabled: boolean = true) => {
     staleTime: STALE_TIME_LONG,
   });
 };
-
-// Consolidated hook that returns all catalogs in a single object
-export const useCatalogosReal = () => {
-  const configuracionVehicular = useConfiguracionesVehiculo();
-  const tipoPermiso = useTiposPermiso();
-  const subtipoRemolque = useRemolques();
-
-  return {
-    catalogos: {
-      configuracionVehicular: configuracionVehicular.data || [],
-      tipoPermiso: tipoPermiso.data || [],
-      subtipoRemolque: subtipoRemolque.data || []
-    },
-    isLoading: configuracionVehicular.isLoading || tipoPermiso.isLoading || subtipoRemolque.isLoading,
-    error: configuracionVehicular.error || tipoPermiso.error || subtipoRemolque.error
-  };
-};

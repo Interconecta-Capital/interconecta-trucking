@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 
@@ -12,16 +13,13 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
   const [formData, setFormData] = useState<Ubicacion>({
     id: initialData?.id || '',
     idUbicacion: initialData?.idUbicacion || '',
-    tipoUbicacion: initialData?.tipoUbicacion || 'Origen', // Default to 'Origen' instead of empty string
+    tipoUbicacion: initialData?.tipoUbicacion || '', // Vacío por defecto
     rfcRemitenteDestinatario: initialData?.rfcRemitenteDestinatario || '',
     nombreRemitenteDestinatario: initialData?.nombreRemitenteDestinatario || '',
     fechaHoraSalidaLlegada: initialData?.fechaHoraSalidaLlegada || '',
     distanciaRecorrida: initialData?.distanciaRecorrida || 0,
     ordenSecuencia: initialData?.ordenSecuencia || 1,
-    coordenadas: initialData?.coordenadas ? {
-      latitud: initialData.coordenadas.latitud || 0,
-      longitud: initialData.coordenadas.longitud || 0
-    } : undefined,
+    coordenadas: initialData?.coordenadas,
     domicilio: {
       pais: 'México',
       codigoPostal: '',
@@ -58,15 +56,6 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
             [keys[1]]: value
           }
         };
-      } else if (keys.length === 2 && keys[0] === 'coordenadas') {
-        return {
-          ...prev,
-          coordenadas: {
-            latitud: prev.coordenadas?.latitud || 0,
-            longitud: prev.coordenadas?.longitud || 0,
-            [keys[1]]: typeof value === 'number' ? value : 0
-          }
-        };
       }
       return prev;
     });
@@ -74,11 +63,11 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
 
   const handleTipoChange = useCallback((tipo: string) => {
     if (!tipo || tipo === '') {
-      // Set to 'Origen' as default instead of empty string
+      // Limpiar ID si se deselecciona el tipo
       setFormData(prev => ({
         ...prev,
-        tipoUbicacion: 'Origen',
-        idUbicacion: generarId ? generarId('Origen') : 'OR_001'
+        tipoUbicacion: '',
+        idUbicacion: ''
       }));
       return;
     }
@@ -187,10 +176,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
       ...prev,
       rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
       nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
-      domicilio: {
-        ...ubicacionFrecuente.domicilio,
-        localidad: ubicacionFrecuente.domicilio.localidad || ''
-      }
+      domicilio: ubicacionFrecuente.domicilio
     }));
   }, []);
 
@@ -216,7 +202,14 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     handleLocationUpdate: handleFieldChange, // Mantener compatibilidad
     handleFieldChange,
     handleMapboxAddressSelect,
-    cargarUbicacionFrecuente,
+    cargarUbicacionFrecuente: useCallback((ubicacionFrecuente: UbicacionFrecuente) => {
+      setFormData(prev => ({
+        ...prev,
+        rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
+        nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
+        domicilio: ubicacionFrecuente.domicilio
+      }));
+    }, []),
     isFormValid
   };
 };

@@ -116,21 +116,21 @@ const TruckAnimation = () => {
       </div>
 
       {/* Floating Notifications - Fuera del contenedor principal */}
-      <div className="absolute top-16 right-0 z-30 space-y-3 transform translate-x-8 hidden md:block">
+      <div className="absolute top-16 right-0 z-30 space-y-3 transform translate-x-8">
         <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 min-w-[280px] animate-slide-in-right">
           <div className="w-2 h-2 rounded-full bg-green-500"></div>
           <span className="text-sm font-medium text-gray-700">✅ Carta porte CP-2847 timbrada</span>
         </div>
       </div>
 
-      <div className="absolute top-32 left-0 z-30 space-y-3 transform -translate-x-8 hidden md:block">
+      <div className="absolute top-32 left-0 z-30 space-y-3 transform -translate-x-8">
         <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 min-w-[280px] animate-slide-in-right" style={{ animationDelay: '2s' }}>
           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
           <span className="text-sm font-medium text-gray-700">🚛 TRK-005 en ruta a Guadalajara</span>
         </div>
       </div>
 
-      <div className="absolute bottom-20 right-0 z-30 space-y-3 transform translate-x-8 hidden md:block">
+      <div className="absolute bottom-20 right-0 z-30 space-y-3 transform translate-x-8">
         <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200 flex items-center gap-3 min-w-[280px] animate-slide-in-right" style={{ animationDelay: '4s' }}>
           <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
           <span className="text-sm font-medium text-gray-700">💡 IA sugiere ruta optimizada</span>

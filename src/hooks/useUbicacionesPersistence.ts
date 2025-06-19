@@ -1,99 +1,98 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { UbicacionCompleta } from '@/types/cartaPorte';
-import { Coordinates } from '@/types/ubicaciones';
+import { Ubicacion } from '@/types/ubicaciones';
 
 export const useUbicacionesPersistence = () => {
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const saveUbicaciones = useCallback(async (ubicaciones: UbicacionCompleta[], cartaPorteId: string) => {
-    setIsLoading(true);
-    setError(null);
-    
+  const guardarUbicaciones = useCallback(async (ubicaciones: Ubicacion[], cartaPorteId?: string) => {
+    setIsSaving(true);
     try {
-      // Delete existing ubicaciones
-      await supabase
-        .from('ubicaciones')
-        .delete()
-        .eq('carta_porte_id', cartaPorteId);
-
-      // Prepare data for insertion with proper Json conversion
-      const ubicacionesData = ubicaciones.map(ubicacion => ({
-        carta_porte_id: cartaPorteId,
-        id_ubicacion: ubicacion.id_ubicacion,
-        tipo_ubicacion: ubicacion.tipo_ubicacion,
-        rfc_remitente_destinatario: ubicacion.rfc_remitente_destinatario || '',
-        nombre_remitente_destinatario: ubicacion.nombre_remitente_destinatario || '',
-        fecha_hora_salida_llegada: ubicacion.fecha_hora_salida_llegada,
-        distancia_recorrida: ubicacion.distancia_recorrida || 0,
-        tipo_estacion: ubicacion.tipo_estacion || '1',
-        numero_estacion: ubicacion.numero_estacion,
-        kilometro: ubicacion.kilometro,
-        coordenadas: ubicacion.coordenadas ? JSON.parse(JSON.stringify(ubicacion.coordenadas)) : null,
-        domicilio: JSON.parse(JSON.stringify(ubicacion.domicilio))
+      // Mock save - in production this would save to API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const ubicacionesConSecuencia = ubicaciones.map((ubicacion, index) => ({
+        ...ubicacion,
+        ordenSecuencia: index + 1
       }));
+      
+      console.log('Ubicaciones guardadas:', ubicacionesConSecuencia);
+      return ubicacionesConSecuencia;
+    } catch (error) {
+      console.error('Error guardando ubicaciones:', error);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
 
-      const { error: insertError } = await supabase
-        .from('ubicaciones')
-        .insert(ubicacionesData);
-
-      if (insertError) throw insertError;
-
-      return { success: true };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-      throw new Error(errorMessage);
+  const cargarUbicaciones = useCallback(async (cartaPorteId: string): Promise<Ubicacion[]> => {
+    setIsLoading(true);
+    try {
+      // Mock load - in production this would load from API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockUbicaciones: Ubicacion[] = [
+        {
+          id: '1',
+          idUbicacion: 'OR001',
+          tipoUbicacion: 'Origen',
+          ordenSecuencia: 1,
+          domicilio: {
+            pais: 'México',
+            codigoPostal: '01000',
+            estado: 'Ciudad de México',
+            municipio: 'Álvaro Obregón',
+            colonia: 'San Ángel',
+            calle: 'Avenida Revolución',
+            numExterior: '123'
+          }
+        }
+      ];
+      
+      return mockUbicaciones;
+    } catch (error) {
+      console.error('Error cargando ubicaciones:', error);
+      return [];
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const loadUbicaciones = useCallback(async (cartaPorteId: string): Promise<UbicacionCompleta[]> => {
-    setIsLoading(true);
-    setError(null);
-    
+  const eliminarUbicacion = useCallback(async (ubicacionId: string, cartaPorteId?: string) => {
     try {
-      const { data, error: fetchError } = await supabase
-        .from('ubicaciones')
-        .select('*')
-        .eq('carta_porte_id', cartaPorteId)
-        .order('tipo_ubicacion');
+      // Mock delete - in production this would delete from API
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('Ubicación eliminada:', ubicacionId);
+    } catch (error) {
+      console.error('Error eliminando ubicación:', error);
+      throw error;
+    }
+  }, []);
 
-      if (fetchError) throw fetchError;
-
-      const ubicaciones: UbicacionCompleta[] = (data || []).map(item => ({
-        id: item.id,
-        id_ubicacion: item.id_ubicacion,
-        tipo_ubicacion: item.tipo_ubicacion as 'Origen' | 'Destino' | 'Paso Intermedio',
-        rfc_remitente_destinatario: item.rfc_remitente_destinatario,
-        nombre_remitente_destinatario: item.nombre_remitente_destinatario,
-        fecha_hora_salida_llegada: item.fecha_hora_salida_llegada,
-        distancia_recorrida: item.distancia_recorrida,
-        tipo_estacion: item.tipo_estacion || '1',
-        numero_estacion: item.numero_estacion,
-        kilometro: item.kilometro,
-        coordenadas: item.coordenadas as Coordinates,
-        domicilio: typeof item.domicilio === 'string' ? JSON.parse(item.domicilio) : item.domicilio,
-        carta_porte_id: item.carta_porte_id
+  const actualizarOrdenUbicaciones = useCallback(async (ubicaciones: Ubicacion[], cartaPorteId?: string) => {
+    try {
+      // Mock update order - in production this would update in API
+      const ubicacionesOrdenadas = ubicaciones.map((ubicacion, index) => ({
+        ...ubicacion,
+        ordenSecuencia: index + 1
       }));
-
-      return ubicaciones;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setIsLoading(false);
+      
+      console.log('Orden de ubicaciones actualizado:', ubicacionesOrdenadas);
+      return ubicacionesOrdenadas;
+    } catch (error) {
+      console.error('Error actualizando orden de ubicaciones:', error);
+      throw error;
     }
   }, []);
 
   return {
-    saveUbicaciones,
-    loadUbicaciones,
-    isLoading,
-    error
+    guardarUbicaciones,
+    cargarUbicaciones,
+    eliminarUbicacion,
+    actualizarOrdenUbicaciones,
+    isSaving,
+    isLoading
   };
 };

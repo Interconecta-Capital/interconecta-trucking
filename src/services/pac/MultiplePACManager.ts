@@ -229,9 +229,9 @@ export class MultiplePACManager {
       case 'demo':
         return this.timbrarDemo(xml);
       case 'finkok':
-        return this.timbrarFinkok(xml, url, provider.config.credentials, options.timeoutMs);
+        return this.timbrarFinkok(xml, url, provider.config.credentials);
       case 'ecodex':
-        return this.timbrarEcodex(xml, url, provider.config.credentials, options.timeoutMs);
+        return this.timbrarEcodex(xml, url, provider.config.credentials);
       default:
         throw new Error(`Tipo de PAC no soportado: ${provider.type}`);
     }
@@ -303,124 +303,14 @@ export class MultiplePACManager {
     };
   }
 
-  private async timbrarFinkok(
-    xml: string,
-    url: string,
-    credentials: any = {},
-    timeoutMs: number = 30000
-  ): Promise<TimbradoResult> {
-    if (!credentials.username || !credentials.password) {
-      return { success: false, error: 'Credenciales Finkok incompletas' };
-    }
-
-    const xmlBase64 = btoa(unescape(encodeURIComponent(xml)));
-    const soapBody = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="http://facturacion.finkok.com/stamp">
-  <soapenv:Body>
-    <tns:stamp>
-      <xml>${xmlBase64}</xml>
-      <username>${credentials.username}</username>
-      <password>${credentials.password}</password>
-    </tns:stamp>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/xml' },
-        body: soapBody,
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-
-      if (!response.ok) {
-        return { success: false, error: `HTTP ${response.status}` };
-      }
-
-      const text = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/xml');
-      const uuid = doc.getElementsByTagName('UUID')[0]?.textContent ||
-        doc.querySelector('tfd\\:TimbreFiscalDigital')?.getAttribute('UUID') || undefined;
-      const xmlTimbradoBase64 = doc.getElementsByTagName('xml')[0]?.textContent || '';
-      const xmlTimbrado = xmlTimbradoBase64 ? decodeURIComponent(escape(atob(xmlTimbradoBase64))) : undefined;
-
-      if (!uuid && !xmlTimbrado) {
-        const err = doc.getElementsByTagName('faultstring')[0]?.textContent || 'Error en Finkok';
-        return { success: false, error: err };
-      }
-
-      return { success: true, uuid, xmlTimbrado };
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        return { success: false, error: 'Timeout' };
-      }
-      return { success: false, error: error.message };
-    }
+  private async timbrarFinkok(xml: string, url: string, credentials?: any): Promise<TimbradoResult> {
+    // TODO: Implement Finkok SOAP integration
+    throw new Error('Finkok integration not implemented yet');
   }
 
-  private async timbrarEcodex(
-    xml: string,
-    url: string,
-    credentials: any = {},
-    timeoutMs: number = 30000
-  ): Promise<TimbradoResult> {
-    if (!credentials.username || !credentials.password) {
-      return { success: false, error: 'Credenciales Ecodex incompletas' };
-    }
-
-    const xmlBase64 = btoa(unescape(encodeURIComponent(xml)));
-    const soapBody = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-  <soapenv:Body>
-    <timbrar xmlns="http://tempuri.org/">
-      <usuario>${credentials.username}</usuario>
-      <password>${credentials.password}</password>
-      <cfdi>${xmlBase64}</cfdi>
-    </timbrar>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/xml' },
-        body: soapBody,
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-
-      if (!response.ok) {
-        return { success: false, error: `HTTP ${response.status}` };
-      }
-
-      const text = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/xml');
-      const uuid = doc.getElementsByTagName('UUID')[0]?.textContent ||
-        doc.querySelector('tfd\\:TimbreFiscalDigital')?.getAttribute('UUID') || undefined;
-      const xmlTimbradoBase64 = doc.getElementsByTagName('xml')[0]?.textContent || '';
-      const xmlTimbrado = xmlTimbradoBase64 ? decodeURIComponent(escape(atob(xmlTimbradoBase64))) : undefined;
-
-      if (!uuid && !xmlTimbrado) {
-        const err = doc.getElementsByTagName('faultstring')[0]?.textContent || 'Error en Ecodex';
-        return { success: false, error: err };
-      }
-
-      return { success: true, uuid, xmlTimbrado };
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        return { success: false, error: 'Timeout' };
-      }
-      return { success: false, error: error.message };
-    }
+  private async timbrarEcodex(xml: string, url: string, credentials?: any): Promise<TimbradoResult> {
+    // TODO: Implement Ecodex integration
+    throw new Error('Ecodex integration not implemented yet');
   }
 
   private updateProviderMetrics(providerId: string, success: boolean, responseTime: number) {

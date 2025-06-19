@@ -1,3 +1,4 @@
+
 import { CartaPorteData } from '@/types/cartaPorte';
 
 export interface ValidationError {
@@ -249,7 +250,7 @@ export class XMLValidatorSAT {
     // Validaciones específicas de versión 3.1
     if (data.cartaPorteVersion === '3.1') {
       if (data.transporteInternacional === 'Sí' || data.transporteInternacional === true) {
-        if (!data.paisOrigenDestino) {
+        if (!data.pais_origen_destino) {
           warnings.push('Para transporte internacional se recomienda especificar país de origen/destino');
           details.push({
             field: 'paisOrigenDestino',
@@ -330,30 +331,6 @@ export class XMLValidatorSAT {
         message: 'Error crítico procesando la estructura XML',
         severity: 'error'
       });
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings,
-      details
-    };
-  }
-
-  static validateTransporteInternacional(cartaPorteData: CartaPorteData): ValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-    const details: ValidationError[] = [];
-
-    if (cartaPorteData.transporteInternacional === 'Sí' || cartaPorteData.transporteInternacional === true) {
-      // Fix property name to match CartaPorteData interface
-      if (!cartaPorteData.paisOrigenDestino) {
-        errors.push('El país de origen/destino es requerido para transporte internacional');
-      }
-      
-      if (!cartaPorteData.viaEntradaSalida) {
-        errors.push('La vía de entrada/salida es requerida para transporte internacional');
-      }
     }
 
     return {

@@ -1,17 +1,11 @@
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MercanciaFormOptimizada } from './MercanciaFormOptimizada';
 import { DocumentUploadDialog } from './DocumentUploadDialog';
-import { MercanciasHeader } from './MercanciasHeader';
-import { MercanciasEmptyState } from './MercanciasEmptyState';
-import { MercanciasList } from './MercanciasList';
-import { MercanciasResumen } from './MercanciasResumen';
-import { MercanciasValidation } from './MercanciasValidation';
-import { MercanciasNavigation } from './MercanciasNavigation';
-import { useMercanciasLogic } from './hooks/useMercanciasLogic';
-import { Package, AlertCircle } from 'lucide-react';
+import { Plus, Package, ArrowRight, ArrowLeft, AlertCircle, FileText, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MercanciaCompleta {
@@ -21,9 +15,9 @@ interface MercanciaCompleta {
   clave_unidad: string;
   cantidad: number;
   peso_kg: number;
-  valor_mercancia?: number;
-  material_peligroso?: boolean;
-  moneda?: string; // FIXED: Made optional to match global type
+  valor_mercancia: number;
+  material_peligroso: boolean;
+  moneda: string;
   cve_material_peligroso?: string;
   embalaje?: string;
   fraccion_arancelaria?: string;
@@ -51,12 +45,15 @@ export function MercanciasSectionOptimizada({
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const { toast } = useToast();
 
-  const {
-    isDataComplete,
-    handleSaveMercancia,
-    handleDocumentProcessed,
-    calcularTotales
-  } = useMercanciasLogic(data, onChange, setFormErrors, toast);
+  // Validar que hay al menos una mercancía con datos mínimos
+  const isDataComplete = () => {
+    return data.length > 0 && data.every(mercancia => 
+      mercancia.descripcion && 
+      mercancia.cantidad > 0 && 
+      mercancia.bienes_transp &&
+      mercancia.clave_unidad
+    );
+  };
 
   const handleAddMercancia = () => {
     setEditingIndex(null);
@@ -70,6 +67,64 @@ export function MercanciasSectionOptimizada({
     setShowForm(true);
   };
 
+  const handleSaveMercancia = async (mercanciaData: MercanciaCompleta): Promise<boolean> => {
+    try {
+      const errors = validateMercancia(mercanciaData);
+      if (errors.length > 0) {
+        setFormErrors(errors);
+        return false;
+      }
+
+      setFormErrors([]);
+      
+      if (editingIndex !== null) {
+        const newData = [...data];
+        newData[editingIndex] = mercanciaData;
+        onChange(newData);
+      } else {
+        onChange([...data, mercanciaData]);
+      }
+      
+      setShowForm(false);
+      setEditingIndex(null);
+      return true;
+    } catch (error) {
+      console.error('Error saving mercancia:', error);
+      setFormErrors(['Error al guardar la mercancía. Verifique los datos ingresados.']);
+      return false;
+    }
+  };
+
+  const validateMercancia = (mercancia: MercanciaCompleta): string[] => {
+    const errors: string[] = [];
+    
+    if (!mercancia.descripcion?.trim()) {
+      errors.push('La descripción es requerida');
+    }
+    
+    if (!mercancia.bienes_transp?.trim()) {
+      errors.push('La clave de producto/servicio es requerida');
+    }
+    
+    if (!mercancia.clave_unidad?.trim()) {
+      errors.push('La unidad de medida es requerida');
+    }
+    
+    if (!mercancia.cantidad || mercancia.cantidad <= 0) {
+      errors.push('La cantidad debe ser mayor a 0');
+    }
+    
+    if (!mercancia.peso_kg || mercancia.peso_kg <= 0) {
+      errors.push('El peso debe ser mayor a 0');
+    }
+    
+    if (mercancia.material_peligroso && !mercancia.cve_material_peligroso?.trim()) {
+      errors.push('La clave de material peligroso es requerida cuando es material peligroso');
+    }
+    
+    return errors;
+  };
+
   const handleRemoveMercancia = (index: number) => {
     const newData = data.filter((_, i) => i !== index);
     onChange(newData);
@@ -81,16 +136,80 @@ export function MercanciasSectionOptimizada({
     setFormErrors([]);
   };
 
+  const handleDocumentProcessed = (mercancias: any[]) => {
+    if (mercancias && mercancias.length > 0) {
+      // Convertir las mercancías procesadas al formato esperado
+      const mercanciasFormateadas = mercancias.map((mercancia, index) => ({
+        id: `imported-${Date.now()}-${index}`,
+        descripcion: mercancia.descripcion || '',
+        bienes_transp: mercancia.bienes_transp || '',
+        clave_unidad: mercancia.clave_unidad || '',
+        cantidad: mercancia.cantidad || 0,
+        peso_kg: mercancia.peso_kg || 0,
+        valor_mercancia: mercancia.valor_mercancia || 0,
+        material_peligroso: mercancia.material_peligroso || false,
+        moneda: mercancia.moneda || 'MXN',
+        cve_material_peligroso: mercancia.cve_material_peligroso,
+        embalaje: mercancia.embalaje,
+        fraccion_arancelaria: mercancia.fraccion_arancelaria,
+        uuid_comercio_ext: mercancia.uuid_comercio_ext
+      }));
+
+      // Agregar las mercancías procesadas a las existentes
+      onChange([...data, ...mercanciasFormateadas]);
+      
+      toast({
+        title: "Mercancías importadas",
+        description: `Se importaron ${mercanciasFormateadas.length} mercancías desde el documento.`,
+      });
+    }
+  };
+
+  const calcularTotales = () => {
+    return {
+      totalCantidad: data.reduce((sum, m) => sum + m.cantidad, 0),
+      totalPeso: data.reduce((sum, m) => sum + m.peso_kg, 0),
+      totalValor: data.reduce((sum, m) => sum + (m.cantidad * m.valor_mercancia), 0),
+      materialesPeligrosos: data.filter(m => m.material_peligroso).length
+    };
+  };
+
   const totales = calcularTotales();
 
   return (
     <div className="space-y-6">
       <Card>
-        <MercanciasHeader
-          showForm={showForm}
-          onAddMercancia={handleAddMercancia}
-          onShowUploadDialog={() => setShowUploadDialog(true)}
-        />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Package className="h-5 w-5" />
+              <span>Gestión de Mercancías</span>
+            </CardTitle>
+            
+            {!showForm && (
+              <div className="flex gap-2">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowUploadDialog(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Importar desde Documento</span>
+                </Button>
+                
+                <Button 
+                  type="button"
+                  onClick={handleAddMercancia}
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Agregar Mercancía</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
         
         <CardContent>
           {showForm ? (
@@ -121,21 +240,129 @@ export function MercanciasSectionOptimizada({
           ) : (
             <div className="space-y-4">
               {data.length === 0 ? (
-                <MercanciasEmptyState
-                  onAddMercancia={handleAddMercancia}
-                  onShowUploadDialog={() => setShowUploadDialog(true)}
-                />
+                <div className="text-center py-12">
+                  <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">
+                    No hay mercancías agregadas. Agrega mercancías manualmente o importa desde un documento.
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Importar Documento
+                    </Button>
+                    <Button onClick={handleAddMercancia}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Manualmente
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <>
-                  <MercanciasList
-                    data={data}
-                    onEditMercancia={handleEditMercancia}
-                    onRemoveMercancia={handleRemoveMercancia}
-                  />
-                  <MercanciasResumen
-                    data={data}
-                    totales={totales}
-                  />
+                  {/* Lista de mercancías */}
+                  <div className="space-y-3">
+                    {data.map((mercancia, index) => (
+                      <Card key={mercancia.id} className="border-l-4 border-l-blue-500">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-medium">Mercancía #{index + 1}</h4>
+                                {mercancia.material_peligroso && (
+                                  <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                                    Material Peligroso
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {mercancia.descripcion}
+                              </p>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Cantidad:</span>
+                                  <span className="ml-1 font-medium">{mercancia.cantidad}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Peso:</span>
+                                  <span className="ml-1 font-medium">{mercancia.peso_kg} kg</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Valor Unit.:</span>
+                                  <span className="ml-1 font-medium">
+                                    ${mercancia.valor_mercancia.toLocaleString('es-MX')} {mercancia.moneda}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Clave SAT:</span>
+                                  <span className="ml-1 font-medium">{mercancia.bienes_transp}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 ml-4">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditMercancia(index)}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveMercancia(index)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Eliminar
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Resumen de totales */}
+                  <Card className="bg-gray-50">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Resumen de Mercancías
+                      </h4>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Total Artículos:</span>
+                          <span className="ml-1 font-medium">{data.length}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Cantidad Total:</span>
+                          <span className="ml-1 font-medium">{totales.totalCantidad.toLocaleString('es-MX')}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Peso Total:</span>
+                          <span className="ml-1 font-medium">{totales.totalPeso.toLocaleString('es-MX')} kg</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Valor Total:</span>
+                          <span className="ml-1 font-medium">
+                            ${totales.totalValor.toLocaleString('es-MX')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {totales.materialesPeligrosos > 0 && (
+                        <div className="mt-3 p-2 bg-orange-100 rounded text-sm">
+                          <span className="text-orange-800">
+                            ⚠️ Contiene {totales.materialesPeligrosos} material(es) peligroso(s)
+                          </span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </>
               )}
             </div>
@@ -143,19 +370,42 @@ export function MercanciasSectionOptimizada({
         </CardContent>
       </Card>
 
-      <MercanciasValidation
-        showForm={showForm}
-        isDataComplete={isDataComplete}
-        hasData={data.length > 0}
-      />
+      {/* Validaciones */}
+      {!showForm && !isDataComplete() && data.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Algunas mercancías tienen datos incompletos. Revise que todas tengan descripción, cantidad, peso y claves SAT válidas.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <MercanciasNavigation
-        showForm={showForm}
-        isDataComplete={isDataComplete}
-        onPrev={onPrev}
-        onNext={onNext}
-      />
+      {/* Botones de navegación */}
+      {!showForm && (
+        <div className="flex justify-between">
+          <Button 
+            type="button"
+            variant="outline" 
+            onClick={onPrev} 
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Anterior</span>
+          </Button>
+          
+          <Button 
+            type="button"
+            onClick={onNext} 
+            disabled={!isDataComplete()}
+            className="flex items-center space-x-2"
+          >
+            <span>Continuar a Autotransporte</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
+      {/* Dialog de importación de documentos */}
       <DocumentUploadDialog
         open={showUploadDialog}
         onOpenChange={setShowUploadDialog}

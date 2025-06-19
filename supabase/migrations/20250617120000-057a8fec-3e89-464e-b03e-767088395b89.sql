@@ -1,1 +1,0 @@
--- Add peso_bruto_vehicular to autotransporte\nALTER TABLE public.autotransporte ADD COLUMN IF NOT EXISTS peso_bruto_vehicular numeric;

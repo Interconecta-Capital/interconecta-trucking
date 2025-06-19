@@ -13,7 +13,6 @@ import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
 import { CartaPortePDFAdvanced } from '@/services/pdfGenerator/CartaPortePDFAdvanced';
-import { CartaPortePDFService } from '@/services/CartaPortePDFService';
 import { useToast } from '@/hooks/use-toast';
 import { CartaPorteData } from '@/types/cartaPorte';
 
@@ -22,9 +21,6 @@ export default function CartasPorte() {
   const { cartasPorte, loading, actualizarCartaPorte, eliminarCartaPorte } = useCartasPorte();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [pdfLinks, setPdfLinks] = useState<Record<string, string>>({});
-  const [selectedCartaPorte, setSelectedCartaPorte] = useState<CartaPorteData | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleNewCartaPorte = () => {
@@ -62,10 +58,9 @@ export default function CartasPorte() {
       let cartaPorteData: CartaPorteData;
       
       if (typeof carta.datos_formulario === 'string') {
-        const parsed = JSON.parse(carta.datos_formulario);
-        cartaPorteData = { version: '3.1', ...parsed } as CartaPorteData;
+        cartaPorteData = JSON.parse(carta.datos_formulario);
       } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
-        cartaPorteData = { version: '3.1', ...carta.datos_formulario } as CartaPorteData;
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
       } else {
         throw new Error('Formato de datos inválido');
       }
@@ -106,38 +101,25 @@ export default function CartasPorte() {
         throw new Error('No se encontraron datos para generar PDF');
       }
 
-      if (carta.status?.toLowerCase() === 'timbrada') {
-        const result = await CartaPortePDFService.generate(id);
-        if (result.success && result.pdfUrl) {
-          setPdfLinks(prev => ({ ...prev, [id]: result.pdfUrl! }));
-          toast({
-            title: 'PDF generado',
-            description: 'Haz clic en el enlace para descargar el PDF.',
-          });
-          return;
-        }
-      }
-
-      // Fallback al generador local
+      // Convertir datos_formulario a CartaPorteData de forma segura
       let cartaPorteData: CartaPorteData;
-      const datosFormulario = carta.datos_formulario;
       
-      if (typeof datosFormulario === 'string') {
-        const parsed = JSON.parse(datosFormulario);
-        cartaPorteData = { version: '3.1', ...parsed } as CartaPorteData;
-      } else if (typeof datosFormulario === 'object' && datosFormulario !== null) {
-        cartaPorteData = { version: '3.1', ...datosFormulario } as CartaPorteData;
+      if (typeof carta.datos_formulario === 'string') {
+        cartaPorteData = JSON.parse(carta.datos_formulario);
+      } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
       } else {
         throw new Error('Formato de datos inválido');
       }
 
       const result = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);
-
+      
       if (result.success && result.pdfBlob) {
         CartaPortePDFAdvanced.descargarPDF(result.pdfBlob, `carta-porte-${carta.folio || id}.pdf`);
+        
         toast({
-          title: 'PDF generado',
-          description: 'El PDF se ha generado y descargado correctamente.',
+          title: "PDF generado",
+          description: "El PDF se ha generado y descargado correctamente.",
         });
       } else {
         throw new Error(result.error || 'Error desconocido generando PDF');
@@ -145,49 +127,11 @@ export default function CartasPorte() {
     } catch (error) {
       console.error('Error generando PDF:', error);
       toast({
-        title: 'Error generando PDF',
-        description: error instanceof Error ? error.message : 'Error desconocido',
-        variant: 'destructive',
+        title: "Error generando PDF",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive"
       });
     }
-  };
-
-  const handleViewCartaPorte = (cartaPorte: any) => {
-    const cartaPorteData: CartaPorteData = {
-      version: '3.1',
-      rfcEmisor: cartaPorte.rfc_emisor || '',
-      nombreEmisor: cartaPorte.nombre_emisor || '',
-      rfcReceptor: cartaPorte.rfc_receptor || '',
-      nombreReceptor: cartaPorte.nombre_receptor || '',
-      transporteInternacional: cartaPorte.transporte_internacional || false,
-      registroIstmo: cartaPorte.registro_istmo || false,
-      cartaPorteVersion: cartaPorte.version_carta_porte || '3.1',
-      tipoCfdi: cartaPorte.tipo_cfdi || 'T',
-      folio: cartaPorte.folio,
-      ubicaciones: [],
-      mercancias: [],
-      autotransporte: {
-        placa_vm: '',
-        anio_modelo_vm: new Date().getFullYear(),
-        config_vehicular: '',
-        perm_sct: '',
-        num_permiso_sct: '',
-        asegura_resp_civil: '',
-        poliza_resp_civil: '',
-        peso_bruto_vehicular: 0,
-        capacidad_carga: 0,
-        remolques: []
-      },
-      figuras: []
-    };
-
-    // Add any additional properties if cartaPorte has them
-    if (cartaPorte.datos_formulario && typeof cartaPorte.datos_formulario === 'object') {
-      Object.assign(cartaPorteData, cartaPorte.datos_formulario);
-    }
-
-    setSelectedCartaPorte(cartaPorteData);
-    setIsViewDialogOpen(true);
   };
 
   const filteredCartas = cartasPorte.filter(carta =>
@@ -247,14 +191,13 @@ export default function CartasPorte() {
         )}
 
         {/* Tabla Avanzada */}
-        <CartasPorteTableAdvanced
+        <CartasPorteTableAdvanced 
           cartasPorte={filteredCartas}
           loading={loading}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onRegenerateXML={handleRegenerateXML}
           onGeneratePDF={handleGeneratePDF}
-          pdfLinks={pdfLinks}
         />
       </div>
     </ProtectedContent>

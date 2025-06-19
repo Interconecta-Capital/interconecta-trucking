@@ -1,28 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
-
-// Helper to convert Blob <-> base64
-const blobToDataURL = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Error leyendo blob'));
-    reader.readAsDataURL(blob);
-  });
-};
-
-const dataURLToBlob = (dataURL: string): Blob => {
-  const arr = dataURL.split(',');
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
-  const bstr = atob(arr[arr.length - 1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new Blob([u8arr], { type: mime });
-};
+import { CartaPorteData } from '@/types/cartaPorte';
 
 interface PersistenceData {
   xmlGenerado?: string;
@@ -36,7 +14,7 @@ interface PersistenceData {
   lastUpdated?: string;
 }
 
-const STORAGE_KEY = 'carta-porte-local-data';
+const STORAGE_KEY = 'carta-porte-session-data';
 
 export function useCartaPortePersistence(cartaPorteId?: string) {
   const [persistenceData, setPersistenceData] = useState<PersistenceData>({});
@@ -49,33 +27,29 @@ export function useCartaPortePersistence(cartaPorteId?: string) {
     }
   }, [cartaPorteId]);
 
-  const saveToStorage = useCallback((key: string, data: any) => {
+  const saveToSession = useCallback((key: string, data: any) => {
     if (!cartaPorteId) return;
-
-    const storageKey = `${STORAGE_KEY}-${cartaPorteId}`;
-    const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    
+    const sessionKey = `${STORAGE_KEY}-${cartaPorteId}`;
+    const currentData = JSON.parse(sessionStorage.getItem(sessionKey) || '{}');
     const updatedData = {
       ...currentData,
       [key]: data,
       lastUpdated: new Date().toISOString()
     };
-
-    localStorage.setItem(storageKey, JSON.stringify(updatedData));
+    
+    sessionStorage.setItem(sessionKey, JSON.stringify(updatedData));
     setPersistenceData(prev => ({ ...prev, [key]: data }));
   }, [cartaPorteId]);
 
   const restoreSessionData = useCallback(async (id: string) => {
     setIsRestoring(true);
     try {
-      const storageKey = `${STORAGE_KEY}-${id}`;
-      const savedData = localStorage.getItem(storageKey);
-
+      const sessionKey = `${STORAGE_KEY}-${id}`;
+      const savedData = sessionStorage.getItem(sessionKey);
+      
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        // Convert base64 PDF back to Blob if present
-        if (parsedData.pdfBlob && typeof parsedData.pdfBlob === 'string') {
-          parsedData.pdfBlob = dataURLToBlob(parsedData.pdfBlob);
-        }
         setPersistenceData(parsedData);
         console.log('✅ Datos de sesión restaurados:', parsedData);
       }
@@ -88,28 +62,27 @@ export function useCartaPortePersistence(cartaPorteId?: string) {
 
   const clearSessionData = useCallback(() => {
     if (!cartaPorteId) return;
-
-    const storageKey = `${STORAGE_KEY}-${cartaPorteId}`;
-    localStorage.removeItem(storageKey);
+    
+    const sessionKey = `${STORAGE_KEY}-${cartaPorteId}`;
+    sessionStorage.removeItem(sessionKey);
     setPersistenceData({});
   }, [cartaPorteId]);
 
   // Funciones específicas para cada tipo de dato
-  const savePDF = useCallback(async (pdfUrl: string, pdfBlob?: Blob) => {
-    saveToStorage('pdfUrl', pdfUrl);
+  const savePDF = useCallback((pdfUrl: string, pdfBlob?: Blob) => {
+    saveToSession('pdfUrl', pdfUrl);
     if (pdfBlob) {
-      const dataUrl = await blobToDataURL(pdfBlob);
-      saveToStorage('pdfBlob', dataUrl);
+      saveToSession('pdfBlob', pdfBlob);
     }
-  }, [saveToStorage]);
+  }, [saveToSession]);
 
   const saveXML = useCallback((xml: string) => {
-    saveToStorage('xmlGenerado', xml);
-  }, [saveToStorage]);
+    saveToSession('xmlGenerado', xml);
+  }, [saveToSession]);
 
   const saveRouteData = useCallback((routeData: any) => {
-    saveToStorage('datosCalculoRuta', routeData);
-  }, [saveToStorage]);
+    saveToSession('datosCalculoRuta', routeData);
+  }, [saveToSession]);
 
   return {
     persistenceData,

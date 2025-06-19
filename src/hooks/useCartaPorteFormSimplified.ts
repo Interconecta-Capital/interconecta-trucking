@@ -2,24 +2,10 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { CartaPorteData, AutotransporteCompleto } from '@/types/cartaPorte';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { UseCartaPorteFormOptions } from '@/hooks/carta-porte/types/useCartaPorteFormTypes';
 
-const getDefaultAutotransporte = (): AutotransporteCompleto => ({
-  placa_vm: '',
-  anio_modelo_vm: new Date().getFullYear(),
-  config_vehicular: '',
-  perm_sct: '',
-  num_permiso_sct: '',
-  asegura_resp_civil: '',
-  poliza_resp_civil: '',
-  peso_bruto_vehicular: 0,
-  capacidad_carga: 0,
-  remolques: []
-});
-
 const initialData: CartaPorteData = {
-  version: '3.1',
   tipoCreacion: 'manual',
   tipoCfdi: 'Traslado',
   rfcEmisor: '',
@@ -31,7 +17,16 @@ const initialData: CartaPorteData = {
   cartaPorteVersion: '3.1',
   ubicaciones: [],
   mercancias: [],
-  autotransporte: getDefaultAutotransporte(),
+  autotransporte: {
+    placa_vm: '',
+    anio_modelo_vm: 0,
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    remolques: []
+  },
   figuras: [],
 };
 
@@ -53,8 +48,8 @@ const calculateProgress = (validations: Record<string, boolean>) => {
 // Safe data serialization for Supabase
 const serializeForSupabase = (data: CartaPorteData) => {
   try {
+    // Create a clean object with only serializable properties
     const cleanData = {
-      version: data.version || '3.1',
       tipoCreacion: data.tipoCreacion,
       tipoCfdi: data.tipoCfdi,
       rfcEmisor: data.rfcEmisor || '',
@@ -66,11 +61,12 @@ const serializeForSupabase = (data: CartaPorteData) => {
       cartaPorteVersion: data.cartaPorteVersion || '3.1',
       ubicaciones: Array.isArray(data.ubicaciones) ? data.ubicaciones : [],
       mercancias: Array.isArray(data.mercancias) ? data.mercancias : [],
-      autotransporte: data.autotransporte || getDefaultAutotransporte(),
+      autotransporte: data.autotransporte || {},
       figuras: Array.isArray(data.figuras) ? data.figuras : [],
       cartaPorteId: data.cartaPorteId,
     };
     
+    // Convert to JSON and back to ensure all data is serializable
     return JSON.parse(JSON.stringify(cleanData));
   } catch (error) {
     console.error('Error serializing data for Supabase:', error);
@@ -88,7 +84,6 @@ const deserializeFromSupabase = (data: unknown): CartaPorteData => {
     const rawData = data as Record<string, any>;
     
     return {
-      version: rawData.version || '3.1',
       tipoCreacion: rawData.tipoCreacion || 'manual',
       tipoCfdi: rawData.tipoCfdi || 'Traslado',
       rfcEmisor: rawData.rfcEmisor || '',
@@ -100,7 +95,7 @@ const deserializeFromSupabase = (data: unknown): CartaPorteData => {
       cartaPorteVersion: rawData.cartaPorteVersion || '3.1',
       ubicaciones: Array.isArray(rawData.ubicaciones) ? rawData.ubicaciones : [],
       mercancias: Array.isArray(rawData.mercancias) ? rawData.mercancias : [],
-      autotransporte: rawData.autotransporte || getDefaultAutotransporte(),
+      autotransporte: rawData.autotransporte || {},
       figuras: Array.isArray(rawData.figuras) ? rawData.figuras : [],
       cartaPorteId: rawData.cartaPorteId,
     };

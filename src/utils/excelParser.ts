@@ -107,13 +107,12 @@ export class ExcelParser {
           switch (fieldName) {
             case 'cantidad':
             case 'peso_kg':
-            case 'valor_mercancia': {
+            case 'valor_mercancia':
               const numValue = parseFloat(value);
               if (!isNaN(numValue)) {
                 (mercancia as any)[fieldName] = numValue;
               }
               break;
-            }
             case 'material_peligroso':
               (mercancia as any)[fieldName] = Boolean(value);
               break;
@@ -145,7 +144,7 @@ export class ExcelParser {
     // This would generate an Excel template - simplified for now
     const templateData = [
       ['descripcion', 'bienes_transp', 'cantidad', 'clave_unidad', 'peso_kg', 'valor_mercancia'],
-      ['Ejemplo de mercancía', '78101800', '1', 'KGM', '100', '1000']
+      ['Ejemplo de mercancía', '01010101', '1', 'KGM', '100', '1000']
     ];
     
     const ws = XLSX.utils.aoa_to_sheet(templateData);

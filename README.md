@@ -23,9 +23,7 @@ npm install
 
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
-# Editar `.env` con tus claves de API
-FISCAL_API_KEY=sk_test_f8ddb07e_43d1_4d32_a240_f581ebc065d4
-VITE_MAPBOX_TOKEN=pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q
+# Editar .env con tus configuraciones de APIs y base de datos
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
@@ -39,9 +37,6 @@ npm run lint
 
 # Paso 8: Formatear código
 npm run format
-
-# Paso 9: Ejecutar pruebas
-npm run test
 Edición Directa en GitHub
 
 Navega a los archivos que deseas modificar
@@ -161,9 +156,6 @@ npm install @interconecta/api-client
 npm run lint
 npm run format
 
-# Pruebas
-npm run test
-
 # Análisis de bundle
 npm run analyze
 Base de Datos
@@ -214,7 +206,3 @@ Para mantener la calidad del código:
 - Mantén los componentes pequeños y focalizados
 
 ¡Listo para automatizar el transporte de carga con Interconecta Trucking! 🚛📋✨
-
-## Integracion con FISCAL API
-
-Se incluye el servicio `FiscalApiService` para emitir CFDI 4.0 y complementar con Carta Porte 3.1 utilizando FISCAL API. Configure las llaves en `.env` y llame a la función edge `timbrar-invoice` o use el servicio directamente desde el frontend.

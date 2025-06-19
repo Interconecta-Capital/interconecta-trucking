@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { CartaPorteFormData } from './useCartaPorteMappers';
@@ -25,10 +26,7 @@ const initialFormData: CartaPorteFormData = {
     perm_sct: '',
     num_permiso_sct: '',
     asegura_resp_civil: '',
-    poliza_resp_civil: '',
-    peso_bruto_vehicular: 0,
-    capacidad_carga: 0,
-    remolques: []
+    poliza_resp_civil: ''
   },
   figuras: [],
   tipoCreacion: 'manual',
@@ -83,7 +81,6 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
 
   const validateCurrentState = useCallback(() => {
     const compatibleData = {
-      version: '3.1', // Add required version property
       tipoCreacion: formData.tipoCreacion,
       tipoCfdi: formData.tipoCfdi,
       rfcEmisor: formData.rfcEmisor,

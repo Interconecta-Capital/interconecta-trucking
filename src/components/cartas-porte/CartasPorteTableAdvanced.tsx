@@ -31,17 +31,15 @@ interface CartasPorteTableAdvancedProps {
   onDelete?: (id: string) => void;
   onRegenerateXML?: (id: string) => void;
   onGeneratePDF?: (id: string) => void;
-  pdfLinks?: Record<string, string>;
 }
 
-export function CartasPorteTableAdvanced({
-  cartasPorte,
-  loading,
-  onEdit,
+export function CartasPorteTableAdvanced({ 
+  cartasPorte, 
+  loading, 
+  onEdit, 
   onDelete,
   onRegenerateXML,
-  onGeneratePDF,
-  pdfLinks
+  onGeneratePDF 
 }: CartasPorteTableAdvancedProps) {
   const [selectedXML, setSelectedXML] = useState<string | null>(null);
   const [showXMLDialog, setShowXMLDialog] = useState(false);
@@ -253,15 +251,6 @@ export function CartasPorteTableAdvanced({
                         )}
                         PDF
                       </Button>
-                      {pdfLinks && pdfLinks[carta.id] && (
-                        <a
-                          href={pdfLinks[carta.id]}
-                          download={`carta-porte-${carta.folio || carta.id.slice(-8)}.pdf`}
-                          className="text-xs text-blue-600 underline"
-                        >
-                          Descargar
-                        </a>
-                      )}
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

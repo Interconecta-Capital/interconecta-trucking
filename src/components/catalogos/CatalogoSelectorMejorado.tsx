@@ -17,17 +17,7 @@ interface CatalogItem {
 }
 
 interface CatalogoSelectorMejoradoProps {
-  tipo:
-    | 'unidades'
-    | 'productos'
-    | 'embalajes'
-    | 'materiales_peligrosos'
-    | 'figuras_transporte'
-    | 'tipos_permiso'
-    | 'configuraciones_vehiculares'
-    | 'remolques'
-    | 'estados'
-    | 'regimenes_aduaneros';
+  tipo: 'unidades' | 'productos' | 'embalajes' | 'materiales_peligrosos' | 'figuras_transporte' | 'tipos_permiso' | 'configuraciones_vehiculares' | 'remolques' | 'estados';
   value?: string;
   onChange?: (value: string) => void;
   onValueChange?: (value: string) => void;

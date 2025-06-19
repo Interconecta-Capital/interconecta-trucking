@@ -22,7 +22,6 @@ interface MercanciaFormProps {
 export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, isLoading }: MercanciaFormProps) {
   const form = useForm<Mercancia>({
     defaultValues: mercancia || {
-      id: '',
       bienes_transp: '',
       descripcion: '',
       cantidad: 0,
@@ -34,7 +33,8 @@ export function MercanciaForm({ index, onRemove, mercancia, onSave, onCancel, is
       moneda: 'MXN',
       embalaje: '',
       fraccion_arancelaria: '',
-      uuid_comercio_ext: ''
+      uuid_comercio_ext: '',
+      codigo_producto: ''
     }
   });
   

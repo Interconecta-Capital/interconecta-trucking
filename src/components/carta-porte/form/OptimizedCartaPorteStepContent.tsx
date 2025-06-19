@@ -1,9 +1,9 @@
 
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
-import { UbicacionesSectionOptimizada } from '../ubicaciones/UbicacionesSectionOptimizada';
-import { AutotransporteSection } from '../AutotransporteSection';
+import { UbicacionesSection } from '../UbicacionesSection';
 import { MercanciasSection } from '../MercanciasSection';
+import { AutotransporteSection } from '../AutotransporteSection';
 import { FigurasTransporteSection } from '../FigurasTransporteSection';
 import { SimplifiedXMLGenerationPanel } from '../xml/SimplifiedXMLGenerationPanel';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -17,7 +17,7 @@ interface OptimizedCartaPorteStepContentProps {
   figuras: FiguraCompleta[];
   currentCartaPorteId?: string | null;
   onConfiguracionChange: (config: Partial<CartaPorteData>) => void;
-  onUbicacionesChange: (ubicaciones: UbicacionCompleta[], distanciaTotal?: number, tiempoEstimado?: number) => void;
+  onUbicacionesChange: (ubicaciones: UbicacionCompleta[]) => void;
   onMercanciasChange: (mercancias: MercanciaCompleta[]) => void;
   onAutotransporteChange: (autotransporte: AutotransporteCompleto) => void;
   onFigurasChange: (figuras: FiguraCompleta[]) => void;
@@ -53,24 +53,17 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
   onCalculoRutaUpdate
 }) => {
 
-  const pesoTotalMercancias = useMemo(
-    () => mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0),
-    [mercancias]
-  );
-
   const handleNextStep = () => {
-    console.log('Avanzando al paso:', currentStep + 1);
     onStepChange(currentStep + 1);
   };
 
   const handlePrevStep = () => {
-    console.log('Retrocediendo al paso:', currentStep - 1);
     onStepChange(currentStep - 1);
   };
 
   // Renderizar el contenido según el paso actual
   switch (currentStep) {
-    case 0: // Configuración
+    case 0:
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <ConfiguracionInicial
@@ -81,34 +74,28 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         </div>
       );
 
-    case 1: // Ubicaciones
+    case 1:
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-          <UbicacionesSectionOptimizada
-            ubicaciones={ubicaciones}
-            distanciaTotal={datosCalculoRuta?.distanciaTotal}
-            tiempoEstimado={datosCalculoRuta?.tiempoEstimado}
-            onChange={onUbicacionesChange}
+          <UbicacionesSection
+            data={ubicaciones}
+            onChange={(newUbicaciones) => {
+              onUbicacionesChange(newUbicaciones);
+              // Auto-calcular distancia si hay ubicaciones válidas
+              if (newUbicaciones.length >= 2) {
+                console.log('🔄 Ubicaciones actualizadas, preparando cálculo de ruta...');
+              }
+            }}
             onNext={handleNextStep}
             onPrev={handlePrevStep}
+            cartaPorteId={currentCartaPorteId || undefined}
+            // Pasar callback para persistir cálculos de ruta
+            onDistanceCalculated={onCalculoRutaUpdate}
           />
         </div>
       );
 
-    case 2: // Autotransporte (NUEVO ORDEN)
-      return (
-        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-          <AutotransporteSection
-            data={autotransporte}
-            pesoTotalMercancias={0} // No hay mercancías aún
-            onChange={onAutotransporteChange}
-            onNext={handleNextStep}
-            onPrev={handlePrevStep}
-          />
-        </div>
-      );
-
-    case 3: // Mercancías (NUEVO ORDEN)
+    case 2:
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <MercanciasSection
@@ -116,12 +103,23 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
             onChange={onMercanciasChange}
             onNext={handleNextStep}
             onPrev={handlePrevStep}
-            autotransporte={autotransporte} // Pasar datos del autotransporte para validaciones
           />
         </div>
       );
 
-    case 4: // Figuras
+    case 3:
+      return (
+        <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
+          <AutotransporteSection
+            data={autotransporte}
+            onChange={onAutotransporteChange}
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        </div>
+      );
+
+    case 4:
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <FigurasTransporteSection
@@ -133,7 +131,7 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         </div>
       );
 
-    case 5: // XML
+    case 5:
       return (
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <SimplifiedXMLGenerationPanel

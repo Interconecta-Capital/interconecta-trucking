@@ -4,28 +4,36 @@ export interface CatalogoSATItem {
   descripcion: string;
 }
 
-// PRODUCTOS Y SERVICIOS DEL COMPLEMENTO CARTA PORTE (c_ClaveProdServCP)
-// *** CORRECCIÓN CRÍTICA: Usar catálogo específico de Carta Porte ***
+// Productos y servicios más comunes del SAT
 export const PRODUCTOS_SERVICIOS_SAT: CatalogoSATItem[] = [
-  { clave: '01010101', descripcion: 'Animales vivos' },
-  { clave: '01012100', descripcion: 'Animales vivos de la especie equina, reproductores de raza pura' },
-  { clave: '01012999', descripcion: 'Demás animales vivos de la especie equina' },
-  { clave: '02011000', descripcion: 'Carne de bovino en canal, fresca o refrigerada' },
-  { clave: '08081001', descripcion: 'Manzanas frescas' },
-  { clave: '11010001', descripcion: 'Harina de trigo' },
-  { clave: '15121501', descripcion: 'Aceite de soja, en bruto' },
-  { clave: '22029001', descripcion: 'Bebidas no alcohólicas, excepto jugos' },
-  { clave: '27101911', descripcion: 'Diésel' },
-  { clave: '40111001', descripcion: 'Neumáticos nuevos de caucho para automóviles' },
-  { clave: '78101800', descripcion: 'Servicios de transporte de carga por carretera' },
-  // Agregar más productos específicos del catálogo CP
-  { clave: '10161501', descripcion: 'Ganado bovino vivo' },
-  { clave: '10161502', descripcion: 'Ganado porcino vivo' },
-  { clave: '10161503', descripcion: 'Ganado ovino vivo' },
-  { clave: '10161504', descripcion: 'Ganado caprino vivo' },
-  { clave: '50161800', descripcion: 'Productos químicos orgánicos' },
-  { clave: '15111501', descripcion: 'Aceite de palma, en bruto' },
-  { clave: '39231501', descripcion: 'Sacos y bolsas de plástico' }
+  { clave: "01010101", descripcion: "No existe en el catálogo" },
+  { clave: "10101500", descripcion: "Animales vivos" },
+  { clave: "10101600", descripcion: "Productos animales" },
+  { clave: "10121700", descripcion: "Cereales" },
+  { clave: "10121800", descripcion: "Frutas y verduras" },
+  { clave: "15101500", descripcion: "Productos lácteos" },
+  { clave: "15101600", descripcion: "Carne y productos cárnicos" },
+  { clave: "15121500", descripcion: "Bebidas" },
+  { clave: "20101600", descripcion: "Productos textiles" },
+  { clave: "23101600", descripcion: "Productos químicos" },
+  { clave: "24101600", descripcion: "Productos de caucho y plástico" },
+  { clave: "25101600", descripcion: "Productos de cuero" },
+  { clave: "26101600", descripcion: "Productos de madera" },
+  { clave: "27101600", descripcion: "Productos de papel" },
+  { clave: "30101600", descripcion: "Productos metálicos" },
+  { clave: "31101600", descripcion: "Maquinaria y equipo" },
+  { clave: "32101600", descripcion: "Equipo electrónico" },
+  { clave: "33101600", descripcion: "Vehículos automotores" },
+  { clave: "39101600", descripcion: "Otros productos manufacturados" },
+  { clave: "43191600", descripcion: "Servicios de construcción" },
+  { clave: "50101600", descripcion: "Servicios de comercio" },
+  { clave: "60101600", descripcion: "Servicios de transporte" },
+  { clave: "70101600", descripcion: "Servicios profesionales" },
+  { clave: "80101600", descripcion: "Servicios de salud" },
+  { clave: "81101600", descripcion: "Servicios educativos" },
+  { clave: "84101600", descripcion: "Servicios de alimentación" },
+  { clave: "85101600", descripcion: "Servicios de entretenimiento" },
+  { clave: "90101600", descripcion: "Servicios gubernamentales" }
 ];
 
 // Tipos de embalaje más comunes del SAT
@@ -105,20 +113,6 @@ export const UNIDADES_MEDIDA_SAT: CatalogoSATItem[] = [
   { clave: "HUR", descripcion: "Hora" }
 ];
 
-// CATÁLOGO DE REGÍMENES ADUANEROS ACTUALIZADO PARA 3.1
-export const REGIMENES_ADUANEROS_SAT: CatalogoSATItem[] = [
-  { clave: 'A1', descripcion: 'Importación definitiva' },
-  { clave: 'A3', descripcion: 'Importación temporal para elaboración, transformación o reparación en programas de maquila o de exportación' },
-  { clave: 'A4', descripcion: 'Importación temporal para permanecer en territorio nacional por tiempo limitado' },
-  { clave: 'B1', descripcion: 'Exportación definitiva' },
-  { clave: 'B2', descripcion: 'Exportación temporal' },
-  { clave: 'B3', descripcion: 'Exportación temporal para retornar al país en el mismo estado' },
-  { clave: 'B4', descripcion: 'Exportación temporal para elaboración, transformación o reparación' },
-  { clave: 'C1', descripcion: 'Elaboración, transformación o reparación en recinto fiscalizado' },
-  { clave: 'D1', descripcion: 'Depósito fiscal para almacenar, conservar, envasar, reempacar, etc.' },
-  { clave: 'F4', descripcion: 'Recinto fiscalizado estratégico' }
-];
-
 // Función helper para formatear items del catálogo
 export const formatCatalogItem = (item: CatalogoSATItem) => ({
   value: item.clave,
@@ -136,8 +130,6 @@ export const getCatalogoEstatico = (tipo: string) => {
       return TIPOS_EMBALAJE_SAT.map(formatCatalogItem);
     case 'unidades':
       return UNIDADES_MEDIDA_SAT.map(formatCatalogItem);
-    case 'regimenes_aduaneros':
-      return REGIMENES_ADUANEROS_SAT.map(formatCatalogItem);
     default:
       return [];
   }

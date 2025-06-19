@@ -20,10 +20,10 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
     try {
       // Si ya tenemos un cartaPorteId específico, intentar cargarlo
       if (cartaPorteId) {
-        const borrador = await BorradorService.cargarBorrador();
-        if (borrador) {
+        const borrador = await BorradorService.cargarBorrador(cartaPorteId);
+        if (borrador?.datosFormulario) {
           return {
-            data: borrador,
+            data: borrador.datosFormulario,
             id: cartaPorteId,
             found: true
           };
@@ -31,10 +31,10 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
       }
 
       // Buscar último borrador guardado localmente
-      const ultimoBorrador = await BorradorService.cargarBorrador();
-      if (ultimoBorrador) {
+      const ultimoBorrador = BorradorService.cargarUltimoBorrador();
+      if (ultimoBorrador?.datosFormulario) {
         // Verificar que tiene datos significativos
-        const data = ultimoBorrador;
+        const data = ultimoBorrador.datosFormulario;
         const hasSignificantData = !!(
           data.rfcEmisor || 
           data.rfcReceptor || 
@@ -46,8 +46,8 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
 
         if (hasSignificantData) {
           return {
-            data: ultimoBorrador,
-            id: cartaPorteId || null,
+            data: ultimoBorrador.datosFormulario,
+            id: ultimoBorrador.cartaPorteId || null,
             found: true
           };
         }
@@ -91,7 +91,7 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
     try {
       // Limpiar borrador rechazado
       if (recoveryState.borradorId) {
-        await BorradorService.limpiarBorrador();
+        await BorradorService.limpiarBorrador(recoveryState.borradorId);
       } else {
         // Limpiar localStorage
         localStorage.removeItem('carta_porte_borrador');

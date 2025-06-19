@@ -145,7 +145,7 @@ export function SmartUbicacionFormV2({
     // Calle y número exterior (primer fragmento)
     if (addressParts.length > 0) {
       const streetPart = addressParts[0];
-      const numberMatch = streetPart.match(/(.*?)(\d+[a-zA-Z-]*)$/);
+      const numberMatch = streetPart.match(/(.*?)(\d+[a-zA-Z\-]*)$/);
       if (numberMatch) {
         parsedData.calle = numberMatch[1].trim().replace(/[,#]$/, '');
         camposCompletados.add('calle');
@@ -251,19 +251,6 @@ export function SmartUbicacionFormV2({
 
     if (!formData.domicilio.calle?.trim()) {
       newErrors.calle = 'La calle es requerida';
-    }
-
-    if (formData.coordenadas) {
-      const { latitud, longitud } = formData.coordenadas;
-      if (latitud === undefined || isNaN(Number(latitud)) || Number(latitud) < -90 || Number(latitud) > 90) {
-        newErrors.latitud = 'Latitud inválida';
-      }
-      if (longitud === undefined || isNaN(Number(longitud)) || Number(longitud) < -180 || Number(longitud) > 180) {
-        newErrors.longitud = 'Longitud inválida';
-      }
-    } else {
-      newErrors.latitud = 'Latitud inválida';
-      newErrors.longitud = 'Longitud inválida';
     }
 
     // Validar fecha y hora para origen y destino
@@ -606,37 +593,6 @@ export function SmartUbicacionFormV2({
                     disabled={isFieldLocked('referencia')}
                     className={isFieldLocked('referencia') ? 'bg-gray-100' : 'bg-white'}
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="latitud">Latitud *</Label>
-                  <Input
-                    id="latitud"
-                    value={formData.coordenadas?.latitud ?? ''}
-                    onChange={(e) => {
-                      handleFieldChange('coordenadas.latitud', parseFloat(e.target.value));
-                      if (errors.latitud) setErrors(prev => ({ ...prev, latitud: '' }));
-                    }}
-                    placeholder="Ej: 19.4326"
-                    className={errors.latitud ? 'border-red-500' : ''}
-                  />
-                  {errors.latitud && <p className="text-sm text-red-500 mt-1">{errors.latitud}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="longitud">Longitud *</Label>
-                  <Input
-                    id="longitud"
-                    value={formData.coordenadas?.longitud ?? ''}
-                    onChange={(e) => {
-                      handleFieldChange('coordenadas.longitud', parseFloat(e.target.value));
-                      if (errors.longitud) setErrors(prev => ({ ...prev, longitud: '' }));
-                    }}
-                    placeholder="Ej: -99.1332"
-                    className={errors.longitud ? 'border-red-500' : ''}
-                  />
-                  {errors.longitud && <p className="text-sm text-red-500 mt-1">{errors.longitud}</p>}
                 </div>
               </div>
             </div>

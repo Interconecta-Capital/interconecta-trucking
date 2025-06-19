@@ -6,103 +6,19 @@ import { SmartMercanciaForm } from './mercancias/SmartMercanciaForm';
 import { MercanciasListWrapper } from './mercancias/MercanciasListWrapper';
 import { ImportDialog } from './mercancias/ImportDialog';
 import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
-import { useMercancias, Mercancia, MercanciaConErrores } from '@/hooks/useMercancias';
+import { useMercancias, Mercancia } from '@/hooks/useMercancias';
 import { useAIContext } from '@/hooks/ai/useAIContext';
 import { geminiCore } from '@/services/ai/GeminiCoreService';
-import { MercanciaCompleta } from '@/types/cartaPorte';
 import { Package, Upload, ArrowRight, ArrowLeft, Plus, Sparkles, Brain, FileText, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SmartMercanciasSectionProps {
-  data: MercanciaCompleta[];
+  data: any[];
   ubicaciones: any[];
-  onChange: (data: MercanciaCompleta[]) => void;
+  onChange: (data: any[]) => void;
   onNext: () => void;
   onPrev: () => void;
 }
-
-// Helper function to convert Mercancia to MercanciaCompleta
-const convertToMercanciaCompleta = (mercancia: Mercancia): MercanciaCompleta => {
-  return {
-    id: mercancia.id || crypto.randomUUID(),
-    descripcion: mercancia.descripcion || '',
-    bienes_transp: mercancia.bienes_transp || '',
-    clave_unidad: mercancia.clave_unidad || 'KGM',
-    cantidad: mercancia.cantidad || 1,
-    peso_kg: mercancia.peso_kg || 0,
-    valor_mercancia: mercancia.valor_mercancia || 0,
-    material_peligroso: mercancia.material_peligroso || false,
-    moneda: mercancia.moneda || 'MXN',
-    cve_material_peligroso: mercancia.cve_material_peligroso,
-    embalaje: mercancia.embalaje,
-    fraccion_arancelaria: mercancia.fraccion_arancelaria,
-    uuid_comercio_ext: mercancia.uuid_comercio_ext,
-    carta_porte_id: mercancia.carta_porte_id,
-    numero_autorizacion: mercancia.numero_autorizacion,
-    folio_acreditacion: mercancia.folio_acreditacion,
-    requiere_semarnat: mercancia.requiere_semarnat || false,
-    categoria_transporte: mercancia.categoria_transporte,
-    regulaciones_especiales: mercancia.regulaciones_especiales || [],
-    temperatura_transporte: mercancia.temperatura_transporte,
-    tipo_refrigeracion: mercancia.tipo_refrigeracion,
-    dimensiones_especiales: mercancia.dimensiones_especiales,
-    peso_especial: mercancia.peso_especial,
-    peso_bruto_total: mercancia.peso_bruto_total,
-    descripcion_detallada: mercancia.descripcion_detallada,
-    especie_protegida: mercancia.especie_protegida || false,
-    tipo_embalaje: mercancia.tipo_embalaje,
-    material_embalaje: mercancia.material_embalaje,
-    unidad_peso_bruto: mercancia.unidad_peso_bruto,
-    dimensiones: mercancia.dimensiones,
-    uuid_comercio_exterior: mercancia.uuid_comercio_ext,
-    peso_neto_total: mercancia.peso_neto_total,
-    numero_piezas: mercancia.numero_piezas,
-    requiere_cites: mercancia.requiere_cites || false,
-    permisos_semarnat: mercancia.permisos_semarnat || [],
-    documentacion_aduanera: mercancia.documentacion_aduanera || []
-  };
-};
-
-// Helper function to convert MercanciaCompleta to Mercancia
-const convertToMercancia = (mercanciaCompleta: MercanciaCompleta): Mercancia => {
-  return {
-    id: mercanciaCompleta.id,
-    descripcion: mercanciaCompleta.descripcion,
-    bienes_transp: mercanciaCompleta.bienes_transp,
-    clave_unidad: mercanciaCompleta.clave_unidad,
-    cantidad: mercanciaCompleta.cantidad,
-    peso_kg: mercanciaCompleta.peso_kg,
-    valor_mercancia: mercanciaCompleta.valor_mercancia || 0,
-    material_peligroso: mercanciaCompleta.material_peligroso || false,
-    moneda: mercanciaCompleta.moneda || 'MXN',
-    cve_material_peligroso: mercanciaCompleta.cve_material_peligroso,
-    embalaje: mercanciaCompleta.embalaje,
-    fraccion_arancelaria: mercanciaCompleta.fraccion_arancelaria,
-    uuid_comercio_ext: mercanciaCompleta.uuid_comercio_exterior,
-    carta_porte_id: mercanciaCompleta.carta_porte_id,
-    numero_autorizacion: mercanciaCompleta.numero_autorizacion,
-    folio_acreditacion: mercanciaCompleta.folio_acreditacion,
-    requiere_semarnat: mercanciaCompleta.requiere_semarnat,
-    categoria_transporte: mercanciaCompleta.categoria_transporte,
-    regulaciones_especiales: mercanciaCompleta.regulaciones_especiales,
-    temperatura_transporte: mercanciaCompleta.temperatura_transporte,
-    tipo_refrigeracion: mercanciaCompleta.tipo_refrigeracion,
-    dimensiones_especiales: mercanciaCompleta.dimensiones_especiales,
-    peso_especial: mercanciaCompleta.peso_especial,
-    peso_bruto_total: mercanciaCompleta.peso_bruto_total,
-    descripcion_detallada: mercanciaCompleta.descripcion_detallada,
-    especie_protegida: mercanciaCompleta.especie_protegida,
-    tipo_embalaje: mercanciaCompleta.tipo_embalaje,
-    material_embalaje: mercanciaCompleta.material_embalaje,
-    unidad_peso_bruto: mercanciaCompleta.unidad_peso_bruto,
-    dimensiones: mercanciaCompleta.dimensiones,
-    peso_neto_total: mercanciaCompleta.peso_neto_total,
-    numero_piezas: mercanciaCompleta.numero_piezas,
-    requiere_cites: mercanciaCompleta.requiere_cites,
-    permisos_semarnat: mercanciaCompleta.permisos_semarnat,
-    documentacion_aduanera: mercanciaCompleta.documentacion_aduanera
-  };
-};
 
 export function SmartMercanciasSection({ 
   data, 
@@ -122,7 +38,7 @@ export function SmartMercanciasSection({
   } = useMercancias();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingMercancia, setEditingMercancia] = useState<MercanciaCompleta | undefined>();
+  const [editingMercancia, setEditingMercancia] = useState<Mercancia | undefined>();
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
@@ -131,8 +47,7 @@ export function SmartMercanciasSection({
 
   // Sync with prop data when there are changes
   React.useEffect(() => {
-    const mercanciasCompletas: MercanciaCompleta[] = mercancias.map(convertToMercanciaCompleta);
-    onChange(mercanciasCompletas);
+    onChange(mercancias);
   }, [mercancias, onChange]);
 
   // Get carta porte ID from URL or context if available
@@ -141,15 +56,12 @@ export function SmartMercanciasSection({
     return urlParams.get('id') || undefined;
   };
 
-  const handleSaveMercancia = async (mercancia: MercanciaCompleta): Promise<boolean> => {
+  const handleSaveMercancia = async (mercancia: Mercancia) => {
     try {
-      // Convert to Mercancia for the hook
-      const mercanciaForHook = convertToMercancia(mercancia);
-      
       if (editingMercancia) {
-        actualizarMercancia({ id: editingMercancia.id!, mercancia: mercanciaForHook });
+        actualizarMercancia({ id: editingMercancia.id!, mercancia });
       } else {
-        agregarMercancia(mercanciaForHook);
+        agregarMercancia(mercancia);
       }
       
       // Learn from successful saves
@@ -167,15 +79,15 @@ export function SmartMercanciasSection({
     }
   };
 
-  const handleEditMercancia = (mercancia: MercanciaCompleta) => {
-    const index = data.findIndex(m => m.id === mercancia.id);
+  const handleEditMercancia = (mercancia: Mercancia) => {
+    const index = mercancias.findIndex(m => m.id === mercancia.id);
     setEditingMercancia(mercancia);
     setEditingIndex(index);
     setShowForm(true);
   };
 
   const handleRemoveMercancia = (index: number) => {
-    const mercancia = data[index];
+    const mercancia = mercancias[index];
     if (mercancia?.id) {
       eliminarMercancia(mercancia.id);
     }
@@ -263,7 +175,7 @@ export function SmartMercanciasSection({
   const handleNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (data.length > 0) {
+    if (mercancias.length > 0) {
       onNext();
     }
   };
@@ -274,17 +186,7 @@ export function SmartMercanciasSection({
     onPrev();
   };
 
-  const canContinue = data.length > 0;
-
-  // Handle import with proper type conversion
-  const handleImportMercancias = async (nuevasMercancias: Mercancia[]): Promise<{
-    importadas: number;
-    errores: number;
-    mercanciasConErrores: MercanciaConErrores[];
-  }> => {
-    const result = await importarMercancias(nuevasMercancias);
-    return result;
-  };
+  const canContinue = mercancias.length > 0;
 
   return (
     <div className="space-y-6">
@@ -303,7 +205,7 @@ export function SmartMercanciasSection({
                   variant="outline" 
                   onClick={handleGetAISuggestions}
                   className="flex items-center space-x-2"
-                  disabled={data.length === 0}
+                  disabled={mercancias.length === 0}
                 >
                   <Brain className="h-4 w-4" />
                   <span>Sugerencias IA</span>
@@ -338,7 +240,7 @@ export function SmartMercanciasSection({
           </div>
           
           {/* Quick import info */}
-          {!showForm && data.length === 0 && (
+          {!showForm && mercancias.length === 0 && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <Bot className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -365,6 +267,7 @@ export function SmartMercanciasSection({
         <CardContent>
           {showForm ? (
             <SmartMercanciaForm
+              index={editingIndex >= 0 ? editingIndex : mercancias.length}
               mercancia={editingMercancia}
               onSave={handleSaveMercancia}
               onCancel={handleCancelForm}
@@ -373,9 +276,9 @@ export function SmartMercanciasSection({
             />
           ) : (
             <MercanciasListWrapper
-              mercancias={data}
+              mercancias={mercancias}
               onEdit={handleEditMercancia}
-              onDelete={(id: string) => eliminarMercancia(id)}
+              onDelete={eliminarMercancia}
               isLoading={isLoading}
             />
           )}
@@ -426,7 +329,7 @@ export function SmartMercanciasSection({
           <Button 
             type="button"
             variant="outline" 
-            onClick={onPrev} 
+            onClick={handlePrev} 
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -435,7 +338,7 @@ export function SmartMercanciasSection({
           
           <Button 
             type="button"
-            onClick={onNext} 
+            onClick={handleNext} 
             disabled={!canContinue}
             className="flex items-center space-x-2"
           >
@@ -449,7 +352,7 @@ export function SmartMercanciasSection({
       <ImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
-        onImport={handleImportMercancias}
+        onImport={importarMercancias}
       />
 
       <DocumentUploadDialog

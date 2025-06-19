@@ -1,8 +1,7 @@
-
 import mapboxgl from 'mapbox-gl';
 
-// Mapbox access token - Usa tu clave pública de Mapbox
-const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHl6Y2xieWoxMGN1MnFyMHVuaGdvczJhIn0.5GrGKZrRvv6y4HwqgM8plw';
+// Mapbox access token
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q';
 
 export interface Coordinates {
   lat: number;
@@ -40,34 +39,26 @@ class MapService {
 
   // Check if Mapbox token is configured
   isConfigured(): boolean {
-    return this.accessToken.length > 0;
+    return this.accessToken !== 'your-mapbox-token-here' && this.accessToken.length > 0;
   }
 
   // Geocodificar una dirección a coordenadas
   async geocodeAddress(address: string): Promise<GeocodeResult | null> {
     if (!this.isConfigured()) {
-      console.warn('Mapbox token not configured properly');
+      console.warn('Mapbox token not configured. Please set VITE_MAPBOX_TOKEN environment variable.');
       return null;
     }
 
     try {
-      console.log('🔍 Geocodificando dirección:', address);
-      
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${this.accessToken}&country=mx&types=address,poi&limit=1`
       );
 
-      if (!response.ok) {
-        console.error('Error en geocodificación:', response.status, response.statusText);
-        return null;
-      }
-
       const data = await response.json();
-      console.log('📍 Respuesta de geocodificación:', data);
       
       if (data.features && data.features.length > 0) {
         const feature = data.features[0];
-        const result = {
+        return {
           coordinates: {
             lng: feature.center[0],
             lat: feature.center[1]
@@ -75,15 +66,11 @@ class MapService {
           formattedAddress: feature.place_name,
           confidence: feature.relevance || 0.8
         };
-        
-        console.log('✅ Geocodificación exitosa:', result);
-        return result;
       }
 
-      console.log('❌ No se encontraron resultados para:', address);
       return null;
     } catch (error) {
-      console.error('❌ Error en geocodificación:', error);
+      console.error('Error en geocodificación:', error);
       return null;
     }
   }
@@ -118,31 +105,22 @@ class MapService {
   // Calcular ruta entre múltiples puntos
   async calculateRoute(points: Coordinates[]): Promise<RouteResult | null> {
     if (!this.isConfigured() || points.length < 2) {
-      console.warn('No se puede calcular ruta: token no configurado o puntos insuficientes');
       return null;
     }
 
     try {
-      console.log('🛣️ Calculando ruta entre puntos:', points);
-      
       const waypoints = points.map(p => `${p.lng},${p.lat}`).join(';');
       
       const response = await fetch(
         `https://api.mapbox.com/directions/v5/mapbox/driving/${waypoints}?geometries=geojson&overview=full&steps=true&access_token=${this.accessToken}`
       );
 
-      if (!response.ok) {
-        console.error('Error en cálculo de ruta:', response.status, response.statusText);
-        return null;
-      }
-
       const data = await response.json();
-      console.log('🗺️ Respuesta de Mapbox Directions:', data);
       
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
         
-        const result = {
+        return {
           distance: Math.round(route.distance / 1000 * 100) / 100, // km con 2 decimales
           duration: Math.round(route.duration / 60), // minutos
           geometry: route.geometry,
@@ -152,15 +130,11 @@ class MapService {
             address: ''
           }))
         };
-        
-        console.log('✅ Ruta calculada exitosamente:', result);
-        return result;
       }
 
-      console.log('❌ No se pudo calcular la ruta');
       return null;
     } catch (error) {
-      console.error('❌ Error calculando ruta:', error);
+      console.error('Error calculando ruta:', error);
       return null;
     }
   }
