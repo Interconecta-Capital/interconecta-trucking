@@ -1,23 +1,22 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
-import { Ubicacion } from '@/types/ubicaciones';
-import { mapUbicacionToCompleta } from './mapUbicacionToCompleta';
-import { mapCompletaToUbicacion } from './mapCompletaToUbicacion';
-import { BorradorService } from '@/services/borradorService';
-import { useCartaPorteValidation } from './useCartaPorteValidation';
-import { useCartaPortePersistence } from './useCartaPortePersistence';
-import { toast } from 'sonner';
-import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
-import { useBorradorRecovery } from './useBorradorRecovery';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
 
-// Estado inicial unificado y por defecto
-const createInitialFormData = (): CartaPorteData => ({
-  tipoCreacion: 'manual',
+import { useState, useCallback } from 'react';
+import { CartaPorteData, AutotransporteCompleto } from '@/types/cartaPorte';
+
+const getDefaultAutotransporte = (): AutotransporteCompleto => ({
+  placa_vm: '',
+  anio_modelo_vm: new Date().getFullYear(),
+  config_vehicular: '',
+  perm_sct: '',
+  num_permiso_sct: '',
+  asegura_resp_civil: '',
+  poliza_resp_civil: '',
+  peso_bruto_vehicular: 0,
+  remolques: []
+});
+
+const initialData: CartaPorteData = {
+  cartaPorteVersion: '3.1',
   tipoCfdi: 'Traslado',
-  cartaPorteVersion: '3.1', // Remove the 'version' property, use only cartaPorteVersion
   rfcEmisor: '',
   nombreEmisor: '',
   rfcReceptor: '',
@@ -26,474 +25,88 @@ const createInitialFormData = (): CartaPorteData => ({
   registroIstmo: false,
   ubicaciones: [],
   mercancias: [],
-  autotransporte: {
-    placa_vm: '',
-    anio_modelo_vm: new Date().getFullYear(),
-    config_vehicular: '',
-    perm_sct: '',
-    num_permiso_sct: '',
-    asegura_resp_civil: '',
-    poliza_resp_civil: '',
-    remolques: []
-  },
-  figuras: []
-});
-
-// Helper function to serialize CartaPorteData to JSON-safe format
-const serializeCartaPorteData = (data: CartaPorteData): Record<string, any> => {
-  return JSON.parse(JSON.stringify(data));
+  autotransporte: getDefaultAutotransporte(),
+  figuras: [],
+  currentStep: 0
 };
 
-// Helper function to deserialize from JSON back to CartaPorteData
-const deserializeCartaPorteData = (jsonData: any): CartaPorteData => {
-  return {
-    ...createInitialFormData(),
-    ...jsonData
-  };
-};
-
-export function useCartaPorteFormManager(cartaPorteId?: string) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState<CartaPorteData>(createInitialFormData());
+export const useCartaPorteFormManager = () => {
+  const [data, setData] = useState<CartaPorteData>(initialData);
   const [currentStep, setCurrentStep] = useState(0);
-  const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | null>(cartaPorteId || null);
-  const [borradorCargado, setBorradorCargado] = useState(false);
-  const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
-  const [isGuardando, setIsGuardando] = useState(false);
-  
-  // Estados para datos persistidos usando el hook de persistencia
-  const {
-    xmlGenerado,
-    datosCalculoRuta,
-    saveXML,
-    saveRouteData,
-    clearSessionData
-  } = useCartaPortePersistence(currentCartaPorteId || undefined);
-  
-  const { getValidationSummary } = useCartaPorteValidation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-  // Auto-save mejorado que incluye XML y cálculos de ruta
-  const { isAutoSaving, lastSaved } = useCartaPorteAutoSave({
-    formData: {
-      ...formData,
-      xmlGenerado,
-      datosCalculoRuta,
-      currentStep
-    },
-    currentCartaPorteId: currentCartaPorteId || undefined,
-    onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
-    enabled: true
-  });
-
-  // Recuperación de borrador
-  const { showRecoveryDialog, borradorData, acceptBorrador, rejectBorrador } = useBorradorRecovery(cartaPorteId);
-
-  // El resumen de validación ahora depende directamente del estado unificado
-  const validationSummary = getValidationSummary(formData);
-
-  // Cargar datos existentes al montar el componente
-  useEffect(() => {
-    if (currentCartaPorteId && !borradorCargado) {
-      loadCartaPorteData(currentCartaPorteId);
-    }
-  }, [currentCartaPorteId]);
-
-  // Sincronizar estados locales con formData cuando cambian
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      xmlGenerado,
-      datosCalculoRuta,
-      currentStep
-    }));
-  }, [xmlGenerado, datosCalculoRuta, currentStep]);
-
-  const loadCartaPorteData = useCallback(async (id: string) => {
-    try {
-      console.log('🔄 Cargando datos de carta porte:', id);
-      const { data, error } = await supabase
-        .from('cartas_porte')
-        .select('datos_formulario, folio')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      if (data?.datos_formulario) {
-        const savedData = deserializeCartaPorteData(data.datos_formulario);
-        if (data.folio) {
-          savedData.folio = data.folio;
-        }
-        
-        console.log('✅ Datos cargados exitosamente:', {
-          hasXML: !!savedData.xmlGenerado,
-          hasRouteData: !!savedData.datosCalculoRuta,
-          currentStep: savedData.currentStep
-        });
-        
-        // Restaurar todos los datos incluidos XML y cálculos de ruta
-        setFormData(savedData);
-
-        // Persistir datos en sesión
-        if (savedData.xmlGenerado) {
-          saveXML(savedData.xmlGenerado);
-        }
-        
-        if (savedData.datosCalculoRuta) {
-          saveRouteData(savedData.datosCalculoRuta);
-        }
-
-        if (savedData.currentStep !== undefined) {
-          setCurrentStep(savedData.currentStep);
-        }
-
-        setBorradorCargado(true);
-      }
-    } catch (error) {
-      console.error('❌ Error cargando datos de carta porte:', error);
-      toast.error('Error al cargar los datos de la carta porte');
-    }
-  }, [saveXML, saveRouteData]);
-
-  // Handler de cambio unificado y estable
-  const handleConfiguracionChange = useCallback((updates: Partial<CartaPorteData>) => {
-    console.log('🔄 Actualizando configuración:', updates);
-    setFormData(prev => ({ ...prev, ...updates }));
+  const updateData = useCallback((updates: Partial<CartaPorteData>) => {
+    setData(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Setters estables para cada sección del formulario
-  const setUbicaciones = useCallback((ubicaciones: (Ubicacion | UbicacionCompleta)[]) => {
-    const completas = ubicaciones.map(ub => {
-      // Check if it's already UbicacionCompleta by checking for snake_case properties
-      if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
-        return ub as UbicacionCompleta;
-      }
-      // Otherwise convert from Ubicacion to UbicacionCompleta
-      return mapUbicacionToCompleta(ub as Ubicacion);
-    });
-    setFormData(prev => ({ ...prev, ubicaciones: completas }));
-  }, []);
-
-  const setMercancias = useCallback((mercancias: MercanciaCompleta[]) => {
-    setFormData(prev => ({ ...prev, mercancias }));
-  }, []);
-  
-  const setAutotransporte = useCallback((autotransporte: AutotransporteCompleto) => {
-    setFormData(prev => ({ ...prev, autotransporte }));
-  }, []);
-
-  const setFiguras = useCallback((figuras: FiguraCompleta[]) => {
-    setFormData(prev => ({ ...prev, figuras }));
-  }, []);
-
-  // Crear un objeto Autotransporte por defecto para evitar errores de tipo
-  const defaultAutotransporte = {
-    placa_vm: '',
-    anio_modelo_vm: new Date().getFullYear(),
-    config_vehicular: '',
-    perm_sct: '',
-    num_permiso_sct: '',
-    asegura_resp_civil: '',
-    poliza_resp_civil: '',
-    peso_bruto_vehicular: 0,
-    remolques: []
-  };
-
-  // Funciones para manejar XML generado con persistencia
-  const handleXMLGenerated = useCallback((xml: string) => {
-    console.log('📄 XML generado, guardando en persistencia...');
-    saveXML(xml);
-    // Auto-guardar inmediatamente cuando se genera XML
-    setTimeout(() => handleGuardarCartaPorteOficial(), 100);
-  }, [saveXML]);
-
-  // Funciones para manejar cálculos de ruta con persistencia MEJORADA
-  const handleCalculoRutaUpdate = useCallback((datos: {
-    distanciaTotal?: number;
-    tiempoEstimado?: number;
-  }) => {
-    console.log('🗺️ Actualizando y persistiendo cálculo de ruta:', datos);
-    const newDatosRuta = {
-      ...datos,
-      calculadoEn: new Date().toISOString()
-    };
-    
-    // Persistir inmediatamente
-    saveRouteData(newDatosRuta);
-    
-    // Actualizar estado local
-    setFormData(prev => ({
-      ...prev,
-      datosCalculoRuta: newDatosRuta,
-      totalDistRec: datos.distanciaTotal ?? prev.totalDistRec
-    }));
-    
-    // Auto-guardar cuando se actualiza cálculo de ruta
-    setTimeout(() => handleGuardarCartaPorteOficial(), 100);
-  }, [saveRouteData]);
-
-  // Manejar aceptación de borrador
-  const handleAcceptBorrador = useCallback(() => {
-    const { data, id } = acceptBorrador();
-    if (data) {
-      const savedData = deserializeCartaPorteData(data);
-      setFormData(savedData);
-      setCurrentCartaPorteId(id);
-      setBorradorCargado(true);
-      
-      // Persistir datos recuperados
-      if (savedData.xmlGenerado) {
-        saveXML(savedData.xmlGenerado);
-      }
-      
-      if (savedData.datosCalculoRuta) {
-        saveRouteData(savedData.datosCalculoRuta);
-      }
-      
-      if (savedData.currentStep !== undefined) {
-        setCurrentStep(savedData.currentStep);
-      }
-    }
-  }, [acceptBorrador, saveXML, saveRouteData]);
-
-  // Manejar rechazo de borrador
-  const handleRejectBorrador = useCallback(() => {
-    rejectBorrador();
-    setFormData(createInitialFormData());
+  const resetForm = useCallback(() => {
+    setData(initialData);
     setCurrentStep(0);
-    setCurrentCartaPorteId(null);
-    setBorradorCargado(false);
-    clearSessionData();
-  }, [rejectBorrador, clearSessionData]);
-  
-  // Guardar como carta porte oficial (CORREGIDO para evitar problemas de tipo)
-  const handleGuardarCartaPorteOficial = useCallback(async () => {
-    if (!user?.id) {
-      toast.error('Usuario no autenticado');
-      return;
-    }
+    setErrors({});
+  }, []);
 
-    if (isGuardando) return;
+  const validateStep = useCallback((step: number): boolean => {
+    const stepErrors: string[] = [];
     
-    console.log('💾 Iniciando guardado de carta porte oficial...');
-    setIsGuardando(true);
-    
-    try {
-      // Preparar datos completos con estado actual
-      const datosCompletos: CartaPorteData = {
-        ...formData,
-        ubicaciones: (formData.ubicaciones || []).map(ub => {
-          // Check if it's already UbicacionCompleta
-          if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
-            return ub as UbicacionCompleta;
-          }
-          // Convert from Ubicacion if needed using the proper mapper
-          return mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta));
-        }),
-        currentStep,
-        xmlGenerado,
-        datosCalculoRuta
-      };
-      
-      console.log('📊 Datos a guardar:', {
-        hasXML: !!datosCompletos.xmlGenerado,
-        hasRouteData: !!datosCompletos.datosCalculoRuta,
-        currentStep: datosCompletos.currentStep,
-        ubicacionesCount: datosCompletos.ubicaciones?.length || 0,
-        mercanciasCount: datosCompletos.mercancias?.length || 0
-      });
-
-      const serializedData = serializeCartaPorteData(datosCompletos);
-      
-      let folio = formData.folio;
-      if (!folio) {
-        folio = `CP-${Date.now().toString().slice(-8)}`;
-        setFormData(prev => ({ ...prev, folio }));
-      }
-      
-      const cartaPorteData = {
-        folio,
-        tipo_cfdi: formData.tipoCfdi || 'Traslado',
-        rfc_emisor: formData.rfcEmisor || '',
-        nombre_emisor: formData.nombreEmisor || '',
-        rfc_receptor: formData.rfcReceptor || '',
-        nombre_receptor: formData.nombreReceptor || '',
-        transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
-        registro_istmo: formData.registroIstmo || false,
-        status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: serializedData as any,
-        usuario_id: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      let savedId = currentCartaPorteId;
-
-      if (currentCartaPorteId) {
-        const { error } = await supabase
-          .from('cartas_porte')
-          .update({
-            ...cartaPorteData,
-            updated_at: new Date().toISOString()
-          } as any)
-          .eq('id', currentCartaPorteId);
-
-        if (error) throw error;
-        console.log('✅ Carta porte actualizada exitosamente');
-      } else {
-        const { data: nuevaCarta, error } = await supabase
-          .from('cartas_porte')
-          .insert(cartaPorteData as any)
-          .select()
-          .single();
-
-        if (error) throw error;
-        if (nuevaCarta) {
-          savedId = nuevaCarta.id;
-          setCurrentCartaPorteId(nuevaCarta.id);
-          console.log('✅ Nueva carta porte creada:', savedId);
+    switch (step) {
+      case 0: // Configuración
+        if (!data.rfcEmisor) stepErrors.push('RFC del emisor es requerido');
+        if (!data.rfcReceptor) stepErrors.push('RFC del receptor es requerido');
+        break;
+      case 1: // Ubicaciones
+        if (!data.ubicaciones || data.ubicaciones.length < 2) {
+          stepErrors.push('Se requieren al menos 2 ubicaciones');
         }
-      }
-      
-      setUltimoGuardado(new Date());
-      toast.success('Carta porte guardada correctamente');
-      
-      return savedId;
-    } catch (error) {
-      console.error('❌ Error guardando carta porte:', error);
-      toast.error('Error al guardar la carta porte');
-      throw error;
-    } finally {
-      setIsGuardando(false);
+        break;
+      case 2: // Mercancías
+        if (!data.mercancias || data.mercancias.length === 0) {
+          stepErrors.push('Se requiere al menos una mercancía');
+        }
+        break;
+      case 3: // Autotransporte
+        if (!data.autotransporte?.placa_vm) {
+          stepErrors.push('Placa del vehículo es requerida');
+        }
+        break;
+      case 4: // Figuras
+        if (!data.figuras || data.figuras.length === 0) {
+          stepErrors.push('Se requiere al menos una figura de transporte');
+        }
+        break;
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
 
-  // Guardar y salir mejorado con navegación React Router CORREGIDO  
-  const handleGuardarYSalir = useCallback(async () => {
-    try {
-      console.log('💾🚪 Guardando y saliendo...');
-      const savedId = await handleGuardarCartaPorteOficial();
-      
-      if (savedId) {
-        // Limpiar datos de sesión ya que se guardó exitosamente
-        clearSessionData();
-        
-        // Usar navegación React Router
-        toast.success('Carta porte guardada exitosamente');
-        
-        // Navegar después de un breve delay para que el usuario vea el mensaje
-        setTimeout(() => {
-          navigate('/cartas-porte', { replace: true });
-        }, 1000);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error guardando carta porte:', error);
-      toast.error('Error al guardar. No se puede salir. Verifica los datos.');
-    }
-  }, [handleGuardarCartaPorteOficial, navigate, clearSessionData]);
+    setErrors(prev => ({ ...prev, [step]: stepErrors }));
+    return stepErrors.length === 0;
+  }, [data]);
 
-  // Lógica de borrador (mantenido para compatibilidad)
-  const handleGuardarBorrador = useCallback(async () => {
-    if (isGuardando) return;
-    
-    setIsGuardando(true);
-    try {
-      const datosCompletos: CartaPorteData = {
-        ...formData,
-        ubicaciones: (formData.ubicaciones || []).map(ub => {
-          if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
-            return ub as UbicacionCompleta;
-          }
-          return mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta));
-        }),
-        currentStep,
-        xmlGenerado,
-        datosCalculoRuta
-      };
-      
-      const nuevoId = await BorradorService.guardarBorrador(datosCompletos, currentCartaPorteId || undefined);
-      
-      if (nuevoId && nuevoId !== currentCartaPorteId) {
-        setCurrentCartaPorteId(nuevoId);
-      }
-      
-      setUltimoGuardado(new Date());
-      toast.success('Borrador guardado correctamente');
-    } catch (error) {
-      console.error('Error guardando borrador:', error);
-      toast.error('Error al guardar el borrador');
-    } finally {
-      setIsGuardando(false);
+  const nextStep = useCallback(() => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, 5));
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando]);
+  }, [currentStep, validateStep]);
 
-  const handleLimpiarBorrador = useCallback(async () => {
-    try {
-      await BorradorService.limpiarBorrador(currentCartaPorteId || undefined);
-      
-      setFormData(createInitialFormData());
-      setCurrentStep(0);
-      setCurrentCartaPorteId(null);
-      setBorradorCargado(false);
-      setUltimoGuardado(null);
-      clearSessionData();
-      
-      toast.success('Borrador eliminado correctamente');
-    } catch (error) {
-      console.error('Error limpiando borrador:', error);
-      toast.error('Error al eliminar el borrador');
-    }
-  }, [currentCartaPorteId, clearSessionData]);
+  const prevStep = useCallback(() => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+  }, []);
 
-  // Actualizar último guardado cuando hay auto-save
-  useEffect(() => {
-    if (lastSaved) {
-      setUltimoGuardado(lastSaved);
+  const goToStep = useCallback((step: number) => {
+    if (step >= 0 && step <= 5) {
+      setCurrentStep(step);
     }
-  }, [lastSaved]);
+  }, []);
 
   return {
-    // Estado unificado
-    configuracion: formData,
-    ubicaciones: formData.ubicaciones,
-    mercancias: formData.mercancias,
-    autotransporte: formData.autotransporte || defaultAutotransporte,
-    figuras: formData.figuras,
-    
-    // Estado de la UI
+    data,
     currentStep,
-    currentCartaPorteId,
-    borradorCargado,
-    ultimoGuardado,
-    validationSummary,
-    isGuardando: isGuardando || isAutoSaving,
-    
-    // Estados persistidos
-    xmlGenerado,
-    datosCalculoRuta,
-    
-    // Dialog de recuperación
-    showRecoveryDialog,
-    borradorData,
-    handleAcceptBorrador,
-    handleRejectBorrador,
-    
-    // Setters y Handlers estables
-    setUbicaciones,
-    setMercancias,
-    setAutotransporte,
-    setFiguras,
-    setCurrentStep,
-    handleConfiguracionChange,
-    handleGuardarBorrador,
-    handleGuardarCartaPorteOficial,
-    handleGuardarYSalir,
-    handleLimpiarBorrador,
-    
-    // Nuevos handlers para datos persistidos
-    handleXMLGenerated,
-    handleCalculoRutaUpdate,
+    isLoading,
+    errors,
+    updateData,
+    setIsLoading,
+    nextStep,
+    prevStep,
+    goToStep,
+    validateStep,
+    resetForm
   };
-}
+};

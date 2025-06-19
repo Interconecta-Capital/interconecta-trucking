@@ -266,7 +266,7 @@ export function XMLGeneratorV31({
           ${mercancia.valor_mercancia ? `ValorMercancia="${mercancia.valor_mercancia.toFixed(2)}"` : ''}
           ${mercancia.moneda ? `Moneda="${mercancia.moneda}"` : ''}
           ${mercancia.fraccion_arancelaria ? `FraccionArancelaria="${mercancia.fraccion_arancelaria}"` : ''}
-          ${mercancia.uuid_comercio_ext ? `UUIDComercioExt="${mercancia.uuid_comercio_ext}"` : ''}
+          ${mercancia.uuid_comercio_exterior ? `UUIDComercioExt="${mercancia.uuid_comercio_exterior}"` : ''}
           ${mercancia.material_peligroso ? 'MaterialPeligroso="Sí"' : 'MaterialPeligroso="No"'}
           ${mercancia.cve_material_peligroso ? `CveMaterialPeligroso="${mercancia.cve_material_peligroso}"` : ''}
           ${mercancia.embalaje ? `Embalaje="${mercancia.embalaje}"` : ''}
@@ -409,140 +409,96 @@ export function XMLGeneratorV31({
     }
   };
 
-  const downloadXML = () => {
-    const blob = new Blob([xmlContent], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `carta-porte-v31-${cartaPorteData.folio || 'draft'}.xml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const generateQRCode = () => {
-    if (!cartaPorteData.idCCP) return '';
-    
-    const qrUrl = `https://verificacfdi.facturaelectronica.sat.gob.mx/verificaccp/default.aspx?IdCCP=${cartaPorteData.idCCP}&FechaOrig=${cartaPorteData.ubicaciones?.[0]?.fecha_hora_salida_llegada}&FechaTimb=${new Date().toISOString()}`;
-    
-    toast({
-      title: "QR Code URL",
-      description: qrUrl,
-    });
-  };
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center space-x-2">
             <FileText className="h-5 w-5" />
-            Generador XML Carta Porte v3.1
+            <span>Generador XML Carta Porte v3.1</span>
             <Shield className="h-4 w-4 text-green-600" />
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {validationErrors.length > 0 && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-1">
-                    <p className="font-medium">Errores de validación:</p>
-                    <ul className="list-disc list-inside">
-                      {validationErrors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {isGenerating && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Generando XML v3.1...</span>
-                  <span className="text-sm font-medium">{generationProgress}%</span>
-                </div>
-                <Progress value={generationProgress} className="h-2" />
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button
-                onClick={generateXMLv31}
-                disabled={isGenerating}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                {isGenerating ? 'Generando...' : 'Generar XML v3.1'}
+          {!xmlContent ? (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Genere el archivo XML oficial SAT v3.1 para su Carta Porte
+              </p>
+              <Button onClick={generateXMLv31} disabled={isGenerating}>
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generando XML...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generar XML v3.1
+                  </>
+                )}
               </Button>
-
-              {xmlContent && (
-                <>
-                  <Button variant="outline" onClick={copyToClipboard}>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="font-medium">XML Generado Exitosamente</span>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={copyToClipboard}>
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar
                   </Button>
-                  
-                  <Button variant="outline" onClick={downloadXML}>
+                  <Button variant="outline" size="sm">
                     <Download className="h-4 w-4 mr-2" />
                     Descargar
                   </Button>
-                  
-                  <Button variant="outline" onClick={generateQRCode}>
-                    <QrCode className="h-4 w-4 mr-2" />
-                    QR Code
-                  </Button>
-                </>
-              )}
+                  {onTimbrado && (
+                    <Button onClick={onTimbrado}>
+                      <QrCode className="h-4 w-4 mr-2" />
+                      Timbrar CFDI
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <Textarea
+                value={xmlContent}
+                readOnly
+                className="font-mono text-xs h-96"
+                placeholder="XML será mostrado aquí..."
+              />
             </div>
+          )}
 
-            {xmlContent && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">
-                    XML v3.1 generado exitosamente
-                  </span>
-                </div>
-                
-                <Textarea
-                  value={xmlContent}
-                  readOnly
-                  className="font-mono text-xs h-96"
-                  placeholder="El XML generado aparecerá aquí..."
-                />
-                
-                <div className="text-xs text-muted-foreground">
-                  Tamaño: {new Blob([xmlContent]).size} bytes | 
-                  Versión: 3.1 | 
-                  Namespace: cartaporte31
-                </div>
+          {isGenerating && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Progreso de generación</span>
+                <span className="text-sm font-medium">{generationProgress}%</span>
               </div>
-            )}
+              <Progress value={generationProgress} className="h-2" />
+            </div>
+          )}
 
-            {xmlContent && onTimbrado && (
-              <div className="border-t pt-4">
-                <Alert className="border-blue-200 bg-blue-50">
-                  <Info className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-800">
-                    XML listo para timbrado. El proceso de timbrado validará y certificará el documento ante el SAT.
-                  </AlertDescription>
-                </Alert>
-                
-                <Button 
-                  onClick={onTimbrado}
-                  className="mt-4 w-full bg-green-600 hover:bg-green-700"
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Proceder al Timbrado SAT
-                </Button>
-              </div>
-            )}
-          </div>
+          {validationErrors.length > 0 && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-1">
+                  <p className="font-medium">Errores de validación:</p>
+                  <ul className="list-disc list-inside">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     </div>

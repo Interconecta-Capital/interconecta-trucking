@@ -10,14 +10,11 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
-  Info,
   RefreshCw,
   FileCheck,
   Lightbulb,
   Shield,
-  Star,
-  Zap,
-  Scale
+  Star
 } from 'lucide-react';
 import { CartaPorteData, ValidacionSATv31 } from '@/types/cartaPorte';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,12 +50,20 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
       // Realizar validaciones adicionales del frontend
       const frontendValidations = await performFrontendValidations(cartaPorteData);
       
+      // Type-safe handling of database response
+      const dbResult = data as unknown as {
+        valido: boolean;
+        errores: string[];
+        warnings: string[];
+        score: number;
+      };
+      
       // Combinar resultados
       const combinedResult: ValidacionSATv31 = {
-        valido: data.valido && frontendValidations.valido,
-        errores: [...(data.errores || []), ...frontendValidations.errores],
-        warnings: [...(data.warnings || []), ...frontendValidations.warnings],
-        score: Math.min(data.score || 0, frontendValidations.score),
+        valido: dbResult.valido && frontendValidations.valido,
+        errores: [...(dbResult.errores || []), ...frontendValidations.errores],
+        warnings: [...(dbResult.warnings || []), ...frontendValidations.warnings],
+        score: Math.min(dbResult.score || 0, frontendValidations.score),
         campos_faltantes: frontendValidations.campos_faltantes,
         recomendaciones: frontendValidations.recomendaciones
       };

@@ -187,7 +187,7 @@ export function MercanciasSection({
               <span>Gestión de Mercancías</span>
               <span className="text-sm font-normal text-muted-foreground">(SAT v3.1)</span>
               {hasEspeciesProtegidas && (
-                <Shield className="h-4 w-4 text-green-600" title="Contiene especies protegidas" />
+                <Shield className="h-4 w-4 text-green-600" />
               )}
             </CardTitle>
             

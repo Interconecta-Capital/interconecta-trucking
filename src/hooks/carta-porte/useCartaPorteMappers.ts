@@ -5,7 +5,6 @@ import {
   MercanciaCompleta,
   AutotransporteCompleto,
   FiguraCompleta,
-  RemolqueCCP,
 } from '@/types/cartaPorte';
 
 // Tipo unificado para el formulario (basado en la estructura de BD)
@@ -46,7 +45,11 @@ export interface CartaPorteFormData {
   
   // Campos específicos por versión
   regimenAduanero?: string; // v3.0
-  regimenesAduaneros?: string[]; // v3.1
+  regimenesAduaneros?: Array<{
+    clave_regimen: string;
+    descripcion?: string;
+    orden_secuencia: number;
+  }>; // v3.1
 }
 
 // Hook principal de mapeo con validación de tipos
@@ -82,14 +85,6 @@ export const useCartaPorteMappers = () => {
       mercancias: formData.mercancias,
       autotransporte: formData.autotransporte,
       figuras: formData.figuras,
-      
-      // Campos específicos de v3.1
-      version31Fields: formData.cartaPorteVersion === '3.1' ? {
-        transporteEspecializado: false,
-        tipoCarroceria: formData.autotransporte?.tipo_carroceria,
-        registroISTMO: formData.registroIstmo,
-        remolquesCCP: formData.autotransporte?.remolques || [],
-      } : undefined,
     };
   };
 

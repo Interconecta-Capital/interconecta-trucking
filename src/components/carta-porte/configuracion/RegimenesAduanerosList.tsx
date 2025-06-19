@@ -6,8 +6,16 @@ import { Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface RegimenesAduanerosListProps {
-  regimenes: string[];
-  onChange: (regs: string[]) => void;
+  regimenes: Array<{
+    clave_regimen: string;
+    descripcion?: string;
+    orden_secuencia: number;
+  }>;
+  onChange: (regs: Array<{
+    clave_regimen: string;
+    descripcion?: string;
+    orden_secuencia: number;
+  }>) => void;
   transporteInternacional?: boolean;
 }
 
@@ -24,16 +32,31 @@ export function RegimenesAduanerosList({
 
   const addRegimen = () => {
     if (regimenes.length >= 10) return;
-    onChange([...regimenes, '']);
+    const newRegimen = {
+      clave_regimen: '',
+      descripcion: '',
+      orden_secuencia: regimenes.length + 1
+    };
+    onChange([...regimenes, newRegimen]);
   };
 
-  const updateRegimen = (index: number, value: string) => {
-    const updated = regimenes.map((r, i) => (i === index ? value : r));
+  const updateRegimen = (index: number, clave: string) => {
+    const updated = regimenes.map((r, i) => (
+      i === index 
+        ? { ...r, clave_regimen: clave } 
+        : r
+    ));
     onChange(updated);
   };
 
   const removeRegimen = (index: number) => {
-    onChange(regimenes.filter((_, i) => i !== index));
+    const filtered = regimenes.filter((_, i) => i !== index);
+    // Reordenar secuencias
+    const reordered = filtered.map((r, i) => ({
+      ...r,
+      orden_secuencia: i + 1
+    }));
+    onChange(reordered);
   };
 
   return (
@@ -83,7 +106,7 @@ export function RegimenesAduanerosList({
               <CardContent className="space-y-2">
                 <CatalogoSelectorMejorado
                   tipo="regimenes_aduaneros"
-                  value={regimen}
+                  value={regimen.clave_regimen}
                   onValueChange={(val) => updateRegimen(index, val)}
                   placeholder="Selecciona régimen aduanero..."
                   required

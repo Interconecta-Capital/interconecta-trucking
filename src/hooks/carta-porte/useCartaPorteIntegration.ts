@@ -89,6 +89,8 @@ export const useCartaPorteIntegration = ({
         num_permiso_sct: '',
         asegura_resp_civil: '',
         poliza_resp_civil: '',
+        peso_bruto_vehicular: 0,
+        remolques: []
       },
       figuras: [],
       tipoCreacion: 'manual',

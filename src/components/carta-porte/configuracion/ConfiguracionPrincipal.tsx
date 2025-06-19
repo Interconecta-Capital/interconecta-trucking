@@ -10,7 +10,7 @@ import { DatosEmisor } from './DatosEmisor';
 import { DatosReceptor } from './DatosReceptor';
 import { OpcionesEspeciales } from './OpcionesEspeciales';
 import { RegimenesAduanerosList } from './RegimenesAduanerosList';
-import { CartaPorteData } from '../CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 interface ConfiguracionPrincipalProps {
   data: CartaPorteData;
