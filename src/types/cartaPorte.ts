@@ -62,13 +62,19 @@ export interface MercanciaCompleta {
   fraccion_arancelaria?: string;
   uuid_comercio_ext?: string;
   tipo_embalaje?: string;
+  material_embalaje?: string;
   regimen_aduanero?: string;
   descripcion_detallada?: string;
   requiere_cites?: boolean;
   embalaje?: string;
   cve_material_peligroso?: string;
   especie_protegida?: boolean;
-  dimensiones?: any;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+    unidad: string;
+  };
   documentacion_aduanera?: any[];
 }
 
