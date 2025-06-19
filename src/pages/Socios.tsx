@@ -6,20 +6,53 @@ import { Input } from '@/components/ui/input';
 import { SociosTable } from '@/components/socios/SociosTable';
 import { SociosFilters } from '@/components/socios/SociosFilters';
 import { SocioFormDialog } from '@/components/socios/SocioFormDialog';
+import { SocioViewDialog } from '@/components/socios/SocioViewDialog';
 import { useSocios } from '@/hooks/useSocios';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { toast } from 'sonner';
 
 export default function Socios() {
-  const { socios, loading } = useSocios();
+  const { socios, loading, eliminarSocio } = useSocios();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [selectedSocio, setSelectedSocio] = useState<any>(null);
 
   const handleNewSocio = () => {
+    setSelectedSocio(null);
     setShowCreateDialog(true);
+  };
+
+  const handleEdit = (socio: any) => {
+    setSelectedSocio(socio);
+    setShowEditDialog(true);
+  };
+
+  const handleView = (socio: any) => {
+    setSelectedSocio(socio);
+    setShowViewDialog(true);
+  };
+
+  const handleDelete = async (socio: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el socio ${socio.nombre_razon_social}?`)) {
+      try {
+        await eliminarSocio(socio.id);
+        toast.success('Socio eliminado exitosamente');
+      } catch (error) {
+        toast.error('Error al eliminar socio');
+      }
+    }
+  };
+
+  const handleSuccess = () => {
+    setShowCreateDialog(false);
+    setShowEditDialog(false);
+    setSelectedSocio(null);
   };
 
   const filteredSocios = socios.filter(socio =>
@@ -82,12 +115,33 @@ export default function Socios() {
         <SociosTable 
           socios={filteredSocios}
           loading={loading}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
         />
 
-        {/* Dialog de creación */}
+        {/* Diálogos */}
         <SocioFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
+          onSuccess={handleSuccess}
+        />
+
+        <SocioFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          socio={selectedSocio}
+          onSuccess={handleSuccess}
+        />
+
+        <SocioViewDialog
+          open={showViewDialog}
+          onOpenChange={setShowViewDialog}
+          socio={selectedSocio}
+          onEdit={() => {
+            setShowViewDialog(false);
+            handleEdit(selectedSocio);
+          }}
         />
       </div>
     </ProtectedContent>

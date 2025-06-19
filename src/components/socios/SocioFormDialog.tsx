@@ -1,47 +1,58 @@
 
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useSocios } from '@/hooks/useSocios';
 import { SocioFormRefactored } from './forms/SocioFormRefactored';
-import { Building } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface SocioFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   socio?: any;
+  onSuccess?: () => void;
 }
 
-export function SocioFormDialog({ open, onOpenChange, socio }: SocioFormDialogProps) {
-  const handleSuccess = () => {
-    onOpenChange(false);
-  };
+export function SocioFormDialog({ open, onOpenChange, socio, onSuccess }: SocioFormDialogProps) {
+  const { crearSocio, actualizarSocio, isCreating, isUpdating } = useSocios();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCancel = () => {
-    onOpenChange(false);
+  const isEditing = !!socio;
+  const isLoading = isCreating || isUpdating || isSubmitting;
+
+  const handleSubmit = async (formData: any) => {
+    setIsSubmitting(true);
+    try {
+      if (isEditing) {
+        await actualizarSocio(socio.id, formData);
+        toast.success('Socio actualizado exitosamente');
+      } else {
+        await crearSocio(formData);
+        toast.success('Socio creado exitosamente');
+      }
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Error al guardar socio');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            {socio ? 'Editar Socio' : 'Nuevo Socio'}
+          <DialogTitle>
+            {isEditing ? `Editar Socio: ${socio?.nombre_razon_social}` : 'Nuevo Socio Comercial'}
           </DialogTitle>
-          <DialogDescription>
-            {socio ? 'Modifica los datos del socio' : 'Ingresa los datos del nuevo socio comercial con información SAT completa'}
-          </DialogDescription>
         </DialogHeader>
 
         <SocioFormRefactored
-          socioId={socio?.id}
-          onSuccess={handleSuccess}
-          onCancel={handleCancel}
+          initialData={socio}
+          onSubmit={handleSubmit}
+          isLoading={isLoading}
+          onCancel={() => onOpenChange(false)}
         />
       </DialogContent>
     </Dialog>
