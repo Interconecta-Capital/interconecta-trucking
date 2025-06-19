@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,14 +22,18 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
   
   const { conductores, loading } = useConductores();
 
-  const filteredConductores = conductores.filter(conductor => 
+  // Add safety checks for all array operations
+  const safeData = data || [];
+  const safeConductores = conductores || [];
+
+  const filteredConductores = safeConductores.filter(conductor => 
     conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conductor.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conductor.num_licencia?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleConductorSelect = (conductorId: string) => {
-    const conductor = conductores.find(c => c.id === conductorId);
+    const conductor = safeConductores.find(c => c.id === conductorId);
     if (conductor) {
       const nuevaFigura = {
         id: crypto.randomUUID(),
@@ -46,7 +49,7 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
         domicilio: conductor.direccion || {}
       };
       
-      onChange([...data, nuevaFigura]);
+      onChange([...safeData, nuevaFigura]);
       setShowConductorSelector(false);
     }
   };
@@ -70,17 +73,17 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
       }
     };
     
-    onChange([...data, nuevaFigura]);
+    onChange([...safeData, nuevaFigura]);
   };
 
   const updateFigura = (index: number, field: string, value: any) => {
-    const updatedData = [...data];
+    const updatedData = [...safeData];
     updatedData[index] = { ...updatedData[index], [field]: value };
     onChange(updatedData);
   };
 
   const updateDomicilio = (index: number, field: string, value: string) => {
-    const updatedData = [...data];
+    const updatedData = [...safeData];
     updatedData[index] = {
       ...updatedData[index],
       domicilio: {
@@ -92,7 +95,7 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
   };
 
   const removeFigura = (index: number) => {
-    const updatedData = data.filter((_, i) => i !== index);
+    const updatedData = safeData.filter((_, i) => i !== index);
     onChange(updatedData);
   };
 
@@ -192,7 +195,7 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
         </Card>
       )}
 
-      {data.length === 0 ? (
+      {safeData.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-gray-500">No hay figuras configuradas</p>
@@ -203,7 +206,7 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
         </Card>
       ) : (
         <div className="space-y-4">
-          {data.map((figura, index) => (
+          {safeData.map((figura, index) => (
             <Card key={figura.id || index}>
               <CardHeader>
                 <div className="flex items-center justify-between">
