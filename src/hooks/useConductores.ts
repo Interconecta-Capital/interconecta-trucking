@@ -95,31 +95,32 @@ export function useConductores() {
     
     setLoading(true);
     try {
-      // Transform to match Supabase schema exactly
-      const conductoresForSupabase = conductoresData.map(conductor => ({
-        nombre: conductor.nombre || 'Sin nombre',
-        user_id: user.id,
-        activo: conductor.activo ?? true,
-        estado: conductor.estado || 'disponible',
-        rfc: conductor.rfc || null,
-        curp: conductor.curp || null,
-        num_licencia: conductor.num_licencia || null,
-        tipo_licencia: conductor.tipo_licencia || null,
-        vigencia_licencia: conductor.vigencia_licencia || null,
-        operador_sct: conductor.operador_sct ?? false,
-        telefono: conductor.telefono || null,
-        email: conductor.email || null,
-        direccion: conductor.direccion || null,
-        residencia_fiscal: conductor.residencia_fiscal || 'MEX',
-        num_reg_id_trib: conductor.num_reg_id_trib || null
-      }));
-
-      // Use multiple individual inserts for better error handling
       const results = [];
-      for (const conductorData of conductoresForSupabase) {
+      
+      // Insert each conductor individually for better error handling
+      for (const conductorData of conductoresData) {
+        // Transform to match Supabase schema exactly
+        const conductorForSupabase = {
+          nombre: conductorData.nombre || 'Sin nombre',
+          user_id: user.id,
+          activo: conductorData.activo ?? true,
+          estado: conductorData.estado || 'disponible',
+          rfc: conductorData.rfc || null,
+          curp: conductorData.curp || null,
+          num_licencia: conductorData.num_licencia || null,
+          tipo_licencia: conductorData.tipo_licencia || null,
+          vigencia_licencia: conductorData.vigencia_licencia || null,
+          operador_sct: conductorData.operador_sct ?? false,
+          telefono: conductorData.telefono || null,
+          email: conductorData.email || null,
+          direccion: conductorData.direccion || null,
+          residencia_fiscal: conductorData.residencia_fiscal || 'MEX',
+          num_reg_id_trib: conductorData.num_reg_id_trib || null
+        };
+
         const { data, error } = await supabase
           .from('conductores')
-          .insert(conductorData)
+          .insert(conductorForSupabase)
           .select()
           .single();
         

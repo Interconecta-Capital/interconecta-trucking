@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Plus, Users } from 'lucide-react';
 import { ConductoresTable } from '@/components/conductores/ConductoresTable';
 import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
-import { ConductoresFilters } from '@/components/conductores/ConductoresFilters';
 import { useConductores } from '@/hooks/useConductores';
 
 export default function Conductores() {
@@ -63,19 +62,6 @@ export default function Conductores() {
             Nuevo Conductor
           </Button>
         </div>
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ConductoresFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-          </CardContent>
-        </Card>
 
         {/* Conductores Table */}
         <Card>
