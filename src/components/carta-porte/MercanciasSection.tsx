@@ -28,10 +28,11 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     remolques: []
   };
 
-  // Asegurar que todas las mercancías tengan descripción y clave_unidad
+  // CORREGIDO: Asegurar que todas las mercancías tengan campos obligatorios con valores por defecto
   const mercanciasConDescripcion = data.map(mercancia => ({
     ...mercancia,
     descripcion: mercancia.descripcion || 'Sin descripción',
+    cantidad: mercancia.cantidad || 1, // Valor por defecto
     clave_unidad: mercancia.clave_unidad || 'KGM' // Valor por defecto
   }));
 

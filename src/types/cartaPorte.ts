@@ -177,12 +177,13 @@ export interface FiguraCompleta {
   };
 }
 
+// CORREGIDO: Hacer campos obligatorios
 export interface MercanciaCompleta {
   id: string;
   bienes_transp: string;
-  descripcion?: string;
-  cantidad?: number;
-  clave_unidad: string; // Hacer obligatorio
+  descripcion: string; // Hacer obligatorio
+  cantidad: number; // Hacer obligatorio
+  clave_unidad: string; // Ya es obligatorio
   peso_kg?: number;
   valor_mercancia?: number;
   moneda?: string;

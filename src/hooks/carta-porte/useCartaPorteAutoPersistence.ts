@@ -200,7 +200,7 @@ export function useCartaPorteAutoPersistence(
       }
 
       const recoveredData: CartaPorteData = {
-        ...(data.datos_formulario as CartaPorteData),
+        ...(data.datos_formulario as Record<string, any>), // CORREGIDO: Type assertion más segura
         xmlGenerado: data.xml_generado,
         cartaPorteId: id
       };
