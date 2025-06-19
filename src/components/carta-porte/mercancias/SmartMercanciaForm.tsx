@@ -89,7 +89,7 @@ export function SmartMercanciaForm({
         {
           type: 'suggestion',
           title: 'Clasificación SAT Sugerida',
-          content: 'Basado en la descripción, se sugiere la clave 01010101',
+          content: 'Basado en la descripción, se sugiere la clave 78101800',
           confidence: 0.85
         },
         {
