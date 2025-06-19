@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Truck, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AutotransporteCompleto, RemolqueCCP } from '@/types/cartaPorte';
-import { useCatalogos } from '@/hooks/useCatalogos';
+import { useCatalogosReal } from '@/hooks/useCatalogosReal';
 import { AutotransporteMVPFields } from './form/AutotransporteMVPFields';
 
 interface AutotransporteSectionProps {
@@ -26,7 +25,7 @@ export function AutotransporteSection({
   onPrev,
   pesoTotalMercancias = 0 
 }: AutotransporteSectionProps) {
-  const { catalogos } = useCatalogos();
+  const { catalogos } = useCatalogosReal();
 
   const handleChange = (field: keyof AutotransporteCompleto, value: any) => {
     onChange({
