@@ -51,7 +51,7 @@ export interface Autotransporte {
 export interface Remolque {
   id?: string;
   subtipo_remolque: string;
-  subtipo_rem?: string;
+  subtipo_rem: string;
   placa: string;
 }
 
@@ -79,7 +79,6 @@ export interface FiguraTransporte {
   residencia_fiscal_arrendatario?: string;
 }
 
-// New SEMARNAT permit interface
 export interface PermisoSEMARNAT {
   id?: string;
   tipo_permiso: string;
@@ -96,6 +95,11 @@ export interface ValidacionSATv31 {
   advertencias: string[];
   esValido: boolean;
   scoreComplitud: number;
+  warnings?: string[];
+  score?: number;
+  campos_faltantes?: string[];
+  recomendaciones?: string[];
+  valido?: boolean;
 }
 
 export interface CartaPorteData {
@@ -139,6 +143,8 @@ export interface CartaPorteData {
   regimen_fiscal_receptor?: string;
   domicilio_fiscal_receptor?: any;
   datosCalculoRuta?: any;
+  xmlGenerado?: string;
+  tipoCreacion?: string;
 }
 
 export interface UbicacionCompleta extends Ubicacion {
@@ -155,6 +161,7 @@ export interface UbicacionCompleta extends Ubicacion {
     latitud: number;
     longitud: number;
   };
+  tipo_estacion?: string;
 }
 
 export interface AutotransporteCompleto extends Autotransporte {

@@ -1,139 +1,171 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { MapPin, Search } from 'lucide-react';
+import { MapPin, Save, Star } from 'lucide-react';
+import { UbicacionCompleta } from '@/types/cartaPorte';
 import { UbicacionFrecuente } from '@/types/ubicaciones';
-import { FormularioDomicilioUnificado, DomicilioUnificado } from '@/components/common/FormularioDomicilioUnificado';
-import { AddressAutocomplete } from './AddressAutocomplete';
-import { useUbicacionForm } from '@/hooks/useUbicacionForm';
 
 interface SmartUbicacionFormProps {
-  ubicacion?: any;
-  onSave: (ubicacion: any) => void;
+  ubicacion?: UbicacionCompleta;
+  onSave: (ubicacion: UbicacionCompleta) => void;
   onCancel: () => void;
-  onSaveToFavorites?: (ubicacion: Omit<UbicacionFrecuente, 'id' | 'usoCount'>) => void;
+  onSaveToFavorites?: (ubicacion: Omit<UbicacionFrecuente, 'id' | 'uso_count'>) => void;
   generarId: (tipo: 'Origen' | 'Destino' | 'Paso Intermedio') => string;
-  ubicacionesFrecuentes?: UbicacionFrecuente[];
+  ubicacionesFrecuentes: UbicacionFrecuente[];
 }
 
-export function SmartUbicacionForm({ 
-  ubicacion, 
-  onSave, 
-  onCancel, 
+export function SmartUbicacionForm({
+  ubicacion,
+  onSave,
+  onCancel,
   onSaveToFavorites,
   generarId,
-  ubicacionesFrecuentes = []
+  ubicacionesFrecuentes
 }: SmartUbicacionFormProps) {
-  const {
-    formData,
-    rfcValidation,
-    showFrecuentes,
-    setShowFrecuentes,
-    handleTipoChange,
-    handleRFCChange,
-    handleLocationUpdate,
-    handleFieldChange,
-    handleMapboxAddressSelect,
-    cargarUbicacionFrecuente,
-    isFormValid
-  } = useUbicacionForm(ubicacion, generarId);
+  const [formData, setFormData] = useState<UbicacionCompleta>(() => {
+    if (ubicacion) return ubicacion;
+    
+    return {
+      id: crypto.randomUUID(),
+      tipo_estacion: '01',
+      id_ubicacion: generarId('Origen'),
+      tipo_ubicacion: 'Origen',
+      rfc_remitente_destinatario: '',
+      nombre_remitente_destinatario: '',
+      fecha_hora_salida_llegada: '',
+      distancia_recorrida: 0,
+      domicilio: {
+        pais: 'MEX',
+        codigo_postal: '',
+        estado: '',
+        municipio: '',
+        colonia: '',
+        calle: '',
+        numero_exterior: '',
+        numero_interior: '',
+        referencia: ''
+      }
+    };
+  });
 
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [searchAddress, setSearchAddress] = React.useState('');
-
-  const handleDomicilioChange = (campo: keyof DomicilioUnificado, valor: string) => {
-    handleFieldChange(`domicilio.${campo}`, valor);
+  const handleFieldChange = <K extends keyof UbicacionCompleta>(
+    field: K,
+    value: UbicacionCompleta[K]
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.tipoUbicacion?.trim()) {
-      newErrors.tipoUbicacion = 'El tipo de ubicación es requerido';
-    }
-
-    if (!formData.rfcRemitenteDestinatario?.trim()) {
-      newErrors.rfc = 'El RFC es requerido';
-    }
-
-    if (!formData.nombreRemitenteDestinatario?.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
-    }
-
-    if (!formData.domicilio.codigoPostal?.trim()) {
-      newErrors.codigoPostal = 'El código postal es requerido';
-    }
-
-    if (!formData.domicilio.calle?.trim()) {
-      newErrors.calle = 'La calle es requerida';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleDomicilioChange = <K extends keyof UbicacionCompleta['domicilio']>(
+    field: K,
+    value: UbicacionCompleta['domicilio'][K]
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      domicilio: {
+        ...prev.domicilio,
+        [field]: value
+      }
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSave(formData);
-    }
-  };
-
-  const handleSaveToFavoritesClick = () => {
-    if (onSaveToFavorites && formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario) {
+  const handleSaveToFavorites = () => {
+    if (onSaveToFavorites) {
       onSaveToFavorites({
-        nombreUbicacion: formData.nombreRemitenteDestinatario,
-        rfcAsociado: formData.rfcRemitenteDestinatario,
-        domicilio: formData.domicilio,
-        fechaCreacion: new Date().toISOString(),
-        vecesUsada: 1
+        nombre: formData.nombre_remitente_destinatario || 'Ubicación sin nombre',
+        tipo_ubicacion: formData.tipo_ubicacion || 'Origen',
+        rfc_remitente_destinatario: formData.rfc_remitente_destinatario,
+        nombre_remitente_destinatario: formData.nombre_remitente_destinatario,
+        domicilio: {
+          ...formData.domicilio
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
     }
   };
 
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          {ubicacion ? 'Editar Ubicación' : 'Nueva Ubicación'}
-        </CardTitle>
-      </CardHeader>
+  const loadFromFrecuente = (frecuente: UbicacionFrecuente) => {
+    setFormData(prev => ({
+      ...prev,
+      tipo_ubicacion: frecuente.tipo_ubicacion,
+      rfc_remitente_destinatario: frecuente.rfc_remitente_destinatario,
+      nombre_remitente_destinatario: frecuente.nombre_remitente_destinatario,
+      domicilio: {
+        ...frecuente.domicilio
+      }
+    }));
+  };
 
-      <CardContent>
-        {ubicacionesFrecuentes.length > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium mb-2">Ubicaciones Frecuentes</h4>
+  const handleSubmit = () => {
+    onSave(formData);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Ubicaciones frecuentes */}
+      {ubicacionesFrecuentes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Star className="h-4 w-4" />
+              Ubicaciones Frecuentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {ubicacionesFrecuentes.slice(0, 4).map((uf) => (
+              {ubicacionesFrecuentes.map((frecuente) => (
                 <Button
-                  key={uf.id}
+                  key={frecuente.id}
                   variant="outline"
                   size="sm"
-                  onClick={() => cargarUbicacionFrecuente(uf)}
-                  className="text-left justify-start"
+                  onClick={() => loadFromFrecuente(frecuente)}
+                  className="justify-start"
                 >
-                  <div className="truncate">
-                    <div className="font-medium">{uf.nombreUbicacion}</div>
-                    <div className="text-xs text-muted-foreground">{uf.rfcAsociado}</div>
-                  </div>
+                  <MapPin className="h-3 w-3 mr-2" />
+                  {frecuente.nombre_remitente_destinatario || frecuente.nombre}
                 </Button>
               ))}
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="tipoUbicacion">Tipo de Ubicación *</Label>
-              <Select value={formData.tipoUbicacion} onValueChange={handleTipoChange}>
-                <SelectTrigger className={errors.tipoUbicacion ? 'border-red-500' : ''}>
-                  <SelectValue placeholder="Seleccionar tipo de ubicación..." />
+      {/* Formulario principal */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Información de la Ubicación</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSaveToFavorites}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Guardar como frecuente
+            </Button>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Tipo de ubicación y datos básicos */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Tipo de Ubicación *</Label>
+              <Select
+                value={formData.tipo_ubicacion || ''}
+                onValueChange={(value: 'Origen' | 'Destino' | 'Paso Intermedio') => 
+                  handleFieldChange('tipo_ubicacion', value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Origen">Origen</SelectItem>
@@ -141,103 +173,157 @@ export function SmartUbicacionForm({
                   <SelectItem value="Paso Intermedio">Paso Intermedio</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.tipoUbicacion && <p className="text-sm text-red-500 mt-1">{errors.tipoUbicacion}</p>}
             </div>
 
-            <div>
-              <Label htmlFor="idUbicacion">ID Ubicación</Label>
+            <div className="space-y-2">
+              <Label>Tipo de Estación</Label>
               <Input
-                id="idUbicacion"
-                value={formData.idUbicacion}
-                readOnly
-                className="bg-gray-50"
-                placeholder="Se genera al seleccionar tipo"
+                value={formData.tipo_estacion || ''}
+                onChange={(e) => handleFieldChange('tipo_estacion', e.target.value)}
+                placeholder="Ej: 01"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>ID Ubicación</Label>
+              <Input
+                value={formData.id_ubicacion || ''}
+                onChange={(e) => handleFieldChange('id_ubicacion', e.target.value)}
+                placeholder="ID único"
               />
             </div>
           </div>
 
+          {/* RFC y Nombre */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="rfc">RFC Remitente/Destinatario *</Label>
+            <div className="space-y-2">
+              <Label>RFC Remitente/Destinatario</Label>
               <Input
-                id="rfc"
-                value={formData.rfcRemitenteDestinatario}
-                onChange={(e) => handleRFCChange(e.target.value)}
-                placeholder="RFC del remitente o destinatario"
-                className={errors.rfc ? 'border-red-500' : ''}
+                value={formData.rfc_remitente_destinatario || ''}
+                onChange={(e) => handleFieldChange('rfc_remitente_destinatario', e.target.value)}
+                placeholder="RFC"
               />
-              {errors.rfc && <p className="text-sm text-red-500 mt-1">{errors.rfc}</p>}
             </div>
 
-            <div>
-              <Label htmlFor="nombre">Nombre/Razón Social *</Label>
+            <div className="space-y-2">
+              <Label>Nombre Remitente/Destinatario</Label>
               <Input
-                id="nombre"
-                value={formData.nombreRemitenteDestinatario}
-                onChange={(e) => handleFieldChange('nombreRemitenteDestinatario', e.target.value)}
-                placeholder="Nombre completo o razón social"
-                className={errors.nombre ? 'border-red-500' : ''}
+                value={formData.nombre_remitente_destinatario || ''}
+                onChange={(e) => handleFieldChange('nombre_remitente_destinatario', e.target.value)}
+                placeholder="Nombre completo"
               />
-              {errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>}
             </div>
           </div>
 
-          {/* Búsqueda de Dirección con Mapbox */}
+          {/* Domicilio */}
           <div className="space-y-4">
-            <Label className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Buscar Dirección (Mapbox)
-            </Label>
-            <AddressAutocomplete
-              value={searchAddress}
-              onChange={setSearchAddress}
-              onAddressSelect={handleMapboxAddressSelect}
-              placeholder="Buscar dirección completa..."
-              className="w-full"
-            />
-            <p className="text-sm text-muted-foreground">
-              💡 Busca la dirección completa para autocompletar todos los campos automáticamente
-            </p>
+            <h4 className="font-medium">Domicilio</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>País *</Label>
+                <Select
+                  value={formData.domicilio.pais}
+                  onValueChange={(value) => handleDomicilioChange('pais', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar país" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MEX">México</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Código Postal *</Label>
+                <Input
+                  value={formData.domicilio.codigo_postal}
+                  onChange={(e) => handleDomicilioChange('codigo_postal', e.target.value)}
+                  placeholder="00000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Estado *</Label>
+                <Input
+                  value={formData.domicilio.estado}
+                  onChange={(e) => handleDomicilioChange('estado', e.target.value)}
+                  placeholder="Estado"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Municipio *</Label>
+                <Input
+                  value={formData.domicilio.municipio}
+                  onChange={(e) => handleDomicilioChange('municipio', e.target.value)}
+                  placeholder="Municipio"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Colonia *</Label>
+                <Input
+                  value={formData.domicilio.colonia}
+                  onChange={(e) => handleDomicilioChange('colonia', e.target.value)}
+                  placeholder="Colonia"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Calle *</Label>
+                <Input
+                  value={formData.domicilio.calle}
+                  onChange={(e) => handleDomicilioChange('calle', e.target.value)}
+                  placeholder="Nombre de la calle"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Número Exterior</Label>
+                <Input
+                  value={formData.domicilio.numero_exterior || ''}
+                  onChange={(e) => handleDomicilioChange('numero_exterior', e.target.value)}
+                  placeholder="No. Ext"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Número Interior</Label>
+                <Input
+                  value={formData.domicilio.numero_interior || ''}
+                  onChange={(e) => handleDomicilioChange('numero_interior', e.target.value)}
+                  placeholder="No. Int"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Referencia</Label>
+              <Input
+                value={formData.domicilio.referencia || ''}
+                onChange={(e) => handleDomicilioChange('referencia', e.target.value)}
+                placeholder="Referencias adicionales"
+              />
+            </div>
           </div>
 
-          <div>
-            <Label className="flex items-center gap-2 mb-4">
-              <MapPin className="h-4 w-4" />
-              Domicilio
-            </Label>
-            <FormularioDomicilioUnificado
-              domicilio={{
-                ...formData.domicilio,
-                numExterior: formData.domicilio.numExterior || ''
-              }}
-              onDomicilioChange={handleDomicilioChange}
-              camposOpcionales={['numInterior', 'referencia', 'localidad']}
-            />
-          </div>
-
-          <div className="flex justify-between pt-4">
+          {/* Actions */}
+          <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
-            
-            <div className="flex gap-2">
-              {onSaveToFavorites && formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleSaveToFavoritesClick}
-                >
-                  Guardar en Favoritos
-                </Button>
-              )}
-              
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {ubicacion ? 'Actualizar' : 'Agregar'} Ubicación
-              </Button>
-            </div>
+            <Button type="button" onClick={handleSubmit}>
+              Guardar Ubicación
+            </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
