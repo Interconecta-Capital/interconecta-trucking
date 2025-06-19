@@ -31,11 +31,32 @@ export function useConductores() {
     }
   };
 
-  const createConductor = async (conductorData: Partial<Conductor>) => {
+  const createConductor = async (conductorData: Omit<Conductor, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return;
+    
     try {
+      // Ensure required fields are present
+      const conductorForSupabase = {
+        nombre: conductorData.nombre || 'Sin nombre',
+        user_id: user.id,
+        activo: conductorData.activo ?? true,
+        estado: conductorData.estado || 'disponible',
+        rfc: conductorData.rfc || null,
+        curp: conductorData.curp || null,
+        num_licencia: conductorData.num_licencia || null,
+        tipo_licencia: conductorData.tipo_licencia || null,
+        vigencia_licencia: conductorData.vigencia_licencia || null,
+        operador_sct: conductorData.operador_sct ?? false,
+        telefono: conductorData.telefono || null,
+        email: conductorData.email || null,
+        direccion: conductorData.direccion || null,
+        residencia_fiscal: conductorData.residencia_fiscal || 'MEX',
+        num_reg_id_trib: conductorData.num_reg_id_trib || null
+      };
+
       const { data, error } = await supabase
         .from('conductores')
-        .insert([conductorData])
+        .insert(conductorForSupabase)
         .select()
         .single();
 
@@ -90,7 +111,7 @@ export function useConductores() {
     }
   };
 
-  const createMultipleConductores = async (conductoresData: Partial<Conductor>[]) => {
+  const createMultipleConductores = async (conductoresData: Array<Omit<Conductor, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!user) return;
     
     setLoading(true);
@@ -99,33 +120,10 @@ export function useConductores() {
       
       // Insert each conductor individually for better error handling
       for (const conductorData of conductoresData) {
-        // Transform to match Supabase schema exactly
-        const conductorForSupabase = {
-          nombre: conductorData.nombre || 'Sin nombre',
-          user_id: user.id,
-          activo: conductorData.activo ?? true,
-          estado: conductorData.estado || 'disponible',
-          rfc: conductorData.rfc || null,
-          curp: conductorData.curp || null,
-          num_licencia: conductorData.num_licencia || null,
-          tipo_licencia: conductorData.tipo_licencia || null,
-          vigencia_licencia: conductorData.vigencia_licencia || null,
-          operador_sct: conductorData.operador_sct ?? false,
-          telefono: conductorData.telefono || null,
-          email: conductorData.email || null,
-          direccion: conductorData.direccion || null,
-          residencia_fiscal: conductorData.residencia_fiscal || 'MEX',
-          num_reg_id_trib: conductorData.num_reg_id_trib || null
-        };
-
-        const { data, error } = await supabase
-          .from('conductores')
-          .insert(conductorForSupabase)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        results.push(data);
+        const result = await createConductor(conductorData);
+        if (result) {
+          results.push(result);
+        }
       }
       
       toast.success(`${results.length} conductores creados exitosamente`);

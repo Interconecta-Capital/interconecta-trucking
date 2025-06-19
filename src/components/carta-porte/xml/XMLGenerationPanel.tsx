@@ -175,9 +175,13 @@ export function XMLGenerationPanel({
   };
 
   const handleGenerarPDF = async () => {
-    const resultado = await generarPDF(cartaPorteData);
-    if (resultado && resultado.success) {
-      console.log('PDF generado exitosamente');
+    try {
+      const resultado = await generarPDF(cartaPorteData);
+      if (resultado && resultado.success) {
+        console.log('PDF generado exitosamente');
+      }
+    } catch (error) {
+      console.error('Error generando PDF:', error);
     }
   };
 
