@@ -13,9 +13,12 @@ interface VehiculoPermitsProps {
     vigencia_permiso?: string;
   };
   onChange: (field: string, value: any) => void;
+  onFieldChange?: <K extends keyof any>(field: K, value: any) => void;
 }
 
-export function VehiculoPermits({ data, onChange }: VehiculoPermitsProps) {
+export function VehiculoPermits({ data, onChange, onFieldChange }: VehiculoPermitsProps) {
+  const handleChange = onFieldChange || onChange;
+  
   const permisos = Array.isArray(data.numero_permisos_adicionales) 
     ? data.numero_permisos_adicionales 
     : data.numero_permisos_adicionales 
@@ -24,18 +27,18 @@ export function VehiculoPermits({ data, onChange }: VehiculoPermitsProps) {
 
   const agregarPermiso = () => {
     const nuevosPermisos = [...permisos, ''];
-    onChange('numero_permisos_adicionales', nuevosPermisos);
+    handleChange('numero_permisos_adicionales', nuevosPermisos);
   };
 
   const actualizarPermiso = (index: number, valor: string) => {
     const nuevosPermisos = [...permisos];
     nuevosPermisos[index] = valor;
-    onChange('numero_permisos_adicionales', nuevosPermisos);
+    handleChange('numero_permisos_adicionales', nuevosPermisos);
   };
 
   const eliminarPermiso = (index: number) => {
     const nuevosPermisos = permisos.filter((_, i) => i !== index);
-    onChange('numero_permisos_adicionales', nuevosPermisos.length === 0 ? undefined : nuevosPermisos);
+    handleChange('numero_permisos_adicionales', nuevosPermisos.length === 0 ? undefined : nuevosPermisos);
   };
 
   return (
@@ -50,7 +53,7 @@ export function VehiculoPermits({ data, onChange }: VehiculoPermitsProps) {
             <Input
               type="date"
               value={data.vigencia_permiso || ''}
-              onChange={(e) => onChange('vigencia_permiso', e.target.value)}
+              onChange={(e) => handleChange('vigencia_permiso', e.target.value)}
             />
           </div>
         </div>
