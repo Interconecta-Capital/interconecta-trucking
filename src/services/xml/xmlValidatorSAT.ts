@@ -1,3 +1,4 @@
+
 import { CartaPorteData } from '@/types/cartaPorte';
 
 export interface ValidationError {
@@ -248,7 +249,7 @@ export class XMLValidatorSAT {
 
     // Validaciones específicas de versión 3.1
     if (data.cartaPorteVersion === '3.1') {
-      if (data.transporteInternacional === 'Sí' || data.transporteInternacional === true) {
+      if (data.transporteInternacional === 'Sí') {
         if (!data.pais_origen_destino) {
           warnings.push('Para transporte internacional se recomienda especificar país de origen/destino');
           details.push({
@@ -354,11 +355,12 @@ export class XMLValidatorSAT {
     const errors: ValidationError[] = [];
     
     if (data.transporteInternacional === 'Sí') {
-      if (!data.entrada_salida_merc) {
+      if (!data.entradaSalidaMerc) {
         errors.push({
-          codigo: 'CCP_TRANSPORT_INT_001',
-          mensaje: 'EntradaSalidaMerc es requerido para transporte internacional',
-          seccion: 'TransporteInternacional'
+          field: 'entradaSalidaMerc',
+          code: 'CCP_TRANSPORT_INT_001',
+          message: 'EntradaSalidaMerc es requerido para transporte internacional',
+          severity: 'error'
         });
       }
     }

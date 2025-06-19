@@ -9,6 +9,7 @@ export interface ValidationSummary {
     mercancias: 'empty' | 'incomplete' | 'complete';
     autotransporte: 'empty' | 'incomplete' | 'complete';
     figuras: 'empty' | 'incomplete' | 'complete';
+    xml: 'empty' | 'incomplete' | 'complete';
   };
   completionPercentage: number;
   totalErrors: number;
@@ -144,14 +145,14 @@ export const useCartaPorteValidation = () => {
     };
   };
 
-  const getValidationSummary = (data: Partial<CartaPorteData>): ValidationSummary => {
+  const getValidationSummary = (data: Partial<CartaPorteData>, xmlGenerado?: string): ValidationSummary => {
     const basicValidation = validateBasic(data);
     const ubicacionesValidation = validateUbicaciones(data.ubicaciones);
     const mercanciasValidation = validateMercancias(data.mercancias);
     const autotransporteValidation = validateAutotransporte(data.autotransporte);
     const figurasValidation = validateFiguras(data.figuras);
 
-    const getSectionStatus = (isValid: boolean, hasData: boolean) => {
+    const getSectionStatus = (isValid: boolean, hasData: boolean): 'empty' | 'incomplete' | 'complete' => {
       if (!hasData) return 'empty';
       return isValid ? 'complete' : 'incomplete';
     };
@@ -162,10 +163,11 @@ export const useCartaPorteValidation = () => {
       mercancias: getSectionStatus(mercanciasValidation.isValid, (data.mercancias?.length || 0) > 0),
       autotransporte: getSectionStatus(autotransporteValidation.isValid, !!data.autotransporte),
       figuras: getSectionStatus(figurasValidation.isValid, (data.figuras?.length || 0) > 0),
+      xml: xmlGenerado ? 'complete' : 'empty' as 'empty' | 'incomplete' | 'complete'
     };
 
     const completedSections = Object.values(sectionStatus).filter(status => status === 'complete').length;
-    const completionPercentage = Math.round((completedSections / 5) * 100);
+    const completionPercentage = Math.round((completedSections / 6) * 100);
 
     const totalErrors = [
       ...basicValidation.errors,
@@ -179,7 +181,7 @@ export const useCartaPorteValidation = () => {
       sectionStatus,
       completionPercentage,
       totalErrors,
-      isFormComplete: completedSections === 5
+      isFormComplete: completedSections === 6
     };
   };
 

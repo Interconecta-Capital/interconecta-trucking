@@ -1,3 +1,4 @@
+
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 export class XMLComplemento {
@@ -63,8 +64,8 @@ export class XMLComplemento {
         ubicacionesXml += `<cartaporte31:Ubicacion TipoUbicacion="${ubicacion.tipo_ubicacion}"`;
         if (ubicacion.rfc) ubicacionesXml += ` RFCRemitenteDestinatario="${ubicacion.rfc}"`;
         if (ubicacion.nombre) ubicacionesXml += ` NombreRemitenteDestinatario="${ubicacion.nombre}"`;
-        if (ubicacion.num_reg_id_trib) ubicacionesXml += ` NumRegIdTrib="${ubicacion.num_reg_id_trib}"`;
-        if (ubicacion.residencia_fiscal) ubicacionesXml += ` ResidenciaFiscal="${ubicacion.residencia_fiscal}"`;
+        if (ubicacion.rfc_remitente_destinatario) ubicacionesXml += ` NumRegIdTrib="${ubicacion.rfc_remitente_destinatario}"`;
+        if (ubicacion.pais && ubicacion.pais !== 'MEX') ubicacionesXml += ` ResidenciaFiscal="${ubicacion.pais}"`;
         ubicacionesXml += '>';
 
         if (ubicacion.domicilio) {
@@ -126,3 +127,6 @@ export class XMLComplemento {
     return complement;
   }
 }
+
+// Export alias for backward compatibility
+export { XMLComplemento as XMLComplementoBuilder };
