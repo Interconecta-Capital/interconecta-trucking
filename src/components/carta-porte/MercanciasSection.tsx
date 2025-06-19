@@ -28,22 +28,25 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     remolques: []
   };
 
-  // FIXED: Ensure all required fields are properly provided for MercanciaCompleta
-  const mercanciasCompletas: MercanciaCompleta[] = data.map(mercancia => ({
-    ...mercancia,
-    descripcion: mercancia.descripcion || 'Sin descripción',
-    cantidad: mercancia.cantidad || 1,
-    clave_unidad: mercancia.clave_unidad || 'KGM',
-    peso_kg: mercancia.peso_kg || 0,
-    valor_mercancia: mercancia.valor_mercancia ?? 0,
-    material_peligroso: mercancia.material_peligroso ?? false
-  }));
+  // Ensure all required fields are properly provided and cast to the expected type
+  const mercanciasParaComponente = data.map(mercancia => {
+    const mercanciaCompleta: MercanciaCompleta = {
+      ...mercancia,
+      descripcion: mercancia.descripcion || 'Sin descripción',
+      cantidad: mercancia.cantidad || 1,
+      clave_unidad: mercancia.clave_unidad || 'KGM',
+      peso_kg: mercancia.peso_kg || 0,
+      valor_mercancia: mercancia.valor_mercancia ?? 0,
+      material_peligroso: mercancia.material_peligroso ?? false
+    };
+    return mercanciaCompleta;
+  });
 
   return (
     <div className="space-y-6">
       <Card>
         <MercanciasSectionOptimizada
-          data={mercanciasCompletas}
+          data={mercanciasParaComponente}
           onChange={onChange}
           onNext={onNext}
           onPrev={onPrev}
@@ -53,7 +56,7 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
       {/* Validador de peso total */}
       {data.length > 0 && (
         <PesoTotalValidator
-          mercancias={mercanciasCompletas}
+          mercancias={mercanciasParaComponente}
           autotransporte={autotransporte || defaultAutotransporte}
           className="mt-4"
         />
