@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { MercanciasSectionOptimizada } from './mercancias/MercanciasSectionOptimizada';
 import { PesoTotalValidator } from './validacion/PesoTotalValidator';
-import { MercanciaCompleta, AutotransporteCompleto } from '@/types/cartaPorte';
+import type { MercanciaCompleta, AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface MercanciasSectionProps {
   data: MercanciaCompleta[];
@@ -29,14 +29,14 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
   };
 
   // FIXED: Ensure all fields are properly typed and valor_mercancia remains optional
-  const mercanciasCompletas = data.map(mercancia => ({
+  const mercanciasCompletas: MercanciaCompleta[] = data.map(mercancia => ({
     ...mercancia,
     descripcion: mercancia.descripcion || 'Sin descripción',
     cantidad: mercancia.cantidad || 1,
     clave_unidad: mercancia.clave_unidad || 'KGM',
     peso_kg: mercancia.peso_kg || 0
     // valor_mercancia se mantiene como está (opcional)
-  })) as MercanciaCompleta[];
+  }));
 
   return (
     <div className="space-y-6">
