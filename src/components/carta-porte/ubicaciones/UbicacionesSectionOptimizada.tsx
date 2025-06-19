@@ -11,6 +11,7 @@ import { UbicacionesSectionHeader } from './UbicacionesSectionHeader';
 import { UbicacionesValidationPanel } from './UbicacionesValidationPanel';
 import { UbicacionesSectionNavigation } from './UbicacionesSectionNavigation';
 import { useUbicacionesManager } from '@/hooks/carta-porte/useUbicacionesManager';
+import { convertToUbicacion, convertToUbicacionCompleta } from './utils/ubicacionTypeConverters';
 
 interface UbicacionesSectionOptimizadaProps {
   ubicaciones: UbicacionCompleta[];
@@ -49,6 +50,15 @@ export function UbicacionesSectionOptimizada({
     ubicaciones.some(u => u.tipo_ubicacion === 'Origen') &&
     ubicaciones.some(u => u.tipo_ubicacion === 'Destino') &&
     (currentDistanceTotal || distanciaTotal || 0) > 0;
+
+  // Convert editingUbicacion from Ubicacion to UbicacionCompleta for the dialog
+  const editingUbicacionCompleta = editingUbicacion ? convertToUbicacionCompleta(editingUbicacion) : null;
+
+  // Handle save from dialog - convert from UbicacionCompleta to Ubicacion for the manager
+  const handleDialogSave = (ubicacionCompleta: UbicacionCompleta) => {
+    const ubicacion = convertToUbicacion(ubicacionCompleta);
+    handleSaveUbicacion(ubicacion);
+  };
 
   return (
     <div className="space-y-6">
@@ -120,8 +130,8 @@ export function UbicacionesSectionOptimizada({
       <UbicacionFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        ubicacion={editingUbicacion}
-        onSave={handleSaveUbicacion}
+        ubicacion={editingUbicacionCompleta}
+        onSave={handleDialogSave}
       />
     </div>
   );
