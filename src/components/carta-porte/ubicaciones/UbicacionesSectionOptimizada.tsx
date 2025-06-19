@@ -60,6 +60,12 @@ export function UbicacionesSectionOptimizada({
     handleSaveUbicacion(ubicacion);
   };
 
+  // Handle edit - convert from UbicacionCompleta to Ubicacion for the manager
+  const handleEditUbicacionWrapper = (ubicacionCompleta: UbicacionCompleta) => {
+    const ubicacion = convertToUbicacion(ubicacionCompleta);
+    handleEditUbicacion(ubicacion);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -85,7 +91,7 @@ export function UbicacionesSectionOptimizada({
                     key={ubicacion.id}
                     ubicacion={ubicacion}
                     index={index}
-                    onEdit={() => handleEditUbicacion(ubicacion)}
+                    onEdit={() => handleEditUbicacionWrapper(ubicacion)}
                     onDelete={() => handleDeleteUbicacion(ubicacion.id || '')}
                   />
                 ))}
