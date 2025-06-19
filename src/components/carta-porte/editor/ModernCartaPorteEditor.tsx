@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -227,20 +225,19 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     }
 
     // For all other sections, use the generic props pattern
-    const commonProps = {
-      data: activeSection === 'configuracion' ? configuracion : 
-            activeSection === 'ubicaciones' ? ubicaciones :
-            activeSection === 'mercancias' ? mercancias :
-            activeSection === 'autotransporte' ? (autotransporte || defaultAutotransporte) :
-            activeSection === 'figuras' ? figuras : null,
-      onChange: activeSection === 'configuracion' ? handleConfiguracionChange :
-                activeSection === 'ubicaciones' ? setUbicaciones :
-                activeSection === 'mercancias' ? setMercancias :
-                activeSection === 'autotransporte' ? setAutotransporte :
-                activeSection === 'figuras' ? setFiguras : () => {}
-    };
+    if (activeSection === 'configuracion') {
+      return <Component data={configuracion} onChange={handleConfiguracionChange} />;
+    } else if (activeSection === 'ubicaciones') {
+      return <Component data={ubicaciones} onChange={setUbicaciones} />;
+    } else if (activeSection === 'mercancias') {
+      return <Component data={mercancias} onChange={setMercancias} />;
+    } else if (activeSection === 'autotransporte') {
+      return <Component data={autotransporte || defaultAutotransporte} onChange={setAutotransporte} />;
+    } else if (activeSection === 'figuras') {
+      return <Component data={figuras} onChange={setFiguras} />;
+    }
 
-    return <Component {...commonProps} />;
+    return null;
   };
 
   if (!borradorCargado && documentId) {
@@ -428,4 +425,3 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     </div>
   );
 }
-
