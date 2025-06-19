@@ -72,7 +72,7 @@ describe('useCartaPorteMappers', () => {
   it('should convert form data to carta porte data', () => {
     const { result } = renderHook(() => useCartaPorteMappers());
     
-    const cartaPorteData = result.current.formDataToCartaPorteData();
+    const cartaPorteData = result.current.formDataToCartaPorteData(result.current.cachedFormData);
     
     expect(cartaPorteData.version).toBe('3.1');
     expect(cartaPorteData.cartaPorteVersion).toBe('3.1');
