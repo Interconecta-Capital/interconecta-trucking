@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +17,8 @@ import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection'
 import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
 import { PDFGenerationPanel } from './PDFGenerationPanel';
+import { XMLCartaPorteGenerator } from '@/hooks/xml/XMLCartaPorteGenerator';
+import { toast } from 'react-toastify';
 
 interface XMLGenerationPanelProps {
   cartaPorteData: CartaPorteData;
@@ -41,6 +42,7 @@ export function XMLGenerationPanel({
 }: XMLGenerationPanelProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [autoTimbrado, setAutoTimbrado] = useState(true);
+  const [generatedXML, setGeneratedXML] = useState<string | null>(null);
   
   const {
     isGenerating,
@@ -100,21 +102,25 @@ export function XMLGenerationPanel({
     }
   }, [autoTimbrado, cartaPorteCompleta, xmlActual, xmlTimbrado, isTimbring]);
 
-  const handleGenerarXML = async () => {
-    const resultado = await generarXML(cartaPorteData);
-    if (resultado.success && resultado.xml) {
-      // Notificar al componente padre que se generó XML
-      if (onXMLGenerated) {
-        onXMLGenerated(resultado.xml);
-      }
+  const handleGenerateXML = async () => {
+    if (!cartaPorteData) return;
+    
+    setIsGenerating(true);
+    try {
+      const result = await XMLCartaPorteGenerator.generarXML(cartaPorteData);
       
-      // Agregar evento de tracking
-      if (cartaPorteId) {
-        await agregarEvento({
-          evento: 'xml_generado',
-          descripcion: 'XML de Carta Porte generado correctamente'
-        });
+      if (result.success && result.xml) {
+        setGeneratedXML(result.xml);
+        onXMLGenerated?.(result.xml);
+        toast.success('XML generado correctamente');
+      } else {
+        toast.error('Error al generar XML: ' + (result.errors?.join(', ') || 'Error desconocido'));
       }
+    } catch (error) {
+      console.error('Error generando XML:', error);
+      toast.error('Error al generar XML');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -206,9 +212,9 @@ export function XMLGenerationPanel({
             <XMLSection
               isGenerating={isGenerating}
               xmlGenerado={xmlActual}
-              onGenerarXML={handleGenerarXML}
+              onGenerarXML={handleGenerateXML}
               onDescargarXML={() => descargarXML('generado')}
-              onRegenerarXML={handleGenerarXML}
+              onRegenerarXML={handleGenerateXML}
             />
 
             <XMLPreviewSection xmlGenerado={xmlActual} />

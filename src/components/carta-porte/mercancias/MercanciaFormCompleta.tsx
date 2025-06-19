@@ -30,6 +30,7 @@ const mercanciaSchema = z.object({
   regimen_aduanero: z.string().optional(),
   cve_material_peligroso: z.string().optional(),
   descripcion_detallada: z.string().optional(),
+  tipo_embalaje: z.string().optional()
 });
 
 type MercanciaFormData = z.infer<typeof mercanciaSchema>;
@@ -62,17 +63,22 @@ export function MercanciaFormCompleta({
     formState: { errors, isSubmitting }
   } = useForm<MercanciaFormData>({
     resolver: zodResolver(mercanciaSchema),
-    defaultValues: mercancia || {
-      id: crypto.randomUUID(),
-      descripcion: '',
-      bienes_transp: '',
-      clave_unidad: '',
-      cantidad: 0,
-      peso_kg: 0,
-      valor_mercancia: 0,
-      material_peligroso: false,
-      especie_protegida: false,
-      moneda: 'MXN'
+    defaultValues: {
+      id: mercancia?.id || crypto.randomUUID(),
+      descripcion: mercancia?.descripcion || '',
+      bienes_transp: mercancia?.bienes_transp || '',
+      clave_unidad: mercancia?.clave_unidad || '',
+      cantidad: mercancia?.cantidad || 0,
+      peso_kg: mercancia?.peso_kg || 0,
+      valor_mercancia: mercancia?.valor_mercancia || 0,
+      material_peligroso: mercancia?.material_peligroso || false,
+      especie_protegida: mercancia?.especie_protegida || false,
+      moneda: mercancia?.moneda || 'MXN',
+      fraccion_arancelaria: mercancia?.fraccion_arancelaria || '',
+      regimen_aduanero: mercancia?.regimen_aduanero || '',
+      cve_material_peligroso: mercancia?.cve_material_peligroso || '',
+      descripcion_detallada: mercancia?.descripcion_detallada || '',
+      tipo_embalaje: mercancia?.tipo_embalaje || ''
     }
   });
 

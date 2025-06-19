@@ -21,6 +21,7 @@ import {
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { toast } from 'sonner';
 import { UUIDService } from '@/services/uuid/UUIDService';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 // Import section components
 import { ConfiguracionGeneralSection } from './sections/ConfiguracionGeneralSection';
@@ -171,7 +172,18 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     poliza_med_ambiente: '',
     peso_bruto_vehicular: 0,
     tipo_carroceria: '',
-    remolques: []
+    remolques: [],
+    marca_vehiculo: '',
+    modelo_vehiculo: '',
+    numero_serie_vin: '',
+    vigencia_permiso: '',
+    numero_permisos_adicionales: [],
+    capacidad_carga: 0,
+    dimensiones: {
+      largo: 0,
+      ancho: 0,
+      alto: 0
+    }
   };
 
   const renderActiveSection = () => {

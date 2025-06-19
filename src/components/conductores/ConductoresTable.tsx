@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,12 @@ import { Conductor } from '@/hooks/useConductores';
 interface ConductoresTableProps {
   conductores: Conductor[];
   loading: boolean;
+  onView?: (conductor: Conductor) => void;
+  onEdit?: (conductor: Conductor) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function ConductoresTable({ conductores, loading }: ConductoresTableProps) {
+export function ConductoresTable({ conductores, loading, onView, onEdit, onDelete }: ConductoresTableProps) {
   if (loading) {
     return (
       <Card>
@@ -61,15 +63,28 @@ export function ConductoresTable({ conductores, loading }: ConductoresTableProps
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => onView?.(conductor)}
+              >
                 <Eye className="h-4 w-4 mr-1" />
                 Ver
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => onEdit?.(conductor)}
+              >
                 <Edit className="h-4 w-4 mr-1" />
                 Editar
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => onDelete?.(conductor.id)}
+                disabled={conductor.estado === 'en_viaje'}
+              >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Eliminar
               </Button>
