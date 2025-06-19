@@ -38,6 +38,8 @@ export class CartaPorteProfessionalPDF {
     white: '#ffffff'
   };
 
+  private static readonly LOGO_URL = '/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png';
+
   private static readonly LAYOUT = {
     margin: 20,
     headerHeight: 60,
@@ -47,17 +49,40 @@ export class CartaPorteProfessionalPDF {
     qrSize: 76 // 2.7cm aprox
   };
 
+  private static async fetchAsDataURL(url: string): Promise<string> {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Error leyendo archivo'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error cargando recurso como DataURL:', error);
+      return '';
+    }
+  }
+
+  private static async loadLogo(): Promise<string> {
+    return this.fetchAsDataURL(this.LOGO_URL);
+  }
+
   static async generateProfessionalPDF(
-    cartaPorteData: CartaPorteData, 
+    cartaPorteData: CartaPorteData,
     options: ProfessionalPDFOptions = {}
   ): Promise<ProfessionalPDFResult> {
     try {
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
-      
+
       let yPosition = this.LAYOUT.margin;
       let currentPage = 1;
+
+      // Cargar logo de la empresa
+      const logoData = await this.loadLogo();
 
       // Generar código QR si tenemos los datos necesarios
       let qrCodeDataURL = '';
@@ -66,7 +91,15 @@ export class CartaPorteProfessionalPDF {
       }
 
       // 1. ENCABEZADO PRINCIPAL
-      yPosition = this.addDocumentHeader(doc, pageWidth, yPosition, options.datosTimbre, qrCodeDataURL);
+      yPosition = this.addDocumentHeader(
+        doc,
+        pageWidth,
+        yPosition,
+        cartaPorteData,
+        options.datosTimbre,
+        qrCodeDataURL,
+        logoData
+      );
 
       // 2. INFORMACIÓN GENERAL DEL CFDI
       yPosition = this.addGeneralInfo(doc, pageWidth, yPosition, cartaPorteData, options.datosTimbre);
@@ -88,6 +121,9 @@ export class CartaPorteProfessionalPDF {
 
       // 8. PIE DE PÁGINA CON SELLOS DIGITALES
       this.addFooterWithSeals(doc, pageWidth, pageHeight, options.datosTimbre);
+
+      // Numerar páginas
+      this.addPageNumbers(doc);
 
       const pages = typeof (doc as any).getNumberOfPages === 'function'
         ? (doc as any).getNumberOfPages()
@@ -138,7 +174,15 @@ export class CartaPorteProfessionalPDF {
     }
   }
 
-  private static addDocumentHeader(doc: jsPDF, pageWidth: number, yPosition: number, datosTimbre?: any, qrCode?: string): number {
+  private static addDocumentHeader(
+    doc: jsPDF,
+    pageWidth: number,
+    yPosition: number,
+    cartaPorteData: CartaPorteData,
+    datosTimbre?: any,
+    qrCode?: string,
+    logo?: string
+  ): number {
     // Fondo del header
     doc.setFillColor(247, 250, 252); // background
     doc.rect(this.LAYOUT.margin, yPosition - 5, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'F');
@@ -148,6 +192,15 @@ export class CartaPorteProfessionalPDF {
     doc.setLineWidth(0.5);
     doc.rect(this.LAYOUT.margin, yPosition - 5, pageWidth - (this.LAYOUT.margin * 2), this.LAYOUT.headerHeight, 'S');
 
+    // Logo
+    if (logo) {
+      try {
+        doc.addImage(logo, 'PNG', this.LAYOUT.margin + 2, yPosition, 30, 15);
+      } catch (error) {
+        console.error('Error agregando logo al PDF:', error);
+      }
+    }
+
     // Título principal
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
@@ -156,11 +209,12 @@ export class CartaPorteProfessionalPDF {
     doc.text('CON COMPLEMENTO CARTA PORTE 3.1', pageWidth / 2, yPosition + 20, { align: 'center' });
 
     // Datos fiscales clave
+    const fechaEmision = cartaPorteData.ubicaciones?.find(u => u.tipo_ubicacion === 'Origen')?.fecha_hora_salida_llegada;
     if (datosTimbre) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(26, 32, 44); // text
-      
+
       let infoY = yPosition + 35;
       if (datosTimbre.uuid) {
         doc.text(`UUID (Folio Fiscal): ${datosTimbre.uuid}`, this.LAYOUT.margin + 5, infoY);
@@ -170,8 +224,36 @@ export class CartaPorteProfessionalPDF {
         doc.text(`IdCCP: ${datosTimbre.idCCP}`, this.LAYOUT.margin + 5, infoY);
         infoY += 5;
       }
+      if (cartaPorteData.folio) {
+        doc.text(`Folio Interno: ${cartaPorteData.folio}`, this.LAYOUT.margin + 5, infoY);
+        infoY += 5;
+      }
+      if (datosTimbre.noCertificadoSAT) {
+        doc.text(`No. Certificado SAT: ${datosTimbre.noCertificadoSAT}`, this.LAYOUT.margin + 5, infoY);
+        infoY += 5;
+      }
+      if (datosTimbre.noCertificadoEmisor) {
+        doc.text(`No. Certificado Emisor: ${datosTimbre.noCertificadoEmisor}`, this.LAYOUT.margin + 5, infoY);
+        infoY += 5;
+      }
+      if (fechaEmision) {
+        doc.text(`Fecha Emisión: ${new Date(fechaEmision).toLocaleString('es-MX')}`, this.LAYOUT.margin + 5, infoY);
+        infoY += 5;
+      }
       if (datosTimbre.fechaTimbrado) {
         doc.text(`Fecha de Timbrado: ${new Date(datosTimbre.fechaTimbrado).toLocaleString('es-MX')}`, this.LAYOUT.margin + 5, infoY);
+      }
+    } else if (cartaPorteData.folio || fechaEmision) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(26, 32, 44);
+      let infoY = yPosition + 35;
+      if (cartaPorteData.folio) {
+        doc.text(`Folio Interno: ${cartaPorteData.folio}`, this.LAYOUT.margin + 5, infoY);
+        infoY += 5;
+      }
+      if (fechaEmision) {
+        doc.text(`Fecha Emisión: ${new Date(fechaEmision).toLocaleString('es-MX')}`, this.LAYOUT.margin + 5, infoY);
       }
     }
 
@@ -379,19 +461,22 @@ export class CartaPorteProfessionalPDF {
       
       if (datosTimbre.selloDigital) {
         doc.text('Sello Digital del CFDI:', this.LAYOUT.margin, sealY);
-        doc.text(datosTimbre.selloDigital, this.LAYOUT.margin, sealY + 3);
+        const sello = doc.splitTextToSize(datosTimbre.selloDigital, pageWidth - this.LAYOUT.margin * 2);
+        doc.text(sello, this.LAYOUT.margin, sealY + 3);
         sealY += 8;
       }
       
       if (datosTimbre.selloSAT) {
         doc.text('Sello Digital del SAT:', this.LAYOUT.margin, sealY);
-        doc.text(datosTimbre.selloSAT, this.LAYOUT.margin, sealY + 3);
+        const selloSAT = doc.splitTextToSize(datosTimbre.selloSAT, pageWidth - this.LAYOUT.margin * 2);
+        doc.text(selloSAT, this.LAYOUT.margin, sealY + 3);
         sealY += 8;
       }
       
       if (datosTimbre.cadenaOriginal) {
         doc.text('Cadena Original del Complemento:', this.LAYOUT.margin, sealY);
-        doc.text(datosTimbre.cadenaOriginal, this.LAYOUT.margin, sealY + 3);
+        const cadena = doc.splitTextToSize(datosTimbre.cadenaOriginal, pageWidth - this.LAYOUT.margin * 2);
+        doc.text(cadena, this.LAYOUT.margin, sealY + 3);
       }
     }
 
@@ -483,6 +568,18 @@ export class CartaPorteProfessionalPDF {
     });
     
     return yPosition;
+  }
+
+  private static addPageNumbers(doc: jsPDF): void {
+    const totalPages = (doc as any).getNumberOfPages ? (doc as any).getNumberOfPages() : (doc.internal.pages?.length || 1);
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(74, 85, 104);
+      const text = `Página ${i} de ${totalPages}`;
+      doc.text(text, doc.internal.pageSize.width - this.LAYOUT.margin, doc.internal.pageSize.height - 5, { align: 'right' });
+    }
   }
 
   private static checkPageBreak(doc: jsPDF, yPosition: number, pageHeight: number, requiredSpace: number): number {
