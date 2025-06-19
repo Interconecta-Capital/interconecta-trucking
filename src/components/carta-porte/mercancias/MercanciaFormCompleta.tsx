@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -44,8 +43,16 @@ export function MercanciaFormCompleta({
       cve_material_peligroso: '',
       moneda: 'MXN',
       fraccion_arancelaria: '',
-      embalaje: '',
+      tipo_embalaje: '',
+      material_embalaje: '',
       peso_bruto_total: 0,
+      unidad_peso_bruto: 'KGM',
+      dimensiones: {
+        largo: 0,
+        ancho: 0,
+        alto: 0,
+        unidad: 'CM'
+      }
     }
   });
   
@@ -86,7 +93,13 @@ export function MercanciaFormCompleta({
   const handleAISuggestion = (suggestion: any) => {
     if (suggestion.data) {
       Object.entries(suggestion.data).forEach(([key, value]) => {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        if (key === 'dimensiones' && typeof value === 'object') {
+          form.setValue('dimensiones', value as any);
+        } else if (typeof value === 'string') {
+          form.setValue(key as keyof MercanciaCompleta, value);
+        } else if (typeof value === 'number') {
+          form.setValue(key as keyof MercanciaCompleta, value);
+        } else if (typeof value === 'boolean') {
           form.setValue(key as keyof MercanciaCompleta, value);
         }
       });
@@ -311,7 +324,7 @@ export function MercanciaFormCompleta({
               {esComercioExterior && (
                 <FormField
                   control={form.control}
-                  name="uuid_comercio_ext"
+                  name="uuid_comercio_exterior"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>UUID Comercio Exterior</FormLabel>
@@ -340,7 +353,7 @@ export function MercanciaFormCompleta({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="embalaje"
+                  name="tipo_embalaje"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Embalaje</FormLabel>
@@ -364,6 +377,25 @@ export function MercanciaFormCompleta({
 
                 <FormField
                   control={form.control}
+                  name="material_embalaje"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material del Embalaje</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Ej: Cartón, Plástico, Madera"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="peso_bruto_total"
                   render={({ field }) => (
                     <FormItem>
@@ -376,6 +408,130 @@ export function MercanciaFormCompleta({
                           min="0"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="unidad_peso_bruto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unidad Peso Bruto</FormLabel>
+                      <FormControl>
+                        <CatalogoSelector
+                          items={unidades}
+                          loading={loadingUnidades}
+                          placeholder="Buscar unidad..."
+                          value={field.value || 'KGM'}
+                          onValueChange={field.onChange}
+                          onSearchChange={setUnidadSearch}
+                          searchValue={unidadSearch}
+                          allowManualInput={true}
+                          manualInputPlaceholder="Escribir unidad manualmente"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Dimensiones */}
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <Ruler className="h-4 w-4" />
+                Dimensiones del Embalaje
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="dimensiones.largo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Largo</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="dimensiones.ancho"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ancho</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="dimensiones.alto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Alto</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="dimensiones.unidad"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unidad</FormLabel>
+                      <FormControl>
+                        <CatalogoSelector
+                          items={[
+                            { value: 'CM', label: 'CM - Centímetros' },
+                            { value: 'M', label: 'M - Metros' },
+                            { value: 'IN', label: 'IN - Pulgadas' },
+                            { value: 'FT', label: 'FT - Pies' }
+                          ]}
+                          placeholder="Unidad"
+                          value={field.value || 'CM'}
+                          onValueChange={field.onChange}
+                          allowManualInput={false}
                         />
                       </FormControl>
                       <FormMessage />

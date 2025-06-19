@@ -2,266 +2,240 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CartaPorteData } from '@/types/cartaPorte';
 
-export interface BorradorCartaPorte {
+export interface BorradorData {
   id: string;
-  user_id: string;
-  datos_formulario: any;
-  status: string;
-  nombre_borrador?: string;
-  descripcion?: string;
-  created_at: string;
-  updated_at: string;
+  datosFormulario: CartaPorteData;
+  ultimaModificacion: string;
+  version: string;
 }
 
-export class BorradorService {
-  static async guardarBorrador(
-    data: CartaPorteData,
-    currentCartaPorteId?: string,
-    nombreBorrador?: string,
-    descripcion?: string
-  ): Promise<string | null> {
+class BorradorServiceClass {
+  private autoSaveInterval: NodeJS.Timeout | null = null;
+
+  async guardarBorrador(data: CartaPorteData, cartaPorteId?: string): Promise<string | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      console.log('[BorradorService] Guardando borrador...', { cartaPorteId, hasData: !!data });
+
+      const usuario = await supabase.auth.getUser();
+      if (!usuario.data.user) {
         throw new Error('Usuario no autenticado');
       }
 
-      if (currentCartaPorteId) {
-        // Update existing
-        const { data: updated, error } = await supabase
-          .from('cartas_porte')
-          .update({
-            datos_formulario: data as any,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentCartaPorteId)
-          .eq('usuario_id', user.id)
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        return updated?.id || currentCartaPorteId;
-      } else {
-        // Create new
-        const { data: created, error } = await supabase
-          .from('cartas_porte')
-          .insert({
-            usuario_id: user.id,
-            datos_formulario: data as any,
-            status: 'borrador',
-            rfc_emisor: data.rfcEmisor || '',
-            rfc_receptor: data.rfcReceptor || '',
-            nombre_emisor: nombreBorrador || `Borrador ${new Date().toLocaleDateString()}`,
-            nombre_receptor: descripcion || 'Borrador guardado automáticamente'
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        return created?.id || null;
-      }
-    } catch (error) {
-      console.error('Error guardando borrador:', error);
-      return null;
-    }
-  }
-
-  static async cargarBorrador(borradorId: string): Promise<{ success: boolean; data?: CartaPorteData; error?: string }> {
-    try {
-      const { data: borrador, error } = await supabase
-        .from('cartas_porte')
-        .select('datos_formulario')
-        .eq('id', borradorId)
-        .eq('status', 'borrador')
-        .single();
-
-      if (error) throw error;
-      if (!borrador) throw new Error('Borrador no encontrado');
-
-      // Safely parse the datos_formulario with type assertion
-      let cartaPorteData: CartaPorteData;
-      
-      if (typeof borrador.datos_formulario === 'string') {
-        cartaPorteData = JSON.parse(borrador.datos_formulario);
-      } else if (borrador.datos_formulario && typeof borrador.datos_formulario === 'object') {
-        cartaPorteData = {
-          version: '3.1',
-          ...borrador.datos_formulario
-        } as CartaPorteData;
-      } else {
-        throw new Error('Formato de datos inválido en el borrador');
-      }
-
-      // Ensure required fields are present
-      if (!cartaPorteData.version) {
-        cartaPorteData.version = '3.1';
-      }
-
-      return { success: true, data: cartaPorteData };
-    } catch (error) {
-      console.error('Error cargando borrador:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido' 
-      };
-    }
-  }
-
-  static async listarBorradores(): Promise<{ success: boolean; borradores?: BorradorCartaPorte[]; error?: string }> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      const { data: borradores, error } = await supabase
-        .from('cartas_porte')
-        .select(`
-          id, 
-          usuario_id, 
-          datos_formulario, 
-          status, 
-          nombre_emisor, 
-          nombre_receptor, 
-          created_at, 
-          updated_at
-        `)
-        .eq('usuario_id', user.id)
-        .eq('status', 'borrador')
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      const mappedBorradores: BorradorCartaPorte[] = (borradores || []).map(item => ({
-        id: item.id,
-        user_id: item.usuario_id,
-        datos_formulario: item.datos_formulario,
-        status: item.status,
-        nombre_borrador: item.nombre_emisor,
-        descripcion: item.nombre_receptor,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      return { success: true, borradores: mappedBorradores };
-    } catch (error) {
-      console.error('Error listando borradores:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido' 
-      };
-    }
-  }
-
-  static async eliminarBorrador(borradorId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase
-        .from('cartas_porte')
-        .delete()
-        .eq('id', borradorId)
-        .eq('status', 'borrador');
-
-      if (error) throw error;
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error eliminando borrador:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido' 
-      };
-    }
-  }
-
-  static async actualizarBorrador(
-    borradorId: string,
-    data: CartaPorteData,
-    nombreBorrador?: string,
-    descripcion?: string
-  ): Promise<{ success: boolean; borrador?: BorradorCartaPorte; error?: string }> {
-    try {
-      const updateData: any = {
-        datos_formulario: data as any,
+      const borradorData = {
+        id: cartaPorteId || crypto.randomUUID(),
+        usuario_id: usuario.data.user.id,
+        datos_formulario: data as any, // Cast to any for Supabase Json compatibility
+        estado: 'borrador',
+        version_carta_porte: data.cartaPorteVersion || '3.1',
+        rfc_emisor: data.rfcEmisor || '',
+        rfc_receptor: data.rfcReceptor || '',
+        nombre_emisor: data.nombreEmisor || '',
+        nombre_receptor: data.nombreReceptor || '',
         updated_at: new Date().toISOString()
       };
 
-      if (nombreBorrador) updateData.nombre_emisor = nombreBorrador;
-      if (descripcion) updateData.nombre_receptor = descripcion;
+      // Si ya existe el ID, hacer UPDATE, si no, INSERT
+      if (cartaPorteId) {
+        const { data: result, error } = await supabase
+          .from('cartas_porte')
+          .update(borradorData)
+          .eq('id', cartaPorteId)
+          .eq('usuario_id', usuario.data.user.id)
+          .select('id')
+          .single();
 
-      const { data: borrador, error } = await supabase
+        if (error) {
+          console.error('Error actualizando borrador:', error);
+          // Si no existe, crear nuevo
+          if (error.code === 'PGRST116') {
+            const { data: newResult, error: insertError } = await supabase
+              .from('cartas_porte')
+              .insert(borradorData)
+              .select('id')
+              .single();
+
+            if (insertError) {
+              throw insertError;
+            }
+            return newResult?.id || null;
+          }
+          throw error;
+        }
+        return result?.id || null;
+      } else {
+        const { data: result, error } = await supabase
+          .from('cartas_porte')
+          .insert(borradorData)
+          .select('id')
+          .single();
+
+        if (error) {
+          throw error;
+        }
+        return result?.id || null;
+      }
+    } catch (error) {
+      console.error('[BorradorService] Error guardando borrador:', error);
+      
+      // Fallback a localStorage
+      try {
+        const fallbackData = {
+          id: cartaPorteId || crypto.randomUUID(),
+          datosFormulario: data,
+          ultimaModificacion: new Date().toISOString(),
+          version: '3.1'
+        };
+        localStorage.setItem(`carta-porte-borrador-${fallbackData.id}`, JSON.stringify(fallbackData));
+        console.log('✅ Borrador guardado en localStorage como fallback');
+        return fallbackData.id;
+      } catch (storageError) {
+        console.error('Error guardando en localStorage:', storageError);
+        throw error;
+      }
+    }
+  }
+
+  async cargarBorrador(cartaPorteId: string): Promise<BorradorData | null> {
+    try {
+      console.log('[BorradorService] Cargando borrador:', cartaPorteId);
+
+      const usuario = await supabase.auth.getUser();
+      if (!usuario.data.user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      const { data, error } = await supabase
         .from('cartas_porte')
-        .update(updateData)
-        .eq('id', borradorId)
-        .eq('status', 'borrador')
-        .select(`
-          id, 
-          usuario_id, 
-          datos_formulario, 
-          status, 
-          nombre_emisor, 
-          nombre_receptor, 
-          created_at, 
-          updated_at
-        `)
+        .select('*')
+        .eq('id', cartaPorteId)
+        .eq('usuario_id', usuario.data.user.id)
         .single();
 
-      if (error) throw error;
-
-      const mappedBorrador: BorradorCartaPorte = {
-        id: borrador.id,
-        user_id: borrador.usuario_id,
-        datos_formulario: borrador.datos_formulario,
-        status: borrador.status,
-        nombre_borrador: borrador.nombre_emisor,
-        descripcion: borrador.nombre_receptor,
-        created_at: borrador.created_at,
-        updated_at: borrador.updated_at
-      };
-
-      return { success: true, borrador: mappedBorrador };
-    } catch (error) {
-      console.error('Error actualizando borrador:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido' 
-      };
-    }
-  }
-
-  // Local storage methods for fallback
-  static cargarUltimoBorrador(): { datosFormulario: CartaPorteData; cartaPorteId?: string } | null {
-    try {
-      const saved = localStorage.getItem('carta_porte_borrador');
-      if (saved) {
-        return JSON.parse(saved);
+      if (error) {
+        console.error('Error cargando de Supabase:', error);
+        
+        // Fallback a localStorage
+        const fallbackData = localStorage.getItem(`carta-porte-borrador-${cartaPorteId}`);
+        if (fallbackData) {
+          const parsed = JSON.parse(fallbackData);
+          console.log('✅ Borrador cargado desde localStorage');
+          return parsed;
+        }
+        
+        return null;
       }
-      return null;
-    } catch {
+
+      return {
+        id: data.id,
+        datosFormulario: data.datos_formulario as CartaPorteData,
+        ultimaModificacion: data.updated_at,
+        version: data.version_carta_porte || '3.1'
+      };
+    } catch (error) {
+      console.error('[BorradorService] Error cargando borrador:', error);
       return null;
     }
   }
 
-  static guardarBorradorAutomatico(data: CartaPorteData, cartaPorteId?: string): void {
+  // Método para cargar el último borrador desde localStorage
+  cargarUltimoBorrador(): { datosFormulario: CartaPorteData; cartaPorteId?: string } | null {
     try {
-      localStorage.setItem('carta_porte_borrador', JSON.stringify({
+      const borradorKey = 'carta_porte_borrador';
+      const borrador = localStorage.getItem(borradorKey);
+      
+      if (borrador) {
+        const parsed = JSON.parse(borrador);
+        return {
+          datosFormulario: parsed.datosFormulario || parsed,
+          cartaPorteId: parsed.id
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error cargando último borrador:', error);
+      return null;
+    }
+  }
+
+  // Método para guardado automático síncrono
+  guardarBorradorAutomatico(data: CartaPorteData, cartaPorteId?: string): void {
+    try {
+      const fallbackData = {
+        id: cartaPorteId || crypto.randomUUID(),
         datosFormulario: data,
-        cartaPorteId,
-        timestamp: Date.now()
-      }));
+        ultimaModificacion: new Date().toISOString(),
+        version: '3.1'
+      };
+      
+      localStorage.setItem('carta_porte_borrador', JSON.stringify(fallbackData));
+      console.log('✅ Borrador guardado automáticamente en localStorage');
     } catch (error) {
-      console.error('Error guardando en localStorage:', error);
+      console.error('Error en guardado automático:', error);
     }
   }
 
-  static limpiarBorrador(cartaPorteId?: string): void {
+  async limpiarBorrador(cartaPorteId: string): Promise<void> {
     try {
-      if (cartaPorteId) {
-        // If we have an ID, we could mark it as cleaned in the database
-        // For now, just clear localStorage
+      const usuario = await supabase.auth.getUser();
+      if (!usuario.data.user) {
+        throw new Error('Usuario no autenticado');
       }
+
+      const { error } = await supabase
+        .from('cartas_porte')
+        .delete()
+        .eq('id', cartaPorteId)
+        .eq('usuario_id', usuario.data.user.id);
+
+      if (error) {
+        console.error('Error eliminando de Supabase:', error);
+      }
+
+      // También limpiar localStorage
+      localStorage.removeItem(`carta-porte-borrador-${cartaPorteId}`);
       localStorage.removeItem('carta_porte_borrador');
+      
+      console.log('✅ Borrador eliminado');
     } catch (error) {
-      console.error('Error limpiando borrador:', error);
+      console.error('[BorradorService] Error limpiando borrador:', error);
+      throw error;
+    }
+  }
+
+  iniciarGuardadoAutomatico(
+    onSaved: (cartaPorteId: string | null) => void,
+    getData: () => CartaPorteData,
+    getCartaPorteId: () => string | undefined,
+    intervalMs: number = 30000
+  ): NodeJS.Timeout {
+    console.log('[BorradorService] Iniciando auto-guardado cada', intervalMs, 'ms');
+    
+    this.autoSaveInterval = setInterval(async () => {
+      try {
+        const data = getData();
+        const cartaPorteId = getCartaPorteId();
+        
+        if (data && cartaPorteId) {
+          const savedId = await this.guardarBorrador(data, cartaPorteId);
+          onSaved(savedId);
+          console.log('🔄 Auto-guardado completado:', savedId);
+        }
+      } catch (error) {
+        console.error('❌ Error en auto-guardado:', error);
+      }
+    }, intervalMs);
+
+    return this.autoSaveInterval;
+  }
+
+  detenerGuardadoAutomatico(): void {
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+      console.log('⏹️ Auto-guardado detenido');
     }
   }
 }
+
+export const BorradorService = new BorradorServiceClass();

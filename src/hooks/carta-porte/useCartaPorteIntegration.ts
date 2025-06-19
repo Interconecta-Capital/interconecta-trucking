@@ -1,80 +1,129 @@
 
-import { useState, useCallback } from 'react';
-import { AutotransporteCompleto } from '@/types/cartaPorte';
+import { useCallback } from 'react';
+import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
+import { useCartaPorteSync } from './useCartaPorteSync';
+import { supabase } from '@/integrations/supabase/client';
 
-export const useCartaPorteIntegration = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface UseCartaPorteIntegrationOptions {
+  formData: CartaPorteFormData;
+  currentCartaPorteId?: string;
+  isLoading: boolean;
+  isCreating: boolean;
+  isUpdating: boolean;
+  setFormData: (data: CartaPorteFormData) => void;
+  setCurrentCartaPorteId: (id: string | undefined) => void;
+}
 
-  const getDefaultAutotransporte = (): AutotransporteCompleto => ({
-    placa_vm: '',
-    anio_modelo_vm: new Date().getFullYear(),
-    config_vehicular: '',
-    perm_sct: '',
-    num_permiso_sct: '',
-    asegura_resp_civil: '',
-    poliza_resp_civil: '',
-    peso_bruto_vehicular: 0,
-    capacidad_carga: 0,
-    remolques: []
+export const useCartaPorteIntegration = ({
+  formData,
+  currentCartaPorteId,
+  isLoading,
+  isCreating,
+  isUpdating,
+  setFormData,
+  setCurrentCartaPorteId,
+}: UseCartaPorteIntegrationOptions) => {
+  const { 
+    formDataToCartaPorteData, 
+    cartaPorteDataToFormData,
+  } = useCartaPorteMappers();
+  
+  const { updateCartaPorte } = useCartaPorteSync({
+    formData,
+    currentCartaPorteId,
+    isLoading,
+    setFormData,
+    setCurrentCartaPorteId,
   });
 
+  // Cargar carta porte desde base de datos
   const loadCartaPorte = useCallback(async (id: string) => {
-    setIsLoading(true);
-    setError(null);
     try {
-      // Mock implementation - replace with actual API call
-      console.log('Loading carta porte:', id);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error loading carta porte');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      const { data, error } = await supabase
+        .from('cartas_porte')
+        .select('datos_formulario')
+        .eq('id', id)
+        .single();
 
-  const saveCartaPorte = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Mock implementation - replace with actual API call
-      console.log('Saving carta porte');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error saving carta porte');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      if (error) throw error;
 
-  const createNewCartaPorte = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Mock implementation - replace with actual API call
-      console.log('Creating new carta porte');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error creating carta porte');
-    } finally {
-      setIsLoading(false);
+      if (data?.datos_formulario) {
+        // Safe type casting con validación mejorada
+        const rawData = data.datos_formulario;
+        if (typeof rawData === 'object' && rawData !== null && !Array.isArray(rawData)) {
+          // Convertir unknown a CartaPorteFormData de forma segura
+          const typedData = rawData as unknown as CartaPorteFormData;
+          setFormData(typedData);
+          setCurrentCartaPorteId(id);
+        } else {
+          throw new Error('Invalid form data format');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading carta porte:', error);
+      throw error;
     }
-  }, []);
+  }, [setFormData, setCurrentCartaPorteId]);
 
+  // Guardar carta porte en base de datos
+  const saveCartaPorte = useCallback(async (data?: CartaPorteFormData) => {
+    await updateCartaPorte(data || formData);
+  }, [formData, updateCartaPorte]);
+
+  // Crear nueva carta porte
+  const createNewCartaPorte = useCallback(async (initialData?: Partial<CartaPorteFormData>) => {
+    const newFormData: CartaPorteFormData = {
+      configuracion: {
+        version: '3.1',
+        tipoComprobante: 'T',
+        emisor: { rfc: '', nombre: '', regimenFiscal: '' },
+        receptor: { rfc: '', nombre: '' }
+      },
+      ubicaciones: [],
+      mercancias: [],
+      autotransporte: {
+        placa_vm: '',
+        anio_modelo_vm: 0,
+        config_vehicular: '',
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: '',
+        peso_bruto_vehicular: 0,
+        remolques: []
+      },
+      figuras: [],
+      tipoCreacion: 'manual',
+      tipoCfdi: 'Traslado',
+      rfcEmisor: '',
+      nombreEmisor: '',
+      rfcReceptor: '',
+      nombreReceptor: '',
+      transporteInternacional: false,
+      registroIstmo: false,
+      cartaPorteVersion: '3.1',
+      cartaPorteId: undefined,
+      ...initialData
+    };
+
+    setFormData(newFormData);
+  }, [setFormData]);
+
+  // Resetear formulario
   const resetForm = useCallback(() => {
-    setError(null);
-    console.log('Resetting form');
-  }, []);
+    createNewCartaPorte();
+    setCurrentCartaPorteId(undefined);
+  }, [createNewCartaPorte, setCurrentCartaPorteId]);
 
   return {
-    isLoading,
-    setIsLoading,
-    error,
-    setError,
-    getDefaultAutotransporte,
+    // Mappers
+    formDataToCartaPorteData,
+    cartaPorteDataToFormData,
+    
+    // Acciones principales
     loadCartaPorte,
     saveCartaPorte,
     createNewCartaPorte,
-    resetForm
+    resetForm,
   };
 };

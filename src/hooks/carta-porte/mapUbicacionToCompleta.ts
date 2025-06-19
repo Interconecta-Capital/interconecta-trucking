@@ -18,7 +18,7 @@ export function mapUbicacionToCompleta(ubicacion: Ubicacion): UbicacionCompleta 
     distancia_recorrida: ubicacion.distanciaRecorrida,
     
     // Campos nuevos agregados en la migración de BD
-    tipo_estacion: (ubicacion as any).tipoEstacion || '01',
+    tipo_estacion: (ubicacion as any).tipoEstacion,
     numero_estacion: (ubicacion as any).numeroEstacion,
     kilometro: (ubicacion as any).kilometro,
     
@@ -87,7 +87,6 @@ export function createDefaultUbicacion(tipo: 'Origen' | 'Destino' | 'Paso Interm
     id: `ubicacion-${Date.now()}`,
     tipo_ubicacion: tipo,
     id_ubicacion: `ID${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-    tipo_estacion: '01',
     distancia_recorrida: tipo === 'Origen' ? 0 : undefined,
     domicilio: {
       pais: 'MEX',

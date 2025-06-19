@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Truck, Save, Star, Ruler, FileText } from 'lucide-react';
 import { AIAssistantButton } from '../mercancias/AIAssistantButton';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
-import { AutotransporteCompleto, Remolque } from '@/types/cartaPorte';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 import { VehiculosGuardados } from './VehiculosGuardados';
 import { RemolquesList } from './RemolquesList';
 import { VehiculoBasicInfo } from './VehiculoBasicInfo';
@@ -79,24 +80,6 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
       setShowGuardarModal(false);
       setNombrePerfil('');
     }
-  };
-
-  // Fix remolques conversion to ensure compatibility
-  const convertedRemolques: Remolque[] = (data.remolques || []).map(remolque => ({
-    id: remolque.id,
-    placa: remolque.placa,
-    subtipo_rem: remolque.subtipo_rem || remolque.subtipo_remolque || '',
-    subtipo_remolque: remolque.subtipo_remolque || remolque.subtipo_rem || ''
-  }));
-
-  const handleRemolquesChange = (newRemolques: Remolque[]) => {
-    // Convert back to ensure both properties are set
-    const convertedBack = newRemolques.map(remolque => ({
-      ...remolque,
-      subtipo_rem: remolque.subtipo_rem || remolque.subtipo_remolque || '',
-      subtipo_remolque: remolque.subtipo_remolque || remolque.subtipo_rem || ''
-    }));
-    handleFieldChange('remolques', convertedBack);
   };
 
   const isVehiculoCompleto = data.placa_vm && data.anio_modelo_vm && data.config_vehicular;
@@ -211,8 +194,8 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
 
           {/* Remolques */}
           <RemolquesList
-            remolques={convertedRemolques}
-            onChange={handleRemolquesChange}
+            remolques={data.remolques || []}
+            onChange={(remolques) => handleFieldChange('remolques', remolques)}
           />
         </CardContent>
       </Card>

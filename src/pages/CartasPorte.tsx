@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Plus, FileText, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,16 +56,13 @@ export default function CartasPorte() {
         throw new Error('No se encontraron datos para generar XML');
       }
 
-      // Safely convert datos_formulario to CartaPorteData with proper type assertion
+      // Convertir datos_formulario a CartaPorteData de forma segura
       let cartaPorteData: CartaPorteData;
       
       if (typeof carta.datos_formulario === 'string') {
         cartaPorteData = JSON.parse(carta.datos_formulario);
       } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
-        cartaPorteData = {
-          version: '3.1',
-          ...(carta.datos_formulario as any)
-        } as CartaPorteData;
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
       } else {
         throw new Error('Formato de datos inválido');
       }
@@ -117,15 +115,12 @@ export default function CartasPorte() {
         }
       }
 
-      // Fallback to local generator with proper type assertion
+      // Fallback al generador local
       let cartaPorteData: CartaPorteData;
       if (typeof carta.datos_formulario === 'string') {
         cartaPorteData = JSON.parse(carta.datos_formulario);
       } else {
-        cartaPorteData = {
-          version: '3.1',
-          ...(carta.datos_formulario as any)
-        } as CartaPorteData;
+        cartaPorteData = carta.datos_formulario as CartaPorteData;
       }
 
       const result = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);

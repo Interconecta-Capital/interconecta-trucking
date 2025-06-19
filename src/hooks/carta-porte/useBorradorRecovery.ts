@@ -20,10 +20,10 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
     try {
       // Si ya tenemos un cartaPorteId específico, intentar cargarlo
       if (cartaPorteId) {
-        const result = await BorradorService.cargarBorrador(cartaPorteId);
-        if (result.success && result.data) {
+        const borrador = await BorradorService.cargarBorrador(cartaPorteId);
+        if (borrador?.datosFormulario) {
           return {
-            data: result.data,
+            data: borrador.datosFormulario,
             id: cartaPorteId,
             found: true
           };
@@ -91,10 +91,10 @@ export const useBorradorRecovery = (cartaPorteId?: string) => {
     try {
       // Limpiar borrador rechazado
       if (recoveryState.borradorId) {
-        await BorradorService.eliminarBorrador(recoveryState.borradorId);
+        await BorradorService.limpiarBorrador(recoveryState.borradorId);
       } else {
         // Limpiar localStorage
-        BorradorService.limpiarBorrador();
+        localStorage.removeItem('carta_porte_borrador');
       }
     } catch (error) {
       console.error('Error clearing rejected borrador:', error);

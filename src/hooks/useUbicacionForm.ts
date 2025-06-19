@@ -185,18 +185,10 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
   const cargarUbicacionFrecuente = useCallback((ubicacionFrecuente: UbicacionFrecuente) => {
     setFormData(prev => ({
       ...prev,
-      rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado || ubicacionFrecuente.rfc_remitente_destinatario || '',
-      nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion || ubicacionFrecuente.nombre || '',
+      rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
+      nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
       domicilio: {
-        pais: ubicacionFrecuente.domicilio.pais,
-        codigoPostal: ubicacionFrecuente.domicilio.codigo_postal,
-        estado: ubicacionFrecuente.domicilio.estado,
-        municipio: ubicacionFrecuente.domicilio.municipio,
-        colonia: ubicacionFrecuente.domicilio.colonia,
-        calle: ubicacionFrecuente.domicilio.calle,
-        numExterior: ubicacionFrecuente.domicilio.numero_exterior || '',
-        numInterior: ubicacionFrecuente.domicilio.numero_interior || '',
-        referencia: ubicacionFrecuente.domicilio.referencia || '',
+        ...ubicacionFrecuente.domicilio,
         localidad: ubicacionFrecuente.domicilio.localidad || ''
       }
     }));

@@ -44,7 +44,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
     try {
       // Ensure mercancias have bienes_transp property
       const cartaPorteData: CartaPorteData = {
-        version: formData.cartaPorteVersion || '3.1',
         tipoCreacion: formData.tipoCreacion || 'manual',
         tipoCfdi: formData.tipoCfdi || 'Traslado',
         rfcEmisor: formData.rfcEmisor || '',
@@ -68,8 +67,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           asegura_resp_civil: '',
           poliza_resp_civil: '',
           peso_bruto_vehicular: 0,
-          capacidad_carga: 0,
-          remolques: [],
         },
         figuras: formData.figuras || [],
         cartaPorteId: formData.cartaPorteId,
@@ -82,7 +79,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
       
       // Retornar datos mínimos válidos
       const fallbackData: CartaPorteData = {
-        version: formData.cartaPorteVersion || '3.1',
         tipoCreacion: formData.tipoCreacion || 'manual',
         tipoCfdi: formData.tipoCfdi || 'Traslado',
         rfcEmisor: formData.rfcEmisor || '',
@@ -97,7 +93,7 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           ...m,
           bienes_transp: m.bienes_transp || m.descripcion || '',
         })),
-        autotransporte: {
+        autotransporte: formData.autotransporte || {
           placa_vm: '',
           anio_modelo_vm: 0,
           config_vehicular: '',
@@ -106,8 +102,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           asegura_resp_civil: '',
           poliza_resp_civil: '',
           peso_bruto_vehicular: 0,
-          capacidad_carga: 0,
-          remolques: [],
         },
         figuras: formData.figuras || [],
         cartaPorteId: formData.cartaPorteId,
@@ -166,8 +160,6 @@ export const useCartaPorteStableData = ({ formData }: UseCartaPorteStableDataOpt
           asegura_resp_civil: '',
           poliza_resp_civil: '',
           peso_bruto_vehicular: 0,
-          capacidad_carga: 0,
-          remolques: [],
         },
         figuras: [],
         tipoCreacion: formData.tipoCreacion || 'manual',

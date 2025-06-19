@@ -13,7 +13,7 @@ export interface Domicilio {
 }
 
 export interface Ubicacion {
-  tipo_estacion?: string;
+  tipo_estacion: string;
   nombre_estacion?: string;
   rfc_remitente_destinatario?: string;
   id_ubicacion?: string;
@@ -45,13 +45,12 @@ export interface Autotransporte {
   vigencia_tarjeta_circulacion?: string;
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
-  vigencia_med_ambiente?: string;
 }
 
 export interface Remolque {
   id?: string;
   subtipo_remolque: string;
-  subtipo_rem: string;
+  subtipo_rem?: string;
   placa: string;
 }
 
@@ -79,29 +78,6 @@ export interface FiguraTransporte {
   residencia_fiscal_arrendatario?: string;
 }
 
-export interface PermisoSEMARNAT {
-  id?: string;
-  tipo_permiso: string;
-  numero_permiso: string;
-  fecha_expedicion: string;
-  fecha_vencimiento: string;
-  autoridad_expedidora?: string;
-  vigente?: boolean;
-  observaciones?: string;
-}
-
-export interface ValidacionSATv31 {
-  errores: string[];
-  advertencias: string[];
-  esValido: boolean;
-  scoreComplitud: number;
-  warnings?: string[];
-  score?: number;
-  campos_faltantes?: string[];
-  recomendaciones?: string[];
-  valido?: boolean;
-}
-
 export interface CartaPorteData {
   version: string;
   transporte_internacional?: string;
@@ -109,7 +85,6 @@ export interface CartaPorteData {
   entrada_salida_mercancia?: string;
   via_entrada_salida?: string;
   total_distancia_recorrida?: number;
-  totalDistRec?: number;
   registro_istmo?: string | boolean;
   registroIstmo?: string | boolean;
   rfcEmisor?: string;
@@ -121,42 +96,20 @@ export interface CartaPorteData {
   cartaPorteVersion?: string;
   tipoCfdi?: string;
   regimenAduanero?: string;
-  regimenesAduaneros?: Array<{
-    clave_regimen: string;
-    descripcion?: string;
-    orden_secuencia: number;
-  }>;
-  paisOrigenDestino?: string;
-  viaEntradaSalida?: string;
-  entradaSalidaMerc?: string;
-  viaTransporte?: string;
   ubicaciones?: UbicacionCompleta[];
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
-  
-  // Missing properties
-  cartaPorteId?: string;
-  idCCP?: string;
-  regimen_fiscal_emisor?: string;
-  domicilio_fiscal_emisor?: any;
-  regimen_fiscal_receptor?: string;
-  domicilio_fiscal_receptor?: any;
-  datosCalculoRuta?: any;
-  xmlGenerado?: string;
-  tipoCreacion?: string;
 }
 
 export interface UbicacionCompleta extends Ubicacion {
   id?: string;
   carta_porte_id?: string;
-  tipo_ubicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
-  tipoUbicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
+  tipo_ubicacion?: string;
   nombre_remitente_destinatario?: string;
   fecha_hora_salida_llegada?: string;
   numero_estacion?: string;
   kilometro?: number;
-  ordenSecuencia?: number;
   coordenadas?: {
     latitud: number;
     longitud: number;
@@ -178,22 +131,14 @@ export interface AutotransporteCompleto extends Autotransporte {
     alto?: number;
   };
   vigencia_permiso?: string;
-  numero_permisos_adicionales?: string | string[];
+  numero_permisos_adicionales?: string;
   carga_maxima?: number;
-  asegura_carga?: string;
-  poliza_carga?: string;
 }
 
 export interface FiguraCompleta extends FiguraTransporte {
   id?: string;
   carta_porte_id?: string;
   domicilio?: any;
-  residencia_fiscal_figura?: string;
-  num_reg_id_trib_figura?: string;
-  operador_sct?: boolean;
-  tipo_licencia?: string;
-  vigencia_licencia?: string;
-  curp?: string;
 }
 
 export interface MercanciaCompleta {
@@ -223,18 +168,4 @@ export interface MercanciaCompleta {
   peso_bruto_total?: number;
   descripcion_detallada?: string;
   especie_protegida?: boolean;
-  
-  // v3.1 specific fields
-  peso_neto_total?: number;
-  unidad_peso_bruto?: string;
-  uuid_comercio_exterior?: string;
-  requiere_cites?: boolean;
-  permisos_semarnat?: PermisoSEMARNAT[];
-  tipo_embalaje?: string;
-  numero_piezas?: number;
-  documentacion_aduanera?: Array<{
-    tipo_documento: string;
-    numero_documento: string;
-    fecha_expedicion?: string;
-  }>;
 }

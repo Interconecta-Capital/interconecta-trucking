@@ -28,7 +28,6 @@ const initialFormData: CartaPorteFormData = {
     asegura_resp_civil: '',
     poliza_resp_civil: '',
     peso_bruto_vehicular: 0,
-    capacidad_carga: 0,
     remolques: []
   },
   figuras: [],
@@ -84,7 +83,6 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
 
   const validateCurrentState = useCallback(() => {
     const compatibleData = {
-      version: formData.cartaPorteVersion || '3.1',
       tipoCreacion: formData.tipoCreacion,
       tipoCfdi: formData.tipoCfdi,
       rfcEmisor: formData.rfcEmisor,

@@ -10,6 +10,7 @@ import { Package, AlertTriangle } from 'lucide-react';
 import { MercanciaCompleta } from '@/types/cartaPorte';
 import { EnhancedAutocompleteInput } from '@/components/ai/EnhancedAutocompleteInput';
 import { IntelligentFormController } from './IntelligentFormController';
+import { useAIContext } from '@/hooks/ai/useAIContext';
 
 interface DynamicMercanciaFormProps {
   mercancia: MercanciaCompleta;
@@ -22,6 +23,8 @@ export function DynamicMercanciaForm({
   onChange, 
   className 
 }: DynamicMercanciaFormProps) {
+  const { context } = useAIContext();
+
   const handleFieldChange = (field: keyof MercanciaCompleta, value: any) => {
     onChange({
       ...mercancia,
@@ -50,7 +53,7 @@ export function DynamicMercanciaForm({
               type="mercancia"
               label="Descripción Detallada *"
               placeholder="Describe la mercancía con el mayor detalle posible..."
-              context={{}}
+              context={context}
               formName="mercancia"
               fieldName="descripcion"
               showValidation={true}
@@ -64,7 +67,7 @@ export function DynamicMercanciaForm({
                 type="mercancia"
                 label="Clave SAT Bienes Transportados *"
                 placeholder="00000000"
-                context={{}}
+                context={context}
                 formName="mercancia"
                 fieldName="bienes_transp"
                 showValidation={true}
@@ -76,7 +79,7 @@ export function DynamicMercanciaForm({
                 type="mercancia"
                 label="Unidad de Medida SAT *"
                 placeholder="H87, KGM, PZA..."
-                context={{}}
+                context={context}
                 formName="mercancia"
                 fieldName="clave_unidad"
                 showValidation={true}

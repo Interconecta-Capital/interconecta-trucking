@@ -1,5 +1,5 @@
 
-import { CartaPorteData } from '@/types/cartaPorte';
+import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 import { XMLValidation } from './xmlValidation';
 import { XMLUtils } from './xmlUtils';
 import { XMLConceptosBuilder } from './xmlConceptos';
@@ -45,7 +45,7 @@ export class XMLCartaPorteGenerator {
   private static construirXML(data: CartaPorteData): string {
     const fechaActual = new Date().toISOString();
     const folio = data.folio || XMLUtils.generarFolio();
-    const version = (data.cartaPorteVersion || '3.1') as CartaPorteVersion;
+    const version = data.cartaPorteVersion || '3.1';
     
     // Obtener namespaces según versión
     const cartaPorteNamespace = getCartaPorteNamespace(version);

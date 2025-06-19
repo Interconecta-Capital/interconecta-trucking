@@ -1,144 +1,188 @@
 
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useCartaPorteUnified } from '@/hooks/carta-porte/useCartaPorteUnified';
-import { ConfiguracionSection } from './sections/ConfiguracionSection';
-import { UbicacionesSection } from './sections/UbicacionesSection';
-import { MercanciasSection } from './sections/MercanciasSection';
-import { AutotransporteSection } from './sections/AutotransporteSection';
-import { FigurasSection } from './sections/FigurasSection';
-import { XMLSection } from './sections/XMLSection';
-import { Save } from 'lucide-react';
+import React, { memo, useMemo, useCallback } from 'react';
+import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
+import { CartaPorteHeader } from './CartaPorteHeader';
+import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
+import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
+import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
+import { BorradorRecoveryDialog } from '../BorradorRecoveryDialog';
+import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
 
 interface OptimizedCartaPorteFormProps {
-  currentCartaPorteId?: string;
-  onDataChange?: (data: any) => void;
+  cartaPorteId?: string;
 }
 
-export function OptimizedCartaPorteForm({ currentCartaPorteId, onDataChange }: OptimizedCartaPorteFormProps) {
-  const [activeTab, setActiveTab] = useState('configuracion');
-  
+const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorteId }) => {
   const {
-    data,
+    configuracion,
+    ubicaciones,
+    mercancias,
+    autotransporte,
+    figuras,
     currentStep,
-    isDirty,
-    isLoading,
-    error,
-    updateField,
-    updateAutotransporte,
-    updateUbicaciones,
-    updateMercancias,
-    updateFiguras,
+    currentCartaPorteId,
+    borradorCargado,
+    ultimoGuardado,
+    validationSummary,
+    isGuardando,
+    xmlGenerado,
+    datosCalculoRuta,
+    
+    // Dialog de recuperación
+    showRecoveryDialog,
+    borradorData,
+    handleAcceptBorrador,
+    handleRejectBorrador,
+    
+    setUbicaciones,
+    setMercancias,
+    setAutotransporte,
+    setFiguras,
     setCurrentStep,
-    saveData,
-    resetForm,
-    validateData,
-    getCompletionPercentage
-  } = useCartaPorteUnified(currentCartaPorteId);
+    handleConfiguracionChange,
+    handleGuardarBorrador,
+    handleGuardarCartaPorteOficial,
+    handleGuardarYSalir,
+    handleLimpiarBorrador,
+    handleXMLGenerated,
+    handleCalculoRutaUpdate,
+  } = useCartaPorteFormManager(cartaPorteId);
 
-  const handleSave = useCallback(async () => {
-    try {
-      await saveData();
-    } catch (error) {
-      console.error('Error saving:', error);
+  // Crear un objeto Autotransporte por defecto para evitar errores de tipo
+  const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
+    placa_vm: '',
+    anio_modelo_vm: new Date().getFullYear(),
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    peso_bruto_vehicular: 0,
+    remolques: []
+  }), []);
+
+  // Manejar navegación entre pasos con validación mejorada
+  const handleStepNavigation = useCallback((targetStep: number) => {
+    // Permitir navegación hacia atrás siempre
+    if (targetStep < currentStep) {
+      setCurrentStep(targetStep);
+      return;
     }
-  }, [saveData]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <span className="ml-2">Cargando...</span>
-      </div>
-    );
-  }
+    // Para avanzar, verificar que el paso actual tenga datos mínimos
+    const currentSectionKeys = ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'];
+    const currentSectionKey = currentSectionKeys[currentStep];
+    
+    if (currentSectionKey && validationSummary?.sectionStatus[currentSectionKey] === 'empty') {
+      // No permitir avanzar si la sección actual está vacía
+      return;
+    }
+
+    setCurrentStep(targetStep);
+  }, [currentStep, setCurrentStep, validationSummary]);
+
+  // Create a proper ValidationSummary object with all required properties
+  const enhancedValidationSummary = useMemo(() => {
+    const baseValidation = validationSummary || { sectionStatus: {} };
+    
+    return {
+      sectionStatus: {
+        configuracion: (baseValidation.sectionStatus as any)?.configuracion || 'empty',
+        ubicaciones: (baseValidation.sectionStatus as any)?.ubicaciones || 'empty',
+        mercancias: (baseValidation.sectionStatus as any)?.mercancias || 'empty',
+        autotransporte: (baseValidation.sectionStatus as any)?.autotransporte || 'empty',
+        figuras: (baseValidation.sectionStatus as any)?.figuras || 'empty',
+        xml: 'empty' as const
+      },
+      overallProgress: 0,
+      completionPercentage: 0,
+      missingFields: {
+        configuracion: [],
+        ubicaciones: [],
+        mercancias: [],
+        autotransporte: [],
+        figuras: []
+      },
+      completedSections: 0,
+      totalSections: 5
+    };
+  }, [validationSummary]);
+
+  // Fix async function signature
+  const handleGuardarBorradorAsync = useCallback(async () => {
+    await handleGuardarBorrador();
+  }, [handleGuardarBorrador]);
+
+  const handleGuardarYSalirAsync = useCallback(async () => {
+    await handleGuardarYSalir();
+  }, [handleGuardarYSalir]);
+
+  const handleLimpiarBorradorAsync = useCallback(async () => {
+    await handleLimpiarBorrador();
+  }, [handleLimpiarBorrador]);
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Carta Porte</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {getCompletionPercentage()}% Completo
-              </Badge>
-              {isDirty && (
-                <Button onClick={handleSave} size="sm" variant="outline">
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar
-                </Button>
-              )}
-            </div>
-          </div>
-          <Progress value={getCompletionPercentage()} className="h-2" />
-        </CardHeader>
-      </Card>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Dialog de recuperación de borrador */}
+      <BorradorRecoveryDialog
+        open={showRecoveryDialog}
+        borradorData={borradorData}
+        onAccept={handleAcceptBorrador}
+        onReject={handleRejectBorrador}
+      />
 
-      {error && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <p className="text-red-700">{error}</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Header con mejor espaciado */}
+      <div className="mb-8">
+        <CartaPorteHeader
+          borradorCargado={borradorCargado}
+          ultimoGuardado={ultimoGuardado}
+          onGuardarBorrador={handleGuardarBorradorAsync}
+          onLimpiarBorrador={handleLimpiarBorradorAsync}
+          onGuardarYSalir={handleGuardarYSalirAsync}
+          isGuardando={isGuardando}
+        />
+      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="configuracion">Configuración</TabsTrigger>
-          <TabsTrigger value="ubicaciones">Ubicaciones</TabsTrigger>
-          <TabsTrigger value="mercancias">Mercancías</TabsTrigger>
-          <TabsTrigger value="autotransporte">Autotransporte</TabsTrigger>
-          <TabsTrigger value="figuras">Figuras</TabsTrigger>
-          <TabsTrigger value="xml">XML/Timbrado</TabsTrigger>
-        </TabsList>
+      {/* Indicador de progreso con más margen */}
+      <div className="mb-8 bg-white rounded-lg shadow-sm border p-6">
+        <CartaPorteProgressIndicator
+          validationSummary={enhancedValidationSummary}
+          currentStep={currentStep}
+          onStepClick={handleStepNavigation}
+          xmlGenerado={xmlGenerado}
+        />
+      </div>
 
-        <TabsContent value="configuracion">
-          <ConfiguracionSection
-            data={data}
-            onChange={updateField}
-          />
-        </TabsContent>
+      {/* Contenido del paso actual */}
+      <OptimizedCartaPorteStepContent
+        currentStep={currentStep}
+        configuracion={configuracion}
+        ubicaciones={ubicaciones}
+        mercancias={mercancias}
+        autotransporte={autotransporte || defaultAutotransporte}
+        figuras={figuras}
+        currentCartaPorteId={currentCartaPorteId || undefined}
+        onConfiguracionChange={handleConfiguracionChange}
+        onUbicacionesChange={setUbicaciones}
+        onMercanciasChange={setMercancias}
+        onAutotransporteChange={setAutotransporte}
+        onFigurasChange={setFiguras}
+        onStepChange={setCurrentStep}
+        onXMLGenerated={handleXMLGenerated}
+        onTimbrado={() => {}}
+        xmlGenerado={xmlGenerado}
+        datosCalculoRuta={datosCalculoRuta}
+        onCalculoRutaUpdate={handleCalculoRutaUpdate}
+      />
 
-        <TabsContent value="ubicaciones">
-          <UbicacionesSection
-            ubicaciones={data.ubicaciones || []}
-            onChange={updateUbicaciones}
-          />
-        </TabsContent>
-
-        <TabsContent value="mercancias">
-          <MercanciasSection
-            mercancias={data.mercancias || []}
-            onChange={updateMercancias}
-          />
-        </TabsContent>
-
-        <TabsContent value="autotransporte">
-          <AutotransporteSection
-            autotransporte={data.autotransporte}
-            onChange={updateAutotransporte}
-          />
-        </TabsContent>
-
-        <TabsContent value="figuras">
-          <FigurasSection
-            figuras={data.figuras || []}
-            onChange={updateFiguras}
-          />
-        </TabsContent>
-
-        <TabsContent value="xml">
-          <XMLSection
-            data={data}
-            onSave={handleSave}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Indicador de auto-guardado */}
+      <div className="mt-8">
+        <CartaPorteAutoSaveIndicator />
+      </div>
     </div>
   );
-}
+});
+
+OptimizedCartaPorteForm.displayName = 'OptimizedCartaPorteForm';
+
+export { OptimizedCartaPorteForm };
