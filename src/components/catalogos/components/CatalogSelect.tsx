@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, ChevronDown } from 'lucide-react';
 
 interface CatalogSelectProps {
   value?: string;
@@ -45,7 +45,7 @@ export function CatalogSelect({
     
     return parts.map((part, index) => 
       regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 font-medium">{part}</mark>
+        <mark key={index} className="bg-yellow-200 text-yellow-900 font-medium px-1 rounded">{part}</mark>
       ) : part
     );
   };
@@ -58,34 +58,34 @@ export function CatalogSelect({
       option.descripcion?.toLowerCase().includes(searchLower) ||
       option.label?.toLowerCase().includes(searchLower)
     );
-  }).slice(0, 50); // Limit to 50 results for performance
+  }).slice(0, 100); // Aumentar límite para mejor UX
 
   const selectedOption = options.find(opt => opt.value === value);
 
   const renderOptionContent = (option: any) => (
-    <div className="w-full py-1">
+    <div className="w-full py-2 px-1">
       <div className="flex items-center justify-between mb-1">
-        <span className="font-mono text-sm font-medium text-blue-600">
+        <span className="font-mono text-sm font-semibold text-blue-700">
           {internalSearch ? highlightText(option.clave || '', internalSearch) : option.clave}
         </span>
         {option.simbolo && (
-          <Badge variant="outline" className="text-xs ml-2">
+          <Badge variant="outline" className="text-xs ml-2 bg-blue-50 text-blue-700 border-blue-300">
             {option.simbolo}
           </Badge>
         )}
       </div>
-      <div className="text-sm text-gray-700 leading-tight">
+      <div className="text-sm text-gray-800 leading-relaxed font-medium">
         {internalSearch ? highlightText(option.descripcion || '', internalSearch) : option.descripcion}
       </div>
       {(option.clase_division || option.grupo_embalaje) && (
-        <div className="flex gap-2 mt-1">
+        <div className="flex gap-2 mt-2">
           {option.clase_division && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">
               Clase: {option.clase_division}
             </Badge>
           )}
           {option.grupo_embalaje && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">
               Grupo: {option.grupo_embalaje}
             </Badge>
           )}
@@ -102,31 +102,32 @@ export function CatalogSelect({
       open={isOpen}
       onOpenChange={setIsOpen}
     >
-      <SelectTrigger className="h-auto min-h-[40px] bg-white">
+      <SelectTrigger className="h-auto min-h-[48px] bg-white border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm">
         <SelectValue placeholder={placeholder}>
           {selectedOption ? (
             <div className="text-left py-1">
-              <div className="font-mono text-sm font-medium text-blue-600">
+              <div className="font-mono text-sm font-semibold text-blue-700">
                 {selectedOption.clave}
               </div>
-              <div className="text-sm text-gray-700 truncate">
+              <div className="text-sm text-gray-700 truncate font-medium">
                 {selectedOption.descripcion}
               </div>
             </div>
           ) : null}
         </SelectValue>
+        <ChevronDown className="h-4 w-4 opacity-50" />
       </SelectTrigger>
       
-      <SelectContent className="max-h-[400px] w-full min-w-[400px] bg-white border shadow-lg">
+      <SelectContent className="max-h-[420px] w-full min-w-[450px] bg-white border border-gray-200 shadow-xl rounded-lg z-50">
         {/* Search input */}
-        <div className="sticky top-0 p-2 bg-white border-b">
+        <div className="sticky top-0 p-3 bg-white border-b border-gray-200">
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar por clave o descripción..."
               value={internalSearch}
               onChange={(e) => setInternalSearch(e.target.value)}
-              className="pl-8 text-sm"
+              className="pl-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               autoFocus
             />
           </div>
@@ -134,24 +135,31 @@ export function CatalogSelect({
 
         {/* Loading indicator */}
         {showLoading && (
-          <div className="px-3 py-4 text-sm text-gray-500 text-center">
-            <RefreshCw className="h-4 w-4 animate-spin mx-auto mb-2" />
-            Cargando catálogo...
+          <div className="px-4 py-6 text-sm text-gray-500 text-center">
+            <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2 text-blue-500" />
+            <span className="font-medium">Cargando catálogo...</span>
           </div>
         )}
 
         {/* Options */}
         {!showLoading && filteredOptions.length === 0 ? (
-          <div className="px-3 py-4 text-sm text-gray-500 text-center">
-            {internalSearch ? 'No se encontraron resultados' : 'No hay opciones disponibles'}
+          <div className="px-4 py-6 text-sm text-gray-500 text-center">
+            <div className="font-medium">
+              {internalSearch ? 'No se encontraron resultados' : 'No hay opciones disponibles'}
+            </div>
+            {internalSearch && (
+              <div className="text-xs mt-1">
+                Intenta con términos diferentes
+              </div>
+            )}
           </div>
         ) : (
-          <div className="max-h-[300px] overflow-y-auto">
+          <div className="max-h-[320px] overflow-y-auto">
             {filteredOptions.map((option) => (
               <SelectItem 
                 key={option.value} 
                 value={option.value}
-                className="h-auto py-2 px-3 cursor-pointer hover:bg-gray-50 focus:bg-blue-50"
+                className="h-auto py-3 px-4 cursor-pointer hover:bg-blue-50 focus:bg-blue-100 border-b border-gray-100 last:border-b-0"
               >
                 {renderOptionContent(option)}
               </SelectItem>
@@ -160,9 +168,9 @@ export function CatalogSelect({
         )}
 
         {/* Show count if there are more results */}
-        {!showLoading && options.length > 50 && (
-          <div className="px-3 py-2 text-xs text-gray-500 border-t bg-gray-50">
-            Mostrando {Math.min(filteredOptions.length, 50)} de {options.length} resultados
+        {!showLoading && options.length > 100 && (
+          <div className="px-4 py-2 text-xs text-gray-500 border-t bg-gray-50 font-medium">
+            Mostrando {Math.min(filteredOptions.length, 100)} de {options.length} resultados
           </div>
         )}
       </SelectContent>
