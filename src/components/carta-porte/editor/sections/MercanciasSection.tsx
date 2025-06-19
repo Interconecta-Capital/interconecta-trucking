@@ -18,6 +18,9 @@ interface MercanciasSectionProps {
 export function MercanciasSection({ data, onChange }: MercanciasSectionProps) {
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
 
+  // Add safety check for data prop
+  const safeData = data || [];
+
   const addMercancia = () => {
     const nuevaMercancia = {
       id: crypto.randomUUID(),
@@ -34,17 +37,17 @@ export function MercanciasSection({ data, onChange }: MercanciasSectionProps) {
       regimen_aduanero: ''
     };
     
-    onChange([...data, nuevaMercancia]);
+    onChange([...safeData, nuevaMercancia]);
   };
 
   const updateMercancia = (index: number, field: string, value: any) => {
-    const updatedData = [...data];
+    const updatedData = [...safeData];
     updatedData[index] = { ...updatedData[index], [field]: value };
     onChange(updatedData);
   };
 
   const removeMercancia = (index: number) => {
-    const updatedData = data.filter((_, i) => i !== index);
+    const updatedData = safeData.filter((_, i) => i !== index);
     onChange(updatedData);
   };
 
@@ -55,7 +58,7 @@ export function MercanciasSection({ data, onChange }: MercanciasSectionProps) {
         moneda: 'MXN',
         ...m
       }));
-      onChange([...data, ...nuevasMercancias]);
+      onChange([...safeData, ...nuevasMercancias]);
       toast.success(`${nuevasMercancias.length} mercancías cargadas desde el documento`);
     } else {
       toast.info('No se encontraron mercancías en el documento');
@@ -85,7 +88,7 @@ export function MercanciasSection({ data, onChange }: MercanciasSectionProps) {
         </div>
       </div>
 
-      {data.length === 0 ? (
+      {safeData.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-gray-500">No hay mercancías configuradas</p>
@@ -96,7 +99,7 @@ export function MercanciasSection({ data, onChange }: MercanciasSectionProps) {
         </Card>
       ) : (
         <div className="space-y-4">
-          {data.map((mercancia, index) => (
+          {safeData.map((mercancia, index) => (
             <Card key={mercancia.id || index}>
               <CardHeader>
                 <div className="flex items-center justify-between">
