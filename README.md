@@ -185,6 +185,22 @@ pm2 monit
 # Restart aplicación
 pm2 restart trucking-api
 
+## Solución a errores comunes
+
+### Mapbox no puede calcular la ruta
+
+Si la aplicación muestra **"No se pudo calcular la ruta con Mapbox"**, revisa tu
+archivo `.env` y asegúrate de definir `VITE_MAPBOX_TOKEN` con un token válido de
+Mapbox. Sin este valor, el servicio de geocodificación y rutas no podrá
+funcionar correctamente.
+
+### Error 500 en Supabase por `infinite recursion detected`
+
+Este mensaje aparece al intentar guardar datos cuando las políticas RLS de la
+tabla `usuarios` no están actualizadas. Ejecuta las últimas migraciones con
+`npx supabase db push` (o `npm run db:migrate` si tienes ese script) para
+actualizar las políticas y evitar la recursión.
+
 ## Flujo simplificado de Carta Porte
 
 Para depurar o probar el formulario sin las optimizaciones completas puedes activar un modo simplificado.
