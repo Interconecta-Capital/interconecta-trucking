@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
 import { UbicacionesSection } from '../UbicacionesSection';
 import { MercanciasSection } from '../MercanciasSection';
@@ -52,6 +52,11 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
   datosCalculoRuta,
   onCalculoRutaUpdate
 }) => {
+
+  const pesoTotalMercancias = useMemo(
+    () => mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0),
+    [mercancias]
+  );
 
   const handleNextStep = () => {
     onStepChange(currentStep + 1);
@@ -112,6 +117,7 @@ const OptimizedCartaPorteStepContent = memo<OptimizedCartaPorteStepContentProps>
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <AutotransporteSection
             data={autotransporte}
+            pesoTotalMercancias={pesoTotalMercancias}
             onChange={onAutotransporteChange}
             onNext={handleNextStep}
             onPrev={handlePrevStep}

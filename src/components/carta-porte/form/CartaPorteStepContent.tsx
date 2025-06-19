@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ConfiguracionInicial } from '../ConfiguracionInicial';
 import { UbicacionesSection } from '../UbicacionesSection';
 import { MercanciasSection } from '../MercanciasSection';
@@ -42,6 +42,10 @@ export function CartaPorteStepContent({
   onXMLGenerated,
   onTimbrado,
 }: CartaPorteStepContentProps) {
+  const pesoTotalMercancias = useMemo(
+    () => mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0),
+    [mercancias]
+  );
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
@@ -74,6 +78,7 @@ export function CartaPorteStepContent({
         return (
           <AutotransporteSection
             data={autotransporte}
+            pesoTotalMercancias={pesoTotalMercancias}
             onChange={onAutotransporteChange}
             onNext={() => onStepChange(4)}
             onPrev={() => onStepChange(2)}
