@@ -29,7 +29,7 @@ export const useCartaPorteFormValidation = ({
   }, [formDataForValidation, formDataToCartaPorteData]);
 
   // Usar validaciones mejoradas con IA con datos transformados
-  const validationResult = useCartaPorteValidationEnhanced({ 
+  const validationResult = useCartaPorteValidationEnhanced({
     data: transformedData,
     enableAI 
   });

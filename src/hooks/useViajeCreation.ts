@@ -34,11 +34,21 @@ export const useViajeCreation = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  };
+
   const createViaje = async (data: ViajeCreationData) => {
     setIsCreating(true);
     setError(null);
 
     try {
+      const user = await getCurrentUser();
+      if (!user?.id) {
+        throw new Error('Usuario no autenticado');
+      }
+
       const origen = data.ubicaciones.find(u => u.tipo_ubicacion === 'Origen');
       const destino = data.ubicaciones.find(u => u.tipo_ubicacion === 'Destino');
 
@@ -67,6 +77,7 @@ export const useViajeCreation = () => {
         carta_porte_id: data.cartaPorteId,
         conductor_id: data.conductorId,
         vehiculo_id: data.vehiculoId,
+        user_id: user.id,
         origen: `${origen.domicilio.municipio}, ${origen.domicilio.estado}`,
         destino: `${destino.domicilio.municipio}, ${destino.domicilio.estado}`,
         fecha_inicio_programada: origen.fecha_hora_salida_llegada || new Date().toISOString(),

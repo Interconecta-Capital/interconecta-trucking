@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UbicacionCompleta } from '@/types/cartaPorte';
-import { Ubicacion, Coordinates } from '@/types/ubicaciones';
+import { Coordinates } from '@/types/ubicaciones';
 
 export const useUbicacionesPersistence = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +76,7 @@ export const useUbicacionesPersistence = () => {
         numero_estacion: item.numero_estacion,
         kilometro: item.kilometro,
         coordenadas: item.coordenadas as Coordinates,
-        domicilio: item.domicilio,
+        domicilio: typeof item.domicilio === 'string' ? JSON.parse(item.domicilio) : item.domicilio,
         carta_porte_id: item.carta_porte_id
       }));
 

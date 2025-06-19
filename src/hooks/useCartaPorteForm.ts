@@ -4,6 +4,21 @@ import { CartaPorteFormData } from './carta-porte/useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
 
 const getInitialFormData = (): CartaPorteFormData => ({
+  // Configuración básica requerida
+  configuracion: {
+    version: '3.1',
+    tipoComprobante: 'T',
+    emisor: {
+      rfc: '',
+      nombre: '',
+      regimenFiscal: ''
+    },
+    receptor: {
+      rfc: '',
+      nombre: ''
+    }
+  },
+  
   // Basic configuration
   tipoCreacion: 'manual',
   tipoCfdi: 'Traslado',

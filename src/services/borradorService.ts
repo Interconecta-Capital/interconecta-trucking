@@ -2,240 +2,173 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CartaPorteData } from '@/types/cartaPorte';
 
-export interface BorradorData {
-  id: string;
-  datosFormulario: CartaPorteData;
-  ultimaModificacion: string;
-  version: string;
+interface BorradorMetadata {
+  lastModified: string;
+  step: number;
+  progress: number;
 }
 
-class BorradorServiceClass {
-  private autoSaveInterval: NodeJS.Timeout | null = null;
+export class BorradorService {
+  private static readonly STORAGE_KEY = 'carta_porte_borrador';
+  private static readonly METADATA_KEY = 'carta_porte_metadata';
 
-  async guardarBorrador(data: CartaPorteData, cartaPorteId?: string): Promise<string | null> {
+  static async guardarBorrador(data: CartaPorteData, step: number = 0): Promise<void> {
     try {
-      console.log('[BorradorService] Guardando borrador...', { cartaPorteId, hasData: !!data });
-
-      const usuario = await supabase.auth.getUser();
-      if (!usuario.data.user) {
-        throw new Error('Usuario no autenticado');
-      }
-
+      // Save to localStorage as backup
       const borradorData = {
-        id: cartaPorteId || crypto.randomUUID(),
-        usuario_id: usuario.data.user.id,
-        datos_formulario: data as any, // Cast to any for Supabase Json compatibility
-        estado: 'borrador',
-        version_carta_porte: data.cartaPorteVersion || '3.1',
-        rfc_emisor: data.rfcEmisor || '',
-        rfc_receptor: data.rfcReceptor || '',
-        nombre_emisor: data.nombreEmisor || '',
-        nombre_receptor: data.nombreReceptor || '',
-        updated_at: new Date().toISOString()
-      };
-
-      // Si ya existe el ID, hacer UPDATE, si no, INSERT
-      if (cartaPorteId) {
-        const { data: result, error } = await supabase
-          .from('cartas_porte')
-          .update(borradorData)
-          .eq('id', cartaPorteId)
-          .eq('usuario_id', usuario.data.user.id)
-          .select('id')
-          .single();
-
-        if (error) {
-          console.error('Error actualizando borrador:', error);
-          // Si no existe, crear nuevo
-          if (error.code === 'PGRST116') {
-            const { data: newResult, error: insertError } = await supabase
-              .from('cartas_porte')
-              .insert(borradorData)
-              .select('id')
-              .single();
-
-            if (insertError) {
-              throw insertError;
-            }
-            return newResult?.id || null;
-          }
-          throw error;
-        }
-        return result?.id || null;
-      } else {
-        const { data: result, error } = await supabase
-          .from('cartas_porte')
-          .insert(borradorData)
-          .select('id')
-          .single();
-
-        if (error) {
-          throw error;
-        }
-        return result?.id || null;
-      }
-    } catch (error) {
-      console.error('[BorradorService] Error guardando borrador:', error);
-      
-      // Fallback a localStorage
-      try {
-        const fallbackData = {
-          id: cartaPorteId || crypto.randomUUID(),
-          datosFormulario: data,
-          ultimaModificacion: new Date().toISOString(),
-          version: '3.1'
-        };
-        localStorage.setItem(`carta-porte-borrador-${fallbackData.id}`, JSON.stringify(fallbackData));
-        console.log('✅ Borrador guardado en localStorage como fallback');
-        return fallbackData.id;
-      } catch (storageError) {
-        console.error('Error guardando en localStorage:', storageError);
-        throw error;
-      }
-    }
-  }
-
-  async cargarBorrador(cartaPorteId: string): Promise<BorradorData | null> {
-    try {
-      console.log('[BorradorService] Cargando borrador:', cartaPorteId);
-
-      const usuario = await supabase.auth.getUser();
-      if (!usuario.data.user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      const { data, error } = await supabase
-        .from('cartas_porte')
-        .select('*')
-        .eq('id', cartaPorteId)
-        .eq('usuario_id', usuario.data.user.id)
-        .single();
-
-      if (error) {
-        console.error('Error cargando de Supabase:', error);
-        
-        // Fallback a localStorage
-        const fallbackData = localStorage.getItem(`carta-porte-borrador-${cartaPorteId}`);
-        if (fallbackData) {
-          const parsed = JSON.parse(fallbackData);
-          console.log('✅ Borrador cargado desde localStorage');
-          return parsed;
-        }
-        
-        return null;
-      }
-
-      return {
-        id: data.id,
-        datosFormulario: data.datos_formulario as CartaPorteData,
-        ultimaModificacion: data.updated_at,
-        version: data.version_carta_porte || '3.1'
-      };
-    } catch (error) {
-      console.error('[BorradorService] Error cargando borrador:', error);
-      return null;
-    }
-  }
-
-  // Método para cargar el último borrador desde localStorage
-  cargarUltimoBorrador(): { datosFormulario: CartaPorteData; cartaPorteId?: string } | null {
-    try {
-      const borradorKey = 'carta_porte_borrador';
-      const borrador = localStorage.getItem(borradorKey);
-      
-      if (borrador) {
-        const parsed = JSON.parse(borrador);
-        return {
-          datosFormulario: parsed.datosFormulario || parsed,
-          cartaPorteId: parsed.id
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error cargando último borrador:', error);
-      return null;
-    }
-  }
-
-  // Método para guardado automático síncrono
-  guardarBorradorAutomatico(data: CartaPorteData, cartaPorteId?: string): void {
-    try {
-      const fallbackData = {
-        id: cartaPorteId || crypto.randomUUID(),
-        datosFormulario: data,
-        ultimaModificacion: new Date().toISOString(),
-        version: '3.1'
+        ...data,
+        version: data.version || '3.1' // Ensure version is set
       };
       
-      localStorage.setItem('carta_porte_borrador', JSON.stringify(fallbackData));
-      console.log('✅ Borrador guardado automáticamente en localStorage');
-    } catch (error) {
-      console.error('Error en guardado automático:', error);
-    }
-  }
-
-  async limpiarBorrador(cartaPorteId: string): Promise<void> {
-    try {
-      const usuario = await supabase.auth.getUser();
-      if (!usuario.data.user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      const { error } = await supabase
-        .from('cartas_porte')
-        .delete()
-        .eq('id', cartaPorteId)
-        .eq('usuario_id', usuario.data.user.id);
-
-      if (error) {
-        console.error('Error eliminando de Supabase:', error);
-      }
-
-      // También limpiar localStorage
-      localStorage.removeItem(`carta-porte-borrador-${cartaPorteId}`);
-      localStorage.removeItem('carta_porte_borrador');
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(borradorData));
       
-      console.log('✅ Borrador eliminado');
+      const metadata: BorradorMetadata = {
+        lastModified: new Date().toISOString(),
+        step,
+        progress: this.calculateProgress(data)
+      };
+      localStorage.setItem(this.METADATA_KEY, JSON.stringify(metadata));
+
+      // Save to Supabase if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await this.guardarBorradorRemoto(borradorData, user.id);
+      }
     } catch (error) {
-      console.error('[BorradorService] Error limpiando borrador:', error);
+      console.error('Error guardando borrador:', error);
       throw error;
     }
   }
 
-  iniciarGuardadoAutomatico(
-    onSaved: (cartaPorteId: string | null) => void,
-    getData: () => CartaPorteData,
-    getCartaPorteId: () => string | undefined,
-    intervalMs: number = 30000
-  ): NodeJS.Timeout {
-    console.log('[BorradorService] Iniciando auto-guardado cada', intervalMs, 'ms');
-    
-    this.autoSaveInterval = setInterval(async () => {
-      try {
-        const data = getData();
-        const cartaPorteId = getCartaPorteId();
-        
-        if (data && cartaPorteId) {
-          const savedId = await this.guardarBorrador(data, cartaPorteId);
-          onSaved(savedId);
-          console.log('🔄 Auto-guardado completado:', savedId);
-        }
-      } catch (error) {
-        console.error('❌ Error en auto-guardado:', error);
-      }
-    }, intervalMs);
+  private static async guardarBorradorRemoto(data: CartaPorteData, userId: string): Promise<void> {
+    try {
+      const borradorData = {
+        usuario_id: userId,
+        rfc_emisor: data.rfcEmisor || '',
+        rfc_receptor: data.rfcReceptor || '',
+        nombre_emisor: data.nombreEmisor || '',
+        nombre_receptor: data.nombreReceptor || '',
+        tipo_cfdi: data.tipoCfdi || 'Traslado',
+        transporte_internacional: Boolean(data.transporteInternacional),
+        registro_istmo: Boolean(data.registroIstmo),
+        status: 'borrador',
+        version_carta_porte: data.version || '3.1',
+        datos_formulario: JSON.parse(JSON.stringify(data))
+      };
 
-    return this.autoSaveInterval;
-  }
+      const { error } = await supabase
+        .from('cartas_porte')
+        .upsert(borradorData, { 
+          onConflict: 'usuario_id,status',
+          ignoreDuplicates: false 
+        });
 
-  detenerGuardadoAutomatico(): void {
-    if (this.autoSaveInterval) {
-      clearInterval(this.autoSaveInterval);
-      this.autoSaveInterval = null;
-      console.log('⏹️ Auto-guardado detenido');
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error guardando borrador remoto:', error);
+      throw error;
     }
   }
-}
 
-export const BorradorService = new BorradorServiceClass();
+  static async cargarBorrador(): Promise<CartaPorteData | null> {
+    try {
+      // Try to load from Supabase first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const remoteBorrador = await this.cargarBorradorRemoto(user.id);
+        if (remoteBorrador) return remoteBorrador;
+      }
+
+      // Fallback to localStorage
+      const localData = localStorage.getItem(this.STORAGE_KEY);
+      if (localData) {
+        const parsedData = JSON.parse(localData);
+        return {
+          ...parsedData,
+          version: parsedData.version || '3.1' // Ensure version is set
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error cargando borrador:', error);
+      return null;
+    }
+  }
+
+  private static async cargarBorradorRemoto(userId: string): Promise<CartaPorteData | null> {
+    try {
+      const { data, error } = await supabase
+        .from('cartas_porte')
+        .select('datos_formulario')
+        .eq('usuario_id', userId)
+        .eq('status', 'borrador')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data?.datos_formulario) return null;
+
+      const cartaPorteData = data.datos_formulario as unknown as CartaPorteData;
+      return {
+        ...cartaPorteData,
+        version: cartaPorteData.version || '3.1' // Ensure version is set
+      };
+    } catch (error) {
+      console.error('Error cargando borrador remoto:', error);
+      return null;
+    }
+  }
+
+  static async limpiarBorrador(): Promise<void> {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem(this.METADATA_KEY);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('cartas_porte')
+          .delete()
+          .eq('usuario_id', user.id)
+          .eq('status', 'borrador');
+      }
+    } catch (error) {
+      console.error('Error limpiando borrador:', error);
+      throw error;
+    }
+  }
+
+  static getBorradorMetadata(): BorradorMetadata | null {
+    try {
+      const metadata = localStorage.getItem(this.METADATA_KEY);
+      return metadata ? JSON.parse(metadata) : null;
+    } catch (error) {
+      console.error('Error obteniendo metadata del borrador:', error);
+      return null;
+    }
+  }
+
+  private static calculateProgress(data: CartaPorteData): number {
+    let progress = 0;
+    const sections = 5;
+
+    // Basic configuration
+    if (data.rfcEmisor && data.rfcReceptor) progress += 20;
+    
+    // Ubicaciones
+    if (data.ubicaciones && data.ubicaciones.length >= 2) progress += 20;
+    
+    // Mercancías
+    if (data.mercancias && data.mercancias.length > 0) progress += 20;
+    
+    // Autotransporte
+    if (data.autotransporte?.placa_vm) progress += 20;
+    
+    // Figuras
+    if (data.figuras && data.figuras.length > 0) progress += 20;
+
+    return progress;
+  }
+}

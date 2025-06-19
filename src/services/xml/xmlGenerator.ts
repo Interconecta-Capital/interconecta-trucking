@@ -1,11 +1,10 @@
 
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { XMLValidation } from './xmlValidation';
 import { XMLUtils } from './xmlUtils';
 import { XMLConceptosBuilder } from './xmlConceptos';
 import { XMLComplementoBuilder } from './xmlComplemento';
 import { getCartaPorteNamespace, getSchemaLocation, XML_NAMESPACES } from './xmlNamespaces';
-import { CartaPorteVersion } from '@/types/cartaPorteVersions';
 
 export interface XMLGenerationResult {
   success: boolean;
@@ -45,7 +44,7 @@ export class XMLCartaPorteGenerator {
   private static construirXML(data: CartaPorteData): string {
     const fechaActual = new Date().toISOString();
     const folio = data.folio || XMLUtils.generarFolio();
-    const version = data.cartaPorteVersion || '3.1';
+    const version = (data.cartaPorteVersion || '3.1') as '3.0' | '3.1';
     
     // Obtener namespaces según versión
     const cartaPorteNamespace = getCartaPorteNamespace(version);
