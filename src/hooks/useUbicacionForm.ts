@@ -19,7 +19,10 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     fechaHoraSalidaLlegada: initialData?.fechaHoraSalidaLlegada || '',
     distanciaRecorrida: initialData?.distanciaRecorrida || 0,
     ordenSecuencia: initialData?.ordenSecuencia || 1,
-    coordenadas: initialData?.coordenadas,
+    coordenadas: initialData?.coordenadas ? {
+      latitud: initialData.coordenadas.latitud || 0,
+      longitud: initialData.coordenadas.longitud || 0
+    } : undefined,
     domicilio: {
       pais: 'México',
       codigoPostal: '',
@@ -62,7 +65,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
           coordenadas: {
             latitud: prev.coordenadas?.latitud || 0,
             longitud: prev.coordenadas?.longitud || 0,
-            [keys[1]]: value
+            [keys[1]]: typeof value === 'number' ? value : 0
           }
         };
       }
@@ -211,14 +214,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     handleLocationUpdate: handleFieldChange, // Mantener compatibilidad
     handleFieldChange,
     handleMapboxAddressSelect,
-    cargarUbicacionFrecuente: useCallback((ubicacionFrecuente: UbicacionFrecuente) => {
-      setFormData(prev => ({
-        ...prev,
-        rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
-        nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
-        domicilio: ubicacionFrecuente.domicilio
-      }));
-    }, []),
+    cargarUbicacionFrecuente,
     isFormValid
   };
 };

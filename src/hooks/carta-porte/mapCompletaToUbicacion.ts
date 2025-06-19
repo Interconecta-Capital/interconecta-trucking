@@ -9,7 +9,7 @@ import { UbicacionCompleta } from '@/types/cartaPorte';
 export function mapCompletaToUbicacion(ubicacion: UbicacionCompleta): Ubicacion {
   return {
     id: ubicacion.id,
-    idUbicacion: ubicacion.id_ubicacion,
+    idUbicacion: ubicacion.id_ubicacion || ubicacion.id,
     tipoUbicacion: ubicacion.tipo_ubicacion as 'Origen' | 'Destino' | 'Paso Intermedio',
     rfcRemitenteDestinatario: ubicacion.rfc_remitente_destinatario,
     nombreRemitenteDestinatario: ubicacion.nombre_remitente_destinatario,
@@ -18,8 +18,8 @@ export function mapCompletaToUbicacion(ubicacion: UbicacionCompleta): Ubicacion 
     ordenSecuencia: (ubicacion as any).orden_secuencia || 1,
     coordenadas: ubicacion.coordenadas
       ? {
-          latitud: ubicacion.coordenadas.latitud,
-          longitud: ubicacion.coordenadas.longitud,
+          latitud: ubicacion.coordenadas.latitud || 0,
+          longitud: ubicacion.coordenadas.longitud || 0,
         }
       : undefined,
     domicilio: {

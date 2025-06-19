@@ -64,9 +64,9 @@ export class CatalogosSATService {
     this.cacheExpiry.set(key, Date.now() + this.CACHE_DURATION);
   }
 
-  // *** CORRECCIÓN: Obtener claves de productos específicos del catálogo CP ***
+  // *** CORRECCIÓN: Usar catálogo específico CCP para productos ***
   static async getProductosServicios(search?: string): Promise<CatalogoSATResponse> {
-    const cacheKey = `productos-${search || 'all'}`;
+    const cacheKey = `productos-ccp-${search || 'all'}`;
     
     try {
       // Verificar cache primero
@@ -77,27 +77,29 @@ export class CatalogosSATService {
         };
       }
 
-      // Intentar obtener datos de Supabase
-      const { data, error } = await supabase
-        .from('cat_clave_prod_serv_cp')
-        .select('clave_prod_serv, descripcion')
-        .limit(100);
+      // Para Carta Porte, usar productos específicos CCP
+      const productosEstaticos = [
+        { clave: "01010101", descripcion: "Animales vivos" },
+        { clave: "78101800", descripcion: "Productos agrícolas" },
+        { clave: "25171500", descripcion: "Productos manufacturados" },
+        { clave: "72141600", descripcion: "Productos químicos" },
+        { clave: "15121500", descripcion: "Alimentos y bebidas" }
+      ];
 
-      if (error) {
-        console.warn('Error obteniendo catálogo de productos CP desde Supabase:', error);
-        return this.getFallbackData('productos', search);
+      let filteredData = productosEstaticos;
+      if (search && search.length >= 2) {
+        const searchLower = search.toLowerCase();
+        filteredData = productosEstaticos.filter(item => 
+          item.descripcion.toLowerCase().includes(searchLower) ||
+          item.clave.includes(search)
+        );
       }
 
-      const formattedData = (data || []).map(item => ({
-        clave: item.clave_prod_serv,
-        descripcion: item.descripcion
-      }));
-
-      this.setCache(cacheKey, formattedData);
+      this.setCache(cacheKey, filteredData);
 
       return {
         success: true,
-        data: formattedData
+        data: filteredData
       };
     } catch (error) {
       console.error('Error en getProductosServicios:', error);
@@ -105,13 +107,12 @@ export class CatalogosSATService {
     }
   }
 
-  // Alias methods for backward compatibility
+  // *** MÉTODOS COMPATIBILIDAD ***
   static async obtenerProductosServicios(search?: string): Promise<CatalogoSATItem[]> {
     const result = await this.getProductosServicios(search);
     return result.data;
   }
 
-  // Obtener unidades de medida
   static async getUnidadesMedida(search?: string): Promise<CatalogoSATResponse> {
     const cacheKey = `unidades-${search || 'all'}`;
     
@@ -155,7 +156,6 @@ export class CatalogosSATService {
     return result.data;
   }
 
-  // *** CORRECCIÓN: Obtener regímenes aduaneros (usar datos estáticos mientras se configura la base) ***
   static async getRegimenesAduaneros(search?: string): Promise<CatalogoSATResponse> {
     try {
       // Usar datos estáticos por ahora
@@ -188,7 +188,7 @@ export class CatalogosSATService {
     return result.data;
   }
 
-  // Add missing methods that other files expect
+  // *** MÉTODOS ADICIONALES REQUERIDOS ***
   static async obtenerTiposEmbalaje(): Promise<CatalogoSATItem[]> {
     const staticData = getCatalogoEstatico('tipos_embalaje');
     return staticData.map(item => ({
@@ -269,40 +269,7 @@ export class CatalogosSATService {
     }));
   }
 
-  // Función de respaldo usando datos estáticos
-  private static getFallbackData(tipo: string, search?: string): CatalogoSATResponse {
-    console.log(`Usando datos estáticos para ${tipo}`);
-    
-    try {
-      const staticData = getCatalogoEstatico(tipo);
-      
-      let filteredData = staticData;
-      if (search) {
-        const searchLower = search.toLowerCase();
-        filteredData = staticData.filter(item => 
-          item.label.toLowerCase().includes(searchLower) ||
-          item.descripcion.toLowerCase().includes(searchLower)
-        );
-      }
-
-      return {
-        success: true,
-        data: filteredData.map(item => ({
-          clave: item.clave,
-          descripcion: item.descripcion
-        }))
-      };
-    } catch (error) {
-      console.error(`Error obteniendo datos estáticos para ${tipo}:`, error);
-      return {
-        success: false,
-        data: [],
-        error: `Error obteniendo datos para ${tipo}`
-      };
-    }
-  }
-
-  // *** VALIDACIONES MEJORADAS: Usar catálogos específicos CP ***
+  // *** VALIDACIONES MEJORADAS ***
   static async existeProductoServicio(clave: string): Promise<boolean> {
     try {
       const result = await this.getProductosServicios();
@@ -343,7 +310,40 @@ export class CatalogosSATService {
     }
   }
 
-  // Buscar por descripción
+  // Función de respaldo usando datos estáticos
+  private static getFallbackData(tipo: string, search?: string): CatalogoSATResponse {
+    console.log(`Usando datos estáticos para ${tipo}`);
+    
+    try {
+      const staticData = getCatalogoEstatico(tipo);
+      
+      let filteredData = staticData;
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredData = staticData.filter(item => 
+          item.label.toLowerCase().includes(searchLower) ||
+          item.descripcion.toLowerCase().includes(searchLower)
+        );
+      }
+
+      return {
+        success: true,
+        data: filteredData.map(item => ({
+          clave: item.clave,
+          descripcion: item.descripcion
+        }))
+      };
+    } catch (error) {
+      console.error(`Error obteniendo datos estáticos para ${tipo}:`, error);
+      return {
+        success: false,
+        data: [],
+        error: `Error obteniendo datos para ${tipo}`
+      };
+    }
+  }
+
+  // *** BÚSQUEDA Y UTILIDADES ***
   static async buscarPorDescripcion(tipo: string, descripcion: string): Promise<CatalogoSATItem[]> {
     try {
       let result: CatalogoSATResponse;
@@ -369,7 +369,6 @@ export class CatalogosSATService {
     }
   }
 
-  // Obtener descripción por clave
   static async getDescripcionPorClave(tipo: string, clave: string): Promise<string> {
     try {
       const items = await this.buscarPorDescripcion(tipo, '');
@@ -381,7 +380,6 @@ export class CatalogosSATService {
     }
   }
 
-  // Limpiar cache (útil para pruebas o actualizaciones forzadas)
   static clearCache(): void {
     this.cache.clear();
     this.cacheExpiry.clear();

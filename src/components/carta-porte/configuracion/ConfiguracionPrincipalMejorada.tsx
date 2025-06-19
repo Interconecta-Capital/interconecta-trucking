@@ -11,7 +11,7 @@ import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { RegimenesAduanerosList } from './RegimenesAduanerosList';
 import { ClienteSelectorConCRM } from '@/components/crm/ClienteSelectorConCRM';
 import { CartaPorteData } from '@/types/cartaPorte';
-import { RFCValidator } from '@/utils/rfcValidation';
+import { RFCValidator, RFCValidationResult } from '@/utils/rfcValidation';
 
 interface ConfiguracionPrincipalMejoradaProps {
   data: CartaPorteData;
@@ -27,8 +27,13 @@ export function ConfiguracionPrincipalMejorada({
   isFormValid
 }: ConfiguracionPrincipalMejoradaProps) {
   
-  const validacionEmisor = data.rfcEmisor ? RFCValidator.validarRFC(data.rfcEmisor) : { esValido: false, mensaje: '' };
-  const validacionReceptor = data.rfcReceptor ? RFCValidator.validarRFC(data.rfcReceptor) : { esValido: false, mensaje: '' };
+  const validacionEmisor: RFCValidationResult = data.rfcEmisor ? 
+    RFCValidator.validarRFC(data.rfcEmisor) : 
+    { esValido: false, mensaje: 'RFC requerido' };
+    
+  const validacionReceptor: RFCValidationResult = data.rfcReceptor ? 
+    RFCValidator.validarRFC(data.rfcReceptor) : 
+    { esValido: false, mensaje: 'RFC requerido' };
 
   const handleTransporteInternacionalChange = (value: boolean) => {
     onChange({ 
@@ -102,7 +107,7 @@ export function ConfiguracionPrincipalMejorada({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                RFC del emisor inválido: {validacionEmisor.mensaje}
+                RFC del emisor inválido: {validacionEmisor.mensaje || 'Error de validación'}
               </AlertDescription>
             </Alert>
           )}
@@ -130,7 +135,7 @@ export function ConfiguracionPrincipalMejorada({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                RFC del receptor inválido: {validacionReceptor.mensaje}
+                RFC del receptor inválido: {validacionReceptor.mensaje || 'Error de validación'}
               </AlertDescription>
             </Alert>
           )}
@@ -162,7 +167,6 @@ export function ConfiguracionPrincipalMejorada({
             </div>
           </div>
 
-          {/* *** CORRECCIÓN: Mostrar regímenes aduaneros solo si es transporte internacional *** */}
           {data.transporteInternacional && (
             <RegimenesAduanerosList
               regimenes={data.regimenesAduaneros || []}

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { XMLCartaPorteGenerator, XMLGenerationResult } from '@/services/xml/xmlGenerator';
 import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
-import { Ubicacion } from '@/types/ubicaciones';
 import { mapUbicacionToCompleta } from '@/hooks/carta-porte/mapUbicacionToCompleta';
 import { mapCompletaToUbicacion } from '@/hooks/carta-porte/mapCompletaToUbicacion';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,9 +17,16 @@ export const useXMLGeneration = () => {
     try {
       console.log('Iniciando generación de XML para Carta Porte');
 
-      const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub =>
-        (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(mapCompletaToUbicacion(ub as UbicacionCompleta))
-      );
+      // Asegurar que las ubicaciones estén en el formato correcto
+      const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub => {
+        // Si ya tiene las propiedades de UbicacionCompleta, usar tal como está
+        if ((ub as any).tipo_ubicacion) {
+          return ub as UbicacionCompleta;
+        }
+        // Si no, convertir desde Ubicacion a UbicacionCompleta
+        const ubicacionSimple = mapCompletaToUbicacion(ub as UbicacionCompleta);
+        return mapUbicacionToCompleta(ubicacionSimple);
+      });
 
       const data = { ...cartaPorteData, ubicaciones };
 
