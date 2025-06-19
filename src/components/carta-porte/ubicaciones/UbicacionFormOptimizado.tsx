@@ -323,6 +323,14 @@ export function UbicacionFormOptimizado({
             <FormularioDomicilioUnificado
               domicilio={formData.domicilio}
               onDomicilioChange={handleDomicilioChange}
+              mostrarDistancia={
+                formData.tipoUbicacion === 'Destino' ||
+                formData.tipoUbicacion === 'Paso Intermedio'
+              }
+              distanciaRecorrida={formData.distanciaRecorrida}
+              onDistanciaChange={(dist) =>
+                setFormData(prev => ({ ...prev, distanciaRecorrida: dist }))
+              }
               camposOpcionales={['numInterior', 'referencia', 'localidad']}
             />
             
