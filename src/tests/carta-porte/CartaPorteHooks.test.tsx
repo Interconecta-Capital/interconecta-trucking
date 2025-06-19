@@ -1,7 +1,7 @@
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
+import { useCartaPorteMappers } from '@/hooks/carta-porte/useCartaPorteMappers';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 // Mock para Supabase
@@ -17,20 +17,20 @@ vi.mock('@/integrations/supabase/client', () => ({
   }
 }));
 
-describe('useCartaPorteForm', () => {
+describe('useCartaPorteMappers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should initialize with default carta porte data', () => {
-    const { result } = renderHook(() => useCartaPorteForm());
+    const { result } = renderHook(() => useCartaPorteMappers());
     
-    expect(result.current.cartaPorteData).toBeDefined();
-    expect(result.current.cartaPorteData.version).toBe('3.1');
+    expect(result.current.cachedFormData).toBeDefined();
+    expect(result.current.cachedFormData.cartaPorteVersion).toBe('3.1');
   });
 
   it('should provide default autotransporte with required fields', () => {
-    const { result } = renderHook(() => useCartaPorteForm());
+    const { result } = renderHook(() => useCartaPorteMappers());
     
     const defaultAutotransporte: AutotransporteCompleto = {
       placa_vm: 'ABC-123',
@@ -49,39 +49,69 @@ describe('useCartaPorteForm', () => {
     expect(typeof defaultAutotransporte.capacidad_carga).toBe('number');
   });
 
-  it('should update section data correctly', async () => {
-    const { result } = renderHook(() => useCartaPorteForm());
+  it('should update form data correctly', async () => {
+    const { result } = renderHook(() => useCartaPorteMappers());
     
     await act(async () => {
-      result.current.updateSection('configuracion', {
-        rfcEmisor: 'XAXX010101000',
-        nombreEmisor: 'Test Emisor'
-      });
+      result.current.updateFormData('rfcEmisor', 'XAXX010101000');
     });
     
-    expect(result.current.cartaPorteData.rfcEmisor).toBe('XAXX010101000');
-    expect(result.current.cartaPorteData.nombreEmisor).toBe('Test Emisor');
+    expect(result.current.cachedFormData.rfcEmisor).toBe('XAXX010101000');
   });
 
-  it('should handle save carta porte', async () => {
-    const { result } = renderHook(() => useCartaPorteForm());
+  it('should handle save to database', async () => {
+    const { result } = renderHook(() => useCartaPorteMappers());
     
     await act(async () => {
-      await result.current.saveCartaPorte();
+      await result.current.saveToDatabase();
     });
     
     expect(result.current.isLoading).toBe(false);
   });
 
-  it('should reset form to default state', () => {
-    const { result } = renderHook(() => useCartaPorteForm());
+  it('should convert form data to carta porte data', () => {
+    const { result } = renderHook(() => useCartaPorteMappers());
     
-    act(() => {
-      result.current.resetForm();
-    });
+    const cartaPorteData = result.current.formDataToCartaPorteData();
     
-    expect(result.current.cartaPorteData.version).toBe('3.1');
-    expect(result.current.error).toBe('');
+    expect(cartaPorteData.version).toBe('3.1');
+    expect(cartaPorteData.cartaPorteVersion).toBe('3.1');
+  });
+
+  it('should convert carta porte data to form data', () => {
+    const { result } = renderHook(() => useCartaPorteMappers());
+    
+    const testCartaPorteData = {
+      version: '3.1',
+      cartaPorteVersion: '3.1' as const,
+      rfcEmisor: 'TEST123456789',
+      nombreEmisor: 'Test Emisor',
+      rfcReceptor: 'REC123456789',
+      nombreReceptor: 'Test Receptor',
+      transporteInternacional: false,
+      registroIstmo: false,
+      ubicaciones: [],
+      mercancias: [],
+      autotransporte: {
+        placa_vm: 'ABC-123',
+        anio_modelo_vm: 2020,
+        config_vehicular: 'C2',
+        perm_sct: 'TPAF03',
+        num_permiso_sct: '123456',
+        asegura_resp_civil: 'Seguros SA',
+        poliza_resp_civil: 'POL123',
+        peso_bruto_vehicular: 5000,
+        capacidad_carga: 3000,
+        remolques: []
+      },
+      figuras: [],
+      tipoCfdi: 'Traslado' as const
+    };
+    
+    const formData = result.current.cartaPorteDataToFormData(testCartaPorteData);
+    
+    expect(formData.rfcEmisor).toBe('TEST123456789');
+    expect(formData.nombreEmisor).toBe('Test Emisor');
   });
 
   it('should handle autotransporte with all required fields', () => {

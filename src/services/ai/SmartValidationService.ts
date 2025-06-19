@@ -229,8 +229,13 @@ export class SmartValidationService {
     // Calcular scores por sección
     const sectionsStatus = this.calculateSectionScores(allIssues, data);
     
-    // Score general - safely access the score property
-    const sectionScores = Object.values(sectionsStatus).map(s => s.score || 0);
+    // Score general - safely access the score property with proper type checking
+    const sectionScores = Object.values(sectionsStatus).map(s => {
+      if (typeof s === 'object' && s !== null && 'score' in s) {
+        return (s as any).score || 0;
+      }
+      return 0;
+    });
     const overallScore = Math.round(sectionScores.reduce((sum, score) => sum + score, 0) / sectionScores.length);
 
     // Determinar validez

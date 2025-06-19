@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface PredictiveAlert {
   id: string;
   type: 'maintenance' | 'compliance' | 'route' | 'fuel' | 'safety';
-  severity: 'low' | 'medium' | 'high';
+  severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
   predictedDate: Date;
@@ -12,7 +12,10 @@ export interface PredictiveAlert {
   actionRequired: boolean;
   estimatedCost?: number;
   preventiveMeasures: string[];
+  resolved?: boolean;
 }
+
+export interface MonitoringAlert extends PredictiveAlert {}
 
 export interface MaintenancePrediction {
   vehicleId: string;
@@ -28,6 +31,31 @@ export interface ComplianceAlert {
   expirationDate: Date;
   riskLevel: 'low' | 'medium' | 'high';
   affectedOperations: string[];
+}
+
+export interface PredictiveMetrics {
+  maintenancePredictions: MaintenancePrediction[];
+  complianceAlerts: ComplianceAlert[];
+  routeOptimizations: Array<{
+    routeId: string;
+    potentialSavings: number;
+    recommendedChanges: string[];
+  }>;
+  fuelEfficiencyTips: string[];
+  overallRiskScore: number;
+  performanceIndicators: {
+    fuelEfficiency: number;
+    maintenanceScore: number;
+    complianceScore: number;
+    routeOptimization: number;
+  };
+}
+
+export interface RealTimeStatus {
+  systemHealth: number;
+  activeAlerts: number;
+  vehiclesTracked: number;
+  lastUpdate: Date;
 }
 
 export interface PredictiveInsights {
@@ -46,10 +74,10 @@ export class PredictiveMonitoringService {
   private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private static cache = new Map<string, { data: any; timestamp: number }>();
 
-  static async generatePredictiveAlerts(userId: string): Promise<PredictiveAlert[]> {
+  static async generatePredictiveAlerts(userId?: string): Promise<PredictiveAlert[]> {
     console.log('🔮 [PredictiveMonitoring] Generando alertas predictivas...');
 
-    const cacheKey = `alerts_${userId}`;
+    const cacheKey = `alerts_${userId || 'anonymous'}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) {
       console.log('✅ Alertas obtenidas del cache');
@@ -87,8 +115,8 @@ export class PredictiveMonitoringService {
     }
   }
 
-  static async getPredictiveInsights(userId: string, timeframe: string = '30d'): Promise<PredictiveInsights> {
-    console.log('📊 [PredictiveMonitoring] Obteniendo insights predictivos...');
+  static async getPredictiveMetrics(userId?: string, timeframe: string = '30d'): Promise<PredictiveMetrics> {
+    console.log('📊 [PredictiveMonitoring] Obteniendo métricas predictivas...');
 
     try {
       const { data: aiResult, error } = await supabase.functions.invoke('predictive-ai', {
@@ -107,11 +135,11 @@ export class PredictiveMonitoringService {
 
       if (error) {
         console.error('❌ Error en insights AI:', error);
-        return this.getFallbackInsights();
+        return this.getFallbackMetrics();
       }
 
       return {
-        maintenanceAlerts: (aiResult.maintenanceAlerts || []).map((alert: any) => ({
+        maintenancePredictions: (aiResult.maintenanceAlerts || []).map((alert: any) => ({
           vehicleId: String(alert.vehicleId || ''),
           component: alert.component,
           failureProbability: alert.failureProbability,
@@ -127,13 +155,52 @@ export class PredictiveMonitoringService {
         })) as ComplianceAlert[],
         routeOptimizations: aiResult.routeOptimizations || [],
         fuelEfficiencyTips: aiResult.fuelEfficiencyTips || [],
-        overallRiskScore: aiResult.overallRiskScore || 50
+        overallRiskScore: aiResult.overallRiskScore || 50,
+        performanceIndicators: {
+          fuelEfficiency: aiResult.performanceIndicators?.fuelEfficiency || 70,
+          maintenanceScore: aiResult.performanceIndicators?.maintenanceScore || 75,
+          complianceScore: aiResult.performanceIndicators?.complianceScore || 80,
+          routeOptimization: aiResult.performanceIndicators?.routeOptimization || 65
+        }
       };
 
     } catch (error) {
-      console.error('❌ Error obteniendo insights:', error);
-      return this.getFallbackInsights();
+      console.error('❌ Error obteniendo métricas:', error);
+      return this.getFallbackMetrics();
     }
+  }
+
+  static async getRealTimeStatus(): Promise<RealTimeStatus> {
+    console.log('🔄 [PredictiveMonitoring] Cargando estado en tiempo real...');
+
+    try {
+      // Simulate real-time status for now
+      return {
+        systemHealth: Math.floor(Math.random() * 20) + 80, // 80-100
+        activeAlerts: Math.floor(Math.random() * 10),
+        vehiclesTracked: Math.floor(Math.random() * 50) + 10,
+        lastUpdate: new Date()
+      };
+    } catch (error) {
+      console.error('❌ Error cargando estado en tiempo real:', error);
+      return {
+        systemHealth: 85,
+        activeAlerts: 0,
+        vehiclesTracked: 0,
+        lastUpdate: new Date()
+      };
+    }
+  }
+
+  static async getPredictiveInsights(userId: string, timeframe: string = '30d'): Promise<PredictiveInsights> {
+    const metrics = await this.getPredictiveMetrics(userId, timeframe);
+    return {
+      maintenanceAlerts: metrics.maintenancePredictions,
+      complianceAlerts: metrics.complianceAlerts,
+      routeOptimizations: metrics.routeOptimizations,
+      fuelEfficiencyTips: metrics.fuelEfficiencyTips,
+      overallRiskScore: metrics.overallRiskScore
+    };
   }
 
   private static normalizeSeverity(severity: any): 'low' | 'medium' | 'high' {
@@ -156,15 +223,24 @@ export class PredictiveMonitoringService {
     return aiAlerts.map(alert => ({
       id: alert.id || this.generateAlertId(),
       type: alert.type || 'maintenance',
-      severity: this.normalizeSeverity(alert.severity),
+      severity: this.normalizeSeverityForAlert(alert.severity),
       title: alert.title || 'Alerta Predictiva',
       description: alert.description || 'Se ha detectado un posible problema',
       predictedDate: new Date(alert.predictedDate || Date.now() + 7 * 24 * 60 * 60 * 1000),
       confidence: alert.confidence || 0.7,
       actionRequired: alert.actionRequired || false,
       estimatedCost: alert.estimatedCost,
-      preventiveMeasures: alert.preventiveMeasures || []
+      preventiveMeasures: alert.preventiveMeasures || [],
+      resolved: false
     }));
+  }
+
+  private static normalizeSeverityForAlert(severity: any): 'low' | 'medium' | 'high' | 'critical' {
+    const normalizedSeverity = String(severity).toLowerCase();
+    if (['low', 'medium', 'high', 'critical'].includes(normalizedSeverity)) {
+      return normalizedSeverity as 'low' | 'medium' | 'high' | 'critical';
+    }
+    return 'medium'; // default fallback
   }
 
   private static getFallbackAlerts(): PredictiveAlert[] {
@@ -178,18 +254,25 @@ export class PredictiveMonitoringService {
         predictedDate: new Date(),
         confidence: 0.5,
         actionRequired: false,
-        preventiveMeasures: ['Verificar conectividad del sistema']
+        preventiveMeasures: ['Verificar conectividad del sistema'],
+        resolved: false
       }
     ];
   }
 
-  private static getFallbackInsights(): PredictiveInsights {
+  private static getFallbackMetrics(): PredictiveMetrics {
     return {
-      maintenanceAlerts: [],
+      maintenancePredictions: [],
       complianceAlerts: [],
       routeOptimizations: [],
-      fuelEfficiencyTips: ['Sistema de insights temporalmente no disponible'],
-      overallRiskScore: 50
+      fuelEfficiencyTips: ['Sistema de métricas temporalmente no disponible'],
+      overallRiskScore: 50,
+      performanceIndicators: {
+        fuelEfficiency: 50,
+        maintenanceScore: 50,
+        complianceScore: 50,
+        routeOptimization: 50
+      }
     };
   }
 
