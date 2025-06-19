@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ interface UbicacionFormDialogProps {
   onOpenChange: (open: boolean) => void;
   ubicacion?: UbicacionCompleta;
   onSave: (ubicacion: UbicacionCompleta) => void;
-  tipo: 'Origen' | 'Destino' | 'Paso Intermedio';
+  tipo?: 'Origen' | 'Destino' | 'Paso Intermedio';
 }
 
 export function UbicacionFormDialog({
@@ -23,9 +24,9 @@ export function UbicacionFormDialog({
 }: UbicacionFormDialogProps) {
   const [formData, setFormData] = useState<UbicacionCompleta>({
     id: crypto.randomUUID(),
-    tipo_estacion: '01', // Add required property
+    tipo_estacion: '01',
     id_ubicacion: '',
-    tipo_ubicacion: tipo,
+    tipo_ubicacion: tipo || 'Origen',
     rfc_remitente_destinatario: '',
     nombre_remitente_destinatario: '',
     fecha_hora_salida_llegada: new Date().toISOString().slice(0, 16),
@@ -45,14 +46,14 @@ export function UbicacionFormDialog({
     if (ubicacion) {
       setFormData({
         ...ubicacion,
-        tipo_estacion: ubicacion.tipo_estacion || '01' // Ensure tipo_estacion is present
+        tipo_estacion: ubicacion.tipo_estacion || '01'
       });
     } else {
       setFormData({
         id: crypto.randomUUID(),
-        tipo_estacion: '01', // Add required property
+        tipo_estacion: '01',
         id_ubicacion: '',
-        tipo_ubicacion: tipo,
+        tipo_ubicacion: tipo || 'Origen',
         rfc_remitente_destinatario: '',
         nombre_remitente_destinatario: '',
         fecha_hora_salida_llegada: new Date().toISOString().slice(0, 16),
@@ -91,12 +92,11 @@ export function UbicacionFormDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {ubicacion ? 'Editar' : 'Agregar'} Ubicación - {tipo}
+            {ubicacion ? 'Editar' : 'Agregar'} Ubicación - {formData.tipo_ubicacion}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Add tipo_estacion field */}
           <div className="space-y-2">
             <Label>Tipo de Estación</Label>
             <Select

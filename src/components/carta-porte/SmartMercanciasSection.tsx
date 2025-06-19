@@ -9,13 +9,14 @@ import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
 import { useMercancias, Mercancia } from '@/hooks/useMercancias';
 import { useAIContext } from '@/hooks/ai/useAIContext';
 import { geminiCore } from '@/services/ai/GeminiCoreService';
+import { MercanciaCompleta } from '@/types/cartaPorte';
 import { Package, Upload, ArrowRight, ArrowLeft, Plus, Sparkles, Brain, FileText, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SmartMercanciasSectionProps {
-  data: any[];
+  data: MercanciaCompleta[];
   ubicaciones: any[];
-  onChange: (data: any[]) => void;
+  onChange: (data: MercanciaCompleta[]) => void;
   onNext: () => void;
   onPrev: () => void;
 }
@@ -47,7 +48,46 @@ export function SmartMercanciasSection({
 
   // Sync with prop data when there are changes
   React.useEffect(() => {
-    onChange(mercancias);
+    // Convert Mercancia to MercanciaCompleta by ensuring all required properties exist
+    const mercanciasCompletas: MercanciaCompleta[] = mercancias.map(m => ({
+      id: m.id || crypto.randomUUID(),
+      descripcion: m.descripcion || '',
+      bienes_transp: m.bienes_transp || '',
+      clave_unidad: m.clave_unidad || 'KGM',
+      cantidad: m.cantidad || 1,
+      peso_kg: m.peso_kg || 0,
+      valor_mercancia: m.valor_mercancia,
+      material_peligroso: m.material_peligroso,
+      moneda: m.moneda,
+      cve_material_peligroso: m.cve_material_peligroso,
+      embalaje: m.embalaje,
+      fraccion_arancelaria: m.fraccion_arancelaria,
+      uuid_comercio_ext: m.uuid_comercio_ext,
+      carta_porte_id: m.carta_porte_id,
+      numero_autorizacion: m.numero_autorizacion,
+      folio_acreditacion: m.folio_acreditacion,
+      requiere_semarnat: m.requiere_semarnat,
+      categoria_transporte: m.categoria_transporte,
+      regulaciones_especiales: m.regulaciones_especiales,
+      temperatura_transporte: m.temperatura_transporte,
+      tipo_refrigeracion: m.tipo_refrigeracion,
+      dimensiones_especiales: m.dimensiones_especiales,
+      peso_especial: m.peso_especial,
+      peso_bruto_total: m.peso_bruto_total,
+      descripcion_detallada: m.descripcion_detallada,
+      especie_protegida: m.especie_protegida,
+      tipo_embalaje: m.tipo_embalaje,
+      material_embalaje: m.material_embalaje,
+      unidad_peso_bruto: m.unidad_peso_bruto,
+      dimensiones: m.dimensiones,
+      uuid_comercio_exterior: m.uuid_comercio_exterior,
+      peso_neto_total: m.peso_neto_total,
+      numero_piezas: m.numero_piezas,
+      requiere_cites: m.requiere_cites,
+      permisos_semarnat: m.permisos_semarnat,
+      documentacion_aduanera: m.documentacion_aduanera
+    }));
+    onChange(mercanciasCompletas);
   }, [mercancias, onChange]);
 
   // Get carta porte ID from URL or context if available

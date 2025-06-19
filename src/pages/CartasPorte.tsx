@@ -60,9 +60,10 @@ export default function CartasPorte() {
       let cartaPorteData: CartaPorteData;
       
       if (typeof carta.datos_formulario === 'string') {
-        cartaPorteData = JSON.parse(carta.datos_formulario);
+        const parsed = JSON.parse(carta.datos_formulario);
+        cartaPorteData = { version: '3.1', ...parsed } as CartaPorteData;
       } else if (typeof carta.datos_formulario === 'object' && carta.datos_formulario !== null) {
-        cartaPorteData = carta.datos_formulario as CartaPorteData;
+        cartaPorteData = { version: '3.1', ...carta.datos_formulario } as CartaPorteData;
       } else {
         throw new Error('Formato de datos inválido');
       }
@@ -118,9 +119,10 @@ export default function CartasPorte() {
       // Fallback al generador local
       let cartaPorteData: CartaPorteData;
       if (typeof carta.datos_formulario === 'string') {
-        cartaPorteData = JSON.parse(carta.datos_formulario);
+        const parsed = JSON.parse(carta.datos_formulario);
+        cartaPorteData = { version: '3.1', ...parsed } as CartaPorteData;
       } else {
-        cartaPorteData = carta.datos_formulario as CartaPorteData;
+        cartaPorteData = { version: '3.1', ...carta.datos_formulario } as CartaPorteData;
       }
 
       const result = await CartaPortePDFAdvanced.generarPDF(cartaPorteData);

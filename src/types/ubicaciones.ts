@@ -12,6 +12,11 @@ export interface Domicilio {
   localidad?: string;
 }
 
+export interface Coordinates {
+  latitud: number;
+  longitud: number;
+}
+
 export interface Ubicacion {
   id: string;
   idUbicacion?: string;
@@ -21,11 +26,11 @@ export interface Ubicacion {
   fechaHoraSalidaLlegada?: string;
   distanciaRecorrida?: number;
   ordenSecuencia: number;
-  coordenadas?: {
-    latitud: number;
-    longitud: number;
-  };
+  coordenadas?: Coordinates;
   domicilio: Domicilio;
+  tipoEstacion?: string;
+  numeroEstacion?: string;
+  kilometro?: number;
 }
 
 export interface UbicacionFrecuente {

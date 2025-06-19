@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -305,7 +304,6 @@ export function UbicacionesSection({
         onOpenChange={setIsDialogOpen}
         ubicacion={editingUbicacion}
         onSave={handleSaveUbicacion}
-        existingUbicaciones={data}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,8 +27,10 @@ export function SmartMercanciaForm({
   });
 
   useEffect(() => {
-    classifyMercancia(mercancia);
-  }, [classifyMercancia, mercancia]);
+    if (mercancia.descripcion) {
+      classifyMercancia(mercancia.descripcion);
+    }
+  }, [classifyMercancia, mercancia.descripcion]);
 
   return (
     <div className="space-y-6">
