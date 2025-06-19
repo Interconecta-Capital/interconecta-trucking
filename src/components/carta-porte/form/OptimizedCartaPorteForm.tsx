@@ -77,31 +77,31 @@ export function OptimizedCartaPorteForm({ cartaPorteId }: OptimizedCartaPorteFor
       title: 'Configuración',
       component: ConfiguracionSection,
       key: 'configuracion',
-      valid: validationSummary.configuracion
+      valid: validationSummary.sectionStatus.configuracion === 'complete'
     },
     {
       title: 'Ubicaciones',
       component: UbicacionesSection,
       key: 'ubicaciones',
-      valid: validationSummary.ubicaciones
+      valid: validationSummary.sectionStatus.ubicaciones === 'complete'
     },
     {
       title: 'Mercancías',
       component: MercanciasSection,
       key: 'mercancias',
-      valid: validationSummary.mercancias
+      valid: validationSummary.sectionStatus.mercancias === 'complete'
     },
     {
       title: 'Autotransporte',
       component: AutotransporteSection,
       key: 'autotransporte',
-      valid: validationSummary.autotransporte
+      valid: validationSummary.sectionStatus.autotransporte === 'complete'
     },
     {
       title: 'Figuras',
       component: FigurasSection,
       key: 'figuras',
-      valid: validationSummary.figuras
+      valid: validationSummary.sectionStatus.figuras === 'complete'
     }
   ];
 
