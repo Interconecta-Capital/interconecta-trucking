@@ -1,39 +1,13 @@
 
-export interface UbicacionFrecuente {
-  id: string;
-  nombre: string;
-  tipo_ubicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
-  rfc_remitente_destinatario?: string;
-  nombre_remitente_destinatario?: string;
-  nombreUbicacion?: string;
-  rfcAsociado?: string;
-  domicilio: {
-    calle: string;
-    numero_exterior?: string;
-    numero_interior?: string;
-    colonia: string;
-    localidad?: string;
-    municipio: string;
-    estado: string;
-    pais: string;
-    codigo_postal: string;
-    referencia?: string;
-  };
-  uso_count?: number;
-  usoCount?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface Ubicacion {
   id: string;
   idUbicacion?: string;
-  tipoUbicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
+  tipoUbicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
   rfcRemitenteDestinatario?: string;
   nombreRemitenteDestinatario?: string;
   fechaHoraSalidaLlegada?: string;
   distanciaRecorrida?: number;
-  ordenSecuencia?: number;
+  ordenSecuencia: number;
   tipoEstacion?: string;
   numeroEstacion?: string;
   kilometro?: number;
@@ -55,12 +29,12 @@ export interface Ubicacion {
   };
 }
 
-export interface UbicacionBase {
-  tipo_estacion: string;
-  nombre_estacion?: string;
+export interface UbicacionFrecuente {
+  id: string;
+  nombre: string;
+  tipo_ubicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
   rfc_remitente_destinatario?: string;
-  id_ubicacion?: string;
-  distancia_recorrida?: number;
+  nombre_remitente_destinatario?: string;
   domicilio: {
     calle: string;
     numero_exterior?: string;
@@ -73,4 +47,19 @@ export interface UbicacionBase {
     codigo_postal: string;
     referencia?: string;
   };
+  uso_count?: number;
+  usoCount?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Coordinates {
+  latitud: number;
+  longitud: number;
+}
+
+export interface GeocodeResult {
+  ubicacion: Ubicacion;
+  coordenadas: Coordinates;
+  direccionFormateada: string;
 }

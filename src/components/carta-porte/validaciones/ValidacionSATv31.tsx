@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,12 +59,15 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
       
       // Combinar resultados
       const combinedResult: ValidacionSATv31 = {
-        valido: dbResult.valido && frontendValidations.valido,
+        esValido: dbResult.valido && frontendValidations.esValido,
         errores: [...(dbResult.errores || []), ...frontendValidations.errores],
-        warnings: [...(dbResult.warnings || []), ...frontendValidations.warnings],
-        score: Math.min(dbResult.score || 0, frontendValidations.score),
+        advertencias: [...(dbResult.warnings || []), ...frontendValidations.advertencias],
+        scoreComplitud: Math.min(dbResult.score || 0, frontendValidations.scoreComplitud),
+        warnings: [...(dbResult.warnings || []), ...frontendValidations.advertencias],
+        score: Math.min(dbResult.score || 0, frontendValidations.scoreComplitud),
         campos_faltantes: frontendValidations.campos_faltantes,
-        recomendaciones: frontendValidations.recomendaciones
+        recomendaciones: frontendValidations.recomendaciones,
+        valido: dbResult.valido && frontendValidations.esValido
       };
 
       setValidationResult(combinedResult);
@@ -74,12 +76,15 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
     } catch (error) {
       console.error('Error en validación SAT v3.1:', error);
       const errorResult: ValidacionSATv31 = {
-        valido: false,
+        esValido: false,
         errores: ['Error interno de validación'],
+        advertencias: [],
+        scoreComplitud: 0,
         warnings: [],
         score: 0,
         campos_faltantes: [],
-        recomendaciones: []
+        recomendaciones: [],
+        valido: false
       };
       setValidationResult(errorResult);
     } finally {
@@ -89,7 +94,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
 
   const performFrontendValidations = async (data: CartaPorteData): Promise<ValidacionSATv31> => {
     const errores: string[] = [];
-    const warnings: string[] = [];
+    const advertencias: string[] = [];
     const campos_faltantes: string[] = [];
     const recomendaciones: string[] = [];
 
@@ -174,7 +179,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
 
       // Validar peso total vs capacidad vehicular
       if (data.autotransporte?.peso_bruto_vehicular && pesoTotalCalculado > data.autotransporte.peso_bruto_vehicular) {
-        warnings.push(`Peso total mercancías (${pesoTotalCalculado.toFixed(2)} kg) excede capacidad vehículo (${data.autotransporte.peso_bruto_vehicular} kg)`);
+        advertencias.push(`Peso total mercancías (${pesoTotalCalculado.toFixed(2)} kg) excede capacidad vehículo (${data.autotransporte.peso_bruto_vehicular} kg)`);
       }
     }
 
@@ -185,7 +190,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
       }
 
       if (!data.autotransporte.vigencia_resp_civil) {
-        warnings.push('Se recomienda especificar vigencia del seguro de responsabilidad civil');
+        advertencias.push('Se recomienda especificar vigencia del seguro de responsabilidad civil');
       }
 
       if (!data.autotransporte.numero_serie_vin) {
@@ -198,7 +203,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
       data.figuras.forEach((figura, idx) => {
         if (figura.tipo_figura === '01') { // Operador
           if (!figura.operador_sct) {
-            warnings.push(`Figura #${idx + 1}: Especificar si es operador SCT`);
+            advertencias.push(`Figura #${idx + 1}: Especificar si es operador SCT`);
           }
           
           if (!figura.tipo_licencia) {
@@ -226,16 +231,19 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
     const errorWeight = 10; // Errores tienen mayor peso
     const warningWeight = 2;
     
-    const penalizacion = (errores.length * errorWeight) + (warnings.length * warningWeight);
+    const penalizacion = (errores.length * errorWeight) + (advertencias.length * warningWeight);
     const score = Math.max(0, Math.round(((totalChecks * 10) - penalizacion) / totalChecks * 10));
 
     return {
-      valido: errores.length === 0,
+      esValido: errores.length === 0,
       errores,
-      warnings,
+      advertencias,
+      scoreComplitud: score,
+      warnings: advertencias,
       score,
       campos_faltantes,
-      recomendaciones
+      recomendaciones,
+      valido: errores.length === 0
     };
   };
 
@@ -291,19 +299,19 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
   return (
     <div className="space-y-6">
       {/* Resumen de Validación */}
-      <Card className={getScoreBgColor(validationResult.score)}>
+      <Card className={getScoreBgColor(validationResult.scoreComplitud)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Shield className="h-5 w-5" />
               <span>Validación SAT Carta Porte v3.1</span>
-              {validationResult.valido && (
+              {validationResult.esValido && (
                 <Badge variant="default" className="bg-green-100 text-green-800">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Cumple SAT v3.1
                 </Badge>
               )}
-              {!validationResult.valido && (
+              {!validationResult.esValido && (
                 <Badge variant="destructive">
                   <XCircle className="h-3 w-3 mr-1" />
                   No Cumple
@@ -311,8 +319,8 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
               )}
             </CardTitle>
             <div className="text-right">
-              <div className={`text-2xl font-bold ${getScoreColor(validationResult.score)}`}>
-                {validationResult.score}%
+              <div className={`text-2xl font-bold ${getScoreColor(validationResult.scoreComplitud)}`}>
+                {validationResult.scoreComplitud}%
               </div>
               <div className="text-xs text-muted-foreground">
                 Cumplimiento SAT
@@ -322,7 +330,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Progress value={validationResult.score} className="h-3" />
+            <Progress value={validationResult.scoreComplitud} className="h-3" />
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">
@@ -333,7 +341,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {validationResult.warnings.length}
+                  {validationResult.advertencias.length}
                 </div>
                 <div className="text-xs text-muted-foreground">Advertencias</div>
               </div>
@@ -390,7 +398,7 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
               </TabsTrigger>
               <TabsTrigger value="advertencias" className="flex items-center space-x-1">
                 <AlertTriangle className="h-3 w-3" />
-                <span>Advertencias ({validationResult.warnings.length})</span>
+                <span>Advertencias ({validationResult.advertencias.length})</span>
               </TabsTrigger>
               <TabsTrigger value="recomendaciones" className="flex items-center space-x-1">
                 <Lightbulb className="h-3 w-3" />
@@ -421,9 +429,9 @@ export const ValidacionSATv31Component: React.FC<ValidacionSATv31Props> = ({
             </TabsContent>
 
             <TabsContent value="advertencias" className="p-4">
-              {validationResult.warnings.length > 0 ? (
+              {validationResult.advertencias.length > 0 ? (
                 <div className="space-y-2">
-                  {validationResult.warnings.map((warning, index) => (
+                  {validationResult.advertencias.map((warning, index) => (
                     <Alert key={index}>
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>{warning}</AlertDescription>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import {
   CartaPorteData,
@@ -124,15 +123,14 @@ export const useCartaPorteMappers = (currentCartaPorteId?: string) => {
   const formDataToCartaPorteData = useCallback((formData: CartaPorteFormData): CartaPorteData => {
     return {
       // Identificadores
-      id: formData.cartaPorteId,
-      idCCP: formData.idCCP || formData.cartaPorteId,
       cartaPorteId: formData.cartaPorteId,
+      idCCP: formData.idCCP || formData.cartaPorteId,
       
       // Configuración
+      version: formData.cartaPorteVersion || '3.1',
       tipoCreacion: formData.tipoCreacion,
       tipoCfdi: formData.tipoCfdi,
       cartaPorteVersion: formData.cartaPorteVersion,
-      version: formData.cartaPorteVersion,
       
       // Emisor y receptor
       rfcEmisor: formData.rfcEmisor,
@@ -159,7 +157,7 @@ export const useCartaPorteMappers = (currentCartaPorteId?: string) => {
   const cartaPorteDataToFormData = useCallback((cartaPorteData: CartaPorteData): CartaPorteFormData => {
     return {
       configuracion: {
-        version: cartaPorteData.cartaPorteVersion || '3.1',
+        version: (cartaPorteData.cartaPorteVersion as '3.0' | '3.1') || '3.1',
         tipoComprobante: cartaPorteData.tipoCfdi === 'Traslado' ? 'T' : 'I',
         emisor: {
           rfc: cartaPorteData.rfcEmisor || '',
@@ -179,15 +177,15 @@ export const useCartaPorteMappers = (currentCartaPorteId?: string) => {
       figuras: cartaPorteData.figuras || [],
       
       // Configuración básica
-      tipoCreacion: cartaPorteData.tipoCreacion || 'manual',
-      tipoCfdi: cartaPorteData.tipoCfdi || 'Traslado',
+      tipoCreacion: (cartaPorteData.tipoCreacion as 'plantilla' | 'carga' | 'manual') || 'manual',
+      tipoCfdi: (cartaPorteData.tipoCfdi as 'Ingreso' | 'Traslado') || 'Traslado',
       rfcEmisor: cartaPorteData.rfcEmisor || '',
       nombreEmisor: cartaPorteData.nombreEmisor || '',
       rfcReceptor: cartaPorteData.rfcReceptor || '',
       nombreReceptor: cartaPorteData.nombreReceptor || '',
       transporteInternacional: cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí',
       registroIstmo: !!cartaPorteData.registroIstmo,
-      cartaPorteVersion: cartaPorteData.cartaPorteVersion || '3.1',
+      cartaPorteVersion: (cartaPorteData.cartaPorteVersion as '3.0' | '3.1') || '3.1',
       cartaPorteId: cartaPorteData.cartaPorteId,
       idCCP: cartaPorteData.idCCP || cartaPorteData.cartaPorteId,
       
