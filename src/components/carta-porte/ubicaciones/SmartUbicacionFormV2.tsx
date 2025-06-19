@@ -49,6 +49,15 @@ export function SmartUbicacionFormV2({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [camposAutoCompletados, setCamposAutoCompletados] = useState<Set<keyof Ubicacion['domicilio']>>(new Set());
 
+  // Logging del estado del formulario
+  console.log('📝 SmartUbicacionFormV2 - Estado actual:', {
+    modoManual,
+    direccionSeleccionada,
+    mostrarDomicilio,
+    formDataTipo: formData.tipoUbicacion,
+    formDataValid: isFormValid()
+  });
+
   // MEJORADO: Función de parsing de Mapbox completamente robusta
   const parseMapboxAddress = (addressData: any): { parsedData: any; camposCompletados: Set<keyof Ubicacion['domicilio']> } => {
     console.log('🔄 === INICIANDO PARSING INTEGRAL DE MAPBOX (CORREGIDO V2) ===');
@@ -219,6 +228,7 @@ export function SmartUbicacionFormV2({
   };
 
   const validateForm = () => {
+    console.log('🔍 Validando formulario:', formData);
     const newErrors: Record<string, string> = {};
 
     if (!formData.tipoUbicacion?.trim()) {
@@ -260,13 +270,20 @@ export function SmartUbicacionFormV2({
     }
 
     setErrors(newErrors);
+    console.log('❌ Errores de validación:', newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📤 === ENVIANDO FORMULARIO ===');
+    console.log('📍 Datos del formulario:', formData);
+    
     if (validateForm()) {
+      console.log('✅ Formulario válido, enviando...');
       onSave(formData);
+    } else {
+      console.log('❌ Formulario inválido, no se enviará');
     }
   };
 
