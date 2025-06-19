@@ -18,7 +18,23 @@ interface ConfiguracionInicialProps {
 }
 
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
-  const [tipoCreacion, setTipoCreacion] = useState<'plantilla' | 'carga' | 'manual'>(data.tipoCreacion || 'manual');
+  // Provide default values if data is undefined or incomplete
+  const safeData = {
+    tipoCreacion: 'manual' as const,
+    cartaPorteVersion: '3.1' as CartaPorteVersion,
+    tipoCfdi: 'Traslado' as const,
+    transporteInternacional: 'No',
+    rfcEmisor: '',
+    nombreEmisor: '',
+    rfcReceptor: '',
+    nombreReceptor: '',
+    registroIstmo: false,
+    ...data
+  };
+
+  const [tipoCreacion, setTipoCreacion] = useState<'plantilla' | 'carga' | 'manual'>(
+    safeData.tipoCreacion || 'manual'
+  );
   const [showPlantillas, setShowPlantillas] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
 
@@ -28,11 +44,11 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
     toggleVersion,
     isChangingVersion
   } = useVersionManager({
-    initialVersion: (data.cartaPorteVersion as CartaPorteVersion) || '3.1',
+    initialVersion: safeData.cartaPorteVersion || '3.1',
     onVersionChange: (newVersion) => {
       onChange({ cartaPorteVersion: newVersion });
     },
-    formData: data,
+    formData: safeData,
     updateFormData: (section, newData) => {
       onChange(newData);
     }
@@ -44,10 +60,10 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
 
   // Actualizar versión en datos cuando cambie
   useEffect(() => {
-    if (data.cartaPorteVersion !== version) {
+    if (safeData.cartaPorteVersion !== version) {
       onChange({ cartaPorteVersion: version });
     }
-  }, [version, data.cartaPorteVersion, onChange]);
+  }, [version, safeData.cartaPorteVersion, onChange]);
 
   const handleCargarPlantilla = (plantilla: any) => {
     onChange({
@@ -71,7 +87,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
         moneda: m.moneda || 'MXN',
         ...m
       }));
-      const actuales = Array.isArray(data.mercancias) ? data.mercancias : [];
+      const actuales = Array.isArray(safeData.mercancias) ? safeData.mercancias : [];
       onChange({ mercancias: [...actuales, ...nuevas] });
       toast.success(`${nuevas.length} mercancías cargadas desde el documento`);
     } else {
@@ -83,16 +99,16 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
 
   const isFormValid = () => {
     // Validate RFC emisor
-    const validacionEmisor = data.rfcEmisor ? RFCValidator.validarRFC(data.rfcEmisor) : { esValido: false };
+    const validacionEmisor = safeData.rfcEmisor ? RFCValidator.validarRFC(safeData.rfcEmisor) : { esValido: false };
     // Validate RFC receptor
-    const validacionReceptor = data.rfcReceptor ? RFCValidator.validarRFC(data.rfcReceptor) : { esValido: false };
+    const validacionReceptor = safeData.rfcReceptor ? RFCValidator.validarRFC(safeData.rfcReceptor) : { esValido: false };
 
     return (
-      data.rfcEmisor &&
-      data.nombreEmisor &&
-      data.rfcReceptor &&
-      data.nombreReceptor &&
-      data.tipoCfdi &&
+      safeData.rfcEmisor &&
+      safeData.nombreEmisor &&
+      safeData.rfcReceptor &&
+      safeData.nombreReceptor &&
+      safeData.tipoCfdi &&
       validacionEmisor.esValido &&
       validacionReceptor.esValido
     );
@@ -117,7 +133,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
 
       {/* Configuración Principal con CRM Integrado */}
       <ConfiguracionPrincipalMejorada
-        data={data}
+        data={safeData}
         onChange={onChange}
         onNext={onNext}
         isFormValid={isFormValid()}
