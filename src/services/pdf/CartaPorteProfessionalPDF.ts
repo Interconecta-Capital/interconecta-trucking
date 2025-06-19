@@ -21,6 +21,7 @@ export interface ProfessionalPDFResult {
   success: boolean;
   pdfBlob?: Blob;
   pdfUrl?: string;
+  pages?: number;
   error?: string;
 }
 
@@ -88,13 +89,18 @@ export class CartaPorteProfessionalPDF {
       // 8. PIE DE PÁGINA CON SELLOS DIGITALES
       this.addFooterWithSeals(doc, pageWidth, pageHeight, options.datosTimbre);
 
+      const pages = typeof (doc as any).getNumberOfPages === 'function'
+        ? (doc as any).getNumberOfPages()
+        : ((doc as any).internal?.pages?.length || 1);
+
       const pdfBlob = doc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
 
       return {
         success: true,
         pdfBlob,
-        pdfUrl
+        pdfUrl,
+        pages
       };
     } catch (error) {
       console.error('❌ Error generando PDF profesional:', error);
