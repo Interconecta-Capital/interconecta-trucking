@@ -80,10 +80,14 @@ export const useCartaPorteAutoSave = ({
 
   // Guardar antes de salir de la página
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
       if (enabled && formData) {
         // Intentar guardado síncrono antes de salir
-        BorradorService.guardarBorrador(formData);
+        try {
+          await BorradorService.guardarBorrador(formData);
+        } catch (error) {
+          console.error('Error guardando antes de salir:', error);
+        }
         e.preventDefault();
         e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
       }
