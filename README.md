@@ -23,7 +23,9 @@ npm install
 
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones de APIs y base de datos
+# Editar `.env` con tus claves de API
+FISCAL_API_KEY=sk_test_f8ddb07e_43d1_4d32_a240_f581ebc065d4
+VITE_MAPBOX_TOKEN=pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
