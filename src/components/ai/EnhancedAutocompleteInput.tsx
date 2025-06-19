@@ -1,123 +1,79 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Check, X, Sparkles, Brain, Lightbulb } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { geminiCore, AISuggestion, AIContextData } from '@/services/ai/GeminiCoreService';
-import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Sparkles, Check, History, Star, Brain, Info } from 'lucide-react';
+import { useSmartAutocomplete, AutocompleteSuggestion } from '@/hooks/ai/useSmartAutocomplete';
+import { AIContextData } from '@/services/ai/AIContextManager';
 
 interface EnhancedAutocompleteInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSuggestionSelect?: (suggestion: AISuggestion) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
-  type: 'address' | 'mercancia' | 'vehicle' | 'driver';
+  onSuggestionSelect?: (suggestion: any) => void;
+  type: 'direccion' | 'mercancia' | 'vehiculo' | 'conductor';
   label?: string;
+  placeholder?: string;
+  className?: string;
   context?: AIContextData;
-  showValidation?: boolean;
-  showHelp?: boolean;
   formName?: string;
   fieldName?: string;
+  showValidation?: boolean;
+  showHelp?: boolean;
+  disabled?: boolean;
+  required?: boolean;
 }
 
 export function EnhancedAutocompleteInput({
   value,
   onChange,
   onSuggestionSelect,
-  placeholder,
-  disabled = false,
-  className,
   type,
   label,
+  placeholder,
+  className,
   context,
-  showValidation = true,
-  showHelp = true,
-  formName = '',
-  fieldName = ''
+  formName,
+  fieldName,
+  showValidation = false,
+  showHelp = false,
+  disabled = false,
+  required = false
 }: EnhancedAutocompleteInputProps) {
-  const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [validation, setValidation] = useState<any>(null);
-  const [help, setHelp] = useState<any>(null);
-  const [showHelpPanel, setShowHelpPanel] = useState(false);
-  
+  const [validationMessage, setValidationMessage] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Get suggestions with debouncing
+  const {
+    suggestions,
+    loading,
+    error,
+    getSuggestions,
+    clearSuggestions,
+    selectSuggestion
+  } = useSmartAutocomplete({
+    tipo: type,
+    includeHistory: true,
+    includeContext: true
+  });
+
+  // Obtener sugerencias cuando cambia el valor
   useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (value.length >= 2) {
+      getSuggestions(value, context);
+    } else {
+      clearSuggestions();
     }
+  }, [value, getSuggestions, clearSuggestions, context]);
 
-    if (value.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    timeoutRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const newSuggestions = await geminiCore.getSmartSuggestions(value, type, context);
-        setSuggestions(newSuggestions);
-        setShowSuggestions(newSuggestions.length > 0);
-      } catch (error) {
-        console.error('Error getting suggestions:', error);
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [value, type, context]);
-
-  // Validate data when value changes significantly
-  useEffect(() => {
-    if (showValidation && value.length > 3) {
-      const validateData = async () => {
-        try {
-          // Map 'driver' type to 'vehicle' for validation since the service doesn't accept 'driver'
-          const validationType = type === 'driver' ? 'vehicle' : type;
-          const result = await geminiCore.validateData({ [fieldName]: value }, validationType, context);
-          setValidation(result);
-        } catch (error) {
-          console.error('Error validating data:', error);
-        }
-      };
-      
-      const validationTimeout = setTimeout(validateData, 1000);
-      return () => clearTimeout(validationTimeout);
-    }
-  }, [value, type, context, showValidation, fieldName]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-    setSelectedIndex(-1);
-  };
-
-  const handleSuggestionClick = (suggestion: AISuggestion) => {
-    onChange(suggestion.text);
-    onSuggestionSelect?.(suggestion);
-    setShowSuggestions(false);
-    setSelectedIndex(-1);
-    toast.success('Sugerencia de IA aplicada');
-  };
-
+  // Manejar teclas
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) return;
+    if (!isOpen || suggestions.length === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -139,213 +95,220 @@ export function EnhancedAutocompleteInput({
         }
         break;
       case 'Escape':
-        setShowSuggestions(false);
+        setIsOpen(false);
         setSelectedIndex(-1);
         break;
     }
   };
 
-  const handleGetHelp = async () => {
-    if (!showHelp) return;
+  // Manejar click en sugerencia
+  const handleSuggestionClick = (suggestion: AutocompleteSuggestion) => {
+    const metadata = selectSuggestion(suggestion);
+    onChange(suggestion.text);
+    onSuggestionSelect?.(metadata);
+    setIsOpen(false);
+    setSelectedIndex(-1);
+    inputRef.current?.focus();
+  };
+
+  // Manejar cambio de input
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
     
-    try {
-      const helpData = await geminiCore.getContextualHelp(formName, fieldName, value, context);
-      setHelp(helpData);
-      setShowHelpPanel(true);
-    } catch (error) {
-      toast.error('Error obteniendo ayuda');
+    if (newValue.length === 0) {
+      clearSuggestions();
+      setValidationMessage('');
     }
   };
 
-  const getValidationIcon = () => {
-    if (!validation) return null;
-    
-    if (validation.isValid) {
-      return <Check className="h-4 w-4 text-green-500" />;
+  // Abrir/cerrar lista según el focus y las sugerencias
+  useEffect(() => {
+    setIsOpen(suggestions.length > 0 && value.length >= 2);
+  }, [suggestions.length, value.length]);
+
+  // Scroll a la sugerencia seleccionada
+  useEffect(() => {
+    if (selectedIndex >= 0 && listRef.current) {
+      const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ block: 'nearest' });
+      }
     }
-    
-    const criticalIssues = validation.issues?.filter(i => i.severity === 'critical') || [];
-    if (criticalIssues.length > 0) {
-      return <X className="h-4 w-4 text-red-500" />;
+  }, [selectedIndex]);
+
+  // Validación básica
+  useEffect(() => {
+    if (showValidation && value && required) {
+      if (value.length < 3) {
+        setValidationMessage('Mínimo 3 caracteres');
+      } else {
+        setValidationMessage('');
+      }
     }
-    
-    return <Sparkles className="h-4 w-4 text-amber-500" />;
+  }, [value, showValidation, required]);
+
+  const getSourceIcon = (source: AutocompleteSuggestion['source']) => {
+    switch (source) {
+      case 'frecuente':
+        return <Star className="h-3 w-3 text-yellow-500" />;
+      case 'history':
+        return <History className="h-3 w-3 text-blue-500" />;
+      case 'ai':
+        return <Brain className="h-3 w-3 text-purple-500" />;
+      default:
+        return <Sparkles className="h-3 w-3 text-gray-500" />;
+    }
   };
 
-  const getTypeIcon = () => {
-    switch (type) {
-      case 'address': return '📍';
-      case 'mercancia': return '📦';
-      case 'vehicle': return '🚛';
-      case 'driver': return '👤';
-      default: return '🤖';
+  const getSourceLabel = (source: AutocompleteSuggestion['source']) => {
+    switch (source) {
+      case 'frecuente':
+        return 'Frecuente';
+      case 'history':
+        return 'Historial';
+      case 'ai':
+        return 'IA';
+      default:
+        return 'Sugerencia';
     }
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.9) return 'bg-green-100 text-green-800';
+    if (confidence >= 0.7) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className="relative space-y-2">
       {label && (
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700">
-            {label}
-          </label>
+        <Label htmlFor={fieldName} className="flex items-center gap-2">
+          {label}
+          {required && <span className="text-red-500">*</span>}
           {showHelp && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleGetHelp}
-              className="h-6 p-1"
-            >
-              <Lightbulb className="h-3 w-3" />
-            </Button>
+            <Info className="h-3 w-3 text-muted-foreground" />
           )}
-        </div>
+        </Label>
       )}
-
+      
       <div className="relative">
         <Input
           ref={inputRef}
+          id={fieldName}
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          onFocus={() => setIsOpen(suggestions.length > 0 && value.length >= 2)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
           placeholder={placeholder}
+          className={className}
           disabled={disabled}
-          className={cn(
-            'pr-20',
-            validation && !validation.isValid && 'border-amber-400'
-          )}
+          required={required}
         />
         
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
-          {!loading && suggestions.length > 0 && (
-            <Brain className="h-4 w-4 text-blue-500" />
-          )}
-          {showValidation && getValidationIcon()}
-        </div>
+        {loading && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+          </div>
+        )}
+        
+        {!loading && suggestions.length > 0 && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Sparkles className="h-4 w-4 text-blue-500" />
+          </div>
+        )}
       </div>
 
-      {/* AI Suggestions Dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <Card className="absolute z-50 w-full shadow-lg">
+      {/* Mensaje de validación */}
+      {validationMessage && (
+        <p className="text-xs text-red-600">{validationMessage}</p>
+      )}
+
+      {/* Error de autocompletado */}
+      {error && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertDescription className="text-orange-800 text-xs">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Lista de sugerencias */}
+      {isOpen && suggestions.length > 0 && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg border-2 border-blue-100">
           <CardContent className="p-0">
-            <div className="max-h-60 overflow-y-auto">
+            <div ref={listRef} className="max-h-80 overflow-y-auto">
               {suggestions.map((suggestion, index) => (
-                <div
+                <Button
                   key={suggestion.id}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className={cn(
-                    'px-3 py-2 cursor-pointer border-b last:border-b-0 hover:bg-blue-50',
-                    'flex items-center justify-between',
-                    index === selectedIndex && 'bg-blue-100'
-                  )}
+                  type="button"
+                  variant="ghost"
+                  className={`w-full text-left justify-start h-auto p-3 rounded-none border-b last:border-b-0 ${
+                    index === selectedIndex 
+                      ? 'bg-blue-50 border-l-2 border-l-blue-500' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSuggestionClick(suggestion);
+                  }}
+                  onMouseEnter={() => setSelectedIndex(index)}
                 >
-                  <div className="flex items-center gap-2 flex-1">
-                    <span>{getTypeIcon()}</span>
+                  <div className="flex items-start space-x-3 w-full">
+                    <div className="mt-1">
+                      {getSourceIcon(suggestion.source)}
+                    </div>
+                    
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
+                      <div className="font-medium text-sm leading-tight mb-1">
                         {suggestion.text}
                       </div>
-                      {suggestion.reasoning && (
-                        <div className="text-xs text-gray-500 truncate">
-                          {suggestion.reasoning}
-                        </div>
-                      )}
+                      
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-xs">
+                          {getSourceLabel(suggestion.source)}
+                        </Badge>
+                        
+                        <Badge className={`text-xs ${getConfidenceColor(suggestion.confidence)}`}>
+                          {Math.round(suggestion.confidence * 100)}%
+                        </Badge>
+                        
+                        {suggestion.metadata?.useCount && (
+                          <Badge variant="secondary" className="text-xs">
+                            {suggestion.metadata.useCount} usos
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <Badge 
-                    variant="secondary" 
-                    className={cn(
-                      'text-xs ml-2',
-                      suggestion.confidence > 0.8 ? 'bg-green-100 text-green-800' :
-                      suggestion.confidence > 0.6 ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
+                    
+                    {index === selectedIndex && (
+                      <Check className="h-4 w-4 text-blue-500 mt-1" />
                     )}
-                  >
-                    {Math.round(suggestion.confidence * 100)}%
-                  </Badge>
-                </div>
+                  </div>
+                </Button>
               ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Validation Messages */}
-      {validation && validation.issues && validation.issues.length > 0 && (
-        <div className="space-y-1">
-          {validation.issues.slice(0, 2).map((issue, index) => (
-            <div key={index} className={cn(
-              'text-xs p-2 rounded',
-              issue.severity === 'critical' ? 'bg-red-50 text-red-700' :
-              issue.severity === 'high' ? 'bg-amber-50 text-amber-700' :
-              'bg-blue-50 text-blue-700'
-            )}>
-              <strong>{issue.severity.toUpperCase()}:</strong> {issue.message}
-              {issue.suggestion && (
-                <div className="mt-1 font-medium">
-                  Sugerencia: {issue.suggestion}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* Ayuda contextual */}
+      {showHelp && value.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          {type === 'direccion' && 'Escribe una dirección y obtén sugerencias inteligentes'}
+          {type === 'mercancia' && 'Describe tu mercancía para clasificación automática'}
+          {type === 'vehiculo' && 'Ingresa marca, modelo o placa del vehículo'}
+          {type === 'conductor' && 'Nombre o RFC del conductor'}
+        </p>
       )}
 
-      {/* Auto-fixes */}
-      {validation?.autoFixes && validation.autoFixes.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded p-2">
-          <div className="text-xs font-medium text-green-800 mb-1">
-            Correcciones automáticas disponibles:
-          </div>
-          {validation.autoFixes.map((fix, index) => (
-            <Button
-              key={index}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onChange(fix.suggestedValue)}
-              className="text-xs mr-1 mb-1 h-6"
-            >
-              {fix.suggestedValue} ({Math.round(fix.confidence * 100)}%)
-            </Button>
-          ))}
+      {/* Indicador de aprendizaje */}
+      {suggestions.some(s => s.source === 'frecuente') && value.length >= 2 && (
+        <div className="flex items-center gap-1 text-xs text-green-600">
+          <Star className="h-3 w-3" />
+          <span>El sistema aprendió de tus preferencias</span>
         </div>
-      )}
-
-      {/* Help Panel */}
-      {showHelpPanel && help && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-blue-800">Ayuda de IA</h4>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowHelpPanel(false)}
-                className="h-6 w-6 p-0"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            <p className="text-xs text-blue-700 mb-2">{help.help}</p>
-            {help.examples && help.examples.length > 0 && (
-              <div className="mb-2">
-                <div className="text-xs font-medium text-blue-800 mb-1">Ejemplos:</div>
-                {help.examples.slice(0, 2).map((example, index) => (
-                  <div key={index} className="text-xs text-blue-600 bg-white rounded px-2 py-1 mb-1">
-                    {example}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       )}
     </div>
   );

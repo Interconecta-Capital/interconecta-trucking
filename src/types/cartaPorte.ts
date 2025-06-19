@@ -1,3 +1,4 @@
+
 export interface Domicilio {
   calle: string;
   numero_exterior?: string;
@@ -8,6 +9,7 @@ export interface Domicilio {
   estado: string;
   pais: string;
   codigo_postal: string;
+  referencia?: string;
 }
 
 export interface Ubicacion {
@@ -34,19 +36,29 @@ export interface Autotransporte {
   num_permiso_sct?: string;
   asegura_resp_civil: string;
   poliza_resp_civil: string;
+  vigencia_resp_civil?: string;
   config_vehicular: string;
   placa_vm: string;
   anio_modelo_vm: number;
+  tipo_carroceria?: string;
+  tarjeta_circulacion?: string;
+  vigencia_tarjeta_circulacion?: string;
+  asegura_med_ambiente?: string;
+  poliza_med_ambiente?: string;
 }
 
 export interface Remolque {
+  id?: string;
   subtipo_remolque: string;
+  subtipo_rem?: string;
   placa: string;
 }
 
 export interface FiguraTransporte {
   tipo_figura: string;
   rfc_transportista: string;
+  rfc_figura?: string;
+  nombre_figura?: string;
   num_licencia?: string;
   nombre_transportista?: string;
   num_reg_id_trib?: string;
@@ -69,14 +81,35 @@ export interface FiguraTransporte {
 export interface CartaPorteData {
   version: string;
   transporte_internacional?: string;
+  transporteInternacional?: string;
   entrada_salida_mercancia?: string;
   via_entrada_salida?: string;
   total_distancia_recorrida?: number;
+  registro_istmo?: string;
+  registroIstmo?: string;
+  rfcEmisor?: string;
+  nombreEmisor?: string;
+  rfcReceptor?: string;
+  nombreReceptor?: string;
+  uso_cfdi?: string;
+  folio?: string;
+  cartaPorteVersion?: string;
+  ubicaciones?: UbicacionCompleta[];
+  mercancias?: MercanciaCompleta[];
+  autotransporte?: AutotransporteCompleto;
+  figuras?: FiguraCompleta[];
 }
 
 export interface UbicacionCompleta extends Ubicacion {
   id?: string;
   carta_porte_id?: string;
+  tipo_ubicacion?: string;
+  nombre_remitente_destinatario?: string;
+  fecha_hora_salida_llegada?: string;
+  coordenadas?: {
+    latitud: number;
+    longitud: number;
+  };
 }
 
 export interface AutotransporteCompleto extends Autotransporte {

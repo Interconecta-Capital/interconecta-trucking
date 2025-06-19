@@ -26,6 +26,14 @@ export interface MercanciaSuggestion {
   fraccionArancelaria?: string;
 }
 
+export interface ConductorSuggestion {
+  nombre: string;
+  rfc: string;
+  licencia: string;
+  confidence: number;
+  vigenciaLicencia?: string;
+}
+
 export class GeminiAutocompleteService {
   private cache = new Map<string, { result: any; timestamp: number }>();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -145,6 +153,40 @@ export class GeminiAutocompleteService {
       return suggestions;
     } catch (error) {
       console.error('[GeminiAutocomplete] Error autocompletando vehículo:', error);
+      return [];
+    }
+  }
+
+  async autocompletarConductor(input: string, context?: any): Promise<ConductorSuggestion[]> {
+    if (input.length < 2) return [];
+
+    const cacheKey = this.getCacheKey('conductor', input, context);
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    try {
+      console.log('[GeminiAutocomplete] Autocompletando conductor:', input);
+      
+      const { data, error } = await supabase.functions.invoke('gemini-assistant', {
+        body: {
+          operation: 'autocomplete_conductor',
+          input,
+          context: {
+            ...context,
+            tipo: 'figura_transporte',
+            pais: 'mexico'
+          }
+        },
+      });
+
+      if (error) throw error;
+
+      const suggestions: ConductorSuggestion[] = data?.suggestions || [];
+      this.setCache(cacheKey, suggestions);
+      
+      return suggestions;
+    } catch (error) {
+      console.error('[GeminiAutocomplete] Error autocompletando conductor:', error);
       return [];
     }
   }
