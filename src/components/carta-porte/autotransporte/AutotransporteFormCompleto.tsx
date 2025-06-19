@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Truck, Save, Star, Ruler, FileText } from 'lucide-react';
 import { AIAssistantButton } from '../mercancias/AIAssistantButton';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
-import { AutotransporteCompleto } from '@/types/cartaPorte';
+import { AutotransporteCompleto, Remolque } from '@/types/cartaPorte';
 import { VehiculosGuardados } from './VehiculosGuardados';
 import { RemolquesList } from './RemolquesList';
 import { VehiculoBasicInfo } from './VehiculoBasicInfo';
@@ -80,6 +79,16 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
       setShowGuardarModal(false);
       setNombrePerfil('');
     }
+  };
+
+  const handleRemolqueChange = (remolques: Remolque[]) => {
+    // Ensure all remolques have required properties
+    const validRemolques = remolques.map(remolque => ({
+      ...remolque,
+      subtipo_remolque: remolque.subtipo_remolque || 'CTR001',
+      subtipo_rem: remolque.subtipo_rem || remolque.subtipo_remolque || 'CTR001'
+    }));
+    handleFieldChange('remolques', validRemolques);
   };
 
   const isVehiculoCompleto = data.placa_vm && data.anio_modelo_vm && data.config_vehicular;
@@ -195,7 +204,7 @@ export function AutotransporteFormCompleto({ data, onChange }: AutotransporteFor
           {/* Remolques */}
           <RemolquesList
             remolques={data.remolques || []}
-            onChange={(remolques) => handleFieldChange('remolques', remolques)}
+            onChange={handleRemolqueChange}
           />
         </CardContent>
       </Card>

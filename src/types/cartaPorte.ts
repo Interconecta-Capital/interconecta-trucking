@@ -89,7 +89,6 @@ export interface FiguraTransporte {
   residencia_fiscal_figura?: string;
 }
 
-// Add PermisoSEMARNAT interface
 export interface PermisoSEMARNAT {
   id?: string;
   tipo_permiso: string;
@@ -101,7 +100,6 @@ export interface PermisoSEMARNAT {
   observaciones?: string;
 }
 
-// Add ValidacionSATv31 interface
 export interface ValidacionSATv31 {
   valido: boolean;
   errores: string[];
@@ -112,7 +110,10 @@ export interface ValidacionSATv31 {
 }
 
 export interface CartaPorteData {
+  // Required core properties
   version: string;
+  
+  // Optional configuration
   transporte_internacional?: string;
   transporteInternacional?: string | boolean;
   entrada_salida_mercancia?: string;
@@ -139,13 +140,18 @@ export interface CartaPorteData {
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
   figuras?: FiguraCompleta[];
-  // Add missing v3.1 properties
+  
+  // Additional properties found in codebase
   cartaPorteId?: string;
   idCCP?: string;
   regimen_fiscal_emisor?: string;
   regimen_fiscal_receptor?: string;
   domicilio_fiscal_emisor?: Domicilio;
   domicilio_fiscal_receptor?: Domicilio;
+  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
+  xmlGenerado?: string;
+  datosCalculoRuta?: any;
+  currentStep?: number;
 }
 
 export interface UbicacionCompleta extends Ubicacion {
@@ -185,7 +191,6 @@ export interface FiguraCompleta extends FiguraTransporte {
   id?: string;
   carta_porte_id?: string;
   domicilio?: any;
-  // Add missing properties
   operador_sct?: boolean;
   tipo_licencia?: string;
   vigencia_licencia?: string;
@@ -229,7 +234,6 @@ export interface MercanciaCompleta {
     unidad?: string;
   };
   uuid_comercio_exterior?: string;
-  // Add v3.1 specific properties
   peso_neto_total?: number;
   numero_piezas?: number;
   requiere_cites?: boolean;
