@@ -128,6 +128,9 @@ export const useCartaPorteValidation = () => {
       if (!auto?.poliza_resp_civil) {
         missingFields.autotransporte.push('Póliza de seguro');
       }
+      if (!auto?.peso_bruto_vehicular) {
+        missingFields.autotransporte.push('Peso bruto vehicular');
+      }
       
       if (auto?.placa_vm) {
         autotransporteStatus = missingFields.autotransporte.length === 0 ? 'complete' : 'incomplete';

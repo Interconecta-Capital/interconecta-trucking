@@ -55,6 +55,20 @@ export function AutotransporteFormOptimizado({ data, onChange }: AutotransporteF
                 placeholder="Ej: T2S1"
               />
             </div>
+
+            <div>
+              <Label htmlFor="peso_bruto_vehicular">Peso Bruto Vehicular (ton)</Label>
+              <Input
+                id="peso_bruto_vehicular"
+                type="number"
+                min="0"
+                step="0.01"
+                value={data.peso_bruto_vehicular ?? ''}
+                onChange={(e) =>
+                  handleFieldChange('peso_bruto_vehicular', parseFloat(e.target.value) || 0)
+                }
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

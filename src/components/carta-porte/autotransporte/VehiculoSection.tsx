@@ -52,6 +52,18 @@ export function VehiculoSection({ data, onChange }: VehiculoSectionProps) {
           placeholder="Buscar configuración vehicular..."
           required
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="peso_bruto_vehicular">Peso Bruto Vehicular (ton)</Label>
+          <Input
+            id="peso_bruto_vehicular"
+            type="number"
+            min="0"
+            step="0.01"
+            value={data.peso_bruto_vehicular ?? ''}
+            onChange={(e) => onChange('peso_bruto_vehicular', parseFloat(e.target.value) || 0)}
+          />
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CatalogoSelectorMejorado
