@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,7 +61,7 @@ export function PDFGenerationPanel({
       addText('INFORMACIÓN DEL CFDI', 20, 14, 'bold');
       addText(`Tipo de CFDI: ${cartaPorteData.tipoCfdi || 'Traslado'}`, 25, 11);
       addText(`Versión Carta Porte: ${cartaPorteData.cartaPorteVersion || '3.1'}`, 25, 11);
-      addText(`Transporte Internacional: ${cartaPorteData.transporteInternacional === 'Sí' ? 'Sí' : 'No'}`, 25, 11);
+      addText(`Transporte Internacional: ${cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí' ? 'Sí' : 'No'}`, 25, 11);
       addSeparator();
 
       // Emisor y Receptor
@@ -78,17 +79,17 @@ export function PDFGenerationPanel({
       if (cartaPorteData.ubicaciones && cartaPorteData.ubicaciones.length > 0) {
         addText('UBICACIONES', 20, 14, 'bold');
         cartaPorteData.ubicaciones.forEach((ubicacion, index) => {
-          addText(`${index + 1}. ${ubicacion.tipo_ubicacion}: ${ubicacion.nombre}`, 25, 11);
+          addText(`${index + 1}. ${ubicacion.tipo_ubicacion}: ${ubicacion.id_ubicacion}`, 25, 11);
           if (ubicacion.domicilio) {
             addText(`   ${ubicacion.domicilio.calle} ${ubicacion.domicilio.numero_exterior}`, 30, 10);
             addText(`   ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}`, 30, 10);
             addText(`   CP: ${ubicacion.domicilio.codigo_postal}, ${ubicacion.domicilio.estado}`, 30, 10);
           }
-          if (ubicacion.rfc) {
-            addText(`   RFC: ${ubicacion.rfc}`, 30, 10);
+          if (ubicacion.rfc_remitente_destinatario) {
+            addText(`   RFC: ${ubicacion.rfc_remitente_destinatario}`, 30, 10);
           }
-          if (ubicacion.nombre) {
-            addText(`   Nombre: ${ubicacion.nombre}`, 30, 10);
+          if (ubicacion.nombre_remitente_destinatario) {
+            addText(`   Nombre: ${ubicacion.nombre_remitente_destinatario}`, 30, 10);
           }
           yPosition += 3;
         });

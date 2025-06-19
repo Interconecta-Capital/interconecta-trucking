@@ -21,12 +21,6 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
     }
   };
 
-  const handleTipoCfdiChange = (value: string) => {
-    if (value === 'Ingreso' || value === 'Traslado') {
-      onChange({ tipoCfdi: value as 'Ingreso' | 'Traslado' });
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -85,7 +79,7 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="tipoCfdi">Tipo de CFDI</Label>
-              <Select value={data.tipoCfdi} onValueChange={handleTipoCfdiChange}>
+              <Select value={data.tipoCfdi} onValueChange={(value) => onChange({ tipoCfdi: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>

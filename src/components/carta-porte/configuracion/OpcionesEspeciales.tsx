@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -11,7 +10,7 @@ interface OpcionesEspecialesProps {
 }
 
 const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps) => {
-  const isTransporteInternacional = data.transporteInternacional === 'Sí';
+  const isTransporteInternacional = data.transporteInternacional === 'Sí' || data.transporteInternacional === true;
 
   const handleTransporteInternacionalChange = (checked: boolean) => {
     const updates: Partial<CartaPorteData> = {
@@ -72,6 +71,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
             <Select 
               value={data.entradaSalidaMerc || ''} 
               onValueChange={(value) => handleFieldChange('entradaSalidaMerc', value)}
+              // SIEMPRE habilitado, no condicionado a isTransporteInternacional
+              // disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -88,6 +89,8 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
             <Select 
               value={data.viaTransporte || ''} 
               onValueChange={(value) => handleFieldChange('viaTransporte', value)}
+              // SIEMPRE habilitado, no condicionado a isTransporteInternacional
+              // disabled={!isTransporteInternacional}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona..." />
@@ -104,6 +107,7 @@ const OpcionesEspecialesComponent = ({ data, onChange }: OpcionesEspecialesProps
         </div>
       </div>
 
+      {/* SOLO los campos estrictamente internacionales siguen condicionados */}
       {isTransporteInternacional && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
           <div>

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { toast } from 'sonner';
@@ -79,7 +80,7 @@ export function useEnhancedPDFGenerator() {
       addText('INFORMACIÓN DEL CFDI', margin, 14, 'bold');
       addText(`Tipo de CFDI: ${cartaPorteData.tipoCfdi || 'Traslado'}`, margin + 5, 11);
       addText(`Versión Carta Porte: ${cartaPorteData.cartaPorteVersion || '3.1'}`, margin + 5, 11);
-      addText(`Transporte Internacional: ${cartaPorteData.transporteInternacional === 'Sí' ? 'Sí' : 'No'}`, margin + 5, 11);
+      addText(`Transporte Internacional: ${cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí' ? 'Sí' : 'No'}`, margin + 5, 11);
       if (cartaPorteData.registroIstmo) {
         addText(`Registro ISTMO: Sí`, margin + 5, 11);
       }
@@ -117,13 +118,13 @@ export function useEnhancedPDFGenerator() {
         
         cartaPorteData.ubicaciones.forEach((ubicacion, index) => {
           checkPageBreak(35);
-          addText(`${index + 1}. ${ubicacion.tipo_ubicacion}: ${ubicacion.nombre}`, margin + 5, 12, 'bold');
+          addText(`${index + 1}. ${ubicacion.tipo_ubicacion}: ${ubicacion.id_ubicacion}`, margin + 5, 12, 'bold');
           
-          if (ubicacion.rfc) {
-            addText(`RFC: ${ubicacion.rfc}`, margin + 10, 10);
+          if (ubicacion.rfc_remitente_destinatario) {
+            addText(`RFC: ${ubicacion.rfc_remitente_destinatario}`, margin + 10, 10);
           }
-          if (ubicacion.nombre) {
-            addText(`Nombre: ${ubicacion.nombre}`, margin + 10, 10);
+          if (ubicacion.nombre_remitente_destinatario) {
+            addText(`Nombre: ${ubicacion.nombre_remitente_destinatario}`, margin + 10, 10);
           }
           
           if (ubicacion.domicilio) {
@@ -138,7 +139,11 @@ export function useEnhancedPDFGenerator() {
             addText(`Fecha/Hora: ${new Date(ubicacion.fecha_hora_salida_llegada).toLocaleString('es-MX')}`, margin + 10, 10);
           }
           
-          yPosition += 3;
+          if (ubicacion.distancia_recorrida) {
+            addText(`Distancia Recorrida: ${ubicacion.distancia_recorrida} km`, margin + 10, 10);
+          }
+          
+          yPosition += 5;
         });
         addSeparator();
       }
