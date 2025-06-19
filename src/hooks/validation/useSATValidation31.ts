@@ -17,93 +17,23 @@ export const useSATValidation31 = () => {
       transporteInternacional: data.transporteInternacional === 'Sí' || data.transporteInternacional === true,
       registroIstmo: data.registroIstmo || false,
       
-      ubicaciones: data.ubicaciones?.map(ub => ({
-        id: ub.id_ubicacion || ub.id || '',
-        id_ubicacion: ub.id_ubicacion || ub.id || '', // Ensure this field is always present and required
-        tipo_ubicacion: ub.tipo_ubicacion,
-        coordenadas: ub.coordenadas ? {
-          latitud: ub.coordenadas.latitud,
-          longitud: ub.coordenadas.longitud
-        } : undefined,
-        tipo_estacion: ub.tipo_estacion,
-        numero_estacion: ub.numero_estacion,
-        kilometro: ub.kilometro,
-        domicilio: {
-          pais: ub.domicilio.pais || 'MEX',
-          codigo_postal: ub.domicilio.codigo_postal,
-          estado: ub.domicilio.estado,
-          municipio: ub.domicilio.municipio,
-          colonia: ub.domicilio.colonia || '',
-          calle: ub.domicilio.calle,
-          numero_exterior: ub.domicilio.numero_exterior || '',
-          numero_interior: ub.domicilio.numero_interior,
-          referencia: ub.domicilio.referencia
-        }
-      })) || [],
+      // Usar directamente las ubicaciones completas
+      ubicaciones: data.ubicaciones || [],
       
+      // Asegurar que las mercancías tienen todos los campos obligatorios
       mercancias: data.mercancias?.map(merc => ({
-        id: merc.id || crypto.randomUUID(), // Add id property
-        bienes_transp: merc.bienes_transp,
-        cantidad: merc.cantidad,
-        peso_kg: merc.peso_kg,
-        fraccion_arancelaria: merc.fraccion_arancelaria,
-        tipo_embalaje: merc.embalaje,
-        dimensiones: merc.dimensiones ? {
-          largo: merc.dimensiones.largo,
-          ancho: merc.dimensiones.ancho,
-          alto: merc.dimensiones.alto
-        } : undefined,
-        numero_piezas: merc.numero_piezas,
-        regimen_aduanero: merc.regimen_aduanero
+        ...merc,
+        descripcion: merc.descripcion || 'Sin descripción',
+        cantidad: merc.cantidad || 1,
+        clave_unidad: merc.clave_unidad || 'KGM',
+        peso_kg: merc.peso_kg || 0,
       })) || [],
       
-      // Ensure autotransporte has all required properties
-      autotransporte: data.autotransporte ? {
-        placa_vm: data.autotransporte.placa_vm,
-        anio_modelo_vm: data.autotransporte.anio_modelo_vm || new Date().getFullYear(),
-        config_vehicular: data.autotransporte.config_vehicular || '',
-        perm_sct: data.autotransporte.perm_sct || '',
-        num_permiso_sct: data.autotransporte.num_permiso_sct || '',
-        asegura_resp_civil: data.autotransporte.asegura_resp_civil || '',
-        poliza_resp_civil: data.autotransporte.poliza_resp_civil || '',
-        asegura_med_ambiente: data.autotransporte.asegura_med_ambiente,
-        poliza_med_ambiente: data.autotransporte.poliza_med_ambiente,
-        peso_bruto_vehicular: data.autotransporte.peso_bruto_vehicular,
-        tipo_carroceria: data.autotransporte.tipo_carroceria,
-        carga_maxima: data.autotransporte.carga_maxima,
-        tarjeta_circulacion: data.autotransporte.tarjeta_circulacion,
-        vigencia_tarjeta_circulacion: data.autotransporte.vigencia_tarjeta_circulacion,
-        remolques: data.autotransporte.remolques?.map(rem => ({
-          id: rem.id || crypto.randomUUID(),
-          placa: rem.placa,
-          subtipo_rem: rem.subtipo_rem,
-          autotransporte_id: rem.autotransporte_id
-        })) || []
-      } : undefined,
+      // Usar directamente el autotransporte completo
+      autotransporte: data.autotransporte,
       
-      // Ensure figuras have all required properties
-      figuras: data.figuras?.map(fig => ({
-        id: fig.id || crypto.randomUUID(),
-        rfc_figura: fig.rfc_figura,
-        nombre_figura: fig.nombre_figura,
-        tipo_figura: fig.tipo_figura,
-        num_licencia: fig.num_licencia,
-        residencia_fiscal_figura: fig.residencia_fiscal_figura,
-        num_reg_id_trib_figura: fig.num_reg_id_trib_figura,
-        curp: fig.curp,
-        tipo_licencia: fig.tipo_licencia,
-        vigencia_licencia: fig.vigencia_licencia,
-        operador_sct: fig.operador_sct,
-        domicilio: fig.domicilio || {
-          pais: 'MEX',
-          codigo_postal: '',
-          estado: '',
-          municipio: '',
-          colonia: '',
-          calle: '',
-          numero_exterior: ''
-        }
-      })) || [],
+      // Usar directamente las figuras completas
+      figuras: data.figuras || [],
 
       // Nuevos campos v3.1
       version31Fields: {
@@ -164,7 +94,9 @@ export const useSATValidation31 = () => {
       
       return {
         isValid: errors.length === 0,
-        errors
+        errors,
+        warnings: [],
+        score: errors.length === 0 ? 100 : 0
       };
     },
     onSuccess: (result) => {
@@ -196,7 +128,9 @@ export const useSATValidation31 = () => {
       
       return {
         isValid: errors.length === 0,
-        errors
+        errors,
+        warnings: [],
+        score: errors.length === 0 ? 100 : 0
       };
     },
     onSuccess: (result) => {
@@ -233,7 +167,9 @@ export const useSATValidation31 = () => {
       
       return {
         isValid: errors.length === 0,
-        errors
+        errors,
+        warnings: [],
+        score: errors.length === 0 ? 100 : 0
       };
     },
     onSuccess: (result) => {
@@ -284,10 +220,14 @@ export const useSATValidation31 = () => {
       ]);
       
       const todosLosErrores = resultados.flatMap(r => r.errors);
+      const todasLasAdvertencias = resultados.flatMap(r => r.warnings);
+      const promedioScore = resultados.reduce((sum, r) => sum + r.score, 0) / resultados.length;
       
       return {
         isValid: todosLosErrores.length === 0,
-        errors: todosLosErrores
+        errors: todosLosErrores,
+        warnings: todasLasAdvertencias,
+        score: promedioScore
       };
     },
     onSuccess: (result) => {

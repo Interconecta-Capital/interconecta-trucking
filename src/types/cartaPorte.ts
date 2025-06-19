@@ -1,4 +1,3 @@
-
 export interface CartaPorteData {
   // Identificadores únicos
   id?: string;
@@ -177,14 +176,14 @@ export interface FiguraCompleta {
   };
 }
 
-// CORREGIDO: Hacer campos obligatorios
+// CORREGIDO: Hacer peso_kg obligatorio también
 export interface MercanciaCompleta {
   id: string;
   bienes_transp: string;
-  descripcion: string; // Hacer obligatorio
-  cantidad: number; // Hacer obligatorio
-  clave_unidad: string; // Ya es obligatorio
-  peso_kg?: number;
+  descripcion: string; // Obligatorio
+  cantidad: number; // Obligatorio
+  clave_unidad: string; // Obligatorio
+  peso_kg: number; // Ahora obligatorio también
   valor_mercancia?: number;
   moneda?: string;
   

@@ -1,28 +1,36 @@
 
-import { MercanciaCompleta } from '@/types/cartaPorte';
+import { MercanciaCompleta, UbicacionCompleta, AutotransporteCompleto, FiguraCompleta } from '@/types/cartaPorte';
 
 export interface CartaPorte31Data {
+  // Datos básicos
+  rfcEmisor?: string;
+  rfcReceptor?: string;
+  nombreEmisor?: string;
+  nombreReceptor?: string;
+  tipoCfdi?: string;
+  transporteInternacional?: boolean;
+  registroIstmo?: boolean;
+  
+  // Datos principales - usar los tipos correctos
   mercancias: MercanciaCompleta[];
-  ubicaciones: Array<{
-    id: string;
-    tipo_ubicacion: string;
-    domicilio: {
-      codigo_postal: string;
-      estado: string;
-      municipio: string;
-    };
-    distancia_recorrida?: number;
-  }>;
-  autotransporte: {
-    placa_vm: string;
-    peso_bruto_vehicular?: number;
-    config_vehicular: string;
+  ubicaciones: UbicacionCompleta[];
+  autotransporte?: AutotransporteCompleto;
+  figuras: FiguraCompleta[];
+  
+  // Campos específicos de validación
+  regimenAduanero?: string;
+  regimenesAduaneros?: string[];
+  
+  // Campos v3.1
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+    remolquesCCP?: Array<{
+      placa: string;
+      subtipo_rem: string;
+    }>;
   };
-  figuras: Array<{
-    id: string;
-    tipo_figura: string;
-    rfc_figura: string;
-  }>;
 }
 
 export interface ValidationResult {

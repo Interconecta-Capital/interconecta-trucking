@@ -28,19 +28,20 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     remolques: []
   };
 
-  // CORREGIDO: Asegurar que todas las mercancías tengan campos obligatorios con valores por defecto
-  const mercanciasConDescripcion = data.map(mercancia => ({
+  // CORREGIDO: Asegurar que todas las mercancías tengan TODOS los campos obligatorios
+  const mercanciasCompletas: MercanciaCompleta[] = data.map(mercancia => ({
     ...mercancia,
     descripcion: mercancia.descripcion || 'Sin descripción',
-    cantidad: mercancia.cantidad || 1, // Valor por defecto
-    clave_unidad: mercancia.clave_unidad || 'KGM' // Valor por defecto
+    cantidad: mercancia.cantidad || 1,
+    clave_unidad: mercancia.clave_unidad || 'KGM',
+    peso_kg: mercancia.peso_kg || 0 // Hacer obligatorio con valor por defecto
   }));
 
   return (
     <div className="space-y-6">
       <Card>
         <MercanciasSectionOptimizada
-          data={mercanciasConDescripcion}
+          data={mercanciasCompletas}
           onChange={onChange}
           onNext={onNext}
           onPrev={onPrev}
@@ -50,7 +51,7 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
       {/* Validador de peso total */}
       {data.length > 0 && (
         <PesoTotalValidator
-          mercancias={mercanciasConDescripcion}
+          mercancias={mercanciasCompletas}
           autotransporte={autotransporte || defaultAutotransporte}
           className="mt-4"
         />
