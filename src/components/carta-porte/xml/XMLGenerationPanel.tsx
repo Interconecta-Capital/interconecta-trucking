@@ -155,21 +155,23 @@ export function XMLGenerationPanel({
     if (resultado.success && onTimbrado) {
       onTimbrado(resultado);
       
-      // Agregar evento de tracking
-      await agregarEvento({
-        evento: 'timbrado',
-        descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
-        metadata: {
-          uuid: resultado.uuid,
-          ambiente: 'test'
-        }
-      });
+      // Agregar evento de tracking solo si el resultado incluye uuid
+      if ('uuid' in resultado) {
+        await agregarEvento({
+          evento: 'timbrado',
+          descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
+          metadata: {
+            uuid: resultado.uuid,
+            ambiente: 'test'
+          }
+        });
+      }
     }
   };
 
   const handleGenerarPDF = async () => {
     const resultado = await generarPDF(cartaPorteData, datosTimbre);
-    if (resultado.success) {
+    if (resultado && resultado.success) {
       console.log('PDF generado exitosamente');
     }
   };

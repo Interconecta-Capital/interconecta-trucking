@@ -106,19 +106,21 @@ export function SimplifiedXMLGenerationPanel({
       return;
     }
     
-    const resultado = await timbrarCartaPorte(cartaPorteData, cartaPorteId);
+    const resultado = await timbrarCartaPorte(cartaPorteData);
     if (resultado.success && onTimbrado) {
       onTimbrado(resultado);
       
-      // Agregar evento de tracking
-      await agregarEvento({
-        evento: 'timbrado',
-        descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
-        metadata: {
-          uuid: resultado.uuid,
-          ambiente: 'test'
-        }
-      });
+      // Agregar evento de tracking solo si el resultado incluye uuid
+      if ('uuid' in resultado) {
+        await agregarEvento({
+          evento: 'timbrado',
+          descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
+          metadata: {
+            uuid: resultado.uuid,
+            ambiente: 'test'
+          }
+        });
+      }
     }
   };
 

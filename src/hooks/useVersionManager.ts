@@ -1,163 +1,103 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { CartaPorteVersion, VERSION_INFO } from '@/types/cartaPorteVersions';
+import { useState, useCallback } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 
-interface UseVersionManagerOptions {
-  initialVersion?: CartaPorteVersion;
-  onVersionChange?: (version: CartaPorteVersion) => void;
-  formData?: CartaPorteData;
-  updateFormData?: (section: string, data: any) => void;
-}
+export function useVersionManager() {
+  const [currentVersion, setCurrentVersion] = useState<'3.0' | '3.1'>('3.1');
 
-export function useVersionManager({
-  initialVersion = '3.1',
-  onVersionChange,
-  formData,
-  updateFormData
-}: UseVersionManagerOptions = {}) {
-  const [version, setVersion] = useState<CartaPorteVersion>(initialVersion);
-  const [isChangingVersion, setIsChangingVersion] = useState(false);
-
-  const migrateFormData = useCallback((newVersion: CartaPorteVersion, currentData?: CartaPorteData) => {
-    if (!currentData || !updateFormData) return;
-
-    console.log(`[VersionManager] Migrating from ${version} to ${newVersion}`);
+  const migrateTo30 = useCallback((data: CartaPorteData): CartaPorteData => {
+    console.log('Migrando datos a versión 3.0');
     
-    const migratedData = { ...currentData };
+    // Crear una copia de los datos
+    const migratedData = { ...data };
     
-    if (version === '3.0' && newVersion === '3.1') {
-      // Migración de 3.0 a 3.1
-      
-      // RegimenAduanero (string) → RegimenesAduaneros (array)
-      if (migratedData.regimenAduanero && !migratedData.regimenesAduaneros) {
-        migratedData.regimenesAduaneros = [migratedData.regimenAduanero];
-        delete migratedData.regimenAduanero;
-      }
-      
-      // FraccionArancelaria ahora es obligatorio en 3.1
-      migratedData.mercancias = migratedData.mercancias?.map(mercancia => ({
-        ...mercancia,
-        fraccion_arancelaria: mercancia.fraccion_arancelaria || ''
-      })) || [];
-      
-      // Agregar campos nuevos de 3.1 con valores por defecto
-      migratedData.version31Fields = {
-        transporteEspecializado: false,
-        tipoCarroceria: '',
-        registroISTMO: migratedData.registroIstmo || false,
-        ...migratedData.version31Fields
-      };
-      
-    } else if (version === '3.1' && newVersion === '3.0') {
-      // Migración de 3.1 a 3.0
-      
-      // RegimenesAduaneros (array) → RegimenAduanero (string)
-      if (migratedData.regimenesAduaneros?.length > 0) {
-        migratedData.regimenAduanero = migratedData.regimenesAduaneros[0];
-        delete migratedData.regimenesAduaneros;
-      }
-      
-      // Remover campos específicos de 3.1
-      delete migratedData.version31Fields;
-      
-      // FraccionArancelaria opcional en 3.0
-      migratedData.mercancias = migratedData.mercancias?.map(mercancia => ({
-        ...mercancia,
-        fraccion_arancelaria: mercancia.fraccion_arancelaria || undefined
-      })) || [];
+    // Migrar campos específicos de versión 3.1 a 3.0
+    if (data.regimenesAduaneros && data.regimenesAduaneros.length > 0) {
+      // En versión 3.0, solo se permite un régimen aduanero
+      migratedData.regimenAduanero = data.regimenesAduaneros[0];
+      delete migratedData.regimenesAduaneros;
     }
     
-    // Actualizar versión en los datos
-    migratedData.cartaPorteVersion = newVersion;
+    // Remover campos específicos de versión 3.1
+    delete migratedData.version31Fields;
     
-    // Aplicar datos migrados
-    updateFormData('configuracion', migratedData);
+    // Establecer versión
+    migratedData.cartaPorteVersion = '3.0';
     
-  }, [version, updateFormData]);
+    return migratedData;
+  }, []);
 
-  const toggleVersion = useCallback(async (newVersion: CartaPorteVersion) => {
-    if (newVersion === version) return;
+  const migrateTo31 = useCallback((data: CartaPorteData): CartaPorteData => {
+    console.log('Migrando datos a versión 3.1');
     
-    setIsChangingVersion(true);
+    // Crear una copia de los datos
+    const migratedData = { ...data };
     
-    try {
-      // Migrar datos si están disponibles
-      if (formData) {
-        migrateFormData(newVersion, formData);
-      }
-      
-      // Cambiar versión
-      setVersion(newVersion);
-      
-      // Notificar cambio
-      onVersionChange?.(newVersion);
-      
-      console.log(`[VersionManager] Version changed to ${newVersion}`);
-      
-    } catch (error) {
-      console.error('[VersionManager] Error changing version:', error);
-    } finally {
-      setIsChangingVersion(false);
+    // Migrar campos específicos de versión 3.0 a 3.1
+    if (data.regimenAduanero) {
+      migratedData.regimenesAduaneros = [data.regimenAduanero];
+      delete migratedData.regimenAduanero;
     }
-  }, [version, formData, migrateFormData, onVersionChange]);
-
-  const getVersionInfo = useCallback(() => {
-    return VERSION_INFO[version];
-  }, [version]);
-
-  const isFieldVisible = useCallback((fieldName: string) => {
-    // Definir qué campos son visibles en cada versión
-    const version31OnlyFields = [
-      'regimenesAduaneros',
-      'transporteEspecializado',
-      'tipoCarroceria',
-      'remolquesCCP',
-      'version31Fields'
-    ];
     
-    const version30OnlyFields = [
-      'regimenAduanero'
-    ];
+    // Agregar campos específicos de versión 3.1
+    migratedData.version31Fields = {
+      transporteEspecializado: false,
+      tipoCarroceria: '',
+      registroISTMO: false,
+      ...data.version31Fields
+    };
     
-    if (version === '3.1') {
-      return !version30OnlyFields.includes(fieldName);
+    // Establecer versión
+    migratedData.cartaPorteVersion = '3.1';
+    
+    return migratedData;
+  }, []);
+
+  const switchVersion = useCallback((newVersion: '3.0' | '3.1', data: CartaPorteData): CartaPorteData => {
+    if (newVersion === currentVersion) {
+      return data;
+    }
+
+    let migratedData: CartaPorteData;
+    
+    if (newVersion === '3.0') {
+      migratedData = migrateTo30(data);
     } else {
-      return !version31OnlyFields.includes(fieldName);
-    }
-  }, [version]);
-
-  const isFieldRequired = useCallback((fieldName: string) => {
-    // Definir campos que cambian de requeridos entre versiones
-    const requiredIn31NotIn30 = ['fraccion_arancelaria'];
-    
-    if (version === '3.1' && requiredIn31NotIn30.includes(fieldName)) {
-      return true;
+      migratedData = migrateTo31(data);
     }
     
-    return false;
-  }, [version]);
+    setCurrentVersion(newVersion);
+    return migratedData;
+  }, [currentVersion, migrateTo30, migrateTo31]);
 
-  // Persistir versión en localStorage
-  useEffect(() => {
-    localStorage.setItem('cartaporte-preferred-version', version);
-  }, [version]);
-
-  // Cargar versión preferida al inicializar
-  useEffect(() => {
-    const savedVersion = localStorage.getItem('cartaporte-preferred-version') as CartaPorteVersion;
-    if (savedVersion && savedVersion !== initialVersion) {
-      setVersion(savedVersion);
+  const validateVersionCompatibility = useCallback((data: CartaPorteData): { 
+    isCompatible: boolean; 
+    issues: string[] 
+  } => {
+    const issues: string[] = [];
+    
+    // Validaciones específicas por versión
+    if (currentVersion === '3.0') {
+      if (data.regimenesAduaneros && data.regimenesAduaneros.length > 1) {
+        issues.push('Versión 3.0 solo admite un régimen aduanero');
+      }
+      if (data.version31Fields?.transporteEspecializado) {
+        issues.push('Transporte especializado no está disponible en versión 3.0');
+      }
     }
-  }, [initialVersion]);
+    
+    return {
+      isCompatible: issues.length === 0,
+      issues
+    };
+  }, [currentVersion]);
 
   return {
-    version,
-    toggleVersion,
-    getVersionInfo,
-    isFieldVisible,
-    isFieldRequired,
-    isChangingVersion,
-    migrateFormData
+    currentVersion,
+    setCurrentVersion,
+    switchVersion,
+    migrateTo30,
+    migrateTo31,
+    validateVersionCompatibility
   };
 }

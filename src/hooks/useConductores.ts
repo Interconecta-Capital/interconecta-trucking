@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -94,13 +95,23 @@ export function useConductores() {
     
     setLoading(true);
     try {
-      // Ensure each conductor has required fields
+      // Ensure each conductor has required fields and proper structure
       const conductoresWithDefaults = conductoresData.map(conductor => ({
         nombre: conductor.nombre || '',
         user_id: user.id,
         activo: conductor.activo ?? true,
         estado: conductor.estado || 'disponible',
-        ...conductor
+        rfc: conductor.rfc || null,
+        curp: conductor.curp || null,
+        num_licencia: conductor.num_licencia || null,
+        tipo_licencia: conductor.tipo_licencia || null,
+        vigencia_licencia: conductor.vigencia_licencia || null,
+        operador_sct: conductor.operador_sct ?? false,
+        telefono: conductor.telefono || null,
+        email: conductor.email || null,
+        direccion: conductor.direccion || null,
+        residencia_fiscal: conductor.residencia_fiscal || 'MEX',
+        num_reg_id_trib: conductor.num_reg_id_trib || null
       }));
 
       const { data, error } = await supabase
@@ -138,3 +149,6 @@ export function useConductores() {
     createMultipleConductores
   };
 }
+
+// Export the Conductor type for external use
+export type { Conductor };
