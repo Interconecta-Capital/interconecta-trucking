@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { AutotransporteSectionOptimizada } from './autotransporte/AutotransporteSectionOptimizada';
+import { AutotransporteSection as AutotransporteSectionEditor } from './editor/sections/AutotransporteSection';
 
 interface AutotransporteSectionProps {
   data: any;
@@ -13,11 +13,9 @@ interface AutotransporteSectionProps {
 export function AutotransporteSection({ data, onChange, onNext, onPrev }: AutotransporteSectionProps) {
   return (
     <Card>
-      <AutotransporteSectionOptimizada
+      <AutotransporteSectionEditor
         data={data}
         onChange={onChange}
-        onNext={onNext}
-        onPrev={onPrev}
       />
     </Card>
   );

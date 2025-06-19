@@ -1,5 +1,5 @@
 
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 import { XMLValidation } from './xmlValidation';
 import { XMLUtils } from './xmlUtils';
 import { XMLConceptosBuilder } from './xmlConceptos';

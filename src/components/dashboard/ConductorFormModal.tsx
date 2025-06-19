@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -16,13 +15,13 @@ interface ConductorFormModalProps {
 
 export function ConductorFormModal({ open, onOpenChange }: ConductorFormModalProps) {
   const [loading, setLoading] = useState(false);
-  const { crearConductor } = useConductores();
+  const { createConductor } = useConductores();
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
   const onSubmit = async (data: any) => {
     setLoading(true);
     try {
-      await crearConductor(data);
+      await createConductor(data);
       toast.success('Conductor creado exitosamente');
       reset();
       onOpenChange(false);

@@ -1,6 +1,5 @@
 
-import { CartaPorteFormData } from '../useCartaPorteMappers';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
 
 export interface UseCartaPorteFormOptions {
   cartaPorteId?: string;

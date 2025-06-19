@@ -105,6 +105,10 @@ export function useConductores() {
     }
   };
 
+  useEffect(() => {
+    fetchConductores();
+  }, []);
+
   return {
     conductores,
     loading,
