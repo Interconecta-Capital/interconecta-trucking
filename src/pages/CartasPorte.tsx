@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus, FileText, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,8 @@ export default function CartasPorte() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [pdfLinks, setPdfLinks] = useState<Record<string, string>>({});
+  const [selectedCartaPorte, setSelectedCartaPorte] = useState<CartaPorteData | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleNewCartaPorte = () => {
@@ -144,6 +145,44 @@ export default function CartasPorte() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleViewCartaPorte = (cartaPorte: any) => {
+    const cartaPorteData: CartaPorteData = {
+      version: '3.1',
+      rfcEmisor: cartaPorte.rfc_emisor || '',
+      nombreEmisor: cartaPorte.nombre_emisor || '',
+      rfcReceptor: cartaPorte.rfc_receptor || '',
+      nombreReceptor: cartaPorte.nombre_receptor || '',
+      transporteInternacional: cartaPorte.transporte_internacional || false,
+      registroIstmo: cartaPorte.registro_istmo || false,
+      cartaPorteVersion: cartaPorte.version_carta_porte || '3.1',
+      tipoCfdi: cartaPorte.tipo_cfdi || 'T',
+      folio: cartaPorte.folio,
+      ubicaciones: [],
+      mercancias: [],
+      autotransporte: {
+        placa_vm: '',
+        anio_modelo_vm: new Date().getFullYear(),
+        config_vehicular: '',
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: '',
+        peso_bruto_vehicular: 0,
+        capacidad_carga: 0,
+        remolques: []
+      },
+      figuras: []
+    };
+
+    // Add any additional spread properties if cartaPorte has them
+    if (cartaPorte.datos_formulario && typeof cartaPorte.datos_formulario === 'object') {
+      Object.assign(cartaPorteData, cartaPorte.datos_formulario);
+    }
+
+    setSelectedCartaPorte(cartaPorteData);
+    setIsViewDialogOpen(true);
   };
 
   const filteredCartas = cartasPorte.filter(carta =>

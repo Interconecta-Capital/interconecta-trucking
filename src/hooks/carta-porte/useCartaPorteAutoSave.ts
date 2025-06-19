@@ -43,7 +43,7 @@ export const useCartaPorteAutoSave = ({
     
     setIsAutoSaving(true);
     try {
-      const nuevoId = await BorradorService.guardarBorrador(formData, currentCartaPorteId);
+      const nuevoId = await BorradorService.guardarBorrador(formData);
       
       if (nuevoId && nuevoId !== currentCartaPorteId && onCartaPorteIdChange) {
         onCartaPorteIdChange(nuevoId);
@@ -82,8 +82,8 @@ export const useCartaPorteAutoSave = ({
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (enabled && formData) {
-        // Intentar guardado síncrono antes de salir usando el método correcto
-        BorradorService.guardarBorradorAutomatico(formData, currentCartaPorteId);
+        // Intentar guardado síncrono antes de salir
+        BorradorService.guardarBorrador(formData);
         e.preventDefault();
         e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
       }
