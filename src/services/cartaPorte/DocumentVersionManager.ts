@@ -36,7 +36,7 @@ export class DocumentVersionManager {
       }
 
       console.log('Documento generado exitosamente:', data.id, data.tipo_documento, data.version_documento);
-      return data;
+      return data as CartaPorteDocumento;
     } catch (error) {
       console.error('Error en generarDocumento:', error);
       throw error;
@@ -64,7 +64,7 @@ export class DocumentVersionManager {
         throw new Error(`Error obteniendo versiones: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as CartaPorteDocumento[];
     } catch (error) {
       console.error('Error en obtenerVersiones:', error);
       throw error;
@@ -104,7 +104,7 @@ export class DocumentVersionManager {
         throw new Error(`Error obteniendo documentos: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as CartaPorteDocumento[];
     } catch (error) {
       console.error('Error en obtenerTodosLosDocumentos:', error);
       throw error;
@@ -218,7 +218,7 @@ export class DocumentVersionManager {
         throw new Error(`Error buscando documento: ${error.message}`);
       }
 
-      return data;
+      return data as CartaPorteDocumento;
     } catch (error) {
       console.error('Error en buscarDocumento:', error);
       throw error;
@@ -245,7 +245,7 @@ export class DocumentVersionManager {
         throw new Error(`Error actualizando metadatos: ${error.message}`);
       }
 
-      return data;
+      return data as CartaPorteDocumento;
     } catch (error) {
       console.error('Error en actualizarMetadatos:', error);
       throw error;

@@ -16,9 +16,15 @@ export class CartaPorteLifecycleManager {
    */
   static async crearBorrador(request: CreateBorradorRequest = {}): Promise<BorradorCartaPorte> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
       const { data, error } = await supabase
         .from('borradores_carta_porte')
         .insert({
+          user_id: user.id,
           nombre_borrador: request.nombre_borrador || `Borrador ${new Date().toLocaleDateString()}`,
           datos_formulario: request.datos_formulario || {
             configuracion: {
@@ -188,7 +194,7 @@ export class CartaPorteLifecycleManager {
           id_ccp: idCCP,
           nombre_documento: request.nombre_documento || borrador.nombre_borrador,
           borrador_origen_id: request.borradorId,
-          status: 'active',
+          status: 'active' as const,
           version_documento: 'v1.0',
           datos_formulario: datosFormulario,
           
@@ -211,7 +217,7 @@ export class CartaPorteLifecycleManager {
       }
 
       console.log('Borrador convertido exitosamente:', data.id, 'IdCCP:', idCCP);
-      return data;
+      return data as CartaPorteCompleta;
     } catch (error) {
       console.error('Error en convertirBorradorACartaPorte:', error);
       throw error;
@@ -336,7 +342,7 @@ export class CartaPorteLifecycleManager {
         throw new Error(`Error listando cartas porte: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as CartaPorteCompleta[];
     } catch (error) {
       console.error('Error en listarCartasPorte:', error);
       throw error;
@@ -365,7 +371,7 @@ export class CartaPorteLifecycleManager {
         throw new Error(`Error obteniendo carta porte: ${error.message}`);
       }
 
-      return data;
+      return data as CartaPorteCompleta;
     } catch (error) {
       console.error('Error en obtenerCartaPorte:', error);
       throw error;
