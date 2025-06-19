@@ -22,10 +22,15 @@ export interface CartaPorte31Data {
     numero_estacion?: string;
     kilometro?: number;
     domicilio: {
+      pais: string;
       codigo_postal: string;
       estado: string;
       municipio: string;
+      colonia: string;
       calle: string;
+      numero_exterior: string;
+      numero_interior?: string;
+      referencia?: string;
     };
   }>;
   

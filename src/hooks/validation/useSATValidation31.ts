@@ -1,3 +1,4 @@
+
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
@@ -28,10 +29,15 @@ export const useSATValidation31 = () => {
         numero_estacion: ub.numero_estacion,
         kilometro: ub.kilometro,
         domicilio: {
+          pais: ub.domicilio.pais || 'MEX',
           codigo_postal: ub.domicilio.codigo_postal,
           estado: ub.domicilio.estado,
           municipio: ub.domicilio.municipio,
-          calle: ub.domicilio.calle
+          colonia: ub.domicilio.colonia || '',
+          calle: ub.domicilio.calle,
+          numero_exterior: ub.domicilio.numero_exterior || ub.domicilio.numExterior || '',
+          numero_interior: ub.domicilio.numero_interior || ub.domicilio.numInterior,
+          referencia: ub.domicilio.referencia
         }
       })) || [],
       
