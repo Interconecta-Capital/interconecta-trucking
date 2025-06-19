@@ -284,9 +284,19 @@ export function UbicacionFormDialog({
                 domicilio={domicilioUnificado}
                 onDomicilioChange={handleDomicilioChange}
                 camposOpcionales={['numInterior', 'referencia', 'localidad']}
-                errors={errors}
               />
             </div>
+            
+            {/* Display validation errors for domicilio fields */}
+            {errors.codigo_postal && (
+              <p className="text-sm text-red-500 mt-1">{errors.codigo_postal}</p>
+            )}
+            {errors.municipio && (
+              <p className="text-sm text-red-500 mt-1">{errors.municipio}</p>
+            )}
+            {errors.calle && (
+              <p className="text-sm text-red-500 mt-1">{errors.calle}</p>
+            )}
           </div>
 
           {/* Botones */}
