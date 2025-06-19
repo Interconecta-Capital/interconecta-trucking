@@ -1,4 +1,3 @@
-
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
@@ -35,13 +34,14 @@ export const useSATValidation31 = () => {
           municipio: ub.domicilio.municipio,
           colonia: ub.domicilio.colonia || '',
           calle: ub.domicilio.calle,
-          numero_exterior: ub.domicilio.numero_exterior || ub.domicilio.numExterior || '',
-          numero_interior: ub.domicilio.numero_interior || ub.domicilio.numInterior,
+          numero_exterior: ub.domicilio.numero_exterior || '',
+          numero_interior: ub.domicilio.numero_interior,
           referencia: ub.domicilio.referencia
         }
       })) || [],
       
       mercancias: data.mercancias?.map(merc => ({
+        id: merc.id || crypto.randomUUID(), // Add id property
         bienes_transp: merc.bienes_transp,
         cantidad: merc.cantidad,
         peso_kg: merc.peso_kg,

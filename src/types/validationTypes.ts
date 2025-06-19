@@ -35,6 +35,7 @@ export interface CartaPorte31Data {
   }>;
   
   mercancias?: Array<{
+    id?: string; // Add id property to match MercanciaCompleta
     bienes_transp: string;
     cantidad?: number;
     peso_kg?: number;
