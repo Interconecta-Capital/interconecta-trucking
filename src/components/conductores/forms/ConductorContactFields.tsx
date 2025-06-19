@@ -3,7 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Phone, Mail, MapPin, Users } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 
 interface ConductorContactFieldsProps {
   formData: any;
@@ -53,39 +53,6 @@ export function ConductorContactFields({ formData, onFieldChange, errors }: Cond
                 className={errors?.email ? 'border-red-500' : ''}
               />
               {errors?.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contacto de Emergencia */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Contacto de Emergencia
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="contacto_emergencia">Nombre del Contacto</Label>
-              <Input
-                id="contacto_emergencia"
-                value={formData.contacto_emergencia || ''}
-                onChange={(e) => onFieldChange('contacto_emergencia', e.target.value)}
-                placeholder="Nombre completo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="telefono_emergencia">Teléfono de Emergencia</Label>
-              <Input
-                id="telefono_emergencia"
-                value={formData.telefono_emergencia || ''}
-                onChange={(e) => onFieldChange('telefono_emergencia', e.target.value)}
-                placeholder="Número de emergencia"
-              />
             </div>
           </div>
         </CardContent>

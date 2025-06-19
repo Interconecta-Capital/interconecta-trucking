@@ -35,7 +35,7 @@ export function useConductores() {
     if (!user) return;
     
     try {
-      // Ensure required fields are present
+      // Ensure required fields are present based on actual database schema
       const conductorForSupabase = {
         nombre: conductorData.nombre || 'Sin nombre',
         user_id: user.id,
@@ -51,9 +51,7 @@ export function useConductores() {
         email: conductorData.email || null,
         direccion: conductorData.direccion || null,
         residencia_fiscal: conductorData.residencia_fiscal || 'MEX',
-        num_reg_id_trib: conductorData.num_reg_id_trib || null,
-        contacto_emergencia: conductorData.contacto_emergencia || null,
-        telefono_emergencia: conductorData.telefono_emergencia || null
+        num_reg_id_trib: conductorData.num_reg_id_trib || null
       };
 
       const { data, error } = await supabase
