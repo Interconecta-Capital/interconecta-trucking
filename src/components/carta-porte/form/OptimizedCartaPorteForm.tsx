@@ -104,10 +104,7 @@ export function OptimizedCartaPorteForm({ currentCartaPorteId, onDataChange }: O
 
         <CartaPorteTabContent
           cartaPorteData={cartaPorteData}
-          cachedFormData={{
-            ...cachedFormData,
-            autotransporte: cachedFormData.autotransporte || defaultAutotransporte
-          }}
+          cachedFormData={cachedFormData}
           updateFormData={updateFormData}
           handleTabChange={handleTabChange}
           handleAutotransporteChange={handleAutotransporteChange}

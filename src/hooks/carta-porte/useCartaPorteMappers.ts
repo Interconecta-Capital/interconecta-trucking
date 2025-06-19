@@ -10,7 +10,7 @@ import {
 
 // Tipo unificado para el formulario (basado en la estructura de BD)
 export interface CartaPorteFormData {
-  // Configuración básica
+  // Configuración básica (REQUIRED)
   configuracion: {
     version: '3.0' | '3.1';
     tipoComprobante: string;
@@ -84,10 +84,40 @@ const getDefaultCartaPorteData = (): CartaPorteData => ({
   figuras: [],
 });
 
+// Función helper para configuración por defecto
+const getDefaultConfiguracion = () => ({
+  version: '3.1' as const,
+  tipoComprobante: 'T',
+  emisor: {
+    rfc: '',
+    nombre: '',
+    regimenFiscal: '',
+  },
+  receptor: {
+    rfc: '',
+    nombre: '',
+  },
+});
+
 // Hook principal de mapeo con gestión de estado
 export const useCartaPorteMappers = (currentCartaPorteId?: string) => {
   const [cartaPorteData, setCartaPorteData] = useState<CartaPorteData>(getDefaultCartaPorteData());
-  const [cachedFormData, setCachedFormData] = useState<Partial<CartaPorteFormData>>({});
+  const [cachedFormData, setCachedFormData] = useState<CartaPorteFormData>({
+    configuracion: getDefaultConfiguracion(),
+    ubicaciones: [],
+    mercancias: [],
+    autotransporte: getDefaultAutotransporte(),
+    figuras: [],
+    tipoCreacion: 'manual',
+    tipoCfdi: 'Traslado',
+    rfcEmisor: '',
+    nombreEmisor: '',
+    rfcReceptor: '',
+    nombreReceptor: '',
+    transporteInternacional: false,
+    registroIstmo: false,
+    cartaPorteVersion: '3.1',
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   // Funciones de mapeo

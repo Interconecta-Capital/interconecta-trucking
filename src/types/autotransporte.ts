@@ -3,7 +3,7 @@ export interface Remolque {
   id?: string;
   placa: string;
   subtipo_rem: string;
-  subtipo_remolque?: string; // Alias for compatibility
+  subtipo_remolque: string; // Always required for compatibility
 }
 
 export interface AutotransporteCompleto {
@@ -32,6 +32,18 @@ export interface AutotransporteCompleto {
   vigencia_tarjeta_circulacion?: string;
   numero_serie_vin?: string;
   tipo_carroceria?: string;
+  
+  // Dimensiones
+  dimensiones?: {
+    largo?: number;
+    ancho?: number;
+    alto?: number;
+  };
+  
+  // Campos adicionales para compatibilidad
+  marca_vehiculo?: string;
+  modelo_vehiculo?: string;
+  carga_maxima?: number;
 }
 
 export interface VehiculoGuardado {
