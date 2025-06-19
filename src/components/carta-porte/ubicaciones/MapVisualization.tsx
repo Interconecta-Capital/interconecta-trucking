@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MapPin, AlertTriangle } from 'lucide-react';
 
@@ -15,8 +14,8 @@ interface MapVisualizationProps {
 export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapVisualizationProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken] = useState<string>('pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q');
-  const [tokenConfigured] = useState(true);
+  const mapboxToken: string = import.meta.env.VITE_MAPBOX_TOKEN || '';
+  const tokenConfigured = mapboxToken.length > 0;
 
   // Initialize map when component mounts
   useEffect(() => {
@@ -135,24 +134,35 @@ export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapV
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div 
-          ref={mapContainer} 
-          className="w-full h-96 rounded-lg border"
-          style={{ minHeight: '400px' }}
-        />
-        {rutaCalculada && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Distancia Total:</span>
-                <span className="ml-2 font-medium">{rutaCalculada.distance} km</span>
+        {!tokenConfigured ? (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Se debe configurar la variable <code>VITE_MAPBOX_TOKEN</code> para mostrar el mapa.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <div
+              ref={mapContainer}
+              className="w-full h-96 rounded-lg border"
+              style={{ minHeight: '400px' }}
+            />
+            {rutaCalculada && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Distancia Total:</span>
+                    <span className="ml-2 font-medium">{rutaCalculada.distance} km</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Tiempo Estimado:</span>
+                    <span className="ml-2 font-medium">{rutaCalculada.duration} min</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-gray-600">Tiempo Estimado:</span>
-                <span className="ml-2 font-medium">{rutaCalculada.duration} min</span>
-              </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
