@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ export function FigurasSection({ figuras, onChange }: FigurasSectionProps) {
     const newFigura: FiguraCompleta = {
       id: Date.now().toString(),
       tipo_figura: 'Operador',
+      rfc_transportista: '', // This was missing - required property
       rfc_figura: '',
       nombre_figura: '',
       num_licencia: '',
