@@ -1,3 +1,4 @@
+
 export interface Domicilio {
   calle: string;
   numero_exterior?: string;
@@ -107,6 +108,8 @@ export interface UbicacionCompleta extends Ubicacion {
   tipo_ubicacion?: string;
   nombre_remitente_destinatario?: string;
   fecha_hora_salida_llegada?: string;
+  numero_estacion?: string;
+  kilometro?: number;
   coordenadas?: {
     latitud: number;
     longitud: number;
