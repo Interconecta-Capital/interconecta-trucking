@@ -34,6 +34,35 @@ export default function CartasPorte() {
     carta.rfc_receptor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Convertir CartaPorteCompleta a CartaPorte para la tabla
+  const cartasPorteParaTabla = filteredCartasPorte.map(carta => ({
+    id: carta.id,
+    usuario_id: carta.usuario_id || '',
+    folio: carta.folio,
+    tipo_cfdi: carta.tipo_cfdi,
+    rfc_emisor: carta.rfc_emisor,
+    nombre_emisor: carta.nombre_emisor,
+    rfc_receptor: carta.rfc_receptor,
+    nombre_receptor: carta.nombre_receptor,
+    entrada_salida_merc: carta.entrada_salida_merc,
+    pais_origen_destino: carta.pais_origen_destino,
+    via_entrada_salida: carta.via_entrada_salida,
+    ubicacion_polo_origen: carta.ubicacion_polo_origen,
+    ubicacion_polo_destino: carta.ubicacion_polo_destino,
+    transporte_internacional: carta.transporte_internacional,
+    registro_istmo: carta.registro_istmo,
+    status: carta.status,
+    xml_generado: carta.xml_generado,
+    uuid_fiscal: carta.uuid_fiscal,
+    fecha_timbrado: carta.fecha_timbrado,
+    tenant_id: carta.tenant_id,
+    datos_formulario: carta.datos_formulario,
+    id_ccp: carta.id_ccp,
+    version_carta_porte: '3.1',
+    created_at: carta.created_at,
+    updated_at: carta.updated_at
+  }));
+
   return (
     <ProtectedContent requiredFeature="cartas_porte">
       <div className="container mx-auto py-6 space-y-6">
@@ -86,7 +115,7 @@ export default function CartasPorte() {
 
         {/* Tabla */}
         <CartasPorteTable 
-          cartasPorte={filteredCartasPorte}
+          cartasPorte={cartasPorteParaTabla}
           loading={isLoading}
         />
       </div>

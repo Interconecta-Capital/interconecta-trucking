@@ -35,6 +35,26 @@ export interface CartaPorteCompleta {
   created_at: string;
   updated_at: string;
   documentos?: CartaPorteDocumento[];
+  
+  // Campos adicionales para compatibilidad con CartaPorte
+  folio?: string;
+  rfc_emisor: string;
+  nombre_emisor?: string;
+  rfc_receptor: string;
+  nombre_receptor?: string;
+  usuario_id: string;
+  uuid_fiscal?: string;
+  fecha_timbrado?: string;
+  xml_generado?: string;
+  tenant_id?: string;
+  tipo_cfdi?: string;
+  transporte_internacional?: boolean;
+  registro_istmo?: boolean;
+  entrada_salida_merc?: string;
+  pais_origen_destino?: string;
+  via_entrada_salida?: string;
+  ubicacion_polo_origen?: string;
+  ubicacion_polo_destino?: string;
 }
 
 export interface CreateBorradorRequest {
