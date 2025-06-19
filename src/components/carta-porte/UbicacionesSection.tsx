@@ -1,14 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Plus, ArrowRight, ArrowLeft, Route, Calculator } from 'lucide-react';
+import { MapPin, Plus, ArrowRight, ArrowLeft, Route, Calculator, CheckCircle } from 'lucide-react';
 import { UbicacionCompleta } from '@/types/cartaPorte';
 import { UbicacionFormDialog } from './ubicaciones/UbicacionFormDialog';
 import { UbicacionCard } from './ubicaciones/UbicacionCard';
 import { DistanceCalculator } from './ubicaciones/DistanceCalculator';
+import { DistanceCalculationService } from '@/services/distanceCalculationService';
 import { Ubicacion } from '@/types/ubicaciones';
+import { useToast } from '@/hooks/use-toast';
 
 interface UbicacionesSectionProps {
   data: UbicacionCompleta[];
@@ -32,8 +33,10 @@ export function UbicacionesSection({
   const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [calculationStatus, setCalculationStatus] = useState<'pending' | 'success' | 'error'>('pending');
+  const { toast } = useToast();
 
-  // Calcular automáticamente distancias cuando hay ubicaciones válidas
+  // Auto-calcular distancias cuando hay ubicaciones válidas
   useEffect(() => {
     const ubicacionesValidas = data.filter(u => 
       u.domicilio?.codigo_postal && 
@@ -42,10 +45,84 @@ export function UbicacionesSection({
       u.domicilio?.estado
     );
 
-    if (ubicacionesValidas.length >= 2 && !distanciaTotal) {
-      console.log('🔄 Ubicaciones válidas detectadas, preparando auto-cálculo');
+    if (ubicacionesValidas.length >= 2 && !distanciaTotal && !isCalculating) {
+      console.log('🔄 Auto-calculando distancias con ubicaciones válidas');
+      handleAutoCalculateDistances();
     }
-  }, [data, distanciaTotal]);
+  }, [data.length, distanciaTotal, isCalculating]);
+
+  const handleAutoCalculateDistances = async () => {
+    setIsCalculating(true);
+    setCalculationStatus('pending');
+    
+    try {
+      // Convertir UbicacionCompleta a formato Ubicacion para el servicio
+      const ubicacionesParaCalculo: Ubicacion[] = data.map((u, index) => ({
+        id: u.id || crypto.randomUUID(),
+        idUbicacion: u.id_ubicacion,
+        tipoUbicacion: u.tipo_ubicacion,
+        rfcRemitenteDestinatario: u.rfc_remitente_destinatario,
+        nombreRemitenteDestinatario: u.nombre_remitente_destinatario,
+        fechaHoraSalidaLlegada: u.fecha_hora_salida_llegada,
+        distanciaRecorrida: u.distancia_recorrida,
+        ordenSecuencia: index + 1,
+        coordenadas: u.coordenadas,
+        domicilio: {
+          pais: u.domicilio.pais,
+          codigoPostal: u.domicilio.codigo_postal,
+          estado: u.domicilio.estado,
+          municipio: u.domicilio.municipio,
+          colonia: u.domicilio.colonia,
+          calle: u.domicilio.calle,
+          numExterior: u.domicilio.numero_exterior,
+          numInterior: u.domicilio.numero_interior,
+          referencia: u.domicilio.referencia,
+          localidad: u.domicilio.municipio
+        }
+      }));
+
+      const resultado = await DistanceCalculationService.calcularDistanciaReal(ubicacionesParaCalculo);
+      
+      // Actualizar distancias calculadas en las ubicaciones
+      const ubicacionesActualizadas = data.map((ubicacion, index) => {
+        const ubicacionCalculada = resultado.ubicacionesConDistancia[index];
+        return {
+          ...ubicacion,
+          distancia_recorrida: ubicacionCalculada?.distanciaRecorrida || ubicacion.distancia_recorrida
+        };
+      });
+
+      onChange(ubicacionesActualizadas);
+      setDistanciaTotal(resultado.distanciaTotal);
+      setTiempoEstimado(resultado.tiempoEstimado);
+      setCalculationStatus('success');
+
+      // Notificar al componente padre
+      if (onDistanceCalculated) {
+        onDistanceCalculated({
+          distanciaTotal: resultado.distanciaTotal,
+          tiempoEstimado: resultado.tiempoEstimado
+        });
+      }
+
+      toast({
+        title: "✅ Distancias calculadas",
+        description: `Distancia total: ${resultado.distanciaTotal} km. Tiempo estimado: ${Math.round(resultado.tiempoEstimado / 60)}h ${resultado.tiempoEstimado % 60}m`,
+      });
+
+    } catch (error) {
+      console.error('❌ Error calculando distancias:', error);
+      setCalculationStatus('error');
+      
+      toast({
+        title: "Error calculando distancias",
+        description: "No se pudieron calcular las distancias automáticamente. Puede ingresarlas manualmente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCalculating(false);
+    }
+  };
 
   const handleAddUbicacion = () => {
     setEditingUbicacion(null);
@@ -68,26 +145,32 @@ export function UbicacionesSection({
     }
     setIsDialogOpen(false);
     setEditingUbicacion(null);
+    
+    // Reset cálculo para que se recalcule automáticamente
+    setDistanciaTotal(0);
+    setCalculationStatus('pending');
   };
 
   const handleDeleteUbicacion = (idUbicacion: string) => {
     const updatedUbicaciones = data.filter(u => u.id_ubicacion !== idUbicacion);
     onChange(updatedUbicaciones);
+    
+    // Reset cálculo
+    setDistanciaTotal(0);
+    setCalculationStatus('pending');
   };
 
   const handleDistanceCalculated = (distancia: number, tiempo: number) => {
     setDistanciaTotal(distancia);
     setTiempoEstimado(tiempo);
+    setCalculationStatus('success');
     
-    // Persistir los datos de cálculo
     if (onDistanceCalculated) {
       onDistanceCalculated({
         distanciaTotal: distancia,
         tiempoEstimado: tiempo
       });
     }
-
-    console.log('✅ Distancia calculada y persistida:', { distancia, tiempo });
   };
 
   const hasOrigen = data.some(u => u.tipo_ubicacion === 'Origen');
@@ -101,16 +184,16 @@ export function UbicacionesSection({
            (orden[b.tipo_ubicacion as keyof typeof orden] || 2);
   });
 
-  // Convertir UbicacionCompleta a formato compatible con DistanceCalculator
-  const ubicacionesParaCalculo: Ubicacion[] = data.map(u => ({
-    id: u.id,
+  // Convertir para DistanceCalculator
+  const ubicacionesParaCalculador: Ubicacion[] = data.map(u => ({
+    id: u.id || crypto.randomUUID(),
     idUbicacion: u.id_ubicacion,
     tipoUbicacion: u.tipo_ubicacion,
     rfcRemitenteDestinatario: u.rfc_remitente_destinatario,
     nombreRemitenteDestinatario: u.nombre_remitente_destinatario,
     fechaHoraSalidaLlegada: u.fecha_hora_salida_llegada,
     distanciaRecorrida: u.distancia_recorrida,
-    ordenSecuencia: 1, // Por ahora valor fijo
+    ordenSecuencia: 1,
     coordenadas: u.coordenadas ? {
       latitud: u.coordenadas.latitud,
       longitud: u.coordenadas.longitud
@@ -125,7 +208,7 @@ export function UbicacionesSection({
       numExterior: u.domicilio.numero_exterior,
       numInterior: u.domicilio.numero_interior,
       referencia: u.domicilio.referencia,
-      localidad: u.domicilio.municipio // Usar municipio como localidad
+      localidad: u.domicilio.municipio
     }
   }));
 
@@ -138,23 +221,45 @@ export function UbicacionesSection({
               <MapPin className="h-5 w-5" />
               Ubicaciones de Carga y Descarga
               <Badge variant="outline">{data.length} ubicación(es)</Badge>
+              {calculationStatus === 'success' && distanciaTotal > 0 && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  {distanciaTotal} km calculados
+                </Badge>
+              )}
             </div>
-            <Button onClick={handleAddUbicacion} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Agregar Ubicación
-            </Button>
+            <div className="flex gap-2">
+              {data.length >= 2 && calculationStatus !== 'success' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoCalculateDistances}
+                  disabled={isCalculating}
+                  className="flex items-center gap-2"
+                >
+                  <Calculator className="h-4 w-4" />
+                  {isCalculating ? 'Calculando...' : 'Calcular Distancias'}
+                </Button>
+              )}
+              <Button onClick={handleAddUbicacion} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Agregar Ubicación
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Calculadora de Distancia */}
-          <DistanceCalculator
-            ubicaciones={ubicacionesParaCalculo}
-            onDistanceCalculated={handleDistanceCalculated}
-            distanciaTotal={distanciaTotal}
-            tiempoEstimado={tiempoEstimado}
-            isCalculating={isCalculating}
-          />
+          {/* Calculadora de Distancia Mejorada */}
+          {data.length >= 2 && (
+            <DistanceCalculator
+              ubicaciones={ubicacionesParaCalculador}
+              onDistanceCalculated={handleDistanceCalculated}
+              distanciaTotal={distanciaTotal}
+              tiempoEstimado={tiempoEstimado}
+              isCalculating={isCalculating}
+            />
+          )}
 
           {/* Lista de ubicaciones */}
           {ubicacionesOrdenadas.length === 0 ? (
