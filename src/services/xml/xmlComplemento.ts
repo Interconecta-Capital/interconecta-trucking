@@ -1,4 +1,5 @@
 
+
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
 export class XMLComplemento {
@@ -65,7 +66,7 @@ export class XMLComplemento {
         if (ubicacion.rfc) ubicacionesXml += ` RFCRemitenteDestinatario="${ubicacion.rfc}"`;
         if (ubicacion.nombre) ubicacionesXml += ` NombreRemitenteDestinatario="${ubicacion.nombre}"`;
         if (ubicacion.rfc_remitente_destinatario) ubicacionesXml += ` NumRegIdTrib="${ubicacion.rfc_remitente_destinatario}"`;
-        if (ubicacion.pais && ubicacion.pais !== 'MEX') ubicacionesXml += ` ResidenciaFiscal="${ubicacion.pais}"`;
+        if (ubicacion.domicilio?.pais && ubicacion.domicilio.pais !== 'MEX') ubicacionesXml += ` ResidenciaFiscal="${ubicacion.domicilio.pais}"`;
         ubicacionesXml += '>';
 
         if (ubicacion.domicilio) {
@@ -126,7 +127,13 @@ export class XMLComplemento {
 
     return complement;
   }
+
+  // Add alias method for backward compatibility
+  static construirComplemento(cartaPorteData: CartaPorteData): string {
+    return this.generateCartaPorteComplement(cartaPorteData);
+  }
 }
 
 // Export alias for backward compatibility
 export { XMLComplemento as XMLComplementoBuilder };
+
