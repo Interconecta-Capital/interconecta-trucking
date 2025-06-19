@@ -15,9 +15,9 @@ export function FigurasSection({ figuras, onChange }: FigurasSectionProps) {
     const newFigura: FiguraCompleta = {
       id: Date.now().toString(),
       tipo_figura: 'Operador',
-      rfc: '',
-      nombre: '',
-      numero_licencia: '',
+      rfc_figura: '',
+      nombre_figura: '',
+      num_licencia: '',
       tipo_licencia: 'A'
     };
     onChange([...figuras, newFigura]);
@@ -53,10 +53,10 @@ export function FigurasSection({ figuras, onChange }: FigurasSectionProps) {
                     {figura.tipo_figura} {index + 1}
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    RFC: {figura.rfc || 'No especificado'}
+                    RFC: {figura.rfc_figura || 'No especificado'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Nombre: {figura.nombre || 'No especificado'}
+                    Nombre: {figura.nombre_figura || 'No especificado'}
                   </p>
                 </div>
               ))}

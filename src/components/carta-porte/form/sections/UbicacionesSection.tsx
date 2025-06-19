@@ -15,8 +15,8 @@ export function UbicacionesSection({ ubicaciones, onChange }: UbicacionesSection
     const newUbicacion: UbicacionCompleta = {
       id: Date.now().toString(),
       tipo_ubicacion: ubicaciones.length === 0 ? 'Origen' : 'Destino',
-      rfc: '',
-      nombre: '',
+      rfc_remitente_destinatario: '',
+      nombre_remitente_destinatario: '',
       domicilio: {
         calle: '',
         numero_exterior: '',
@@ -60,10 +60,10 @@ export function UbicacionesSection({ ubicaciones, onChange }: UbicacionesSection
                     Ubicación {index + 1} - {ubicacion.tipo_ubicacion}
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    RFC: {ubicacion.rfc || 'No especificado'}
+                    RFC: {ubicacion.rfc_remitente_destinatario || 'No especificado'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Nombre: {ubicacion.nombre || 'No especificado'}
+                    Nombre: {ubicacion.nombre_remitente_destinatario || 'No especificado'}
                   </p>
                 </div>
               ))}

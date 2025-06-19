@@ -16,6 +16,18 @@ interface ConfiguracionSectionProps {
 export function ConfiguracionSection({ data, onChange }: ConfiguracionSectionProps) {
   console.log('ConfiguracionSection render:', data);
 
+  const handleTransporteInternacionalChange = (checked: boolean) => {
+    onChange('transporteInternacional', checked);
+  };
+
+  const handleRegistroIstmoChange = (checked: boolean) => {
+    onChange('registroIstmo', checked);
+  };
+
+  // Normalize boolean values
+  const transporteInternacionalValue = data.transporteInternacional === true || data.transporteInternacional === 'Sí';
+  const registroIstmoValue = data.registroIstmo === true || data.registroIstmo === 'Sí';
+
   return (
     <div className="space-y-6">
       <Card>
@@ -146,8 +158,8 @@ export function ConfiguracionSection({ data, onChange }: ConfiguracionSectionPro
                 </p>
               </div>
               <Switch
-                checked={data.transporteInternacional || false}
-                onCheckedChange={(checked) => onChange('transporteInternacional', checked)}
+                checked={transporteInternacionalValue}
+                onCheckedChange={handleTransporteInternacionalChange}
               />
             </div>
 
@@ -159,8 +171,8 @@ export function ConfiguracionSection({ data, onChange }: ConfiguracionSectionPro
                 </p>
               </div>
               <Switch
-                checked={data.registroIstmo || false}
-                onCheckedChange={(checked) => onChange('registroIstmo', checked)}
+                checked={registroIstmoValue}
+                onCheckedChange={handleRegistroIstmoChange}
               />
             </div>
           </div>
