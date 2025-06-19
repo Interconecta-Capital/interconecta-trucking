@@ -8,6 +8,7 @@ import { UbicacionCompleta } from '@/types/cartaPorte';
 import { UbicacionFormDialog } from './ubicaciones/UbicacionFormDialog';
 import { UbicacionCard } from './ubicaciones/UbicacionCard';
 import { DistanceCalculator } from './ubicaciones/DistanceCalculator';
+import { Ubicacion } from '@/types/ubicaciones';
 
 interface UbicacionesSectionProps {
   data: UbicacionCompleta[];
@@ -100,8 +101,8 @@ export function UbicacionesSection({
            (orden[b.tipo_ubicacion as keyof typeof orden] || 2);
   });
 
-  // Convertir UbicacionCompleta a un formato compatible con DistanceCalculator
-  const ubicacionesParaCalculo = data.map(u => ({
+  // Convertir UbicacionCompleta a formato compatible con DistanceCalculator
+  const ubicacionesParaCalculo: Ubicacion[] = data.map(u => ({
     id: u.id,
     idUbicacion: u.id_ubicacion,
     tipoUbicacion: u.tipo_ubicacion,
@@ -110,7 +111,10 @@ export function UbicacionesSection({
     fechaHoraSalidaLlegada: u.fecha_hora_salida_llegada,
     distanciaRecorrida: u.distancia_recorrida,
     ordenSecuencia: 1, // Por ahora valor fijo
-    coordenadas: u.coordenadas,
+    coordenadas: u.coordenadas ? {
+      latitud: u.coordenadas.latitud,
+      longitud: u.coordenadas.longitud
+    } : undefined,
     domicilio: {
       pais: u.domicilio.pais,
       codigoPostal: u.domicilio.codigo_postal,
@@ -121,7 +125,7 @@ export function UbicacionesSection({
       numExterior: u.domicilio.numero_exterior,
       numInterior: u.domicilio.numero_interior,
       referencia: u.domicilio.referencia,
-      localidad: '' // Campo requerido
+      localidad: u.domicilio.municipio // Usar municipio como localidad
     }
   }));
 

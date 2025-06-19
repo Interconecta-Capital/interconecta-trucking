@@ -1,24 +1,51 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MercanciasSectionOptimizada } from './mercancias/MercanciasSectionOptimizada';
+import { PesoTotalValidator } from './validacion/PesoTotalValidator';
+import { MercanciaCompleta, AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface MercanciasSectionProps {
-  data: any[];
-  onChange: (data: any[]) => void;
+  data: MercanciaCompleta[];
+  onChange: (data: MercanciaCompleta[]) => void;
   onNext: () => void;
   onPrev: () => void;
+  autotransporte?: AutotransporteCompleto;
 }
 
-export function MercanciasSection({ data, onChange, onNext, onPrev }: MercanciasSectionProps) {
+export function MercanciasSection({ data, onChange, onNext, onPrev, autotransporte }: MercanciasSectionProps) {
+  // Autotransporte por defecto si no se proporciona
+  const defaultAutotransporte: AutotransporteCompleto = {
+    placa_vm: '',
+    anio_modelo_vm: new Date().getFullYear(),
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    peso_bruto_vehicular: 0,
+    remolques: []
+  };
+
   return (
-    <Card>
-      <MercanciasSectionOptimizada
-        data={data}
-        onChange={onChange}
-        onNext={onNext}
-        onPrev={onPrev}
-      />
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <MercanciasSectionOptimizada
+          data={data}
+          onChange={onChange}
+          onNext={onNext}
+          onPrev={onPrev}
+        />
+      </Card>
+
+      {/* Validador de peso total */}
+      {data.length > 0 && (
+        <PesoTotalValidator
+          mercancias={data}
+          autotransporte={autotransporte || defaultAutotransporte}
+          className="mt-4"
+        />
+      )}
+    </div>
   );
 }
