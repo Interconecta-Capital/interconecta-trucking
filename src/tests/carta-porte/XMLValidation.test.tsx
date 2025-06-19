@@ -33,6 +33,7 @@ const mockValidCartaPorteData: CartaPorteData = {
       id: 'loc2',
       tipo_ubicacion: 'Destino',
       id_ubicacion: 'loc2',
+      distancia_recorrida: 100,
       domicilio: {
         pais: 'México',
         codigo_postal: '02000',

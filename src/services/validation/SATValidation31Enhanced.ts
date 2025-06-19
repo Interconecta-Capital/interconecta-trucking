@@ -162,7 +162,15 @@ export class SATValidation31Enhanced {
       }
       
       // Validar distancia recorrida
-      if (index > 0 && !ubicacion.distancia_recorrida) {
+      const requiereDistancia =
+        ubicacion.tipo_ubicacion === 'Destino' ||
+        ubicacion.tipo_ubicacion === 'Paso Intermedio';
+
+      if (requiereDistancia) {
+        if (!ubicacion.distancia_recorrida) {
+          errors.push(`${prefix}: Distancia recorrida es obligatoria`);
+        }
+      } else if (index > 0 && !ubicacion.distancia_recorrida) {
         warnings.push(`${prefix}: Se recomienda especificar distancia recorrida`);
       }
     }
