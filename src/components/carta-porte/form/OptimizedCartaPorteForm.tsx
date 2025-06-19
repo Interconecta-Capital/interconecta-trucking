@@ -117,6 +117,10 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     await handleGuardarYSalir();
   }, [handleGuardarYSalir]);
 
+  const handleLimpiarBorradorAsync = useCallback(async () => {
+    await handleLimpiarBorrador();
+  }, [handleLimpiarBorrador]);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Dialog de recuperación de borrador */}
@@ -133,7 +137,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
           borradorCargado={borradorCargado}
           ultimoGuardado={ultimoGuardado}
           onGuardarBorrador={handleGuardarBorradorAsync}
-          onLimpiarBorrador={handleLimpiarBorrador}
+          onLimpiarBorrador={handleLimpiarBorradorAsync}
           onGuardarYSalir={handleGuardarYSalirAsync}
           isGuardando={isGuardando}
         />
