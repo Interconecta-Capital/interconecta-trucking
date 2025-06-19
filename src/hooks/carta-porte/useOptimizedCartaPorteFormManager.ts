@@ -68,7 +68,7 @@ export const useOptimizedCartaPorteFormManager = (cartaPorteId?: string) => {
     setDatosCalculoRuta(datos);
   }, []);
 
-  // Función real para guardar borrador
+  // Función real para guardar borrador - Simplificada para evitar errores de tipo
   const handleGuardarBorrador = useCallback(async () => {
     if (!user) {
       toast({
@@ -81,13 +81,14 @@ export const useOptimizedCartaPorteFormManager = (cartaPorteId?: string) => {
 
     setIsGuardando(true);
     try {
-      const dataToSave = {
+      // Serializar datos de forma segura para Supabase Json
+      const dataToSave = JSON.parse(JSON.stringify({
         ...formManager.formData,
         ubicaciones,
         mercancias,
         autotransporte,
         figuras
-      };
+      }));
 
       if (cartaPorteId) {
         // Actualizar existente
@@ -155,7 +156,7 @@ export const useOptimizedCartaPorteFormManager = (cartaPorteId?: string) => {
   const handleGuardarYSalir = useCallback(async () => {
     await handleGuardarBorrador();
     // Redirigir o cerrar
-    window.location.href = '/dashboard';
+    window.location.href = '/cartas-porte';
   }, [handleGuardarBorrador]);
 
   // Función para limpiar borrador

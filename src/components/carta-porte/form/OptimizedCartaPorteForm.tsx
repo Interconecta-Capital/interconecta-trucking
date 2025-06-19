@@ -118,12 +118,14 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Dialog de recuperación de borrador */}
-      <BorradorRecoveryDialog
-        open={showRecoveryDialog}
-        borradorData={borradorData}
-        onAccept={handleAcceptBorrador}
-        onReject={handleRejectBorrador}
-      />
+      {showRecoveryDialog && (
+        <BorradorRecoveryDialog
+          open={showRecoveryDialog}
+          borradorData={borradorData}
+          onAccept={handleAcceptBorrador}
+          onReject={handleRejectBorrador}
+        />
+      )}
 
       {/* Header con mejor espaciado */}
       <div className="mb-8">
