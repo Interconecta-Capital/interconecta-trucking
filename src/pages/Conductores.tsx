@@ -18,20 +18,20 @@ export default function Conductores() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedConductor, setSelectedConductor] = useState<Conductor | null>(null);
   const [filters, setFilters] = useState({
-    estado: '',
+    estado: 'all',
     searchTerm: '',
-    tipoLicencia: ''
+    tipoLicencia: 'all'
   });
 
   const { conductores, loading, fetchConductores, deleteConductor } = useConductores();
 
   const filteredConductores = conductores.filter(conductor => {
-    const matchesEstado = !filters.estado || conductor.estado === filters.estado;
+    const matchesEstado = filters.estado === 'all' || conductor.estado === filters.estado;
     const matchesSearch = !filters.searchTerm || 
       conductor.nombre.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
       (conductor.rfc && conductor.rfc.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
       (conductor.num_licencia && conductor.num_licencia.toLowerCase().includes(filters.searchTerm.toLowerCase()));
-    const matchesTipoLicencia = !filters.tipoLicencia || conductor.tipo_licencia === filters.tipoLicencia;
+    const matchesTipoLicencia = filters.tipoLicencia === 'all' || conductor.tipo_licencia === filters.tipoLicencia;
     
     return matchesEstado && matchesSearch && matchesTipoLicencia;
   });
@@ -76,9 +76,9 @@ export default function Conductores() {
 
   const clearFilters = () => {
     setFilters({
-      estado: '',
+      estado: 'all',
       searchTerm: '',
-      tipoLicencia: ''
+      tipoLicencia: 'all'
     });
   };
 
@@ -185,7 +185,7 @@ export default function Conductores() {
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="disponible">Disponible</SelectItem>
                     <SelectItem value="en_viaje">En Viaje</SelectItem>
                     <SelectItem value="descanso">Descanso</SelectItem>
@@ -204,7 +204,7 @@ export default function Conductores() {
                     <SelectValue placeholder="Todos los tipos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="A">Tipo A</SelectItem>
                     <SelectItem value="B">Tipo B</SelectItem>
                     <SelectItem value="C">Tipo C</SelectItem>

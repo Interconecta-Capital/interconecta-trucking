@@ -19,6 +19,7 @@ export function ConductoresFilters() {
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="disponible">Disponible</SelectItem>
                 <SelectItem value="en_viaje">En Viaje</SelectItem>
                 <SelectItem value="descanso">Descanso</SelectItem>
@@ -32,6 +33,7 @@ export function ConductoresFilters() {
                 <SelectValue placeholder="Todos los tipos" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Todos los tipos</SelectItem>
                 <SelectItem value="A">Tipo A</SelectItem>
                 <SelectItem value="B">Tipo B</SelectItem>
                 <SelectItem value="C">Tipo C</SelectItem>
