@@ -1,104 +1,113 @@
 
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CatalogosSATService } from '@/services/catalogosSAT';
-import { getCatalogoEstatico } from '@/data/catalogosSATEstaticos';
+import { getCatalogoEstatico, searchCatalogoEstatico } from '@/data/catalogosSATEstaticos';
 
-interface CatalogItem {
+interface CatalogoItem {
   value: string;
   label: string;
   descripcion?: string;
   clave?: string;
+  simbolo?: string;
+  clase_division?: string;
+  grupo_embalaje?: string;
 }
 
-export function useCatalogosHibrido(tipo: string, searchTerm: string = '', enabled: boolean = true) {
-  // Obtener datos estáticos como respaldo
-  const datosEstaticos = useMemo(() => getCatalogoEstatico(tipo), [tipo]);
+// Mapeo de tipos para el servicio SAT
+const tipoToServiceMap: Record<string, string> = {
+  'productos': 'obtenerProductosServicios',
+  'unidades': 'obtenerUnidades', 
+  'materiales_peligrosos': 'obtenerMaterialesPeligrosos',
+  'embalajes': 'obtenerTiposEmbalaje',
+  'configuraciones_vehiculares': 'obtenerConfiguracionesVehiculares',
+  'figuras_transporte': 'obtenerFigurasTransporte',
+  'tipos_permiso': 'obtenerTiposPermiso',
+  'remolques': 'obtenerSubtiposRemolque',
+  'estados': 'obtenerEstados'
+};
 
-  // Query para datos dinámicos de la base de datos
-  const { data: datosDinamicos, isLoading, error } = useQuery({
-    queryKey: ['catalogo-hibrido', tipo, searchTerm],
-    queryFn: async () => {
+const formatSATResponse = (data: any[], tipo: string): CatalogoItem[] => {
+  return data.map(item => {
+    // Formato estándar para todos los tipos
+    let clave = item.clave || item.clave_prod_serv || item.clave_unidad || 
+                item.clave_material || item.clave_embalaje || item.clave_config ||
+                item.clave_figura || item.clave_permiso || item.clave_subtipo ||
+                item.clave_estado || item.value;
+    
+    let descripcion = item.descripcion || item.nombre || item.label;
+    
+    return {
+      value: clave,
+      label: `${clave} - ${descripcion}`,
+      descripcion,
+      clave,
+      simbolo: item.simbolo,
+      clase_division: item.clase_division,
+      grupo_embalaje: item.grupo_embalaje
+    };
+  });
+};
+
+export const useCatalogosHibrido = (tipo: string, searchTerm: string = '', enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['catalogos-hibrido', tipo, searchTerm],
+    queryFn: async (): Promise<CatalogoItem[]> => {
       try {
-        switch (tipo) {
-          case 'productos':
-            return await CatalogosSATService.obtenerProductosServicios(searchTerm);
-          case 'unidades':
-            return await CatalogosSATService.obtenerUnidades(searchTerm);
-          case 'embalajes':
-            return await CatalogosSATService.obtenerTiposEmbalaje();
-          case 'materiales_peligrosos':
-            return searchTerm.length >= 2 ? await CatalogosSATService.obtenerMaterialesPeligrosos(searchTerm) : [];
-          case 'configuraciones_vehiculares':
-            return await CatalogosSATService.obtenerConfiguracionesVehiculares();
-          case 'figuras_transporte':
-            return await CatalogosSATService.obtenerFigurasTransporte();
-          case 'tipos_permiso':
-            return await CatalogosSATService.obtenerTiposPermiso();
-          case 'remolques':
-            return await CatalogosSATService.obtenerSubtiposRemolque(searchTerm);
-          case 'estados':
-            return await CatalogosSATService.obtenerEstados(searchTerm);
-          default:
-            return [];
+        console.log(`🔍 Consultando catálogo híbrido: ${tipo}, término: "${searchTerm}"`);
+        
+        // 1. Intentar obtener datos dinámicos del servicio SAT
+        let dynamicData: any[] = [];
+        const serviceMethod = tipoToServiceMap[tipo];
+        
+        if (serviceMethod && (CatalogosSATService as any)[serviceMethod]) {
+          try {
+            dynamicData = await (CatalogosSATService as any)[serviceMethod](searchTerm);
+            console.log(`✅ Datos dinámicos obtenidos: ${dynamicData.length} registros`);
+          } catch (error) {
+            console.warn(`⚠️ Error en servicio dinámico para ${tipo}:`, error);
+          }
         }
+        
+        // 2. Si hay datos dinámicos suficientes, usarlos
+        if (dynamicData.length >= 10) {
+          return formatSATResponse(dynamicData, tipo);
+        }
+        
+        // 3. Fallback a datos estáticos
+        console.log(`📚 Usando datos estáticos para ${tipo}`);
+        const staticData = searchTerm 
+          ? searchCatalogoEstatico(tipo, searchTerm)
+          : getCatalogoEstatico(tipo);
+        
+        // 4. Combinar datos dinámicos (si los hay) con estáticos
+        const combinedData = [
+          ...formatSATResponse(dynamicData, tipo),
+          ...staticData.filter(staticItem => 
+            !dynamicData.some(dynamicItem => 
+              (dynamicItem.clave || dynamicItem.value) === staticItem.clave
+            )
+          )
+        ];
+        
+        console.log(`✅ Datos combinados: ${combinedData.length} registros`);
+        return combinedData;
+        
       } catch (error) {
-        console.warn(`Error cargando catálogo ${tipo}:`, error);
-        return [];
+        console.error(`❌ Error en catálogo híbrido ${tipo}:`, error);
+        
+        // Fallback final a datos estáticos
+        const fallbackData = searchTerm 
+          ? searchCatalogoEstatico(tipo, searchTerm)
+          : getCatalogoEstatico(tipo);
+        
+        console.log(`🔄 Fallback final: ${fallbackData.length} registros estáticos`);
+        return fallbackData;
       }
     },
-    enabled,
+    enabled: enabled,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    retry: 1
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    retry: 1,
+    refetchOnWindowFocus: false
   });
-
-  // Combinar datos dinámicos con estáticos
-  const data = useMemo(() => {
-    let resultado: CatalogItem[] = [];
-
-    // Si tenemos datos dinámicos, usarlos
-    if (datosDinamicos && Array.isArray(datosDinamicos) && datosDinamicos.length > 0) {
-      resultado = datosDinamicos.map((item: any) => {
-        const clave = item.clave || item.clave_prod_serv || item.clave_unidad || 
-                     item.clave_embalaje || item.clave_material || item.clave_config || 
-                     item.clave_figura || item.clave_permiso || item.clave_subtipo || 
-                     item.clave_estado || '';
-        
-        const descripcion = item.descripcion || item.nombre || '';
-        
-        return {
-          value: clave,
-          label: `${clave} - ${descripcion}`,
-          descripcion,
-          clave
-        };
-      });
-    }
-
-    // Si no hay datos dinámicos o hay error, usar datos estáticos
-    if (resultado.length === 0 && datosEstaticos.length > 0) {
-      resultado = datosEstaticos;
-    }
-
-    // Aplicar filtro de búsqueda si existe
-    if (searchTerm && searchTerm.length > 0) {
-      const termino = searchTerm.toLowerCase();
-      resultado = resultado.filter(item => 
-        item.value.toLowerCase().includes(termino) ||
-        item.label.toLowerCase().includes(termino) ||
-        (item.descripcion && item.descripcion.toLowerCase().includes(termino))
-      );
-    }
-
-    return resultado;
-  }, [datosDinamicos, datosEstaticos, searchTerm]);
-
-  return {
-    data,
-    isLoading,
-    error,
-    refetch: () => {
-      // No implementamos refetch para mantener simplicidad
-    }
-  };
-}
+};
