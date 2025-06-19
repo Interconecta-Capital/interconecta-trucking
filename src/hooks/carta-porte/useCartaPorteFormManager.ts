@@ -1,6 +1,8 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { CartaPorteData, AutotransporteCompleto } from '@/types/cartaPorte';
+import { BorradorService } from '@/services/borradorService';
+import { useToast } from '@/hooks/use-toast';
 
 const getDefaultAutotransporte = (): AutotransporteCompleto => ({
   placa_vm: '',
@@ -35,8 +37,9 @@ export const useCartaPorteFormManager = (cartaPorteId?: string) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const { toast } = useToast();
   
-  // State for additional properties expected by OptimizedCartaPorteForm
+  // ✅ NEW: Estado para propiedades específicas del formulario optimizado
   const [borradorCargado, setBorradorCargado] = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
@@ -46,9 +49,84 @@ export const useCartaPorteFormManager = (cartaPorteId?: string) => {
     tiempoEstimado?: number;
   } | null>(null);
   
-  // Dialog de recuperación
+  // ✅ NEW: ID persistente y diálogo de recuperación
+  const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [borradorData, setBorradorData] = useState<any>(null);
+
+  // ✅ NEW: Efecto para generar ID persistente en nueva carta porte
+  useEffect(() => {
+    const initializeCartaPorte = async () => {
+      if (!cartaPorteId && !currentCartaPorteId) {
+        console.log('[CartaPorteFormManager] Inicializando nueva carta porte...');
+        
+        try {
+          setIsLoading(true);
+          
+          // Generar ID único inmediatamente
+          const newId = crypto.randomUUID();
+          console.log('[CartaPorteFormManager] ID generado:', newId);
+          
+          // Crear registro inicial en la base de datos
+          const savedId = await BorradorService.guardarBorrador(initialData, newId);
+          
+          if (savedId) {
+            setCurrentCartaPorteId(savedId);
+            setBorradorCargado(true);
+            setUltimoGuardado(new Date());
+            
+            console.log('✅ [CartaPorteFormManager] Carta porte inicializada con ID:', savedId);
+            
+            toast({
+              title: "Nueva carta porte creada",
+              description: "Se ha inicializado un nuevo borrador",
+            });
+          }
+        } catch (error) {
+          console.error('❌ [CartaPorteFormManager] Error inicializando carta porte:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo inicializar la carta porte. Se usará modo offline.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (cartaPorteId) {
+        // Cargar carta porte existente
+        console.log('[CartaPorteFormManager] Cargando carta porte existente:', cartaPorteId);
+        await loadExistingCartaPorte(cartaPorteId);
+      }
+    };
+
+    initializeCartaPorte();
+  }, [cartaPorteId]); // Solo ejecutar cuando cambie cartaPorteId
+
+  // ✅ NEW: Función para cargar carta porte existente
+  const loadExistingCartaPorte = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const borradorData = await BorradorService.cargarBorrador(id);
+      
+      if (borradorData) {
+        setData(borradorData.datosFormulario);
+        setCurrentCartaPorteId(id);
+        setBorradorCargado(true);
+        setUltimoGuardado(new Date(borradorData.ultimaModificacion));
+        
+        console.log('✅ [CartaPorteFormManager] Carta porte cargada:', id);
+      }
+    } catch (error) {
+      console.error('❌ [CartaPorteFormManager] Error cargando carta porte:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la carta porte",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateData = useCallback((updates: Partial<CartaPorteData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -58,6 +136,9 @@ export const useCartaPorteFormManager = (cartaPorteId?: string) => {
     setData(initialData);
     setCurrentStep(0);
     setErrors({});
+    setCurrentCartaPorteId(undefined);
+    setBorradorCargado(false);
+    setUltimoGuardado(null);
   }, []);
 
   const validateStep = useCallback((step: number): boolean => {
@@ -131,31 +212,81 @@ export const useCartaPorteFormManager = (cartaPorteId?: string) => {
     updateData({ figuras });
   }, [updateData]);
 
+  // ✅ NEW: Guardado real conectado con BorradorService
   const handleGuardarBorrador = useCallback(async () => {
+    if (!currentCartaPorteId) {
+      console.error('❌ [CartaPorteFormManager] No hay ID de carta porte para guardar');
+      toast({
+        title: "Error",
+        description: "No se puede guardar: falta ID de carta porte",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGuardando(true);
+    
     try {
-      // Simular guardado
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setUltimoGuardado(new Date());
-      setBorradorCargado(true);
+      console.log('[CartaPorteFormManager] Guardando borrador...', currentCartaPorteId);
+      
+      const savedId = await BorradorService.guardarBorrador(data, currentCartaPorteId);
+      
+      if (savedId) {
+        setUltimoGuardado(new Date());
+        setBorradorCargado(true);
+        
+        console.log('✅ [CartaPorteFormManager] Borrador guardado exitosamente');
+        
+        toast({
+          title: "Guardado exitoso",
+          description: "El borrador se ha guardado correctamente",
+        });
+      }
+    } catch (error) {
+      console.error('❌ [CartaPorteFormManager] Error guardando borrador:', error);
+      
+      toast({
+        title: "Error de guardado",
+        description: "No se pudo guardar el borrador. Los datos se mantienen en memoria.",
+        variant: "destructive",
+      });
     } finally {
       setIsGuardando(false);
     }
-  }, []);
+  }, [data, currentCartaPorteId, toast]);
 
   const handleGuardarCartaPorteOficial = useCallback(async () => {
-    // Implementar guardado oficial
+    // TODO: Implementar guardado oficial/timbrado
+    console.log('TODO: Implementar guardado oficial');
   }, []);
 
   const handleGuardarYSalir = useCallback(async () => {
     await handleGuardarBorrador();
+    // TODO: Navegar a dashboard o lista de cartas porte
   }, [handleGuardarBorrador]);
 
-  const handleLimpiarBorrador = useCallback(() => {
+  const handleLimpiarBorrador = useCallback(async () => {
+    if (currentCartaPorteId) {
+      try {
+        await BorradorService.limpiarBorrador(currentCartaPorteId);
+        
+        toast({
+          title: "Borrador eliminado",
+          description: "El borrador se ha eliminado correctamente",
+        });
+      } catch (error) {
+        console.error('❌ Error limpiando borrador:', error);
+        
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el borrador",
+          variant: "destructive",
+        });
+      }
+    }
+    
     resetForm();
-    setBorradorCargado(false);
-    setUltimoGuardado(null);
-  }, [resetForm]);
+  }, [currentCartaPorteId, resetForm, toast]);
 
   const handleXMLGenerated = useCallback((xml: string) => {
     setXmlGenerado(xml);
@@ -181,6 +312,27 @@ export const useCartaPorteFormManager = (cartaPorteId?: string) => {
     setBorradorData(null);
   }, []);
 
+  // ✅ NEW: Auto-guardado mejorado
+  useEffect(() => {
+    if (currentCartaPorteId && borradorCargado) {
+      const autoSaveInterval = BorradorService.iniciarGuardadoAutomatico(
+        (cartaPorteId) => {
+          if (cartaPorteId) {
+            setUltimoGuardado(new Date());
+            console.log('✅ Auto-guardado completado');
+          }
+        },
+        () => data,
+        () => currentCartaPorteId,
+        30000 // 30 segundos
+      );
+
+      return () => {
+        BorradorService.detenerGuardadoAutomatico();
+      };
+    }
+  }, [currentCartaPorteId, borradorCargado, data]);
+
   // Create validation summary
   const validationSummary = {
     sectionStatus: {
@@ -200,7 +352,7 @@ export const useCartaPorteFormManager = (cartaPorteId?: string) => {
     autotransporte: data.autotransporte || getDefaultAutotransporte(),
     figuras: data.figuras || [],
     currentStep,
-    currentCartaPorteId: cartaPorteId,
+    currentCartaPorteId,
     borradorCargado,
     ultimoGuardado,
     validationSummary,

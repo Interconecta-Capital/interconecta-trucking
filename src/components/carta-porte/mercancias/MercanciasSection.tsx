@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,8 @@ export function MercanciasSection({
     });
   };
 
-  const handleSaveMercanciaSuccess = async (mercanciaData: MercanciaCompleta): Promise<boolean> => {
+  // ✅ FIX: Crear función con la signatura correcta esperada por MercanciaFormV31
+  const handleSaveMercanciaWrapper = async (mercanciaData: MercanciaCompleta): Promise<boolean> => {
     try {
       const errors = validateMercanciaV31(mercanciaData);
       if (errors.length > 0) {
@@ -236,7 +238,7 @@ export function MercanciasSection({
               
               <MercanciaFormV31
                 mercancia={editingIndex !== null ? data[editingIndex] : undefined}
-                onSave={handleSaveMercanciaSuccess}
+                onSave={handleSaveMercanciaWrapper}
                 onCancel={handleCancelForm}
                 index={editingIndex !== null ? editingIndex : data.length}
               />
