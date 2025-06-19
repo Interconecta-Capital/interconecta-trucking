@@ -16,7 +16,8 @@ import {
   MapPin,
   Package,
   Truck,
-  Users
+  Users,
+  FileText
 } from 'lucide-react';
 import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
 import { toast } from 'sonner';
@@ -28,12 +29,13 @@ import { UbicacionesSection } from './sections/UbicacionesSection';
 import { MercanciasSection } from './sections/MercanciasSection';
 import { AutotransporteSection } from './sections/AutotransporteSection';
 import { FigurasTransporteSection } from './sections/FigurasTransporteSection';
+import { GeneracionSection } from './sections/GeneracionSection';
 
 interface ModernCartaPorteEditorProps {
   documentId?: string;
 }
 
-type SectionKey = 'configuracion' | 'ubicaciones' | 'mercancias' | 'autotransporte' | 'figuras';
+type SectionKey = 'configuracion' | 'ubicaciones' | 'mercancias' | 'autotransporte' | 'figuras' | 'generacion';
 
 export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorProps) {
   const navigate = useNavigate();
@@ -107,6 +109,14 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       description: 'Operadores y Responsables',
       component: FigurasTransporteSection,
       isValid: validationSummary.sectionStatus.figuras === 'complete'
+    },
+    {
+      key: 'generacion' as SectionKey,
+      title: 'Generación y Timbrado',
+      icon: FileText,
+      description: 'XML, PDF y Timbrado Fiscal',
+      component: GeneracionSection,
+      isValid: validationSummary.sectionStatus.generacion === 'complete'
     }
   ];
 
@@ -175,6 +185,23 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       figuras: {
         data: figuras,
         onChange: setFiguras
+      },
+      generacion: {
+        cartaPorteData: {
+          ...configuracion,
+          ubicaciones,
+          mercancias,
+          autotransporte,
+          figuras
+        },
+        cartaPorteId: currentCartaPorteId,
+        onXMLGenerated: (xml: string) => {
+          console.log('XML generado:', xml);
+        },
+        onTimbrado: () => {
+          console.log('CFDI timbrado');
+          navigate('/cartas-porte');
+        }
       }
     };
 
@@ -339,9 +366,9 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      {sections.find(s => s.key === activeSection)?.icon && (
+                      {sections.find(s => s.key === activeSection)?.icon && 
                         React.createElement(sections.find(s => s.key === activeSection)!.icon, { className: "h-5 w-5" })
-                      )}
+                      }
                       {sections.find(s => s.key === activeSection)?.title}
                     </CardTitle>
                     <p className="text-sm text-gray-600 mt-1">
@@ -349,7 +376,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                     </p>
                   </div>
                   {sections.find(s => s.key === activeSection)?.isValid && (
-                    <Badge variant="secondary" className="flex items-center gap-1 text-green-700 bg-green-100">
+                    <Badge variant="outline" className="flex items-center gap-1 text-green-700 bg-green-100">
                       <CheckCircle className="h-3 w-3" />
                       Completa
                     </Badge>

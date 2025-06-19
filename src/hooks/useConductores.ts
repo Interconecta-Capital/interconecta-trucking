@@ -1,126 +1,121 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-export interface Conductor {
+interface Conductor {
   id: string;
-  user_id: string;
   nombre: string;
   rfc?: string;
   curp?: string;
-  telefono?: string;
-  email?: string;
   num_licencia?: string;
   tipo_licencia?: string;
   vigencia_licencia?: string;
-  operador_sct: boolean;
+  operador_sct?: boolean;
   residencia_fiscal?: string;
-  num_reg_id_trib?: string;
+  telefono?: string;
+  email?: string;
   estado: string;
-  activo: boolean;
   direccion?: any;
   created_at: string;
   updated_at: string;
 }
 
-export const useConductores = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+export function useConductores() {
+  const [conductores, setConductores] = useState<Conductor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: conductores = [], isLoading: loading } = useQuery({
-    queryKey: ['conductores', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
+  const fetchConductores = async () => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('conductores')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('activo', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: Omit<Conductor, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      if (!user?.id) throw new Error('Usuario no autenticado');
-      
-      const { data: result, error } = await supabase
+      setConductores(data || []);
+    } catch (error) {
+      console.error('Error fetching conductores:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+      toast.error('Error cargando conductores');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createConductor = async (conductorData: Partial<Conductor>) => {
+    try {
+      const { data, error } = await supabase
         .from('conductores')
-        .insert({
-          ...data,
-          user_id: user.id,
-        })
+        .insert([conductorData])
         .select()
         .single();
 
       if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conductores'] });
-      toast.success('Conductor creado exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(`Error al crear conductor: ${error.message}`);
-    }
-  });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Conductor> }) => {
-      const { data: result, error } = await supabase
+      setConductores(prev => [data, ...prev]);
+      toast.success('Conductor creado exitosamente');
+      return data;
+    } catch (error) {
+      console.error('Error creating conductor:', error);
+      toast.error('Error creando conductor');
+      throw error;
+    }
+  };
+
+  const updateConductor = async (id: string, updates: Partial<Conductor>) => {
+    try {
+      const { data, error } = await supabase
         .from('conductores')
-        .update(data)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conductores'] });
-      toast.success('Conductor actualizado exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(`Error al actualizar conductor: ${error.message}`);
-    }
-  });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+      setConductores(prev => prev.map(c => c.id === id ? data : c));
+      toast.success('Conductor actualizado exitosamente');
+      return data;
+    } catch (error) {
+      console.error('Error updating conductor:', error);
+      toast.error('Error actualizando conductor');
+      throw error;
+    }
+  };
+
+  const deleteConductor = async (id: string) => {
+    try {
       const { error } = await supabase
         .from('conductores')
-        .update({ activo: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conductores'] });
-      toast.success('Conductor eliminado exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(`Error al eliminar conductor: ${error.message}`);
-    }
-  });
 
-  return { 
-    conductores, 
-    loading,
-    crearConductor: createMutation.mutateAsync,
-    actualizarConductor: updateMutation.mutateAsync,
-    eliminarConductor: deleteMutation.mutateAsync,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
+      setConductores(prev => prev.filter(c => c.id !== id));
+      toast.success('Conductor eliminado exitosamente');
+    } catch (error) {
+      console.error('Error deleting conductor:', error);
+      toast.error('Error eliminando conductor');
+      throw error;
+    }
   };
-};
+
+  useEffect(() => {
+    fetchConductores();
+  }, []);
+
+  return {
+    conductores,
+    loading,
+    error,
+    fetchConductores,
+    createConductor,
+    updateConductor,
+    deleteConductor
+  };
+}

@@ -14,6 +14,7 @@ import {
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import CartasPorteUnified from "./pages/CartasPorteUnified";
+import CartaPorteEditor from "./pages/CartaPorteEditor";
 import Vehiculos from "./pages/Vehiculos";
 import Conductores from "./pages/Conductores";
 import Socios from "./pages/Socios";
@@ -42,6 +43,13 @@ export const navItems = [
     to: "/cartas-porte",
     icon: <FileTextIcon className="h-4 w-4" />,
     page: <CartasPorteUnified />,
+  },
+  {
+    title: "Editor Carta Porte",
+    to: "/carta-porte/editor/:id?",
+    icon: <FileTextIcon className="h-4 w-4" />,
+    page: <CartaPorteEditor />,
+    hideFromNav: true,
   },
   {
     title: "Vehículos",
