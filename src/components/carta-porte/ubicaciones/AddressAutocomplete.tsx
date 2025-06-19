@@ -1,10 +1,25 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Check, Loader2, Search } from 'lucide-react';
-import { useMapas } from '@/hooks/useMapas';
-import { GeocodeResult } from '@/services/mapService';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Check, Loader2, Search, Star } from 'lucide-react';
+import { MapboxDistanceService } from '@/services/mapboxDistanceService';
+
+interface GeocodeResult {
+  coordinates: { lat: number; lng: number };
+  formattedAddress: string;
+  addressComponents: {
+    codigoPostal?: string;
+    estado?: string;
+    municipio?: string;
+    colonia?: string;
+    calle?: string;
+    pais?: string;
+  };
+  confidence: number;
+}
 
 interface AddressAutocompleteProps {
   value: string;
@@ -12,6 +27,7 @@ interface AddressAutocompleteProps {
   onAddressSelect?: (result: any) => void;
   placeholder?: string;
   className?: string;
+  showConfidence?: boolean;
 }
 
 export function AddressAutocomplete({
@@ -19,16 +35,30 @@ export function AddressAutocomplete({
   onChange,
   onAddressSelect,
   placeholder = "Buscar dirección...",
-  className = ""
+  className = "",
+  showConfidence = true
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const { buscarDirecciones } = useMapas();
+  const [recentAddresses, setRecentAddresses] = useState<GeocodeResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Buscar direcciones con debounce optimizado
+  // Load recent addresses from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recent_addresses');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setRecentAddresses(parsed.slice(0, 3)); // Últimas 3 direcciones
+      }
+    } catch (error) {
+      console.error('Error loading recent addresses:', error);
+    }
+  }, []);
+
+  // Buscar direcciones con Mapbox
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -45,39 +75,33 @@ export function AddressAutocomplete({
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('Buscando direcciones con Mapbox:', value);
+        console.log('🔍 Buscando direcciones con Mapbox:', value);
         
-        // Mejorar query agregando país México para mejor precisión
-        const queryWithCountry = `${value}, México`;
-        const results = await buscarDirecciones(queryWithCountry);
+        const result = await MapboxDistanceService.geocodeAddress(value);
         
-        // Filtrar resultados para México únicamente
-        const filteredResults = results
-          .filter(result => 
-            result.formattedAddress.toLowerCase().includes('mexico') ||
-            result.formattedAddress.toLowerCase().includes('méxico') ||
-            result.formattedAddress.toLowerCase().includes('mx')
-          )
-          .slice(0, 5); // Limitar a 5 resultados más relevantes
-
-        setSuggestions(filteredResults);
-        setShowSuggestions(filteredResults.length > 0);
-        console.log(`Encontradas ${filteredResults.length} direcciones`);
+        if (result) {
+          setSuggestions([result]);
+          setShowSuggestions(true);
+          console.log('✅ Dirección encontrada con Mapbox');
+        } else {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
       } catch (error) {
-        console.error('Error buscando direcciones:', error);
+        console.error('❌ Error buscando direcciones:', error);
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
         setIsSearching(false);
       }
-    }, 300); // Debounce más rápido para mejor UX
+    }, 300); // Debounce optimizado
 
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [value, buscarDirecciones]);
+  }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -91,29 +115,50 @@ export function AddressAutocomplete({
     }
   };
 
+  const saveToRecent = (address: GeocodeResult) => {
+    try {
+      const existing = recentAddresses.filter(addr => 
+        addr.formattedAddress !== address.formattedAddress
+      );
+      
+      const updated = [address, ...existing].slice(0, 5);
+      setRecentAddresses(updated);
+      localStorage.setItem('recent_addresses', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Error saving recent address:', error);
+    }
+  };
+
   const handleSuggestionSelect = (suggestion: GeocodeResult) => {
-    console.log('🔍 Dirección seleccionada desde AddressAutocomplete:', suggestion);
+    console.log('📍 Dirección seleccionada:', suggestion);
     
     setShowSuggestions(false);
     setSuggestions([]);
     onChange('');
     
+    // Guardar en direcciones recientes
+    saveToRecent(suggestion);
+    
     if (onAddressSelect) {
-      // MEJORADO: Crear estructura completa compatible con parsing real de Mapbox
+      // Crear estructura compatible con parsing de Mapbox
       const mapboxData = {
         place_name: suggestion.formattedAddress,
-        center: suggestion.coordinates ? [suggestion.coordinates.lng, suggestion.coordinates.lat] : null,
-        text: suggestion.formattedAddress.split(',')[0],
-        // NUEVO: Simular context de Mapbox para parsing correcto
-        context: [],
+        center: [suggestion.coordinates.lng, suggestion.coordinates.lat],
+        text: suggestion.addressComponents.calle || suggestion.formattedAddress.split(',')[0],
+        context: [
+          { id: 'postcode', text: suggestion.addressComponents.codigoPostal || '' },
+          { id: 'place', text: suggestion.addressComponents.municipio || '' },
+          { id: 'region', text: suggestion.addressComponents.estado || '' },
+          { id: 'country', text: suggestion.addressComponents.pais || 'México' }
+        ].filter(item => item.text),
         properties: {
-          address: suggestion.formattedAddress
+          address: suggestion.formattedAddress,
+          confidence: suggestion.confidence
         },
-        // Pasar toda la información original
         originalData: suggestion
       };
       
-      console.log('📤 Enviando datos completos a parsing:', mapboxData);
+      console.log('📤 Enviando datos de dirección:', mapboxData);
       onAddressSelect(mapboxData);
     }
   };
@@ -126,9 +171,24 @@ export function AddressAutocomplete({
   };
 
   const handleInputFocus = () => {
-    if (suggestions.length > 0 && value.length >= 4) {
+    if (value.length === 0 && recentAddresses.length > 0) {
+      // Mostrar direcciones recientes cuando el campo está vacío
+      setShowSuggestions(true);
+    } else if (suggestions.length > 0 && value.length >= 4) {
       setShowSuggestions(true);
     }
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return 'bg-green-100 text-green-800';
+    if (confidence >= 0.6) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  const getConfidenceText = (confidence: number) => {
+    if (confidence >= 0.8) return 'Alta';
+    if (confidence >= 0.6) return 'Media';
+    return 'Baja';
   };
 
   // Limpiar sugerencias cuando el componente se desmonta
@@ -164,18 +224,62 @@ export function AddressAutocomplete({
         )}
       </div>
 
-      {/* Sugerencias mejoradas */}
-      {showSuggestions && suggestions.length > 0 && (
+      {/* Sugerencias de búsqueda */}
+      {showSuggestions && (value.length >= 4 ? suggestions.length > 0 : recentAddresses.length > 0) && (
         <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto border shadow-lg bg-white">
           <CardContent className="p-0">
-            {suggestions.map((suggestion, index) => (
+            {/* Direcciones recientes cuando el campo está vacío */}
+            {value.length === 0 && recentAddresses.length > 0 && (
+              <>
+                <div className="p-3 border-b bg-gray-50">
+                  <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                    <Star className="h-4 w-4" />
+                    Direcciones recientes
+                  </div>
+                </div>
+                {recentAddresses.map((address, index) => (
+                  <Button
+                    key={`recent-${index}`}
+                    type="button"
+                    variant="ghost"
+                    className="w-full text-left justify-start h-auto p-4 rounded-none border-b last:border-b-0 hover:bg-blue-50"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSuggestionSelect(address);
+                    }}
+                  >
+                    <div className="flex items-start space-x-3 w-full">
+                      <MapPin className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm leading-tight mb-1">
+                          {address.formattedAddress}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            Reciente
+                          </Badge>
+                          {showConfidence && (
+                            <Badge className={`text-xs ${getConfidenceColor(address.confidence)}`}>
+                              {getConfidenceText(address.confidence)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
+
+            {/* Resultados de búsqueda */}
+            {value.length >= 4 && suggestions.map((suggestion, index) => (
               <Button
-                key={`${suggestion.formattedAddress}-${index}`}
+                key={`suggestion-${index}`}
                 type="button"
                 variant="ghost"
                 className="w-full text-left justify-start h-auto p-4 rounded-none border-b last:border-b-0 hover:bg-blue-50"
                 onMouseDown={(e) => {
-                  // Usar onMouseDown en lugar de onClick para ejecutar antes del onBlur
                   e.preventDefault();
                   e.stopPropagation();
                   handleSuggestionSelect(suggestion);
@@ -188,13 +292,18 @@ export function AddressAutocomplete({
                       {suggestion.formattedAddress}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                        Confianza: {Math.round(suggestion.confidence * 100)}%
-                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        📍 Mapbox
+                      </Badge>
+                      {showConfidence && (
+                        <Badge className={`text-xs ${getConfidenceColor(suggestion.confidence)}`}>
+                          Confianza: {getConfidenceText(suggestion.confidence)}
+                        </Badge>
+                      )}
                       {suggestion.coordinates && (
-                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                          📍 Coordenadas
-                        </span>
+                        <Badge variant="secondary" className="text-xs">
+                          Coordenadas
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -220,7 +329,7 @@ export function AddressAutocomplete({
       {/* Ayuda para el usuario */}
       {value.length > 0 && value.length < 4 && (
         <p className="text-xs text-muted-foreground mt-1">
-          Escribe al menos 4 caracteres para buscar direcciones
+          Escribe al menos 4 caracteres para buscar direcciones con Mapbox
         </p>
       )}
     </div>
