@@ -1,57 +1,61 @@
-
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { XMLValidatorSAT } from '@/services/xml/xmlValidatorSAT';
 import { XMLValidation } from '@/services/xml/xmlValidation';
 import { CartaPorteData } from '@/types/cartaPorte';
 
-const mockValidCartaPorteData: CartaPorteData = {
+const mockCartaPorteData: CartaPorteData = {
   tipoCreacion: 'manual',
   tipoCfdi: 'Traslado',
-  rfcEmisor: 'XAXX010101000',
-  nombreEmisor: 'Test Emisor SA',
-  rfcReceptor: 'XBXX010101000',
-  nombreReceptor: 'Test Receptor SA',
-  transporteInternacional: false,
-  registroIstmo: false,
+  rfcEmisor: 'TEST123456789',
+  nombreEmisor: 'Test Company',
+  rfcReceptor: 'RECV123456789',
+  nombreReceptor: 'Receiver Company',
+  transporteInternacional: 'No', // Changed to string
   cartaPorteVersion: '3.1',
   ubicaciones: [
     {
-      id: 'loc1',
-      tipo_ubicacion: 'Origen',
-      id_ubicacion: 'loc1',
+      id: 'ubicacion1',
+      tipo_ubicacion: 'Origen', // Fixed property name
+      rfc: 'TEST123456789',
+      nombre: 'Test Location',
       domicilio: {
-        pais: 'México',
-        codigo_postal: '01000',
-        estado: 'Ciudad de México',
-        municipio: 'Álvaro Obregón',
-        colonia: 'Centro',
         calle: 'Test Street',
-        numero_exterior: '123'
-      }
+        numero_exterior: '123',
+        codigo_postal: '12345',
+        colonia: 'Test Colony',
+        municipio: 'Test Municipality',
+        estado: 'Test State',
+        pais: 'México'
+      },
+      fecha_hora_salida_llegada: new Date().toISOString()
     },
     {
-      id: 'loc2',
-      tipo_ubicacion: 'Destino',
-      id_ubicacion: 'loc2',
+      id: 'ubicacion2',
+      tipo_ubicacion: 'Destino', // Fixed property name
+      rfc: 'RECV123456789',
+      nombre: 'Destination Location',
       domicilio: {
-        pais: 'México',
-        codigo_postal: '02000',
-        estado: 'Ciudad de México',
-        municipio: 'Benito Juárez',
-        colonia: 'Centro',
-        calle: 'Test Street 2',
-        numero_exterior: '456'
-      }
+        calle: 'Destination Street',
+        numero_exterior: '456',
+        codigo_postal: '54321',
+        colonia: 'Destination Colony',
+        municipio: 'Destination Municipality',
+        estado: 'Destination State',
+        pais: 'México'
+      },
+      fecha_hora_salida_llegada: new Date().toISOString()
     }
   ],
   mercancias: [
     {
-      id: 'merc1',
+      id: 'mercancia1',
       bienes_transp: 'Test Product',
-      descripcion: 'Producto de prueba',
-      cantidad: 10,
-      peso_kg: 100,
-      valor_mercancia: 1000,
+      descripcion: 'Test product description',
+      cantidad: 100,
+      clave_unidad: 'KGM', // Added missing property
+      peso_kg: 1000,
+      unidad_peso_bruto: 'KGM', // Added missing property
+      valor_mercancia: 50000,
       moneda: 'MXN'
     }
   ],
@@ -62,26 +66,9 @@ const mockValidCartaPorteData: CartaPorteData = {
     perm_sct: 'TPAF01',
     num_permiso_sct: '123456',
     asegura_resp_civil: 'Test Insurance',
-    poliza_resp_civil: 'POL123',
-    remolques: []
+    poliza_resp_civil: 'POL123'
   },
-  figuras: [
-    {
-      id: 'fig1',
-      tipo_figura: '01',
-      rfc_figura: 'XAXX010101000',
-      nombre_figura: 'Test Conductor',
-      domicilio: {
-        pais: 'México',
-        codigo_postal: '01000',
-        estado: 'Ciudad de México',
-        municipio: 'Álvaro Obregón',
-        colonia: 'Centro',
-        calle: 'Test Street',
-        numero_exterior: '123'
-      }
-    }
-  ]
+  figuras: []
 };
 
 const mockValidXML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -102,7 +89,7 @@ describe('XML Validation - Robust Testing', () => {
 
   describe('XMLValidatorSAT', () => {
     test('should validate complete CartaPorte data successfully', async () => {
-      const result = await XMLValidatorSAT.validateCartaPorteCompliance(mockValidCartaPorteData);
+      const result = await XMLValidatorSAT.validateCartaPorteCompliance(mockCartaPorteData);
       
       expect(result).toBeDefined();
       expect(result.isValid).toBe(true);
@@ -111,7 +98,7 @@ describe('XML Validation - Robust Testing', () => {
 
     test('should detect missing required fields', async () => {
       const invalidData = {
-        ...mockValidCartaPorteData,
+        ...mockCartaPorteData,
         rfcEmisor: '',
         rfcReceptor: ''
       };
@@ -126,7 +113,7 @@ describe('XML Validation - Robust Testing', () => {
 
     test('should validate ubicaciones requirements', async () => {
       const dataWithoutUbicaciones = {
-        ...mockValidCartaPorteData,
+        ...mockCartaPorteData,
         ubicaciones: []
       };
       
@@ -155,7 +142,7 @@ describe('XML Validation - Robust Testing', () => {
 
   describe('XMLValidation', () => {
     test('should validate CartaPorte data with business rules', async () => {
-      const result = await XMLValidation.validateCartaPorteData(mockValidCartaPorteData);
+      const result = await XMLValidation.validateCartaPorteData(mockCartaPorteData);
       
       expect(result).toBeDefined();
       expect(result.isValid).toBe(true);
@@ -164,7 +151,7 @@ describe('XML Validation - Robust Testing', () => {
 
     test('should generate warnings for incomplete data', async () => {
       const incompleteData = {
-        ...mockValidCartaPorteData,
+        ...mockCartaPorteData,
         mercancias: [],
         figuras: []
       };
@@ -190,7 +177,7 @@ describe('XML Validation - Robust Testing', () => {
   describe('Integration Tests', () => {
     test('should validate complete flow: data -> XML -> SAT compliance', async () => {
       // Paso 1: Validar datos iniciales
-      const dataValidation = await XMLValidation.validateCartaPorteData(mockValidCartaPorteData);
+      const dataValidation = await XMLValidation.validateCartaPorteData(mockCartaPorteData);
       expect(dataValidation.isValid).toBe(true);
       
       // Paso 2: Validar estructura XML
@@ -198,13 +185,13 @@ describe('XML Validation - Robust Testing', () => {
       expect(xmlValidation.isValid).toBe(true);
       
       // Paso 3: Validar cumplimiento SAT
-      const satValidation = await XMLValidatorSAT.validateCartaPorteCompliance(mockValidCartaPorteData);
+      const satValidation = await XMLValidatorSAT.validateCartaPorteCompliance(mockCartaPorteData);
       expect(satValidation.isValid).toBe(true);
     });
 
     test('should provide comprehensive error reporting', async () => {
       const invalidData = {
-        ...mockValidCartaPorteData,
+        ...mockCartaPorteData,
         rfcEmisor: '',
         rfcReceptor: '',
         ubicaciones: [],

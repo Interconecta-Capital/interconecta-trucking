@@ -36,7 +36,7 @@ const initialFormData: CartaPorteFormData = {
   nombreEmisor: '',
   rfcReceptor: '',
   nombreReceptor: '',
-  transporteInternacional: 'No', // Changed to string
+  transporteInternacional: 'No', // Keep as string
   registroIstmo: false,
   cartaPorteVersion: '3.1',
 };

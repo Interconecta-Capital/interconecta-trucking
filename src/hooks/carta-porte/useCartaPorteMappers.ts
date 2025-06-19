@@ -32,7 +32,7 @@ export interface CartaPorteFormData {
   nombreEmisor: string;
   rfcReceptor: string;
   nombreReceptor: string;
-  transporteInternacional: boolean;
+  transporteInternacional: string; // Always string
   registroIstmo: boolean;
   cartaPorteVersion: '3.0' | '3.1';
   cartaPorteId?: string;
@@ -119,7 +119,7 @@ export const useCartaPorteMappers = () => {
       nombreEmisor: formData.nombreEmisor,
       rfcReceptor: formData.rfcReceptor,
       nombreReceptor: formData.nombreReceptor,
-      transporteInternacional: formData.transporteInternacional === true ? 'Sí' : (formData.transporteInternacional || 'No'), // Handle both boolean and string
+      transporteInternacional: formData.transporteInternacional, // Already string
       registroIstmo: formData.registroIstmo,
       cartaPorteVersion: formData.cartaPorteVersion,
       ubicaciones: formData.ubicaciones,

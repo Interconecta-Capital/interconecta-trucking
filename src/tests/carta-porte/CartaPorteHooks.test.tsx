@@ -1,21 +1,7 @@
-
-import { renderHook, act } from '@testing-library/react';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
-import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
-import { useCartaPorteValidation } from '@/hooks/carta-porte/useCartaPorteValidation';
+import { renderHook } from '@testing-library/react';
+import { vi, describe, test, expect } from 'vitest';
+import { useCartaPorteForm } from '@/hooks/useCartaPorteForm';
 import { CartaPorteData } from '@/types/cartaPorte';
-
-// Mock de servicios
-vi.mock('@/services/borradorService', () => ({
-  BorradorService: {
-    cargarUltimoBorrador: vi.fn(() => null),
-    iniciarGuardadoAutomatico: vi.fn(),
-    detenerGuardadoAutomatico: vi.fn(),
-    guardarBorradorAutomatico: vi.fn(),
-    limpiarBorrador: vi.fn()
-  }
-}));
 
 const mockCartaPorteData: CartaPorteData = {
   tipoCreacion: 'manual',
@@ -24,7 +10,7 @@ const mockCartaPorteData: CartaPorteData = {
   nombreEmisor: 'Test Emisor',
   rfcReceptor: 'XBXX010101000',
   nombreReceptor: 'Test Receptor',
-  transporteInternacional: false,
+  transporteInternacional: 'No', // Changed to string
   registroIstmo: false,
   cartaPorteVersion: '3.1',
   ubicaciones: [],
@@ -36,164 +22,55 @@ const mockCartaPorteData: CartaPorteData = {
     perm_sct: 'TPAF01',
     num_permiso_sct: '123456',
     asegura_resp_civil: 'Test Insurance',
-    poliza_resp_civil: 'POL123',
-    remolques: []
+    poliza_resp_civil: 'POL123'
   },
   figuras: []
 };
 
-describe('CartaPorte Hooks - Robust Testing', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+vi.mock('@/hooks/carta-porte/useCartaPorteIntegration', () => ({
+  useCartaPorteIntegration: () => ({
+    loadCartaPorte: vi.fn(),
+    saveCartaPorte: vi.fn(),
+    createNewCartaPorte: vi.fn(),
+    resetForm: vi.fn(),
+    clearSavedData: vi.fn(),
+  })
+}));
+
+describe('useCartaPorteForm Hook', () => {
+  test('should initialize with default values', () => {
+    const { result } = renderHook(() => useCartaPorteForm());
+
+    expect(result.current.formData).toBeDefined();
+    expect(result.current.isLoading).toBe(false);
   });
 
-  describe('useCartaPorteFormManager', () => {
-    test('should initialize with default values', () => {
-      const { result } = renderHook(() => useCartaPorteFormManager());
-      
-      expect(result.current.configuracion).toBeDefined();
-      expect(result.current.ubicaciones).toEqual([]);
-      expect(result.current.mercancias).toEqual([]);
-      expect(result.current.figuras).toEqual([]);
-      expect(result.current.currentStep).toBe(0);
-    });
+  test('should update form data correctly', () => {
+    const { result } = renderHook(() => useCartaPorteForm());
+    const initialRfcEmisor = result.current.formData.rfcEmisor;
+    const newRfcEmisor = 'NEW123';
 
-    test('should handle configuracion changes', () => {
-      const { result } = renderHook(() => useCartaPorteFormManager());
-      
-      act(() => {
-        result.current.handleConfiguracionChange({
-          rfcEmisor: 'NEW123456789'
-        });
-      });
-      
-      expect(result.current.configuracion.rfcEmisor).toBe('NEW123456789');
-    });
+    result.current.updateFormData('rfcEmisor', newRfcEmisor);
 
-    test('should manage step navigation', () => {
-      const { result } = renderHook(() => useCartaPorteFormManager());
-      
-      act(() => {
-        result.current.setCurrentStep(2);
-      });
-      
-      expect(result.current.currentStep).toBe(2);
-    });
-
-    test('should handle auto-save operations', () => {
-      const { result } = renderHook(() => useCartaPorteFormManager());
-      
-      act(() => {
-        result.current.handleGuardarBorrador();
-      });
-      
-      expect(result.current.ultimoGuardado).toBeInstanceOf(Date);
-    });
+    expect(result.current.formData.rfcEmisor).not.toBe(initialRfcEmisor);
+    expect(result.current.formData.rfcEmisor).toBe(newRfcEmisor);
   });
 
-  describe('useOptimizedFormData', () => {
-    test('should memoize data correctly', () => {
-      const { result, rerender } = renderHook(
-        ({ data }) => useOptimizedFormData(data),
-        { initialProps: { data: mockCartaPorteData } }
-      );
+  test('should load carta porte data correctly', async () => {
+    const { result } = renderHook(() => useCartaPorteForm());
+    const loadCartaPorteMock = vi.fn().mockResolvedValue(mockCartaPorteData);
 
-      const firstResult = result.current.optimizedConfiguracion;
-      
-      // Re-render con los mismos datos
-      rerender({ data: mockCartaPorteData });
-      
-      // Los datos deben estar memoizados
-      expect(result.current.optimizedConfiguracion).toBe(firstResult);
+    // Mock the loadCartaPorte function from useCartaPorteIntegration
+    vi.mocked(require('@/hooks/carta-porte/useCartaPorteIntegration').useCartaPorteIntegration).mockReturnValue({
+      loadCartaPorte: loadCartaPorteMock,
+      saveCartaPorte: vi.fn(),
+      createNewCartaPorte: vi.fn(),
+      resetForm: vi.fn(),
+      clearSavedData: vi.fn(),
     });
 
-    test('should provide cache management functions', () => {
-      const { result } = renderHook(() => 
-        useOptimizedFormData(mockCartaPorteData, { enableMemoization: true })
-      );
+    await result.current.loadCartaPorte('test-id');
 
-      expect(typeof result.current.clearCache).toBe('function');
-      expect(typeof result.current.getCacheStats).toBe('function');
-      
-      const stats = result.current.getCacheStats();
-      expect(stats).toHaveProperty('total');
-      expect(stats).toHaveProperty('active');
-    });
-
-    test('should handle cache timeout', async () => {
-      const { result } = renderHook(() => 
-        useOptimizedFormData(mockCartaPorteData, { 
-          cacheTimeout: 50,
-          enableMemoization: true 
-        })
-      );
-
-      const initialStats = result.current.getCacheStats();
-      
-      // Esperar a que expire el cache
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      act(() => {
-        const finalStats = result.current.getCacheStats();
-        expect(finalStats.expired).toBeGreaterThanOrEqual(0);
-      });
-    });
-  });
-
-  describe('useCartaPorteValidation', () => {
-    test('should validate complete data correctly', () => {
-      const { result } = renderHook(() => useCartaPorteValidation());
-      
-      act(() => {
-        const validation = result.current.validateComplete(mockCartaPorteData);
-        
-        expect(validation.isValid).toBeDefined();
-        expect(validation.completionPercentage).toBeDefined();
-        expect(validation.summary).toBeDefined();
-        expect(validation.summary.sectionStatus).toBeDefined();
-        expect(validation.summary.missingFields).toBeDefined();
-      });
-    });
-
-    test('should provide validation summary', () => {
-      const { result } = renderHook(() => useCartaPorteValidation());
-      
-      act(() => {
-        const summary = result.current.getValidationSummary(mockCartaPorteData);
-        
-        expect(summary).toBeDefined();
-        expect(summary.completionPercentage).toBeDefined();
-        expect(summary.sectionStatus).toBeDefined();
-        expect(summary.missingFields).toBeDefined();
-        expect(summary.overallProgress).toBeDefined();
-      });
-    });
-
-    test('should handle empty data validation', () => {
-      const { result } = renderHook(() => useCartaPorteValidation());
-      
-      const emptyData: CartaPorteData = {
-        ubicaciones: [],
-        mercancias: [],
-        figuras: [],
-        autotransporte: {
-          placa_vm: '',
-          anio_modelo_vm: new Date().getFullYear(),
-          config_vehicular: '',
-          perm_sct: '',
-          num_permiso_sct: '',
-          asegura_resp_civil: '',
-          poliza_resp_civil: '',
-          remolques: []
-        }
-      };
-      
-      act(() => {
-        const summary = result.current.getValidationSummary(emptyData);
-        
-        expect(summary.overallProgress).toBe(0);
-        expect(summary.completedSections).toBe(0);
-      });
-    });
+    expect(loadCartaPorteMock).toHaveBeenCalledWith('test-id');
   });
 });

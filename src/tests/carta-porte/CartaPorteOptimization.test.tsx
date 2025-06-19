@@ -1,57 +1,60 @@
-
-import { renderHook } from '@testing-library/react';
-import { describe, test, expect, vi } from 'vitest';
-import { useOptimizedFormData } from '@/hooks/carta-porte/useOptimizedFormData';
+import { render } from '@testing-library/react';
+import { vi, describe, test, expect } from 'vitest';
 import { CartaPorteData } from '@/types/cartaPorte';
 
-const mockFormData: CartaPorteData = {
+const mockCartaPorteData: CartaPorteData = {
   tipoCreacion: 'manual',
   tipoCfdi: 'Traslado',
   rfcEmisor: 'TEST123456789',
-  nombreEmisor: 'Test Emisor',
-  rfcReceptor: 'REC123456789',
-  nombreReceptor: 'Test Receptor',
-  transporteInternacional: false,
-  registroIstmo: false,
+  nombreEmisor: 'Test Company',
+  rfcReceptor: 'RECV123456789',
+  nombreReceptor: 'Receiver Company',
+  transporteInternacional: 'No', // Changed to string
   cartaPorteVersion: '3.1',
   ubicaciones: [
-    { 
-      id: 'loc1',
-      tipo_ubicacion: 'Origen', 
-      id_ubicacion: 'loc1',
+    {
+      id: 'ubicacion1',
+      tipo_ubicacion: 'Origen', // Fixed property name
+      rfc: 'TEST123456789',
+      nombre: 'Test Location',
       domicilio: {
-        pais: 'México',
-        codigo_postal: '01000',
-        estado: 'Ciudad de México',
-        municipio: 'Álvaro Obregón',
-        colonia: 'Centro',
         calle: 'Test Street',
-        numero_exterior: '123'
-      }
+        numero_exterior: '123',
+        codigo_postal: '12345',
+        colonia: 'Test Colony',
+        municipio: 'Test Municipality',
+        estado: 'Test State',
+        pais: 'México'
+      },
+      fecha_hora_salida_llegada: new Date().toISOString()
     },
-    { 
-      id: 'loc2',
-      tipo_ubicacion: 'Destino', 
-      id_ubicacion: 'loc2',
+    {
+      id: 'ubicacion2',
+      tipo_ubicacion: 'Destino', // Fixed property name
+      rfc: 'RECV123456789',
+      nombre: 'Destination Location',
       domicilio: {
-        pais: 'México',
-        codigo_postal: '02000',
-        estado: 'Ciudad de México',
-        municipio: 'Benito Juárez',
-        colonia: 'Centro',
-        calle: 'Test Street 2',
-        numero_exterior: '456'
-      }
+        calle: 'Destination Street',
+        numero_exterior: '456',
+        codigo_postal: '54321',
+        colonia: 'Destination Colony',
+        municipio: 'Destination Municipality',
+        estado: 'Destination State',
+        pais: 'México'
+      },
+      fecha_hora_salida_llegada: new Date().toISOString()
     }
   ],
   mercancias: [
-    { 
-      id: 'merc1',
+    {
+      id: 'mercancia1',
       bienes_transp: 'Test Product',
-      descripcion: 'Producto Test', 
-      cantidad: 10,
-      peso_kg: 100,
-      valor_mercancia: 1000,
+      descripcion: 'Test product description',
+      cantidad: 100,
+      clave_unidad: 'KGM', // Added missing property
+      peso_kg: 1000,
+      unidad_peso_bruto: 'KGM', // Added missing property
+      valor_mercancia: 50000,
       moneda: 'MXN'
     }
   ],
@@ -62,26 +65,9 @@ const mockFormData: CartaPorteData = {
     perm_sct: 'TPAF01',
     num_permiso_sct: '123456',
     asegura_resp_civil: 'Test Insurance',
-    poliza_resp_civil: 'POL123',
-    remolques: []
+    poliza_resp_civil: 'POL123'
   },
-  figuras: [
-    { 
-      id: 'fig1',
-      tipo_figura: '01', 
-      rfc_figura: 'XAXX010101000',
-      nombre_figura: 'Test Conductor',
-      domicilio: {
-        pais: 'México',
-        codigo_postal: '01000',
-        estado: 'Ciudad de México',
-        municipio: 'Álvaro Obregón',
-        colonia: 'Centro',
-        calle: 'Test Street',
-        numero_exterior: '123'
-      }
-    }
-  ]
+  figuras: []
 };
 
 describe('useOptimizedFormData', () => {
@@ -89,14 +75,14 @@ describe('useOptimizedFormData', () => {
     const { result, rerender } = renderHook(
       (props) => useOptimizedFormData(props.formData),
       {
-        initialProps: { formData: mockFormData }
+        initialProps: { formData: mockCartaPorteData }
       }
     );
 
     const firstRender = result.current;
     
     // Re-render con los mismos datos
-    rerender({ formData: mockFormData });
+    rerender({ formData: mockCartaPorteData });
     
     const secondRender = result.current;
     
@@ -108,7 +94,7 @@ describe('useOptimizedFormData', () => {
 
   test('should provide cache management functions', () => {
     const { result } = renderHook(() => 
-      useOptimizedFormData(mockFormData, { enableMemoization: true })
+      useOptimizedFormData(mockCartaPorteData, { enableMemoization: true })
     );
 
     expect(typeof result.current.clearCache).toBe('function');
@@ -123,7 +109,7 @@ describe('useOptimizedFormData', () => {
 
   test('should respect cache timeout', async () => {
     const { result } = renderHook(() => 
-      useOptimizedFormData(mockFormData, { 
+      useOptimizedFormData(mockCartaPorteData, { 
         cacheTimeout: 100,
         enableMemoization: true 
       })
@@ -142,14 +128,14 @@ describe('useOptimizedFormData', () => {
     const { result, rerender } = renderHook(
       (props) => useOptimizedFormData(props.formData, { enableMemoization: false }),
       {
-        initialProps: { formData: mockFormData }
+        initialProps: { formData: mockCartaPorteData }
       }
     );
 
     const firstRender = result.current;
     
     // Cambiar datos ligeramente
-    const modifiedData = { ...mockFormData, rfcEmisor: 'MODIFIED123' };
+    const modifiedData = { ...mockCartaPorteData, rfcEmisor: 'MODIFIED123' };
     rerender({ formData: modifiedData });
     
     const secondRender = result.current;
