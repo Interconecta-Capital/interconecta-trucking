@@ -252,10 +252,10 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
 
   if (!borradorCargado && documentId) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-          <p>Cargando documento...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto" />
+          <p className="text-gray-600">Cargando documento...</p>
         </div>
       </div>
     );
@@ -264,14 +264,15 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header pegajoso */}
-      <div className="bg-white border-b shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleBackToList}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver a Lista
@@ -279,12 +280,12 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
 
               <div className="flex items-center gap-3">
                 <div>
-                  <h1 className="text-xl font-bold">
+                  <h1 className="text-xl font-semibold text-gray-900">
                     {documentId ? 'Editar Carta Porte' : 'Nueva Carta Porte'}
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span>IdCCP: {UUIDService.formatIdCCPForDisplay(idCCP)}</span>
-                    <Badge variant={documentStatus.variant}>
+                    <Badge variant={documentStatus.variant} className="bg-gray-100 text-gray-700 border-gray-300">
                       {documentStatus.label}
                     </Badge>
                   </div>
@@ -292,16 +293,16 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {lastSaved && (
                 <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-green-600" />
                   <span>Guardado {lastSaved.toLocaleTimeString()}</span>
                 </div>
               )}
               
               {isGuardando && (
-                <div className="flex items-center gap-1 text-sm text-blue-600">
+                <div className="flex items-center gap-1 text-sm text-gray-600">
                   <Clock className="h-3 w-3 animate-spin" />
                   <span>Guardando...</span>
                 </div>
@@ -311,7 +312,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                 variant="outline"
                 onClick={handleSave}
                 disabled={isGuardando}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 <Save className="h-4 w-4" />
                 Guardar
@@ -321,7 +322,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                 <Button
                   onClick={handleActivate}
                   disabled={isGuardando}
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Eye className="h-4 w-4" />
                   Activar Documento
@@ -331,7 +332,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
               <Button
                 onClick={handleSaveAndExit}
                 disabled={isGuardando}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white"
               >
                 <CheckCircle className="h-4 w-4" />
                 Guardar y Salir
@@ -347,19 +348,19 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
               </span>
               <span className="text-sm text-gray-600">{progress}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-2 bg-gray-200" />
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="container mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar navigation */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Secciones</CardTitle>
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg text-gray-900">Secciones</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <nav className="space-y-1">
@@ -371,24 +372,26 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                       <button
                         key={section.key}
                         onClick={() => setActiveSection(section.key)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                          isActive ? 'bg-blue-50 border-r-2 border-blue-600' : ''
+                        className={`w-full flex items-center gap-3 px-4 py-4 text-left transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-gray-50 border-r-3 border-gray-800 text-gray-900' 
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                       >
                         <div className="flex items-center gap-3 flex-1">
-                          <Icon className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <Icon className={`h-5 w-5 ${isActive ? 'text-gray-800' : 'text-gray-400'}`} />
                           <div className="flex-1 min-w-0">
-                            <div className={`font-medium ${isActive ? 'text-blue-900' : 'text-gray-900'}`}>
+                            <div className={`font-medium ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>
                               {section.title}
                             </div>
-                            <div className="text-xs text-gray-500 truncate">
+                            <div className="text-xs text-gray-500 truncate mt-1">
                               {section.description}
                             </div>
                           </div>
                         </div>
                         <div className="flex-shrink-0">
                           {section.isValid ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-green-600" />
                           ) : (
                             <AlertCircle className="h-4 w-4 text-gray-300" />
                           )}
@@ -403,29 +406,29 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
 
           {/* Main content */}
           <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
                       {sections.find(s => s.key === activeSection)?.icon && 
-                        React.createElement(sections.find(s => s.key === activeSection)!.icon, { className: "h-5 w-5" })
+                        React.createElement(sections.find(s => s.key === activeSection)!.icon, { className: "h-5 w-5 text-gray-700" })
                       }
                       {sections.find(s => s.key === activeSection)?.title}
                     </CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 mt-2">
                       {sections.find(s => s.key === activeSection)?.description}
                     </p>
                   </div>
                   {sections.find(s => s.key === activeSection)?.isValid && (
-                    <Badge variant="outline" className="flex items-center gap-1 text-green-700 bg-green-100">
+                    <Badge variant="outline" className="flex items-center gap-1 text-green-700 bg-green-50 border-green-200">
                       <CheckCircle className="h-3 w-3" />
                       Completa
                     </Badge>
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 {renderActiveSection()}
               </CardContent>
             </Card>
