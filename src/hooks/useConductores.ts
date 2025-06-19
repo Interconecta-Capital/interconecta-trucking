@@ -31,7 +31,7 @@ export function useConductores() {
     }
   };
 
-  const createConductor = async (conductorData: Omit<Conductor, 'id' | 'created_at' | 'updated_at'>) => {
+  const createConductor = async (conductorData: Omit<Conductor, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     if (!user) return;
     
     try {
@@ -111,7 +111,7 @@ export function useConductores() {
     }
   };
 
-  const createMultipleConductores = async (conductoresData: Array<Omit<Conductor, 'id' | 'created_at' | 'updated_at'>>) => {
+  const createMultipleConductores = async (conductoresData: Array<Omit<Conductor, 'id' | 'created_at' | 'updated_at' | 'user_id'>>) => {
     if (!user) return;
     
     setLoading(true);

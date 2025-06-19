@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -186,6 +187,22 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     }
   };
 
+  // Create complete cartaPorteData object for GeneracionSection
+  const cartaPorteData = {
+    rfcEmisor: configuracion.rfcEmisor,
+    nombreEmisor: configuracion.nombreEmisor,
+    rfcReceptor: configuracion.rfcReceptor,
+    nombreReceptor: configuracion.nombreReceptor,
+    tipoCfdi: configuracion.tipoCfdi,
+    cartaPorteVersion: configuracion.cartaPorteVersion,
+    transporteInternacional: configuracion.transporteInternacional,
+    registroIstmo: configuracion.registroIstmo,
+    ubicaciones,
+    mercancias,
+    autotransporte: autotransporte || defaultAutotransporte,
+    figuras
+  };
+
   const renderActiveSection = () => {
     const activeConfig = sections.find(s => s.key === activeSection);
     if (!activeConfig) return null;
@@ -193,21 +210,6 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     const Component = activeConfig.component;
     
     if (activeSection === 'generacion') {
-      const cartaPorteData = {
-        rfcEmisor: configuracion.rfcEmisor,
-        nombreEmisor: configuracion.nombreEmisor,
-        rfcReceptor: configuracion.rfcReceptor,
-        nombreReceptor: configuracion.nombreReceptor,
-        tipoCfdi: configuracion.tipoCfdi,
-        cartaPorteVersion: configuracion.cartaPorteVersion,
-        transporteInternacional: configuracion.transporteInternacional,
-        registroIstmo: configuracion.registroIstmo,
-        ubicaciones,
-        mercancias,
-        autotransporte: autotransporte || defaultAutotransporte,
-        figuras
-      };
-
       return (
         <GeneracionSection
           cartaPorteData={cartaPorteData}
