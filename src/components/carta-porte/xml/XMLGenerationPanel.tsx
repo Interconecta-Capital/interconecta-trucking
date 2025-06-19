@@ -6,7 +6,6 @@ import { Separator } from '@/components/ui/separator';
 import { FileText } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
-import { useCartaPortePersistence } from '@/hooks/carta-porte/useCartaPortePersistence';
 import { useTrackingCartaPorte } from '@/hooks/useTrackingCartaPorte';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { PDFPreviewDialog } from '../pdf/PDFPreviewDialog';
@@ -40,14 +39,6 @@ export function XMLGenerationPanel({
 }: XMLGenerationPanelProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [autoTimbrado, setAutoTimbrado] = useState(true);
-
-  const {
-    saveXML,
-    savePDF,
-    xmlGenerado: xmlPersistido,
-    pdfUrl: pdfPersistido,
-    pdfBlob: pdfBlobPersistido
-  } = useCartaPortePersistence(cartaPorteId);
   
   const {
     isGenerating,
@@ -61,8 +52,8 @@ export function XMLGenerationPanel({
     validarConexionPAC
   } = useCartaPorteXMLManager();
 
-  // Usar XML del prop si existe, luego el hook, luego el persistido
-  const xmlActual = xmlGeneradoProp || xmlGeneradoHook || xmlPersistido;
+  // Usar XML del prop si existe, sino el del hook
+  const xmlActual = xmlGeneradoProp || xmlGeneradoHook;
 
   const {
     isGenerating: isGeneratingPDF,
@@ -70,7 +61,7 @@ export function XMLGenerationPanel({
     generarPDF,
     descargarPDF,
     limpiarPDF
-  } = usePDFGeneration(pdfPersistido, pdfBlobPersistido);
+  } = usePDFGeneration();
 
   const {
     eventos,
@@ -98,7 +89,6 @@ export function XMLGenerationPanel({
   const handleGenerarXML = async () => {
     const resultado = await generarXML(cartaPorteData);
     if (resultado.success && resultado.xml) {
-      saveXML(resultado.xml);
       // Notificar al componente padre que se generó XML
       if (onXMLGenerated) {
         onXMLGenerated(resultado.xml);
@@ -138,8 +128,7 @@ export function XMLGenerationPanel({
 
   const handleGenerarPDF = async () => {
     const resultado = await generarPDF(cartaPorteData, datosTimbre);
-    if (resultado.success && resultado.pdfUrl) {
-      savePDF(resultado.pdfUrl, resultado.pdfBlob);
+    if (resultado.success) {
       console.log('PDF generado exitosamente');
     }
   };
