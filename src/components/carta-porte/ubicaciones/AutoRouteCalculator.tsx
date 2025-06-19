@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Route, MapPin, Clock, CheckCircle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Route, CheckCircle } from 'lucide-react';
 import { useRouteCalculation } from '@/hooks/useRouteCalculation';
 import { Ubicacion } from '@/types/ubicaciones';
+import { RouteCalculationStatus } from './RouteCalculationStatus';
+import { RouteMetricsDisplay } from './RouteMetricsDisplay';
+import { RouteControls } from './RouteControls';
 
 interface AutoRouteCalculatorProps {
   ubicaciones: Ubicacion[];
@@ -161,40 +163,14 @@ export function AutoRouteCalculator({
     }
   };
 
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
-
-  // Early return if no ubicaciones provided
-  if (!safeUbicaciones.length) {
+  // Check if we should show the status component instead of the main calculator
+  if (!safeUbicaciones.length || !canCalculate) {
     return (
-      <Card className="border-gray-200 bg-white shadow-sm">
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 text-gray-500">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm">
-              No hay ubicaciones disponibles para calcular la ruta
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!canCalculate) {
-    return (
-      <Card className="border-gray-200 bg-white shadow-sm">
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 text-amber-700">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm">
-              Agrega un origen y destino con direcciones completas para calcular la ruta automáticamente
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      <RouteCalculationStatus
+        isCalculating={isCalculating}
+        hasUbicaciones={safeUbicaciones.length > 0}
+        canCalculate={!!canCalculate}
+      />
     );
   }
 
@@ -214,67 +190,24 @@ export function AutoRouteCalculator({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {isCalculating && (
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-            <span className="text-sm text-gray-800">
-              Calculando ruta con Mapbox...
-            </span>
-          </div>
-        )}
+        <RouteCalculationStatus
+          isCalculating={isCalculating}
+          hasUbicaciones={true}
+          canCalculate={true}
+        />
 
-        {distanciaTotal && tiempoEstimado && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-800">Distancia Total</span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900">
-                {distanciaTotal} km
-              </div>
-              <div className="text-xs text-gray-600 mt-1">
-                Calculado automáticamente
-              </div>
-            </div>
+        <RouteMetricsDisplay
+          distanciaTotal={distanciaTotal || 0}
+          tiempoEstimado={tiempoEstimado || 0}
+        />
 
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-800">Tiempo Estimado</span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900">
-                {formatTime(tiempoEstimado)}
-              </div>
-              <div className="text-xs text-gray-600 mt-1">
-                Tiempo de conducción
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-xs text-gray-600">
-            <strong>Ruta:</strong> {origen?.nombreRemitenteDestinatario || 'Origen'} → {destino?.nombreRemitenteDestinatario || 'Destino'}
-            {intermedios.length > 0 && ` (${intermedios.length} parada${intermedios.length > 1 ? 's' : ''} intermedia${intermedios.length > 1 ? 's' : ''})`}
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleManualRecalculation}
-            disabled={isCalculating}
-            className="text-gray-600 border-gray-200 hover:bg-gray-50"
-          >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isCalculating ? 'animate-spin' : ''}`} />
-            Recalcular
-          </Button>
-        </div>
-
-        <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
-          <strong>Nota:</strong> La distancia se calcula automáticamente usando rutas reales de Mapbox.
-          Esta es la distancia que aparecerá en tu PDF de Carta Porte.
-        </div>
+        <RouteControls
+          origen={origen}
+          destino={destino}
+          intermedios={intermedios}
+          isCalculating={isCalculating}
+          onRecalculate={handleManualRecalculation}
+        />
       </CardContent>
     </Card>
   );
