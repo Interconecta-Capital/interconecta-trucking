@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { CartaPorteData, MercanciaCompleta, UbicacionCompleta, AutotransporteCompleto, FiguraCompleta } from '@/types/cartaPorte';
 
@@ -190,13 +191,16 @@ export class SmartValidationService {
         return { issues: [] };
       }
 
+      // Safely access properties with type checking
+      const aiInsights = aiResult?.insights || {
+        riskLevel: 'medium' as 'medium',
+        compliancePrediction: 75,
+        optimizationSuggestions: [],
+        timbradoProbability: 70
+      };
+
       return {
-        aiInsights: aiResult?.insights || {
-          riskLevel: 'medium',
-          compliancePrediction: 75,
-          optimizationSuggestions: [],
-          timbradoProbability: 70
-        },
+        aiInsights,
         recommendations: aiResult?.recommendations || [],
         issues: aiResult?.issues || []
       };
@@ -206,7 +210,7 @@ export class SmartValidationService {
       return { 
         issues: [],
         aiInsights: {
-          riskLevel: 'medium',
+          riskLevel: 'medium' as 'medium',
           compliancePrediction: 50,
           optimizationSuggestions: ['Validación IA no disponible temporalmente'],
           timbradoProbability: 50
@@ -225,8 +229,8 @@ export class SmartValidationService {
     // Calcular scores por sección
     const sectionsStatus = this.calculateSectionScores(allIssues, data);
     
-    // Score general
-    const sectionScores = Object.values(sectionsStatus).map(s => s.score);
+    // Score general - safely access the score property
+    const sectionScores = Object.values(sectionsStatus).map(s => s.score || 0);
     const overallScore = Math.round(sectionScores.reduce((sum, score) => sum + score, 0) / sectionScores.length);
 
     // Determinar validez
