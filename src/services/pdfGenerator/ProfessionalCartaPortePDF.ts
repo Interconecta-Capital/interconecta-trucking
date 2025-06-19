@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -106,7 +105,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setFontSize(12);
     this.pdf.setTextColor(this.colors.gray800);
-    const folioText = `Folio Interno: ${data.folio || `CP-${Date.now().toString().slice(-8)}`}`;
+    const folioText = `Folio Interno: ${data.cartaPorteId || `CP-${Date.now().toString().slice(-8)}`}`;
     this.pdf.text(folioText, rightX, this.currentY, { align: 'right' });
     
     this.currentY += 6;
@@ -143,8 +142,8 @@ export class ProfessionalCartaPortePDF {
     const rowHeight = boxHeight / 2;
     
     const fiscalData = [
-      { label: 'FOLIO FISCAL (UUID)', value: data.uuid_fiscal || 'Pendiente de timbrado' },
-      { label: 'ID CARTA PORTE (IdCCP)', value: data.id_ccp || `CCP-${Date.now().toString().slice(-8)}` },
+      { label: 'FOLIO FISCAL (UUID)', value: data.xmlGenerado ? 'Pendiente de timbrado' : 'Pendiente de timbrado' },
+      { label: 'ID CARTA PORTE (IdCCP)', value: data.cartaPorteId || `CCP-${Date.now().toString().slice(-8)}` },
       { label: 'No. Certificado Emisor', value: '30001000000400002434' },
       { label: 'No. Certificado SAT', value: '30001000000500001234' }
     ];
@@ -440,7 +439,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(7);
     this.pdf.setTextColor(this.colors.gray500);
-    const selloCFDI = data.xml_generado ? 'abc...xyz' : 'Pendiente de timbrado';
+    const selloCFDI = data.xmlGenerado ? 'abc...xyz' : 'Pendiente de timbrado';
     const selloSplit = this.pdf.splitTextToSize(selloCFDI, sellosWidth);
     this.pdf.text(selloSplit, sellosX, this.currentY);
     
