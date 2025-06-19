@@ -4,10 +4,13 @@ import { useToast } from '@/hooks/use-toast';
 import { CartaPortePDFGenerator, PDFGenerationResult } from '@/services/pdfGenerator';
 import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
 
-export const usePDFGeneration = () => {
+export const usePDFGeneration = (
+  initialUrl: string | null = null,
+  initialBlob: Blob | null = null
+) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(initialUrl);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(initialBlob);
   const { toast } = useToast();
 
   const generarPDF = async (
