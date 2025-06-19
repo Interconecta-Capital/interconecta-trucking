@@ -114,16 +114,22 @@ export function useConductores() {
         num_reg_id_trib: conductor.num_reg_id_trib || null
       }));
 
-      const { data, error } = await supabase
-        .from('conductores')
-        .insert(conductoresForSupabase)
-        .select();
-
-      if (error) throw error;
+      // Use multiple individual inserts for better error handling
+      const results = [];
+      for (const conductorData of conductoresForSupabase) {
+        const { data, error } = await supabase
+          .from('conductores')
+          .insert(conductorData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        results.push(data);
+      }
       
-      toast.success(`${data.length} conductores creados exitosamente`);
+      toast.success(`${results.length} conductores creados exitosamente`);
       await fetchConductores();
-      return data;
+      return results;
     } catch (err) {
       console.error('Error creating multiple conductores:', err);
       setError('Error al crear conductores');

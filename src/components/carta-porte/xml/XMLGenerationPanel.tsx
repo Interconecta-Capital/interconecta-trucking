@@ -153,8 +153,8 @@ export function XMLGenerationPanel({
     
     try {
       const resultado = await timbrarCartaPorte(cartaPorteData);
-      if (resultado && resultado.success && onTimbrado) {
-        onTimbrado(resultado);
+      if (resultado && resultado.success) {
+        onTimbrado?.(resultado);
         
         // Agregar evento de tracking solo si el resultado incluye uuid
         if ('uuid' in resultado) {

@@ -31,6 +31,18 @@ export default function Conductores() {
     setShowFormDialog(false);
   };
 
+  const handleEdit = (conductor: any) => {
+    console.log('Edit conductor:', conductor);
+  };
+
+  const handleDelete = (conductor: any) => {
+    console.log('Delete conductor:', conductor);
+  };
+
+  const handleView = (conductor: any) => {
+    console.log('View conductor:', conductor);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
@@ -75,6 +87,9 @@ export default function Conductores() {
           <CardContent>
             <ConductoresTable
               conductores={filteredConductores}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onView={handleView}
             />
           </CardContent>
         </Card>
