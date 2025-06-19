@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { BorradorService } from '@/services/borradorService';
@@ -43,11 +42,7 @@ export const useCartaPorteAutoSave = ({
     
     setIsAutoSaving(true);
     try {
-      const result = await BorradorService.guardarBorrador(formData);
-      
-      if (result && typeof result === 'string' && result !== currentCartaPorteId && onCartaPorteIdChange) {
-        onCartaPorteIdChange(result);
-      }
+      await BorradorService.guardarBorrador(formData);
       
       lastDataRef.current = currentDataString;
       setLastSaved(new Date());
