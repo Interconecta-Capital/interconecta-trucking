@@ -27,3 +27,12 @@ export interface Ubicacion {
   };
   domicilio: Domicilio;
 }
+
+export interface UbicacionFrecuente {
+  id: string;
+  nombreUbicacion: string;
+  rfcAsociado: string;
+  domicilio: Domicilio;
+  fechaCreacion: string;
+  vecesUsada: number;
+}

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,33 @@ export function UbicacionesSection({
   const [calculationStatus, setCalculationStatus] = useState<'pending' | 'success' | 'error'>('pending');
   const { toast } = useToast();
 
+  // Helper function to convert UbicacionCompleta to Ubicacion
+  const convertToUbicacion = (ubicacionCompleta: UbicacionCompleta): Ubicacion => {
+    return {
+      id: ubicacionCompleta.id || crypto.randomUUID(),
+      idUbicacion: ubicacionCompleta.id_ubicacion,
+      tipoUbicacion: (ubicacionCompleta.tipo_ubicacion as 'Origen' | 'Destino' | 'Paso Intermedio') || 'Origen',
+      rfcRemitenteDestinatario: ubicacionCompleta.rfc_remitente_destinatario,
+      nombreRemitenteDestinatario: ubicacionCompleta.nombre_remitente_destinatario,
+      fechaHoraSalidaLlegada: ubicacionCompleta.fecha_hora_salida_llegada,
+      distanciaRecorrida: ubicacionCompleta.distancia_recorrida,
+      ordenSecuencia: 1,
+      coordenadas: ubicacionCompleta.coordenadas,
+      domicilio: {
+        pais: ubicacionCompleta.domicilio.pais,
+        codigoPostal: ubicacionCompleta.domicilio.codigo_postal,
+        estado: ubicacionCompleta.domicilio.estado,
+        municipio: ubicacionCompleta.domicilio.municipio,
+        colonia: ubicacionCompleta.domicilio.colonia,
+        calle: ubicacionCompleta.domicilio.calle,
+        numExterior: ubicacionCompleta.domicilio.numero_exterior,
+        numInterior: ubicacionCompleta.domicilio.numero_interior,
+        referencia: ubicacionCompleta.domicilio.referencia,
+        localidad: ubicacionCompleta.domicilio.municipio
+      }
+    };
+  };
+
   // Auto-calcular distancias cuando hay ubicaciones válidas
   useEffect(() => {
     const ubicacionesValidas = data.filter(u => 
@@ -56,29 +84,10 @@ export function UbicacionesSection({
     setCalculationStatus('pending');
     
     try {
-      // Convertir UbicacionCompleta a formato Ubicacion para el servicio
+      // Convert UbicacionCompleta to Ubicacion format for the service
       const ubicacionesParaCalculo: Ubicacion[] = data.map((u, index) => ({
-        id: u.id || crypto.randomUUID(),
-        idUbicacion: u.id_ubicacion,
-        tipoUbicacion: u.tipo_ubicacion,
-        rfcRemitenteDestinatario: u.rfc_remitente_destinatario,
-        nombreRemitenteDestinatario: u.nombre_remitente_destinatario,
-        fechaHoraSalidaLlegada: u.fecha_hora_salida_llegada,
-        distanciaRecorrida: u.distancia_recorrida,
-        ordenSecuencia: index + 1,
-        coordenadas: u.coordenadas,
-        domicilio: {
-          pais: u.domicilio.pais,
-          codigoPostal: u.domicilio.codigo_postal,
-          estado: u.domicilio.estado,
-          municipio: u.domicilio.municipio,
-          colonia: u.domicilio.colonia,
-          calle: u.domicilio.calle,
-          numExterior: u.domicilio.numero_exterior,
-          numInterior: u.domicilio.numero_interior,
-          referencia: u.domicilio.referencia,
-          localidad: u.domicilio.municipio
-        }
+        ...convertToUbicacion(u),
+        ordenSecuencia: index + 1
       }));
 
       const resultado = await DistanceCalculationService.calcularDistanciaReal(ubicacionesParaCalculo);
@@ -184,33 +193,8 @@ export function UbicacionesSection({
            (orden[b.tipo_ubicacion as keyof typeof orden] || 2);
   });
 
-  // Convertir para DistanceCalculator
-  const ubicacionesParaCalculador: Ubicacion[] = data.map(u => ({
-    id: u.id || crypto.randomUUID(),
-    idUbicacion: u.id_ubicacion,
-    tipoUbicacion: u.tipo_ubicacion,
-    rfcRemitenteDestinatario: u.rfc_remitente_destinatario,
-    nombreRemitenteDestinatario: u.nombre_remitente_destinatario,
-    fechaHoraSalidaLlegada: u.fecha_hora_salida_llegada,
-    distanciaRecorrida: u.distancia_recorrida,
-    ordenSecuencia: 1,
-    coordenadas: u.coordenadas ? {
-      latitud: u.coordenadas.latitud,
-      longitud: u.coordenadas.longitud
-    } : undefined,
-    domicilio: {
-      pais: u.domicilio.pais,
-      codigoPostal: u.domicilio.codigo_postal,
-      estado: u.domicilio.estado,
-      municipio: u.domicilio.municipio,
-      colonia: u.domicilio.colonia,
-      calle: u.domicilio.calle,
-      numExterior: u.domicilio.numero_exterior,
-      numInterior: u.domicilio.numero_interior,
-      referencia: u.domicilio.referencia,
-      localidad: u.domicilio.municipio
-    }
-  }));
+  // Convert for DistanceCalculator
+  const ubicacionesParaCalculador: Ubicacion[] = data.map(convertToUbicacion);
 
   return (
     <div className="space-y-6">

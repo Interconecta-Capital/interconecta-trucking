@@ -20,6 +20,9 @@ export interface AutotransporteData {
   vigencia_tarjeta_circulacion?: string;
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
+  asegura_carga?: string;
+  poliza_carga?: string;
+  vigencia_med_ambiente?: string;
   peso_bruto_vehicular: number;
   capacidad_carga: number;
   remolques: Remolque[];
@@ -32,5 +35,5 @@ export interface AutotransporteData {
     alto?: number;
   };
   vigencia_permiso?: string;
-  numero_permisos_adicionales?: string;
+  numero_permisos_adicionales?: string[];
 }

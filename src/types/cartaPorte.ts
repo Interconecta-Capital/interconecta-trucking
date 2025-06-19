@@ -45,12 +45,15 @@ export interface Autotransporte {
   vigencia_tarjeta_circulacion?: string;
   asegura_med_ambiente?: string;
   poliza_med_ambiente?: string;
+  asegura_carga?: string;
+  poliza_carga?: string;
+  vigencia_med_ambiente?: string;
 }
 
 export interface Remolque {
   id?: string;
   subtipo_remolque: string;
-  subtipo_rem?: string;
+  subtipo_rem: string;
   placa: string;
 }
 
@@ -76,6 +79,9 @@ export interface FiguraTransporte {
   rfc_arrendatario?: string;
   num_reg_id_trib_arrendatario?: string;
   residencia_fiscal_arrendatario?: string;
+  // Additional fields for compatibility
+  num_reg_id_trib_figura?: string;
+  residencia_fiscal_figura?: string;
 }
 
 export interface CartaPorteData {
@@ -83,7 +89,12 @@ export interface CartaPorteData {
   transporte_internacional?: string;
   transporteInternacional?: string | boolean;
   entrada_salida_mercancia?: string;
+  entradaSalidaMerc?: string;
   via_entrada_salida?: string;
+  viaEntradaSalida?: string;
+  viaTransporte?: string;
+  paisOrigenDestino?: string;
+  pais_origen_destino?: string;
   total_distancia_recorrida?: number;
   registro_istmo?: string | boolean;
   registroIstmo?: string | boolean;
@@ -96,6 +107,7 @@ export interface CartaPorteData {
   cartaPorteVersion?: string;
   tipoCfdi?: string;
   regimenAduanero?: string;
+  regimenesAduaneros?: string[];
   ubicaciones?: UbicacionCompleta[];
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
@@ -105,7 +117,7 @@ export interface CartaPorteData {
 export interface UbicacionCompleta extends Ubicacion {
   id?: string;
   carta_porte_id?: string;
-  tipo_ubicacion?: string;
+  tipo_ubicacion?: 'Origen' | 'Destino' | 'Paso Intermedio';
   nombre_remitente_destinatario?: string;
   fecha_hora_salida_llegada?: string;
   numero_estacion?: string;
@@ -131,7 +143,7 @@ export interface AutotransporteCompleto extends Autotransporte {
     alto?: number;
   };
   vigencia_permiso?: string;
-  numero_permisos_adicionales?: string;
+  numero_permisos_adicionales?: string[];
   carga_maxima?: number;
 }
 

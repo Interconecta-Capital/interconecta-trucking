@@ -29,6 +29,19 @@ export function VehiculoPermits({ data, onFieldChange }: VehiculoPermitsProps) {
     validar();
   }, [data.perm_sct]);
 
+  const handlePermisosAdicionalesChange = (value: string) => {
+    const permisos = value.split(',').map(p => p.trim()).filter(p => p);
+    onFieldChange('numero_permisos_adicionales', permisos);
+  };
+
+  const getPermisosAdicionalesValue = (): string => {
+    if (!data.numero_permisos_adicionales) return '';
+    if (Array.isArray(data.numero_permisos_adicionales)) {
+      return data.numero_permisos_adicionales.join(', ');
+    }
+    return String(data.numero_permisos_adicionales);
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -69,11 +82,8 @@ export function VehiculoPermits({ data, onFieldChange }: VehiculoPermitsProps) {
           <Input 
             id="numero_permisos_adicionales"
             placeholder="Separados por comas" 
-            value={data.numero_permisos_adicionales?.join(', ') || ''}
-            onChange={(e) => {
-              const permisos = e.target.value.split(',').map(p => p.trim()).filter(p => p);
-              onFieldChange('numero_permisos_adicionales', permisos);
-            }}
+            value={getPermisosAdicionalesValue()}
+            onChange={(e) => handlePermisosAdicionalesChange(e.target.value)}
           />
         </div>
       </div>
