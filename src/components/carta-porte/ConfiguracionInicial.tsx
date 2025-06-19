@@ -1,15 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
-import { PlantillasSelector } from './plantillas/PlantillasSelector';
-import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
-import { FlujoCargaSelector } from './configuracion/FlujoCargaSelector';
-import { ConfiguracionPrincipalMejorada } from './configuracion/ConfiguracionPrincipalMejorada';
-import { VersionSelector } from './VersionSelector';
-import { RFCValidator } from '@/utils/rfcValidation';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CartaPorteData } from '@/types/cartaPorte';
-import { useVersionManager } from '@/hooks/useVersionManager';
-import { CartaPorteVersion } from '@/types/cartaPorteVersions';
-import { toast } from 'sonner';
 
 interface ConfiguracionInicialProps {
   data: CartaPorteData;
@@ -18,126 +14,103 @@ interface ConfiguracionInicialProps {
 }
 
 export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionInicialProps) {
-  const [tipoCreacion, setTipoCreacion] = useState<'plantilla' | 'carga' | 'manual'>(data.tipoCreacion || 'manual');
-  const [showPlantillas, setShowPlantillas] = useState(false);
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-
-  // Gestión de versiones
-  const {
-    version,
-    toggleVersion,
-    isChangingVersion
-  } = useVersionManager({
-    initialVersion: (data.cartaPorteVersion as CartaPorteVersion) || '3.1',
-    onVersionChange: (newVersion) => {
-      onChange({ cartaPorteVersion: newVersion });
-    },
-    formData: data,
-    updateFormData: (section, newData) => {
-      onChange(newData);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (data.rfcEmisor && data.rfcReceptor) {
+      onNext();
     }
-  });
-
-  useEffect(() => {
-    onChange({ tipoCreacion });
-  }, [tipoCreacion, onChange]);
-
-  // Actualizar versión en datos cuando cambie
-  useEffect(() => {
-    if (data.cartaPorteVersion !== version) {
-      onChange({ cartaPorteVersion: version });
-    }
-  }, [version, data.cartaPorteVersion, onChange]);
-
-  const handleCargarPlantilla = (plantilla: any) => {
-    onChange({
-      rfcEmisor: plantilla.rfc_emisor,
-      nombreEmisor: plantilla.nombre_emisor,
-      rfcReceptor: plantilla.rfc_receptor,
-      nombreReceptor: plantilla.nombre_receptor,
-      tipoCfdi: plantilla.tipo_cfdi,
-      transporteInternacional: plantilla.transporte_internacional,
-      registroIstmo: plantilla.registro_istmo,
-      cartaPorteVersion: plantilla.carta_porte_version || version
-    });
-    setShowPlantillas(false);
-    setTipoCreacion('manual');
-  };
-
-  const handleCargarDocumento = (mercancias: any[]) => {
-    if (Array.isArray(mercancias) && mercancias.length > 0) {
-      const nuevas = mercancias.map(m => ({
-        id: crypto.randomUUID(),
-        moneda: m.moneda || 'MXN',
-        ...m
-      }));
-      const actuales = Array.isArray(data.mercancias) ? data.mercancias : [];
-      onChange({ mercancias: [...actuales, ...nuevas] });
-      toast.success(`${nuevas.length} mercancías cargadas desde el documento`);
-    } else {
-      toast.info('No se encontraron mercancías en el documento');
-    }
-    setShowDocumentUpload(false);
-    setTipoCreacion('manual');
-  };
-
-  const isFormValid = () => {
-    // Validate RFC emisor
-    const validacionEmisor = data.rfcEmisor ? RFCValidator.validarRFC(data.rfcEmisor) : { esValido: false };
-    // Validate RFC receptor
-    const validacionReceptor = data.rfcReceptor ? RFCValidator.validarRFC(data.rfcReceptor) : { esValido: false };
-
-    return (
-      data.rfcEmisor &&
-      data.nombreEmisor &&
-      data.rfcReceptor &&
-      data.nombreReceptor &&
-      data.tipoCfdi &&
-      validacionEmisor.esValido &&
-      validacionReceptor.esValido
-    );
   };
 
   return (
-    <div className="space-y-6">
-      {/* Selector de Versión del Complemento */}
-      <VersionSelector
-        version={version}
-        onVersionChange={toggleVersion}
-        isChanging={isChangingVersion}
-      />
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuración Inicial</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <h3 className="font-medium">Datos del Emisor</h3>
+              <div>
+                <Label htmlFor="rfcEmisor">RFC Emisor *</Label>
+                <Input
+                  id="rfcEmisor"
+                  value={data.rfcEmisor || ''}
+                  onChange={(e) => onChange({ rfcEmisor: e.target.value })}
+                  placeholder="RFC del emisor"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="nombreEmisor">Nombre Emisor</Label>
+                <Input
+                  id="nombreEmisor"
+                  value={data.nombreEmisor || ''}
+                  onChange={(e) => onChange({ nombreEmisor: e.target.value })}
+                  placeholder="Nombre del emisor"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="font-medium">Datos del Receptor</h3>
+              <div>
+                <Label htmlFor="rfcReceptor">RFC Receptor *</Label>
+                <Input
+                  id="rfcReceptor"
+                  value={data.rfcReceptor || ''}
+                  onChange={(e) => onChange({ rfcReceptor: e.target.value })}
+                  placeholder="RFC del receptor"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="nombreReceptor">Nombre Receptor</Label>
+                <Input
+                  id="nombreReceptor"
+                  value={data.nombreReceptor || ''}
+                  onChange={(e) => onChange({ nombreReceptor: e.target.value })}
+                  placeholder="Nombre del receptor"
+                />
+              </div>
+            </div>
+          </div>
 
-      {/* Selector de Tipo de Creación */}
-      <FlujoCargaSelector
-        tipoCreacion={tipoCreacion}
-        onTipoChange={setTipoCreacion}
-        onShowPlantillas={() => setShowPlantillas(true)}
-        onShowDocumentUpload={() => setShowDocumentUpload(true)}
-      />
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="tipoCfdi">Tipo de CFDI</Label>
+              <Select value={data.tipoCfdi} onValueChange={(value) => onChange({ tipoCfdi: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Traslado">Traslado</SelectItem>
+                  <SelectItem value="Ingreso">Ingreso</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="transporteInternacional">Transporte Internacional</Label>
+              <Select value={data.transporteInternacional} onValueChange={(value) => onChange({ transporteInternacional: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="No">No</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-      {/* Configuración Principal con CRM Integrado */}
-      <ConfiguracionPrincipalMejorada
-        data={data}
-        onChange={onChange}
-        onNext={onNext}
-        isFormValid={isFormValid()}
-      />
-
-      {/* Dialogs */}
-      {showPlantillas && (
-        <PlantillasSelector
-          onSelectPlantilla={handleCargarPlantilla}
-          onClose={() => setShowPlantillas(false)}
-        />
-      )}
-
-      {showDocumentUpload && (
-        <DocumentUploadDialog
-          open={showDocumentUpload}
-          onOpenChange={setShowDocumentUpload}
-          onDocumentProcessed={handleCargarDocumento}
-        />
-      )}
-    </div>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={!data.rfcEmisor || !data.rfcReceptor}>
+              Continuar
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
