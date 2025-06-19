@@ -6,23 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, X } from 'lucide-react';
-import { AutotransporteCompleto } from '@/types/autotransporte';
+import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface VehiculoPermitsProps {
   data: {
     numero_permisos_adicionales?: string | string[];
     vigencia_permiso?: string;
   };
-  onChange?: (field: string, value: any) => void;
   onFieldChange?: <K extends keyof AutotransporteCompleto>(field: K, value: AutotransporteCompleto[K]) => void;
 }
 
-export function VehiculoPermits({ data, onChange, onFieldChange }: VehiculoPermitsProps) {
+export function VehiculoPermits({ data, onFieldChange }: VehiculoPermitsProps) {
   const handleChange = (field: string, value: any) => {
     if (onFieldChange) {
       onFieldChange(field as keyof AutotransporteCompleto, value);
-    } else if (onChange) {
-      onChange(field, value);
     }
   };
   

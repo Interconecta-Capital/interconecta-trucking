@@ -79,6 +79,18 @@ export interface FiguraTransporte {
   residencia_fiscal_arrendatario?: string;
 }
 
+// New SEMARNAT permit interface
+export interface PermisoSEMARNAT {
+  id?: string;
+  tipo_permiso: string;
+  numero_permiso: string;
+  fecha_expedicion: string;
+  fecha_vencimiento: string;
+  autoridad_expedidora?: string;
+  vigente?: boolean;
+  observaciones?: string;
+}
+
 export interface CartaPorteData {
   version: string;
   transporte_internacional?: string;
@@ -185,4 +197,18 @@ export interface MercanciaCompleta {
   peso_bruto_total?: number;
   descripcion_detallada?: string;
   especie_protegida?: boolean;
+  
+  // v3.1 specific fields
+  peso_neto_total?: number;
+  unidad_peso_bruto?: string;
+  uuid_comercio_exterior?: string;
+  requiere_cites?: boolean;
+  permisos_semarnat?: PermisoSEMARNAT[];
+  tipo_embalaje?: string;
+  numero_piezas?: number;
+  documentacion_aduanera?: Array<{
+    tipo_documento: string;
+    numero_documento: string;
+    fecha_expedicion?: string;
+  }>;
 }

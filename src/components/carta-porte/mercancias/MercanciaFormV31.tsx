@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ export function MercanciaFormV31({ mercancia, onSave, onCancel, index }: Mercanc
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [currentMercancia, setCurrentMercancia] = useState<MercanciaCompleta>(
     mercancia || {
-      id: crypto.randomUUID(), // Add the required id field
+      id: crypto.randomUUID(),
       descripcion: '',
       bienes_transp: '',
       cantidad: 1,
@@ -52,25 +53,6 @@ export function MercanciaFormV31({ mercancia, onSave, onCancel, index }: Mercanc
     setCurrentMercancia(prev => ({
       ...prev,
       [field]: value
-    }));
-  };
-
-  const handleNestedFieldChange = (parentField: keyof MercanciaCompleta, field: string, value: any) => {
-    const currentValue = currentMercancia[parentField] as any;
-    setCurrentMercancia(prev => ({
-      ...prev,
-      [parentField]: {
-        ...currentValue,
-        [field]: value
-      }
-    }));
-  };
-
-  // Handle UUID comercio exterior field
-  const handleUUIDChange = (value: string) => {
-    setCurrentMercancia(prev => ({
-      ...prev,
-      uuid_comercio_exterior: value
     }));
   };
 
@@ -213,7 +195,7 @@ export function MercanciaFormV31({ mercancia, onSave, onCancel, index }: Mercanc
               <Label>UUID Comercio Exterior</Label>
               <Input
                 value={currentMercancia.uuid_comercio_exterior || ''}
-                onChange={(e) => handleUUIDChange(e.target.value)}
+                onChange={(e) => handleFieldChange('uuid_comercio_exterior', e.target.value)}
                 placeholder="UUID del complemento"
               />
             </div>

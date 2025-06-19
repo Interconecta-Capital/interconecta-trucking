@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Truck, Save, Star, Ruler, FileText } from 'lucide-react';
 import { AIAssistantButton } from '../mercancias/AIAssistantButton';
 import { CatalogosSATExtendido } from '@/services/catalogosSATExtendido';
-import { AutotransporteCompleto, Remolque } from '@/types/autotransporte';
+import { AutotransporteCompleto, Remolque } from '@/types/cartaPorte';
 import { VehiculosGuardados } from './VehiculosGuardados';
 import { RemolquesList } from './RemolquesList';
 import { VehiculoBasicInfo } from './VehiculoBasicInfo';

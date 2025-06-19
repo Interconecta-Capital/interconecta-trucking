@@ -64,7 +64,6 @@ export function MercanciasSection({
     });
   };
 
-  // ✅ FIX: Crear función con la signatura correcta esperada por MercanciaFormV31
   const handleSaveMercanciaWrapper = async (mercanciaData: MercanciaCompleta): Promise<boolean> => {
     try {
       const errors = validateMercanciaV31(mercanciaData);
@@ -76,7 +75,6 @@ export function MercanciasSection({
       setFormErrors([]);
       
       if (editingIndex !== null) {
-        // Editar existente
         const newData = [...data];
         newData[editingIndex] = mercanciaData;
         onChange(newData);
@@ -86,7 +84,6 @@ export function MercanciasSection({
           description: `Se actualizó la mercancía #${editingIndex + 1}`,
         });
       } else {
-        // Agregar nueva
         onChange([...data, mercanciaData]);
         
         toast({
@@ -154,9 +151,9 @@ export function MercanciasSection({
       }
 
       // Validación CITES si se requiere
-      if (mercancia.requiere_cites && !mercancia.documentacion_aduanera?.some(doc => 
+      if (mercancia.requiere_cites && (!mercancia.documentacion_aduanera || !mercancia.documentacion_aduanera.some(doc => 
         doc.tipo_documento === 'cites'
-      )) {
+      ))) {
         errors.push('Especies que requieren CITES deben tener documentación aduanera correspondiente');
       }
     }
@@ -297,9 +294,9 @@ export function MercanciasSection({
                   {showValidation && (
                     <ValidacionSATv31Component
                       cartaPorteData={{
+                        version: '3.1',
                         cartaPorteVersion: '3.1',
                         mercancias: data,
-                        // Simular otros datos necesarios para validación
                         ubicaciones: [],
                         autotransporte: {} as any,
                         figuras: []
