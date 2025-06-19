@@ -249,7 +249,7 @@ export class XMLValidatorSAT {
 
     // Validaciones específicas de versión 3.1
     if (data.cartaPorteVersion === '3.1') {
-      if (data.transporteInternacional === 'Sí' || data.transporteInternacional === true) {
+      if (data.transporteInternacional === 'Sí') {
         if (!data.pais_origen_destino) {
           warnings.push('Para transporte internacional se recomienda especificar país de origen/destino');
           details.push({
@@ -349,5 +349,22 @@ export class XMLValidatorSAT {
   private static validarCodigoPostal(cp: string): boolean {
     const cpRegex = /^[0-9]{5}$/;
     return cpRegex.test(cp);
+  }
+
+  private static validateTransporteInternacional(data: CartaPorteData): ValidationError[] {
+    const errors: ValidationError[] = [];
+    
+    if (data.transporteInternacional === 'Sí') {
+      if (!data.entradaSalidaMerc) {
+        errors.push({
+          field: 'entradaSalidaMerc',
+          code: 'CCP_TRANSPORT_INT_001',
+          message: 'EntradaSalidaMerc es requerido para transporte internacional',
+          severity: 'error'
+        });
+      }
+    }
+    
+    return errors;
   }
 }

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { CartaPorteFormData } from './useCartaPorteMappers';
@@ -35,7 +36,7 @@ const initialFormData: CartaPorteFormData = {
   nombreEmisor: '',
   rfcReceptor: '',
   nombreReceptor: '',
-  transporteInternacional: false,
+  transporteInternacional: 'No', // Keep as string
   registroIstmo: false,
   cartaPorteVersion: '3.1',
 };
@@ -116,7 +117,7 @@ export const useCartaPorteFormState = ({
       nombreEmisor: formData.nombreEmisor,
       rfcReceptor: formData.rfcReceptor,
       nombreReceptor: formData.nombreReceptor,
-      transporteInternacional: formData.transporteInternacional,
+      transporteInternacional: formData.transporteInternacional, // Already string
       registroIstmo: formData.registroIstmo,
       cartaPorteVersion: formData.cartaPorteVersion,
       ubicaciones: formData.ubicaciones || [],

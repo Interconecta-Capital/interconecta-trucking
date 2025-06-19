@@ -1,9 +1,9 @@
 
 export interface CartaPorteData {
-  tipoCfdi?: string;
-  transporteInternacional?: string;
+  tipoCfdi?: 'Ingreso' | 'Traslado';
+  transporteInternacional?: string; // Changed from string | boolean to string
   version?: string;
-  cartaPorteVersion?: string;
+  cartaPorteVersion?: '3.0' | '3.1';
   rfcEmisor?: string;
   nombreEmisor?: string;
   rfcReceptor?: string;
@@ -25,6 +25,16 @@ export interface CartaPorteData {
   pais_origen_destino?: string;
   via_entrada_salida?: string;
   registroIstmo?: boolean;
+  // Missing properties that are being used
+  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
+  cartaPorteId?: string;
+  regimenAduanero?: string;
+  regimenesAduaneros?: string[];
+  version31Fields?: {
+    transporteEspecializado?: boolean;
+    tipoCarroceria?: string;
+    registroISTMO?: boolean;
+  };
 }
 
 export interface UbicacionCompleta {
@@ -43,6 +53,14 @@ export interface UbicacionCompleta {
     pais: string;
   };
   fecha_hora_salida_llegada: string;
+  // Add missing properties that are being used
+  coordenadas?: {
+    latitud: number;
+    longitud: number;
+  };
+  rfc_remitente_destinatario?: string;
+  nombre_remitente_destinatario?: string;
+  distancia_recorrida?: number;
 }
 
 export interface MercanciaCompleta {
@@ -62,13 +80,19 @@ export interface MercanciaCompleta {
   fraccion_arancelaria?: string;
   uuid_comercio_ext?: string;
   tipo_embalaje?: string;
+  material_embalaje?: string;
   regimen_aduanero?: string;
   descripcion_detallada?: string;
   requiere_cites?: boolean;
   embalaje?: string;
   cve_material_peligroso?: string;
   especie_protegida?: boolean;
-  dimensiones?: any;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+    unidad: string;
+  };
   documentacion_aduanera?: any[];
 }
 
@@ -81,7 +105,7 @@ export interface AutotransporteCompleto {
   asegura_resp_civil: string;
   poliza_resp_civil: string;
   remolques?: RemolqueCompleto[];
-  // Nuevas propiedades para autotransporte extendido
+  // Add missing properties that are being used in various components
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
   numero_serie_vin?: string;

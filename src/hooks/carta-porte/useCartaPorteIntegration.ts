@@ -97,7 +97,7 @@ export const useCartaPorteIntegration = ({
       nombreEmisor: '',
       rfcReceptor: '',
       nombreReceptor: '',
-      transporteInternacional: false,
+      transporteInternacional: 'No',
       registroIstmo: false,
       cartaPorteVersion: '3.1',
       cartaPorteId: undefined,

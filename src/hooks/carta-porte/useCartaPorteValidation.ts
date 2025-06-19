@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 
@@ -10,196 +11,215 @@ export interface ValidationSummary {
     figuras: 'empty' | 'incomplete' | 'complete';
     xml: 'empty' | 'incomplete' | 'complete';
   };
-  overallProgress: number;
   completionPercentage: number;
-  missingFields: {
-    configuracion: string[];
-    ubicaciones: string[];
-    mercancias: string[];
-    autotransporte: string[];
-    figuras: string[];
-  };
-  completedSections: number;
-  totalSections: number;
+  totalErrors: number;
+  isFormComplete: boolean;
 }
 
 export const useCartaPorteValidation = () => {
-  const getValidationSummary = useMemo(() => {
-    return (formData: CartaPorteData): ValidationSummary => {
-      console.log('🔍 Validando datos del formulario:', {
-        hasEmisor: !!formData.rfcEmisor,
-        hasReceptor: !!formData.rfcReceptor,
-        ubicacionesCount: formData.ubicaciones?.length || 0,
-        mercanciasCount: formData.mercancias?.length || 0,
-        hasAutotransporte: !!formData.autotransporte?.placa_vm,
-        figurasCount: formData.figuras?.length || 0
-      });
-
-      const missingFields = {
-        configuracion: [] as string[],
-        ubicaciones: [] as string[],
-        mercancias: [] as string[],
-        autotransporte: [] as string[],
-        figuras: [] as string[]
-      };
-
-      // Validar Configuración
-      let configuracionStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
-      if (!formData.rfcEmisor) missingFields.configuracion.push('RFC del Emisor');
-      if (!formData.nombreEmisor) missingFields.configuracion.push('Nombre del Emisor');
-      if (!formData.rfcReceptor) missingFields.configuracion.push('RFC del Receptor');
-      if (!formData.nombreReceptor) missingFields.configuracion.push('Nombre del Receptor');
-      
-      if (formData.rfcEmisor || formData.rfcReceptor) {
-        configuracionStatus = missingFields.configuracion.length === 0 ? 'complete' : 'incomplete';
-      }
-
-      // Validar Ubicaciones
-      let ubicacionesStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
-      const ubicaciones = formData.ubicaciones || [];
-      
-      if (ubicaciones.length === 0) {
-        missingFields.ubicaciones.push('Agregar al menos una ubicación de origen');
-        missingFields.ubicaciones.push('Agregar al menos una ubicación de destino');
-      } else {
-        const hasOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
-        const hasDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
-        
-        if (!hasOrigen) missingFields.ubicaciones.push('Ubicación de Origen');
-        if (!hasDestino) missingFields.ubicaciones.push('Ubicación de Destino');
-        
-        // Validar domicilios completos
-        ubicaciones.forEach((ub, index) => {
-          if (!ub.domicilio?.codigo_postal) {
-            missingFields.ubicaciones.push(`Código postal en ubicación ${index + 1}`);
-          }
-          if (!ub.domicilio?.calle) {
-            missingFields.ubicaciones.push(`Calle en ubicación ${index + 1}`);
-          }
-          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso') {
-            missingFields.ubicaciones.push(`RFC en ubicación ${index + 1}`);
-          }
-        });
-        
-        ubicacionesStatus = missingFields.ubicaciones.length === 0 ? 'complete' : 'incomplete';
-      }
-
-      // Validar Mercancías
-      let mercanciasStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
-      const mercancias = formData.mercancias || [];
-      
-      if (mercancias.length === 0) {
-        missingFields.mercancias.push('Agregar al menos una mercancía');
-      } else {
-        mercancias.forEach((merc, index) => {
-          if (!merc.bienes_transp) {
-            missingFields.mercancias.push(`Clave de producto en mercancía ${index + 1}`);
-          }
-          if (!merc.cantidad || merc.cantidad <= 0) {
-            missingFields.mercancias.push(`Cantidad en mercancía ${index + 1}`);
-          }
-          if (!merc.peso_kg || merc.peso_kg <= 0) {
-            missingFields.mercancias.push(`Peso en mercancía ${index + 1}`);
-          }
-        });
-        
-        mercanciasStatus = missingFields.mercancias.length === 0 ? 'complete' : 'incomplete';
-      }
-
-      // Validar Autotransporte
-      let autotransporteStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
-      const auto = formData.autotransporte;
-      
-      if (!auto?.placa_vm) {
-        missingFields.autotransporte.push('Placa del vehículo');
-      }
-      if (!auto?.config_vehicular) {
-        missingFields.autotransporte.push('Configuración vehicular');
-      }
-      if (!auto?.perm_sct) {
-        missingFields.autotransporte.push('Permiso SCT');
-      }
-      if (!auto?.num_permiso_sct) {
-        missingFields.autotransporte.push('Número de permiso SCT');
-      }
-      if (!auto?.asegura_resp_civil) {
-        missingFields.autotransporte.push('Aseguradora');
-      }
-      if (!auto?.poliza_resp_civil) {
-        missingFields.autotransporte.push('Póliza de seguro');
-      }
-      
-      if (auto?.placa_vm) {
-        autotransporteStatus = missingFields.autotransporte.length === 0 ? 'complete' : 'incomplete';
-      }
-
-      // Validar Figuras
-      let figurasStatus: 'empty' | 'incomplete' | 'complete' = 'empty';
-      const figuras = formData.figuras || [];
-      
-      if (figuras.length === 0) {
-        missingFields.figuras.push('Agregar al menos una figura de transporte');
-      } else {
-        figuras.forEach((figura, index) => {
-          if (!figura.rfc_figura) {
-            missingFields.figuras.push(`RFC en figura ${index + 1}`);
-          }
-          if (!figura.nombre_figura) {
-            missingFields.figuras.push(`Nombre en figura ${index + 1}`);
-          }
-          if (!figura.tipo_figura) {
-            missingFields.figuras.push(`Tipo de figura ${index + 1}`);
-          }
-        });
-        
-        figurasStatus = missingFields.figuras.length === 0 ? 'complete' : 'incomplete';
-      }
-
-      const sectionStatus = {
-        configuracion: configuracionStatus,
-        ubicaciones: ubicacionesStatus,
-        mercancias: mercanciasStatus,
-        autotransporte: autotransporteStatus,
-        figuras: figurasStatus,
-        xml: 'empty' as const
-      };
-
-      const completedSections = Object.values(sectionStatus).filter(status => status === 'complete').length;
-      const totalSections = Object.keys(sectionStatus).length - 1; // Excluir XML del conteo
-      const overallProgress = Math.round((completedSections / totalSections) * 100);
-      const completionPercentage = overallProgress;
-
-      console.log('📊 Resultado de validación:', {
-        completedSections,
-        totalSections,
-        overallProgress,
-        completionPercentage,
-        sectionStatus,
-        totalMissingFields: Object.values(missingFields).flat().length
-      });
-
-      return {
-        sectionStatus,
-        overallProgress,
-        completionPercentage,
-        missingFields,
-        completedSections,
-        totalSections
-      };
+  const validateBasic = (data: Partial<CartaPorteData>) => {
+    const errors: string[] = [];
+    
+    if (!data.rfcEmisor) errors.push('RFC Emisor es requerido');
+    if (!data.rfcReceptor) errors.push('RFC Receptor es requerido');
+    
+    return {
+      isValid: errors.length === 0,
+      errors
     };
-  }, []);
+  };
 
-  // Add missing validateComplete method
-  const validateComplete = useMemo(() => {
-    return (formData: CartaPorteData) => {
-      const summary = getValidationSummary(formData);
-      return {
-        isValid: summary.overallProgress === 100,
-        completionPercentage: summary.completionPercentage,
-        summary
-      };
+  const validateUbicaciones = (ubicaciones: any[] = []) => {
+    const errors: string[] = [];
+    
+    if (ubicaciones.length === 0) {
+      errors.push('Se requiere al menos una ubicación');
+      return { isValid: false, errors };
+    }
+
+    const tiposUbicacion = ubicaciones.map(u => u.tipo_ubicacion);
+    const hasOrigen = tiposUbicacion.includes('Origen');
+    const hasDestino = tiposUbicacion.includes('Destino');
+
+    if (!hasOrigen) errors.push('Se requiere al menos una ubicación de Origen');
+    if (!hasDestino) errors.push('Se requiere al menos una ubicación de Destino');
+
+    ubicaciones.forEach((ubicacion, index) => {
+      if (!ubicacion.rfc) {
+        errors.push(`RFC es requerido en ubicación ${index + 1}`);
+      }
+      if (!ubicacion.nombre) {
+        errors.push(`Nombre es requerido en ubicación ${index + 1}`);
+      }
+      if (!ubicacion.domicilio?.codigo_postal) {
+        errors.push(`Código postal es requerido en ubicación ${index + 1}`);
+      }
+      if (!ubicacion.fecha_hora_salida_llegada) {
+        errors.push(`Fecha y hora es requerida en ubicación ${index + 1}`);
+      }
+      
+      if (ubicacion.rfc_remitente_destinatario && ubicacion.tipo_ubicacion !== 'Origen' && ubicacion.tipo_ubicacion !== 'Destino') {
+        errors.push(`RFC remitente/destinatario solo es válido para ubicaciones de Origen o Destino`);
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors
     };
-  }, [getValidationSummary]);
+  };
 
-  return { getValidationSummary, validateComplete };
+  const validateMercancias = (mercancias: any[] = []) => {
+    const errors: string[] = [];
+    
+    if (mercancias.length === 0) {
+      errors.push('Se requiere al menos una mercancía');
+      return { isValid: false, errors };
+    }
+
+    mercancias.forEach((mercancia, index) => {
+      if (!mercancia.bienes_transp) {
+        errors.push(`Descripción de bienes es requerida en mercancía ${index + 1}`);
+      }
+      if (!mercancia.cantidad || mercancia.cantidad <= 0) {
+        errors.push(`Cantidad debe ser mayor a 0 en mercancía ${index + 1}`);
+      }
+      if (!mercancia.peso_kg || mercancia.peso_kg <= 0) {
+        errors.push(`Peso debe ser mayor a 0 en mercancía ${index + 1}`);
+      }
+      if (!mercancia.clave_unidad) {
+        errors.push(`Clave de unidad es requerida en mercancía ${index + 1}`);
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
+  const validateAutotransporte = (autotransporte: any) => {
+    const errors: string[] = [];
+    
+    if (!autotransporte) {
+      errors.push('Información de autotransporte es requerida');
+      return { isValid: false, errors };
+    }
+
+    if (!autotransporte.placa_vm) {
+      errors.push('Placa del vehículo es requerida');
+    }
+    if (!autotransporte.config_vehicular) {
+      errors.push('Configuración vehicular es requerida');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
+  const validateFiguras = (figuras: any[] = []) => {
+    const errors: string[] = [];
+    
+    if (figuras.length === 0) {
+      errors.push('Se requiere al menos una figura de transporte');
+      return { isValid: false, errors };
+    }
+
+    figuras.forEach((figura, index) => {
+      if (!figura.tipo_figura) {
+        errors.push(`Tipo de figura es requerido en figura ${index + 1}`);
+      }
+      if (!figura.rfc_figura) {
+        errors.push(`RFC es requerido en figura ${index + 1}`);
+      }
+      if (!figura.nombre_figura) {
+        errors.push(`Nombre es requerido en figura ${index + 1}`);
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
+  const getValidationSummary = (data: Partial<CartaPorteData>, xmlGenerado?: string): ValidationSummary => {
+    const basicValidation = validateBasic(data);
+    const ubicacionesValidation = validateUbicaciones(data.ubicaciones);
+    const mercanciasValidation = validateMercancias(data.mercancias);
+    const autotransporteValidation = validateAutotransporte(data.autotransporte);
+    const figurasValidation = validateFiguras(data.figuras);
+
+    const getSectionStatus = (isValid: boolean, hasData: boolean): 'empty' | 'incomplete' | 'complete' => {
+      if (!hasData) return 'empty';
+      return isValid ? 'complete' : 'incomplete';
+    };
+
+    const sectionStatus = {
+      configuracion: getSectionStatus(basicValidation.isValid, !!(data.rfcEmisor || data.rfcReceptor)),
+      ubicaciones: getSectionStatus(ubicacionesValidation.isValid, (data.ubicaciones?.length || 0) > 0),
+      mercancias: getSectionStatus(mercanciasValidation.isValid, (data.mercancias?.length || 0) > 0),
+      autotransporte: getSectionStatus(autotransporteValidation.isValid, !!data.autotransporte),
+      figuras: getSectionStatus(figurasValidation.isValid, (data.figuras?.length || 0) > 0),
+      xml: xmlGenerado ? 'complete' : 'empty' as 'empty' | 'incomplete' | 'complete'
+    };
+
+    const completedSections = Object.values(sectionStatus).filter(status => status === 'complete').length;
+    const completionPercentage = Math.round((completedSections / 6) * 100);
+
+    const totalErrors = [
+      ...basicValidation.errors,
+      ...ubicacionesValidation.errors,
+      ...mercanciasValidation.errors,
+      ...autotransporteValidation.errors,
+      ...figurasValidation.errors
+    ].length;
+
+    return {
+      sectionStatus,
+      completionPercentage,
+      totalErrors,
+      isFormComplete: completedSections === 6
+    };
+  };
+
+  const validateComplete = (data: Partial<CartaPorteData>) => {
+    const basicValidation = validateBasic(data);
+    const ubicacionesValidation = validateUbicaciones(data.ubicaciones);
+    const mercanciasValidation = validateMercancias(data.mercancias);
+    const autotransporteValidation = validateAutotransporte(data.autotransporte);
+    const figurasValidation = validateFiguras(data.figuras);
+
+    const allErrors = [
+      ...basicValidation.errors,
+      ...ubicacionesValidation.errors,
+      ...mercanciasValidation.errors,
+      ...autotransporteValidation.errors,
+      ...figurasValidation.errors
+    ];
+
+    return {
+      isValid: allErrors.length === 0,
+      errors: allErrors,
+      sectionValidations: {
+        basic: basicValidation.isValid,
+        ubicaciones: ubicacionesValidation.isValid,
+        mercancias: mercanciasValidation.isValid,
+        autotransporte: autotransporteValidation.isValid,
+        figuras: figurasValidation.isValid
+      }
+    };
+  };
+
+  return {
+    validateBasic,
+    validateUbicaciones,
+    validateMercancias,
+    validateAutotransporte,
+    validateFiguras,
+    validateComplete,
+    getValidationSummary
+  };
 };
