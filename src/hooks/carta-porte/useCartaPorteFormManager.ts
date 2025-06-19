@@ -9,7 +9,7 @@ import { useCartaPorteAutoSave } from './useCartaPorteAutoSave';
 import { useBorradorRecovery } from './useBorradorRecovery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
-import { UUIDService } from '@/services/uuidService';
+import { UUIDService } from '@/services/uuid/UUIDService';
 
 // Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
