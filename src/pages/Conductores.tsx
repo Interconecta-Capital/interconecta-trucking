@@ -1,95 +1,91 @@
 
-import { useState } from 'react';
-import { Plus, User, Filter, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Plus, Users } from 'lucide-react';
 import { ConductoresTable } from '@/components/conductores/ConductoresTable';
-import { ConductoresFilters } from '@/components/conductores/ConductoresFilters';
 import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
+import { ConductoresFilters } from '@/components/conductores/ConductoresFilters';
 import { useConductores } from '@/hooks/useConductores';
-import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActions } from '@/components/ProtectedActions';
-import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
-import { PlanNotifications } from '@/components/common/PlanNotifications';
 
 export default function Conductores() {
-  const { conductores, loading } = useConductores();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showFormDialog, setShowFormDialog] = useState(false);
+  const [filters, setFilters] = useState({
+    estado: '',
+    searchTerm: ''
+  });
 
-  const handleNewConductor = () => {
-    setShowCreateDialog(true);
+  const { conductores, loading, fetchConductores } = useConductores();
+
+  const filteredConductores = conductores.filter(conductor => {
+    const matchesEstado = !filters.estado || conductor.estado === filters.estado;
+    const matchesSearch = !filters.searchTerm || 
+      conductor.nombre.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+      (conductor.rfc && conductor.rfc.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+    
+    return matchesEstado && matchesSearch;
+  });
+
+  const handleSuccess = () => {
+    fetchConductores();
+    setShowFormDialog(false);
   };
 
-  const filteredConductores = conductores.filter(conductor =>
-    conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conductor.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conductor.num_licencia?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <ProtectedContent requiredFeature="conductores">
-      <div className="container mx-auto py-6 space-y-6">
-        {/* Notificaciones de plan */}
-        <PlanNotifications />
-
+    <div className="container mx-auto px-4 py-8">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <User className="h-6 w-6 text-blue-600" />
-            <h1 className="text-3xl font-bold">Conductores</h1>
-          </div>
-          <ProtectedActions
-            action="create"
-            resource="conductores"
-            onAction={handleNewConductor}
-            buttonText="Nuevo Conductor"
-          />
-        </div>
-
-        {/* Indicador de límites */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LimitUsageIndicator resourceType="conductores" className="md:col-span-2" />
-        </div>
-
-        {/* Filtros y búsqueda */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar por nombre, RFC o licencia..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+            <Users className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Conductores</h1>
+              <p className="text-gray-600">Gestión de conductores del sistema</p>
+            </div>
           </div>
           <Button 
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => setShowFormDialog(true)}
+            className="flex items-center gap-2"
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtros
+            <Plus className="h-4 w-4" />
+            Nuevo Conductor
           </Button>
         </div>
 
-        {/* Filtros adicionales */}
-        {showFilters && (
-          <ConductoresFilters />
-        )}
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConductoresFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </CardContent>
+        </Card>
 
-        {/* Tabla */}
-        <ConductoresTable 
-          conductores={filteredConductores}
-          loading={loading}
-        />
+        {/* Conductores Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Lista de Conductores ({filteredConductores.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConductoresTable
+              conductores={filteredConductores}
+            />
+          </CardContent>
+        </Card>
 
-        {/* Dialog de creación */}
+        {/* Form Dialog */}
         <ConductorFormDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
+          open={showFormDialog}
+          onOpenChange={setShowFormDialog}
+          onSuccess={handleSuccess}
         />
       </div>
-    </ProtectedContent>
+    </div>
   );
 }

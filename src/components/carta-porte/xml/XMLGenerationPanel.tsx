@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -150,21 +151,26 @@ export function XMLGenerationPanel({
       return;
     }
     
-    const resultado = await timbrarCartaPorte(cartaPorteData);
-    if (resultado && resultado.success && onTimbrado) {
-      onTimbrado(resultado);
-      
-      // Agregar evento de tracking solo si el resultado incluye uuid
-      if ('uuid' in resultado) {
-        await agregarEvento({
-          evento: 'timbrado',
-          descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
-          metadata: {
-            uuid: resultado.uuid,
-            ambiente: 'test'
-          }
-        });
+    try {
+      const resultado = await timbrarCartaPorte(cartaPorteData);
+      if (resultado && resultado.success && onTimbrado) {
+        onTimbrado(resultado);
+        
+        // Agregar evento de tracking solo si el resultado incluye uuid
+        if ('uuid' in resultado) {
+          await agregarEvento({
+            evento: 'timbrado',
+            descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
+            metadata: {
+              uuid: resultado.uuid,
+              ambiente: 'test'
+            }
+          });
+        }
       }
+    } catch (error) {
+      console.error('Error al timbrar:', error);
+      toast.error('Error al timbrar la Carta Porte');
     }
   };
 

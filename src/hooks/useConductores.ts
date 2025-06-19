@@ -95,8 +95,8 @@ export function useConductores() {
     
     setLoading(true);
     try {
-      // Ensure each conductor has required fields and proper structure
-      const conductoresWithDefaults = conductoresData.map(conductor => ({
+      // Transform to match Supabase schema exactly
+      const conductoresForSupabase = conductoresData.map(conductor => ({
         nombre: conductor.nombre || 'Sin nombre',
         user_id: user.id,
         activo: conductor.activo ?? true,
@@ -116,7 +116,7 @@ export function useConductores() {
 
       const { data, error } = await supabase
         .from('conductores')
-        .insert(conductoresWithDefaults)
+        .insert(conductoresForSupabase)
         .select();
 
       if (error) throw error;
