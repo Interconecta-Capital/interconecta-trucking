@@ -87,20 +87,35 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     
     return {
       sectionStatus: {
-        configuracion: baseValidation.sectionStatus?.configuracion || 'empty',
-        ubicaciones: baseValidation.sectionStatus?.ubicaciones || 'empty',
-        mercancias: baseValidation.sectionStatus?.mercancias || 'empty',
-        autotransporte: baseValidation.sectionStatus?.autotransporte || 'empty',
-        figuras: baseValidation.sectionStatus?.figuras || 'empty',
+        configuracion: (baseValidation.sectionStatus as any)?.configuracion || 'empty',
+        ubicaciones: (baseValidation.sectionStatus as any)?.ubicaciones || 'empty',
+        mercancias: (baseValidation.sectionStatus as any)?.mercancias || 'empty',
+        autotransporte: (baseValidation.sectionStatus as any)?.autotransporte || 'empty',
+        figuras: (baseValidation.sectionStatus as any)?.figuras || 'empty',
         xml: 'empty' as const
       },
       overallProgress: 0,
       completionPercentage: 0,
-      missingFields: [],
+      missingFields: {
+        configuracion: [],
+        ubicaciones: [],
+        mercancias: [],
+        autotransporte: [],
+        figuras: []
+      },
       completedSections: 0,
       totalSections: 5
     };
   }, [validationSummary]);
+
+  // Fix async function signature
+  const handleGuardarBorradorAsync = useCallback(async () => {
+    await handleGuardarBorrador();
+  }, [handleGuardarBorrador]);
+
+  const handleGuardarYSalirAsync = useCallback(async () => {
+    await handleGuardarYSalir();
+  }, [handleGuardarYSalir]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -117,9 +132,9 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         <CartaPorteHeader
           borradorCargado={borradorCargado}
           ultimoGuardado={ultimoGuardado}
-          onGuardarBorrador={async () => await handleGuardarBorrador()}
+          onGuardarBorrador={handleGuardarBorradorAsync}
           onLimpiarBorrador={handleLimpiarBorrador}
-          onGuardarYSalir={async () => await handleGuardarYSalir()}
+          onGuardarYSalir={handleGuardarYSalirAsync}
           isGuardando={isGuardando}
         />
       </div>

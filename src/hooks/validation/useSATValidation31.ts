@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -48,7 +47,7 @@ export const useSATValidation31 = () => {
       },
       
       regimenAduanero: data.regimenesAduaneros?.[0]?.clave_regimen || '',
-      regimenesAduaneros: data.regimenesAduaneros || []
+      regimenesAduaneros: data.regimenesAduaneros?.map(r => r.clave_regimen) || []
     };
   };
 
