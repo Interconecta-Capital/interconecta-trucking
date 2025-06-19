@@ -197,7 +197,7 @@ export class CartaPorteFiscalPDF {
 
     cartaPorteData.ubicaciones.forEach(ubicacion => {
       const domicilio = ubicacion.domicilio ? 
-        `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.localidad || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''}, CP ${ubicacion.domicilio.codigo_postal || ''}`.trim() : 
+        `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''}, CP ${ubicacion.domicilio.codigo_postal || ''}`.trim() : 
         'N/A';
       
       const nombreRFC = `${ubicacion.nombre_remitente_destinatario || 'N/A'}\nRFC: ${ubicacion.rfc_remitente_destinatario || 'N/A'}`;

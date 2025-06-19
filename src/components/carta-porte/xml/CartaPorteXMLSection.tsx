@@ -123,23 +123,19 @@ export function CartaPorteXMLSection({ cartaPorteData, cartaPorteId }: CartaPort
           <TabsContent value="xml" className="mt-6">
             <XMLGenerationPanel
               cartaPorteData={cartaPorteData}
+              cartaPorteId={cartaPorteId}
               xmlGenerado={xmlGenerado}
-              onGenerarXML={() => generarXML(cartaPorteData)}
-              onDescargarXML={descargarXML}
-              onLimpiarXML={limpiarDatos}
             />
           </TabsContent>
 
           <TabsContent value="timbrado" className="mt-6">
             <TimbradoPanel
-              cartaPorteId={cartaPorteId}
-              xmlGenerado={xmlGenerado}
-              isTimbring={isTimbring}
-              xmlTimbrado={xmlTimbrado}
-              datosTimbre={datosTimbre}
-              onTimbrar={() => timbrarCartaPorte(cartaPorteData, cartaPorteId || '')}
-              onDescargarXMLTimbrado={() => descargarXML('timbrado')}
-              onValidarConexion={validarConexionPAC}
+              xmlContent={xmlGenerado || ''}
+              cartaPorteId={cartaPorteId || ''}
+              rfcEmisor={cartaPorteData.rfcEmisor || ''}
+              onTimbradoComplete={(response) => {
+                console.log('Timbrado completado:', response);
+              }}
             />
           </TabsContent>
 
