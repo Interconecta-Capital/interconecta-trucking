@@ -343,6 +343,7 @@ export class XMLValidatorSAT {
   static validateTransporteInternacional(cartaPorteData: CartaPorteData): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const details: ValidationError[] = [];
 
     if (cartaPorteData.transporteInternacional === 'Sí' || cartaPorteData.transporteInternacional === true) {
       // Fix property name to match CartaPorteData interface
@@ -358,7 +359,8 @@ export class XMLValidatorSAT {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
+      details
     };
   }
 

@@ -1,3 +1,4 @@
+
 import { XMLParser } from 'fast-xml-parser';
 import { CartaPorteData } from '@/types/cartaPorte';
 
@@ -228,3 +229,50 @@ export const validateCartaPorteXMLStructure = (xmlObject: any): boolean => {
     return false;
   }
 };
+
+// Add XMLUtils class with utility methods
+export class XMLUtils {
+  static generarFolio(): string {
+    return `CP${Date.now()}`;
+  }
+
+  static generarIdCCP(): string {
+    return `CCP${Date.now()}`;
+  }
+
+  static obtenerCodigoPostalExpedicion(data: CartaPorteData): string {
+    const origen = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Origen');
+    return origen?.domicilio?.codigo_postal || '01000';
+  }
+
+  static calcularDistanciaTotal(ubicaciones: any[]): number {
+    return ubicaciones.reduce((total, ubicacion) => {
+      return total + (ubicacion.distancia_recorrida || 0);
+    }, 0);
+  }
+
+  static construirRegimenesAduaneros(data: CartaPorteData): string {
+    if (!data.regimenesAduaneros || data.regimenesAduaneros.length === 0) {
+      return '';
+    }
+    
+    const regimenes = data.regimenesAduaneros.map(regimen => 
+      `<cartaporte31:RegimenAduanero RegimenAduanero="${regimen}" />`
+    ).join('\n    ');
+    
+    return `<cartaporte31:RegimenesAduaneros>
+    ${regimenes}
+  </cartaporte31:RegimenesAduaneros>`;
+  }
+
+  static construirAtributosInternacionales(data: CartaPorteData): string {
+    let attrs = '';
+    if (data.paisOrigenDestino) {
+      attrs += `PaisOrigenDestino="${data.paisOrigenDestino}" `;
+    }
+    if (data.viaEntradaSalida) {
+      attrs += `ViaEntradaSalida="${data.viaEntradaSalida}" `;
+    }
+    return attrs;
+  }
+}
