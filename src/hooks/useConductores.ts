@@ -51,7 +51,9 @@ export function useConductores() {
         email: conductorData.email || null,
         direccion: conductorData.direccion || null,
         residencia_fiscal: conductorData.residencia_fiscal || 'MEX',
-        num_reg_id_trib: conductorData.num_reg_id_trib || null
+        num_reg_id_trib: conductorData.num_reg_id_trib || null,
+        contacto_emergencia: conductorData.contacto_emergencia || null,
+        telefono_emergencia: conductorData.telefono_emergencia || null
       };
 
       const { data, error } = await supabase

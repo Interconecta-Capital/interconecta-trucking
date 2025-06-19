@@ -1,205 +1,227 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useConductores } from '@/hooks/useConductores';
-import { Plus } from 'lucide-react';
+import { ConductorBasicFields } from './forms/ConductorBasicFields';
+import { ConductorLicenciaFields } from './forms/ConductorLicenciaFields';
+import { ConductorSCTFields } from './forms/ConductorSCTFields';
+import { ConductorContactFields } from './forms/ConductorContactFields';
+import { FormStepper } from './forms/FormStepper';
+import { toast } from 'sonner';
+import { User, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 
 interface ConductorFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-  trigger?: React.ReactNode;
+  conductor?: any;
+  onSuccess?: () => void;
 }
+
+const steps = [
+  { id: 'basica', title: 'Información Básica', description: 'Datos personales del conductor' },
+  { id: 'licencia', title: 'Licencia', description: 'Información de conducir y médica' },
+  { id: 'contacto', title: 'Contacto', description: 'Información de contacto y dirección' },
+  { id: 'sct', title: 'SCT', description: 'Información del sistema de transporte' }
+];
 
 export function ConductorFormDialog({ 
   open, 
   onOpenChange, 
-  onSuccess, 
-  trigger 
+  conductor, 
+  onSuccess 
 }: ConductorFormDialogProps) {
-  const { createConductor } = useConductores();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState(conductor || {
     nombre: '',
     rfc: '',
     curp: '',
     num_licencia: '',
     tipo_licencia: '',
     vigencia_licencia: '',
-    operador_sct: false,
-    residencia_fiscal: 'MEX',
     telefono: '',
     email: '',
+    direccion: {},
+    operador_sct: false,
+    residencia_fiscal: 'MEX',
+    activo: true,
     estado: 'disponible'
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const { createConductor, updateConductor, loading } = useConductores();
 
-    try {
-      await createConductor(formData);
-      onSuccess();
-      onOpenChange(false);
-      setFormData({
-        nombre: '',
-        rfc: '',
-        curp: '',
-        num_licencia: '',
-        tipo_licencia: '',
-        vigencia_licencia: '',
-        operador_sct: false,
-        residencia_fiscal: 'MEX',
-        telefono: '',
-        email: '',
-        estado: 'disponible'
-      });
-    } catch (error) {
-      console.error('Error creating conductor:', error);
-    } finally {
-      setIsSubmitting(false);
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 0) {
+      if (!formData.nombre?.trim()) {
+        newErrors.nombre = 'El nombre es requerido';
+      }
+      if (formData.rfc && formData.rfc.length < 12) {
+        newErrors.rfc = 'RFC debe tener al menos 12 caracteres';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        handleSave();
+      }
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (conductor) {
+        await updateConductor(conductor.id, formData);
+      } else {
+        await createConductor(formData);
+      }
+      
+      toast.success(conductor ? 'Conductor actualizado exitosamente' : 'Conductor creado exitosamente');
+      onSuccess?.();
+      onOpenChange(false);
+      setCurrentStep(0);
+    } catch (error) {
+      toast.error('Error al guardar el conductor');
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <ConductorBasicFields
+            formData={formData}
+            onFieldChange={handleFieldChange}
+            errors={errors}
+          />
+        );
+      case 1:
+        return (
+          <ConductorLicenciaFields
+            formData={formData}
+            onFieldChange={handleFieldChange}
+            errors={errors}
+          />
+        );
+      case 2:
+        return (
+          <ConductorContactFields
+            formData={formData}
+            onFieldChange={handleFieldChange}
+            errors={errors}
+          />
+        );
+      case 3:
+        return (
+          <ConductorSCTFields
+            formData={formData}
+            onFieldChange={handleFieldChange}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Conductor</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            {conductor ? 'Editar Conductor' : 'Nuevo Conductor'}
+          </DialogTitle>
+          <DialogDescription>
+            {conductor ? 'Modifica los datos del conductor' : 'Ingresa los datos del nuevo conductor'}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nombre">Nombre Completo *</Label>
-              <Input
-                id="nombre"
-                value={formData.nombre}
-                onChange={(e) => handleChange('nombre', e.target.value)}
-                placeholder="Nombre completo del conductor"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rfc">RFC</Label>
-              <Input
-                id="rfc"
-                value={formData.rfc}
-                onChange={(e) => handleChange('rfc', e.target.value)}
-                placeholder="RFC del conductor"
-              />
-            </div>
+
+        <div className="space-y-6">
+          <FormStepper
+            steps={steps}
+            currentStep={currentStep}
+            onStepChange={setCurrentStep}
+          />
+
+          <div className="min-h-[400px]">
+            {renderStepContent()}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="curp">CURP</Label>
-              <Input
-                id="curp"
-                value={formData.curp}
-                onChange={(e) => handleChange('curp', e.target.value)}
-                placeholder="CURP del conductor"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="num_licencia">Número de Licencia</Label>
-              <Input
-                id="num_licencia"
-                value={formData.num_licencia}
-                onChange={(e) => handleChange('num_licencia', e.target.value)}
-                placeholder="Número de licencia"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="tipo_licencia">Tipo de Licencia</Label>
-              <Select
-                value={formData.tipo_licencia}
-                onValueChange={(value) => handleChange('tipo_licencia', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A">A - Motocicletas</SelectItem>
-                  <SelectItem value="B">B - Automóviles</SelectItem>
-                  <SelectItem value="C">C - Camiones</SelectItem>
-                  <SelectItem value="D">D - Autobuses</SelectItem>
-                  <SelectItem value="E">E - Tractocamiones</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="vigencia_licencia">Vigencia de Licencia</Label>
-              <Input
-                id="vigencia_licencia"
-                type="date"
-                value={formData.vigencia_licencia}
-                onChange={(e) => handleChange('vigencia_licencia', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="telefono">Teléfono</Label>
-              <Input
-                id="telefono"
-                value={formData.telefono}
-                onChange={(e) => handleChange('telefono', e.target.value)}
-                placeholder="Número de teléfono"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="Correo electrónico"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="operador_sct"
-              checked={formData.operador_sct}
-              onCheckedChange={(checked) => handleChange('operador_sct', checked)}
-            />
-            <Label htmlFor="operador_sct">
-              Operador SCT
-            </Label>
-          </div>
-
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-between pt-4 border-t">
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={handlePrevious}
+              disabled={currentStep === 0}
+              className="flex items-center gap-2"
             >
-              Cancelar
+              <ChevronLeft className="h-4 w-4" />
+              Anterior
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !formData.nombre}
-            >
-              {isSubmitting ? 'Creando...' : 'Crear Conductor'}
-            </Button>
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                {currentStep === steps.length - 1 ? (
+                  <>
+                    <Save className="h-4 w-4" />
+                    {loading ? 'Guardando...' : (conductor ? 'Actualizar' : 'Crear Conductor')}
+                  </>
+                ) : (
+                  <>
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
