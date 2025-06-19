@@ -2,7 +2,6 @@
 import { 
   HomeIcon, 
   FileTextIcon, 
-  FolderOpenIcon, 
   SettingsIcon,
   LayoutDashboard,
   Car,
@@ -14,8 +13,7 @@ import {
 
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import GestionBorradores from "./pages/GestionBorradores";
-import CartasPorte from "./pages/CartasPorte";
+import CartasPorteUnified from "./pages/CartasPorteUnified";
 import Vehiculos from "./pages/Vehiculos";
 import Conductores from "./pages/Conductores";
 import Socios from "./pages/Socios";
@@ -43,13 +41,7 @@ export const navItems = [
     title: "Cartas Porte",
     to: "/cartas-porte",
     icon: <FileTextIcon className="h-4 w-4" />,
-    page: <CartasPorte />,
-  },
-  {
-    title: "Borradores",
-    to: "/borradores", 
-    icon: <FolderOpenIcon className="h-4 w-4" />,
-    page: <GestionBorradores />,
+    page: <CartasPorteUnified />,
   },
   {
     title: "Vehículos",

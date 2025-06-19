@@ -9,10 +9,8 @@ import { BaseLayout } from "./components/layout/BaseLayout"
 // Páginas principales
 import Index from "./pages/Index"
 import Dashboard from "./pages/Dashboard"
-import NewCartaPorte from "./pages/NewCartaPorte"
-import EditCartaPorte from "./pages/EditCartaPorte"
-import GestionBorradores from "./pages/GestionBorradores"
-import CartasPorte from "./pages/CartasPorte"
+import CartasPorteUnified from "./pages/CartasPorteUnified"
+import CartaPorteEditor from "./pages/CartaPorteEditor"
 import Vehiculos from "./pages/Vehiculos"
 import Conductores from "./pages/Conductores"
 import Socios from "./pages/Socios"
@@ -39,9 +37,10 @@ const App = () => (
               </BaseLayout>
             } />
             
+            {/* Nueva ruta unificada de Cartas Porte */}
             <Route path="/cartas-porte" element={
               <BaseLayout>
-                <CartasPorte />
+                <CartasPorteUnified />
               </BaseLayout>
             } />
             
@@ -81,14 +80,14 @@ const App = () => (
               </BaseLayout>
             } />
             
-            {/* Rutas de Carta Porte específicas */}
-            <Route path="/carta-porte/nuevo" element={<NewCartaPorte />} />
-            <Route path="/carta-porte/:id" element={<EditCartaPorte />} />
-            <Route path="/borradores" element={
-              <BaseLayout>
-                <GestionBorradores />
-              </BaseLayout>
-            } />
+            {/* Editor de Carta Porte (sin layout para pantalla completa) */}
+            <Route path="/carta-porte/editor/:id" element={<CartaPorteEditor />} />
+            <Route path="/carta-porte/editor" element={<CartaPorteEditor />} />
+            
+            {/* Redirección de rutas antiguas */}
+            <Route path="/borradores" element={<Navigate to="/cartas-porte" replace />} />
+            <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
+            <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor" replace />} />
             
             {/* Redirección por defecto */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
