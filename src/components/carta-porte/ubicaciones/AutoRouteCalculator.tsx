@@ -170,7 +170,7 @@ export function AutoRouteCalculator({
   // Early return if no ubicaciones provided
   if (!safeUbicaciones.length) {
     return (
-      <Card className="border-gray-200 bg-gray-50">
+      <Card className="border-gray-200 bg-white shadow-sm">
         <CardContent className="pt-4">
           <div className="flex items-center gap-2 text-gray-500">
             <MapPin className="h-4 w-4" />
@@ -185,7 +185,7 @@ export function AutoRouteCalculator({
 
   if (!canCalculate) {
     return (
-      <Card className="border-amber-200 bg-amber-50">
+      <Card className="border-gray-200 bg-white shadow-sm">
         <CardContent className="pt-4">
           <div className="flex items-center gap-2 text-amber-700">
             <MapPin className="h-4 w-4" />
@@ -199,7 +199,7 @@ export function AutoRouteCalculator({
   }
 
   return (
-    <Card className="border-gray-200 bg-gray-50">
+    <Card className="border-gray-200 bg-white shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-gray-800">
           <Route className="h-5 w-5" />
@@ -215,7 +215,7 @@ export function AutoRouteCalculator({
       
       <CardContent className="space-y-4">
         {isCalculating && (
-          <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
             <span className="text-sm text-gray-800">
               Calculando ruta con Mapbox...
@@ -225,7 +225,7 @@ export function AutoRouteCalculator({
 
         {distanciaTotal && tiempoEstimado && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="h-4 w-4 text-gray-600" />
                 <span className="text-sm font-medium text-gray-800">Distancia Total</span>
@@ -238,7 +238,7 @@ export function AutoRouteCalculator({
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4 text-gray-600" />
                 <span className="text-sm font-medium text-gray-800">Tiempo Estimado</span>
@@ -264,14 +264,14 @@ export function AutoRouteCalculator({
             size="sm"
             onClick={handleManualRecalculation}
             disabled={isCalculating}
-            className="text-gray-600 border-gray-300 hover:bg-gray-50"
+            className="text-gray-600 border-gray-200 hover:bg-gray-50"
           >
             <RefreshCw className={`h-3 w-3 mr-1 ${isCalculating ? 'animate-spin' : ''}`} />
             Recalcular
           </Button>
         </div>
 
-        <div className="text-xs text-gray-500 bg-white p-3 rounded border border-gray-200">
+        <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded border border-gray-200">
           <strong>Nota:</strong> La distancia se calcula automáticamente usando rutas reales de Mapbox.
           Esta es la distancia que aparecerá en tu PDF de Carta Porte.
         </div>
