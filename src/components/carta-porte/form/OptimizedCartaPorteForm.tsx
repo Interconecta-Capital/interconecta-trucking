@@ -1,54 +1,30 @@
 
-import React, { memo, useMemo, useCallback } from 'react';
-import { useCartaPorteFormManager } from '@/hooks/carta-porte/useCartaPorteFormManager';
-import { CartaPorteHeader } from './CartaPorteHeader';
-import { CartaPorteProgressIndicator } from './CartaPorteProgressIndicator';
-import { OptimizedCartaPorteStepContent } from './OptimizedCartaPorteStepContent';
-import { CartaPorteAutoSaveIndicator } from './CartaPorteAutoSaveIndicator';
-import { BorradorRecoveryDialog } from '../BorradorRecoveryDialog';
-import { AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { CartaPorteTabContent } from './CartaPorteTabContent';
+import { useCartaPorteMappers } from '@/hooks/carta-porte/useCartaPorteMappers';
+import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta } from '@/types/cartaPorte';
 
 interface OptimizedCartaPorteFormProps {
-  cartaPorteId?: string;
+  currentCartaPorteId?: string;
+  onDataChange?: (data: any) => void;
 }
 
-const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorteId }) => {
+export function OptimizedCartaPorteForm({ currentCartaPorteId, onDataChange }: OptimizedCartaPorteFormProps) {
+  const [activeTab, setActiveTab] = useState('configuracion');
+  
   const {
-    configuracion,
-    ubicaciones,
-    mercancias,
-    autotransporte,
-    figuras,
-    currentStep,
-    currentCartaPorteId,
-    borradorCargado,
-    ultimoGuardado,
-    validationSummary,
-    isGuardando,
-    xmlGenerado,
-    datosCalculoRuta,
-    
-    // Dialog de recuperación
-    showRecoveryDialog,
-    borradorData,
-    handleAcceptBorrador,
-    handleRejectBorrador,
-    
-    setUbicaciones,
-    setMercancias,
-    setAutotransporte,
-    setFiguras,
-    setCurrentStep,
-    handleConfiguracionChange,
-    handleGuardarBorrador,
-    handleGuardarCartaPorteOficial,
-    handleGuardarYSalir,
-    handleLimpiarBorrador,
-    handleXMLGenerated,
-    handleCalculoRutaUpdate,
-  } = useCartaPorteFormManager(cartaPorteId);
+    cartaPorteData,
+    cachedFormData,
+    updateFormData,
+    saveToDatabase,
+    isLoading
+  } = useCartaPorteMappers(currentCartaPorteId);
 
-  // Crear un objeto Autotransporte por defecto para evitar errores de tipo
+  // Estado por defecto para autotransporte con todos los campos requeridos
   const defaultAutotransporte = useMemo((): AutotransporteCompleto => ({
     placa_vm: '',
     anio_modelo_vm: new Date().getFullYear(),
@@ -58,131 +34,88 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     asegura_resp_civil: '',
     poliza_resp_civil: '',
     peso_bruto_vehicular: 0,
+    capacidad_carga: 0, // Campo requerido
     remolques: []
   }), []);
 
-  // Manejar navegación entre pasos con validación mejorada
-  const handleStepNavigation = useCallback((targetStep: number) => {
-    // Permitir navegación hacia atrás siempre
-    if (targetStep < currentStep) {
-      setCurrentStep(targetStep);
-      return;
-    }
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+  }, []);
 
-    // Para avanzar, verificar que el paso actual tenga datos mínimos
-    const currentSectionKeys = ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'];
-    const currentSectionKey = currentSectionKeys[currentStep];
-    
-    if (currentSectionKey && validationSummary?.sectionStatus[currentSectionKey] === 'empty') {
-      // No permitir avanzar si la sección actual está vacía
-      return;
-    }
+  const handleAutotransporteChange = useCallback((data: AutotransporteCompleto) => {
+    updateFormData('autotransporte', data);
+    onDataChange?.(data);
+  }, [updateFormData, onDataChange]);
 
-    setCurrentStep(targetStep);
-  }, [currentStep, setCurrentStep, validationSummary]);
+  const handleFigurasChange = useCallback((data: FiguraCompleta[]) => {
+    updateFormData('figuras', data);
+    onDataChange?.(data);
+  }, [updateFormData, onDataChange]);
 
-  // Create a proper ValidationSummary object with all required properties
-  const enhancedValidationSummary = useMemo(() => {
-    const baseValidation = validationSummary || { sectionStatus: {} };
-    
-    return {
-      sectionStatus: {
-        configuracion: (baseValidation.sectionStatus as any)?.configuracion || 'empty',
-        ubicaciones: (baseValidation.sectionStatus as any)?.ubicaciones || 'empty',
-        mercancias: (baseValidation.sectionStatus as any)?.mercancias || 'empty',
-        autotransporte: (baseValidation.sectionStatus as any)?.autotransporte || 'empty',
-        figuras: (baseValidation.sectionStatus as any)?.figuras || 'empty',
-        xml: 'empty' as const
-      },
-      overallProgress: 0,
-      completionPercentage: 0,
-      missingFields: {
-        configuracion: [],
-        ubicaciones: [],
-        mercancias: [],
-        autotransporte: [],
-        figuras: []
-      },
-      completedSections: 0,
-      totalSections: 5
-    };
-  }, [validationSummary]);
+  const handleXMLGenerated = useCallback((xml: string) => {
+    console.log('XML generado:', xml);
+  }, []);
 
-  // Fix async function signature
-  const handleGuardarBorradorAsync = useCallback(async () => {
-    await handleGuardarBorrador();
-  }, [handleGuardarBorrador]);
+  const handleTimbrado = useCallback((datos: any) => {
+    console.log('Timbrado:', datos);
+  }, []);
 
-  const handleGuardarYSalirAsync = useCallback(async () => {
-    await handleGuardarYSalir();
-  }, [handleGuardarYSalir]);
+  const getCompletionPercentage = () => {
+    let completed = 0;
+    let total = 6;
 
-  const handleLimpiarBorradorAsync = useCallback(async () => {
-    await handleLimpiarBorrador();
-  }, [handleLimpiarBorrador]);
+    if (cartaPorteData.rfc_emisor && cartaPorteData.rfc_receptor) completed++;
+    if (cachedFormData.ubicaciones?.length >= 2) completed++;
+    if (cachedFormData.mercancias?.length > 0) completed++;
+    if (cachedFormData.autotransporte?.placa_vm) completed++;
+    if (cachedFormData.figuras?.length > 0) completed++;
+
+    return Math.round((completed / total) * 100);
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8">Cargando...</div>;
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Dialog de recuperación de borrador */}
-      <BorradorRecoveryDialog
-        open={showRecoveryDialog}
-        borradorData={borradorData}
-        onAccept={handleAcceptBorrador}
-        onReject={handleRejectBorrador}
-      />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Carta Porte</CardTitle>
+            <Badge variant="outline">
+              {getCompletionPercentage()}% Completo
+            </Badge>
+          </div>
+          <Progress value={getCompletionPercentage()} className="h-2" />
+        </CardHeader>
+      </Card>
 
-      {/* Header con mejor espaciado */}
-      <div className="mb-8">
-        <CartaPorteHeader
-          borradorCargado={borradorCargado}
-          ultimoGuardado={ultimoGuardado}
-          onGuardarBorrador={handleGuardarBorradorAsync}
-          onLimpiarBorrador={handleLimpiarBorradorAsync}
-          onGuardarYSalir={handleGuardarYSalirAsync}
-          isGuardando={isGuardando}
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="configuracion">Configuración</TabsTrigger>
+          <TabsTrigger value="ubicaciones">Ubicaciones</TabsTrigger>
+          <TabsTrigger value="mercancias">Mercancías</TabsTrigger>
+          <TabsTrigger value="autotransporte">Autotransporte</TabsTrigger>
+          <TabsTrigger value="figuras">Figuras</TabsTrigger>
+          <TabsTrigger value="xml">XML/Timbrado</TabsTrigger>
+        </TabsList>
+
+        <CartaPorteTabContent
+          cartaPorteData={cartaPorteData}
+          cachedFormData={{
+            ...cachedFormData,
+            autotransporte: cachedFormData.autotransporte || defaultAutotransporte
+          }}
+          updateFormData={updateFormData}
+          handleTabChange={handleTabChange}
+          handleAutotransporteChange={handleAutotransporteChange}
+          handleFigurasChange={handleFigurasChange}
+          handleXMLGenerated={handleXMLGenerated}
+          handleTimbrado={handleTimbrado}
+          currentCartaPorteId={currentCartaPorteId}
         />
-      </div>
-
-      {/* Indicador de progreso con más margen */}
-      <div className="mb-8 bg-white rounded-lg shadow-sm border p-6">
-        <CartaPorteProgressIndicator
-          validationSummary={enhancedValidationSummary}
-          currentStep={currentStep}
-          onStepClick={handleStepNavigation}
-          xmlGenerado={xmlGenerado}
-        />
-      </div>
-
-      {/* Contenido del paso actual */}
-      <OptimizedCartaPorteStepContent
-        currentStep={currentStep}
-        configuracion={configuracion}
-        ubicaciones={ubicaciones}
-        mercancias={mercancias}
-        autotransporte={autotransporte || defaultAutotransporte}
-        figuras={figuras}
-        currentCartaPorteId={currentCartaPorteId || undefined}
-        onConfiguracionChange={handleConfiguracionChange}
-        onUbicacionesChange={setUbicaciones}
-        onMercanciasChange={setMercancias}
-        onAutotransporteChange={setAutotransporte}
-        onFigurasChange={setFiguras}
-        onStepChange={setCurrentStep}
-        onXMLGenerated={handleXMLGenerated}
-        onTimbrado={() => {}}
-        xmlGenerado={xmlGenerado}
-        datosCalculoRuta={datosCalculoRuta}
-        onCalculoRutaUpdate={handleCalculoRutaUpdate}
-      />
-
-      {/* Indicador de auto-guardado */}
-      <div className="mt-8">
-        <CartaPorteAutoSaveIndicator />
-      </div>
+      </Tabs>
     </div>
   );
-});
-
-OptimizedCartaPorteForm.displayName = 'OptimizedCartaPorteForm';
-
-export { OptimizedCartaPorteForm };
+}

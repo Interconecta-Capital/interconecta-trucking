@@ -1,82 +1,104 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
-import { AutotransporteCompleto } from '@/types/cartaPorte';
-import { CatalogosSATService } from '@/services/catalogosSAT';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, X } from 'lucide-react';
 
 interface VehiculoPermitsProps {
-  data: AutotransporteCompleto;
-  onFieldChange: <K extends keyof AutotransporteCompleto>(
-    field: K, 
-    value: AutotransporteCompleto[K]
-  ) => void;
+  data: {
+    numero_permisos_adicionales?: string | string[];
+    vigencia_permiso?: string;
+  };
+  onChange: (field: string, value: any) => void;
 }
 
-export function VehiculoPermits({ data, onFieldChange }: VehiculoPermitsProps) {
-  const [permisoError, setPermisoError] = useState('');
+export function VehiculoPermits({ data, onChange }: VehiculoPermitsProps) {
+  const permisos = Array.isArray(data.numero_permisos_adicionales) 
+    ? data.numero_permisos_adicionales 
+    : data.numero_permisos_adicionales 
+      ? [data.numero_permisos_adicionales] 
+      : [];
 
-  useEffect(() => {
-    const validar = async () => {
-      if (!data.perm_sct) {
-        setPermisoError('El tipo de permiso es requerido');
-        return;
-      }
-      const existe = await CatalogosSATService.existeTipoPermiso(data.perm_sct);
-      setPermisoError(existe ? '' : 'Permiso no válido');
-    };
-    validar();
-  }, [data.perm_sct]);
+  const agregarPermiso = () => {
+    const nuevosPermisos = [...permisos, ''];
+    onChange('numero_permisos_adicionales', nuevosPermisos);
+  };
+
+  const actualizarPermiso = (index: number, valor: string) => {
+    const nuevosPermisos = [...permisos];
+    nuevosPermisos[index] = valor;
+    onChange('numero_permisos_adicionales', nuevosPermisos);
+  };
+
+  const eliminarPermiso = (index: number) => {
+    const nuevosPermisos = permisos.filter((_, i) => i !== index);
+    onChange('numero_permisos_adicionales', nuevosPermisos.length === 0 ? undefined : nuevosPermisos);
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <CatalogoSelectorMejorado
-          tipo="tipos_permiso"
-          label="Tipo de Permiso SCT"
-          value={data.perm_sct || ''}
-          onValueChange={(value) => onFieldChange('perm_sct', value)}
-          placeholder="Buscar tipo de permiso..."
-          required
-          error={permisoError}
-        />
-
-        <div className="space-y-2">
-          <Label htmlFor="num_permiso_sct">Número de Permiso SCT *</Label>
-          <Input 
-            id="num_permiso_sct"
-            placeholder="Número de permiso" 
-            value={data.num_permiso_sct || ''}
-            onChange={(e) => onFieldChange('num_permiso_sct', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="vigencia_permiso">Vigencia del Permiso</Label>
-          <Input 
-            id="vigencia_permiso"
-            type="date"
-            value={data.vigencia_permiso || ''}
-            onChange={(e) => onFieldChange('vigencia_permiso', e.target.value)}
-          />
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Permisos Adicionales</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Vigencia del Permiso</Label>
+            <Input
+              type="date"
+              value={data.vigencia_permiso || ''}
+              onChange={(e) => onChange('vigencia_permiso', e.target.value)}
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="numero_permisos_adicionales">Permisos Adicionales</Label>
-          <Input 
-            id="numero_permisos_adicionales"
-            placeholder="Separados por comas" 
-            value={data.numero_permisos_adicionales?.join(', ') || ''}
-            onChange={(e) => {
-              const permisos = e.target.value.split(',').map(p => p.trim()).filter(p => p);
-              onFieldChange('numero_permisos_adicionales', permisos);
-            }}
-          />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label>Números de Permisos Adicionales</Label>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={agregarPermiso}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Agregar
+            </Button>
+          </div>
+
+          {permisos.map((permiso, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Input
+                value={permiso}
+                onChange={(e) => actualizarPermiso(index, e.target.value)}
+                placeholder="Número de permiso"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => eliminarPermiso(index)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+
+          {permisos.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {permisos.filter(p => p.trim()).map((permiso, index) => (
+                <Badge key={index} variant="secondary">
+                  {permiso}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
