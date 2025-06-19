@@ -1,81 +1,197 @@
 
-import { useEffect, useCallback } from 'react';
-import { useCartaPortePersistence } from './useCartaPortePersistence';
-import { CartaPorteFormData } from './types/useCartaPorteFormTypes';
-import { useDebounce } from '../useDebounce';
+import { useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { CartaPorteData } from '@/types/cartaPorte';
+import { useToast } from '@/hooks/use-toast';
 
 interface AutoPersistenceOptions {
   cartaPorteId?: string;
-  formData: CartaPorteFormData;
-  xmlGenerado?: string | null;
-  pdfUrl?: string | null;
-  pdfBlob?: Blob | null;
-  datosCalculoRuta?: {
-    distanciaTotal?: number;
-    tiempoEstimado?: number;
-  } | null;
+  autoSaveInterval?: number; // milisegundos
+  onSaveSuccess?: () => void;
+  onSaveError?: (error: string) => void;
 }
 
-export function useCartaPorteAutoPersistence({
-  cartaPorteId,
-  formData,
-  xmlGenerado,
-  pdfUrl,
-  pdfBlob,
-  datosCalculoRuta
-}: AutoPersistenceOptions) {
+export function useCartaPorteAutoPersistence(
+  formData: CartaPorteData,
+  options: AutoPersistenceOptions = {}
+) {
+  const { 
+    cartaPorteId, 
+    autoSaveInterval = 30000, // 30 segundos por defecto
+    onSaveSuccess,
+    onSaveError 
+  } = options;
   
-  const { savePDF, saveXML, saveRouteData } = useCartaPortePersistence(cartaPorteId);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Debounce para evitar múltiples guardados
-  const debouncedFormData = useDebounce(formData, 2000);
-  const debouncedXmlGenerado = useDebounce(xmlGenerado, 1000);
-  const debouncedRouteData = useDebounce(datosCalculoRuta, 1000);
+  const lastSavedRef = useRef<string>('');
+  const autoSaveTimerRef = useRef<NodeJS.Timeout>();
+  const isSavingRef = useRef(false);
 
-  // Auto-guardar XML cuando se genera
+  // Generar signature de los datos para detectar cambios
+  const generateDataSignature = useCallback((data: CartaPorteData): string => {
+    return JSON.stringify({
+      rfcEmisor: data.rfcEmisor,
+      rfcReceptor: data.rfcReceptor,
+      nombreEmisor: data.nombreEmisor,
+      nombreReceptor: data.nombreReceptor,
+      ubicacionesCount: data.ubicaciones?.length || 0,
+      mercanciasCount: data.mercancias?.length || 0,
+      autotransporte: data.autotransporte?.placa_vm,
+      figurasCount: data.figuras?.length || 0,
+      xmlGenerado: !!data.xmlGenerado,
+      datosCalculoRuta: data.datosCalculoRuta
+    });
+  }, []);
+
+  // Función para guardar en Supabase
+  const saveToSupabase = useCallback(async (data: CartaPorteData): Promise<boolean> => {
+    if (!user || !cartaPorteId || isSavingRef.current) {
+      return false;
+    }
+
+    isSavingRef.current = true;
+
+    try {
+      // Serializar datos de forma segura
+      const serializedData = {
+        tipoCreacion: data.tipoCreacion || 'manual',
+        tipoCfdi: data.tipoCfdi || 'Traslado',
+        rfcEmisor: data.rfcEmisor || '',
+        nombreEmisor: data.nombreEmisor || '',
+        rfcReceptor: data.rfcReceptor || '',
+        nombreReceptor: data.nombreReceptor || '',
+        transporteInternacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
+        registroIstmo: Boolean(data.registroIstmo),
+        cartaPorteVersion: data.cartaPorteVersion || '3.1',
+        ubicaciones: Array.isArray(data.ubicaciones) ? data.ubicaciones : [],
+        mercancias: Array.isArray(data.mercancias) ? data.mercancias : [],
+        autotransporte: data.autotransporte || {},
+        figuras: Array.isArray(data.figuras) ? data.figuras : [],
+        xmlGenerado: data.xmlGenerado,
+        datosCalculoRuta: data.datosCalculoRuta
+      };
+
+      const { error } = await supabase
+        .from('cartas_porte')
+        .update({
+          datos_formulario: serializedData,
+          rfc_emisor: data.rfcEmisor || 'TEMP',
+          nombre_emisor: data.nombreEmisor,
+          rfc_receptor: data.rfcReceptor || 'TEMP',
+          nombre_receptor: data.nombreReceptor,
+          tipo_cfdi: data.tipoCfdi,
+          transporte_internacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
+          registro_istmo: Boolean(data.registroIstmo),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', cartaPorteId)
+        .eq('usuario_id', user.id);
+
+      if (error) {
+        console.error('Error en auto-guardado:', error);
+        onSaveError?.(`Error al guardar: ${error.message}`);
+        return false;
+      }
+
+      console.log('✅ Auto-guardado exitoso');
+      onSaveSuccess?.();
+      return true;
+
+    } catch (error: any) {
+      console.error('Error en auto-persistencia:', error);
+      onSaveError?.(error.message);
+      return false;
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [user, cartaPorteId, onSaveSuccess, onSaveError]);
+
+  // Auto-guardado basado en cambios
   useEffect(() => {
-    if (debouncedXmlGenerado && cartaPorteId) {
-      console.log('💾 Auto-guardando XML generado...');
-      saveXML(debouncedXmlGenerado);
-    }
-  }, [debouncedXmlGenerado, cartaPorteId, saveXML]);
-
-  // Auto-guardar PDF cuando se genera
-  useEffect(() => {
-    if (pdfUrl && pdfBlob && cartaPorteId) {
-      console.log('💾 Auto-guardando PDF generado...');
-      savePDF(pdfUrl, pdfBlob);
-    }
-  }, [pdfUrl, pdfBlob, cartaPorteId, savePDF]);
-
-  // Auto-guardar datos de cálculo de ruta
-  useEffect(() => {
-    if (debouncedRouteData && cartaPorteId) {
-      console.log('💾 Auto-guardando datos de cálculo de ruta...');
-      saveRouteData(debouncedRouteData);
-    }
-  }, [debouncedRouteData, cartaPorteId, saveRouteData]);
-
-  // Función manual para forzar guardado
-  const forceSave = useCallback(() => {
-    if (!cartaPorteId) return;
-
-    if (xmlGenerado) {
-      saveXML(xmlGenerado);
-    }
+    const currentSignature = generateDataSignature(formData);
     
-    if (pdfUrl && pdfBlob) {
-      savePDF(pdfUrl, pdfBlob);
-    }
-    
-    if (datosCalculoRuta) {
-      saveRouteData(datosCalculoRuta);
+    // Si los datos han cambiado, programar auto-guardado
+    if (currentSignature !== lastSavedRef.current && cartaPorteId) {
+      
+      // Limpiar timer anterior
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      // Programar nuevo auto-guardado
+      autoSaveTimerRef.current = setTimeout(() => {
+        saveToSupabase(formData).then(success => {
+          if (success) {
+            lastSavedRef.current = currentSignature;
+          }
+        });
+      }, autoSaveInterval);
     }
 
-    console.log('💾 Guardado manual completado');
-  }, [cartaPorteId, xmlGenerado, pdfUrl, pdfBlob, datosCalculoRuta, saveXML, savePDF, saveRouteData]);
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, generateDataSignature, saveToSupabase, autoSaveInterval, cartaPorteId]);
+
+  // Guardado manual
+  const saveManually = useCallback(async (): Promise<boolean> => {
+    const success = await saveToSupabase(formData);
+    if (success) {
+      lastSavedRef.current = generateDataSignature(formData);
+      toast({
+        title: "Guardado exitoso",
+        description: "Los datos se han guardado correctamente",
+      });
+    }
+    return success;
+  }, [formData, saveToSupabase, generateDataSignature, toast]);
+
+  // Recuperación de sesión
+  const recoverSession = useCallback(async (id: string): Promise<CartaPorteData | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('cartas_porte')
+        .select('datos_formulario, xml_generado')
+        .eq('id', id)
+        .single();
+
+      if (error || !data?.datos_formulario) {
+        return null;
+      }
+
+      // Deserializar datos
+      const recoveredData = {
+        ...data.datos_formulario,
+        xmlGenerado: data.xml_generado,
+        cartaPorteId: id
+      } as CartaPorteData;
+
+      return recoveredData;
+
+    } catch (error) {
+      console.error('Error recovering session:', error);
+      return null;
+    }
+  }, []);
+
+  // Cleanup al desmontar
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
-    forceSave
+    saveManually,
+    recoverSession,
+    isSaving: isSavingRef.current,
+    lastSaved: lastSavedRef.current
   };
 }

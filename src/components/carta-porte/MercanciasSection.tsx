@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { MercanciasSectionOptimizada } from './mercancias/MercanciasSectionOptimizada';
 import { PesoTotalValidator } from './validacion/PesoTotalValidator';
 import { MercanciaCompleta, AutotransporteCompleto } from '@/types/cartaPorte';
