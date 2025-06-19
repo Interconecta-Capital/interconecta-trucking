@@ -158,6 +158,22 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
     }
   };
 
+  // Create a complete default autotransporte object
+  const defaultAutotransporte: AutotransporteCompleto = {
+    placa_vm: '',
+    anio_modelo_vm: new Date().getFullYear(),
+    config_vehicular: '',
+    perm_sct: '',
+    num_permiso_sct: '',
+    asegura_resp_civil: '',
+    poliza_resp_civil: '',
+    asegura_med_ambiente: '',
+    poliza_med_ambiente: '',
+    peso_bruto_vehicular: 0,
+    tipo_carroceria: '',
+    remolques: []
+  };
+
   const renderActiveSection = () => {
     const activeConfig = sections.find(s => s.key === activeSection);
     if (!activeConfig) return null;
@@ -168,7 +184,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
       data: activeSection === 'configuracion' ? configuracion : 
             activeSection === 'ubicaciones' ? ubicaciones :
             activeSection === 'mercancias' ? mercancias :
-            activeSection === 'autotransporte' ? autotransporte :
+            activeSection === 'autotransporte' ? (autotransporte || defaultAutotransporte) :
             activeSection === 'figuras' ? figuras : null,
       onChange: activeSection === 'configuracion' ? handleConfiguracionChange :
                 activeSection === 'ubicaciones' ? setUbicaciones :
@@ -184,7 +200,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
             ...configuracion,
             ubicaciones,
             mercancias,
-            autotransporte,
+            autotransporte: autotransporte || defaultAutotransporte,
             figuras
           }}
           cartaPorteId={currentCartaPorteId}

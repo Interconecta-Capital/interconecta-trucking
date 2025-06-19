@@ -30,6 +30,10 @@ const initialCartaPorteData: CartaPorteData = {
     num_permiso_sct: '',
     asegura_resp_civil: '',
     poliza_resp_civil: '',
+    asegura_med_ambiente: '',
+    poliza_med_ambiente: '',
+    peso_bruto_vehicular: 0,
+    tipo_carroceria: '',
     remolques: []
   },
   figuras: [],
@@ -183,7 +187,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   }, []);
 
   // Crear un objeto Autotransporte por defecto
-  const defaultAutotransporte = {
+  const defaultAutotransporte: AutotransporteCompleto = {
     placa_vm: '',
     anio_modelo_vm: new Date().getFullYear(),
     config_vehicular: '',
@@ -191,6 +195,10 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     num_permiso_sct: '',
     asegura_resp_civil: '',
     poliza_resp_civil: '',
+    asegura_med_ambiente: '',
+    poliza_med_ambiente: '',
+    peso_bruto_vehicular: 0,
+    tipo_carroceria: '',
     remolques: []
   };
 

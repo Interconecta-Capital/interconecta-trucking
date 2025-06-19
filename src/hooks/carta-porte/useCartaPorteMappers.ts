@@ -1,3 +1,4 @@
+
 import {
   CartaPorteData,
   UbicacionCompleta,
@@ -37,77 +38,6 @@ export interface CartaPorteFormData {
   cartaPorteId?: string;
 }
 
-// Funciones de conversión (antes en cartaPorteDataConverters.ts)
-const convertUbicacionesToSimple = (ubicaciones: UbicacionCompleta[]) => {
-  return ubicaciones.map(ubicacion => ({
-    id: ubicacion.id || '',
-    tipo:
-      ubicacion.tipo_ubicacion === 'Origen'
-        ? 'origen'
-        : ubicacion.tipo_ubicacion === 'Destino'
-        ? 'destino'
-        : 'origen',
-    direccion: `${ubicacion.domicilio?.calle || ''} ${
-      ubicacion.domicilio?.numero_exterior || ''
-    }`,
-    codigoPostal: ubicacion.domicilio?.codigo_postal || '',
-    estado: ubicacion.domicilio?.estado || '',
-    municipio: ubicacion.domicilio?.municipio || '',
-    coordenadas: ubicacion.coordenadas,
-  }));
-};
-
-const convertMercanciasToSimple = (mercancias: MercanciaCompleta[]) => {
-  return mercancias.map(mercancia => ({
-    id: mercancia.id || '',
-    descripcion: mercancia.descripcion || '',
-    cantidad: mercancia.cantidad || 0,
-    unidadMedida: mercancia.clave_unidad || '',
-    peso: mercancia.peso_kg || 0,
-    valor: mercancia.valor_mercancia || 0,
-    claveProdServ: mercancia.bienes_transp,
-    materialPeligroso: mercancia.material_peligroso,
-    claveMaterialPeligroso: mercancia.cve_material_peligroso,
-    fraccionArancelaria: mercancia.fraccion_arancelaria,
-    tipoEmbalaje: mercancia.tipo_embalaje,
-    dimensiones: mercancia.dimensiones,
-  }));
-};
-
-const convertAutotransporteToSimple = (autotransporte?: AutotransporteCompleto) => {
-  if (!autotransporte) {
-    return {
-      placaVm: '',
-      configuracionVehicular: '',
-      seguro: { aseguradora: '', poliza: '', vigencia: '' },
-    };
-  }
-  return {
-    placaVm: autotransporte.placa_vm || '',
-    configuracionVehicular: autotransporte.config_vehicular || '',
-    anioModelo: autotransporte.anio_modelo_vm || new Date().getFullYear(),
-    seguro: {
-      aseguradora: autotransporte.asegura_resp_civil || '',
-      poliza: autotransporte.poliza_resp_civil || '',
-      vigencia: '', // Este campo no existe en el origen
-    },
-    remolques: autotransporte.remolques?.map(r => ({
-      placa: r.placa,
-      subtipo: r.subtipo_rem,
-    })) || [],
-  };
-};
-
-const convertFigurasToSimple = (figuras: FiguraCompleta[]) => {
-  return figuras.map(figura => ({
-    id: figura.id || '',
-    tipoFigura: figura.tipo_figura || '',
-    rfc: figura.rfc_figura || '',
-    nombre: figura.nombre_figura || '',
-    licencia: figura.num_licencia,
-  }));
-};
-
 // Hook principal de mapeo
 export const useCartaPorteMappers = () => {
   const formDataToCartaPorteData = (formData: CartaPorteFormData): CartaPorteData => {
@@ -132,7 +62,7 @@ export const useCartaPorteMappers = () => {
   const cartaPorteDataToFormData = (cartaPorteData: CartaPorteData): CartaPorteFormData => {
     return {
       configuracion: {
-        version: cartaPorteData.cartaPorteVersion || '3.1',
+        version: (cartaPorteData.cartaPorteVersion as '3.0' | '3.1') || '3.1',
         tipoComprobante: cartaPorteData.tipoCfdi === 'Traslado' ? 'T' : 'I',
         emisor: {
           rfc: cartaPorteData.rfcEmisor || '',
@@ -146,17 +76,30 @@ export const useCartaPorteMappers = () => {
       },
       ubicaciones: cartaPorteData.ubicaciones || [],
       mercancias: cartaPorteData.mercancias || [],
-      autotransporte: cartaPorteData.autotransporte,
+      autotransporte: cartaPorteData.autotransporte || {
+        placa_vm: '',
+        anio_modelo_vm: new Date().getFullYear(),
+        config_vehicular: '',
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: '',
+        asegura_med_ambiente: '',
+        poliza_med_ambiente: '',
+        peso_bruto_vehicular: 0,
+        tipo_carroceria: '',
+        remolques: []
+      },
       figuras: cartaPorteData.figuras || [],
-      tipoCreacion: cartaPorteData.tipoCreacion || 'manual',
-      tipoCfdi: cartaPorteData.tipoCfdi || 'Traslado',
+      tipoCreacion: (cartaPorteData.tipoCreacion as 'plantilla' | 'carga' | 'manual') || 'manual',
+      tipoCfdi: (cartaPorteData.tipoCfdi as 'Ingreso' | 'Traslado') || 'Traslado',
       rfcEmisor: cartaPorteData.rfcEmisor || '',
       nombreEmisor: cartaPorteData.nombreEmisor || '',
       rfcReceptor: cartaPorteData.rfcReceptor || '',
       nombreReceptor: cartaPorteData.nombreReceptor || '',
       transporteInternacional: cartaPorteData.transporteInternacional === true || cartaPorteData.transporteInternacional === 'Sí',
       registroIstmo: !!cartaPorteData.registroIstmo,
-      cartaPorteVersion: cartaPorteData.cartaPorteVersion || '3.1',
+      cartaPorteVersion: (cartaPorteData.cartaPorteVersion as '3.0' | '3.1') || '3.1',
       cartaPorteId: cartaPorteData.cartaPorteId,
     };
   };

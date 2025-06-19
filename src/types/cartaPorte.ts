@@ -27,6 +27,18 @@ export interface CartaPorteData {
 
   // Figuras
   figuras?: FiguraCompleta[];
+
+  // Additional properties for form management
+  xmlGenerado?: string;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    calculadoEn?: string;
+  };
+  currentStep?: number;
+  tipoCreacion?: 'plantilla' | 'carga' | 'manual';
+  cartaPorteId?: string;
+  version?: string;
 }
 
 export interface UbicacionCompleta {
@@ -36,6 +48,9 @@ export interface UbicacionCompleta {
   nombre: string;
   fecha_llegada_salida: string;
   distancia_recorrida: number;
+  rfc_remitente_destinatario?: string;
+  nombre_remitente_destinatario?: string;
+  id_ubicacion?: string;
   coordenadas?: {
     latitud: number;
     longitud: number;
@@ -128,4 +143,26 @@ export interface FiguraCompleta {
     calle?: string;
     numero_exterior?: string;
   };
+}
+
+// Add Conductor type for other components
+export interface Conductor {
+  id: string;
+  nombre: string;
+  rfc?: string;
+  curp?: string;
+  num_licencia?: string;
+  tipo_licencia?: string;
+  vigencia_licencia?: string;
+  operador_sct?: boolean;
+  telefono?: string;
+  email?: string;
+  direccion?: any;
+  residencia_fiscal?: string;
+  num_reg_id_trib?: string;
+  user_id: string;
+  activo?: boolean;
+  estado: string;
+  created_at?: string;
+  updated_at?: string;
 }

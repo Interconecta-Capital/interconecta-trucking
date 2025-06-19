@@ -127,7 +127,7 @@ export function MercanciaFormCompleta({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <CatalogoSelectorMejorado
-                tipo="productos_servicios"
+                tipo="productos"
                 label="Clave de Producto/Servicio"
                 value={watch('bienes_transp')}
                 onValueChange={(value) => setValue('bienes_transp', value)}
@@ -165,7 +165,7 @@ export function MercanciaFormCompleta({
               </div>
 
               <CatalogoSelectorMejorado
-                tipo="unidades_medida"
+                tipo="unidades"
                 label="Unidad de Medida"
                 value={watch('clave_unidad')}
                 onValueChange={(value) => setValue('clave_unidad', value)}
@@ -212,14 +212,14 @@ export function MercanciaFormCompleta({
                 )}
               </div>
 
-              <CatalogoSelectorMejorado
-                tipo="monedas"
-                label="Moneda"
-                value={watch('moneda')}
-                onValueChange={(value) => setValue('moneda', value)}
-                placeholder="Seleccionar moneda..."
-                required
-              />
+              <div className="space-y-2">
+                <Label htmlFor="moneda">Moneda</Label>
+                <Input 
+                  id="moneda"
+                  {...register('moneda')}
+                  placeholder="MXN" 
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
