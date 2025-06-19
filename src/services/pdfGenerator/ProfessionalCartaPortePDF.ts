@@ -106,7 +106,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setFontSize(12);
     this.pdf.setTextColor(this.colors.gray800);
-    const folioText = `Folio Interno: CP-${Date.now().toString().slice(-8)}`;
+    const folioText = `Folio Interno: ${data.folio || `CP-${Date.now().toString().slice(-8)}`}`;
     this.pdf.text(folioText, rightX, this.currentY, { align: 'right' });
     
     this.currentY += 6;
@@ -143,10 +143,10 @@ export class ProfessionalCartaPortePDF {
     const rowHeight = boxHeight / 2;
     
     const fiscalData = [
-      { label: 'FOLIO FISCAL (UUID)', value: data.uuid || 'Pendiente de timbrado' },
-      { label: 'ID CARTA PORTE (IdCCP)', value: data.idCCP || `CCP-${Date.now().toString().slice(-8)}` },
-      { label: 'No. Certificado Emisor', value: data.noCertificadoEmisor || '30001000000400002434' },
-      { label: 'No. Certificado SAT', value: data.noCertificadoSAT || '30001000000500001234' }
+      { label: 'FOLIO FISCAL (UUID)', value: data.uuid_fiscal || 'Pendiente de timbrado' },
+      { label: 'ID CARTA PORTE (IdCCP)', value: data.id_ccp || `CCP-${Date.now().toString().slice(-8)}` },
+      { label: 'No. Certificado Emisor', value: '30001000000400002434' },
+      { label: 'No. Certificado SAT', value: '30001000000500001234' }
     ];
     
     fiscalData.forEach((item, index) => {
@@ -213,7 +213,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.text(`RFC: ${data.rfcReceptor || 'RFC del Receptor'}`, receptorX, receptorY);
     
     receptorY += 4;
-    this.pdf.text(`Uso CFDI: ${data.usoCFDI || 'S01 - Sin efectos fiscales'}`, receptorX, receptorY);
+    this.pdf.text(`Uso CFDI: ${data.usoCfdi || 'S01 - Sin efectos fiscales'}`, receptorX, receptorY);
     
     this.currentY += 15;
   }
@@ -316,7 +316,7 @@ export class ProfessionalCartaPortePDF {
     
     // Tabla de mercancías
     const tableData = data.mercancias.map(mercancia => [
-      mercancia.clave_producto || mercancia.bienes_transp || 'N/A',
+      mercancia.bienes_transp || 'N/A',
       mercancia.descripcion || 'Sin descripción',
       mercancia.cantidad?.toString() || 'N/A',
       mercancia.clave_unidad || 'N/A',
@@ -364,7 +364,7 @@ export class ProfessionalCartaPortePDF {
     
     const auto = data.autotransporte;
     if (auto) {
-      this.drawInfoLine(`Permiso SICT: ${auto.perm_sct || 'N/A'} - ${auto.tipo_permiso || 'Permiso General'}`, this.margin);
+      this.drawInfoLine(`Permiso SICT: ${auto.perm_sct || 'N/A'} - Permiso General`, this.margin);
       this.drawInfoLine(`No. Permiso: ${auto.num_permiso_sct || 'N/A'}`, this.margin);
       this.drawInfoLine(`Vehículo: ${auto.config_vehicular || 'N/A'}`, this.margin);
       this.drawInfoLine(`Placa: ${auto.placa_vm || 'N/A'} | Año: ${auto.anio_modelo_vm || 'N/A'}`, this.margin);
@@ -440,7 +440,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(7);
     this.pdf.setTextColor(this.colors.gray500);
-    const selloCFDI = data.selloCFD || 'abc...xyz';
+    const selloCFDI = data.xml_generado ? 'abc...xyz' : 'Pendiente de timbrado';
     const selloSplit = this.pdf.splitTextToSize(selloCFDI, sellosWidth);
     this.pdf.text(selloSplit, sellosX, this.currentY);
     
@@ -454,7 +454,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(7);
     this.pdf.setTextColor(this.colors.gray500);
-    const selloSAT = data.selloSAT || '123...789';
+    const selloSAT = '123...789';
     const selloSATSplit = this.pdf.splitTextToSize(selloSAT, sellosWidth);
     this.pdf.text(selloSATSplit, sellosX, this.currentY);
     
@@ -468,7 +468,7 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(7);
     this.pdf.setTextColor(this.colors.gray500);
-    const cadenaOriginal = data.cadenaOriginal || '||1.1|T|...||';
+    const cadenaOriginal = '||1.1|T|...||';
     const cadenaSplit = this.pdf.splitTextToSize(cadenaOriginal, sellosWidth);
     this.pdf.text(cadenaSplit, sellosX, this.currentY);
   }
