@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { RegimenesAduanerosList } from './RegimenesAduanerosList';
 import { ClienteSelectorConCRM } from '@/components/crm/ClienteSelectorConCRM';
-import { CartaPorteData } from '@/types/cartaPorte';
+import { CartaPorteData, RegimenAduanero } from '@/types/cartaPorte';
 import { RFCValidator, RFCValidationResult } from '@/utils/rfcValidation';
 
 interface ConfiguracionPrincipalMejoradaProps {
@@ -41,6 +41,10 @@ export function ConfiguracionPrincipalMejorada({
       // Si cambia a false, limpiar regímenes aduaneros
       regimenesAduaneros: value ? (data.regimenesAduaneros || []) : []
     });
+  };
+
+  const handleRegimenesChange = (regimenes: RegimenAduanero[]) => {
+    onChange({ regimenesAduaneros: regimenes });
   };
 
   return (
@@ -170,7 +174,7 @@ export function ConfiguracionPrincipalMejorada({
           {data.transporteInternacional && (
             <RegimenesAduanerosList
               regimenes={data.regimenesAduaneros || []}
-              onChange={(regimenes) => onChange({ regimenesAduaneros: regimenes })}
+              onChange={handleRegimenesChange}
               transporteInternacional={Boolean(data.transporteInternacional)}
             />
           )}

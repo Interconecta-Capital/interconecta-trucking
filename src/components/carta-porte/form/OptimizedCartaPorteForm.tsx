@@ -58,6 +58,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     asegura_resp_civil: '',
     poliza_resp_civil: '',
     peso_bruto_vehicular: 0,
+    capacidad_carga: 0,
     remolques: []
   }), []);
 

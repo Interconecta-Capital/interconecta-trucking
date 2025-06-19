@@ -14,6 +14,8 @@ export interface ClasificacionMercanciaResult {
   regulaciones_especiales?: string[];
   categoria_transporte?: 'general' | 'peligroso' | 'refrigerado' | 'especializado';
   regulaciones: string[];
+  tipo_embalaje?: string;
+  requiere_semarnat?: boolean;
 }
 
 export class MercanciaClassifierService {
@@ -39,7 +41,9 @@ export class MercanciaClassifierService {
         material_peligroso: false,
         regulaciones_especiales: [],
         categoria_transporte: 'general',
-        regulaciones: []
+        regulaciones: [],
+        tipo_embalaje: undefined,
+        requiere_semarnat: false
       };
 
       return result;
@@ -54,3 +58,6 @@ export class MercanciaClassifierService {
     return !!(datos.bienes_transp && datos.clave_unidad && datos.descripcion);
   }
 }
+
+// Export instance for compatibility
+export const mercanciaClassifier = MercanciaClassifierService.getInstance();

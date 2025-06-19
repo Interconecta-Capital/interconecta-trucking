@@ -93,7 +93,7 @@ export function DynamicMercanciaForm({
 
             <div className="space-y-4">
               <CatalogoSelectorMejorado
-                tipo="productos_servicios"
+                tipo="productos"
                 label="Producto/Servicio *"
                 value={mercancia.bienes_transp || ''}
                 onValueChange={(value) => handleFieldChange('bienes_transp', value)}

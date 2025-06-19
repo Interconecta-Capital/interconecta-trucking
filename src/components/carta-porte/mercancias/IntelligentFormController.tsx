@@ -14,21 +14,43 @@ interface IntelligentFormControllerProps {
   children: React.ReactNode;
 }
 
+interface SmartState {
+  isDynamic: boolean;
+  showSemarnatFields: boolean;
+  showMaterialPeligrosoFields: boolean;
+  showRefrigeracionFields: boolean;
+  showEspecializadoFields: boolean;
+  aiSuggestions: string[];
+}
+
 export function IntelligentFormController({
   mercancia,
   onChange,
   children
 }: IntelligentFormControllerProps) {
-  const { smartState, getConditionalFields } = useSmartMercanciaForm(mercancia);
+  const { isProcessing, suggestions, classifyMercancia } = useSmartMercanciaForm();
   const [aiAnalysisActive, setAiAnalysisActive] = useState(false);
+  const [smartState, setSmartState] = useState<SmartState>({
+    isDynamic: false,
+    showSemarnatFields: false,
+    showMaterialPeligrosoFields: false,
+    showRefrigeracionFields: false,
+    showEspecializadoFields: false,
+    aiSuggestions: []
+  });
 
   // Detectar cambios en la descripción para activar análisis IA
   useEffect(() => {
     if (mercancia.descripcion && mercancia.descripcion.length > 3) {
       setAiAnalysisActive(true);
-      // El análisis se hace automáticamente en useSmartMercanciaForm
+      setSmartState(prev => ({
+        ...prev,
+        isDynamic: true,
+        showMaterialPeligrosoFields: mercancia.material_peligroso || false,
+        aiSuggestions: suggestions
+      }));
     }
-  }, [mercancia.descripcion]);
+  }, [mercancia.descripcion, mercancia.material_peligroso, suggestions]);
 
   const handleFieldChange = (field: keyof MercanciaCompleta, value: any) => {
     onChange({

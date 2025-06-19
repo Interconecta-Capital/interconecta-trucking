@@ -57,6 +57,12 @@ export interface Remolque {
   placa: string;
 }
 
+export interface RegimenAduanero {
+  clave_regimen: string;
+  descripcion?: string;
+  orden_secuencia: number;
+}
+
 export interface FiguraTransporte {
   tipo_figura: string;
   rfc_transportista: string;
@@ -79,7 +85,6 @@ export interface FiguraTransporte {
   rfc_arrendatario?: string;
   num_reg_id_trib_arrendatario?: string;
   residencia_fiscal_arrendatario?: string;
-  // Additional fields for compatibility
   num_reg_id_trib_figura?: string;
   residencia_fiscal_figura?: string;
 }
@@ -107,7 +112,7 @@ export interface CartaPorteData {
   cartaPorteVersion?: string;
   tipoCfdi?: string;
   regimenAduanero?: string;
-  regimenesAduaneros?: string[];
+  regimenesAduaneros?: RegimenAduanero[];
   ubicaciones?: UbicacionCompleta[];
   mercancias?: MercanciaCompleta[];
   autotransporte?: AutotransporteCompleto;
@@ -180,4 +185,14 @@ export interface MercanciaCompleta {
   peso_bruto_total?: number;
   descripcion_detallada?: string;
   especie_protegida?: boolean;
+  tipo_embalaje?: string;
+  material_embalaje?: string;
+  unidad_peso_bruto?: string;
+  dimensiones?: {
+    largo?: number;
+    ancho?: number;
+    alto?: number;
+    unidad?: string;
+  };
+  uuid_comercio_exterior?: string;
 }
