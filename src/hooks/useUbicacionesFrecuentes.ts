@@ -35,7 +35,6 @@ export const useUbicacionesFrecuentes = () => {
         domicilio: ubicacion.domicilio,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        fechaCreacion: new Date().toISOString(),
         vecesUsada: 1,
         uso_count: 1
       };

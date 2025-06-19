@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,8 @@ export function SmartUbicacionForm({
     if (onSaveToFavorites) {
       onSaveToFavorites({
         nombre: formData.nombre_remitente_destinatario || 'Ubicación sin nombre',
+        nombreUbicacion: formData.nombre_remitente_destinatario || 'Ubicación sin nombre',
+        rfcAsociado: formData.rfc_remitente_destinatario || '',
         tipo_ubicacion: formData.tipo_ubicacion || 'Origen',
         rfc_remitente_destinatario: formData.rfc_remitente_destinatario,
         nombre_remitente_destinatario: formData.nombre_remitente_destinatario,

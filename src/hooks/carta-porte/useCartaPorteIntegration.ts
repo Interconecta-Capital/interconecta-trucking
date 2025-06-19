@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useCallback } from 'react';
 import { AutotransporteCompleto } from '@/types/cartaPorte';
 
 export const useCartaPorteIntegration = () => {
@@ -18,11 +19,62 @@ export const useCartaPorteIntegration = () => {
     remolques: []
   });
 
+  const loadCartaPorte = useCallback(async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Mock implementation - replace with actual API call
+      console.log('Loading carta porte:', id);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error loading carta porte');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const saveCartaPorte = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Mock implementation - replace with actual API call
+      console.log('Saving carta porte');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error saving carta porte');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const createNewCartaPorte = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Mock implementation - replace with actual API call
+      console.log('Creating new carta porte');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error creating carta porte');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setError(null);
+    console.log('Resetting form');
+  }, []);
+
   return {
     isLoading,
     setIsLoading,
     error,
     setError,
-    getDefaultAutotransporte
+    getDefaultAutotransporte,
+    loadCartaPorte,
+    saveCartaPorte,
+    createNewCartaPorte,
+    resetForm
   };
 };

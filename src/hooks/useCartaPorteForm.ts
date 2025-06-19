@@ -88,19 +88,7 @@ export function useCartaPorteForm({ cartaPorteId, enableAI = true }: UseCartaPor
   }, [cartaPorteDataToFormData, setFormData]);
 
   // Integración completa con auto-save y sincronización
-  const integrationResult = useCartaPorteIntegration({
-    formData: formDataForValidation,
-    currentCartaPorteId,
-    isLoading,
-    isCreating: false,
-    isUpdating: false,
-    setFormData: (data) => {
-      // Convert CartaPorteFormData back to CartaPorteData for stableSetFormData
-      const cartaPorteData = formDataToCartaPorteData(data);
-      stableSetFormData(cartaPorteData);
-    },
-    setCurrentCartaPorteId,
-  });
+  const integrationResult = useCartaPorteIntegration();
 
   console.log('[useCartaPorteForm] Integration completed');
 

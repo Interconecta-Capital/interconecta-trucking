@@ -53,8 +53,10 @@ export function UbicacionFormOptimizado({ ubicacion, onUbicacionChange }: Ubicac
   };
 
   const guardarComoFrecuente = () => {
-    const nuevaFrecuente: Omit<UbicacionFrecuente, 'id' | 'usoCount'> = {
+    const nuevaFrecuente: Omit<UbicacionFrecuente, 'id' | 'uso_count'> = {
       nombre: ubicacion.nombre_remitente_destinatario || 'Ubicación sin nombre',
+      nombreUbicacion: ubicacion.nombre_remitente_destinatario || 'Ubicación sin nombre',
+      rfcAsociado: ubicacion.rfc_remitente_destinatario || '',
       tipo_ubicacion: ubicacion.tipo_ubicacion || 'Origen',
       rfc_remitente_destinatario: ubicacion.rfc_remitente_destinatario,
       nombre_remitente_destinatario: ubicacion.nombre_remitente_destinatario,
