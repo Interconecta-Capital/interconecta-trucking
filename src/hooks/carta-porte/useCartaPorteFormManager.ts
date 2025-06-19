@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -256,8 +255,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   }, [rejectBorrador, clearSessionData]);
   
   // Guardar como borrador usando el nuevo sistema
-  const handleGuardarBorrador = useCallback(async () => {
-    if (isGuardando) return;
+  const handleGuardarBorrador = useCallback(async (): Promise<string> => {
+    if (isGuardando) return '';
     
     setIsGuardando(true);
     try {
@@ -302,8 +301,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando]);
 
   // Guardar como carta porte oficial usando el nuevo sistema
-  const handleGuardarCartaPorteOficial = useCallback(async () => {
-    if (!user?.id || isGuardando) return;
+  const handleGuardarCartaPorteOficial = useCallback(async (): Promise<string> => {
+    if (!user?.id || isGuardando) return '';
     
     setIsGuardando(true);
     try {
@@ -362,7 +361,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, user?.id, isGuardando]);
 
   // Guardar y salir
-  const handleGuardarYSalir = useCallback(async () => {
+  const handleGuardarYSalir = useCallback(async (): Promise<void> => {
     try {
       console.log('💾🚪 Guardando y saliendo...');
       const savedId = await handleGuardarCartaPorteOficial();

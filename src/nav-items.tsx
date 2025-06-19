@@ -1,7 +1,7 @@
 
 import { HomeIcon, FileTextIcon, FolderOpenIcon, SettingsIcon } from "lucide-react";
-import Index from "./pages/Index.jsx";
-import GestionBorradores from "./pages/GestionBorradores.jsx";
+import Index from "./pages/Index";
+import GestionBorradores from "./pages/GestionBorradores";
 
 /**
  * Central place for defining the navigation items. Used for navigation components and routing.
