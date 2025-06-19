@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Package, Save, X, Brain, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
+import { geminiCore } from '@/services/ai/GeminiCoreService';
 
 interface SmartMercanciaFormProps {
   index: number;
@@ -44,11 +45,69 @@ export function SmartMercanciaForm({
     fraccion_arancelaria: '',
     embalaje: '',
     uuid_comercio_ext: '',
+    numero_autorizacion: '',
+    folio_acreditacion: '',
     ...mercancia
   });
 
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [showAiPanel, setShowAiPanel] = useState(false);
+  const [semarnatRequired, setSemarnatRequired] = useState(false);
+  const [descriptionLocked, setDescriptionLocked] = useState(false);
+  const analyzeTimeout = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    if (analyzeTimeout.current) clearTimeout(analyzeTimeout.current);
+
+    analyzeTimeout.current = setTimeout(async () => {
+      if (!formData.descripcion) {
+        setSemarnatRequired(false);
+        setDescriptionLocked(false);
+        return;
+      }
+      try {
+        const result = await geminiCore.analyzeTextForRegulatedKeywords(
+          formData.descripcion,
+          context
+        );
+        setSemarnatRequired(result.hasRegulatedKeywords);
+        if (!result.hasRegulatedKeywords) setDescriptionLocked(false);
+      } catch (error) {
+        console.error('Error analyzing text:', error);
+      }
+    }, 600);
+
+    return () => {
+      if (analyzeTimeout.current) clearTimeout(analyzeTimeout.current);
+    };
+  }, [formData.descripcion, context]);
+
+  useEffect(() => {
+    const generate = async () => {
+      if (
+        semarnatRequired &&
+        formData.numero_autorizacion &&
+        formData.folio_acreditacion &&
+        !descriptionLocked
+      ) {
+        try {
+          const legal = await geminiCore.generateLegalDescription(
+            formData.descripcion,
+            formData.numero_autorizacion,
+            formData.folio_acreditacion,
+            context
+          );
+          if (legal) {
+            setFormData(prev => ({ ...prev, descripcion: legal }));
+            setDescriptionLocked(true);
+          }
+        } catch (error) {
+          console.error('Error generating legal description:', error);
+        }
+      }
+    };
+    generate();
+  }, [semarnatRequired, formData.numero_autorizacion, formData.folio_acreditacion, context, descriptionLocked, formData.descripcion]);
 
   const handleFieldChange = (field: keyof Mercancia, value: any) => {
     setFormData(prev => ({
@@ -62,9 +121,17 @@ export function SmartMercanciaForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.descripcion || !formData.cantidad) {
       toast.error('Complete los campos obligatorios');
+      return;
+    }
+
+    if (
+      semarnatRequired &&
+      (!formData.numero_autorizacion || !formData.folio_acreditacion)
+    ) {
+      toast.error('Ingrese los datos de autorización SEMARNAT');
       return;
     }
 
@@ -139,6 +206,7 @@ export function SmartMercanciaForm({
             type="mercancia"
             label="Descripción de la Mercancía *"
             placeholder="Describe detalladamente la mercancía..."
+            disabled={descriptionLocked}
             context={context}
             formName="mercancia"
             fieldName="descripcion"
@@ -207,6 +275,30 @@ export function SmartMercanciaForm({
                 onChange={(e) => handleFieldChange('valor_mercancia', parseFloat(e.target.value) || 0)}
               />
             </div>
+
+            {semarnatRequired && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="numero_autorizacion">Número de Autorización SEMARNAT *</Label>
+                  <Input
+                    id="numero_autorizacion"
+                    value={formData.numero_autorizacion || ''}
+                    onChange={(e) => handleFieldChange('numero_autorizacion', e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="folio_acreditacion">Folio de Acreditación *</Label>
+                  <Input
+                    id="folio_acreditacion"
+                    value={formData.folio_acreditacion || ''}
+                    onChange={(e) => handleFieldChange('folio_acreditacion', e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <EnhancedAutocompleteInput

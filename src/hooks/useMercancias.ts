@@ -17,6 +17,8 @@ export interface Mercancia {
   embalaje?: string;
   uuid_comercio_ext?: string;
   codigo_producto?: string;
+  numero_autorizacion?: string;
+  folio_acreditacion?: string;
 }
 
 export interface MercanciaConErrores extends Mercancia {
