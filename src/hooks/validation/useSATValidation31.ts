@@ -58,7 +58,17 @@ export const useSATValidation31 = () => {
       
       const cartaPorte31Data = convertToCartaPorte31Data(cartaPorteData);
       
-      return await SATValidation31Enhanced.validarCompleta(cartaPorte31Data);
+      try {
+        return await SATValidation31Enhanced.validarCompleta(cartaPorte31Data);
+      } catch (error) {
+        console.error('Error en SATValidation31Enhanced:', error);
+        return {
+          isValid: false,
+          errors: ['Error en validación SAT'],
+          warnings: [],
+          score: 0
+        };
+      }
     },
     onSuccess: (result) => {
       if (result.isValid) {
@@ -191,7 +201,17 @@ export const useSATValidation31 = () => {
       console.log('Validando transporte internacional...');
       
       const cartaPorte31Data = convertToCartaPorte31Data(cartaPorteData);
-      return await SATValidation31Enhanced.validarTransporteInternacional(cartaPorte31Data);
+      try {
+        return await SATValidation31Enhanced.validarTransporteInternacional(cartaPorte31Data);
+      } catch (error) {
+        console.error('Error en SATValidation31Enhanced transporte internacional:', error);
+        return {
+          isValid: false,
+          errors: ['Error en validación de transporte internacional'],
+          warnings: [],
+          score: 0
+        };
+      }
     },
     onSuccess: (result) => {
       if (result.isValid) {
