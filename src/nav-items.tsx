@@ -1,7 +1,27 @@
 
-import { HomeIcon, FileTextIcon, FolderOpenIcon, SettingsIcon } from "lucide-react";
+import { 
+  HomeIcon, 
+  FileTextIcon, 
+  FolderOpenIcon, 
+  SettingsIcon,
+  LayoutDashboard,
+  Car,
+  Users,
+  Building2,
+  Truck,
+  CreditCard
+} from "lucide-react";
+
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import GestionBorradores from "./pages/GestionBorradores";
+import CartasPorte from "./pages/CartasPorte";
+import Vehiculos from "./pages/Vehiculos";
+import Conductores from "./pages/Conductores";
+import Socios from "./pages/Socios";
+import Viajes from "./pages/Viajes";
+import Administracion from "./pages/Administracion";
+import Planes from "./pages/Planes";
 
 /**
  * Central place for defining the navigation items. Used for navigation components and routing.
@@ -14,21 +34,57 @@ export const navItems = [
     page: <Index />,
   },
   {
+    title: "Dashboard", 
+    to: "/dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+    page: <Dashboard />,
+  },
+  {
+    title: "Cartas Porte",
+    to: "/cartas-porte",
+    icon: <FileTextIcon className="h-4 w-4" />,
+    page: <CartasPorte />,
+  },
+  {
     title: "Borradores",
     to: "/borradores", 
     icon: <FolderOpenIcon className="h-4 w-4" />,
     page: <GestionBorradores />,
   },
   {
-    title: "Cartas Porte",
-    to: "/cartas-porte",
-    icon: <FileTextIcon className="h-4 w-4" />,
-    page: <div>Cartas Porte - En desarrollo</div>,
+    title: "Vehículos",
+    to: "/vehiculos",
+    icon: <Car className="h-4 w-4" />,
+    page: <Vehiculos />,
   },
   {
-    title: "Configuración",
-    to: "/configuracion",
+    title: "Conductores",
+    to: "/conductores",
+    icon: <Users className="h-4 w-4" />,
+    page: <Conductores />,
+  },
+  {
+    title: "Socios",
+    to: "/socios",
+    icon: <Building2 className="h-4 w-4" />,
+    page: <Socios />,
+  },
+  {
+    title: "Viajes",
+    to: "/viajes",
+    icon: <Truck className="h-4 w-4" />,
+    page: <Viajes />,
+  },
+  {
+    title: "Administración",
+    to: "/administracion",
     icon: <SettingsIcon className="h-4 w-4" />,
-    page: <div>Configuración - En desarrollo</div>,
+    page: <Administracion />,
+  },
+  {
+    title: "Planes",
+    to: "/planes",
+    icon: <CreditCard className="h-4 w-4" />,
+    page: <Planes />,
   },
 ];

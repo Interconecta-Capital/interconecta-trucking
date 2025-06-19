@@ -1,122 +1,28 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+
+import { useState } from 'react';
+import { Plus, Truck, Filter, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, FileText, Clock, Calendar } from 'lucide-react';
-import { DocumentosVista } from '@/components/viajes/DocumentosVista';
 import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { ProgramacionViajes } from '@/components/viajes/ProgramacionViajes';
-import { useTabNavigation } from '@/hooks/useTabNavigation';
-import { useStatePersistence } from '@/hooks/useStatePersistence';
+import { DocumentosVista } from '@/components/viajes/DocumentosVista';
+import { ProgramarViajeModal } from '@/components/viajes/modals/ProgramarViajeModal';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedFeature } from '@/components/ProtectedFeature';
+import { ProtectedActions } from '@/components/ProtectedActions';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { FunctionalityType } from '@/types/permissions';
-
-interface TabConfig {
-  id: string;
-  label: string;
-  icon: any;
-  component: React.ComponentType;
-  requiresFeature?: FunctionalityType;
-}
-
-const TABS_CONFIG: TabConfig[] = [
-  { 
-    id: 'activos', 
-    label: 'Viajes Activos', 
-    icon: Truck, 
-    component: ViajesActivos 
-  },
-  { 
-    id: 'documentos', 
-    label: 'Documentos', 
-    icon: FileText, 
-    component: DocumentosVista 
-  },
-  { 
-    id: 'historial', 
-    label: 'Historial', 
-    icon: Clock, 
-    component: HistorialViajes 
-  },
-  { 
-    id: 'programacion', 
-    label: 'Programación', 
-    icon: Calendar, 
-    component: ProgramacionViajes,
-    requiresFeature: 'funciones_avanzadas' as FunctionalityType
-  },
-];
 
 export default function Viajes() {
-  const [searchParams] = useSearchParams();
-  const urlTab = searchParams.get('tab');
-  
-  // Usar persistencia mejorada para mantener estado
-  const [persistedTab, setPersistedTab] = useStatePersistence(
-    urlTab || 'activos',
-    { key: 'viajes-active-tab', storage: 'sessionStorage' }
-  );
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showProgramarModal, setShowProgramarModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('activos');
 
-  const { activeTab, handleTabChange } = useTabNavigation({
-    initialTab: persistedTab,
-    persistInURL: false, // NO persistir en URL para evitar recargas
-    storageKey: 'viajes' // Usar sessionStorage en su lugar
-  });
-
-  console.log('[Viajes] Current active tab:', activeTab);
-
-  // Sincronizar cambios de tab con persistencia
-  useEffect(() => {
-    if (activeTab !== persistedTab) {
-      setPersistedTab(activeTab);
-    }
-  }, [activeTab, persistedTab, setPersistedTab]);
-
-  // Prevenir re-renders innecesarios con useCallback
-  const handleTabChangeOptimized = useCallback((tab: string) => {
-    console.log('[Viajes] Tab change requested:', tab);
-    handleTabChange(tab);
-  }, [handleTabChange]);
-
-  // Memoizar los componentes de contenido para evitar re-renders
-  const tabContent = useMemo(() => {
-    console.log('[Viajes] Memoizing tab content for tabs:', TABS_CONFIG.map(t => t.id));
-    return TABS_CONFIG.reduce((acc, tab) => {
-      const Component = tab.component;
-      if (tab.requiresFeature) {
-        acc[tab.id] = (
-          <ProtectedFeature feature={tab.requiresFeature} key={`${tab.id}-content`}>
-            <Component />
-          </ProtectedFeature>
-        );
-      } else {
-        acc[tab.id] = <Component key={`${tab.id}-content`} />;
-      }
-      return acc;
-    }, {} as Record<string, JSX.Element>);
-  }, []); // Dependencias vacías para evitar re-creación
-
-  // Memoizar la lista de tabs para evitar re-renders
-  const tabsList = useMemo(() => (
-    <TabsList className="grid w-full grid-cols-4">
-      {TABS_CONFIG.map((tab) => {
-        const Icon = tab.icon;
-        return (
-          <TabsTrigger 
-            key={tab.id} 
-            value={tab.id} 
-            className="flex items-center gap-2"
-          >
-            <Icon className="h-4 w-4" />
-            {tab.label}
-          </TabsTrigger>
-        );
-      })}
-    </TabsList>
-  ), []);
+  const handleNuevoViaje = () => {
+    setShowProgramarModal(true);
+  };
 
   return (
     <ProtectedContent requiredFeature="viajes">
@@ -124,20 +30,76 @@ export default function Viajes() {
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
-        <div className="flex items-center gap-3">
-          <Truck className="h-6 w-6 text-blue-600" />
-          <h1 className="text-3xl font-bold">Gestión de Viajes</h1>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Truck className="h-6 w-6 text-blue-600" />
+            <h1 className="text-3xl font-bold">Gestión de Viajes</h1>
+          </div>
+          <ProtectedActions
+            action="create"
+            resource="viajes"
+            onAction={handleNuevoViaje}
+            buttonText="Programar Viaje"
+          />
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChangeOptimized} className="w-full">
-          {tabsList}
+        {/* Indicador de límites */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <LimitUsageIndicator resourceType="viajes" className="md:col-span-2" />
+        </div>
 
-          {TABS_CONFIG.map((tab) => (
-            <TabsContent key={tab.id} value={tab.id} className="mt-6">
-              {tabContent[tab.id]}
-            </TabsContent>
-          ))}
+        {/* Filtros y búsqueda */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar viajes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros
+          </Button>
+        </div>
+
+        {/* Tabs de viajes */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="activos">Viajes Activos</TabsTrigger>
+            <TabsTrigger value="programados">Programados</TabsTrigger>
+            <TabsTrigger value="historial">Historial</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="activos">
+            <ViajesActivos searchTerm={searchTerm} />
+          </TabsContent>
+
+          <TabsContent value="programados">
+            <ProgramacionViajes searchTerm={searchTerm} />
+          </TabsContent>
+
+          <TabsContent value="historial">
+            <HistorialViajes searchTerm={searchTerm} />
+          </TabsContent>
+
+          <TabsContent value="documentos">
+            <DocumentosVista searchTerm={searchTerm} />
+          </TabsContent>
         </Tabs>
+
+        {/* Modal de programar viaje */}
+        <ProgramarViajeModal
+          open={showProgramarModal}
+          onOpenChange={setShowProgramarModal}
+        />
       </div>
     </ProtectedContent>
   );

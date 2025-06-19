@@ -2,13 +2,23 @@
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { navItems } from "./nav-items"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./hooks/useAuth"
+import { BaseLayout } from "./components/layout/BaseLayout"
+
+// Páginas principales
 import Index from "./pages/Index"
+import Dashboard from "./pages/Dashboard"
 import NewCartaPorte from "./pages/NewCartaPorte"
 import EditCartaPorte from "./pages/EditCartaPorte"
 import GestionBorradores from "./pages/GestionBorradores"
+import CartasPorte from "./pages/CartasPorte"
+import Vehiculos from "./pages/Vehiculos"
+import Conductores from "./pages/Conductores"
+import Socios from "./pages/Socios"
+import Viajes from "./pages/Viajes"
+import Administracion from "./pages/Administracion"
+import Planes from "./pages/Planes"
 
 const queryClient = new QueryClient()
 
@@ -19,13 +29,69 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Página de inicio sin layout */}
             <Route path="/" element={<Index />} />
+            
+            {/* Rutas principales con layout completo */}
+            <Route path="/dashboard" element={
+              <BaseLayout>
+                <Dashboard />
+              </BaseLayout>
+            } />
+            
+            <Route path="/cartas-porte" element={
+              <BaseLayout>
+                <CartasPorte />
+              </BaseLayout>
+            } />
+            
+            <Route path="/vehiculos" element={
+              <BaseLayout>
+                <Vehiculos />
+              </BaseLayout>
+            } />
+            
+            <Route path="/conductores" element={
+              <BaseLayout>
+                <Conductores />
+              </BaseLayout>
+            } />
+            
+            <Route path="/socios" element={
+              <BaseLayout>
+                <Socios />
+              </BaseLayout>
+            } />
+            
+            <Route path="/viajes" element={
+              <BaseLayout>
+                <Viajes />
+              </BaseLayout>
+            } />
+            
+            <Route path="/administracion" element={
+              <BaseLayout>
+                <Administracion />
+              </BaseLayout>
+            } />
+            
+            <Route path="/planes" element={
+              <BaseLayout>
+                <Planes />
+              </BaseLayout>
+            } />
+            
+            {/* Rutas de Carta Porte específicas */}
             <Route path="/carta-porte/nuevo" element={<NewCartaPorte />} />
             <Route path="/carta-porte/:id" element={<EditCartaPorte />} />
-            <Route path="/borradores" element={<GestionBorradores />} />
-            {navItems.map((item) => (
-              <Route key={item.to} path={item.to} element={item.page} />
-            ))}
+            <Route path="/borradores" element={
+              <BaseLayout>
+                <GestionBorradores />
+              </BaseLayout>
+            } />
+            
+            {/* Redirección por defecto */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
