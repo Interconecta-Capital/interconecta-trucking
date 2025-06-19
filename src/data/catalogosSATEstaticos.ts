@@ -6,7 +6,7 @@ export interface CatalogoSATItem {
 
 // Productos y servicios más comunes del SAT
 export const PRODUCTOS_SERVICIOS_SAT: CatalogoSATItem[] = [
-  { clave: '01010101', descripcion: 'No existe en el catálogo' },
+  { clave: '01010101', descripcion: 'Animales vivos' },
   {
     clave: '01012100',
     descripcion: 'Animales vivos de la especie equina, reproductores de raza pura'
