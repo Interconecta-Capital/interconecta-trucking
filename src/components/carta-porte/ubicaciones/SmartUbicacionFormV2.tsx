@@ -55,7 +55,7 @@ export function SmartUbicacionFormV2({
     console.log('📥 Datos completos recibidos:', JSON.stringify(addressData, null, 2));
 
     const placeName = addressData.place_name || '';
-    const camposCompletados = new Set<keyof Ubicacion['domicilio']>();
+    const camposCompletados = new Set<keyof Ubicacion['domicilio']>;
     let parsedData: Partial<Ubicacion['domicilio']> & { coordenadas?: any } = {
       pais: 'México',
       codigoPostal: '',
@@ -451,7 +451,7 @@ export function SmartUbicacionFormV2({
 
               {/* Mensaje cuando el formulario está oculto */}
               {!mostrarDomicilio && (
-                <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                   <p className="text-sm text-gray-600 flex items-center gap-2 justify-center">
                     <EyeOff className="h-4 w-4" />
                     El formulario de domicilio aparecerá cuando busques una dirección o actives el modo manual
