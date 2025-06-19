@@ -1,6 +1,16 @@
 
-import { CartaPorteFormData } from '../useCartaPorteMappers';
-import { CartaPorteData } from '@/components/carta-porte/CartaPorteForm';
+import { CartaPorteData } from '@/types/cartaPorte';
+
+export interface CartaPorteFormData extends CartaPorteData {
+  // Campos adicionales específicos del formulario
+  xmlGenerado?: string | null;
+  pdfUrl?: string | null;
+  pdfBlob?: Blob | null;
+  datosCalculoRuta?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+  } | null;
+}
 
 export interface UseCartaPorteFormOptions {
   cartaPorteId?: string;

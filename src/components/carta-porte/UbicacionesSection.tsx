@@ -35,7 +35,7 @@ export function UbicacionesSection({
   // Calcular automáticamente distancias cuando hay ubicaciones válidas
   useEffect(() => {
     const ubicacionesValidas = data.filter(u => 
-      u.domicilio?.codigoPostal && 
+      u.domicilio?.codigo_postal && 
       u.domicilio?.calle && 
       u.domicilio?.municipio &&
       u.domicilio?.estado
@@ -59,7 +59,7 @@ export function UbicacionesSection({
   const handleSaveUbicacion = (ubicacion: UbicacionCompleta) => {
     if (editingUbicacion) {
       const updatedUbicaciones = data.map(u => 
-        u.idUbicacion === editingUbicacion.idUbicacion ? ubicacion : u
+        u.id_ubicacion === editingUbicacion.id_ubicacion ? ubicacion : u
       );
       onChange(updatedUbicaciones);
     } else {
@@ -70,7 +70,7 @@ export function UbicacionesSection({
   };
 
   const handleDeleteUbicacion = (idUbicacion: string) => {
-    const updatedUbicaciones = data.filter(u => u.idUbicacion !== idUbicacion);
+    const updatedUbicaciones = data.filter(u => u.id_ubicacion !== idUbicacion);
     onChange(updatedUbicaciones);
   };
 
@@ -89,16 +89,41 @@ export function UbicacionesSection({
     console.log('✅ Distancia calculada y persistida:', { distancia, tiempo });
   };
 
-  const hasOrigen = data.some(u => u.tipoUbicacion === 'Origen');
-  const hasDestino = data.some(u => u.tipoUbicacion === 'Destino');
+  const hasOrigen = data.some(u => u.tipo_ubicacion === 'Origen');
+  const hasDestino = data.some(u => u.tipo_ubicacion === 'Destino');
   const canContinue = hasOrigen && hasDestino && data.length >= 2;
 
   // Ordenar ubicaciones por tipo
   const ubicacionesOrdenadas = [...data].sort((a, b) => {
     const orden = { 'Origen': 1, 'Paso Intermedio': 2, 'Destino': 3 };
-    return (orden[a.tipoUbicacion as keyof typeof orden] || 2) - 
-           (orden[b.tipoUbicacion as keyof typeof orden] || 2);
+    return (orden[a.tipo_ubicacion as keyof typeof orden] || 2) - 
+           (orden[b.tipo_ubicacion as keyof typeof orden] || 2);
   });
+
+  // Convertir UbicacionCompleta a un formato compatible con DistanceCalculator
+  const ubicacionesParaCalculo = data.map(u => ({
+    id: u.id,
+    idUbicacion: u.id_ubicacion,
+    tipoUbicacion: u.tipo_ubicacion,
+    rfcRemitenteDestinatario: u.rfc_remitente_destinatario,
+    nombreRemitenteDestinatario: u.nombre_remitente_destinatario,
+    fechaHoraSalidaLlegada: u.fecha_hora_salida_llegada,
+    distanciaRecorrida: u.distancia_recorrida,
+    ordenSecuencia: 1, // Por ahora valor fijo
+    coordenadas: u.coordenadas,
+    domicilio: {
+      pais: u.domicilio.pais,
+      codigoPostal: u.domicilio.codigo_postal,
+      estado: u.domicilio.estado,
+      municipio: u.domicilio.municipio,
+      colonia: u.domicilio.colonia,
+      calle: u.domicilio.calle,
+      numExterior: u.domicilio.numero_exterior,
+      numInterior: u.domicilio.numero_interior,
+      referencia: u.domicilio.referencia,
+      localidad: '' // Campo requerido
+    }
+  }));
 
   return (
     <div className="space-y-6">
@@ -120,7 +145,7 @@ export function UbicacionesSection({
         <CardContent className="space-y-4">
           {/* Calculadora de Distancia */}
           <DistanceCalculator
-            ubicaciones={data}
+            ubicaciones={ubicacionesParaCalculo}
             onDistanceCalculated={handleDistanceCalculated}
             distanciaTotal={distanciaTotal}
             tiempoEstimado={tiempoEstimado}
@@ -138,11 +163,11 @@ export function UbicacionesSection({
             <div className="space-y-4">
               {ubicacionesOrdenadas.map((ubicacion, index) => (
                 <UbicacionCard
-                  key={ubicacion.idUbicacion}
+                  key={ubicacion.id_ubicacion}
                   ubicacion={ubicacion}
                   index={index}
                   onEdit={() => handleEditUbicacion(ubicacion)}
-                  onDelete={() => handleDeleteUbicacion(ubicacion.idUbicacion)}
+                  onDelete={() => handleDeleteUbicacion(ubicacion.id_ubicacion)}
                 />
               ))}
             </div>

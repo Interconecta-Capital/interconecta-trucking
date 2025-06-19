@@ -164,13 +164,13 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
             <div className="flex items-center space-x-2">
               <Switch
                 id="transporte-internacional"
-                checked={data.transporte_internacional || false}
-                onCheckedChange={(checked) => handleChange('transporte_internacional', checked)}
+                checked={data.transporteInternacional || false}
+                onCheckedChange={(checked) => handleChange('transporteInternacional', checked)}
               />
               <Label htmlFor="transporte-internacional">Transporte Internacional</Label>
             </div>
             
-            {data.transporte_internacional && (
+            {data.transporteInternacional && (
               <Alert className="border-blue-200 bg-blue-50">
                 <AlertTriangle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
@@ -182,8 +182,8 @@ export function ConfiguracionInicial({ data, onChange, onNext }: ConfiguracionIn
             <div className="flex items-center space-x-2">
               <Switch
                 id="registro-istmo"
-                checked={data.registro_istmo || false}
-                onCheckedChange={(checked) => handleChange('registro_istmo', checked)}
+                checked={data.registroIstmo || false}
+                onCheckedChange={(checked) => handleChange('registroIstmo', checked)}
               />
               <Label htmlFor="registro-istmo">Registro ISTMO</Label>
             </div>

@@ -1,4 +1,3 @@
-
 export interface CartaPorteData {
   // Identificadores únicos
   id?: string;
@@ -17,9 +16,14 @@ export interface CartaPorteData {
   rfcReceptor?: string;
   nombreReceptor?: string;
   
+  // Uso del CFDI - Agregado
+  uso_cfdi?: string;
+  
   // Configuración de transporte
   transporteInternacional?: string | boolean;
+  transporte_internacional?: boolean; // Alias para compatibilidad
   registroIstmo?: boolean;
+  registro_istmo?: boolean; // Alias para compatibilidad
   entradaSalidaMerc?: string;
   paisOrigenDestino?: string;
   viaEntradaSalida?: string;
