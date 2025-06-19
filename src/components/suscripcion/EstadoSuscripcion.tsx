@@ -132,10 +132,10 @@ export const EstadoSuscripcion = () => {
           <CardTitle>Uso Detallado por Recurso</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <LimitUsageIndicator resource="cartas_porte" />
-          <LimitUsageIndicator resource="conductores" />
-          <LimitUsageIndicator resource="vehiculos" />
-          <LimitUsageIndicator resource="socios" />
+          <LimitUsageIndicator resourceType="cartas_porte" />
+          <LimitUsageIndicator resourceType="conductores" />
+          <LimitUsageIndicator resourceType="vehiculos" />
+          <LimitUsageIndicator resourceType="socios" />
         </CardContent>
       </Card>
     </div>

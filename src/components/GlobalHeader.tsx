@@ -60,10 +60,10 @@ export function GlobalHeader() {
                 <div className="space-y-3">
                   <h4 className="font-medium">Uso Actual</h4>
                   <div className="space-y-3">
-                    <LimitUsageIndicator resource="cartas_porte" />
-                    <LimitUsageIndicator resource="conductores" />
-                    <LimitUsageIndicator resource="vehiculos" />
-                    <LimitUsageIndicator resource="socios" />
+                    <LimitUsageIndicator resourceType="cartas_porte" />
+                    <LimitUsageIndicator resourceType="conductores" />
+                    <LimitUsageIndicator resourceType="vehiculos" />
+                    <LimitUsageIndicator resourceType="socios" />
                   </div>
                   <div className="pt-2 border-t">
                     <Link to="/planes">

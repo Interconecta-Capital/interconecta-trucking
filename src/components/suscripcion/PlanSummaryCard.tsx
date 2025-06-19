@@ -96,7 +96,7 @@ export const PlanSummaryCard = () => {
                 {key.replace('_', ' ')}
               </div>
               <LimitUsageIndicator 
-                resource={key as any} 
+                resourceType={key as any} 
                 showDetails={false}
                 className="text-xs"
               />
