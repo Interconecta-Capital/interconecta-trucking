@@ -16,7 +16,6 @@ export const useSATValidation31 = () => {
       tipoCfdi: data.tipoCfdi || 'Traslado',
       transporteInternacional: data.transporteInternacional === 'Sí' || data.transporteInternacional === true,
       registroIstmo: data.registroIstmo || false,
-      cartaPorteVersion: data.cartaPorteVersion || '3.1',
       
       ubicaciones: data.ubicaciones?.map(ub => ({
         id: ub.id_ubicacion || ub.id || '',
@@ -93,15 +92,7 @@ export const useSATValidation31 = () => {
       
       const cartaPorte31Data = convertToCartaPorte31Data(cartaPorteData);
       
-      if (cartaPorte31Data.cartaPorteVersion === '3.1') {
-        return await SATValidation31Enhanced.validarCompleta(cartaPorte31Data);
-      }
-      
-      // Fallback para versión 3.0
-      return {
-        valido: true,
-        errores: []
-      };
+      return await SATValidation31Enhanced.validarCompleta(cartaPorte31Data);
     },
     onSuccess: (result) => {
       if (result.valido) {
