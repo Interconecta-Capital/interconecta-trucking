@@ -1,3 +1,4 @@
+
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
@@ -56,23 +57,52 @@ export const useSATValidation31 = () => {
         regimen_aduanero: merc.regimen_aduanero
       })) || [],
       
+      // Ensure autotransporte has all required properties
       autotransporte: data.autotransporte ? {
         placa_vm: data.autotransporte.placa_vm,
+        anio_modelo_vm: data.autotransporte.anio_modelo_vm || new Date().getFullYear(),
+        config_vehicular: data.autotransporte.config_vehicular || '',
+        perm_sct: data.autotransporte.perm_sct || '',
+        num_permiso_sct: data.autotransporte.num_permiso_sct || '',
+        asegura_resp_civil: data.autotransporte.asegura_resp_civil || '',
+        poliza_resp_civil: data.autotransporte.poliza_resp_civil || '',
+        asegura_med_ambiente: data.autotransporte.asegura_med_ambiente,
+        poliza_med_ambiente: data.autotransporte.poliza_med_ambiente,
         peso_bruto_vehicular: data.autotransporte.peso_bruto_vehicular,
         tipo_carroceria: data.autotransporte.tipo_carroceria,
         carga_maxima: data.autotransporte.carga_maxima,
         tarjeta_circulacion: data.autotransporte.tarjeta_circulacion,
         vigencia_tarjeta_circulacion: data.autotransporte.vigencia_tarjeta_circulacion,
         remolques: data.autotransporte.remolques?.map(rem => ({
+          id: rem.id || crypto.randomUUID(),
           placa: rem.placa,
-          subtipo_rem: rem.subtipo_rem
+          subtipo_rem: rem.subtipo_rem,
+          autotransporte_id: rem.autotransporte_id
         })) || []
       } : undefined,
       
+      // Ensure figuras have all required properties
       figuras: data.figuras?.map(fig => ({
+        id: fig.id || crypto.randomUUID(),
         rfc_figura: fig.rfc_figura,
         nombre_figura: fig.nombre_figura,
-        tipo_figura: fig.tipo_figura
+        tipo_figura: fig.tipo_figura,
+        num_licencia: fig.num_licencia,
+        residencia_fiscal_figura: fig.residencia_fiscal_figura,
+        num_reg_id_trib_figura: fig.num_reg_id_trib_figura,
+        curp: fig.curp,
+        tipo_licencia: fig.tipo_licencia,
+        vigencia_licencia: fig.vigencia_licencia,
+        operador_sct: fig.operador_sct,
+        domicilio: fig.domicilio || {
+          pais: 'MEX',
+          codigo_postal: '',
+          estado: '',
+          municipio: '',
+          colonia: '',
+          calle: '',
+          numero_exterior: ''
+        }
       })) || [],
 
       // Nuevos campos v3.1

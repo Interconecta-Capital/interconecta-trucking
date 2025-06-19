@@ -1,5 +1,4 @@
 
-
 // Tipos específicos para validación SAT v3.1
 export interface CartaPorte31Data {
   rfcEmisor?: string;
@@ -54,11 +53,8 @@ export interface CartaPorte31Data {
   // Use the complete AutotransporteCompleto type instead of custom type
   autotransporte?: import('@/types/cartaPorte').AutotransporteCompleto;
   
-  figuras?: Array<{
-    rfc_figura: string;
-    nombre_figura: string;
-    tipo_figura: string;
-  }>;
+  // Use the complete FiguraCompleta type instead of custom type
+  figuras?: import('@/types/cartaPorte').FiguraCompleta[];
   
   // Campos específicos de versión 3.1
   version31Fields?: {
@@ -81,4 +77,3 @@ export interface ValidationResult {
   isValid: boolean;
   errors: string[];
 }
-
