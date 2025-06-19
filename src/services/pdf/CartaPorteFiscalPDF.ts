@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { CartaPorteData } from '@/types/cartaPorte';
@@ -180,6 +179,49 @@ export class CartaPorteFiscalPDF {
     }
   }
 
+  private static addUbicacionesCompletas(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
+    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 60);
+    
+    this.addSectionTitle(doc, '3. UBICACIONES (ORIGEN Y DESTINO)', yPosition);
+    yPosition += 10;
+
+    if (!cartaPorteData.ubicaciones || cartaPorteData.ubicaciones.length === 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('No hay ubicaciones registradas', this.LAYOUT.margin + 5, yPosition);
+      return yPosition + 15;
+    }
+
+    const headers = ['Tipo', 'ID Ubicación', 'Nombre/RFC', 'Domicilio Completo', 'Fecha/Hora', 'Distancia'];
+    const tableData = [headers];
+
+    cartaPorteData.ubicaciones.forEach(ubicacion => {
+      const domicilio = ubicacion.domicilio ? 
+        `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.localidad || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''}, CP ${ubicacion.domicilio.codigo_postal || ''}`.trim() : 
+        'N/A';
+      
+      const nombreRFC = `${ubicacion.nombre_remitente_destinatario || 'N/A'}\nRFC: ${ubicacion.rfc_remitente_destinatario || 'N/A'}`;
+
+      const fechaHora = ubicacion.fecha_hora_salida_llegada ? 
+        new Date(ubicacion.fecha_hora_salida_llegada).toLocaleString('es-MX') : 
+        'N/A';
+
+      const distancia = ubicacion.distancia_recorrida ? `${ubicacion.distancia_recorrida} km` : 'N/A';
+
+      tableData.push([
+        ubicacion.tipo_ubicacion || 'N/A',
+        ubicacion.id_ubicacion || 'N/A',
+        nombreRFC,
+        domicilio,
+        fechaHora,
+        distancia
+      ]);
+    });
+
+    yPosition = this.addTable(doc, pageWidth, yPosition, tableData, true, 7);
+    return yPosition + this.LAYOUT.sectionSpacing;
+  }
+
   private static addFiscalHeader(
     doc: jsPDF,
     pageWidth: number,
@@ -282,49 +324,6 @@ export class CartaPorteFiscalPDF {
     ];
 
     yPosition = this.addInfoGrid(doc, pageWidth, yPosition, infoData);
-    return yPosition + this.LAYOUT.sectionSpacing;
-  }
-
-  private static addUbicacionesCompletas(doc: jsPDF, pageWidth: number, pageHeight: number, yPosition: number, cartaPorteData: CartaPorteData): number {
-    yPosition = this.checkPageBreak(doc, yPosition, pageHeight, 60);
-    
-    this.addSectionTitle(doc, '3. UBICACIONES (ORIGEN Y DESTINO)', yPosition);
-    yPosition += 10;
-
-    if (!cartaPorteData.ubicaciones || cartaPorteData.ubicaciones.length === 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('No hay ubicaciones registradas', this.LAYOUT.margin + 5, yPosition);
-      return yPosition + 15;
-    }
-
-    const headers = ['Tipo', 'ID Ubicación', 'Nombre/RFC', 'Domicilio Completo', 'Fecha/Hora', 'Distancia'];
-    const tableData = [headers];
-
-    cartaPorteData.ubicaciones.forEach(ubicacion => {
-      const domicilio = ubicacion.domicilio ? 
-        `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.localidad || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''}, CP ${ubicacion.domicilio.codigo_postal || ''}`.trim() : 
-        'N/A';
-      
-      const nombreRFC = `${ubicacion.nombre_remitente_destinatario || 'N/A'}\nRFC: ${ubicacion.rfc_remitente_destinatario || 'N/A'}`;
-
-      const fechaHora = ubicacion.fecha_hora_salida_llegada ? 
-        new Date(ubicacion.fecha_hora_salida_llegada).toLocaleString('es-MX') : 
-        'N/A';
-
-      const distancia = ubicacion.distancia_recorrida ? `${ubicacion.distancia_recorrida} km` : 'N/A';
-
-      tableData.push([
-        ubicacion.tipo_ubicacion || 'N/A',
-        ubicacion.id_ubicacion || 'N/A',
-        nombreRFC,
-        domicilio,
-        fechaHora,
-        distancia
-      ]);
-    });
-
-    yPosition = this.addTable(doc, pageWidth, yPosition, tableData, true, 7);
     return yPosition + this.LAYOUT.sectionSpacing;
   }
 

@@ -123,7 +123,6 @@ export function CartaPorteXMLSection({ cartaPorteData, cartaPorteId }: CartaPort
           <TabsContent value="xml" className="mt-6">
             <XMLGenerationPanel
               cartaPorteData={cartaPorteData}
-              isGenerating={isGenerating}
               xmlGenerado={xmlGenerado}
               onGenerarXML={() => generarXML(cartaPorteData)}
               onDescargarXML={descargarXML}
@@ -133,7 +132,6 @@ export function CartaPorteXMLSection({ cartaPorteData, cartaPorteId }: CartaPort
 
           <TabsContent value="timbrado" className="mt-6">
             <TimbradoPanel
-              cartaPorteData={cartaPorteData}
               cartaPorteId={cartaPorteId}
               xmlGenerado={xmlGenerado}
               isTimbring={isTimbring}

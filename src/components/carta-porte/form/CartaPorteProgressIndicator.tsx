@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, Clock, FileText, MapPin, Package, Truck, Users, Code, ShieldCheck } from 'lucide-react';
@@ -18,45 +17,47 @@ const steps = [
     id: 0, 
     name: 'Configuración', 
     icon: FileText,
-    key: 'configuracion' as keyof ValidationSummary['sectionStatus']
+    key: 'configuracion' as const
   },
   { 
     id: 1, 
     name: 'Ubicaciones', 
     icon: MapPin,
-    key: 'ubicaciones' as keyof ValidationSummary['sectionStatus']
+    key: 'ubicaciones' as const
   },
   { 
     id: 2, 
     name: 'Mercancías', 
     icon: Package,
-    key: 'mercancias' as keyof ValidationSummary['sectionStatus']
+    key: 'mercancias' as const
   },
   { 
     id: 3, 
     name: 'Autotransporte', 
     icon: Truck,
-    key: 'autotransporte' as keyof ValidationSummary['sectionStatus']
+    key: 'autotransporte' as const
   },
   { 
     id: 4, 
     name: 'Figuras', 
     icon: Users,
-    key: 'figuras' as keyof ValidationSummary['sectionStatus']
+    key: 'figuras' as const
   },
   { 
     id: 5, 
     name: 'XML', 
     icon: Code,
-    key: 'xml' as keyof ValidationSummary['sectionStatus']
+    key: 'xml' as const
   },
   { 
     id: 6, 
     name: 'PDF Fiscal', 
     icon: ShieldCheck,
-    key: 'pdf_fiscal' as keyof ValidationSummary['sectionStatus']
+    key: 'pdf_fiscal' as const
   }
 ];
+
+type StepKey = typeof steps[number]['key'];
 
 export function CartaPorteProgressIndicator({ 
   validationSummary, 
@@ -88,17 +89,26 @@ export function CartaPorteProgressIndicator({
       }
     }
     
-    const sectionStatus = validationSummary.sectionStatus[step.key];
+    // Para las secciones principales del formulario
+    const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
+      'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
+    ];
     
-    if (step.id < currentStep) {
-      return sectionStatus === 'complete' ? 'completed' : 'completed-warning';
+    if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
+      const sectionStatus = validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']];
+      
+      if (step.id < currentStep) {
+        return sectionStatus === 'complete' ? 'completed' : 'completed-warning';
+      }
+      
+      if (step.id === currentStep) {
+        return 'current';
+      }
+      
+      return sectionStatus === 'empty' ? 'pending' : 'ready';
     }
     
-    if (step.id === currentStep) {
-      return 'current';
-    }
-    
-    return sectionStatus === 'empty' ? 'pending' : 'ready';
+    return 'pending';
   };
 
   const getStepIcon = (step: typeof steps[0], status: string) => {
@@ -138,8 +148,14 @@ export function CartaPorteProgressIndicator({
     // Para avanzar, verificar que los pasos anteriores no estén vacíos
     for (let i = 0; i < stepId; i++) {
       const step = steps[i];
-      if (step.key !== 'xml' && step.key !== 'pdf_fiscal' && validationSummary.sectionStatus[step.key] === 'empty') {
-        return false;
+      const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
+        'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
+      ];
+      
+      if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
+        if (validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']] === 'empty') {
+          return false;
+        }
       }
     }
     
@@ -148,9 +164,16 @@ export function CartaPorteProgressIndicator({
 
   const getNextStepMessage = () => {
     // Si todas las secciones principales están completas
-    const mainSectionsComplete = steps.slice(0, 5).every(step => 
-      validationSummary.sectionStatus[step.key] !== 'empty'
-    );
+    const mainSectionsComplete = steps.slice(0, 5).every(step => {
+      const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
+        'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
+      ];
+      
+      if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
+        return validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']] !== 'empty';
+      }
+      return true;
+    });
     
     if (mainSectionsComplete && !xmlGenerado) {
       return 'Listo para generar XML';
@@ -169,22 +192,28 @@ export function CartaPorteProgressIndicator({
     
     if (!nextStepData) return null;
     
-    const currentSectionStatus = validationSummary.sectionStatus[currentStepData.key];
+    const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
+      'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
+    ];
     
-    if (currentSectionStatus === 'empty') {
-      switch (currentStepData.key) {
-        case 'configuracion':
-          return 'Complete los datos del emisor y receptor';
-        case 'ubicaciones':
-          return 'Agregue las ubicaciones de origen y destino';
-        case 'mercancias':
-          return 'Agregue al menos una mercancía';
-        case 'autotransporte':
-          return 'Complete los datos del vehículo';
-        case 'figuras':
-          return 'Agregue al menos una figura de transporte';
-        default:
-          return `Complete la sección ${currentStepData.name}`;
+    if (mainSectionKeys.includes(currentStepData.key as keyof ValidationSummary['sectionStatus'])) {
+      const currentSectionStatus = validationSummary.sectionStatus[currentStepData.key as keyof ValidationSummary['sectionStatus']];
+      
+      if (currentSectionStatus === 'empty') {
+        switch (currentStepData.key) {
+          case 'configuracion':
+            return 'Complete los datos del emisor y receptor';
+          case 'ubicaciones':
+            return 'Agregue las ubicaciones de origen y destino';
+          case 'mercancias':
+            return 'Agregue al menos una mercancía';
+          case 'autotransporte':
+            return 'Complete los datos del vehículo';
+          case 'figuras':
+            return 'Agregue al menos una figura de transporte';
+          default:
+            return `Complete la sección ${currentStepData.name}`;
+        }
       }
     }
     
@@ -200,7 +229,16 @@ export function CartaPorteProgressIndicator({
       if (step.key === 'pdf_fiscal') {
         return xmlTimbrado && datosTimbre?.uuid ? 1 : 0;
       }
-      return validationSummary.sectionStatus[step.key] === 'complete' ? 1 : 0;
+      
+      const mainSectionKeys: Array<keyof ValidationSummary['sectionStatus']> = [
+        'configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'
+      ];
+      
+      if (mainSectionKeys.includes(step.key as keyof ValidationSummary['sectionStatus'])) {
+        return validationSummary.sectionStatus[step.key as keyof ValidationSummary['sectionStatus']] === 'complete' ? 1 : 0;
+      }
+      
+      return 0;
     }).length;
     
     return Math.round((completedSections / steps.length) * 100);
