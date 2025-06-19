@@ -12,7 +12,7 @@ export interface CartaPorte31Data {
   
   ubicaciones?: Array<{
     id: string;
-    id_ubicacion?: string; // Add this missing field
+    id_ubicacion: string; // Make this required to match UbicacionCompleta
     tipo_ubicacion: 'Origen' | 'Destino' | 'Paso Intermedio';
     coordenadas?: {
       latitud: number;

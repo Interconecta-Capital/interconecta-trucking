@@ -59,7 +59,7 @@ export function UbicacionForm({ ubicacion, onSave, onCancel, existingUbicaciones
     } else {
       const cpValidation = SATValidation.validarCodigoPostal(formData.domicilio.codigo_postal);
       if (!cpValidation.isValid) {
-        newErrors.codigo_postal = cpValidation.message || 'Código postal inválido';
+        newErrors.codigo_postal = cpValidation.errors[0] || 'Código postal inválido';
       }
     }
 
@@ -79,7 +79,7 @@ export function UbicacionForm({ ubicacion, onSave, onCancel, existingUbicaciones
     if (formData.rfc_remitente_destinatario) {
       const rfcValidation = SATValidation.validarRFC(formData.rfc_remitente_destinatario);
       if (!rfcValidation.isValid) {
-        newErrors.rfc = rfcValidation.message || 'RFC inválido';
+        newErrors.rfc = rfcValidation.errors[0] || 'RFC inválido';
       }
     }
 

@@ -18,7 +18,7 @@ export const useSATValidation31 = () => {
       
       ubicaciones: data.ubicaciones?.map(ub => ({
         id: ub.id_ubicacion || ub.id || '',
-        id_ubicacion: ub.id_ubicacion || ub.id || '', // Ensure this field is included
+        id_ubicacion: ub.id_ubicacion || ub.id || '', // Ensure this field is always present and required
         tipo_ubicacion: ub.tipo_ubicacion,
         coordenadas: ub.coordenadas ? {
           latitud: ub.coordenadas.latitud,
