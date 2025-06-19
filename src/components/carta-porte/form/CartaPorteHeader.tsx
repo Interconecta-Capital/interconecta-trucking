@@ -1,14 +1,15 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Save, FileText, Trash2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { IdCCPDisplay } from '../IdCCPDisplay';
 
 interface CartaPorteHeaderProps {
   borradorCargado: boolean;
   ultimoGuardado: Date | null;
+  idCCP?: string;
   onGuardarBorrador: () => Promise<void>;
   onLimpiarBorrador: () => Promise<void>;
   onGuardarYSalir: () => Promise<void>;
@@ -18,6 +19,7 @@ interface CartaPorteHeaderProps {
 export function CartaPorteHeader({
   borradorCargado,
   ultimoGuardado,
+  idCCP,
   onGuardarBorrador,
   onLimpiarBorrador,
   onGuardarYSalir,
@@ -31,7 +33,7 @@ export function CartaPorteHeader({
 
   return (
     <Card className="border-l-4 border-l-blue-500">
-      <CardContent className="p-6">
+      <CardContent className="p-6 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -108,6 +110,9 @@ export function CartaPorteHeader({
             </Button>
           </div>
         </div>
+
+        {/* Mostrar IdCCP */}
+        <IdCCPDisplay idCCP={idCCP} />
       </CardContent>
     </Card>
   );

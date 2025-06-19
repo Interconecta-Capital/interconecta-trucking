@@ -1,4 +1,3 @@
-
 export interface QRCodeData31 {
   uuid: string;
   fechaOrigen: string;
@@ -37,12 +36,9 @@ export class CartaPorte31QRGenerator {
 
   // Generar IdCCP válido para v3.1 (36 caracteres RFC 4122)
   static generateIdCCP31(): string {
-    // Generar UUID v4 según RFC 4122
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c == 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
+    // Usar el servicio UUID centralizado
+    const UUIDService = require('@/services/uuid/UUIDService').UUIDService;
+    return UUIDService.generateValidIdCCP();
   }
 
   private static isValidDateTimeFormat(dateTime: string): boolean {

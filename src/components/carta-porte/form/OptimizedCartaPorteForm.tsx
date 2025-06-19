@@ -21,6 +21,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     figuras,
     currentStep,
     currentCartaPorteId,
+    idCCP,
     borradorCargado,
     ultimoGuardado,
     validationSummary,
@@ -90,11 +91,12 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         onReject={handleRejectBorrador}
       />
 
-      {/* Header con mejor espaciado */}
+      {/* Header con IdCCP */}
       <div className="mb-8">
         <CartaPorteHeader
           borradorCargado={borradorCargado}
           ultimoGuardado={ultimoGuardado}
+          idCCP={idCCP}
           onGuardarBorrador={handleGuardarBorrador}
           onLimpiarBorrador={handleLimpiarBorrador}
           onGuardarYSalir={handleGuardarYSalir}

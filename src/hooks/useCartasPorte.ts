@@ -1,9 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { UUIDService } from '@/services/uuid/UUIDService';
 
 export interface CartaPorte {
   id: string;
@@ -96,11 +96,18 @@ export const useCartasPorte = () => {
     mutationFn: async (data: Omit<CartaPorte, 'id' | 'usuario_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
+      // Generar IdCCP automáticamente si no existe
+      const idCCP = data.id_ccp || UUIDService.generateValidIdCCP();
+      
+      console.log('[CartaPorte] Generando nueva carta porte con IdCCP:', idCCP);
+      
       const { data: result, error } = await supabase
         .from('cartas_porte')
         .insert({
           ...data,
           usuario_id: user.id,
+          id_ccp: idCCP,
+          version_carta_porte: '3.1', // Asegurar versión 3.1
         })
         .select()
         .single();
@@ -110,7 +117,7 @@ export const useCartasPorte = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cartas-porte'] });
-      toast.success('Carta porte creada exitosamente');
+      toast.success('Carta porte creada exitosamente con IdCCP generado');
     },
     onError: (error: any) => {
       console.error('[CartasPorte] Create error:', error);

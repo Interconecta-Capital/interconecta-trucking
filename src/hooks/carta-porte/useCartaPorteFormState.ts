@@ -1,7 +1,7 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { CartaPorteFormData } from './useCartaPorteMappers';
+import { UUIDService } from '@/services/uuid/UUIDService';
 
 const initialFormData: CartaPorteFormData = {
   configuracion: {
@@ -42,17 +42,31 @@ const initialFormData: CartaPorteFormData = {
 
 interface UseCartaPorteFormStateOptions {
   cartaPorteId?: string;
+  autoGenerateIdCCP?: boolean;
 }
 
-export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateOptions = {}) => {
+export const useCartaPorteFormState = ({ 
+  cartaPorteId,
+  autoGenerateIdCCP = true 
+}: UseCartaPorteFormStateOptions = {}) => {
   const [formData, setFormData] = useState<CartaPorteFormData>(initialFormData);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | undefined>(cartaPorteId);
+  const [idCCP, setIdCCP] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { validateComplete } = useCartaPorteValidation();
+
+  // Generar IdCCP automáticamente al inicializar el formulario
+  useEffect(() => {
+    if (autoGenerateIdCCP && !idCCP && !cartaPorteId) {
+      const newIdCCP = UUIDService.generateValidIdCCP();
+      setIdCCP(newIdCCP);
+      console.log('[CartaPorteForm] IdCCP generado automáticamente:', newIdCCP);
+    }
+  }, [autoGenerateIdCCP, idCCP, cartaPorteId]);
 
   const updateFormData = useCallback((updates: Partial<CartaPorteFormData>) => {
     setFormData(prev => ({
@@ -77,6 +91,21 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
     setCurrentStep(0);
     setIsDirty(false);
     setError(null);
+    
+    // Generar nuevo IdCCP al resetear
+    if (autoGenerateIdCCP) {
+      const newIdCCP = UUIDService.generateValidIdCCP();
+      setIdCCP(newIdCCP);
+      console.log('[CartaPorteForm] Nuevo IdCCP generado al resetear:', newIdCCP);
+    }
+  }, [autoGenerateIdCCP]);
+
+  const generateNewIdCCP = useCallback(() => {
+    const newIdCCP = UUIDService.generateValidIdCCP();
+    setIdCCP(newIdCCP);
+    setIsDirty(true);
+    console.log('[CartaPorteForm] IdCCP regenerado manualmente:', newIdCCP);
+    return newIdCCP;
   }, []);
 
   const validateCurrentState = useCallback(() => {
@@ -114,6 +143,8 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
     setFormData,
     currentCartaPorteId,
     setCurrentCartaPorteId,
+    idCCP,
+    setIdCCP,
     currentStep,
     isDirty,
     isLoading,
@@ -123,6 +154,7 @@ export const useCartaPorteFormState = ({ cartaPorteId }: UseCartaPorteFormStateO
     updateSection,
     setCurrentStep,
     resetForm,
+    generateNewIdCCP,
     validateCurrentState
   };
 };
