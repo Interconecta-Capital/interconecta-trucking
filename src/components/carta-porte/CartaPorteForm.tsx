@@ -10,7 +10,7 @@ interface CartaPorteFormProps {
 }
 
 export function CartaPorteForm({ cartaPorteId }: CartaPorteFormProps) {
-  return <OptimizedCartaPorteForm cartaPorteId={cartaPorteId} />;
+  return <OptimizedCartaPorteForm currentCartaPorteId={cartaPorteId} />;
 }
 
 export default CartaPorteForm;

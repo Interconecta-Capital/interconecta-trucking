@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -59,18 +60,19 @@ export function OptimizedCartaPorteForm({ currentCartaPorteId, onDataChange }: O
     console.log('Timbrado:', datos);
   }, []);
 
-  const getCompletionPercentage = () => {
+  const getCompletionPercentage = useCallback(() => {
     let completed = 0;
     let total = 6;
 
-    if (cartaPorteData.rfc_emisor && cartaPorteData.rfc_receptor) completed++;
-    if (cachedFormData.ubicaciones?.length >= 2) completed++;
-    if (cachedFormData.mercancias?.length > 0) completed++;
-    if (cachedFormData.autotransporte?.placa_vm) completed++;
-    if (cachedFormData.figuras?.length > 0) completed++;
+    // Verificar datos básicos con valores por defecto
+    if (cartaPorteData?.rfcEmisor && cartaPorteData?.rfcReceptor) completed++;
+    if (cachedFormData?.ubicaciones?.length >= 2) completed++;
+    if (cachedFormData?.mercancias?.length > 0) completed++;
+    if (cachedFormData?.autotransporte?.placa_vm) completed++;
+    if (cachedFormData?.figuras?.length > 0) completed++;
 
     return Math.round((completed / total) * 100);
-  };
+  }, [cartaPorteData, cachedFormData]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">Cargando...</div>;

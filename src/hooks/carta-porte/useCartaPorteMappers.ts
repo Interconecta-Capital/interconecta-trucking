@@ -1,4 +1,5 @@
 
+import { useState, useEffect, useCallback } from 'react';
 import {
   CartaPorteData,
   UbicacionCompleta,
@@ -52,9 +53,45 @@ export interface CartaPorteFormData {
   }>; // v3.1
 }
 
-// Hook principal de mapeo con validación de tipos
-export const useCartaPorteMappers = () => {
-  const formDataToCartaPorteData = (formData: CartaPorteFormData): CartaPorteData => {
+// Función helper para autotransporte por defecto
+const getDefaultAutotransporte = (): AutotransporteCompleto => ({
+  placa_vm: '',
+  anio_modelo_vm: new Date().getFullYear(),
+  config_vehicular: '',
+  perm_sct: '',
+  num_permiso_sct: '',
+  asegura_resp_civil: '',
+  poliza_resp_civil: '',
+  peso_bruto_vehicular: 0,
+  capacidad_carga: 0,
+  remolques: [],
+});
+
+// Datos por defecto para CartaPorteData
+const getDefaultCartaPorteData = (): CartaPorteData => ({
+  version: '3.1',
+  cartaPorteVersion: '3.1',
+  tipoCfdi: 'Traslado',
+  rfcEmisor: '',
+  nombreEmisor: '',
+  rfcReceptor: '',
+  nombreReceptor: '',
+  transporteInternacional: false,
+  registroIstmo: false,
+  ubicaciones: [],
+  mercancias: [],
+  autotransporte: getDefaultAutotransporte(),
+  figuras: [],
+});
+
+// Hook principal de mapeo con gestión de estado
+export const useCartaPorteMappers = (currentCartaPorteId?: string) => {
+  const [cartaPorteData, setCartaPorteData] = useState<CartaPorteData>(getDefaultCartaPorteData());
+  const [cachedFormData, setCachedFormData] = useState<Partial<CartaPorteFormData>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Funciones de mapeo
+  const formDataToCartaPorteData = useCallback((formData: CartaPorteFormData): CartaPorteData => {
     return {
       // Identificadores
       id: formData.cartaPorteId,
@@ -65,6 +102,7 @@ export const useCartaPorteMappers = () => {
       tipoCreacion: formData.tipoCreacion,
       tipoCfdi: formData.tipoCfdi,
       cartaPorteVersion: formData.cartaPorteVersion,
+      version: formData.cartaPorteVersion,
       
       // Emisor y receptor
       rfcEmisor: formData.rfcEmisor,
@@ -86,9 +124,9 @@ export const useCartaPorteMappers = () => {
       autotransporte: formData.autotransporte,
       figuras: formData.figuras,
     };
-  };
+  }, []);
 
-  const cartaPorteDataToFormData = (cartaPorteData: CartaPorteData): CartaPorteFormData => {
+  const cartaPorteDataToFormData = useCallback((cartaPorteData: CartaPorteData): CartaPorteFormData => {
     return {
       configuracion: {
         version: cartaPorteData.cartaPorteVersion || '3.1',
@@ -127,23 +165,57 @@ export const useCartaPorteMappers = () => {
       regimenAduanero: cartaPorteData.regimenAduanero,
       regimenesAduaneros: cartaPorteData.regimenesAduaneros,
     };
-  };
+  }, []);
 
-  // Función helper para autotransporte por defecto
-  const getDefaultAutotransporte = (): AutotransporteCompleto => ({
-    placa_vm: '',
-    anio_modelo_vm: new Date().getFullYear(),
-    config_vehicular: '',
-    perm_sct: '',
-    num_permiso_sct: '',
-    asegura_resp_civil: '',
-    poliza_resp_civil: '',
-    peso_bruto_vehicular: 0,
-    remolques: [],
-  });
+  // Actualizar datos del formulario
+  const updateFormData = useCallback((section: string, data: any) => {
+    setCachedFormData(prev => ({
+      ...prev,
+      [section]: data
+    }));
+
+    // También actualizar cartaPorteData para mantener sincronización
+    setCartaPorteData(prev => ({
+      ...prev,
+      [section]: data
+    }));
+  }, []);
+
+  // Función simulada para guardar en base de datos
+  const saveToDatabase = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Aquí iría la lógica real de guardado
+      console.log('Guardando carta porte...', cartaPorteData);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay
+    } catch (error) {
+      console.error('Error guardando:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cartaPorteData]);
+
+  // Cargar datos si hay un ID
+  useEffect(() => {
+    if (currentCartaPorteId) {
+      setIsLoading(true);
+      // Aquí iría la lógica para cargar datos existentes
+      // Por ahora, usar datos por defecto
+      setTimeout(() => {
+        const defaultData = getDefaultCartaPorteData();
+        setCartaPorteData(defaultData);
+        setCachedFormData(cartaPorteDataToFormData(defaultData));
+        setIsLoading(false);
+      }, 500);
+    } else {
+      const defaultData = getDefaultCartaPorteData();
+      setCartaPorteData(defaultData);
+      setCachedFormData(cartaPorteDataToFormData(defaultData));
+    }
+  }, [currentCartaPorteId, cartaPorteDataToFormData]);
 
   // Funciones de validación de migración entre versiones
-  const validateMigrationTo31 = (data: CartaPorteData): string[] => {
+  const validateMigrationTo31 = useCallback((data: CartaPorteData): string[] => {
     const errors: string[] = [];
     
     // Validar fracción arancelaria obligatoria en v3.1
@@ -157,18 +229,30 @@ export const useCartaPorteMappers = () => {
     }
     
     return errors;
-  };
+  }, []);
 
-  const validateMigrationTo30 = (data: CartaPorteData): string[] => {
+  const validateMigrationTo30 = useCallback((data: CartaPorteData): string[] => {
     const errors: string[] = [];
     
     // Validaciones específicas para migrar a v3.0 si las hubiera
     // Por ejemplo, verificar que no hay campos exclusivos de v3.1
     
     return errors;
-  };
+  }, []);
 
   return {
+    // Datos principales
+    cartaPorteData,
+    cachedFormData,
+    
+    // Estado
+    isLoading,
+    
+    // Funciones de gestión
+    updateFormData,
+    saveToDatabase,
+    
+    // Funciones de mapeo
     formDataToCartaPorteData,
     cartaPorteDataToFormData,
     validateMigrationTo31,
