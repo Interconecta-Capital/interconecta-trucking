@@ -60,7 +60,7 @@ export function UbicacionesSectionOptimizada({
     handleSaveUbicacion(ubicacion);
   };
 
-  // Handle edit - convert from UbicacionCompleta to Ubicacion for the manager
+  // Handle edit - pass UbicacionCompleta directly since that's what we have
   const handleEditUbicacionWrapper = (ubicacionCompleta: UbicacionCompleta) => {
     const ubicacion = convertToUbicacion(ubicacionCompleta);
     handleEditUbicacion(ubicacion);
