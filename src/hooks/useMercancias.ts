@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface Mercancia {
@@ -10,12 +11,21 @@ export interface Mercancia {
   peso_kg: number;
   valor_mercancia: number;
   material_peligroso: boolean;
-  cve_material_peligroso?: string;
   moneda: string;
   fraccion_arancelaria?: string;
   embalaje?: string;
+  cve_material_peligroso?: string;
+  especie_protegida?: boolean;
+  numero_piezas?: number;
   uuid_comercio_ext?: string;
-  codigo_producto?: string;
+  descripcion_detallada?: string;
+  regimen_aduanero?: string;
+  tipo_embalaje?: string;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+  };
 }
 
 export interface MercanciaConErrores extends Mercancia {
