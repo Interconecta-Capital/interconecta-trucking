@@ -16,6 +16,15 @@ export class BorradorService {
     try {
       const now = new Date().toISOString();
       
+      // Verificar autenticación
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        console.error('❌ Usuario no autenticado para guardar borrador');
+        // Guardar solo en localStorage
+        this.guardarEnLocalStorage(datos, cartaPorteId);
+        return cartaPorteId || null;
+      }
+      
       // Si tenemos un ID, actualizar; si no, crear nuevo
       if (cartaPorteId) {
         const { error } = await supabase
@@ -33,7 +42,8 @@ export class BorradorService {
             registro_istmo: datos.registroIstmo || false,
             tipo_cfdi: datos.tipoCfdi || 'Traslado'
           })
-          .eq('id', cartaPorteId);
+          .eq('id', cartaPorteId)
+          .eq('usuario_id', userData.user.id);
 
         if (error) throw error;
       } else {
@@ -43,6 +53,7 @@ export class BorradorService {
           .insert({
             datos_formulario: datos,
             status: 'borrador',
+            usuario_id: userData.user.id,
             created_at: now,
             updated_at: now,
             rfc_emisor: datos.rfcEmisor || datos.configuracion?.emisor?.rfc || '',
@@ -63,10 +74,10 @@ export class BorradorService {
       // Guardar también en localStorage como respaldo
       this.guardarEnLocalStorage(datos, cartaPorteId);
       
-      console.log('Borrador guardado exitosamente en Supabase:', cartaPorteId);
+      console.log('✅ Borrador guardado exitosamente en Supabase:', cartaPorteId);
       return cartaPorteId;
     } catch (error) {
-      console.error('Error guardando en Supabase, usando localStorage:', error);
+      console.error('❌ Error guardando en Supabase, usando localStorage:', error);
       // Si falla Supabase, al menos guardamos en localStorage
       this.guardarEnLocalStorage(datos, cartaPorteId);
       return cartaPorteId || null;
@@ -92,7 +103,7 @@ export class BorradorService {
         };
       }
     } catch (error) {
-      console.error('Error cargando desde Supabase, intentando localStorage:', error);
+      console.error('❌ Error cargando desde Supabase, intentando localStorage:', error);
     }
 
     // Fallback a localStorage
@@ -107,7 +118,7 @@ export class BorradorService {
         return JSON.parse(borradorStr);
       }
     } catch (error) {
-      console.error('Error cargando borrador desde localStorage:', error);
+      console.error('❌ Error cargando borrador desde localStorage:', error);
     }
     return null;
   }
@@ -121,8 +132,13 @@ export class BorradorService {
         cartaPorteId
       };
       localStorage.setItem('carta_porte_borrador', JSON.stringify(borrador));
+      
+      // Guardar también con ID específico si existe
+      if (cartaPorteId) {
+        localStorage.setItem(`carta_porte_${cartaPorteId}`, JSON.stringify(borrador));
+      }
     } catch (error) {
-      console.error('Error guardando en localStorage:', error);
+      console.error('❌ Error guardando en localStorage:', error);
     }
   }
 
@@ -133,10 +149,10 @@ export class BorradorService {
     this.isAutoSaving = true;
     try {
       const nuevoId = await this.guardarBorrador(datos, cartaPorteId);
-      console.log('Auto-guardado completado');
+      console.log('✅ Auto-guardado completado');
       return nuevoId;
     } catch (error) {
-      console.error('Error en guardado automático:', error);
+      console.error('❌ Error en guardado automático:', error);
       return cartaPorteId || null;
     } finally {
       this.isAutoSaving = false;
@@ -153,19 +169,22 @@ export class BorradorService {
           .eq('id', cartaPorteId);
         
         if (error) {
-          console.error('Error eliminando de Supabase:', error);
+          console.error('❌ Error eliminando de Supabase:', error);
         }
       }
     } catch (error) {
-      console.error('Error limpiando borrador de Supabase:', error);
+      console.error('❌ Error limpiando borrador de Supabase:', error);
     }
 
     // Limpiar localStorage también
     try {
       localStorage.removeItem('carta_porte_borrador');
-      console.log('Borrador eliminado');
+      if (cartaPorteId) {
+        localStorage.removeItem(`carta_porte_${cartaPorteId}`);
+      }
+      console.log('✅ Borrador eliminado');
     } catch (error) {
-      console.error('Error limpiando localStorage:', error);
+      console.error('❌ Error limpiando localStorage:', error);
     }
   }
 
@@ -192,7 +211,7 @@ export class BorradorService {
             onSave(nuevoId || cartaPorteId);
           }
         } catch (error) {
-          console.error('Error en guardado automático:', error);
+          console.error('❌ Error en guardado automático:', error);
         }
       }
     }, intervalMs);
@@ -231,7 +250,7 @@ export class BorradorService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error obteniendo borradores:', error);
+      console.error('❌ Error obteniendo borradores:', error);
       return [];
     }
   }

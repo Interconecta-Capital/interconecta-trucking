@@ -28,11 +28,17 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
     remolques: []
   };
 
+  // Asegurar que todas las mercancías tengan descripción
+  const mercanciasConDescripcion = data.map(mercancia => ({
+    ...mercancia,
+    descripcion: mercancia.descripcion || 'Sin descripción'
+  }));
+
   return (
     <div className="space-y-6">
       <Card>
         <MercanciasSectionOptimizada
-          data={data}
+          data={mercanciasConDescripcion}
           onChange={onChange}
           onNext={onNext}
           onPrev={onPrev}
@@ -42,7 +48,7 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
       {/* Validador de peso total */}
       {data.length > 0 && (
         <PesoTotalValidator
-          mercancias={data}
+          mercancias={mercanciasConDescripcion}
           autotransporte={autotransporte || defaultAutotransporte}
           className="mt-4"
         />

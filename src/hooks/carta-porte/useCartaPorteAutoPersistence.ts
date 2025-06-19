@@ -41,7 +41,7 @@ export function useCartaPorteAutoPersistence(
       autotransporte: data.autotransporte?.placa_vm || '',
       figurasCount: data.figuras?.length || 0,
       xmlGenerado: !!data.xmlGenerado,
-      datosCalculoRuta: data.datosCalculoRuta || {}
+      datosCalculoRuta: data.datosCalculoRuta || null
     });
   }, []);
 
@@ -53,6 +53,13 @@ export function useCartaPorteAutoPersistence(
     isSavingRef.current = true;
 
     try {
+      // Usar auth.uid() directamente en lugar de user.id para evitar conflictos de FK
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        console.error('❌ Usuario no autenticado:', userError);
+        return false;
+      }
+
       // Serializar datos de forma segura para Supabase
       const serializedData = {
         tipoCreacion: data.tipoCreacion || 'manual',
@@ -72,6 +79,7 @@ export function useCartaPorteAutoPersistence(
         datosCalculoRuta: data.datosCalculoRuta || null
       };
 
+      // Usar usuario_id en lugar de user_id para coincidir con la FK
       const { error } = await supabase
         .from('cartas_porte')
         .update({
@@ -87,20 +95,44 @@ export function useCartaPorteAutoPersistence(
           updated_at: new Date().toISOString()
         })
         .eq('id', cartaPorteId)
-        .eq('usuario_id', user.id);
+        .eq('usuario_id', userData.user.id);
 
       if (error) {
-        console.error('Error en auto-guardado:', error);
-        onSaveError?.(`Error al guardar: ${error.message}`);
+        console.error('❌ Error en auto-guardado Supabase:', error);
+        
+        // Fallback a localStorage
+        const fallbackData = {
+          ...data,
+          cartaPorteId,
+          lastSaved: new Date().toISOString()
+        };
+        localStorage.setItem(`carta_porte_${cartaPorteId}`, JSON.stringify(fallbackData));
+        console.log('💾 Guardado en localStorage como fallback');
+        
+        onSaveError?.(`Error de persistencia: ${error.message}`);
         return false;
       }
 
-      console.log('✅ Auto-guardado exitoso');
+      console.log('✅ Auto-guardado Supabase exitoso');
       onSaveSuccess?.();
       return true;
 
     } catch (error: any) {
-      console.error('Error en auto-persistencia:', error);
+      console.error('❌ Error en auto-persistencia:', error);
+      
+      // Fallback a localStorage en caso de error
+      try {
+        const fallbackData = {
+          ...data,
+          cartaPorteId,
+          lastSaved: new Date().toISOString()
+        };
+        localStorage.setItem(`carta_porte_${cartaPorteId}`, JSON.stringify(fallbackData));
+        console.log('💾 Guardado en localStorage por error de red');
+      } catch (storageError) {
+        console.error('❌ Error guardando en localStorage:', storageError);
+      }
+      
       onSaveError?.(error.message);
       return false;
     } finally {
@@ -146,9 +178,10 @@ export function useCartaPorteAutoPersistence(
     return success;
   }, [formData, saveToSupabase, generateDataSignature, toast]);
 
-  // Recuperación de sesión
+  // Recuperación de sesión mejorada
   const recoverSession = useCallback(async (id: string): Promise<CartaPorteData | null> => {
     try {
+      // Intentar cargar desde Supabase primero
       const { data, error } = await supabase
         .from('cartas_porte')
         .select('datos_formulario, xml_generado')
@@ -156,6 +189,13 @@ export function useCartaPorteAutoPersistence(
         .single();
 
       if (error || !data?.datos_formulario) {
+        // Fallback a localStorage
+        const fallbackData = localStorage.getItem(`carta_porte_${id}`);
+        if (fallbackData) {
+          const parsed = JSON.parse(fallbackData);
+          console.log('🔄 Datos recuperados desde localStorage');
+          return parsed;
+        }
         return null;
       }
 
@@ -165,10 +205,22 @@ export function useCartaPorteAutoPersistence(
         cartaPorteId: id
       };
 
+      console.log('🔄 Datos recuperados desde Supabase');
       return recoveredData;
 
     } catch (error) {
-      console.error('Error recovering session:', error);
+      console.error('❌ Error recovering session:', error);
+      
+      // Último intento con localStorage
+      try {
+        const fallbackData = localStorage.getItem(`carta_porte_${id}`);
+        if (fallbackData) {
+          return JSON.parse(fallbackData);
+        }
+      } catch (storageError) {
+        console.error('❌ Error en localStorage recovery:', storageError);
+      }
+      
       return null;
     }
   }, []);
