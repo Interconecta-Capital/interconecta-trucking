@@ -43,7 +43,8 @@ export function VehiculoSelector({ data, onChange }: VehiculoSelectorProps) {
         asegura_resp_civil: vehiculo.asegura_resp_civil || '',
         poliza_resp_civil: vehiculo.poliza_resp_civil || vehiculo.poliza_seguro || '',
         asegura_med_ambiente: vehiculo.asegura_med_ambiente || '',
-        poliza_med_ambiente: vehiculo.poliza_med_ambiente || ''
+        poliza_med_ambiente: vehiculo.poliza_med_ambiente || '',
+        peso_bruto_vehicular: vehiculo.peso_bruto_vehicular || 0
       });
     }
   };

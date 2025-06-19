@@ -11,6 +11,7 @@ interface VehiculoMotorFormProps {
     placa_vm: string;
     anio_modelo_vm: number;
     config_vehicular: string;
+    peso_bruto_vehicular?: number;
   };
   onChange: (field: string, value: any) => void;
   errors: Record<string, string>;
@@ -62,6 +63,22 @@ export function VehiculoMotorForm({ data, onChange, errors }: VehiculoMotorFormP
             required
             error={errors.config_vehicular}
           />
+
+          <div>
+            <Label htmlFor="peso_bruto_vehicular">Peso Bruto Vehicular (ton)</Label>
+            <Input
+              id="peso_bruto_vehicular"
+              type="number"
+              min="0"
+              step="0.01"
+              value={data.peso_bruto_vehicular ?? ''}
+              onChange={(e) => onChange('peso_bruto_vehicular', parseFloat(e.target.value) || 0)}
+              className={errors.peso_bruto_vehicular ? 'border-red-500' : ''}
+            />
+            {errors.peso_bruto_vehicular && (
+              <p className="text-sm text-red-500 mt-1">{errors.peso_bruto_vehicular}</p>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

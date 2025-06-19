@@ -33,6 +33,7 @@ const initialCartaPorteData: CartaPorteData = {
     num_permiso_sct: '',
     asegura_resp_civil: '',
     poliza_resp_civil: '',
+    peso_bruto_vehicular: 0,
     remolques: []
   },
   figuras: [],
@@ -194,6 +195,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     num_permiso_sct: '',
     asegura_resp_civil: '',
     poliza_resp_civil: '',
+    peso_bruto_vehicular: 0,
     remolques: []
   };
 
