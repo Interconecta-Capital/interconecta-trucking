@@ -115,7 +115,6 @@ export function FormularioDomicilioUnificado({
     setColoniaSeleccionada(colonia);
     onDomicilioChange('colonia', colonia);
     
-    // Notificar dirección completa si está llena
     if (domicilio.calle && domicilio.numExterior && colonia) {
       onDireccionCompleta?.({
         ...domicilio,
@@ -148,7 +147,7 @@ export function FormularioDomicilioUnificado({
             onValueChange={(value) => onDomicilioChange('pais', value)}
             disabled={readonly}
           >
-            <SelectTrigger>
+            <SelectTrigger className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -174,7 +173,7 @@ export function FormularioDomicilioUnificado({
               placeholder="Ej: 06600"
               maxLength={5}
               disabled={readonly || isLoading}
-              className={`${
+              className={`border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm ${
                 error ? 'border-red-500' : isValid ? 'border-green-500' : ''
               } ${isLoading ? 'opacity-75' : ''}`}
             />
@@ -242,7 +241,7 @@ export function FormularioDomicilioUnificado({
             value={domicilio.estado}
             onChange={(e) => onDomicilioChange('estado', e.target.value)}
             placeholder="Estado"
-            className="bg-gray-50"
+            className="bg-white border-gray-100 text-gray-900 shadow-sm"
             readOnly
           />
         </div>
@@ -253,7 +252,7 @@ export function FormularioDomicilioUnificado({
             value={domicilio.municipio}
             onChange={(e) => onDomicilioChange('municipio', e.target.value)}
             placeholder="Municipio"
-            className="bg-gray-50"
+            className="bg-white border-gray-100 text-gray-900 shadow-sm"
             readOnly
           />
         </div>
@@ -268,7 +267,7 @@ export function FormularioDomicilioUnificado({
               value={domicilio.localidad || ''}
               onChange={(e) => onDomicilioChange('localidad', e.target.value)}
               placeholder="Localidad"
-              className="bg-gray-50"
+              className="bg-white border-gray-100 text-gray-900 shadow-sm"
               readOnly={readonly}
             />
           </div>
@@ -284,7 +283,7 @@ export function FormularioDomicilioUnificado({
             </Label>
             
             <Select value={coloniaSeleccionada} onValueChange={handleColoniaChange} disabled={readonly}>
-              <SelectTrigger className="bg-background">
+              <SelectTrigger className="bg-white border-gray-100 text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm">
                 <SelectValue placeholder="Selecciona una colonia" />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
@@ -319,6 +318,7 @@ export function FormularioDomicilioUnificado({
             onChange={(e) => onDomicilioChange('calle', e.target.value)}
             placeholder="Nombre de la calle"
             disabled={readonly}
+            className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
           />
         </div>
 
@@ -329,6 +329,7 @@ export function FormularioDomicilioUnificado({
             onChange={(e) => onDomicilioChange('numExterior', e.target.value)}
             placeholder="123"
             disabled={readonly}
+            className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
           />
         </div>
 
@@ -340,6 +341,7 @@ export function FormularioDomicilioUnificado({
               onChange={(e) => onDomicilioChange('numInterior', e.target.value)}
               placeholder="A, B, 1, 2..."
               disabled={readonly}
+              className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
             />
           </div>
         )}
@@ -354,6 +356,7 @@ export function FormularioDomicilioUnificado({
             onChange={(e) => onDomicilioChange('referencia', e.target.value)}
             placeholder="Entre calles, cerca de..."
             disabled={readonly}
+            className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
           />
         </div>
       )}
@@ -370,6 +373,7 @@ export function FormularioDomicilioUnificado({
             min="0"
             step="0.1"
             disabled={readonly}
+            className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
           />
         </div>
       )}

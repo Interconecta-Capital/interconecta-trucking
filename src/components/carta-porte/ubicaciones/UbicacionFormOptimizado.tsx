@@ -1,15 +1,18 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, Search } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { UbicacionFrecuente } from '@/types/ubicaciones';
 import { FormularioDomicilioUnificado, DomicilioUnificado } from '@/components/common/FormularioDomicilioUnificado';
-import { AddressAutocomplete } from './AddressAutocomplete';
 import { useCodigoPostalMexicanoNacional } from '@/hooks/useCodigoPostalMexicanoNacional';
+
+// Import the new components
+import { UbicacionBasicFields } from './UbicacionBasicFields';
+import { UbicacionAddressSearch } from './UbicacionAddressSearch';
+import { UbicacionDateTimeField } from './UbicacionDateTimeField';
+import { UbicacionFrequentLocations } from './UbicacionFrequentLocations';
+import { UbicacionFormActions } from './UbicacionFormActions';
 
 interface UbicacionFormOptimizadoProps {
   ubicacion?: any;
@@ -30,7 +33,7 @@ export function UbicacionFormOptimizado({
 }: UbicacionFormOptimizadoProps) {
   const [formData, setFormData] = React.useState({
     idUbicacion: ubicacion?.idUbicacion || '',
-    tipoUbicacion: ubicacion?.tipoUbicacion || '', // Cambio principal: vacío por defecto
+    tipoUbicacion: ubicacion?.tipoUbicacion || '',
     rfcRemitenteDestinatario: ubicacion?.rfcRemitenteDestinatario || '',
     nombreRemitenteDestinatario: ubicacion?.nombreRemitenteDestinatario || '',
     fechaHoraSalidaLlegada: ubicacion?.fechaHoraSalidaLlegada || '',
@@ -52,7 +55,6 @@ export function UbicacionFormOptimizado({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [searchAddress, setSearchAddress] = React.useState('');
   
-  // Hook para código postal como fallback
   const { 
     direccionInfo, 
     consultarCodigoPostal,
@@ -77,11 +79,9 @@ export function UbicacionFormOptimizado({
     }));
   };
 
-  // Mejorar manejo de selección de dirección desde Mapbox
   const handleMapboxAddressSelect = (addressData: any) => {
     console.log('Dirección seleccionada desde Mapbox:', addressData);
     
-    // Parsear la dirección de Mapbox
     const components = addressData.place_name ? addressData.place_name.split(', ') : [];
     let calle = '';
     let colonia = '';
@@ -116,7 +116,6 @@ export function UbicacionFormOptimizado({
       }
     }));
 
-    // Limpiar el campo de búsqueda
     setSearchAddress('');
   };
 
@@ -129,13 +128,11 @@ export function UbicacionFormOptimizado({
       }
     }));
 
-    // Si es código postal, intentar auto-completar
     if (campo === 'codigoPostal' && valor.length === 5) {
       consultarCodigoPostal(valor);
     }
   };
 
-  // Auto-completar con datos del código postal
   React.useEffect(() => {
     if (direccionInfo && direccionInfo.colonias.length > 0) {
       setFormData(prev => ({
@@ -145,7 +142,6 @@ export function UbicacionFormOptimizado({
           estado: direccionInfo.estado,
           municipio: direccionInfo.municipio,
           localidad: direccionInfo.localidad || direccionInfo.municipio,
-          // Solo actualizar colonia si está vacía
           colonia: prev.domicilio.colonia || direccionInfo.colonias[0].nombre
         }
       }));
@@ -196,7 +192,7 @@ export function UbicacionFormOptimizado({
   };
 
   return (
-    <Card className="w-full border-gray-200 bg-white shadow-sm">
+    <Card className="w-full border-gray-100 bg-white shadow-sm">
       <CardHeader className="pb-6">
         <CardTitle className="flex items-center gap-2 text-gray-900">
           <MapPin className="h-5 w-5 text-gray-700" />
@@ -205,116 +201,34 @@ export function UbicacionFormOptimizado({
       </CardHeader>
 
       <CardContent>
-        {ubicacionesFrecuentes.length > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-            <h4 className="font-medium mb-2 text-gray-900">Ubicaciones Frecuentes</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {ubicacionesFrecuentes.slice(0, 4).map((uf) => (
-                <Button
-                  key={uf.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => cargarUbicacionFrecuente(uf)}
-                  className="text-left justify-start border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
-                >
-                  <div className="truncate">
-                    <div className="font-medium text-gray-900">{uf.nombreUbicacion}</div>
-                    <div className="text-xs text-gray-600">{uf.rfcAsociado}</div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
+        <UbicacionFrequentLocations
+          ubicacionesFrecuentes={ubicacionesFrecuentes}
+          onCargarUbicacionFrecuente={cargarUbicacionFrecuente}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="tipoUbicacion" className="text-gray-700 font-medium">Tipo de Ubicación *</Label>
-              <Select value={formData.tipoUbicacion} onValueChange={handleTipoChange}>
-                <SelectTrigger className={`border-gray-200 bg-white text-gray-900 focus:border-gray-600 focus:ring-gray-600/10 ${errors.tipoUbicacion ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="Seleccionar tipo de ubicación..." />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="Origen">Origen</SelectItem>
-                  <SelectItem value="Destino">Destino</SelectItem>
-                  <SelectItem value="Paso Intermedio">Paso Intermedio</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.tipoUbicacion && <p className="text-sm text-red-500 mt-1">{errors.tipoUbicacion}</p>}
-            </div>
+          <UbicacionBasicFields
+            tipoUbicacion={formData.tipoUbicacion}
+            idUbicacion={formData.idUbicacion}
+            rfcRemitenteDestinatario={formData.rfcRemitenteDestinatario}
+            nombreRemitenteDestinatario={formData.nombreRemitenteDestinatario}
+            onTipoChange={handleTipoChange}
+            onRFCChange={(e) => setFormData(prev => ({ ...prev, rfcRemitenteDestinatario: e.target.value.toUpperCase() }))}
+            onNombreChange={(e) => setFormData(prev => ({ ...prev, nombreRemitenteDestinatario: e.target.value }))}
+            errors={errors}
+          />
 
-            <div>
-              <Label htmlFor="idUbicacion" className="text-gray-700 font-medium">ID Ubicación</Label>
-              <Input
-                id="idUbicacion"
-                value={formData.idUbicacion}
-                readOnly
-                className="bg-gray-50 border-gray-200 text-gray-900"
-                placeholder="Se genera al seleccionar tipo"
-              />
-            </div>
-          </div>
+          <UbicacionAddressSearch
+            searchAddress={searchAddress}
+            onSearchAddressChange={setSearchAddress}
+            onAddressSelect={handleMapboxAddressSelect}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="rfc" className="text-gray-700 font-medium">RFC Remitente/Destinatario *</Label>
-              <Input
-                id="rfc"
-                value={formData.rfcRemitenteDestinatario}
-                onChange={(e) => setFormData(prev => ({ ...prev, rfcRemitenteDestinatario: e.target.value.toUpperCase() }))}
-                placeholder="RFC del remitente o destinatario"
-                className={`border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-600 focus:ring-gray-600/10 ${errors.rfc ? 'border-red-500' : ''}`}
-              />
-              {errors.rfc && <p className="text-sm text-red-500 mt-1">{errors.rfc}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="nombre" className="text-gray-700 font-medium">Nombre/Razón Social *</Label>
-              <Input
-                id="nombre"
-                value={formData.nombreRemitenteDestinatario}
-                onChange={(e) => setFormData(prev => ({ ...prev, nombreRemitenteDestinatario: e.target.value }))}
-                placeholder="Nombre completo o razón social"
-                className={`border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-600 focus:ring-gray-600/10 ${errors.nombre ? 'border-red-500' : ''}`}
-              />
-              {errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>}
-            </div>
-          </div>
-
-          {/* Búsqueda de Dirección con Mapbox - MEJORADA */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2 text-gray-700 font-medium">
-              <Search className="h-4 w-4" />
-              Buscar Dirección Completa
-            </Label>
-            <AddressAutocomplete
-              value={searchAddress}
-              onChange={setSearchAddress}
-              onAddressSelect={handleMapboxAddressSelect}
-              placeholder="Buscar dirección completa (ej: Av. Insurgentes 123, Roma Norte, CDMX)..."
-              className="w-full border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-600 focus:ring-gray-600/10"
-            />
-            <p className="text-sm text-gray-600">
-              💡 Busca la dirección completa para auto-completar todos los campos automáticamente
-            </p>
-          </div>
-
-          {(formData.tipoUbicacion === 'Origen' || formData.tipoUbicacion === 'Destino') && (
-            <div>
-              <Label htmlFor="fechaHora" className="flex items-center gap-2 text-gray-700 font-medium">
-                <Calendar className="h-4 w-4" />
-                Fecha y Hora de {formData.tipoUbicacion === 'Origen' ? 'Salida' : 'Llegada'}
-              </Label>
-              <Input
-                id="fechaHora"
-                type="datetime-local"
-                value={formData.fechaHoraSalidaLlegada}
-                onChange={(e) => setFormData(prev => ({ ...prev, fechaHoraSalidaLlegada: e.target.value }))}
-                className="border-gray-200 bg-white text-gray-900 focus:border-gray-600 focus:ring-gray-600/10"
-              />
-            </div>
-          )}
+          <UbicacionDateTimeField
+            tipoUbicacion={formData.tipoUbicacion}
+            fechaHoraSalidaLlegada={formData.fechaHoraSalidaLlegada}
+            onFechaHoraChange={(e) => setFormData(prev => ({ ...prev, fechaHoraSalidaLlegada: e.target.value }))}
+          />
 
           <div>
             <Label className="flex items-center gap-2 mb-4 text-gray-700 font-medium">
@@ -327,9 +241,8 @@ export function UbicacionFormOptimizado({
               camposOpcionales={['numInterior', 'referencia', 'localidad']}
             />
             
-            {/* Mostrar colonias disponibles si se encontraron */}
             {direccionInfo && direccionInfo.colonias.length > 1 && (
-              <div className="mt-2 p-3 bg-green-50 rounded-xl border border-green-200">
+              <div className="mt-2 p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
                 <p className="text-sm font-medium text-green-800 mb-2">
                   Colonias disponibles para CP {formData.domicilio.codigoPostal}:
                 </p>
@@ -356,42 +269,14 @@ export function UbicacionFormOptimizado({
             )}
           </div>
 
-          <div className="flex justify-between pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-              className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
-            >
-              Cancelar
-            </Button>
-            
-            <div className="flex gap-2">
-              {onSaveToFavorites && formData.rfcRemitenteDestinatario && formData.nombreRemitenteDestinatario && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => onSaveToFavorites({
-                    nombreUbicacion: formData.nombreRemitenteDestinatario,
-                    rfcAsociado: formData.rfcRemitenteDestinatario,
-                    domicilio: formData.domicilio,
-                    fechaCreacion: new Date().toISOString(),
-                    vecesUsada: 1
-                  })}
-                  className="bg-gray-900 text-white hover:bg-gray-800"
-                >
-                  Guardar en Favoritos
-                </Button>
-              )}
-              
-              <Button 
-                type="submit" 
-                className="bg-gray-900 hover:bg-gray-800 text-white"
-              >
-                {ubicacion ? 'Actualizar' : 'Agregar'} Ubicación
-              </Button>
-            </div>
-          </div>
+          <UbicacionFormActions
+            ubicacion={ubicacion}
+            onCancel={onCancel}
+            onSaveToFavorites={onSaveToFavorites}
+            rfcRemitenteDestinatario={formData.rfcRemitenteDestinatario}
+            nombreRemitenteDestinatario={formData.nombreRemitenteDestinatario}
+            domicilio={formData.domicilio}
+          />
         </form>
       </CardContent>
     </Card>
