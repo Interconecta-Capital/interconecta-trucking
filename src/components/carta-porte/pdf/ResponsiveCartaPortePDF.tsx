@@ -218,7 +218,7 @@ export const ResponsiveCartaPortePDF = ({
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>IdCCP:</Text>
             <Text style={styles.fieldValue}>
-              {datosTimbre?.idCCP || 'Pendiente'}
+              {datosTimbre?.idCCP || cartaPorteData.cartaPorteId || 'Pendiente'}
             </Text>
           </View>
           <View style={styles.fieldGroup}>
@@ -237,7 +237,7 @@ export const ResponsiveCartaPortePDF = ({
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeader]}>
               <Text style={[styles.tableCell, styles.tableCellSmall]}>Tipo</Text>
-              <Text style={[styles.tableCell, styles.tableCellMedium]}>Nombre</Text>
+              <Text style={[styles.tableCell, styles.tableCellMedium]}>Nombre/RFC</Text>
               <Text style={[styles.tableCell, styles.tableCellLarge]}>Dirección</Text>
               <Text style={[styles.tableCell, styles.tableCellSmall]}>Distancia</Text>
             </View>
@@ -248,11 +248,14 @@ export const ResponsiveCartaPortePDF = ({
                 </Text>
                 <Text style={[styles.tableCell, styles.tableCellMedium]}>
                   {ubicacion.nombre_remitente_destinatario || 'N/A'}
+                  {ubicacion.rfc_remitente_destinatario && (
+                    <Text>{'\n'}RFC: {ubicacion.rfc_remitente_destinatario}</Text>
+                  )}
                 </Text>
                 <Text style={[styles.tableCell, styles.tableCellLarge]}>
                   {ubicacion.domicilio ? 
-                    `${ubicacion.domicilio.calle} ${ubicacion.domicilio.numero_exterior}, ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}, ${ubicacion.domicilio.estado}` 
-                    : 'N/A'
+                    `${ubicacion.domicilio.calle || ''} ${ubicacion.domicilio.numero_exterior || ''}, ${ubicacion.domicilio.colonia || ''}, ${ubicacion.domicilio.municipio || ''}, ${ubicacion.domicilio.estado || ''} ${ubicacion.domicilio.codigo_postal || ''}` 
+                    : 'Dirección no especificada'
                   }
                 </Text>
                 <Text style={[styles.tableCell, styles.tableCellSmall]}>
@@ -273,24 +276,44 @@ export const ResponsiveCartaPortePDF = ({
               <Text style={[styles.tableCell, styles.tableCellSmall]}>Clave SAT</Text>
               <Text style={[styles.tableCell, styles.tableCellLarge]}>Descripción</Text>
               <Text style={[styles.tableCell, styles.tableCellSmall]}>Cantidad</Text>
-              <Text style={[styles.tableCell, styles.tableCellSmall]}>Peso (Kg)</Text>
+              <Text style={[styles.tableCell, styles.tableCellSmall]}>Peso Unit.</Text>
+              <Text style={[styles.tableCell, styles.tableCellSmall]}>Peso Total</Text>
             </View>
-            {cartaPorteData.mercancias.map((mercancia: any, index: number) => (
-              <View style={styles.tableRow} key={index}>
-                <Text style={[styles.tableCell, styles.tableCellSmall]}>
-                  {mercancia.bienes_transp || 'N/A'}
-                </Text>
-                <Text style={[styles.tableCell, styles.tableCellLarge]}>
-                  {mercancia.descripcion || 'Sin descripción'}
-                </Text>
-                <Text style={[styles.tableCell, styles.tableCellSmall]}>
-                  {mercancia.cantidad || '0'} {mercancia.clave_unidad || ''}
-                </Text>
-                <Text style={[styles.tableCell, styles.tableCellSmall]}>
-                  {mercancia.peso_kg || '0'}
-                </Text>
-              </View>
-            ))}
+            {cartaPorteData.mercancias.map((mercancia: any, index: number) => {
+              const cantidad = Number(mercancia.cantidad) || 0;
+              const pesoUnitario = Number(mercancia.peso_kg) || 0;
+              const pesoTotal = cantidad * pesoUnitario;
+              
+              return (
+                <View style={styles.tableRow} key={index}>
+                  <Text style={[styles.tableCell, styles.tableCellSmall]}>
+                    {mercancia.bienes_transp || 'N/A'}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellLarge]}>
+                    {mercancia.descripcion || 'Sin descripción'}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellSmall]}>
+                    {cantidad} {mercancia.clave_unidad || ''}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellSmall]}>
+                    {pesoUnitario} kg
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellSmall]}>
+                    {pesoTotal} kg
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          
+          {/* Resumen de mercancías */}
+          <View style={{ backgroundColor: '#F3F4F6', padding: 5, marginTop: 5 }}>
+            <Text style={{ fontSize: 7, fontWeight: 'bold' }}>
+              Resumen: {cartaPorteData.mercancias.length} mercancía(s) - 
+              Peso Total: {cartaPorteData.mercancias.reduce((total: number, m: any) => 
+                total + ((Number(m.cantidad) || 0) * (Number(m.peso_kg) || 0)), 0
+              )} kg
+            </Text>
           </View>
         </View>
       )}
@@ -313,10 +336,16 @@ export const ResponsiveCartaPortePDF = ({
                   {cartaPorteData.autotransporte.config_vehicular || 'N/A'}
                 </Text>
               </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Año Modelo:</Text>
+                <Text style={styles.fieldValue}>
+                  {cartaPorteData.autotransporte.anio_modelo_vm || 'N/A'}
+                </Text>
+              </View>
             </View>
             <View style={styles.column50}>
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Seguro:</Text>
+                <Text style={styles.fieldLabel}>Aseguradora:</Text>
                 <Text style={styles.fieldValue}>
                   {cartaPorteData.autotransporte.asegura_resp_civil || 'N/A'}
                 </Text>
@@ -327,7 +356,44 @@ export const ResponsiveCartaPortePDF = ({
                   {cartaPorteData.autotransporte.poliza_resp_civil || 'N/A'}
                 </Text>
               </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Peso Bruto:</Text>
+                <Text style={styles.fieldValue}>
+                  {cartaPorteData.autotransporte.peso_bruto_vehicular || 'N/A'} kg
+                </Text>
+              </View>
             </View>
+          </View>
+        </View>
+      )}
+
+      {/* Figuras de Transporte */}
+      {cartaPorteData.figuras && cartaPorteData.figuras.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Figuras de Transporte</Text>
+          <View style={styles.table}>
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              <Text style={[styles.tableCell, styles.tableCellSmall]}>Tipo</Text>
+              <Text style={[styles.tableCell, styles.tableCellLarge]}>Nombre</Text>
+              <Text style={[styles.tableCell, styles.tableCellMedium]}>RFC</Text>
+              <Text style={[styles.tableCell, styles.tableCellSmall]}>Licencia</Text>
+            </View>
+            {cartaPorteData.figuras.map((figura: any, index: number) => (
+              <View style={styles.tableRow} key={index}>
+                <Text style={[styles.tableCell, styles.tableCellSmall]}>
+                  {figura.tipo_figura || 'N/A'}
+                </Text>
+                <Text style={[styles.tableCell, styles.tableCellLarge]}>
+                  {figura.nombre_figura || 'N/A'}
+                </Text>
+                <Text style={[styles.tableCell, styles.tableCellMedium]}>
+                  {figura.rfc_figura || 'N/A'}
+                </Text>
+                <Text style={[styles.tableCell, styles.tableCellSmall]}>
+                  {figura.num_licencia || 'N/A'}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
       )}

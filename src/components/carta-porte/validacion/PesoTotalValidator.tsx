@@ -1,8 +1,9 @@
 
-import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import React, { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, Scale, Truck } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Scale, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { MercanciaCompleta, AutotransporteCompleto } from '@/types/cartaPorte';
 
 interface PesoTotalValidatorProps {
@@ -12,137 +13,193 @@ interface PesoTotalValidatorProps {
 }
 
 export function PesoTotalValidator({ mercancias, autotransporte, className }: PesoTotalValidatorProps) {
-  // Calcular peso total de mercancías
-  const pesoTotalMercancias = mercancias.reduce((total, mercancia) => {
-    return total + (mercancia.peso_kg || 0);
-  }, 0);
+  const validacion = useMemo(() => {
+    // Calcular peso total de mercancías correctamente
+    const pesoTotalMercancias = mercancias.reduce((total, mercancia) => {
+      const cantidad = Number(mercancia.cantidad) || 0;
+      const pesoUnitario = Number(mercancia.peso_kg) || 0;
+      return total + (cantidad * pesoUnitario);
+    }, 0);
 
-  // Peso bruto vehicular (incluye vehículo + mercancías)
-  const pesoBrutoVehicular = autotransporte.peso_bruto_vehicular || 0;
-  
-  // Capacidad máxima del vehículo
-  const capacidadMaxima = autotransporte.carga_maxima || 0;
-
-  // Validaciones
-  const hayMercancias = mercancias.length > 0;
-  const hayAutotransporte = Boolean(autotransporte.placa_vm);
-  const pesoVehiculoDefinido = pesoBrutoVehicular > 0;
-  const capacidadDefinida = capacidadMaxima > 0;
-  
-  // Cálculo de sobrepeso
-  const excedePesoMaximo = capacidadDefinida && pesoTotalMercancias > capacidadMaxima;
-  const porcentajeCapacidad = capacidadDefinida ? (pesoTotalMercancias / capacidadMaxima) * 100 : 0;
-
-  // Estados de validación
-  const getEstadoValidacion = () => {
-    if (!hayMercancias || !hayAutotransporte) {
-      return { tipo: 'pendiente', mensaje: 'Completa mercancías y autotransporte para validar peso' };
-    }
+    // Capacidad del vehículo
+    const capacidadVehiculo = Number(autotransporte.capacidad_carga) || Number(autotransporte.peso_bruto_vehicular) || 0;
     
-    if (!pesoVehiculoDefinido || !capacidadDefinida) {
-      return { tipo: 'advertencia', mensaje: 'Define peso bruto vehicular y capacidad máxima' };
-    }
-    
-    if (excedePesoMaximo) {
-      return { tipo: 'error', mensaje: 'El peso de las mercancías excede la capacidad del vehículo' };
-    }
-    
-    if (porcentajeCapacidad > 90) {
-      return { tipo: 'advertencia', mensaje: 'Estás cerca del límite de capacidad del vehículo' };
-    }
-    
-    return { tipo: 'exito', mensaje: 'El peso está dentro de los límites permitidos' };
-  };
+    // Calcular porcentaje de capacidad utilizada
+    const porcentajeUtilizado = capacidadVehiculo > 0 
+      ? Math.round((pesoTotalMercancias / capacidadVehiculo) * 100 * 100) / 100 
+      : 0;
 
-  const estado = getEstadoValidacion();
+    // Determinar estado
+    let estado: 'seguro' | 'advertencia' | 'critico' = 'seguro';
+    let mensaje = '';
+    let color = 'green';
 
-  const getIcono = () => {
-    switch (estado.tipo) {
-      case 'exito':
+    if (capacidadVehiculo === 0) {
+      estado = 'advertencia';
+      mensaje = 'No se ha especificado la capacidad del vehículo';
+      color = 'yellow';
+    } else if (pesoTotalMercancias > capacidadVehiculo) {
+      estado = 'critico';
+      mensaje = 'El peso total excede la capacidad del vehículo';
+      color = 'red';
+    } else if (porcentajeUtilizado > 90) {
+      estado = 'advertencia';
+      mensaje = 'Capacidad del vehículo casi al límite';
+      color = 'yellow';
+    } else {
+      mensaje = `Capacidad segura del vehículo (${porcentajeUtilizado}% utilizada)`;
+      color = 'green';
+    }
+
+    return {
+      pesoTotalMercancias,
+      capacidadVehiculo,
+      porcentajeUtilizado,
+      estado,
+      mensaje,
+      color
+    };
+  }, [mercancias, autotransporte]);
+
+  const getIcon = () => {
+    switch (validacion.estado) {
+      case 'seguro':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'error':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
       case 'advertencia':
         return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      case 'critico':
+        return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Scale className="h-4 w-4 text-blue-600" />;
+        return <Scale className="h-4 w-4" />;
     }
   };
 
-  const getColorAlert = () => {
-    switch (estado.tipo) {
-      case 'exito':
-        return 'border-green-200 bg-green-50';
-      case 'error':
-        return 'border-red-200 bg-red-50';
+  const getBadgeVariant = () => {
+    switch (validacion.estado) {
+      case 'seguro':
+        return 'default';
       case 'advertencia':
-        return 'border-yellow-200 bg-yellow-50';
+        return 'secondary';
+      case 'critico':
+        return 'destructive';
       default:
-        return 'border-blue-200 bg-blue-50';
+        return 'outline';
     }
   };
 
   return (
-    <div className={className}>
-      <Alert className={getColorAlert()}>
-        {getIcono()}
-        <AlertDescription>
-          <div className="space-y-3">
-            <div className="font-medium">{estado.mensaje}</div>
-            
-            {/* Métricas de peso */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Scale className="h-3 w-3" />
-                <span>Peso Mercancías:</span>
-                <Badge variant="outline">
-                  {pesoTotalMercancias.toFixed(2)} kg
-                </Badge>
-              </div>
-              
-              {capacidadDefinida && (
-                <div className="flex items-center gap-2">
-                  <Truck className="h-3 w-3" />
-                  <span>Capacidad Máxima:</span>
-                  <Badge variant="outline">
-                    {capacidadMaxima.toFixed(2)} kg
-                  </Badge>
-                </div>
-              )}
-              
-              {capacidadDefinida && (
-                <div className="flex items-center gap-2">
-                  <span>Uso de Capacidad:</span>
-                  <Badge 
-                    variant={porcentajeCapacidad > 90 ? 'destructive' : 'default'}
-                    className={porcentajeCapacidad > 100 ? 'bg-red-600' : ''}
-                  >
-                    {porcentajeCapacidad.toFixed(1)}%
-                  </Badge>
-                </div>
-              )}
+    <Card className={className}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2">
+          <Scale className="h-5 w-5" />
+          Validador de Peso Total
+          <Badge variant={getBadgeVariant()}>
+            {getIcon()}
+            {validacion.estado === 'seguro' ? 'Válido' : 
+             validacion.estado === 'advertencia' ? 'Atención' : 'Crítico'}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Resumen de pesos */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="text-sm font-medium text-blue-800">Peso Total Mercancías</div>
+            <div className="text-2xl font-bold text-blue-900">
+              {validacion.pesoTotalMercancias.toLocaleString()} kg
             </div>
-
-            {/* Recomendaciones */}
-            {estado.tipo === 'error' && (
-              <div className="text-red-800 text-sm">
-                <strong>Recomendaciones:</strong>
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>Reduce la cantidad de mercancías</li>
-                  <li>Distribuye la carga en múltiples viajes</li>
-                  <li>Considera usar un vehículo de mayor capacidad</li>
-                </ul>
-              </div>
-            )}
-
-            {estado.tipo === 'advertencia' && porcentajeCapacidad > 90 && (
-              <div className="text-yellow-800 text-sm">
-                <strong>Nota:</strong> Estás utilizando más del 90% de la capacidad del vehículo.
-              </div>
-            )}
+            <div className="text-xs text-blue-600">
+              {mercancias.length} mercancía(s)
+            </div>
           </div>
-        </AlertDescription>
-      </Alert>
-    </div>
+
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="text-sm font-medium text-gray-800">Capacidad Vehículo</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {validacion.capacidadVehiculo > 0 
+                ? `${validacion.capacidadVehiculo.toLocaleString()} kg`
+                : 'No especificada'
+              }
+            </div>
+            <div className="text-xs text-gray-600">
+              {autotransporte.placa_vm || 'Sin placa'}
+            </div>
+          </div>
+
+          <div className={`p-3 rounded-lg ${
+            validacion.color === 'green' ? 'bg-green-50' :
+            validacion.color === 'yellow' ? 'bg-yellow-50' : 'bg-red-50'
+          }`}>
+            <div className={`text-sm font-medium ${
+              validacion.color === 'green' ? 'text-green-800' :
+              validacion.color === 'yellow' ? 'text-yellow-800' : 'text-red-800'
+            }`}>
+              Capacidad Utilizada
+            </div>
+            <div className={`text-2xl font-bold ${
+              validacion.color === 'green' ? 'text-green-900' :
+              validacion.color === 'yellow' ? 'text-yellow-900' : 'text-red-900'
+            }`}>
+              {validacion.porcentajeUtilizado}%
+            </div>
+            <div className={`text-xs ${
+              validacion.color === 'green' ? 'text-green-600' :
+              validacion.color === 'yellow' ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {validacion.capacidadVehiculo > 0 ? 
+                `${(validacion.capacidadVehiculo - validacion.pesoTotalMercancias).toLocaleString()} kg disponibles` :
+                'Capacidad no definida'
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* Mensaje de estado */}
+        <Alert className={
+          validacion.color === 'green' ? 'border-green-200 bg-green-50' :
+          validacion.color === 'yellow' ? 'border-yellow-200 bg-yellow-50' : 'border-red-200 bg-red-50'
+        }>
+          {getIcon()}
+          <AlertDescription className={
+            validacion.color === 'green' ? 'text-green-800' :
+            validacion.color === 'yellow' ? 'text-yellow-800' : 'text-red-800'
+          }>
+            <strong>Validación de Peso:</strong> {validacion.mensaje}
+          </AlertDescription>
+        </Alert>
+
+        {/* Desglose por mercancía */}
+        {mercancias.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Desglose por Mercancía:</h4>
+            <div className="space-y-2">
+              {mercancias.map((mercancia, index) => {
+                const cantidad = Number(mercancia.cantidad) || 0;
+                const pesoUnitario = Number(mercancia.peso_kg) || 0;
+                const pesoTotal = cantidad * pesoUnitario;
+                
+                return (
+                  <div key={index} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
+                    <span className="font-medium">
+                      {mercancia.descripcion || `Mercancía ${index + 1}`}
+                    </span>
+                    <span className="text-gray-600">
+                      {cantidad} × {pesoUnitario} kg = <strong>{pesoTotal} kg</strong>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Nota informativa */}
+        <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded">
+          <strong>Nota:</strong> Esta validación calcula el peso total multiplicando la cantidad por el peso unitario de cada mercancía. 
+          Es fundamental que estos datos sean precisos para cumplir con las regulaciones de transporte.
+        </div>
+      </CardContent>
+    </Card>
   );
 }

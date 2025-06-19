@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,16 +32,16 @@ export function useCartaPorteAutoPersistence(
 
   const generateDataSignature = useCallback((data: CartaPorteData): string => {
     return JSON.stringify({
-      rfcEmisor: data.rfcEmisor,
-      rfcReceptor: data.rfcReceptor,
-      nombreEmisor: data.nombreEmisor,
-      nombreReceptor: data.nombreReceptor,
+      rfcEmisor: data.rfcEmisor || '',
+      rfcReceptor: data.rfcReceptor || '',
+      nombreEmisor: data.nombreEmisor || '',
+      nombreReceptor: data.nombreReceptor || '',
       ubicacionesCount: data.ubicaciones?.length || 0,
       mercanciasCount: data.mercancias?.length || 0,
-      autotransporte: data.autotransporte?.placa_vm,
+      autotransporte: data.autotransporte?.placa_vm || '',
       figurasCount: data.figuras?.length || 0,
       xmlGenerado: !!data.xmlGenerado,
-      datosCalculoRuta: data.datosCalculoRuta
+      datosCalculoRuta: data.datosCalculoRuta || {}
     });
   }, []);
 
@@ -63,12 +64,12 @@ export function useCartaPorteAutoPersistence(
         transporteInternacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
         registroIstmo: Boolean(data.registroIstmo),
         cartaPorteVersion: data.cartaPorteVersion || '3.1',
-        ubicaciones: JSON.parse(JSON.stringify(data.ubicaciones || [])),
-        mercancias: JSON.parse(JSON.stringify(data.mercancias || [])),
-        autotransporte: JSON.parse(JSON.stringify(data.autotransporte || {})),
-        figuras: JSON.parse(JSON.stringify(data.figuras || [])),
-        xmlGenerado: data.xmlGenerado,
-        datosCalculoRuta: data.datosCalculoRuta
+        ubicaciones: data.ubicaciones ? JSON.parse(JSON.stringify(data.ubicaciones)) : [],
+        mercancias: data.mercancias ? JSON.parse(JSON.stringify(data.mercancias)) : [],
+        autotransporte: data.autotransporte ? JSON.parse(JSON.stringify(data.autotransporte)) : null,
+        figuras: data.figuras ? JSON.parse(JSON.stringify(data.figuras)) : [],
+        xmlGenerado: data.xmlGenerado || null,
+        datosCalculoRuta: data.datosCalculoRuta || null
       };
 
       const { error } = await supabase
@@ -82,6 +83,7 @@ export function useCartaPorteAutoPersistence(
           tipo_cfdi: data.tipoCfdi,
           transporte_internacional: Boolean(data.transporteInternacional === 'Sí' || data.transporteInternacional === true),
           registro_istmo: Boolean(data.registroIstmo),
+          xml_generado: data.xmlGenerado,
           updated_at: new Date().toISOString()
         })
         .eq('id', cartaPorteId)
