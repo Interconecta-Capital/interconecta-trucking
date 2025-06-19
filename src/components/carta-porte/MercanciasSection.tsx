@@ -29,12 +29,14 @@ export function MercanciasSection({ data, onChange, onNext, onPrev, autotranspor
   };
 
   // CORREGIDO: Asegurar que todas las mercancías tengan TODOS los campos obligatorios
+  // valor_mercancia es opcional, así que no necesita valor por defecto
   const mercanciasCompletas: MercanciaCompleta[] = data.map(mercancia => ({
     ...mercancia,
     descripcion: mercancia.descripcion || 'Sin descripción',
     cantidad: mercancia.cantidad || 1,
     clave_unidad: mercancia.clave_unidad || 'KGM',
-    peso_kg: mercancia.peso_kg || 0 // Hacer obligatorio con valor por defecto
+    peso_kg: mercancia.peso_kg || 0
+    // valor_mercancia se mantiene como está (opcional)
   }));
 
   return (

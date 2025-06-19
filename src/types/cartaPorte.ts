@@ -177,7 +177,7 @@ export interface FiguraCompleta {
   };
 }
 
-// CORREGIDO: Definir MercanciaCompleta con tipos consistentes
+// CORREGIDO: Definir MercanciaCompleta con tipos consistentes - valor_mercancia es opcional
 export interface MercanciaCompleta {
   id: string;
   bienes_transp: string;
@@ -185,7 +185,7 @@ export interface MercanciaCompleta {
   cantidad: number; // Obligatorio
   clave_unidad: string; // Obligatorio
   peso_kg: number; // Obligatorio
-  valor_mercancia?: number; // Opcional
+  valor_mercancia?: number; // Opcional - CORREGIDO
   moneda?: string;
   
   // Campos de comercio exterior

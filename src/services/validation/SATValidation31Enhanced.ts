@@ -1,6 +1,19 @@
 
 import { CartaPorte31Data, ValidationResult } from '@/types/validationTypes';
 
+export interface ValidationSAT31Result {
+  isValid: boolean;
+  message: string;
+  errors: string[];
+  warnings: string[];
+  recommendations: string[];
+  complianceScore: number;
+  criticalIssues: string[];
+  version31Specific: string[];
+}
+
+export { CartaPorte31Data };
+
 export class SATValidation31Enhanced {
   static async validarCompleta(data: CartaPorte31Data): Promise<ValidationResult> {
     const errors: string[] = [];
@@ -93,6 +106,54 @@ export class SATValidation31Enhanced {
       errors,
       warnings,
       score
+    };
+  }
+
+  static async validateCompleteCartaPorte31(data: CartaPorte31Data): Promise<ValidationSAT31Result> {
+    const basicValidation = await this.validarCompleta(data);
+    const transportValidation = await this.validarTransporteInternacional(data);
+    
+    const allErrors = [...basicValidation.errors, ...transportValidation.errors];
+    const allWarnings = [...basicValidation.warnings, ...transportValidation.warnings];
+    
+    const criticalIssues = allErrors.filter(error => 
+      error.includes('RFC') || 
+      error.includes('ubicación') || 
+      error.includes('mercancía')
+    );
+    
+    const version31Specific = [];
+    if (data.version31Fields?.transporteEspecializado) {
+      version31Specific.push('Transporte especializado configurado');
+    }
+    if (data.version31Fields?.tipoCarroceria) {
+      version31Specific.push(`Tipo de carrocería: ${data.version31Fields.tipoCarroceria}`);
+    }
+    if (data.version31Fields?.remolquesCCP?.length) {
+      version31Specific.push(`${data.version31Fields.remolquesCCP.length} remolque(s) configurado(s)`);
+    }
+    
+    const recommendations = [];
+    if (allErrors.length === 0 && allWarnings.length === 0) {
+      recommendations.push('Considere guardar esta configuración como plantilla');
+    }
+    if (!data.version31Fields?.registroISTMO && data.transporteInternacional) {
+      recommendations.push('Active el registro ISTMO para transporte internacional');
+    }
+    
+    const complianceScore = Math.round(
+      (basicValidation.score + transportValidation.score) / 2
+    );
+    
+    return {
+      isValid: allErrors.length === 0,
+      message: allErrors.length === 0 ? 'Validación exitosa' : 'Se encontraron errores',
+      errors: allErrors,
+      warnings: allWarnings,
+      recommendations,
+      complianceScore,
+      criticalIssues,
+      version31Specific
     };
   }
 }
