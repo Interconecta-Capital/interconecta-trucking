@@ -31,14 +31,14 @@ export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResu
 
       // Convert data to Json-compatible format
       const cartaPorteData = {
-        version: data.version || data.cartaPorteVersion || '3.1',
+        version_carta_porte: data.version || data.cartaPorteVersion || '3.1',
         usuario_id: user.id,
         rfc_emisor: data.rfcEmisor || '',
         nombre_emisor: data.nombreEmisor || '',
         rfc_receptor: data.rfcReceptor || '',
         nombre_receptor: data.nombreReceptor || '',
-        transporte_internacional: data.transporteInternacional || false,
-        registro_istmo: data.registroIstmo || false,
+        transporte_internacional: Boolean(data.transporteInternacional),
+        registro_istmo: Boolean(data.registroIstmo),
         tipo_cfdi: data.tipoCfdi || 'Traslado',
         status: 'borrador',
         datos_formulario: JSON.parse(JSON.stringify({
@@ -78,7 +78,7 @@ export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResu
       setLastError(null);
 
       const updateData = {
-        version: data.version || data.cartaPorteVersion || '3.1',
+        version_carta_porte: data.version || data.cartaPorteVersion || '3.1',
         updated_at: new Date().toISOString(),
         datos_formulario: JSON.parse(JSON.stringify({
           version: data.version || data.cartaPorteVersion || '3.1',

@@ -4,20 +4,37 @@ import { supabase } from '@/integrations/supabase/client';
 import { UbicacionCompleta } from '@/types/cartaPorte';
 import { Coordinates } from '@/types/ubicaciones';
 
-interface ViajeData {
+interface ViajeCreationData {
   cartaPorteId: string;
-  conductorId?: string;
-  vehiculoId?: string;
+  conductorId: string;
+  vehiculoId: string;
   ubicaciones: UbicacionCompleta[];
   distanciaTotal: number;
   tiempoEstimado: number;
+}
+
+interface RutaCalculada {
+  ubicaciones: {
+    tipo: 'Origen' | 'Destino' | 'Paso Intermedio';
+    nombre: string;
+    direccion: string;
+    codigoPostal: string;
+    fechaEstimada: string;
+    coordenadas: {
+      latitud: number;
+      longitud: number;
+    };
+  }[];
+  distanciaTotal: number;
+  tiempoEstimado: number;
+  fechaCalculada: string;
 }
 
 export const useViajeCreation = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createViaje = async (data: ViajeData) => {
+  const createViaje = async (data: ViajeCreationData) => {
     setIsCreating(true);
     setError(null);
 
@@ -29,15 +46,17 @@ export const useViajeCreation = () => {
         throw new Error('Se requiere al menos un origen y un destino');
       }
 
-      // Convert Coordinates to Json compatible format
-      const rutaCalculada = {
+      const rutaCalculada: RutaCalculada = {
         ubicaciones: data.ubicaciones.map(ubicacion => ({
-          tipo: ubicacion.tipo_ubicacion,
+          tipo: ubicacion.tipo_ubicacion || 'Origen',
           nombre: ubicacion.nombre_remitente_destinatario || 'Sin nombre',
-          direccion: `${ubicacion.domicilio.calle}, ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}`,
+          direccion: `${ubicacion.domicilio.calle} ${ubicacion.domicilio.numero_exterior}, ${ubicacion.domicilio.colonia}`,
           codigoPostal: ubicacion.domicilio.codigo_postal,
           fechaEstimada: ubicacion.fecha_hora_salida_llegada || new Date().toISOString(),
-          coordenadas: ubicacion.coordenadas ? JSON.parse(JSON.stringify(ubicacion.coordenadas)) : null
+          coordenadas: {
+            latitud: ubicacion.coordenadas?.latitud || 0,
+            longitud: ubicacion.coordenadas?.longitud || 0
+          }
         })),
         distanciaTotal: data.distanciaTotal,
         tiempoEstimado: data.tiempoEstimado,
@@ -53,22 +72,22 @@ export const useViajeCreation = () => {
         fecha_inicio_programada: origen.fecha_hora_salida_llegada || new Date().toISOString(),
         fecha_fin_programada: destino.fecha_hora_salida_llegada || new Date().toISOString(),
         distancia_km: data.distanciaTotal,
-        tiempo_estimado_horas: Math.round(data.tiempoEstimado / 60),
+        tiempo_estimado_horas: data.tiempoEstimado,
         estado: 'programado',
         ruta_calculada: JSON.parse(JSON.stringify(rutaCalculada))
       };
 
-      const { data: viaje, error: insertError } = await supabase
+      const { data: viaje, error } = await supabase
         .from('viajes')
         .insert([viajeData])
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (error) throw error;
 
       return viaje;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error creating viaje';
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al crear viaje';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

@@ -3,7 +3,14 @@ import { useMemo } from 'react';
 import { useCartaPorteValidationEnhanced } from './useCartaPorteValidationEnhanced';
 import { useCartaPorteMappers, CartaPorteFormData } from './useCartaPorteMappers';
 import { CartaPorteData } from '@/types/cartaPorte';
-import { StepValidations } from './types/useCartaPorteFormTypes';
+
+interface StepValidations {
+  configuracion: boolean;
+  ubicaciones: boolean;
+  mercancias: boolean;
+  autotransporte: boolean;
+  figuras: boolean;
+}
 
 interface UseCartaPorteFormValidationOptions {
   formDataForValidation: CartaPorteFormData;
@@ -23,36 +30,42 @@ export const useCartaPorteFormValidation = ({
 
   // Usar validaciones mejoradas con IA con datos transformados
   const validationResult = useCartaPorteValidationEnhanced({ 
-    formData: transformedData,
+    data: transformedData,
     enableAI 
   });
 
   const { 
-    stepValidations: rawStepValidations, 
-    totalProgress,
-    aiValidation,
-    hasAIEnhancements,
-    validationMode,
-    overallScore,
-    validateComplete
+    isValid,
+    errors,
+    warnings,
+    score
   } = validationResult;
 
-  // Convertir las validaciones al formato correcto de forma estable
+  // Create step validations based on the data
   const stepValidations: StepValidations = useMemo(() => ({
-    configuracion: rawStepValidations?.configuracion || false,
-    ubicaciones: rawStepValidations?.ubicaciones || false,
-    mercancias: rawStepValidations?.mercancias || false,
-    autotransporte: rawStepValidations?.autotransporte || false,
-    figuras: rawStepValidations?.figuras || false,
-  }), [rawStepValidations]);
+    configuracion: !!(transformedData.rfcEmisor && transformedData.rfcReceptor),
+    ubicaciones: !!(transformedData.ubicaciones && transformedData.ubicaciones.length >= 2),
+    mercancias: !!(transformedData.mercancias && transformedData.mercancias.length > 0),
+    autotransporte: !!(transformedData.autotransporte && transformedData.autotransporte.placa_vm),
+    figuras: !!(transformedData.figuras && transformedData.figuras.length > 0),
+  }), [transformedData]);
+
+  const totalProgress = useMemo(() => {
+    const validSteps = Object.values(stepValidations).filter(Boolean).length;
+    return Math.round((validSteps / Object.keys(stepValidations).length) * 100);
+  }, [stepValidations]);
+
+  const validateComplete = () => {
+    return Object.values(stepValidations).every(Boolean) && isValid;
+  };
 
   return {
     stepValidations,
-    totalProgress: totalProgress || 0,
-    aiValidation,
-    hasAIEnhancements: hasAIEnhancements || false,
-    validationMode: validationMode || 'standard',
-    overallScore: overallScore || 0,
+    totalProgress,
+    aiValidation: { isValid, errors, warnings },
+    hasAIEnhancements: enableAI,
+    validationMode: enableAI ? 'enhanced' : 'standard',
+    overallScore: score || 0,
     validateComplete
   };
 };

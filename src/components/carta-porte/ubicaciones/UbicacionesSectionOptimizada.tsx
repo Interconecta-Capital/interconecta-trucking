@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -237,7 +238,7 @@ export function UbicacionesSectionOptimizada({
                 {currentDistanceTotal > 0 ? '✅' : '❌'} Distancia total calculada (obligatorio SAT)
               </div>
               <div className="flex items-center gap-2">
-                {ubicaciones.every(u => u.domicilio.codigoPostal && u.domicilio.municipio) ? '✅' : '❌'} 
+                {ubicaciones.every(u => u.domicilio.codigo_postal && u.domicilio.municipio) ? '✅' : '❌'} 
                 Domicilios completos en todas las ubicaciones
               </div>
             </div>

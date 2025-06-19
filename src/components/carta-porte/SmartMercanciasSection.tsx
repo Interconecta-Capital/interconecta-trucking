@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +54,7 @@ const convertToMercanciaCompleta = (mercancia: Mercancia): MercanciaCompleta => 
     material_embalaje: mercancia.material_embalaje,
     unidad_peso_bruto: mercancia.unidad_peso_bruto,
     dimensiones: mercancia.dimensiones,
-    uuid_comercio_exterior: mercancia.uuid_comercio_ext, // Map from uuid_comercio_ext
+    uuid_comercio_exterior: mercancia.uuid_comercio_ext,
     peso_neto_total: mercancia.peso_neto_total,
     numero_piezas: mercancia.numero_piezas,
     requiere_cites: mercancia.requiere_cites || false,
@@ -140,7 +141,7 @@ export function SmartMercanciasSection({
     return urlParams.get('id') || undefined;
   };
 
-  const handleSaveMercancia = async (mercancia: MercanciaCompleta) => {
+  const handleSaveMercancia = async (mercancia: MercanciaCompleta): Promise<boolean> => {
     try {
       // Convert to Mercancia for the hook
       const mercanciaForHook = convertToMercancia(mercancia);

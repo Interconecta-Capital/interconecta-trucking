@@ -67,7 +67,7 @@ export const useUbicacionesPersistence = () => {
       const ubicaciones: UbicacionCompleta[] = (data || []).map(item => ({
         id: item.id,
         id_ubicacion: item.id_ubicacion,
-        tipo_ubicacion: item.tipo_ubicacion,
+        tipo_ubicacion: item.tipo_ubicacion as 'Origen' | 'Destino' | 'Paso Intermedio',
         rfc_remitente_destinatario: item.rfc_remitente_destinatario,
         nombre_remitente_destinatario: item.nombre_remitente_destinatario,
         fecha_hora_salida_llegada: item.fecha_hora_salida_llegada,
