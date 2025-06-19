@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { CartaPorteData, UbicacionCompleta } from '@/types/cartaPorte';
 import { Ubicacion } from '@/types/ubicaciones';
@@ -28,9 +27,15 @@ export function useEnhancedPDFGenerator() {
     try {
       console.log('📄 Generando PDF completo de carta porte...');
 
-      const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub =>
-        (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(ub as Ubicacion)
-      );
+      // Fixed type conversion issue with proper type checking
+      const ubicaciones: UbicacionCompleta[] = (cartaPorteData.ubicaciones || []).map(ub => {
+        // Check if it's already UbicacionCompleta by checking for snake_case properties
+        if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
+          return ub as UbicacionCompleta;
+        }
+        // Otherwise convert from Ubicacion to UbicacionCompleta
+        return mapUbicacionToCompleta(ub as Ubicacion);
+      });
 
       const data = { ...cartaPorteData, ubicaciones };
       

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartaPorteData, AutotransporteCompleto, FiguraCompleta, MercanciaCompleta, UbicacionCompleta } from '@/types/cartaPorte';
@@ -168,9 +167,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Setters estables para cada sección del formulario
   const setUbicaciones = useCallback((ubicaciones: (Ubicacion | UbicacionCompleta)[]) => {
-    const completas = ubicaciones.map(ub =>
-      (ub as any).tipo_ubicacion ? (ub as UbicacionCompleta) : mapUbicacionToCompleta(ub as Ubicacion)
-    );
+    const completas = ubicaciones.map(ub => {
+      // Check if it's already UbicacionCompleta by checking for snake_case properties
+      if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
+        return ub as UbicacionCompleta;
+      }
+      // Otherwise convert from Ubicacion to UbicacionCompleta
+      return mapUbicacionToCompleta(ub as Ubicacion);
+    });
     setFormData(prev => ({ ...prev, ubicaciones: completas }));
   }, []);
 
@@ -282,9 +286,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       // Preparar datos completos con estado actual
       const datosCompletos: CartaPorteData = {
         ...formData,
-        ubicaciones: (formData.ubicaciones || []).map(ub =>
-          (ub as any).tipo_ubicacion ? ub as UbicacionCompleta : mapUbicacionToCompleta(ub as Ubicacion)
-        ),
+        ubicaciones: (formData.ubicaciones || []).map(ub => {
+          // Check if it's already UbicacionCompleta
+          if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
+            return ub as UbicacionCompleta;
+          }
+          // Convert from Ubicacion if needed
+          return mapUbicacionToCompleta(ub as Ubicacion);
+        }),
         currentStep,
         xmlGenerado,
         datosCalculoRuta
@@ -298,17 +307,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         mercanciasCount: datosCompletos.mercancias?.length || 0
       });
 
-      // Serialize data for Supabase - CORREGIDO
       const serializedData = serializeCartaPorteData(datosCompletos);
       
-      // Generar folio único solo la primera vez
       let folio = formData.folio;
       if (!folio) {
         folio = `CP-${Date.now().toString().slice(-8)}`;
         setFormData(prev => ({ ...prev, folio }));
       }
       
-      // Preparar datos para la carta porte oficial - CORREGIDO tipos
       const cartaPorteData = {
         folio,
         tipo_cfdi: formData.tipoCfdi || 'Traslado',
@@ -319,7 +325,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         transporte_internacional: (formData.transporteInternacional === 'Sí' || formData.transporteInternacional === true) ? true : false,
         registro_istmo: formData.registroIstmo || false,
         status: xmlGenerado ? 'generado' : 'borrador',
-        datos_formulario: serializedData as any, // Cast para evitar error de tipo
+        datos_formulario: serializedData as any,
         usuario_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -328,22 +334,20 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       let savedId = currentCartaPorteId;
 
       if (currentCartaPorteId) {
-        // Actualizar carta porte existente
         const { error } = await supabase
           .from('cartas_porte')
           .update({
             ...cartaPorteData,
             updated_at: new Date().toISOString()
-          } as any) // Cast para evitar error de tipo
+          } as any)
           .eq('id', currentCartaPorteId);
 
         if (error) throw error;
         console.log('✅ Carta porte actualizada exitosamente');
       } else {
-        // Crear nueva carta porte
         const { data: nuevaCarta, error } = await supabase
           .from('cartas_porte')
-          .insert(cartaPorteData as any) // Cast para evitar error de tipo
+          .insert(cartaPorteData as any)
           .select()
           .single();
 
@@ -401,9 +405,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     try {
       const datosCompletos: CartaPorteData = {
         ...formData,
-        ubicaciones: (formData.ubicaciones || []).map(ub =>
-          (ub as any).tipo_ubicacion ? ub as UbicacionCompleta : mapUbicacionToCompleta(ub as Ubicacion)
-        ),
+        ubicaciones: (formData.ubicaciones || []).map(ub => {
+          if ((ub as any).tipo_ubicacion && (ub as any).id_ubicacion) {
+            return ub as UbicacionCompleta;
+          }
+          return mapUbicacionToCompleta(ub as Ubicacion);
+        }),
         currentStep,
         xmlGenerado,
         datosCalculoRuta

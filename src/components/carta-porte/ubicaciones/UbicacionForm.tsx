@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ export function UbicacionForm({ ubicacion, onSave, onCancel, existingUbicaciones
     rfc_remitente_destinatario: ubicacion?.rfc_remitente_destinatario || '',
     nombre_remitente_destinatario: ubicacion?.nombre_remitente_destinatario || '',
     fecha_hora_salida_llegada: ubicacion?.fecha_hora_salida_llegada || '',
-    // *** CORRECCIÓN CRÍTICA: Campo obligatorio para destinos ***
     distancia_recorrida: ubicacion?.distancia_recorrida || 0,
     domicilio: {
       pais: ubicacion?.domicilio?.pais || 'MEX',
@@ -232,6 +230,7 @@ export function UbicacionForm({ ubicacion, onSave, onCancel, existingUbicaciones
             
             <CodigoPostalSelector
               value={formData.domicilio.codigo_postal}
+              onChange={(value) => handleFieldChange('domicilio.codigo_postal', value)}
               onPostalDataChange={(data) => {
                 handleFieldChange('domicilio.codigo_postal', data.codigoPostal);
                 handleFieldChange('domicilio.estado', data.estado);
