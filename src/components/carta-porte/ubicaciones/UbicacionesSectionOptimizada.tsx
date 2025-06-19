@@ -27,7 +27,7 @@ const convertToUbicacionCompleta = (ubicacion: Ubicacion): UbicacionCompleta => 
     tipo_ubicacion: ubicacion.tipoUbicacion,
     id_ubicacion: ubicacion.idUbicacion || ubicacion.id,
     distancia_recorrida: ubicacion.distanciaRecorrida || 0,
-    tipo_estacion: ubicacion.tipoEstacion || '1', // Default value
+    tipo_estacion: ubicacion.tipoEstacion || '1', // Required property with default value
     domicilio: {
       pais: ubicacion.domicilio.pais,
       codigo_postal: ubicacion.domicilio.codigoPostal,
