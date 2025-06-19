@@ -1,38 +1,69 @@
-import React from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
+
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Package, Trash2, Save, X, Ruler, Globe } from 'lucide-react';
-import { CatalogoSelector } from '@/components/catalogos/CatalogoSelector';
-import { AIAssistantButton } from './AIAssistantButton';
-import { useAdaptedCatalogQuery } from '@/components/catalogos/hooks/useAdaptedCatalogQuery';
-import { useFraccionesArancelarias } from '@/hooks/useCatalogosExtendidos';
+import { Badge } from '@/components/ui/badge';
+import { Package, Save, AlertTriangle, Info } from 'lucide-react';
 import { MercanciaCompleta } from '@/types/cartaPorte';
+import { CatalogoSelectorMejorado } from '@/components/catalogos/CatalogoSelectorMejorado';
+import { useToast } from '@/hooks/use-toast';
+
+const mercanciaSchema = z.object({
+  id: z.string(),
+  bienes_transp: z.string().min(1, 'Clave de producto/servicio requerida'),
+  descripcion: z.string().min(1, 'Descripción requerida'),
+  cantidad: z.number().min(0.01, 'Cantidad debe ser mayor a 0'),
+  clave_unidad: z.string().min(1, 'Unidad de medida requerida'),
+  peso_kg: z.number().min(0.01, 'Peso debe ser mayor a 0'),
+  moneda: z.string().default('MXN'),
+  valor_mercancia: z.number().min(0, 'Valor debe ser mayor o igual a 0'),
+  material_peligroso: z.boolean().default(false),
+  especie_protegida: z.boolean().default(false),
+  fraccion_arancelaria: z.string().optional(),
+  regimen_aduanero: z.string().optional(),
+  cve_material_peligroso: z.string().optional(),
+  descripcion_detallada: z.string().optional(),
+});
+
+type MercanciaFormData = z.infer<typeof mercanciaSchema>;
 
 interface MercanciaFormCompletaProps {
-  index: number;
-  onRemove?: () => void;
   mercancia?: MercanciaCompleta;
-  onSave?: (mercancia: MercanciaCompleta) => Promise<boolean> | boolean;
-  onCancel?: () => void;
-  isLoading?: boolean;
+  onSave: (mercancia: MercanciaCompleta) => void;
+  onCancel: () => void;
+  isEdit?: boolean;
 }
 
 export function MercanciaFormCompleta({ 
-  index, 
-  onRemove, 
   mercancia, 
   onSave, 
   onCancel, 
-  isLoading 
+  isEdit = false 
 }: MercanciaFormCompletaProps) {
-  const form = useForm<MercanciaCompleta>({
+  const { toast } = useToast();
+  const [dimensiones, setDimensiones] = useState({
+    largo: mercancia?.dimensiones?.largo || 0,
+    ancho: mercancia?.dimensiones?.ancho || 0,
+    alto: mercancia?.dimensiones?.alto || 0
+  });
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting }
+  } = useForm<MercanciaFormData>({
+    resolver: zodResolver(mercanciaSchema),
     defaultValues: mercancia || {
-      id: `mercancia-${Date.now()}`,
+      id: crypto.randomUUID(),
       descripcion: '',
       bienes_transp: '',
       clave_unidad: '',
@@ -40,573 +71,288 @@ export function MercanciaFormCompleta({
       peso_kg: 0,
       valor_mercancia: 0,
       material_peligroso: false,
-      cve_material_peligroso: '',
-      moneda: 'MXN',
-      fraccion_arancelaria: '',
-      tipo_embalaje: '',
-      material_embalaje: '',
-      peso_bruto_total: 0,
-      unidad_peso_bruto: 'KGM',
-      dimensiones: {
-        largo: 0,
-        ancho: 0,
-        alto: 0,
-        unidad: 'CM'
-      }
+      especie_protegida: false,
+      moneda: 'MXN'
     }
   });
-  
-  const [productoSearch, setProductoSearch] = React.useState('');
-  const [unidadSearch, setUnidadSearch] = React.useState('');
-  const [materialSearch, setMaterialSearch] = React.useState('');
-  const [embalajeSearch, setEmbalajeSearch] = React.useState('');
-  const [fraccionSearch, setFraccionSearch] = React.useState('');
-  
-  const materialPeligroso = form.watch('material_peligroso') || false;
-  const esComercioExterior = form.watch('fraccion_arancelaria') !== '';
-  
-  const { data: productos = [], isLoading: loadingProductos } = useAdaptedCatalogQuery(
-    'productos',
-    productoSearch,
-    productoSearch.length >= 2
-  );
-  
-  const { data: unidades = [], isLoading: loadingUnidades } = useAdaptedCatalogQuery(
-    'unidades',
-    unidadSearch,
-    unidadSearch.length >= 2
-  );
-  
-  const { data: materiales = [], isLoading: loadingMateriales } = useAdaptedCatalogQuery(
-    'materiales_peligrosos',
-    materialSearch,
-    materialPeligroso && materialSearch.length >= 2
-  );
 
-  const { data: embalajes = [], isLoading: loadingEmbalajes } = useAdaptedCatalogQuery('embalajes', '', true);
+  const materialPeligroso = watch('material_peligroso');
+  const especieProtegida = watch('especie_protegida');
 
-  const { data: fracciones = [], isLoading: loadingFracciones } = useFraccionesArancelarias(
-    fraccionSearch,
-    fraccionSearch.length >= 2
-  );
+  const handleDimensionChange = (dimension: 'largo' | 'ancho' | 'alto', value: number) => {
+    setDimensiones(prev => ({ ...prev, [dimension]: value }));
+  };
 
-  const handleAISuggestion = (suggestion: any) => {
-    if (suggestion.data) {
-      Object.entries(suggestion.data).forEach(([key, value]) => {
-        if (key === 'dimensiones' && typeof value === 'object') {
-          form.setValue('dimensiones', value as any);
-        } else if (typeof value === 'string') {
-          form.setValue(key as keyof MercanciaCompleta, value);
-        } else if (typeof value === 'number') {
-          form.setValue(key as keyof MercanciaCompleta, value);
-        } else if (typeof value === 'boolean') {
-          form.setValue(key as keyof MercanciaCompleta, value);
-        }
+  const onSubmit = async (data: MercanciaFormData) => {
+    try {
+      const mercanciaCompleta: MercanciaCompleta = {
+        ...data,
+        dimensiones: dimensiones.largo > 0 || dimensiones.ancho > 0 || dimensiones.alto > 0 
+          ? dimensiones 
+          : undefined
+      };
+
+      await onSave(mercanciaCompleta);
+      toast({
+        title: "Éxito",
+        description: `Mercancía ${isEdit ? 'actualizada' : 'agregada'} correctamente`,
+      });
+    } catch (error) {
+      console.error('Error guardando mercancía:', error);
+      toast({
+        title: "Error",
+        description: "Error al guardar la mercancía",
+        variant: "destructive",
       });
     }
   };
 
-  const handleSave = async (data: MercanciaCompleta) => {
-    if (onSave) {
-      const result = await onSave(data);
-      if (result && onCancel) {
-        onCancel();
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
-  };
-
   return (
-    <FormProvider {...form}>
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Mercancía {index + 1}
-            </CardTitle>
-            <div className="flex gap-2">
-              <AIAssistantButton 
-                context="mercancias"
-                onSuggestionApply={handleAISuggestion}
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-blue-500" />
+          {isEdit ? 'Editar Mercancía' : 'Nueva Mercancía'}
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Información Básica */}
+          <div className="space-y-4">
+            <h4 className="font-medium flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Información Básica
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CatalogoSelectorMejorado
+                tipo="productos_servicios"
+                label="Clave de Producto/Servicio"
+                value={watch('bienes_transp')}
+                onValueChange={(value) => setValue('bienes_transp', value)}
+                placeholder="Buscar clave..."
+                required
               />
-              {onRemove && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onRemove}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="descripcion">Descripción *</Label>
+                <Input 
+                  id="descripcion"
+                  {...register('descripcion')}
+                  placeholder="Descripción de la mercancía" 
+                />
+                {errors.descripcion && (
+                  <p className="text-sm text-red-600">{errors.descripcion.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cantidad">Cantidad *</Label>
+                <Input 
+                  id="cantidad"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register('cantidad', { valueAsNumber: true })}
+                  placeholder="0.00" 
+                />
+                {errors.cantidad && (
+                  <p className="text-sm text-red-600">{errors.cantidad.message}</p>
+                )}
+              </div>
+
+              <CatalogoSelectorMejorado
+                tipo="unidades_medida"
+                label="Unidad de Medida"
+                value={watch('clave_unidad')}
+                onValueChange={(value) => setValue('clave_unidad', value)}
+                placeholder="Seleccionar unidad..."
+                required
+              />
+
+              <div className="space-y-2">
+                <Label htmlFor="peso_kg">Peso (kg) *</Label>
+                <Input 
+                  id="peso_kg"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register('peso_kg', { valueAsNumber: true })}
+                  placeholder="0.00" 
+                />
+                {errors.peso_kg && (
+                  <p className="text-sm text-red-600">{errors.peso_kg.message}</p>
+                )}
+              </div>
             </div>
           </div>
-        </CardHeader>
 
-        <CardContent>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
-            {/* Información Básica */}
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Información Básica de la Mercancía
-              </h4>
-              
-              <FormField
-                control={form.control}
-                name="descripcion"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción de la Mercancía *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Descripción detallada de la mercancía" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+          <Separator />
+
+          {/* Información Comercial */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Información Comercial</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="valor_mercancia">Valor de la Mercancía *</Label>
+                <Input 
+                  id="valor_mercancia"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register('valor_mercancia', { valueAsNumber: true })}
+                  placeholder="0.00" 
+                />
+                {errors.valor_mercancia && (
+                  <p className="text-sm text-red-600">{errors.valor_mercancia.message}</p>
                 )}
+              </div>
+
+              <CatalogoSelectorMejorado
+                tipo="monedas"
+                label="Moneda"
+                value={watch('moneda')}
+                onValueChange={(value) => setValue('moneda', value)}
+                placeholder="Seleccionar moneda..."
+                required
               />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="bienes_transp"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Clave Producto/Servicio SAT *</FormLabel>
-                      <FormControl>
-                        <CatalogoSelector
-                          items={productos}
-                          loading={loadingProductos}
-                          placeholder="Buscar clave de producto..."
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          onSearchChange={setProductoSearch}
-                          searchValue={productoSearch}
-                          allowManualInput={true}
-                          manualInputPlaceholder="Escribir clave manualmente"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="clave_unidad"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Clave Unidad SAT *</FormLabel>
-                      <FormControl>
-                        <CatalogoSelector
-                          items={unidades}
-                          loading={loadingUnidades}
-                          placeholder="Buscar unidad..."
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          onSearchChange={setUnidadSearch}
-                          searchValue={unidadSearch}
-                          allowManualInput={true}
-                          manualInputPlaceholder="Escribir unidad manualmente"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="cantidad"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cantidad *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0"
-                          step="0.001"
-                          min="0.001"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="peso_kg"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso (kg)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          step="0.001"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="valor_mercancia"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor ($)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </div>
 
-            <Separator />
-
-            {/* Comercio Exterior */}
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                Comercio Exterior (Opcional)
-              </h4>
-
-              <FormField
-                control={form.control}
-                name="fraccion_arancelaria"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fracción Arancelaria</FormLabel>
-                    <FormControl>
-                      <CatalogoSelector
-                        items={fracciones}
-                        loading={loadingFracciones}
-                        placeholder="Buscar fracción arancelaria..."
-                        value={field.value || ''}
-                        onValueChange={field.onChange}
-                        onSearchChange={setFraccionSearch}
-                        searchValue={fraccionSearch}
-                        allowManualInput={true}
-                        manualInputPlaceholder="Escribir fracción manualmente"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <Label htmlFor="fraccion_arancelaria">Fracción Arancelaria</Label>
+              <Input 
+                id="fraccion_arancelaria"
+                {...register('fraccion_arancelaria')}
+                placeholder="Ej: 8704.10.01" 
               />
-
-              {esComercioExterior && (
-                <FormField
-                  control={form.control}
-                  name="uuid_comercio_exterior"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>UUID Comercio Exterior</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="UUID del complemento de comercio exterior"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
+          </div>
 
-            <Separator />
+          <Separator />
 
-            {/* Embalaje */}
+          {/* Dimensiones */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Dimensiones (metros)</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dimension_largo">Largo (m)</Label>
+                <Input 
+                  id="dimension_largo"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={dimensiones.largo || ''}
+                  onChange={(e) => handleDimensionChange('largo', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dimension_ancho">Ancho (m)</Label>
+                <Input 
+                  id="dimension_ancho"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={dimensiones.ancho || ''}
+                  onChange={(e) => handleDimensionChange('ancho', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dimension_alto">Alto (m)</Label>
+                <Input 
+                  id="dimension_alto"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={dimensiones.alto || ''}
+                  onChange={(e) => handleDimensionChange('alto', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Características Especiales */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Características Especiales</h4>
+            
             <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Información de Embalaje
-              </h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="tipo_embalaje"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Embalaje</FormLabel>
-                      <FormControl>
-                        <CatalogoSelector
-                          items={embalajes}
-                          loading={loadingEmbalajes}
-                          placeholder="Buscar tipo de embalaje..."
-                          value={field.value || ''}
-                          onValueChange={field.onChange}
-                          onSearchChange={setEmbalajeSearch}
-                          searchValue={embalajeSearch}
-                          allowManualInput={true}
-                          manualInputPlaceholder="Escribir tipo manualmente"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="material_peligroso"
+                  checked={materialPeligroso}
+                  onCheckedChange={(checked) => setValue('material_peligroso', checked as boolean)}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="material_embalaje"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Material del Embalaje</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Ej: Cartón, Plástico, Madera"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <Label htmlFor="material_peligroso" className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  Material Peligroso
+                </Label>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="peso_bruto_total"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso Bruto Total (kg)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          step="0.001"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="unidad_peso_bruto"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unidad Peso Bruto</FormLabel>
-                      <FormControl>
-                        <CatalogoSelector
-                          items={unidades}
-                          loading={loadingUnidades}
-                          placeholder="Buscar unidad..."
-                          value={field.value || 'KGM'}
-                          onValueChange={field.onChange}
-                          onSearchChange={setUnidadSearch}
-                          searchValue={unidadSearch}
-                          allowManualInput={true}
-                          manualInputPlaceholder="Escribir unidad manualmente"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Dimensiones */}
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <Ruler className="h-4 w-4" />
-                Dimensiones del Embalaje
-              </h4>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <FormField
-                  control={form.control}
-                  name="dimensiones.largo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Largo</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="dimensiones.ancho"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ancho</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="dimensiones.alto"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Alto</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="dimensiones.unidad"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unidad</FormLabel>
-                      <FormControl>
-                        <CatalogoSelector
-                          items={[
-                            { value: 'CM', label: 'CM - Centímetros' },
-                            { value: 'M', label: 'M - Metros' },
-                            { value: 'IN', label: 'IN - Pulgadas' },
-                            { value: 'FT', label: 'FT - Pies' }
-                          ]}
-                          placeholder="Unidad"
-                          value={field.value || 'CM'}
-                          onValueChange={field.onChange}
-                          allowManualInput={false}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Material Peligroso */}
-            <FormField
-              control={form.control}
-              name="material_peligroso"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Material Peligroso</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      ¿Esta mercancía es considerada material peligroso?
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
+              {materialPeligroso && (
+                <div className="ml-6 space-y-2">
+                  <Label htmlFor="cve_material_peligroso">Clave Material Peligroso</Label>
+                  <Input 
+                    id="cve_material_peligroso"
+                    {...register('cve_material_peligroso')}
+                    placeholder="Clave ONU del material peligroso" 
+                  />
+                </div>
               )}
-            />
 
-            {materialPeligroso && (
-              <FormField
-                control={form.control}
-                name="cve_material_peligroso"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Clave Material Peligroso *</FormLabel>
-                    <FormControl>
-                      <CatalogoSelector
-                        items={materiales}
-                        loading={loadingMateriales}
-                        placeholder="Buscar material peligroso..."
-                        value={field.value || ''}
-                        onValueChange={field.onChange}
-                        onSearchChange={setMaterialSearch}
-                        searchValue={materialSearch}
-                        allowManualInput={true}
-                        manualInputPlaceholder="Escribir clave manualmente"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="especie_protegida"
+                  checked={especieProtegida}
+                  onCheckedChange={(checked) => setValue('especie_protegida', checked as boolean)}
+                />
+                <Label htmlFor="especie_protegida">
+                  Especie Protegida por CITES
+                </Label>
+              </div>
 
-            {/* Botones de acción */}
-            <div className="flex justify-end gap-2 pt-4">
-              {onCancel && (
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-              )}
-              <Button type="submit" disabled={isLoading}>
-                <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar'}
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="descripcion_detallada">Descripción Detallada</Label>
+                <Input 
+                  id="descripcion_detallada"
+                  {...register('descripcion_detallada')}
+                  placeholder="Descripción adicional de la mercancía" 
+                />
+              </div>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </FormProvider>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex justify-end space-x-4 pt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isSubmitting ? 'Guardando...' : isEdit ? 'Actualizar' : 'Guardar'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

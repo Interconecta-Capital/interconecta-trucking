@@ -36,6 +36,10 @@ export interface UbicacionCompleta {
   nombre: string;
   fecha_llegada_salida: string;
   distancia_recorrida: number;
+  coordenadas?: {
+    latitud: number;
+    longitud: number;
+  };
   domicilio?: {
     pais?: string;
     codigo_postal?: string;
@@ -62,6 +66,17 @@ export interface MercanciaCompleta {
   regimen_aduanero?: string;
   cve_material_peligroso?: string;
   descripcion_detallada?: string;
+  tipo_embalaje?: string;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+  };
+}
+
+export interface Remolque {
+  placa: string;
+  subtipo_rem: string;
 }
 
 export interface AutotransporteCompleto {
@@ -76,6 +91,20 @@ export interface AutotransporteCompleto {
   poliza_med_ambiente: string;
   peso_bruto_vehicular: number;
   tipo_carroceria: string;
+  
+  // Additional properties used by components
+  marca_vehiculo?: string;
+  modelo_vehiculo?: string;
+  numero_serie_vin?: string;
+  vigencia_permiso?: string;
+  numero_permisos_adicionales?: string[];
+  capacidad_carga?: number;
+  dimensiones?: {
+    largo: number;
+    ancho: number;
+    alto: number;
+  };
+  remolques?: Remolque[];
 }
 
 export interface FiguraCompleta {
