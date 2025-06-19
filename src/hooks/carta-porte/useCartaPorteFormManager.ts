@@ -30,11 +30,25 @@ const initialData: CartaPorteData = {
   currentStep: 0
 };
 
-export const useCartaPorteFormManager = () => {
+export const useCartaPorteFormManager = (cartaPorteId?: string) => {
   const [data, setData] = useState<CartaPorteData>(initialData);
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  
+  // State for additional properties expected by OptimizedCartaPorteForm
+  const [borradorCargado, setBorradorCargado] = useState(false);
+  const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
+  const [isGuardando, setIsGuardando] = useState(false);
+  const [xmlGenerado, setXmlGenerado] = useState<string | null>(null);
+  const [datosCalculoRuta, setDatosCalculoRuta] = useState<{
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+  } | null>(null);
+  
+  // Dialog de recuperación
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [borradorData, setBorradorData] = useState<any>(null);
 
   const updateData = useCallback((updates: Partial<CartaPorteData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -96,9 +110,125 @@ export const useCartaPorteFormManager = () => {
     }
   }, []);
 
+  // Handler functions expected by OptimizedCartaPorteForm
+  const handleConfiguracionChange = useCallback((config: Partial<CartaPorteData>) => {
+    updateData(config);
+  }, [updateData]);
+
+  const setUbicaciones = useCallback((ubicaciones: any[]) => {
+    updateData({ ubicaciones });
+  }, [updateData]);
+
+  const setMercancias = useCallback((mercancias: any[]) => {
+    updateData({ mercancias });
+  }, [updateData]);
+
+  const setAutotransporte = useCallback((autotransporte: AutotransporteCompleto) => {
+    updateData({ autotransporte });
+  }, [updateData]);
+
+  const setFiguras = useCallback((figuras: any[]) => {
+    updateData({ figuras });
+  }, [updateData]);
+
+  const handleGuardarBorrador = useCallback(async () => {
+    setIsGuardando(true);
+    try {
+      // Simular guardado
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setUltimoGuardado(new Date());
+      setBorradorCargado(true);
+    } finally {
+      setIsGuardando(false);
+    }
+  }, []);
+
+  const handleGuardarCartaPorteOficial = useCallback(async () => {
+    // Implementar guardado oficial
+  }, []);
+
+  const handleGuardarYSalir = useCallback(async () => {
+    await handleGuardarBorrador();
+  }, [handleGuardarBorrador]);
+
+  const handleLimpiarBorrador = useCallback(() => {
+    resetForm();
+    setBorradorCargado(false);
+    setUltimoGuardado(null);
+  }, [resetForm]);
+
+  const handleXMLGenerated = useCallback((xml: string) => {
+    setXmlGenerado(xml);
+  }, []);
+
+  const handleCalculoRutaUpdate = useCallback((datos: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+  }) => {
+    setDatosCalculoRuta(datos);
+  }, []);
+
+  const handleAcceptBorrador = useCallback(() => {
+    if (borradorData) {
+      setData(borradorData);
+      setBorradorCargado(true);
+    }
+    setShowRecoveryDialog(false);
+  }, [borradorData]);
+
+  const handleRejectBorrador = useCallback(() => {
+    setShowRecoveryDialog(false);
+    setBorradorData(null);
+  }, []);
+
+  // Create validation summary
+  const validationSummary = {
+    sectionStatus: {
+      configuracion: data.rfcEmisor && data.rfcReceptor ? 'valid' : 'empty',
+      ubicaciones: data.ubicaciones && data.ubicaciones.length >= 2 ? 'valid' : 'empty',
+      mercancias: data.mercancias && data.mercancias.length > 0 ? 'valid' : 'empty',
+      autotransporte: data.autotransporte?.placa_vm ? 'valid' : 'empty',
+      figuras: data.figuras && data.figuras.length > 0 ? 'valid' : 'empty'
+    }
+  };
+
   return {
-    data,
+    // Structure expected by OptimizedCartaPorteForm
+    configuracion: data,
+    ubicaciones: data.ubicaciones || [],
+    mercancias: data.mercancias || [],
+    autotransporte: data.autotransporte || getDefaultAutotransporte(),
+    figuras: data.figuras || [],
     currentStep,
+    currentCartaPorteId: cartaPorteId,
+    borradorCargado,
+    ultimoGuardado,
+    validationSummary,
+    isGuardando,
+    xmlGenerado,
+    datosCalculoRuta,
+    
+    // Dialog de recuperación
+    showRecoveryDialog,
+    borradorData,
+    handleAcceptBorrador,
+    handleRejectBorrador,
+    
+    setUbicaciones,
+    setMercancias,
+    setAutotransporte,
+    setFiguras,
+    setCurrentStep,
+    handleConfiguracionChange,
+    handleGuardarBorrador,
+    handleGuardarCartaPorteOficial,
+    handleGuardarYSalir,
+    handleLimpiarBorrador,
+    handleXMLGenerated,
+    handleCalculoRutaUpdate,
+
+    // Original structure for backward compatibility
+    data,
     isLoading,
     errors,
     updateData,

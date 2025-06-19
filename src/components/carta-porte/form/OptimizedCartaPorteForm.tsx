@@ -73,13 +73,13 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
     const currentSectionKeys = ['configuracion', 'ubicaciones', 'mercancias', 'autotransporte', 'figuras'];
     const currentSectionKey = currentSectionKeys[currentStep];
     
-    if (currentSectionKey && validationSummary.sectionStatus[currentSectionKey] === 'empty') {
+    if (currentSectionKey && validationSummary?.sectionStatus[currentSectionKey] === 'empty') {
       // No permitir avanzar si la sección actual está vacía
       return;
     }
 
     setCurrentStep(targetStep);
-  }, [currentStep, setCurrentStep, validationSummary.sectionStatus]);
+  }, [currentStep, setCurrentStep, validationSummary]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -106,7 +106,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
       {/* Indicador de progreso con más margen */}
       <div className="mb-8 bg-white rounded-lg shadow-sm border p-6">
         <CartaPorteProgressIndicator
-          validationSummary={validationSummary}
+          validationSummary={validationSummary || { sectionStatus: {} }}
           currentStep={currentStep}
           onStepClick={handleStepNavigation}
           xmlGenerado={xmlGenerado}
@@ -121,7 +121,7 @@ const OptimizedCartaPorteForm = memo<OptimizedCartaPorteFormProps>(({ cartaPorte
         mercancias={mercancias}
         autotransporte={autotransporte || defaultAutotransporte}
         figuras={figuras}
-        currentCartaPorteId={currentCartaPorteId}
+        currentCartaPorteId={currentCartaPorteId || undefined}
         onConfiguracionChange={handleConfiguracionChange}
         onUbicacionesChange={setUbicaciones}
         onMercanciasChange={setMercancias}
