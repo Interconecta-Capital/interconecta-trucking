@@ -1,5 +1,5 @@
+
 import { useState, useCallback } from 'react';
-import { useUser } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CartaPorteData } from '@/types/cartaPorte';
 
@@ -14,31 +14,37 @@ interface UseCartaPorteAutoPersistenceResult {
 export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResult => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
-  const user = useUser();
+
+  // Get current user from supabase auth
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  };
 
   const persistCartaPorte = useCallback(async (data: CartaPorteData) => {
+    const user = await getCurrentUser();
     if (!user?.id) return null;
 
     try {
       setIsSaving(true);
       setLastError(null);
 
+      // Convert data to Json-compatible format
       const cartaPorteData = {
-        ...data,
         version: data.version || data.cartaPorteVersion || '3.1',
         usuario_id: user.id,
-        rfc_emisor: data.rfcEmisor,
-        nombre_emisor: data.nombreEmisor,
-        rfc_receptor: data.rfcReceptor,
-        nombre_receptor: data.nombreReceptor,
-        transporte_internacional: data.transporteInternacional,
-        registro_istmo: data.registroIstmo,
-        tipo_cfdi: data.tipoCfdi,
+        rfc_emisor: data.rfcEmisor || '',
+        nombre_emisor: data.nombreEmisor || '',
+        rfc_receptor: data.rfcReceptor || '',
+        nombre_receptor: data.nombreReceptor || '',
+        transporte_internacional: data.transporteInternacional || false,
+        registro_istmo: data.registroIstmo || false,
+        tipo_cfdi: data.tipoCfdi || 'Traslado',
         status: 'borrador',
-        datos_formulario: {
+        datos_formulario: JSON.parse(JSON.stringify({
           version: data.version || data.cartaPorteVersion || '3.1',
           ...data
-        }
+        }))
       };
 
       const { data: cartaPorte, error } = await supabase
@@ -61,9 +67,10 @@ export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResu
     } finally {
       setIsSaving(false);
     }
-  }, [user?.id]);
+  }, []);
 
   const updateCartaPorte = useCallback(async (id: string, data: CartaPorteData) => {
+    const user = await getCurrentUser();
     if (!user?.id) return null;
 
     try {
@@ -71,13 +78,12 @@ export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResu
       setLastError(null);
 
       const updateData = {
-        ...data,
         version: data.version || data.cartaPorteVersion || '3.1',
         updated_at: new Date().toISOString(),
-        datos_formulario: {
+        datos_formulario: JSON.parse(JSON.stringify({
           version: data.version || data.cartaPorteVersion || '3.1',
           ...data
-        }
+        }))
       };
 
       const { data: updatedCartaPorte, error } = await supabase
@@ -101,7 +107,7 @@ export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResu
     } finally {
       setIsSaving(false);
     }
-  }, [user?.id]);
+  }, []);
 
   const saveBorrador = useCallback(async (data: CartaPorteData, cartaPorteId?: string) => {
     try {
@@ -143,7 +149,12 @@ export const useCartaPorteAutoPersistence = (): UseCartaPorteAutoPersistenceResu
         return null;
       }
 
-      return data.datos_formulario as CartaPorteData;
+      // Safe conversion with version default
+      const cartaPorteData = data.datos_formulario as unknown as CartaPorteData;
+      return {
+        version: '3.1',
+        ...cartaPorteData
+      };
     } catch (error) {
       console.error('Error loading carta porte:', error);
       setLastError(error as Error);

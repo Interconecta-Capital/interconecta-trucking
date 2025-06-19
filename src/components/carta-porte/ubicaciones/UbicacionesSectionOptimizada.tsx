@@ -1,23 +1,82 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, ArrowLeft, MapPin, Plus } from 'lucide-react';
 import { Ubicacion } from '@/types/ubicaciones';
+import { UbicacionCompleta } from '@/types/cartaPorte';
 import { UbicacionCard } from './UbicacionCard';
 import { UbicacionFormDialog } from './UbicacionFormDialog';
 import { OptimizedDistanceCalculator } from './OptimizedDistanceCalculator';
 import { MapVisualization } from './MapVisualization';
 
 interface UbicacionesSectionOptimizadaProps {
-  ubicaciones: Ubicacion[];
+  ubicaciones: UbicacionCompleta[];
   distanciaTotal?: number;
   tiempoEstimado?: number;
-  onChange: (ubicaciones: Ubicacion[], distanciaTotal?: number, tiempoEstimado?: number) => void;
+  onChange: (ubicaciones: UbicacionCompleta[], distanciaTotal?: number, tiempoEstimado?: number) => void;
   onNext: () => void;
   onPrev: () => void;
 }
+
+// Helper function to convert Ubicacion to UbicacionCompleta
+const convertToUbicacionCompleta = (ubicacion: Ubicacion): UbicacionCompleta => {
+  return {
+    id: ubicacion.id,
+    tipo_ubicacion: ubicacion.tipoUbicacion,
+    id_ubicacion: ubicacion.idUbicacion || ubicacion.id,
+    distancia_recorrida: ubicacion.distanciaRecorrida || 0,
+    tipo_estacion: ubicacion.tipoEstacion || '1', // Default value
+    domicilio: {
+      pais: ubicacion.domicilio.pais,
+      codigo_postal: ubicacion.domicilio.codigoPostal,
+      estado: ubicacion.domicilio.estado,
+      municipio: ubicacion.domicilio.municipio,
+      colonia: ubicacion.domicilio.colonia,
+      calle: ubicacion.domicilio.calle,
+      numero_exterior: ubicacion.domicilio.numExterior || '',
+      numero_interior: ubicacion.domicilio.numInterior,
+      referencia: ubicacion.domicilio.referencia,
+      localidad: ubicacion.domicilio.localidad
+    },
+    rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario,
+    nombre_remitente_destinatario: ubicacion.nombreRemitenteDestinatario,
+    fecha_hora_salida_llegada: ubicacion.fechaHoraSalidaLlegada,
+    numero_estacion: ubicacion.numeroEstacion,
+    kilometro: ubicacion.kilometro,
+    coordenadas: ubicacion.coordenadas
+  };
+};
+
+// Helper function to convert UbicacionCompleta to Ubicacion
+const convertToUbicacion = (ubicacionCompleta: UbicacionCompleta): Ubicacion => {
+  return {
+    id: ubicacionCompleta.id || crypto.randomUUID(),
+    idUbicacion: ubicacionCompleta.id_ubicacion,
+    tipoUbicacion: ubicacionCompleta.tipo_ubicacion || 'Origen',
+    ordenSecuencia: 1,
+    rfcRemitenteDestinatario: ubicacionCompleta.rfc_remitente_destinatario,
+    nombreRemitenteDestinatario: ubicacionCompleta.nombre_remitente_destinatario,
+    fechaHoraSalidaLlegada: ubicacionCompleta.fecha_hora_salida_llegada,
+    distanciaRecorrida: ubicacionCompleta.distancia_recorrida,
+    coordenadas: ubicacionCompleta.coordenadas,
+    domicilio: {
+      pais: ubicacionCompleta.domicilio.pais,
+      codigoPostal: ubicacionCompleta.domicilio.codigo_postal,
+      estado: ubicacionCompleta.domicilio.estado,
+      municipio: ubicacionCompleta.domicilio.municipio,
+      colonia: ubicacionCompleta.domicilio.colonia,
+      calle: ubicacionCompleta.domicilio.calle,
+      numExterior: ubicacionCompleta.domicilio.numero_exterior,
+      numInterior: ubicacionCompleta.domicilio.numero_interior,
+      referencia: ubicacionCompleta.domicilio.referencia,
+      localidad: ubicacionCompleta.domicilio.localidad
+    },
+    tipoEstacion: ubicacionCompleta.tipo_estacion,
+    numeroEstacion: ubicacionCompleta.numero_estacion,
+    kilometro: ubicacionCompleta.kilometro
+  };
+};
 
 export function UbicacionesSectionOptimizada({
   ubicaciones,
@@ -39,6 +98,7 @@ export function UbicacionesSectionOptimizada({
       idUbicacion: '',
       tipoUbicacion: ubicaciones.length === 0 ? 'Origen' : 'Destino',
       ordenSecuencia: ubicaciones.length + 1,
+      tipoEstacion: '1',
       domicilio: {
         pais: 'México',
         codigoPostal: '',
@@ -56,19 +116,22 @@ export function UbicacionesSectionOptimizada({
     setIsDialogOpen(true);
   };
 
-  const handleEditUbicacion = (ubicacion: Ubicacion) => {
+  const handleEditUbicacion = (ubicacionCompleta: UbicacionCompleta) => {
+    const ubicacion = convertToUbicacion(ubicacionCompleta);
     setEditingUbicacion(ubicacion);
     setIsDialogOpen(true);
   };
 
   const handleSaveUbicacion = (ubicacion: Ubicacion) => {
+    const ubicacionCompleta = convertToUbicacionCompleta(ubicacion);
+    
     if (editingUbicacion?.id && ubicaciones.find(u => u.id === editingUbicacion.id)) {
       // Actualizar ubicación existente
-      const updatedUbicaciones = ubicaciones.map(u => u.id === ubicacion.id ? ubicacion : u);
+      const updatedUbicaciones = ubicaciones.map(u => u.id === ubicacionCompleta.id ? ubicacionCompleta : u);
       onChange(updatedUbicaciones, currentDistanceTotal, currentTimeEstimate);
     } else {
       // Agregar nueva ubicación
-      const newUbicaciones = [...ubicaciones, ubicacion];
+      const newUbicaciones = [...ubicaciones, ubicacionCompleta];
       onChange(newUbicaciones, currentDistanceTotal, currentTimeEstimate);
     }
     setIsDialogOpen(false);
@@ -86,17 +149,17 @@ export function UbicacionesSectionOptimizada({
     onChange(ubicaciones, distancia, tiempo);
   };
 
-  const handleUbicacionesOptimizadas = (ubicacionesOptimizadas: Ubicacion[]) => {
+  const handleUbicacionesOptimizadas = (ubicacionesOptimizadas: UbicacionCompleta[]) => {
     onChange(ubicacionesOptimizadas, currentDistanceTotal, currentTimeEstimate);
   };
 
   const canContinue = ubicaciones.length >= 2 && 
-    ubicaciones.some(u => u.tipoUbicacion === 'Origen') &&
-    ubicaciones.some(u => u.tipoUbicacion === 'Destino') &&
+    ubicaciones.some(u => u.tipo_ubicacion === 'Origen') &&
+    ubicaciones.some(u => u.tipo_ubicacion === 'Destino') &&
     currentDistanceTotal > 0;
 
-  const tieneOrigen = ubicaciones.some(u => u.tipoUbicacion === 'Origen');
-  const tieneDestino = ubicaciones.some(u => u.tipoUbicacion === 'Destino');
+  const tieneOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
+  const tieneDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
 
   return (
     <div className="space-y-6">
@@ -136,14 +199,14 @@ export function UbicacionesSectionOptimizada({
           ) : (
             <div className="space-y-4">
               {ubicaciones
-                .sort((a, b) => a.ordenSecuencia - b.ordenSecuencia)
+                .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
                 .map((ubicacion, index) => (
                   <UbicacionCard
                     key={ubicacion.id}
                     ubicacion={ubicacion}
                     index={index}
                     onEdit={() => handleEditUbicacion(ubicacion)}
-                    onDelete={() => handleDeleteUbicacion(ubicacion.id)}
+                    onDelete={() => handleDeleteUbicacion(ubicacion.id || '')}
                   />
                 ))}
             </div>

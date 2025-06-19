@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -122,7 +121,7 @@ export function SmartMercanciasSection({
   } = useMercancias();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingMercancia, setEditingMercancia] = useState<Mercancia | undefined>();
+  const [editingMercancia, setEditingMercancia] = useState<MercanciaCompleta | undefined>();
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
@@ -141,12 +140,15 @@ export function SmartMercanciasSection({
     return urlParams.get('id') || undefined;
   };
 
-  const handleSaveMercancia = async (mercancia: Mercancia) => {
+  const handleSaveMercancia = async (mercancia: MercanciaCompleta) => {
     try {
+      // Convert to Mercancia for the hook
+      const mercanciaForHook = convertToMercancia(mercancia);
+      
       if (editingMercancia) {
-        actualizarMercancia({ id: editingMercancia.id!, mercancia });
+        actualizarMercancia({ id: editingMercancia.id!, mercancia: mercanciaForHook });
       } else {
-        agregarMercancia(mercancia);
+        agregarMercancia(mercanciaForHook);
       }
       
       // Learn from successful saves
@@ -165,15 +167,14 @@ export function SmartMercanciasSection({
   };
 
   const handleEditMercancia = (mercancia: MercanciaCompleta) => {
-    const mercanciaToEdit = convertToMercancia(mercancia);
     const index = data.findIndex(m => m.id === mercancia.id);
-    setEditingMercancia(mercanciaToEdit);
+    setEditingMercancia(mercancia);
     setEditingIndex(index);
     setShowForm(true);
   };
 
   const handleRemoveMercancia = (index: number) => {
-    const mercancia = mercancias[index];
+    const mercancia = data[index];
     if (mercancia?.id) {
       eliminarMercancia(mercancia.id);
     }
@@ -261,7 +262,7 @@ export function SmartMercanciasSection({
   const handleNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (mercancias.length > 0) {
+    if (data.length > 0) {
       onNext();
     }
   };
@@ -272,7 +273,7 @@ export function SmartMercanciasSection({
     onPrev();
   };
 
-  const canContinue = mercancias.length > 0;
+  const canContinue = data.length > 0;
 
   return (
     <div className="space-y-6">
@@ -291,7 +292,7 @@ export function SmartMercanciasSection({
                   variant="outline" 
                   onClick={handleGetAISuggestions}
                   className="flex items-center space-x-2"
-                  disabled={mercancias.length === 0}
+                  disabled={data.length === 0}
                 >
                   <Brain className="h-4 w-4" />
                   <span>Sugerencias IA</span>
@@ -326,7 +327,7 @@ export function SmartMercanciasSection({
           </div>
           
           {/* Quick import info */}
-          {!showForm && mercancias.length === 0 && (
+          {!showForm && data.length === 0 && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <Bot className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -353,7 +354,7 @@ export function SmartMercanciasSection({
         <CardContent>
           {showForm ? (
             <SmartMercanciaForm
-              mercancia={editingMercancia ? convertToMercanciaCompleta(editingMercancia) : undefined}
+              mercancia={editingMercancia}
               onSave={handleSaveMercancia}
               onCancel={handleCancelForm}
               onRemove={editingIndex >= 0 ? () => handleRemoveMercancia(editingIndex) : undefined}
@@ -363,7 +364,7 @@ export function SmartMercanciasSection({
             <MercanciasListWrapper
               mercancias={data}
               onEdit={handleEditMercancia}
-              onDelete={eliminarMercancia}
+              onDelete={(id: string) => eliminarMercancia(id)}
               isLoading={isLoading}
             />
           )}
@@ -414,7 +415,7 @@ export function SmartMercanciasSection({
           <Button 
             type="button"
             variant="outline" 
-            onClick={handlePrev} 
+            onClick={onPrev} 
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -423,7 +424,7 @@ export function SmartMercanciasSection({
           
           <Button 
             type="button"
-            onClick={handleNext} 
+            onClick={onNext} 
             disabled={!canContinue}
             className="flex items-center space-x-2"
           >
