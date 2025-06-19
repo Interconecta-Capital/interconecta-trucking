@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +16,7 @@ interface MercanciaCompleta {
   peso_kg: number;
   valor_mercancia?: number; // FIXED: Made optional to match global type
   material_peligroso?: boolean; // FIXED: Made optional to match global type
-  moneda: string;
+  moneda?: string; // FIXED: Made optional to match global type
   cve_material_peligroso?: string;
   embalaje?: string;
   fraccion_arancelaria?: string;
@@ -169,7 +168,7 @@ export function MercanciasSectionOptimizada({
     return {
       totalCantidad: data.reduce((sum, m) => sum + m.cantidad, 0),
       totalPeso: data.reduce((sum, m) => sum + m.peso_kg, 0),
-      totalValor: data.reduce((sum, m) => sum + (m.cantidad * m.valor_mercancia), 0),
+      totalValor: data.reduce((sum, m) => sum + (m.cantidad * (m.valor_mercancia || 0)), 0),
       materialesPeligrosos: data.filter(m => m.material_peligroso).length
     };
   };
@@ -290,7 +289,7 @@ export function MercanciasSectionOptimizada({
                                 <div>
                                   <span className="text-muted-foreground">Valor Unit.:</span>
                                   <span className="ml-1 font-medium">
-                                    ${mercancia.valor_mercancia.toLocaleString('es-MX')} {mercancia.moneda}
+                                    ${(mercancia.valor_mercancia || 0).toLocaleString('es-MX')} {mercancia.moneda || 'MXN'}
                                   </span>
                                 </div>
                                 <div>
