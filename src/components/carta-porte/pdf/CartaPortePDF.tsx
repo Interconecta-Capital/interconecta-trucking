@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Page, Document, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
@@ -71,7 +72,6 @@ const styles = StyleSheet.create({
     marginBottom: 20
   },
   table: {
-    display: 'table',
     width: 'auto',
     borderStyle: 'solid',
     borderWidth: 1,
@@ -114,8 +114,7 @@ const styles = StyleSheet.create({
   sealText: {
     fontSize: 6.5,
     fontFamily: 'Courier',
-    marginBottom: 4,
-    wordBreak: 'break-all'
+    marginBottom: 4
   },
   legend: {
     fontSize: 7,
@@ -206,4 +205,3 @@ export const CartaPortePDF = ({ cartaPorteData, datosTimbre, qrCodeDataURL, logo
 );
 
 export default CartaPortePDF;
-

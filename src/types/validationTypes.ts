@@ -3,6 +3,11 @@
 export interface CartaPorte31Data {
   rfcEmisor?: string;
   rfcReceptor?: string;
+  nombreEmisor?: string;
+  nombreReceptor?: string;
+  tipoCfdi?: string;
+  transporteInternacional?: boolean;
+  registroIstmo?: boolean;
   cartaPorteVersion?: '3.0' | '3.1';
   
   ubicaciones?: Array<{

@@ -1,98 +1,105 @@
-
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Ubicacion } from '@/types/ubicaciones';
 
-export const useUbicacionesPersistence = () => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+interface UseUbicacionesPersistenceProps {
+  cartaPorteId?: string;
+}
 
-  const guardarUbicaciones = useCallback(async (ubicaciones: Ubicacion[], cartaPorteId?: string) => {
-    setIsSaving(true);
-    try {
-      // Mock save - in production this would save to API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const ubicacionesConSecuencia = ubicaciones.map((ubicacion, index) => ({
-        ...ubicacion,
-        ordenSecuencia: index + 1
-      }));
-      
-      console.log('Ubicaciones guardadas:', ubicacionesConSecuencia);
-      return ubicacionesConSecuencia;
-    } catch (error) {
-      console.error('Error guardando ubicaciones:', error);
-      throw error;
-    } finally {
-      setIsSaving(false);
-    }
-  }, []);
+export const useUbicacionesPersistence = ({ cartaPorteId }: UseUbicacionesPersistenceProps) => {
+  const [loadingUbicaciones, setLoadingUbicaciones] = useState(false);
+  const [savingUbicaciones, setSavingUbicaciones] = useState(false);
 
-  const cargarUbicaciones = useCallback(async (cartaPorteId: string): Promise<Ubicacion[]> => {
-    setIsLoading(true);
+  const loadUbicaciones = useCallback(async () => {
+    if (!cartaPorteId) return [];
+
+    setLoadingUbicaciones(true);
     try {
-      // Mock load - in production this would load from API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockUbicaciones: Ubicacion[] = [
-        {
-          id: '1',
-          idUbicacion: 'OR001',
-          tipoUbicacion: 'Origen',
-          ordenSecuencia: 1,
-          domicilio: {
-            pais: 'México',
-            codigoPostal: '01000',
-            estado: 'Ciudad de México',
-            municipio: 'Álvaro Obregón',
-            colonia: 'San Ángel',
-            calle: 'Avenida Revolución',
-            numExterior: '123'
-          }
-        }
-      ];
-      
-      return mockUbicaciones;
+      const { data, error } = await supabase
+        .from('ubicaciones')
+        .select('*')
+        .eq('carta_porte_id', cartaPorteId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching ubicaciones:', error);
+        return [];
+      }
+
+      return data || [];
     } catch (error) {
-      console.error('Error cargando ubicaciones:', error);
+      console.error('Error fetching ubicaciones:', error);
       return [];
     } finally {
-      setIsLoading(false);
+      setLoadingUbicaciones(false);
     }
-  }, []);
+  }, [cartaPorteId]);
 
-  const eliminarUbicacion = useCallback(async (ubicacionId: string, cartaPorteId?: string) => {
-    try {
-      // Mock delete - in production this would delete from API
-      await new Promise(resolve => setTimeout(resolve, 300));
-      console.log('Ubicación eliminada:', ubicacionId);
-    } catch (error) {
-      console.error('Error eliminando ubicación:', error);
-      throw error;
-    }
-  }, []);
+  const saveUbicaciones = useCallback(async (ubicaciones: Ubicacion[]) => {
+    if (!cartaPorteId) return;
 
-  const actualizarOrdenUbicaciones = useCallback(async (ubicaciones: Ubicacion[], cartaPorteId?: string) => {
+    setSavingUbicaciones(true);
     try {
-      // Mock update order - in production this would update in API
-      const ubicacionesOrdenadas = ubicaciones.map((ubicacion, index) => ({
-        ...ubicacion,
-        ordenSecuencia: index + 1
-      }));
-      
-      console.log('Orden de ubicaciones actualizado:', ubicacionesOrdenadas);
-      return ubicacionesOrdenadas;
+      // Delete existing ubicaciones for this carta_porte_id
+      const { error: deleteError } = await supabase
+        .from('ubicaciones')
+        .delete()
+        .eq('carta_porte_id', cartaPorteId);
+
+      if (deleteError) {
+        console.error('Error deleting existing ubicaciones:', deleteError);
+        throw deleteError;
+      }
+
+      // Map Ubicacion type to the structure expected by Supabase
+      const ubicacionesToInsert = ubicaciones.map(ubicacion => mapUbicacionToSupabase(ubicacion, cartaPorteId));
+
+      // Insert the new set of ubicaciones
+      const { error: insertError } = await supabase
+        .from('ubicaciones')
+        .insert(ubicacionesToInsert);
+
+      if (insertError) {
+        console.error('Error inserting ubicaciones:', insertError);
+        throw insertError;
+      }
     } catch (error) {
-      console.error('Error actualizando orden de ubicaciones:', error);
-      throw error;
+      console.error('Error saving ubicaciones:', error);
+    } finally {
+      setSavingUbicaciones(false);
     }
-  }, []);
+  }, [cartaPorteId]);
 
   return {
-    guardarUbicaciones,
-    cargarUbicaciones,
-    eliminarUbicacion,
-    actualizarOrdenUbicaciones,
-    isSaving,
-    isLoading
+    loadingUbicaciones,
+    savingUbicaciones,
+    loadUbicaciones,
+    saveUbicaciones,
   };
 };
+
+const mapUbicacionToSupabase = (ubicacion: Ubicacion, cartaPorteId: string) => ({
+  carta_porte_id: cartaPorteId,
+  id_ubicacion: ubicacion.idUbicacion,
+  tipo_ubicacion: ubicacion.tipoUbicacion,
+  rfc_remitente_destinatario: ubicacion.rfcRemitenteDestinatario,
+  nombre_remitente_destinatario: ubicacion.nombreRemitenteDestinatario,
+  fecha_hora_salida_llegada: ubicacion.fechaHoraSalidaLlegada,
+  distancia_recorrida: ubicacion.distanciaRecorrida,
+  coordenadas: ubicacion.coordenadas,
+  tipo_estacion: ubicacion.tipoEstacion,
+  numero_estacion: ubicacion.numeroEstacion,
+  kilometro: ubicacion.kilometro,
+  domicilio: {
+    pais: ubicacion.domicilio.pais,
+    codigoPostal: ubicacion.domicilio.codigoPostal,
+    estado: ubicacion.domicilio.estado,
+    municipio: ubicacion.domicilio.municipio,
+    colonia: ubicacion.domicilio.colonia,
+    calle: ubicacion.domicilio.calle,
+    numExterior: ubicacion.domicilio.numExterior,
+    numInterior: ubicacion.domicilio.numInterior,
+    referencia: ubicacion.domicilio.referencia,
+    localidad: ubicacion.domicilio.localidad || '', // Add localidad with default
+  }
+});

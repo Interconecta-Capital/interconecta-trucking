@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -202,7 +201,8 @@ export const useCartaPorteVersionMigration = () => {
 
       if (error) throw error;
       
-      const validationResult = data as ValidationResult;
+      // Properly type cast the validation result
+      const validationResult = data as unknown as ValidationResult;
       if (!validationResult.valido) {
         throw new Error(`Errores de validación: ${validationResult.errores.join(', ')}`);
       }

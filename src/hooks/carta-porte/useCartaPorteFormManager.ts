@@ -14,15 +14,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
 
 // Estado inicial unificado y por defecto
-const initialCartaPorteData: CartaPorteData = {
+const createInitialFormData = (): CartaPorteData => ({
+  tipoCreacion: 'manual',
   tipoCfdi: 'Traslado',
-  transporteInternacional: 'No',
-  version: '4.0',
-  cartaPorteVersion: '3.1',
+  cartaPorteVersion: '3.1', // Remove the 'version' property, use only cartaPorteVersion
   rfcEmisor: '',
   nombreEmisor: '',
   rfcReceptor: '',
   nombreReceptor: '',
+  transporteInternacional: false,
+  registroIstmo: false,
   ubicaciones: [],
   mercancias: [],
   autotransporte: {
@@ -33,15 +34,10 @@ const initialCartaPorteData: CartaPorteData = {
     num_permiso_sct: '',
     asegura_resp_civil: '',
     poliza_resp_civil: '',
-    peso_bruto_vehicular: 0,
     remolques: []
   },
-  figuras: [],
-  folio: undefined,
-  currentStep: 0,
-  xmlGenerado: undefined,
-  datosCalculoRuta: undefined,
-};
+  figuras: []
+});
 
 // Helper function to serialize CartaPorteData to JSON-safe format
 const serializeCartaPorteData = (data: CartaPorteData): Record<string, any> => {
@@ -51,7 +47,7 @@ const serializeCartaPorteData = (data: CartaPorteData): Record<string, any> => {
 // Helper function to deserialize from JSON back to CartaPorteData
 const deserializeCartaPorteData = (jsonData: any): CartaPorteData => {
   return {
-    ...initialCartaPorteData,
+    ...createInitialFormData(),
     ...jsonData
   };
 };
@@ -59,7 +55,7 @@ const deserializeCartaPorteData = (jsonData: any): CartaPorteData => {
 export function useCartaPorteFormManager(cartaPorteId?: string) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<CartaPorteData>(initialCartaPorteData);
+  const [formData, setFormData] = useState<CartaPorteData>(createInitialFormData());
   const [currentStep, setCurrentStep] = useState(0);
   const [currentCartaPorteId, setCurrentCartaPorteId] = useState<string | null>(cartaPorteId || null);
   const [borradorCargado, setBorradorCargado] = useState(false);
@@ -264,7 +260,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   // Manejar rechazo de borrador
   const handleRejectBorrador = useCallback(() => {
     rejectBorrador();
-    setFormData(initialCartaPorteData);
+    setFormData(createInitialFormData());
     setCurrentStep(0);
     setCurrentCartaPorteId(null);
     setBorradorCargado(false);
@@ -437,7 +433,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     try {
       await BorradorService.limpiarBorrador(currentCartaPorteId || undefined);
       
-      setFormData(initialCartaPorteData);
+      setFormData(createInitialFormData());
       setCurrentStep(0);
       setCurrentCartaPorteId(null);
       setBorradorCargado(false);

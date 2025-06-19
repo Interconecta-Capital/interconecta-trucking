@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 
@@ -13,7 +12,7 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
   const [formData, setFormData] = useState<Ubicacion>({
     id: initialData?.id || '',
     idUbicacion: initialData?.idUbicacion || '',
-    tipoUbicacion: initialData?.tipoUbicacion || '', // Vacío por defecto
+    tipoUbicacion: initialData?.tipoUbicacion || 'Origen', // Default to 'Origen' instead of empty string
     rfcRemitenteDestinatario: initialData?.rfcRemitenteDestinatario || '',
     nombreRemitenteDestinatario: initialData?.nombreRemitenteDestinatario || '',
     fechaHoraSalidaLlegada: initialData?.fechaHoraSalidaLlegada || '',
@@ -75,11 +74,11 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
 
   const handleTipoChange = useCallback((tipo: string) => {
     if (!tipo || tipo === '') {
-      // Limpiar ID si se deselecciona el tipo
+      // Set to 'Origen' as default instead of empty string
       setFormData(prev => ({
         ...prev,
-        tipoUbicacion: '',
-        idUbicacion: ''
+        tipoUbicacion: 'Origen',
+        idUbicacion: generarId ? generarId('Origen') : 'OR_001'
       }));
       return;
     }
@@ -188,7 +187,10 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
       ...prev,
       rfcRemitenteDestinatario: ubicacionFrecuente.rfcAsociado,
       nombreRemitenteDestinatario: ubicacionFrecuente.nombreUbicacion,
-      domicilio: ubicacionFrecuente.domicilio
+      domicilio: {
+        ...ubicacionFrecuente.domicilio,
+        localidad: ubicacionFrecuente.domicilio.localidad || ''
+      }
     }));
   }, []);
 
