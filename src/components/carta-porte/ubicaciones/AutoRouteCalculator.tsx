@@ -24,10 +24,13 @@ export function AutoRouteCalculator({
   const [autoCalculationDone, setAutoCalculationDone] = useState(false);
   const [lastCalculationHash, setLastCalculationHash] = useState<string>('');
 
+  // Add safety check for ubicaciones
+  const safeUbicaciones = ubicaciones || [];
+
   // Obtener origen y destino válidos
-  const origen = ubicaciones.find(u => u.tipoUbicacion === 'Origen');
-  const destino = ubicaciones.find(u => u.tipoUbicacion === 'Destino');
-  const intermedios = ubicaciones.filter(u => u.tipoUbicacion === 'Paso Intermedio');
+  const origen = safeUbicaciones.find(u => u.tipoUbicacion === 'Origen');
+  const destino = safeUbicaciones.find(u => u.tipoUbicacion === 'Destino');
+  const intermedios = safeUbicaciones.filter(u => u.tipoUbicacion === 'Paso Intermedio');
 
   // Verificar si tenemos datos suficientes para calcular
   const canCalculate = origen && destino && 
@@ -78,7 +81,7 @@ export function AutoRouteCalculator({
   // Auto-calcular cuando cambian las ubicaciones
   useEffect(() => {
     const performAutoCalculation = async () => {
-      if (!canCalculate || isCalculating) return;
+      if (!canCalculate || isCalculating || !safeUbicaciones.length) return;
       
       const currentHash = createLocationHash();
       
@@ -124,7 +127,7 @@ export function AutoRouteCalculator({
     // Delay para evitar cálculos excesivos
     const timeoutId = setTimeout(performAutoCalculation, 1000);
     return () => clearTimeout(timeoutId);
-  }, [ubicaciones, canCalculate, distanciaTotal, lastCalculationHash]);
+  }, [safeUbicaciones, canCalculate, distanciaTotal, lastCalculationHash]);
 
   // Recalcular manualmente
   const handleManualRecalculation = async () => {
@@ -163,6 +166,22 @@ export function AutoRouteCalculator({
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   };
+
+  // Early return if no ubicaciones provided
+  if (!safeUbicaciones.length) {
+    return (
+      <Card className="border-gray-200 bg-gray-50/50">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 text-gray-500">
+            <MapPin className="h-4 w-4" />
+            <span className="text-sm">
+              No hay ubicaciones disponibles para calcular la ruta
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!canCalculate) {
     return (
@@ -236,7 +255,7 @@ export function AutoRouteCalculator({
 
         <div className="flex items-center justify-between pt-2">
           <div className="text-xs text-gray-600">
-            <strong>Ruta:</strong> {origen.nombreRemitenteDestinatario || 'Origen'} → {destino.nombreRemitenteDestinatario || 'Destino'}
+            <strong>Ruta:</strong> {origen?.nombreRemitenteDestinatario || 'Origen'} → {destino?.nombreRemitenteDestinatario || 'Destino'}
             {intermedios.length > 0 && ` (${intermedios.length} parada${intermedios.length > 1 ? 's' : ''} intermedia${intermedios.length > 1 ? 's' : ''})`}
           </div>
           
