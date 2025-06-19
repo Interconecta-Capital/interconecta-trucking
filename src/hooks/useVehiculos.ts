@@ -70,6 +70,7 @@ export const useVehiculos = () => {
       toast.success('Vehículo creado exitosamente');
     },
     onError: (error: any) => {
+      console.error('Error creating vehicle:', error);
       toast.error(`Error al crear vehículo: ${error.message}`);
     }
   });
@@ -91,6 +92,7 @@ export const useVehiculos = () => {
       toast.success('Vehículo actualizado exitosamente');
     },
     onError: (error: any) => {
+      console.error('Error updating vehicle:', error);
       toast.error(`Error al actualizar vehículo: ${error.message}`);
     }
   });
@@ -109,6 +111,7 @@ export const useVehiculos = () => {
       toast.success('Vehículo eliminado exitosamente');
     },
     onError: (error: any) => {
+      console.error('Error deleting vehicle:', error);
       toast.error(`Error al eliminar vehículo: ${error.message}`);
     }
   });

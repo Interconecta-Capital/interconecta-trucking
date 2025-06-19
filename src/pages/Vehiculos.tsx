@@ -6,20 +6,53 @@ import { Input } from '@/components/ui/input';
 import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
 import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
+import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { toast } from 'sonner';
 
 export default function Vehiculos() {
-  const { vehiculos, loading } = useVehiculos();
+  const { vehiculos, loading, eliminarVehiculo } = useVehiculos();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
 
   const handleNewVehiculo = () => {
+    setSelectedVehiculo(null);
     setShowCreateDialog(true);
+  };
+
+  const handleEdit = (vehiculo: any) => {
+    setSelectedVehiculo(vehiculo);
+    setShowEditDialog(true);
+  };
+
+  const handleView = (vehiculo: any) => {
+    setSelectedVehiculo(vehiculo);
+    setShowViewDialog(true);
+  };
+
+  const handleDelete = async (vehiculo: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el vehículo con placa ${vehiculo.placa}?`)) {
+      try {
+        await eliminarVehiculo(vehiculo.id);
+        toast.success('Vehículo eliminado exitosamente');
+      } catch (error) {
+        toast.error('Error al eliminar vehículo');
+      }
+    }
+  };
+
+  const handleSuccess = () => {
+    setShowCreateDialog(false);
+    setShowEditDialog(false);
+    setSelectedVehiculo(null);
   };
 
   const filteredVehiculos = vehiculos.filter(vehiculo =>
@@ -82,12 +115,33 @@ export default function Vehiculos() {
         <VehiculosTable 
           vehiculos={filteredVehiculos}
           loading={loading}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
         />
 
-        {/* Dialog de creación */}
+        {/* Diálogos */}
         <VehiculoFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
+          onSuccess={handleSuccess}
+        />
+
+        <VehiculoFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          vehiculo={selectedVehiculo}
+          onSuccess={handleSuccess}
+        />
+
+        <VehiculoViewDialog
+          open={showViewDialog}
+          onOpenChange={setShowViewDialog}
+          vehiculo={selectedVehiculo}
+          onEdit={() => {
+            setShowViewDialog(false);
+            handleEdit(selectedVehiculo);
+          }}
         />
       </div>
     </ProtectedContent>
