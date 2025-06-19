@@ -5,16 +5,18 @@ import { AutotransporteSectionOptimizada } from './autotransporte/Autotransporte
 
 interface AutotransporteSectionProps {
   data: any;
+  pesoTotalMercancias: number;
   onChange: (data: any) => void;
   onNext: () => void;
   onPrev: () => void;
 }
 
-export function AutotransporteSection({ data, onChange, onNext, onPrev }: AutotransporteSectionProps) {
+export function AutotransporteSection({ data, pesoTotalMercancias, onChange, onNext, onPrev }: AutotransporteSectionProps) {
   return (
     <Card>
       <AutotransporteSectionOptimizada
         data={data}
+        pesoTotalMercancias={pesoTotalMercancias}
         onChange={onChange}
         onNext={onNext}
         onPrev={onPrev}
