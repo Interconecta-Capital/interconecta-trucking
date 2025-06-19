@@ -340,7 +340,7 @@ export function SmartUbicacionFormV2({
                 id="idUbicacion"
                 value={formData.idUbicacion}
                 readOnly
-                className="bg-gray-50"
+                className="bg-white border-gray-100 shadow-sm"
                 placeholder="Se genera al seleccionar tipo"
               />
             </div>
