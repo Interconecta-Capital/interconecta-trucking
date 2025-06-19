@@ -52,15 +52,19 @@ export function UbicacionesSection({
     const updated = [...data];
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      updated[index] = {
-        ...updated[index],
-        [parent]: {
-          ...updated[index][parent as keyof UbicacionCompleta],
-          [child]: value
-        }
-      };
+      const parentKey = parent as keyof UbicacionCompleta;
+      if (parentKey === 'domicilio' && updated[index].domicilio) {
+        updated[index] = {
+          ...updated[index],
+          domicilio: {
+            ...updated[index].domicilio,
+            [child]: value
+          }
+        };
+      }
     } else {
-      updated[index] = { ...updated[index], [field]: value };
+      const fieldKey = field as keyof UbicacionCompleta;
+      updated[index] = { ...updated[index], [fieldKey]: value };
     }
     onChange(updated);
   };
