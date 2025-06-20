@@ -1,16 +1,16 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Users, Truck, BarChart3, UserCheck, Wrench, MapPin, CheckCircle, CalendarIcon } from 'lucide-react';
+import { Plus, FileText, Users, Truck, BarChart3, UserCheck, Wrench, MapPin, CheckCircle, CalendarIcon, Route } from 'lucide-react';
 import { ConductorFormModal } from './ConductorFormModal';
 import { VehiculoFormModal } from './VehiculoFormModal';
 import { SocioFormModal } from './SocioFormModal';
 import { MantenimientoFormModal } from './MantenimientoFormModal';
 import { VerificacionFormModal } from './VerificacionFormModal';
 import { RevisionGPSFormModal } from './RevisionGPSFormModal';
-import { CartaPorteFormModal } from './CartaPorteFormModal';
 
 // Mock data para eventos próximos
 const mockEventos = [
@@ -54,30 +54,48 @@ export function QuickActionsCard() {
   const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
   const [showVerificacionForm, setShowVerificacionForm] = useState(false);
   const [showRevisionGPSForm, setShowRevisionGPSForm] = useState(false);
-  const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
+
+  const handleProgramarViaje = () => {
+    navigate('/viajes/programar');
+  };
 
   const handleVerDocumentos = () => {
     navigate('/cartas-porte');
   };
 
+  const handleVerViajes = () => {
+    navigate('/viajes');
+  };
+
   return (
     <>
       <div className="space-y-6">
-        {/* Acciones Rápidas */}
+        {/* Acciones Principales de Operación */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Acciones Rápidas
+              <Route className="h-5 w-5" />
+              Centro de Operaciones
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* CTA Principal - Programar Viaje */}
             <Button 
-              className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white h-10"
-              onClick={() => setShowCartaPorteForm(true)}
+              className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white h-12 text-base font-semibold"
+              onClick={handleProgramarViaje}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Carta Porte
+              <Route className="h-5 w-5 mr-3" />
+              Programar Nuevo Viaje
+            </Button>
+            
+            {/* Acciones Secundarias de Operación */}
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10 border-blue-200 hover:bg-blue-50"
+              onClick={handleVerViajes}
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Ver Viajes Activos
             </Button>
             
             <Button 
@@ -86,9 +104,20 @@ export function QuickActionsCard() {
               onClick={handleVerDocumentos}
             >
               <FileText className="h-4 w-4 mr-2" />
-              Ver Documentos
+              Consultar Documentos
             </Button>
-            
+          </CardContent>
+        </Card>
+
+        {/* Gestión de Recursos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Gestión de Recursos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <Button 
               variant="outline" 
               className="w-full justify-start h-10"
@@ -113,9 +142,20 @@ export function QuickActionsCard() {
               onClick={() => setShowSocioForm(true)}
             >
               <Users className="h-4 w-4 mr-2" />
-              Nuevo Socio
+              Nuevo Socio/Cliente
             </Button>
+          </CardContent>
+        </Card>
 
+        {/* Mantenimiento y Programación */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Programación
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <Button 
               variant="outline" 
               className="w-full justify-start h-10"
@@ -145,17 +185,17 @@ export function QuickActionsCard() {
             
             <Button variant="outline" className="w-full justify-start h-10">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Reportes
+              Generar Reportes
             </Button>
           </CardContent>
         </Card>
 
-        {/* Próximos Eventos - Movido al final como resumen */}
+        {/* Próximos Eventos */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Resumen de Próximos Eventos
+              Próximos Eventos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -221,11 +261,6 @@ export function QuickActionsCard() {
       <RevisionGPSFormModal 
         open={showRevisionGPSForm}
         onOpenChange={setShowRevisionGPSForm}
-      />
-
-      <CartaPorteFormModal 
-        open={showCartaPorteForm}
-        onOpenChange={setShowCartaPorteForm}
       />
     </>
   );

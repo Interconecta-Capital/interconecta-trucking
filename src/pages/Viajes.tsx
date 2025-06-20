@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Plus, Truck, Filter, Search } from 'lucide-react';
+import { Plus, Truck, Filter, Search, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,15 +13,17 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { useNavigate } from 'react-router-dom';
 
 export default function Viajes() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showProgramarModal, setShowProgramarModal] = useState(false);
   const [activeTab, setActiveTab] = useState('activos');
 
   const handleNuevoViaje = () => {
-    setShowProgramarModal(true);
+    navigate('/viajes/programar');
   };
 
   return (
@@ -34,14 +36,22 @@ export default function Viajes() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Truck className="h-6 w-6 text-blue-600" />
-            <h1 className="text-3xl font-bold">Gestión de Viajes</h1>
+            <h1 className="text-3xl font-bold">Centro de Operaciones</h1>
           </div>
-          <ProtectedActions
-            action="create"
-            resource="cartas_porte"
-            onAction={handleNuevoViaje}
-            buttonText="Programar Viaje"
-          />
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/cartas-porte')}>
+              Consultar Documentos
+            </Button>
+            <ProtectedActions
+              action="create"
+              resource="cartas_porte"
+              onAction={handleNuevoViaje}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Route className="h-4 w-4 mr-2" />
+              Programar Nuevo Viaje
+            </ProtectedActions>
+          </div>
         </div>
 
         {/* Indicador de límites */}

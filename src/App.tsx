@@ -22,6 +22,9 @@ import Viajes from "./pages/Viajes"
 import Administracion from "./pages/Administracion"
 import Planes from "./pages/Planes"
 
+// Nuevos componentes
+import { ViajeWizard } from "./components/viajes/ViajeWizard"
+
 const queryClient = new QueryClient()
 
 const App = () => (
@@ -82,6 +85,15 @@ const App = () => (
               <AuthGuard>
                 <BaseLayout>
                   <Viajes />
+                </BaseLayout>
+              </AuthGuard>
+            } />
+            
+            {/* Nueva ruta del Wizard de Viajes */}
+            <Route path="/viajes/programar" element={
+              <AuthGuard>
+                <BaseLayout>
+                  <ViajeWizard />
                 </BaseLayout>
               </AuthGuard>
             } />
