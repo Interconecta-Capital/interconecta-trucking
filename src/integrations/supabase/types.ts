@@ -2820,6 +2820,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_missing_trials: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       buscar_codigo_postal: {
         Args: { cp_input: string }
         Returns: {

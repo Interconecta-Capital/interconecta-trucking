@@ -87,107 +87,67 @@ export const useTrialManager = () => {
     }
 
     // Lógica de trial activo
-    const isInActiveTrial = trialInfo.isTrialActive && trialInfo.daysRemaining > 0;
-    const isTrialExpired = trialInfo.isTrialExpired || trialInfo.daysRemaining <= 0;
-
-    // Si el trial expiró pero no está en grace period, debe entrar automáticamente
-    if (isTrialExpired && suscripcion?.status === 'trial') {
-      return {
-        isInActiveTrial: false,
-        isTrialExpired: true,
-        isInGracePeriod: false,
-        hasFullAccess: false,
-        daysRemaining: 0,
-        graceDaysRemaining: 90, // Se activará el período de gracia
-        trialStatus: 'expired',
-        shouldShowUpgradeModal: true,
-        dataWillBeDeleted: false
-      };
-    }
+    const isInActiveTrial = trialInfo.isInActiveTrial || suscripcion?.status === 'trial';
+    const isTrialExpired = trialInfo.isTrialExpired && suscripcion?.status !== 'active';
+    const daysRemaining = trialInfo.daysRemaining;
 
     return {
       isInActiveTrial,
       isTrialExpired,
       isInGracePeriod: false,
-      hasFullAccess: isInActiveTrial,
-      daysRemaining: trialInfo.daysRemaining,
+      hasFullAccess: isInActiveTrial, // Durante trial tiene acceso completo
+      daysRemaining,
       graceDaysRemaining: 0,
-      trialStatus: isInActiveTrial ? 'active' : (isTrialExpired ? 'expired' : 'not_applicable'),
-      shouldShowUpgradeModal: isTrialExpired && !suscripcion?.plan,
+      trialStatus: isInActiveTrial ? 'active' : 'expired',
+      shouldShowUpgradeModal: isTrialExpired,
       dataWillBeDeleted: false
     };
   }, [trialInfo, suscripcion, estaBloqueado, suscripcionVencida, isSuperuser]);
 
-  // Verificar si puede realizar una acción específica
-  const canPerformAction = (action: 'create' | 'edit' | 'delete' | 'view' = 'view'): boolean => {
+  const canPerformAction = (actionType: string) => {
     // Superusers pueden hacer todo
     if (isSuperuser) return true;
-
+    
     // Durante trial activo, puede hacer todo
     if (trialState.isInActiveTrial) return true;
-
-    // Con plan activo, puede hacer todo según su plan
+    
+    // Con suscripción activa, depende del plan
     if (suscripcion?.status === 'active') return true;
-
-    // Durante período de gracia: solo lectura
+    
+    // En período de gracia, solo lectura
     if (trialState.isInGracePeriod) {
-      return action === 'view';
+      return actionType === 'read' || actionType === 'view';
     }
-
-    // Post-trial sin período de gracia: solo puede ver y acceder a planes/logout
-    if (action === 'view') return true;
-
+    
+    // Trial expirado sin gracia, no puede hacer nada
     return false;
   };
 
-  // Obtener mensaje contextual según el estado
-  const getContextualMessage = (): string => {
-    if (isSuperuser) return 'Acceso completo como Superuser';
-    
+  const getContextualMessage = () => {
+    if (isSuperuser) return 'Acceso completo de superusuario';
+    if (trialState.dataWillBeDeleted) return `¡URGENTE! Tus datos serán eliminados en ${trialState.graceDaysRemaining} días`;
+    if (trialState.isInGracePeriod) return `Período de gracia: ${trialState.graceDaysRemaining} días restantes`;
+    if (trialState.isTrialExpired) return 'Tu período de prueba ha expirado';
     if (trialState.isInActiveTrial) {
-      const days = trialState.daysRemaining;
-      return `Trial activo: ${days} día${days !== 1 ? 's' : ''} restante${days !== 1 ? 's' : ''}`;
+      if (trialState.daysRemaining <= 3) return `¡Solo ${trialState.daysRemaining} días de prueba restantes!`;
+      return `Período de prueba: ${trialState.daysRemaining} días restantes`;
     }
-
-    if (trialState.isInGracePeriod) {
-      const days = trialState.graceDaysRemaining;
-      if (trialState.dataWillBeDeleted) {
-        return `¡URGENTE! Período de gracia: ${days} día${days !== 1 ? 's' : ''} antes de eliminar tus datos`;
-      }
-      return `Período de gracia: ${days} día${days !== 1 ? 's' : ''} restante${days !== 1 ? 's' : ''} (solo lectura)`;
-    }
-
-    if (trialState.isTrialExpired) {
-      return 'Trial expirado - Actualiza tu plan para continuar';
-    }
-
-    if (suscripcion?.status === 'active') {
-      return `Plan ${suscripcion.plan?.nombre} activo`;
-    }
-
-    return 'Acceso limitado';
+    return 'Estado desconocido';
   };
 
-  // Función para obtener el estado de urgencia
   const getUrgencyLevel = (): 'low' | 'medium' | 'high' | 'critical' => {
-    if (trialState.isInGracePeriod) {
-      if (trialState.graceDaysRemaining <= 1) return 'critical';
-      if (trialState.graceDaysRemaining <= 7) return 'high';
-      return 'medium';
-    }
-    
-    if (trialState.isInActiveTrial && trialState.daysRemaining <= 3) {
-      return 'medium';
-    }
-    
+    if (trialState.dataWillBeDeleted) return 'critical';
+    if (trialState.isInGracePeriod && trialState.graceDaysRemaining <= 7) return 'high';
+    if (trialState.isTrialExpired) return 'high';
+    if (trialState.isInActiveTrial && trialState.daysRemaining <= 3) return 'medium';
     return 'low';
   };
 
   return {
     ...trialState,
+    loading: trialLoading,
     canPerformAction,
     getContextualMessage,
-    getUrgencyLevel,
-    loading: trialLoading
+    getUrgencyLevel
   };
 };
