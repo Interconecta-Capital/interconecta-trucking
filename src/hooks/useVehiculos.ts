@@ -15,8 +15,6 @@ export interface Vehiculo {
   config_vehicular?: string;
   peso_bruto_vehicular?: number;
   capacidad_carga?: number;
-  numero_ejes?: number;
-  numero_llantas?: number;
   poliza_seguro?: string;
   vigencia_seguro?: string;
   aseguradora?: string;
@@ -43,15 +41,13 @@ export const useVehiculos = () => {
           id,
           user_id,
           placa,
-          num_serie,
-          modelo,
           marca,
+          modelo,
           anio,
+          num_serie,
           config_vehicular,
           peso_bruto_vehicular,
           capacidad_carga,
-          numero_ejes,
-          numero_llantas,
           poliza_seguro,
           vigencia_seguro,
           aseguradora,

@@ -22,29 +22,33 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
   
   const { vehiculos, loading } = useVehiculos();
 
-  const filteredVehiculos = (vehiculos || []).filter(vehiculo => 
-    vehiculo?.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo?.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo?.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const safeVehiculos = Array.isArray(vehiculos) ? vehiculos : [];
 
-  const selectedVehicle = (vehiculos || []).find(v => v?.id === selectedVehicleId);
+  const filteredVehiculos = safeVehiculos.filter(vehiculo => {
+    if (!vehiculo) return false;
+    const searchLower = searchTerm.toLowerCase();
+    return vehiculo.placa?.toLowerCase().includes(searchLower) ||
+           vehiculo.marca?.toLowerCase().includes(searchLower) ||
+           vehiculo.modelo?.toLowerCase().includes(searchLower);
+  });
+
+  const selectedVehicle = safeVehiculos.find(v => v?.id === selectedVehicleId);
 
   const handleVehiculoSelect = (vehiculoId: string) => {
-    const vehiculo = (vehiculos || []).find(v => v?.id === vehiculoId);
+    const vehiculo = safeVehiculos.find(v => v?.id === vehiculoId);
     if (vehiculo) {
       setSelectedVehicleId(vehiculoId);
       onChange({
         ...data,
-        placa_vm: vehiculo?.placa || '',
-        anio_modelo_vm: vehiculo?.anio || new Date().getFullYear(),
-        config_vehicular: vehiculo?.config_vehicular || '',
-        peso_bruto_vehicular: vehiculo?.peso_bruto_vehicular || 0,
+        placa_vm: vehiculo.placa || '',
+        anio_modelo_vm: vehiculo.anio || new Date().getFullYear(),
+        config_vehicular: vehiculo.config_vehicular || '',
+        peso_bruto_vehicular: vehiculo.peso_bruto_vehicular || 0,
         // Note: These fields would come from autotransporte table, not vehiculos
         perm_sct: '',
         num_permiso_sct: '',
-        asegura_resp_civil: vehiculo?.aseguradora || '',
-        poliza_resp_civil: vehiculo?.poliza_seguro || '',
+        asegura_resp_civil: vehiculo.aseguradora || '',
+        poliza_resp_civil: vehiculo.poliza_seguro || '',
         asegura_med_ambiente: '',
         poliza_med_ambiente: ''
       });
@@ -97,27 +101,27 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Placa:</span>
-                <span className="ml-2 font-mono">{selectedVehicle?.placa}</span>
+                <span className="ml-2 font-mono">{selectedVehicle.placa}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Año:</span>
-                <span className="ml-2">{selectedVehicle?.anio}</span>
+                <span className="ml-2">{selectedVehicle.anio}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Marca/Modelo:</span>
-                <span className="ml-2">{selectedVehicle?.marca} {selectedVehicle?.modelo}</span>
+                <span className="ml-2">{selectedVehicle.marca} {selectedVehicle.modelo}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Configuración:</span>
-                <span className="ml-2">{selectedVehicle?.config_vehicular || 'N/A'}</span>
+                <span className="ml-2">{selectedVehicle.config_vehicular || 'N/A'}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Seguro:</span>
-                <span className="ml-2">{selectedVehicle?.aseguradora || 'N/A'}</span>
+                <span className="ml-2">{selectedVehicle.aseguradora || 'N/A'}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Estado:</span>
-                <span className="ml-2">{selectedVehicle?.estado || 'N/A'}</span>
+                <span className="ml-2">{selectedVehicle.estado || 'N/A'}</span>
               </div>
             </div>
           </div>

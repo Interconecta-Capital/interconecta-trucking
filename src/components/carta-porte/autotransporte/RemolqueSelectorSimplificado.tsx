@@ -21,20 +21,26 @@ export function RemolqueSelectorSimplificado({ remolques, onChange }: RemolqueSe
   const { vehiculos, loading } = useVehiculos();
 
   // Filtrar remolques/trailers usando config_vehicular que contiene información del tipo
-  const filteredRemolques = (vehiculos || []).filter(vehiculo => 
-    vehiculo?.config_vehicular?.toLowerCase().includes('remolque') ||
-    vehiculo?.config_vehicular?.toLowerCase().includes('trailer') ||
-    vehiculo?.config_vehicular?.toLowerCase().includes('semirremolque')
-  ).filter(vehiculo =>
-    vehiculo?.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo?.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo?.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRemolques = (Array.isArray(vehiculos) ? vehiculos : []).filter(vehiculo => {
+    if (!vehiculo?.config_vehicular) return false;
+    const configLower = vehiculo.config_vehicular.toLowerCase();
+    return configLower.includes('remolque') ||
+           configLower.includes('trailer') ||
+           configLower.includes('semirremolque');
+  }).filter(vehiculo => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return vehiculo?.placa?.toLowerCase().includes(searchLower) ||
+           vehiculo?.marca?.toLowerCase().includes(searchLower) ||
+           vehiculo?.modelo?.toLowerCase().includes(searchLower);
+  });
 
   const handleRemolqueSelect = (vehiculo: any) => {
+    if (!vehiculo) return;
+    
     const nuevoRemolque = {
-      placa: vehiculo?.placa || '',
-      subtipo_rem: vehiculo?.config_vehicular || ''
+      placa: vehiculo.placa || '',
+      subtipo_rem: vehiculo.config_vehicular || ''
     };
     onChange([...remolques, nuevoRemolque]);
     setShowSelector(false);

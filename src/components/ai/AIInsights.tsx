@@ -41,32 +41,38 @@ export function AIInsights() {
       setLoading(true);
       setError(null);
 
-      // Preparar datos del dashboard - usar estados seguros
+      // Preparar datos del dashboard con verificación de tipos
+      const safeVehiculos = Array.isArray(vehiculos) ? vehiculos : [];
+      const safeConductores = Array.isArray(conductores) ? conductores : [];
+      const safeCartasPorte = Array.isArray(cartasPorte) ? cartasPorte : [];
+      const safeSocios = Array.isArray(socios) ? socios : [];
+
       const dashboardData = {
         cartasPorte: {
-          total: cartasPorte?.length || 0,
-          completadas: cartasPorte?.filter(c => c.status === 'timbrada')?.length || 0,
-          pendientes: cartasPorte?.filter(c => c.status === 'borrador')?.length || 0,
-          thisMonth: cartasPorte?.filter(c => {
+          total: safeCartasPorte.length,
+          completadas: safeCartasPorte.filter(c => c?.status === 'timbrada').length,
+          pendientes: safeCartasPorte.filter(c => c?.status === 'borrador').length,
+          thisMonth: safeCartasPorte.filter(c => {
+            if (!c?.created_at) return false;
             const created = new Date(c.created_at);
             const now = new Date();
             return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
-          })?.length || 0
+          }).length
         },
         vehiculos: {
-          total: vehiculos?.length || 0,
-          disponibles: vehiculos?.filter(v => v.estado === 'disponible')?.length || 0,
-          enUso: vehiculos?.filter(v => v.estado === 'en_uso')?.length || 0,
-          mantenimiento: vehiculos?.filter(v => v.estado === 'mantenimiento')?.length || 0
+          total: safeVehiculos.length,
+          disponibles: safeVehiculos.filter(v => v?.estado === 'disponible').length,
+          enUso: safeVehiculos.filter(v => v?.estado === 'en_uso').length,
+          mantenimiento: safeVehiculos.filter(v => v?.estado === 'mantenimiento').length
         },
         conductores: {
-          total: conductores?.length || 0,
-          disponibles: conductores?.filter(c => c.estado === 'disponible')?.length || 0,
-          enViaje: conductores?.filter(c => c.estado === 'en_viaje')?.length || 0
+          total: safeConductores.length,
+          disponibles: safeConductores.filter(c => c?.estado === 'disponible').length,
+          enViaje: safeConductores.filter(c => c?.estado === 'en_viaje').length
         },
         socios: {
-          total: socios?.length || 0,
-          activos: socios?.filter(s => s.estado === 'activo')?.length || 0
+          total: safeSocios.length,
+          activos: safeSocios.filter(s => s?.estado === 'activo').length
         }
       };
 
@@ -97,19 +103,22 @@ export function AIInsights() {
       console.error('Error generando insights:', error);
       setError('Error al generar insights');
       
-      // Fallback insights basados en datos reales
+      // Fallback insights basados en datos reales con verificación de tipos
+      const safeVehiculos = Array.isArray(vehiculos) ? vehiculos : [];
+      const safeConductores = Array.isArray(conductores) ? conductores : [];
+      
       const fallbackInsights: AIInsight[] = [
         {
           title: 'Eficiencia de Flota',
-          description: `Tienes ${vehiculos?.filter(v => v.estado === 'disponible')?.length || 0} vehículos disponibles de ${vehiculos?.length || 0} total`,
-          impact: (vehiculos?.filter(v => v.estado === 'disponible')?.length || 0) / (vehiculos?.length || 1) > 0.8 ? 'low' : 'high',
+          description: `Tienes ${safeVehiculos.filter(v => v?.estado === 'disponible').length} vehículos disponibles de ${safeVehiculos.length} total`,
+          impact: (safeVehiculos.filter(v => v?.estado === 'disponible').length / (safeVehiculos.length || 1)) > 0.8 ? 'low' : 'high',
           action: 'Optimizar asignación de vehículos',
           metric: 'vehiculos',
           category: 'efficiency'
         },
         {
           title: 'Productividad Conductores',
-          description: `${conductores?.filter(c => c.estado === 'en_viaje')?.length || 0} conductores actualmente en viaje`,
+          description: `${safeConductores.filter(c => c?.estado === 'en_viaje').length} conductores actualmente en viaje`,
           impact: 'medium',
           action: 'Revisar carga de trabajo',
           metric: 'conductores',
@@ -124,7 +133,7 @@ export function AIInsights() {
   };
 
   useEffect(() => {
-    if (cartasPorte?.length > 0 || vehiculos?.length > 0) {
+    if (Array.isArray(cartasPorte) || Array.isArray(vehiculos)) {
       generateInsights();
     } else {
       setLoading(false);
