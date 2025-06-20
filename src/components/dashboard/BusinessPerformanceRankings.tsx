@@ -15,6 +15,28 @@ import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useSocios } from '@/hooks/useSocios';
 
+interface AutotransporteData {
+  placa_vm?: string;
+}
+
+interface FiguraData {
+  rfc_figura?: string;
+}
+
+interface UbicacionData {
+  tipo_ubicacion?: string;
+  domicilio?: {
+    municipio?: string;
+    estado?: string;
+  };
+}
+
+interface DatosFormulario {
+  autotransporte?: AutotransporteData;
+  figuras?: FiguraData[];
+  ubicaciones?: UbicacionData[];
+}
+
 export function BusinessPerformanceRankings() {
   const { cartasPorte } = useCartasPorte();
   const { vehiculos } = useVehiculos();
@@ -32,35 +54,38 @@ export function BusinessPerformanceRankings() {
     .sort((a, b) => b.viajes - a.viajes)
     .slice(0, 5);
 
-  // Ranking de vehículos por uso
+  // Ranking de vehículos por uso - usando type assertion segura
   const vehiculosRanking = vehiculos
     .map(vehiculo => ({
       ...vehiculo,
-      viajes: cartasPorte.filter(cp => 
-        cp.datos_formulario?.autotransporte?.placa_vm === vehiculo.placa
-      ).length
-    }))
-    .sort((a, b) => b.viajes - a.viajes)
-    .slice(0, 5);
-
-  // Ranking de conductores por actividad
-  const conductoresRanking = conductores
-    .map(conductor => ({
-      ...conductor,
       viajes: cartasPorte.filter(cp => {
-        const figuras = cp.datos_formulario?.figuras || [];
-        return figuras.some((figura: any) => figura.rfc_figura === conductor.rfc);
+        const datosFormulario = cp.datos_formulario as DatosFormulario | null;
+        return datosFormulario?.autotransporte?.placa_vm === vehiculo.placa;
       }).length
     }))
     .sort((a, b) => b.viajes - a.viajes)
     .slice(0, 5);
 
-  // Rutas más frecuentes
+  // Ranking de conductores por actividad - usando type assertion segura
+  const conductoresRanking = conductores
+    .map(conductor => ({
+      ...conductor,
+      viajes: cartasPorte.filter(cp => {
+        const datosFormulario = cp.datos_formulario as DatosFormulario | null;
+        const figuras = datosFormulario?.figuras || [];
+        return figuras.some(figura => figura.rfc_figura === conductor.rfc);
+      }).length
+    }))
+    .sort((a, b) => b.viajes - a.viajes)
+    .slice(0, 5);
+
+  // Rutas más frecuentes - usando type assertion segura
   const rutasFrecuentes = cartasPorte
     .map(cp => {
-      const ubicaciones = cp.datos_formulario?.ubicaciones || [];
-      const origen = ubicaciones.find((u: any) => u.tipo_ubicacion === 'Origen');
-      const destino = ubicaciones.find((u: any) => u.tipo_ubicacion === 'Destino');
+      const datosFormulario = cp.datos_formulario as DatosFormulario | null;
+      const ubicaciones = datosFormulario?.ubicaciones || [];
+      const origen = ubicaciones.find(u => u.tipo_ubicacion === 'Origen');
+      const destino = ubicaciones.find(u => u.tipo_ubicacion === 'Destino');
       
       if (!origen || !destino) return null;
       

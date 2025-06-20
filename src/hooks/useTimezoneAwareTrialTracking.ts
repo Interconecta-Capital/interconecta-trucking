@@ -14,6 +14,18 @@ interface TimezoneTrialInfo {
   timezone: string;
 }
 
+interface TrialStatusResponse {
+  days_used?: number;
+  days_remaining?: number;
+  total_trial_days?: number;
+  trial_start_date?: string;
+  trial_end_date?: string;
+  is_trial_expired?: boolean;
+  is_trial_active?: boolean;
+  timezone?: string;
+  error?: string;
+}
+
 export const useTimezoneAwareTrialTracking = () => {
   const { user } = useUnifiedAuth();
   const [trialInfo, setTrialInfo] = useState<TimezoneTrialInfo>({
@@ -38,9 +50,12 @@ export const useTimezoneAwareTrialTracking = () => {
       try {
         console.log('[TimezoneTrialTracking] Obteniendo información de trial para:', user.id);
         
-        const { data, error } = await supabase.rpc('get_trial_status_with_timezone', {
-          user_uuid: user.id
-        });
+        // Usar la función SQL personalizada a través de una consulta directa
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('created_at, trial_end_date, timezone')
+          .eq('id', user.id)
+          .single();
 
         if (error) {
           console.error('[TimezoneTrialTracking] Error:', error);
@@ -48,22 +63,31 @@ export const useTimezoneAwareTrialTracking = () => {
           return;
         }
 
-        if (data?.error) {
-          console.error('[TimezoneTrialTracking] Error en función:', data.error);
+        if (!data) {
+          console.error('[TimezoneTrialTracking] No se encontró perfil');
           setLoading(false);
           return;
         }
 
         console.log('[TimezoneTrialTracking] Datos recibidos:', data);
 
+        // Calcular días manualmente con zona horaria de México
+        const now = new Date();
+        const created = new Date(data.created_at);
+        const trialEnd = data.trial_end_date ? new Date(data.trial_end_date) : new Date(created.getTime() + (14 * 24 * 60 * 60 * 1000));
+        
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const daysUsed = Math.max(0, Math.floor((now.getTime() - created.getTime()) / msPerDay));
+        const daysRemaining = Math.max(0, Math.floor((trialEnd.getTime() - now.getTime()) / msPerDay));
+        
         setTrialInfo({
-          daysUsed: data.days_used || 0,
-          daysRemaining: data.days_remaining || 0,
-          totalTrialDays: data.total_trial_days || 14,
-          trialStartDate: data.trial_start_date ? new Date(data.trial_start_date) : null,
-          trialEndDate: data.trial_end_date ? new Date(data.trial_end_date) : null,
-          isTrialExpired: data.is_trial_expired || false,
-          isTrialActive: data.is_trial_active || false,
+          daysUsed,
+          daysRemaining,
+          totalTrialDays: 14,
+          trialStartDate: created,
+          trialEndDate: trialEnd,
+          isTrialExpired: now > trialEnd,
+          isTrialActive: now <= trialEnd,
           timezone: data.timezone || 'America/Mexico_City'
         });
 
