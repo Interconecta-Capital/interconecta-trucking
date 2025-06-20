@@ -212,7 +212,7 @@
 
   /* Apple Focus Ring */
   .focus-ring-apple {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-primary focus-visible:ring-offset-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
   }
 }
 
