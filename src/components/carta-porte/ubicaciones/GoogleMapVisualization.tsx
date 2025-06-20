@@ -52,7 +52,8 @@ export function GoogleMapVisualization({
 
     // Create script element to load Google Maps
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAl1vKLZYb5h5How7tlpzrvFX2cbH4_qws&libraries=geometry&loading=async`;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async`;
     script.async = true;
     script.defer = true;
     

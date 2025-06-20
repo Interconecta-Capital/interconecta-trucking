@@ -24,6 +24,8 @@ npm install
 # Paso 4: Configurar variables de entorno
 cp .env.example .env
 # Editar .env con tus configuraciones de APIs y base de datos
+# Variables importantes:
+# - `VITE_GOOGLE_MAPS_API_KEY`: clave de la API de Google Maps
 
 # Paso 5: Iniciar servidor de desarrollo
 npm run dev
