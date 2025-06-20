@@ -22,6 +22,8 @@ interface HybridRouteResult {
     legs: any[];
   };
   success: boolean;
+  fallback?: boolean;
+  fallback_reason?: string;
 }
 
 export function useHybridRouteCalculation() {
@@ -81,8 +83,16 @@ export function useHybridRouteCalculation() {
       
       try {
         googleResult = await googleMapsService.calculateRoute(origin, destination, waypoints);
+        
+        if (googleResult) {
+          console.log('✅ Google Maps response received:', {
+            success: googleResult.success,
+            fallback: googleResult.fallback,
+            distance: googleResult.distance_km
+          });
+        }
       } catch (googleError) {
-        console.warn('⚠️ Google Maps no disponible:', googleError);
+        console.warn('⚠️ Google Maps service error:', googleError);
       }
 
       // Si Mapbox falló, usar Google Maps para los cálculos también
@@ -111,15 +121,18 @@ export function useHybridRouteCalculation() {
           coordinates: googleResult?.route_geometry?.coordinates || ''
         },
         google_data: googleResult?.google_data,
-        success: true
+        success: true,
+        fallback: googleResult?.fallback || false,
+        fallback_reason: googleResult?.fallback_reason
       };
 
       console.log('✅ Cálculo híbrido completado:', hybridResult);
       setRouteData(hybridResult);
       
       if (finalDistanceKm > 0) {
+        const fallbackText = hybridResult.fallback ? ' (estimado)' : '';
         toast.success(
-          `Ruta calculada: ${finalDistanceKm} km (${Math.round(finalDurationMinutes / 60)}h ${finalDurationMinutes % 60}m)`
+          `Ruta calculada: ${finalDistanceKm} km (${Math.round(finalDurationMinutes / 60)}h ${finalDurationMinutes % 60}m)${fallbackText}`
         );
       }
 

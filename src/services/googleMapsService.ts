@@ -17,6 +17,8 @@ interface RouteResult {
     legs: any[];
   };
   success: boolean;
+  fallback?: boolean;
+  fallback_reason?: string;
 }
 
 class GoogleMapsService {
@@ -52,15 +54,30 @@ class GoogleMapsService {
 
       if (error) {
         console.error('❌ Error calling google-directions function:', error);
-        throw new Error(error.message || 'Error calculating route');
+        
+        // If we get a function error, return null so the hybrid system can use fallbacks
+        console.log('⚠️ Google Maps service unavailable, will use fallback calculation');
+        return null;
       }
 
-      if (!data || !data.success) {
-        console.error('❌ Invalid response from google-directions:', data);
-        throw new Error(data?.error || 'Failed to calculate route');
+      if (!data) {
+        console.error('❌ No data received from google-directions function');
+        return null;
       }
 
-      console.log('✅ Route calculated successfully with Google Maps');
+      // Check if the response indicates success (including fallback responses)
+      if (!data.success) {
+        console.error('❌ Google directions function returned failure:', data.error);
+        return null;
+      }
+
+      // Log whether this is a fallback response
+      if (data.fallback) {
+        console.log('⚠️ Using fallback calculation from Google service:', data.fallback_reason);
+      } else {
+        console.log('✅ Route calculated successfully with Google Maps');
+      }
+
       return data;
     } catch (error) {
       console.error('❌ Error in GoogleMapsService:', error);
