@@ -1,6 +1,8 @@
+
 import { PersonalizedGreeting } from './PersonalizedGreeting';
 import { WelcomeCard } from './WelcomeCard';
 import { DashboardMetricsGrid } from './DashboardMetricsGrid';
+import { TrialStatusCard } from './TrialStatusCard';
 import { PlanNotifications } from '../common/PlanNotifications';
 import { LimitUsageIndicator } from '../common/LimitUsageIndicator';
 import { PlanBadge } from '../common/PlanBadge';
@@ -23,6 +25,9 @@ export function EnhancedDashboardLayout() {
   const conductoresCount = conductores.length;
   const sociosCount = socios.length;
 
+  // Mostrar WelcomeCard si no hay datos
+  const showWelcomeCard = cartasPorteCount === 0 && vehiculosCount === 0 && conductoresCount === 0 && sociosCount === 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-6 space-y-6">
@@ -36,14 +41,28 @@ export function EnhancedDashboardLayout() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Columna izquierda - Tarjetas de estado */}
           <div className="space-y-4">
-            <WelcomeCard />
+            <WelcomeCard show={showWelcomeCard} />
             <TrialStatusCard />
             <PlanBadge size="lg" className="w-full justify-center py-3" />
           </div>
           
           {/* Columna central - Métricas principales */}
           <div className="lg:col-span-2">
-            <DashboardMetricsGrid />
+            <DashboardMetricsGrid 
+              isLoading={false}
+              totalCartasPorte={cartasPorteCount}
+              cartasPendientes={0}
+              cartasCompletadas={cartasPorteCount}
+              totalVehiculos={vehiculosCount}
+              vehiculosActivos={vehiculosCount}
+              totalConductores={conductoresCount}
+              conductoresActivos={conductoresCount}
+              totalSocios={sociosCount}
+              sociosActivos={sociosCount}
+              viajesTotales={0}
+              viajesActivos={0}
+              viajesCompletados={0}
+            />
           </div>
         </div>
 
@@ -53,28 +72,16 @@ export function EnhancedDashboardLayout() {
         {/* Indicadores de uso de límites */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <LimitUsageIndicator 
-            resource="cartas_porte" 
-            used={cartasPorteCount} 
-            limit={accessControl.limits.cartas_porte}
-            label="Cartas Porte"
+            resourceType="cartas_porte"
           />
           <LimitUsageIndicator 
-            resource="vehiculos" 
-            used={vehiculosCount} 
-            limit={accessControl.limits.vehiculos}
-            label="Vehículos"
+            resourceType="vehiculos"
           />
           <LimitUsageIndicator 
-            resource="conductores" 
-            used={conductoresCount} 
-            limit={accessControl.limits.conductores}
-            label="Conductores"
+            resourceType="conductores"
           />
           <LimitUsageIndicator 
-            resource="socios" 
-            used={sociosCount} 
-            limit={accessControl.limits.socios}
-            label="Socios"
+            resourceType="socios"
           />
         </div>
       </div>
