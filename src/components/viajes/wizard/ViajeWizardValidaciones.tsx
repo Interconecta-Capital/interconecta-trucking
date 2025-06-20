@@ -10,11 +10,12 @@ import { ViajeWizardData } from '../ViajeWizard';
 
 interface ViajeWizardValidacionesProps {
   data: ViajeWizardData;
+  updateData: (updates: Partial<ViajeWizardData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }
 
-export function ViajeWizardValidaciones({ data, onNext, onPrev }: ViajeWizardValidacionesProps) {
+export function ViajeWizardValidaciones({ data, updateData, onNext, onPrev }: ViajeWizardValidacionesProps) {
   const {
     validaciones,
     isValidating,
