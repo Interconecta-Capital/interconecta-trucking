@@ -3,9 +3,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from '@/hooks/useAuth';
 
 type UserRole = 'transportista' | 'administrador' | 'operador' | 'nuevo';
-type OnboardingStep = 'welcome' | 'navigation' | 'crear_viaje' | 'validaciones' | 'documentos' | 'completed';
 
-interface OnboardingStep {
+interface OnboardingStepData {
   id: string;
   title: string;
   description: string;
@@ -17,7 +16,7 @@ interface OnboardingStep {
 
 interface OnboardingContextType {
   isOnboardingActive: boolean;
-  currentStep: OnboardingStep | null;
+  currentStep: OnboardingStepData | null;
   userRole: UserRole;
   completedSteps: string[];
   onboardingProgress: number;
@@ -32,7 +31,7 @@ interface OnboardingContextType {
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
-const ONBOARDING_STEPS: Record<string, OnboardingStep> = {
+const ONBOARDING_STEPS: Record<string, OnboardingStepData> = {
   welcome: {
     id: 'welcome',
     title: '¡Bienvenido a InterConecta!',
@@ -73,7 +72,7 @@ const ONBOARDING_STEPS: Record<string, OnboardingStep> = {
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
-  const [currentStep, setCurrentStep] = useState<OnboardingStep | null>(null);
+  const [currentStep, setCurrentStep] = useState<OnboardingStepData | null>(null);
   const [userRole, setUserRole] = useState<UserRole>('nuevo');
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [activeHint, setActiveHint] = useState<string | null>(null);
