@@ -15,6 +15,7 @@ interface StableGoogleMapProps {
 declare global {
   interface Window {
     google: any;
+    initGoogleMapsCallback?: () => void;
   }
 }
 
@@ -110,14 +111,14 @@ export function StableGoogleMap({
     console.log('🗺️ Loading Google Maps API...');
     
     const script = document.createElement('script');
-    // Use the actual API key from environment or fallback
-    const apiKey = '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';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMaps`;
+    // Get API key from environment variable
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'DEMO_KEY';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMapsCallback`;
     script.async = true;
     script.defer = true;
     
-    // Create a global callback
-    window.initGoogleMaps = () => {
+    // Create a global callback with proper typing
+    window.initGoogleMapsCallback = () => {
       console.log('✅ Google Maps API loaded successfully');
       scriptLoadedRef.current = true;
       setMapState(prev => ({ 
@@ -144,8 +145,8 @@ export function StableGoogleMap({
         script.parentNode.removeChild(script);
       }
       // Clean up global callback
-      if (window.initGoogleMaps) {
-        delete window.initGoogleMaps;
+      if (window.initGoogleMapsCallback) {
+        delete window.initGoogleMapsCallback;
       }
     };
   }, [mapState.retryCount]);
