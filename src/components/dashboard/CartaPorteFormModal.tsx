@@ -2,8 +2,11 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ModernCartaPorteEditor } from '@/components/carta-porte/editor/ModernCartaPorteEditor';
-import { X } from 'lucide-react';
+import { X, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CartaPorteFormModalProps {
   open: boolean;
@@ -11,6 +14,15 @@ interface CartaPorteFormModalProps {
 }
 
 export function CartaPorteFormModal({ open, onOpenChange }: CartaPorteFormModalProps) {
+  const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
+  const { getContextualMessage } = useTrialManager();
+
+  // Si no es superuser y no tiene acceso completo, no mostrar el modal
+  if (!isSuperuser && !hasFullAccess) {
+    console.log('❌ CartaPorteFormModal blocked - no access');
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0">
@@ -27,9 +39,21 @@ export function CartaPorteFormModal({ open, onOpenChange }: CartaPorteFormModalP
             </Button>
           </div>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden">
-          <ModernCartaPorteEditor />
-        </div>
+        
+        {!hasFullAccess && !isSuperuser ? (
+          <div className="p-6">
+            <Alert className="border-red-200 bg-red-50">
+              <Lock className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {getContextualMessage()}
+              </AlertDescription>
+            </Alert>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-hidden">
+            <ModernCartaPorteEditor />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

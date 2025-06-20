@@ -1,6 +1,7 @@
 
 import { ReactNode } from 'react';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +25,23 @@ export const ProtectedContent = ({
   showUpgrade = true
 }: ProtectedContentProps) => {
   const { puedeAcceder, planActual, estaBloqueado, suscripcionVencida, isSuperuser } = useEnhancedPermissions();
+  const { 
+    hasFullAccess, 
+    restrictionType, 
+    getContextualMessage,
+    isTrialExpired,
+    isInGracePeriod
+  } = useTrialManager();
   const navigate = useNavigate();
+
+  console.log('🛡️ ProtectedContent Debug:', {
+    requiredFeature,
+    isSuperuser,
+    hasFullAccess,
+    restrictionType,
+    estaBloqueado,
+    suscripcionVencida
+  });
   
   // Superusers bypass all restrictions
   if (isSuperuser) {
@@ -46,21 +63,61 @@ export const ProtectedContent = ({
     );
   }
 
-  // Verificar bloqueos primero
-  if (estaBloqueado) {
+  // BLOQUEO PRINCIPAL: Si no tiene acceso completo, mostrar mensaje de restricción
+  if (!hasFullAccess) {
+    console.log('❌ Content blocked - no full access:', restrictionType);
+
+    const getAlertProps = () => {
+      switch (restrictionType) {
+        case 'trial_expired':
+          return {
+            className: 'border-orange-200 bg-orange-50',
+            iconColor: 'text-orange-600',
+            textColor: 'text-orange-800',
+            buttonColor: 'bg-orange-600 hover:bg-orange-700'
+          };
+        case 'payment_suspended':
+          return {
+            className: 'border-red-200 bg-red-50',
+            iconColor: 'text-red-600',
+            textColor: 'text-red-800',
+            buttonColor: 'bg-red-600 hover:bg-red-700'
+          };
+        case 'grace_period':
+          return {
+            className: 'border-yellow-200 bg-yellow-50',
+            iconColor: 'text-yellow-600',
+            textColor: 'text-yellow-800',
+            buttonColor: 'bg-yellow-600 hover:bg-yellow-700'
+          };
+        default:
+          return {
+            className: 'border-gray-200 bg-gray-50',
+            iconColor: 'text-gray-600',
+            textColor: 'text-gray-800',
+            buttonColor: 'bg-gray-600 hover:bg-gray-700'
+          };
+      }
+    };
+
+    const alertProps = getAlertProps();
+    const message = getContextualMessage();
+
+    if (fallback) return <>{fallback}</>;
+
     return (
-      <Alert className="border-red-200 bg-red-50">
-        <Lock className="h-4 w-4 text-red-600" />
+      <Alert className={alertProps.className}>
+        <Lock className={`h-4 w-4 ${alertProps.iconColor}`} />
         <AlertDescription className="flex items-center justify-between">
-          <span className="text-red-800">Su cuenta está bloqueada por falta de pago</span>
+          <span className={alertProps.textColor}>{message}</span>
           {showUpgrade && (
             <Button 
               size="sm" 
               onClick={() => navigate('/planes')}
-              className="ml-4 bg-red-600 hover:bg-red-700"
+              className={`ml-4 ${alertProps.buttonColor}`}
             >
               <TrendingUp className="w-3 h-3 mr-1" />
-              Renovar Suscripción
+              {restrictionType === 'payment_suspended' ? 'Renovar' : 'Ver Planes'}
             </Button>
           )}
         </AlertDescription>
@@ -68,29 +125,8 @@ export const ProtectedContent = ({
     );
   }
 
-  if (suscripcionVencida) {
-    return (
-      <Alert className="border-orange-200 bg-orange-50">
-        <Lock className="h-4 w-4 text-orange-600" />
-        <AlertDescription className="flex items-center justify-between">
-          <span className="text-orange-800">Su suscripción ha vencido</span>
-          {showUpgrade && (
-            <Button 
-              size="sm" 
-              onClick={() => navigate('/planes')}
-              className="ml-4 bg-orange-600 hover:bg-orange-700"
-            >
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Renovar Plan
-            </Button>
-          )}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  // Verificar funcionalidad específica
-  if (requiredFeature) {
+  // Verificar funcionalidad específica solo si tiene acceso completo
+  if (requiredFeature && hasFullAccess) {
     const result = puedeAcceder(requiredFeature);
     const puede = result?.puede ?? false;
     const razon = result?.razon;
@@ -119,8 +155,8 @@ export const ProtectedContent = ({
     }
   }
 
-  // Verificar plan específico
-  if (requiredPlan && planActual !== requiredPlan) {
+  // Verificar plan específico solo si tiene acceso completo
+  if (requiredPlan && planActual !== requiredPlan && hasFullAccess) {
     if (fallback) return <>{fallback}</>;
     
     return (
@@ -145,5 +181,6 @@ export const ProtectedContent = ({
     );
   }
 
+  console.log('✅ Content access granted');
   return <>{children}</>;
 };
