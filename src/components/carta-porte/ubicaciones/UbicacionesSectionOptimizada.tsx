@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
@@ -5,7 +6,7 @@ import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
 import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
-import { AutoRouteCalculator } from './AutoRouteCalculator';
+import { OptimizedAutoRouteCalculator } from './OptimizedAutoRouteCalculator';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
@@ -256,9 +257,9 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo simplificado de cálculo de distancia (una sola fuente)
+  // Manejo optimizado de cálculo de distancia usando el nuevo componente
   const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
-    console.log('📏 Distancia calculada con sistema híbrido:', { distancia, tiempo });
+    console.log('📏 Distancia calculada con sistema estabilizado:', { distancia, tiempo });
     
     try {
       if (distanciaTotal !== distancia || tiempoEstimado !== tiempo) {
@@ -333,7 +334,7 @@ export function UbicacionesSectionOptimizada({
   const canCalculateDistances = ubicaciones.length >= 2;
   const canContinue = ubicaciones.length > 0 && validacion.esValido;
 
-  console.log('🎯 Estado actual:', {
+  console.log('🎯 Estado actual (optimizado):', {
     ubicacionesCount: ubicaciones.length,
     validacion,
     canCalculateDistances,
@@ -387,9 +388,9 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* ÚNICO Calculadora híbrida de rutas con mapa integrado */}
+      {/* ÚNICO Calculadora híbrida estabilizada de rutas con mapa integrado */}
       {canCalculateDistances && (
-        <AutoRouteCalculator
+        <OptimizedAutoRouteCalculator
           ubicaciones={ubicaciones}
           onDistanceCalculated={handleDistanceCalculated}
           distanciaTotal={distanciaTotal}
