@@ -7,7 +7,8 @@ import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
 import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
 import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
-import { useVehiculos } from '@/hooks/useVehiculos';
+import { useStableVehiculos } from '@/hooks/useStableVehiculos';
+import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
@@ -15,7 +16,8 @@ import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
 export default function Vehiculos() {
-  const { vehiculos, loading, eliminarVehiculo } = useVehiculos();
+  const { user } = useStableAuth();
+  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -42,9 +44,8 @@ export default function Vehiculos() {
     if (window.confirm(`¿Estás seguro de eliminar el vehículo con placa ${vehiculo.placa}?`)) {
       try {
         await eliminarVehiculo(vehiculo.id);
-        toast.success('Vehículo eliminado exitosamente');
       } catch (error) {
-        toast.error('Error al eliminar vehículo');
+        // Error already handled by hook
       }
     }
   };
@@ -53,6 +54,8 @@ export default function Vehiculos() {
     setShowCreateDialog(false);
     setShowEditDialog(false);
     setSelectedVehiculo(null);
+    // Reload data after successful operation
+    recargar();
   };
 
   const filteredVehiculos = vehiculos.filter(vehiculo =>
@@ -60,6 +63,23 @@ export default function Vehiculos() {
     vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Error cargando vehículos: {error}</p>
+          <Button 
+            variant="outline" 
+            onClick={recargar}
+            className="mt-2"
+          >
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ProtectedContent requiredFeature="vehiculos">
@@ -72,6 +92,9 @@ export default function Vehiculos() {
           <div className="flex items-center gap-3">
             <Car className="h-6 w-6 text-blue-600" />
             <h1 className="text-3xl font-bold">Vehículos</h1>
+            {loading && (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            )}
           </div>
           <ProtectedActions
             action="create"
@@ -104,12 +127,37 @@ export default function Vehiculos() {
             <Filter className="h-4 w-4 mr-2" />
             Filtros
           </Button>
+          <Button 
+            variant="outline"
+            onClick={recargar}
+            disabled={loading}
+          >
+            Actualizar
+          </Button>
         </div>
 
         {/* Filtros adicionales */}
         {showFilters && (
           <VehiculosFilters />
         )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-lg border">
+            <h3 className="text-lg font-semibold">Total Vehículos</h3>
+            <p className="text-2xl text-blue-600">{vehiculos.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border">
+            <h3 className="text-lg font-semibold">Resultados</h3>
+            <p className="text-2xl text-green-600">{filteredVehiculos.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border">
+            <h3 className="text-lg font-semibold">Estado</h3>
+            <p className={`text-sm ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
+              {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
+            </p>
+          </div>
+        </div>
 
         {/* Tabla */}
         <VehiculosTable 

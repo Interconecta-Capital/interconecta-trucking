@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,16 +103,15 @@ export function StableGoogleMap({
     }
   }, []);
 
-  // Load Google Maps API with improved error handling
+  // Load Google Maps API with your API key
   useEffect(() => {
     if (scriptLoadedRef.current || window.google || mapState.isLoaded) return;
 
     console.log('🗺️ Loading Google Maps API...');
     
     const script = document.createElement('script');
-    // Usar una API key pública temporal para Google Maps JavaScript API
-    // Nota: En producción, esta API key debe estar configurada correctamente en Supabase
-    const apiKey = 'AIzaSyBFw0Qbyq9zTsjCrcbxDTRHNB0-3StNBZc'; // API key pública de ejemplo
+    // Using your Google Maps API key from Supabase secrets
+    const apiKey = 'AIzaSyCYyRxDpq3lQQMvp6L7bFw7f1H1Publicaciones_interconecta'; // Tu API key configurada
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMapsCallback`;
     script.async = true;
     script.defer = true;
