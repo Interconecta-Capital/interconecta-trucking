@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +51,38 @@ export function AutoRouteCalculator({
   const canCalculate = origen && destino && 
     origen.domicilio?.codigoPostal && origen.domicilio?.calle &&
     destino.domicilio?.codigoPostal && destino.domicilio?.calle;
+
+  // Helper function to create location hash
+  const createLocationHash = () => {
+    return safeUbicaciones
+      .map(u => `${u.tipoUbicacion}-${u.domicilio?.codigoPostal}-${u.domicilio?.calle}`)
+      .join('|');
+  };
+
+  // Helper function to geocode a location
+  const geocodeLocation = async (ubicacion: Ubicacion | undefined) => {
+    if (!ubicacion || !ubicacion.domicilio) return null;
+    
+    // Si ya tiene coordenadas, usarlas
+    if (ubicacion.coordenadas) {
+      return {
+        lat: ubicacion.coordenadas.latitud,
+        lng: ubicacion.coordenadas.longitud
+      };
+    }
+    
+    // Usar el servicio de geocodificación mexicano mejorado
+    const coords = geocodeByCodigoPostal(ubicacion.domicilio.codigoPostal);
+    
+    if (coords) {
+      return {
+        lat: coords.lat,
+        lng: coords.lng
+      };
+    }
+    
+    return null;
+  };
 
   // Load Google Maps API
   useEffect(() => {
