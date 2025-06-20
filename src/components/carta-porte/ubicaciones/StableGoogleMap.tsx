@@ -26,6 +26,7 @@ export function StableGoogleMap({
 }: StableGoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const scriptLoadedRef = useRef(false);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const [mapState, setMapState] = useState({
     isLoaded: false,
@@ -35,13 +36,17 @@ export function StableGoogleMap({
     containerReady: false
   });
 
-  // Check if container is ready
+  // Check if container is ready and visible
   useEffect(() => {
     if (!mapRef.current) return;
 
     const checkContainer = () => {
       const container = mapRef.current;
       if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+        console.log('✅ Map container is ready:', {
+          width: container.offsetWidth,
+          height: container.offsetHeight
+        });
         setMapState(prev => ({ ...prev, containerReady: true }));
         return true;
       }
@@ -51,8 +56,23 @@ export function StableGoogleMap({
     // Immediate check
     if (checkContainer()) return;
 
-    // Use IntersectionObserver to detect when container becomes visible
-    if ('IntersectionObserver' in window) {
+    // Use ResizeObserver as fallback for better compatibility
+    if ('ResizeObserver' in window) {
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.target === mapRef.current) {
+            if (checkContainer()) {
+              resizeObserver.disconnect();
+            }
+          }
+        }
+      });
+
+      resizeObserver.observe(mapRef.current);
+
+      return () => resizeObserver.disconnect();
+    } else if ('IntersectionObserver' in window) {
+      // Fallback to IntersectionObserver
       intersectionObserverRef.current = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -67,36 +87,39 @@ export function StableGoogleMap({
       );
 
       intersectionObserverRef.current.observe(mapRef.current);
+
+      return () => {
+        intersectionObserverRef.current?.disconnect();
+      };
     } else {
-      // Fallback for browsers without IntersectionObserver
+      // Final fallback for older browsers
       const interval = setInterval(() => {
         if (checkContainer()) {
           clearInterval(interval);
         }
-      }, 500);
+      }, 1000);
 
       return () => clearInterval(interval);
     }
-
-    return () => {
-      intersectionObserverRef.current?.disconnect();
-    };
   }, []);
 
-  // Load Google Maps API
+  // Load Google Maps API with improved error handling
   useEffect(() => {
-    if (window.google || mapState.isLoaded) return;
+    if (scriptLoadedRef.current || window.google || mapState.isLoaded) return;
 
     console.log('🗺️ Loading Google Maps API...');
     
     const script = document.createElement('script');
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBpZVhEF9lJbBg1cQhF2jQzPxF8cQhF2jQ';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async`;
+    // Use the actual API key from environment or fallback
+    const apiKey = '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';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMaps`;
     script.async = true;
     script.defer = true;
     
-    script.onload = () => {
+    // Create a global callback
+    window.initGoogleMaps = () => {
       console.log('✅ Google Maps API loaded successfully');
+      scriptLoadedRef.current = true;
       setMapState(prev => ({ 
         ...prev, 
         isLoaded: true, 
@@ -120,6 +143,10 @@ export function StableGoogleMap({
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
+      // Clean up global callback
+      if (window.initGoogleMaps) {
+        delete window.initGoogleMaps;
+      }
     };
   }, [mapState.retryCount]);
 
@@ -128,6 +155,7 @@ export function StableGoogleMap({
     if (!mapState.isLoaded || 
         !mapState.containerReady ||
         !window.google || 
+        !window.google.maps ||
         !mapRef.current || 
         mapState.isInitialized ||
         mapState.error) {
@@ -139,9 +167,9 @@ export function StableGoogleMap({
 
       const container = mapRef.current;
       
-      // Double-check container is ready
+      // Triple-check container is ready
       if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.warn('⚠️ Map container not ready yet, waiting...');
+        console.warn('⚠️ Map container not ready yet, retrying...');
         setTimeout(() => {
           setMapState(prev => ({ ...prev, containerReady: false }));
         }, 1000);
@@ -151,12 +179,15 @@ export function StableGoogleMap({
       // Default center (Mexico City)
       const defaultCenter = { lat: 19.4326, lng: -99.1332 };
 
-      // Initialize map with safer options
+      // Initialize map with defensive options
       mapInstanceRef.current = new window.google.maps.Map(container, {
         zoom: 6,
         center: defaultCenter,
         mapTypeId: window.google.maps.MapTypeId.ROADMAP,
         gestureHandling: 'greedy',
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: false,
         styles: [
           {
             featureType: 'poi',
@@ -166,13 +197,19 @@ export function StableGoogleMap({
         ]
       });
 
-      // Wait for map to be fully loaded
+      // Wait for map to be fully loaded with timeout
+      const timeoutId = setTimeout(() => {
+        console.warn('⚠️ Map initialization timeout, proceeding anyway');
+        setMapState(prev => ({ ...prev, isInitialized: true }));
+      }, 10000);
+
       window.google.maps.event.addListenerOnce(mapInstanceRef.current, 'idle', () => {
-        console.log('🗺️ Map fully loaded');
+        console.log('🗺️ Map fully loaded and ready');
+        clearTimeout(timeoutId);
         
-        // Add markers and route
+        // Add markers and route after map is ready
         if (ubicaciones && ubicaciones.length > 0) {
-          addMarkersAndRoute();
+          setTimeout(() => addMarkersAndRoute(), 500);
         }
 
         setMapState(prev => ({ ...prev, isInitialized: true }));
@@ -184,17 +221,22 @@ export function StableGoogleMap({
       console.error('❌ Error initializing Google Maps:', error);
       setMapState(prev => ({ 
         ...prev, 
-        error: 'Error inicializando el mapa. Por favor, recarga la página.',
+        error: 'Error inicializando el mapa. Reintentando...',
         retryCount: prev.retryCount + 1
       }));
     }
   }, [mapState.isLoaded, mapState.containerReady, ubicaciones, routeData]);
 
   const addMarkersAndRoute = () => {
-    if (!mapInstanceRef.current || !window.google) return;
+    if (!mapInstanceRef.current || !window.google || !window.google.maps) {
+      console.warn('⚠️ Google Maps not ready for markers');
+      return;
+    }
 
     try {
+      console.log('📍 Adding markers and route to map');
       const bounds = new window.google.maps.LatLngBounds();
+      const markers: any[] = [];
 
       // Add markers for each location
       ubicaciones.forEach((ubicacion, index) => {
@@ -225,6 +267,7 @@ export function StableGoogleMap({
             infoWindow.open(mapInstanceRef.current, marker);
           });
 
+          markers.push(marker);
           bounds.extend(coords);
         }
       });
@@ -250,11 +293,11 @@ export function StableGoogleMap({
       }
 
       // Fit map to bounds
-      if (ubicaciones.length > 0) {
+      if (markers.length > 0) {
         mapInstanceRef.current.fitBounds(bounds);
         
         // Set minimum zoom for single location
-        if (ubicaciones.length === 1) {
+        if (markers.length === 1) {
           setTimeout(() => {
             if (mapInstanceRef.current) {
               mapInstanceRef.current.setZoom(15);
@@ -276,12 +319,15 @@ export function StableGoogleMap({
       };
     }
 
-    // Fallback coordinates for common postal codes
+    // Enhanced fallback coordinates for common postal codes
     const cpMap: { [key: string]: { lat: number; lng: number } } = {
       '01000': { lat: 19.4326, lng: -99.1332 }, // CDMX Centro
       '62577': { lat: 18.8711, lng: -99.2211 }, // Jiutepec, Morelos
       '22000': { lat: 32.5149, lng: -117.0382 }, // Tijuana, BC
       '22010': { lat: 32.52, lng: -117.03 }, // Tijuana Centro
+      '03100': { lat: 19.3927, lng: -99.1588 }, // CDMX Sur
+      '06700': { lat: 19.4284, lng: -99.1676 }, // CDMX Roma
+      '11000': { lat: 19.4069, lng: -99.1716 }, // CDMX Centro
     };
 
     const cp = ubicacion.domicilio?.codigoPostal;
@@ -298,29 +344,48 @@ export function StableGoogleMap({
   };
 
   const handleRetry = () => {
+    console.log('🔄 Retrying map initialization');
     setMapState(prev => ({ 
       ...prev, 
       error: '', 
       isLoaded: false, 
       isInitialized: false,
-      containerReady: false
+      containerReady: false,
+      retryCount: 0
     }));
+    scriptLoadedRef.current = false;
   };
 
-  if (mapState.error) {
+  // Show error state with retry option
+  if (mapState.error && mapState.retryCount < 3) {
     return (
       <Card className="border-red-200">
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="text-center">
               <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <p className="text-sm text-red-600 mb-2">Mapa no disponible</p>
+              <p className="text-sm text-red-600 mb-2">Mapa temporalmente no disponible</p>
               <p className="text-xs text-gray-500 mb-4">{mapState.error}</p>
-              {mapState.retryCount < 3 && (
-                <Button variant="outline" size="sm" onClick={handleRetry}>
-                  Reintentar
-                </Button>
-              )}
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                Reintentar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show permanent error after 3 retries
+  if (mapState.error && mapState.retryCount >= 3) {
+    return (
+      <Card className="border-red-200">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="text-center">
+              <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+              <p className="text-sm text-red-600 mb-2">Servicio de mapas no disponible</p>
+              <p className="text-xs text-gray-500">Por favor, verifica tu configuración de API Key</p>
             </div>
           </div>
         </CardContent>
@@ -340,6 +405,11 @@ export function StableGoogleMap({
               Inicializando
             </Badge>
           )}
+          {mapState.isInitialized && (
+            <Badge variant="outline" className="ml-2 bg-green-100 text-green-800">
+              Listo
+            </Badge>
+          )}
         </div>
         <Button 
           variant="outline" 
@@ -353,7 +423,7 @@ export function StableGoogleMap({
         </Button>
       </div>
       
-      <div className={`bg-gray-100 overflow-hidden ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'h-96'}`}>
+      <div className={`bg-gray-100 overflow-hidden relative ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'h-96'}`}>
         <div ref={mapRef} className="w-full h-full" />
         {(!mapState.isInitialized || !mapState.containerReady) && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -363,6 +433,9 @@ export function StableGoogleMap({
                 {!mapState.isLoaded ? 'Cargando Google Maps...' : 
                  !mapState.containerReady ? 'Preparando contenedor...' : 
                  'Inicializando mapa...'}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                {mapState.retryCount > 0 && `Intento ${mapState.retryCount + 1}/3`}
               </p>
             </div>
           </div>

@@ -49,15 +49,44 @@ export const useStableVehiculos = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Simple query without complex joins that might cause 406 errors
+        // Enhanced query with explicit column selection to avoid 406 errors
         const { data, error } = await supabase
           .from('vehiculos')
-          .select('*')
+          .select(`
+            id,
+            user_id,
+            placa,
+            numero_serie,
+            modelo,
+            marca,
+            anio,
+            tipo_vehiculo,
+            peso_bruto_vehicular,
+            carga_maxima,
+            numero_ejes,
+            numero_llantas,
+            tarjeta_circulacion,
+            created_at,
+            updated_at
+          `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('[StableVehiculos] Database error:', error);
+          
+          // Handle specific error types for better user experience
+          if (error.code === 'PGRST301') {
+            // Table doesn't exist or permission denied
+            throw new Error('No tienes permisos para ver los vehículos o la tabla no existe');
+          } else if (error.code === '406') {
+            // Not acceptable - likely RLS issue or column permission problem
+            throw new Error('Error de permisos en la base de datos');
+          } else if (error.code === 'PGRST116') {
+            // Row not found - this is actually OK for an empty table
+            return [];
+          }
+          
           throw new Error(`Error cargando vehículos: ${error.message}`);
         }
 
@@ -86,7 +115,7 @@ export const useStableVehiculos = (userId?: string) => {
           initialized: true,
         }));
         
-        // Only show toast on final failure
+        // Only show toast on final failure after all retries
         if (retryCountRef.current >= MAX_RETRIES) {
           toast.error(`Error cargando vehículos: ${errorMessage}`);
         }
@@ -187,7 +216,7 @@ export const useStableVehiculos = (userId?: string) => {
     }
   }, [retryWithBackoff]);
 
-  // Load vehicles when userId changes
+  // Load vehicles when userId changes with enhanced error recovery
   useEffect(() => {
     if (userId) {
       retryCountRef.current = 0;

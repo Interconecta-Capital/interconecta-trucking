@@ -58,6 +58,7 @@ export const useStableAuth = () => {
       console.log('[StableAuth] Loading user profile for:', userId);
 
       const loadProfile = async () => {
+        // Try to load from profiles table first
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -66,11 +67,32 @@ export const useStableAuth = () => {
 
         if (error) {
           console.error('[StableAuth] Profile error:', error);
-          // Don't throw error if profile doesn't exist, create default
+          
+          // If profile doesn't exist, create a basic one
           if (error.code === 'PGRST116') {
-            console.log('[StableAuth] No profile found, using defaults');
-            return null;
+            console.log('[StableAuth] Creating default profile for user');
+            
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert([
+                {
+                  id: userId,
+                  nombre: 'Usuario',
+                  email: '',
+                  plan_type: 'trial'
+                }
+              ])
+              .select()
+              .single();
+
+            if (createError) {
+              console.warn('[StableAuth] Could not create profile:', createError);
+              return null;
+            }
+            
+            return newProfile;
           }
+          
           throw new Error(`Error loading profile: ${error.message}`);
         }
 
@@ -83,11 +105,18 @@ export const useStableAuth = () => {
       return profile;
     } catch (error) {
       console.error('[StableAuth] Error loading profile:', error);
-      return null;
+      
+      // Return a default profile to prevent app crashes
+      return {
+        id: userId,
+        nombre: 'Usuario',
+        email: '',
+        plan_type: 'trial'
+      };
     }
   }, [retryWithBackoff]);
 
-  // Initialize auth
+  // Initialize auth with enhanced error handling
   useEffect(() => {
     if (!mountedRef.current) return;
 
@@ -97,7 +126,16 @@ export const useStableAuth = () => {
       try {
         setState(prev => ({ ...prev, loading: true }));
 
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 10000)
+        );
+
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.error('[StableAuth] Session error:', error);
@@ -137,6 +175,7 @@ export const useStableAuth = () => {
             initialized: true,
           }));
           
+          // Only show error toast on final failure
           if (retryCountRef.current >= MAX_RETRIES) {
             toast.error('Error de autenticación. Por favor, recarga la página.');
           }
@@ -147,32 +186,51 @@ export const useStableAuth = () => {
 
     initializeAuth();
 
-    // Listen for auth changes
+    // Enhanced auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mountedRef.current) return;
 
       console.log('[StableAuth] Auth state change:', event, !!session);
 
-      if (event === 'SIGNED_IN' && session?.user) {
-        const profile = await loadUserProfile(session.user.id);
-        if (mountedRef.current) {
-          setState({
-            user: session.user,
-            session,
-            profile,
-            loading: false,
-            initialized: true,
-          });
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setState(prev => ({ ...prev, loading: true }));
+          const profile = await loadUserProfile(session.user.id);
+          if (mountedRef.current) {
+            setState({
+              user: session.user,
+              session,
+              profile,
+              loading: false,
+              initialized: true,
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          if (mountedRef.current) {
+            setState({
+              user: null,
+              session: null,
+              profile: null,
+              loading: false,
+              initialized: true,
+            });
+          }
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          if (mountedRef.current) {
+            setState(prev => ({
+              ...prev,
+              session,
+              user: session.user
+            }));
+          }
         }
-      } else if (event === 'SIGNED_OUT') {
+      } catch (error) {
+        console.error('[StableAuth] Error in auth state change:', error);
         if (mountedRef.current) {
-          setState({
-            user: null,
-            session: null,
-            profile: null,
-            loading: false,
-            initialized: true,
-          });
+          setState(prev => ({
+            ...prev,
+            loading: false
+          }));
         }
       }
     });
@@ -191,11 +249,14 @@ export const useStableAuth = () => {
 
   const signOut = useCallback(async () => {
     try {
+      setState(prev => ({ ...prev, loading: true }));
       await supabase.auth.signOut();
       toast.success('Sesión cerrada exitosamente');
     } catch (error) {
       console.error('[StableAuth] Sign out error:', error);
       toast.error('Error al cerrar sesión');
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
     }
   }, []);
 

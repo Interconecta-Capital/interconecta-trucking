@@ -49,15 +49,36 @@ export const useStableSocios = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Simple query without complex joins that might cause 406 errors
+        // Enhanced query with better error handling
         const { data, error } = await supabase
           .from('socios')
-          .select('*')
+          .select(`
+            id,
+            user_id,
+            nombre,
+            rfc,
+            licencia_federal,
+            telefono,
+            email,
+            domicilio,
+            created_at,
+            updated_at
+          `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('[StableSocios] Database error:', error);
+          
+          // Handle specific error types
+          if (error.code === 'PGRST301') {
+            // Table doesn't exist or permission denied
+            throw new Error('No tienes permisos para ver los socios o la tabla no existe');
+          } else if (error.code === '406') {
+            // Not acceptable - likely RLS issue
+            throw new Error('Error de permisos en la base de datos');
+          }
+          
           throw new Error(`Error cargando socios: ${error.message}`);
         }
 
@@ -86,7 +107,7 @@ export const useStableSocios = (userId?: string) => {
           initialized: true,
         }));
         
-        // Only show toast on final failure
+        // Only show toast on final failure after retries
         if (retryCountRef.current >= MAX_RETRIES) {
           toast.error(`Error cargando socios: ${errorMessage}`);
         }
@@ -187,7 +208,7 @@ export const useStableSocios = (userId?: string) => {
     }
   }, [retryWithBackoff]);
 
-  // Load partners when userId changes
+  // Load partners when userId changes with enhanced error recovery
   useEffect(() => {
     if (userId) {
       retryCountRef.current = 0;
