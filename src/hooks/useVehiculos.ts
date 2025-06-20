@@ -17,7 +17,6 @@ export interface Vehiculo {
   capacidad_carga?: number;
   poliza_seguro?: string;
   vigencia_seguro?: string;
-  aseguradora?: string;
   estado: string;
   activo: boolean;
   created_at: string;
@@ -46,11 +45,8 @@ export const useVehiculos = () => {
           anio,
           num_serie,
           config_vehicular,
-          peso_bruto_vehicular,
-          capacidad_carga,
           poliza_seguro,
           vigencia_seguro,
-          aseguradora,
           estado,
           activo,
           created_at,

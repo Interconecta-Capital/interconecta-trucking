@@ -164,7 +164,7 @@ export function RemolqueSelectorSimplificado({ remolques, onChange }: RemolqueSe
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="font-medium">
-                          {vehiculo?.placa}
+                          {vehiculo?.placa || 'Sin placa'}
                           {vehiculo?.marca && vehiculo?.modelo && (
                             <span className="text-gray-500 ml-2 font-normal">
                               {vehiculo.marca} {vehiculo.modelo}

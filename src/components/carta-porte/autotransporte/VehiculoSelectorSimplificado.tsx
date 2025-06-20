@@ -47,7 +47,7 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
         // Note: These fields would come from autotransporte table, not vehiculos
         perm_sct: '',
         num_permiso_sct: '',
-        asegura_resp_civil: vehiculo.aseguradora || '',
+        asegura_resp_civil: '', // This field doesn't exist in vehiculos table
         poliza_resp_civil: vehiculo.poliza_seguro || '',
         asegura_med_ambiente: '',
         poliza_med_ambiente: ''
@@ -101,15 +101,15 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Placa:</span>
-                <span className="ml-2 font-mono">{selectedVehicle.placa}</span>
+                <span className="ml-2 font-mono">{selectedVehicle.placa || 'N/A'}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Año:</span>
-                <span className="ml-2">{selectedVehicle.anio}</span>
+                <span className="ml-2">{selectedVehicle.anio || 'N/A'}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Marca/Modelo:</span>
-                <span className="ml-2">{selectedVehicle.marca} {selectedVehicle.modelo}</span>
+                <span className="ml-2">{selectedVehicle.marca || 'N/A'} {selectedVehicle.modelo || ''}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Configuración:</span>
@@ -117,7 +117,7 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
               </div>
               <div>
                 <span className="font-medium text-gray-600">Seguro:</span>
-                <span className="ml-2">{selectedVehicle.aseguradora || 'N/A'}</span>
+                <span className="ml-2">{selectedVehicle.poliza_seguro || 'N/A'}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Estado:</span>
@@ -183,7 +183,7 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">
-                      {vehiculo?.placa}
+                      {vehiculo?.placa || 'Sin placa'}
                       {vehiculo?.marca && vehiculo?.modelo && (
                         <span className="text-gray-500 ml-2 font-normal">
                           {vehiculo.marca} {vehiculo.modelo}
