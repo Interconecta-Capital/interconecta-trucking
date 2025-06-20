@@ -49,23 +49,30 @@ export const useStableVehiculos = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Enhanced query with explicit column selection to avoid 406 errors
+        // Query using correct column names from database
         const { data, error } = await supabase
           .from('vehiculos')
           .select(`
             id,
             user_id,
             placa,
-            numero_serie,
+            num_serie,
             modelo,
             marca,
             anio,
-            tipo_vehiculo,
+            config_vehicular,
             peso_bruto_vehicular,
-            carga_maxima,
+            capacidad_carga,
             numero_ejes,
             numero_llantas,
             tarjeta_circulacion,
+            perm_sct,
+            num_permiso_sct,
+            poliza_seguro,
+            vigencia_seguro,
+            aseguradora,
+            estado,
+            activo,
             created_at,
             updated_at
           `)

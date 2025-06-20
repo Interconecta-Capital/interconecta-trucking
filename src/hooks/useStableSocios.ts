@@ -49,18 +49,23 @@ export const useStableSocios = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Enhanced query with better error handling
+        // Query using correct column names from database
         const { data, error } = await supabase
           .from('socios')
           .select(`
             id,
             user_id,
-            nombre,
+            nombre_razon_social,
             rfc,
-            licencia_federal,
             telefono,
             email,
-            domicilio,
+            tipo_persona,
+            regimen_fiscal,
+            uso_cfdi,
+            direccion,
+            direccion_fiscal,
+            estado,
+            activo,
             created_at,
             updated_at
           `)
