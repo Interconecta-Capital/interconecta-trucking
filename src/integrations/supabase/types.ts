@@ -2616,6 +2616,8 @@ export type Database = {
           modelo: string | null
           num_permiso_sct: string | null
           num_serie: string | null
+          numero_ejes: number | null
+          numero_llantas: number | null
           numero_permisos_adicionales: string[] | null
           numero_serie_vin: string | null
           perm_sct: string | null
@@ -2649,6 +2651,8 @@ export type Database = {
           modelo?: string | null
           num_permiso_sct?: string | null
           num_serie?: string | null
+          numero_ejes?: number | null
+          numero_llantas?: number | null
           numero_permisos_adicionales?: string[] | null
           numero_serie_vin?: string | null
           perm_sct?: string | null
@@ -2682,6 +2686,8 @@ export type Database = {
           modelo?: string | null
           num_permiso_sct?: string | null
           num_serie?: string | null
+          numero_ejes?: number | null
+          numero_llantas?: number | null
           numero_permisos_adicionales?: string[] | null
           numero_serie_vin?: string | null
           perm_sct?: string | null
