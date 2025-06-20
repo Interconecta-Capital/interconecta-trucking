@@ -12,7 +12,7 @@ export const useSuperuser = () => {
     if (!user) return false;
     
     // Verificar desde metadata del usuario de auth
-    const authMetadata = user.user_metadata || user.raw_user_meta_data || {};
+    const authMetadata = user.user_metadata || {};
     return authMetadata.is_superuser === 'true' || authMetadata.is_admin === 'true';
   }, [user]);
 

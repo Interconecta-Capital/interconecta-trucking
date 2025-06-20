@@ -21,8 +21,8 @@ export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadge
     dataWillBeDeleted
   } = useTrialManager();
   
-  // Ensure planActual is a string
-  const planName = typeof planActual === 'string' ? planActual : (planActual?.nombre || 'Plan Básico');
+  // Ensure planActual is always a string
+  const planName = planActual || 'Plan Básico';
   
   const getPlanIcon = () => {
     if (isSuperuser) return Crown;

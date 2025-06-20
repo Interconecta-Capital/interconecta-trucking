@@ -50,9 +50,17 @@ export const usePermisosSubscripcion = () => {
     const puede = puedeCrearBase(tipo);
     if (!puede) {
       const limites = obtenerLimites();
-      const uso = obtenerUsoActualBase();
+      const usoRaw = obtenerUsoActualBase();
       const limite = limites[tipo];
-      const actual = uso[tipo] || 0;
+      
+      // Ensure uso is always a number
+      let actual = 0;
+      if (typeof usoRaw === 'object' && usoRaw !== null && tipo in usoRaw) {
+        actual = (usoRaw as any)[tipo] || 0;
+      } else if (typeof usoRaw === 'number') {
+        actual = usoRaw;
+      }
+      
       return { 
         puede: false, 
         razon: limite ? `Límite alcanzado: ${actual}/${limite} ${tipo.replace('_', ' ')}` : 'No se puede crear' 
@@ -85,22 +93,26 @@ export const usePermisosSubscripcion = () => {
     const limites = obtenerLimites();
     
     if (tipo) {
+      const usado = typeof usoRaw === 'object' && usoRaw !== null ? ((usoRaw as any)[tipo] || 0) : (typeof usoRaw === 'number' ? usoRaw : 0);
       return {
-        usado: usoRaw || 0,
+        usado,
         limite: limites[tipo]
       };
     }
     
+    // Ensure we return a consistent structure
+    const usoObj = typeof usoRaw === 'object' && usoRaw !== null ? usoRaw as Record<string, number> : {};
+    
     return {
-      cartas_porte: { usado: usoRaw.cartas_porte || 0, limite: limites.cartas_porte },
-      conductores: { usado: usoRaw.conductores || 0, limite: limites.conductores },
-      vehiculos: { usado: usoRaw.vehiculos || 0, limite: limites.vehiculos },
-      socios: { usado: usoRaw.socios || 0, limite: limites.socios }
+      cartas_porte: { usado: usoObj.cartas_porte || 0, limite: limites.cartas_porte },
+      conductores: { usado: usoObj.conductores || 0, limite: limites.conductores },
+      vehiculos: { usado: usoObj.vehiculos || 0, limite: limites.vehiculos },
+      socios: { usado: usoObj.socios || 0, limite: limites.socios }
     };
   };
 
   const planActual = getPlanActual();
-  const planNombre = typeof planActual === 'string' ? planActual : planActual?.nombre || 'Plan Básico';
+  const planNombre = typeof planActual === 'string' ? planActual : (planActual?.nombre || 'Plan Básico');
 
   return {
     puedeAcceder,

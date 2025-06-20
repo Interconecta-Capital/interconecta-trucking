@@ -57,7 +57,8 @@ export function LimitUsageIndicator({ resourceType, className }: LimitUsageIndic
 
   const Icon = getIcon();
   const percentage = getProgressPercentage();
-  const planName = typeof planActual === 'string' ? planActual : (planActual?.nombre || 'Plan Básico');
+  // Ensure planActual is always a string
+  const planName = planActual || 'Plan Básico';
 
   return (
     <Card className={className}>
