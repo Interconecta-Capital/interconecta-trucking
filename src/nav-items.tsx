@@ -27,7 +27,8 @@ import Planes from "./pages/Planes";
  * 
  * IMPORTANTE: 
  * - /cartas-porte = Gestión y listado de documentos
- * - /carta-porte/editor = Editor completo con todos los módulos (ubicaciones, mercancías, figuras, etc.)
+ * - /carta-porte/editor = Editor completo con todos los módulos (ubicaciones, mercancías, figuras, etc.) - PROTEGIDO
+ * - /carta-porte/nuevo = Alias para crear nueva carta porte - PROTEGIDO
  */
 export const navItems = [
   {
@@ -55,7 +56,19 @@ export const navItems = [
     icon: <FileTextIcon className="h-4 w-4" />,
     page: <CartaPorteEditor />,
     hideFromNav: true,
-    description: "Editor completo con módulos: ubicaciones, mercancías, figuras, autotransporte"
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Editor completo con módulos: ubicaciones, mercancías, figuras, autotransporte - PROTEGIDO"
+  },
+  {
+    title: "Nueva Carta Porte",
+    to: "/carta-porte/nuevo",
+    icon: <FileTextIcon className="h-4 w-4" />,
+    page: <CartaPorteEditor />,
+    hideFromNav: true,
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Crear nueva carta porte - PROTEGIDO"
   },
   {
     title: "Vehículos",

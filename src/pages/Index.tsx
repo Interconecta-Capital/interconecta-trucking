@@ -1,11 +1,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, FolderOpen, BarChart3 } from "lucide-react";
+import { Plus, FileText, FolderOpen, BarChart3, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ProtectedContent } from "@/components/ProtectedContent";
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
 
 export default function Index() {
   const navigate = useNavigate();
+  const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
+  const { canPerformAction, getContextualMessage } = useTrialManager();
+
+  const canCreateCartaPorte = isSuperuser || (hasFullAccess && canPerformAction('create'));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -20,11 +27,15 @@ export default function Index() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Crear Nueva Carta Porte */}
+          {/* Crear Nueva Carta Porte - PROTEGIDO */}
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-blue-600" />
+                {canCreateCartaPorte ? (
+                  <Plus className="h-5 w-5 text-blue-600" />
+                ) : (
+                  <Lock className="h-5 w-5 text-gray-400" />
+                )}
                 Nueva Carta Porte
               </CardTitle>
               <CardDescription>
@@ -32,12 +43,35 @@ export default function Index() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => navigate('/carta-porte/nuevo')}
-              >
-                Crear Nueva
-              </Button>
+              {canCreateCartaPorte ? (
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate('/carta-porte/editor')}
+                >
+                  Crear Nueva
+                </Button>
+              ) : (
+                <ProtectedContent 
+                  requiredFeature="cartas_porte"
+                  fallback={
+                    <Button 
+                      disabled 
+                      className="w-full opacity-50 cursor-not-allowed"
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      Acceso Restringido
+                    </Button>
+                  }
+                  showUpgrade={true}
+                >
+                  <Button 
+                    className="w-full" 
+                    onClick={() => navigate('/carta-porte/editor')}
+                  >
+                    Crear Nueva
+                  </Button>
+                </ProtectedContent>
+              )}
             </CardContent>
           </Card>
 

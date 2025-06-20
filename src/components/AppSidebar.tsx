@@ -9,6 +9,7 @@ import {
   Truck,
   Users,
   Plus,
+  Lock,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -25,12 +26,20 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
+import { Badge } from "@/components/ui/badge";
 
 export const AppSidebar = () => {
   const location = useLocation();
   const { puedeAccederAdministracion } = usePermisosSubscripcion();
+  const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
+  const { canPerformAction } = useTrialManager();
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Verificar si puede crear cartas porte
+  const canCreateCartaPorte = isSuperuser || (hasFullAccess && canPerformAction('create'));
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -65,12 +74,27 @@ export const AppSidebar = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/carta-porte/editor')} size="default" tooltip="Nueva Carta Porte">
-                <Link to="/carta-porte/editor">
-                  <Plus className="h-5 w-5" />
+              {canCreateCartaPorte ? (
+                <SidebarMenuButton asChild isActive={isActive('/carta-porte/editor')} size="default" tooltip="Nueva Carta Porte">
+                  <Link to="/carta-porte/editor">
+                    <Plus className="h-5 w-5" />
+                    <span className="text-sm">Nueva Carta Porte</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton 
+                  disabled 
+                  size="default" 
+                  tooltip="Acceso Restringido"
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Lock className="h-5 w-5" />
                   <span className="text-sm">Nueva Carta Porte</span>
-                </Link>
-              </SidebarMenuButton>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Bloqueado
+                  </Badge>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
 
             <SidebarMenuItem>

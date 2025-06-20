@@ -15,11 +15,24 @@ interface CartaPorteFormModalProps {
 
 export function CartaPorteFormModal({ open, onOpenChange }: CartaPorteFormModalProps) {
   const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
-  const { getContextualMessage } = useTrialManager();
+  const { getContextualMessage, canPerformAction } = useTrialManager();
 
-  // Si no es superuser y no tiene acceso completo, no mostrar el modal
+  console.log('🔍 CartaPorteFormModal Debug:', {
+    open,
+    isSuperuser,
+    hasFullAccess,
+    canPerformAction: canPerformAction('create')
+  });
+
+  // BLOQUEO TOTAL: Si no es superuser Y no tiene acceso completo, NO mostrar el modal
   if (!isSuperuser && !hasFullAccess) {
-    console.log('❌ CartaPorteFormModal blocked - no access');
+    console.log('❌ CartaPorteFormModal completely blocked - no access');
+    return null;
+  }
+
+  // BLOQUEO ADICIONAL: Si no puede realizar acciones de creación, NO mostrar el modal
+  if (!isSuperuser && !canPerformAction('create')) {
+    console.log('❌ CartaPorteFormModal blocked - cannot perform create action');
     return null;
   }
 
@@ -40,6 +53,7 @@ export function CartaPorteFormModal({ open, onOpenChange }: CartaPorteFormModalP
           </div>
         </DialogHeader>
         
+        {/* VERIFICACIÓN FINAL: Mostrar alerta si por alguna razón no tiene acceso */}
         {!hasFullAccess && !isSuperuser ? (
           <div className="p-6">
             <Alert className="border-red-200 bg-red-50">
