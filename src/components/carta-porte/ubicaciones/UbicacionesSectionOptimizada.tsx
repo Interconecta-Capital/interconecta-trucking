@@ -1,16 +1,14 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
-import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
-import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
-import { AutoRouteCalculator } from './AutoRouteCalculator';
-import { GoogleMapVisualization } from './GoogleMapVisualization';
+import { UbicacionesProgress } from './UbicacionesProgress';
+import { UbicacionesContent } from './UbicacionesContent';
+import { UbicacionesManager } from './UbicacionesManager';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
-import { useViajeCreation } from '@/hooks/useViajeCreation';
-import { useToast } from '@/hooks/use-toast';
 
 interface UbicacionesSectionOptimizadaProps {
   data: any[];
@@ -34,19 +32,11 @@ export function UbicacionesSectionOptimizada({
   const [showMap, setShowMap] = useState(false);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
-  const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
-  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
-  const [showViajeModal, setShowViajeModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [routeData, setRouteData] = useState<any>(null);
   
   // Referencias para evitar loops infinitos
   const lastOnChangeRef = useRef<string>('');
   const isUpdatingFromPropsRef = useRef(false);
-  
-  const { toast } = useToast();
-  const { createViaje, isCreating } = useViajeCreation();
   
   const {
     ubicaciones,
@@ -59,6 +49,17 @@ export function UbicacionesSectionOptimizada({
     calcularDistanciaTotal,
     ubicacionesFrecuentes
   } = useUbicaciones();
+
+  // Get manager logic
+  const manager = UbicacionesManager({
+    ubicaciones,
+    onAgregarUbicacion: agregarUbicacion,
+    onActualizarUbicacion: actualizarUbicacion,
+    onEliminarUbicacion: eliminarUbicacion,
+    onNext,
+    cartaPorteId,
+    onDistanceCalculated
+  });
 
   // SOLUCIÓN 1: Inicialización única desde localStorage y props
   useEffect(() => {
@@ -75,10 +76,6 @@ export function UbicacionesSectionOptimizada({
           if (parsed.ubicaciones && Array.isArray(parsed.ubicaciones)) {
             ubicacionesIniciales = parsed.ubicaciones;
             console.log('📍 Cargadas desde localStorage:', ubicacionesIniciales.length);
-            
-            // También restaurar distancias si existen
-            if (parsed.distanciaTotal) setDistanciaTotal(parsed.distanciaTotal);
-            if (parsed.tiempoEstimado) setTiempoEstimado(parsed.tiempoEstimado);
           }
         }
         
@@ -108,7 +105,7 @@ export function UbicacionesSectionOptimizada({
     }
   }, [data, isInitialized, setUbicaciones, onChange]);
 
-  // SOLUCIÓN 2: Sincronización unidireccional desde hook hacia padre (NO loops)
+  // SOLUCIÓN 2: Sincronización unidireccional desde hook hacia padre
   useEffect(() => {
     if (!isInitialized) return;
     
@@ -143,8 +140,8 @@ export function UbicacionesSectionOptimizada({
       try {
         const dataToSave = {
           ubicaciones,
-          distanciaTotal,
-          tiempoEstimado,
+          distanciaTotal: manager.distanciaTotal,
+          tiempoEstimado: manager.tiempoEstimado,
           timestamp: new Date().toISOString()
         };
         localStorage.setItem('carta-porte-ubicaciones', JSON.stringify(dataToSave));
@@ -152,10 +149,10 @@ export function UbicacionesSectionOptimizada({
       } catch (error) {
         console.warn('⚠️ Error persistiendo en localStorage:', error);
       }
-    }, 500); // 500ms debounce
+    }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [ubicaciones, distanciaTotal, tiempoEstimado, isInitialized]);
+  }, [ubicaciones, manager.distanciaTotal, manager.tiempoEstimado, isInitialized]);
 
   const handleAgregarUbicacion = () => {
     console.log('➕ Iniciando agregar ubicación');
@@ -171,17 +168,8 @@ export function UbicacionesSectionOptimizada({
     setShowForm(true);
   };
 
-  const handleEliminarUbicacion = (index: number) => {
-    console.log('🗑️ Eliminando ubicación:', index);
-    eliminarUbicacion(index);
-    toast({
-      title: "Ubicación eliminada",
-      description: "La ubicación ha sido eliminada correctamente.",
-    });
-  };
-
   const handleGuardarUbicacion = (ubicacionData: any) => {
-    console.log('💾 === GUARDANDO UBICACIÓN (ESTABLE) ===');
+    console.log('💾 === GUARDANDO UBICACIÓN ===');
     console.log('📍 Datos recibidos:', ubicacionData);
     
     try {
@@ -223,17 +211,9 @@ export function UbicacionesSectionOptimizada({
       if (editingIndex !== null) {
         console.log('✏️ Actualizando ubicación en índice:', editingIndex);
         actualizarUbicacion(editingIndex, ubicacionData);
-        toast({
-          title: "Ubicación actualizada",
-          description: "La ubicación ha sido actualizada correctamente.",
-        });
       } else {
         console.log('➕ Agregando nueva ubicación');
         agregarUbicacion(ubicacionData);
-        toast({
-          title: "Ubicación agregada",
-          description: "La ubicación ha sido agregada correctamente.",
-        });
       }
       
       // Cerrar el formulario
@@ -245,11 +225,6 @@ export function UbicacionesSectionOptimizada({
       
     } catch (error) {
       console.error('❌ Error al guardar ubicación:', error);
-      toast({
-        title: "Error",
-        description: "Hubo un error al guardar la ubicación.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -260,85 +235,32 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo mejorado de cálculo de distancia con Google Maps
-  const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
-    console.log('📏 Distancia calculada con Google Maps:', { distancia, tiempo });
-    
-    try {
-      setIsCalculatingDistance(true);
-      setDistanciaTotal(distancia);
-      setTiempoEstimado(tiempo);
-      setRouteData({
-        distance_km: distancia,
-        duration_minutes: tiempo,
-        google_data: routeGeometry?.google_data
-      });
-      setShowMap(true);
-      
-      // Notificar al componente padre
-      if (onDistanceCalculated) {
-        onDistanceCalculated({
-          distanciaTotal: distancia,
-          tiempoEstimado: tiempo
-        });
-      }
-      
-      console.log('✅ Distancia y ruta procesadas exitosamente');
-      
-      toast({
-        title: "Ruta calculada exitosamente",
-        description: `Distancia: ${distancia} km. Tiempo: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
-      });
-    } catch (error) {
-      console.error('❌ Error procesando cálculo de distancia:', error);
-      toast({
-        title: "Error",
-        description: "Error al procesar el cálculo de distancia.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCalculatingDistance(false);
-    }
-  };
-
   const handleSaveToFavorites = (ubicacion: any) => {
-    toast({
-      title: "Guardado en favoritos",
-      description: "La ubicación ha sido guardada en tus favoritos.",
-    });
-  };
-
-  // Manejar el click en "Continuar"
-  const handleContinueClick = () => {
-    if (canContinue && ubicaciones.length > 0) {
-      setShowViajeModal(true);
-    }
-  };
-
-  // Confirmar guardar viaje y continuar
-  const handleConfirmSaveTrip = () => {
-    if (cartaPorteId) {
-      createViaje({
-        cartaPorteId,
-        ubicaciones,
-        distanciaTotal,
-        tiempoEstimado
-      });
-    }
-    setShowViajeModal(false);
-    onNext();
-  };
-
-  // Continuar sin guardar viaje
-  const handleConfirmContinue = () => {
-    setShowViajeModal(false);
-    onNext();
+    // Implementation for saving to favorites
   };
 
   const validacion = validarSecuenciaUbicaciones();
   const distanciaCalculada = calcularDistanciaTotal();
   const canCalculateDistances = ubicaciones.length >= 2;
   const canContinue = ubicaciones.length > 0 && validacion.esValido;
+
+  // Calculate completion percentage
+  const getCompletionPercentage = () => {
+    if (ubicaciones.length === 0) return 0;
+    
+    const tieneOrigen = ubicaciones.some(u => u.tipoUbicacion === 'Origen') ? 30 : 0;
+    const tieneDestino = ubicaciones.some(u => u.tipoUbicacion === 'Destino') ? 30 : 0;
+    const ubicacionesCompletas = ubicaciones.filter(u => 
+      u.rfcRemitenteDestinatario && u.nombreRemitenteDestinatario && 
+      u.domicilio?.codigoPostal && u.domicilio?.calle
+    ).length;
+    
+    const porcentajeCompletitud = (ubicacionesCompletas / Math.max(1, ubicaciones.length)) * 40;
+    
+    return Math.round(tieneOrigen + tieneDestino + porcentajeCompletitud);
+  };
+
+  const completionPercentage = getCompletionPercentage();
 
   console.log('🎯 Estado actual:', {
     ubicacionesCount: ubicaciones.length,
@@ -379,6 +301,12 @@ export function UbicacionesSectionOptimizada({
 
   return (
     <div className="space-y-6 bg-white">
+      <UbicacionesProgress
+        ubicacionesCount={ubicaciones.length}
+        isComplete={canContinue}
+        completionPercentage={completionPercentage}
+      />
+
       <UbicacionesHeader
         ubicacionesCount={ubicaciones.length}
         canCalculateDistances={canCalculateDistances}
@@ -392,55 +320,35 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      <CardContent className="bg-white">
-        <UbicacionesList
+      <Card>
+        <UbicacionesContent
           ubicaciones={ubicaciones}
+          canCalculateDistances={canCalculateDistances}
+          showMap={showMap}
+          isMapFullscreen={isMapFullscreen}
+          routeData={manager.routeData}
+          distanciaTotal={manager.distanciaTotal}
+          tiempoEstimado={manager.tiempoEstimado}
           onEditarUbicacion={handleEditarUbicacion}
-          onEliminarUbicacion={handleEliminarUbicacion}
+          onEliminarUbicacion={manager.handleEliminarUbicacion}
           onAgregarUbicacion={handleAgregarUbicacion}
-        />
-
-        {/* Calculadora automática de rutas con Google Maps - SOLO UNA VEZ AQUÍ */}
-        {canCalculateDistances && (
-          <div className="mt-6">
-            <AutoRouteCalculator
-              ubicaciones={ubicaciones}
-              onDistanceCalculated={handleDistanceCalculated}
-              distanciaTotal={distanciaTotal}
-              tiempoEstimado={tiempoEstimado}
-            />
-          </div>
-        )}
-
-        {/* Mapa de Google Maps integrado */}
-        {showMap && ubicaciones.length >= 2 && (
-          <div className="mt-6">
-            <GoogleMapVisualization
-              ubicaciones={ubicaciones}
-              routeData={routeData}
-              isVisible={showMap}
-              onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
-              isFullscreen={isMapFullscreen}
-            />
-          </div>
-        )}
-
-        <UbicacionesNavigation
+          onDistanceCalculated={manager.handleDistanceCalculated}
+          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
           onPrev={onPrev}
-          onNext={handleContinueClick}
+          onNext={manager.handleContinueClick}
           canContinue={canContinue}
         />
-      </CardContent>
+      </Card>
 
       {/* Modal de confirmación de viaje */}
       <ViajeConfirmationModal
-        isOpen={showViajeModal}
-        onClose={() => setShowViajeModal(false)}
-        onConfirmSaveTrip={handleConfirmSaveTrip}
-        onConfirmContinue={handleConfirmContinue}
+        isOpen={manager.showViajeModal}
+        onClose={() => manager.setShowViajeModal(false)}
+        onConfirmSaveTrip={manager.handleConfirmSaveTrip}
+        onConfirmContinue={manager.handleConfirmContinue}
         ubicaciones={ubicaciones}
-        distanciaTotal={distanciaTotal}
-        tiempoEstimado={tiempoEstimado}
+        distanciaTotal={manager.distanciaTotal}
+        tiempoEstimado={manager.tiempoEstimado}
       />
     </div>
   );
