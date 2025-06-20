@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
@@ -399,7 +400,6 @@ export function UbicacionesSectionOptimizada({
           onDistanceCalculated={handleDistanceCalculated}
           distanciaTotal={distanciaTotal}
           tiempoEstimado={tiempoEstimado}
-          isCalculating={isCalculatingDistance}
         />
       )}
 

@@ -296,7 +296,7 @@ export function GoogleMapVisualization({
                   {ubicacion.domicilio.calle}, {ubicacion.domicilio.municipio}
                 </div>
               </div>
-              <Badge variant="outline" size="sm">
+              <Badge variant="outline">
                 {index + 1}
               </Badge>
             </div>
