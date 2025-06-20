@@ -5,7 +5,7 @@ import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import BenefitsSection from '@/components/landing/BenefitsSection';
 import NewPricingSection from '@/components/landing/NewPricingSection';
-import AddOnsSection from '@/components/landing/AddOnsSection';
+import { AddOnsSection } from '@/components/landing/AddOnsSection';
 import ProvenResultsSection from '@/components/landing/ProvenResultsSection';
 import TestimonialSection from '@/components/landing/TestimonialSection';
 import CTASection from '@/components/landing/CTASection';
