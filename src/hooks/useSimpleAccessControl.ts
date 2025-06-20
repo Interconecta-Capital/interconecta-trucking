@@ -33,10 +33,14 @@ export const useSimpleAccessControl = (): SimpleAccessState => {
   const { suscripcion } = useSuscripcion();
 
   const accessState = useMemo((): SimpleAccessState => {
-    console.log('🔥 SIMPLE ACCESS CONTROL:', {
+    console.log('🔥 ACCESS CONTROL CHECK:', {
       userId: user?.id,
+      userEmail: user?.email,
       userCreatedAt: user?.created_at,
-      suscripcion
+      suscripcion: suscripcion ? {
+        status: suscripcion.status,
+        planNombre: suscripcion.plan?.nombre
+      } : null
     });
 
     if (!user) {
@@ -56,21 +60,22 @@ export const useSimpleAccessControl = (): SimpleAccessState => {
 
     const now = new Date();
     const userCreatedAt = new Date(user.created_at);
-    const trialEndDate = new Date(userCreatedAt.getTime() + (14 * 24 * 60 * 60 * 1000)); // 14 días después de creación
+    const trialEndDate = new Date(userCreatedAt.getTime() + (14 * 24 * 60 * 60 * 1000));
     const daysRemaining = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-    const isTrialActive = trialEndDate > now;
+    const isTrialActive = trialEndDate > now && daysRemaining > 0;
 
     console.log('📅 TRIAL CALCULATION:', {
       userCreatedAt: userCreatedAt.toISOString(),
       trialEndDate: trialEndDate.toISOString(),
       now: now.toISOString(),
       daysRemaining,
-      isTrialActive
+      isTrialActive,
+      timeDiff: trialEndDate.getTime() - now.getTime()
     });
 
-    // 1. VERIFICAR SI TIENE TRIAL ACTIVO (14 días desde creación)
-    if (isTrialActive && daysRemaining > 0) {
-      console.log('✅ TRIAL ACTIVO - Acceso completo');
+    // REGLA 1: Si tiene trial activo = ACCESO COMPLETO SIN RESTRICCIONES
+    if (isTrialActive) {
+      console.log('✅ TRIAL ACTIVO - ACCESO COMPLETO GARANTIZADO');
       return {
         hasFullAccess: true,
         isBlocked: false,
@@ -81,13 +86,13 @@ export const useSimpleAccessControl = (): SimpleAccessState => {
         daysRemaining,
         planName: 'Trial',
         statusMessage: `Trial activo: ${daysRemaining} días restantes`,
-        limits: { cartas_porte: null, conductores: null, vehiculos: null, socios: null } // Sin límites en trial
+        limits: { cartas_porte: null, conductores: null, vehiculos: null, socios: null }
       };
     }
 
-    // 2. VERIFICAR SI TIENE PLAN PAGADO ACTIVO
+    // REGLA 2: Si tiene plan pagado activo = ACCESO SEGÚN LÍMITES
     if (suscripcion?.status === 'active' && suscripcion.plan) {
-      console.log('✅ PLAN PAGADO - Acceso según límites del plan');
+      console.log('✅ PLAN PAGADO ACTIVO');
       return {
         hasFullAccess: true,
         isBlocked: false,
@@ -107,23 +112,23 @@ export const useSimpleAccessControl = (): SimpleAccessState => {
       };
     }
 
-    // 3. SIN TRIAL NI PLAN PAGADO = BLOQUEADO
-    console.log('❌ SIN ACCESO VÁLIDO - Bloqueado');
+    // REGLA 3: Sin trial ni plan = BLOQUEADO
+    console.log('❌ SIN ACCESO VÁLIDO - BLOQUEADO');
     return {
       hasFullAccess: false,
       isBlocked: true,
       canCreateContent: false,
-      canViewContent: true, // Puede ver pero no crear
+      canViewContent: true,
       isInActiveTrial: false,
       isTrialExpired: true,
       daysRemaining: 0,
       planName: 'Sin Plan',
-      statusMessage: 'Trial expirado - Adquiere un plan para continuar',
+      statusMessage: 'Trial expirado - Necesitas un plan',
       limits: { cartas_porte: 0, conductores: 0, vehiculos: 0, socios: 0 }
     };
   }, [user, suscripcion]);
 
-  console.log('📊 ESTADO FINAL SIMPLE:', accessState);
+  console.log('📊 ESTADO FINAL DE ACCESO:', accessState);
   
   return accessState;
 };

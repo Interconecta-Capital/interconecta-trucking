@@ -10,7 +10,6 @@ import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useSocios } from '@/hooks/useSocios';
-import { AccessControlDebug } from '../debug/AccessControlDebug';
 import { useSimpleAccessControl } from '@/hooks/useSimpleAccessControl';
 
 export function EnhancedDashboardLayout() {
@@ -20,7 +19,7 @@ export function EnhancedDashboardLayout() {
   const { conductores } = useConductores();
   const { socios } = useSocios();
 
-  console.log('🏠 EnhancedDashboardLayout - Estado simple:', {
+  console.log('🏠 EnhancedDashboardLayout:', {
     hasFullAccess: accessControl.hasFullAccess,
     isBlocked: accessControl.isBlocked,
     isInActiveTrial: accessControl.isInActiveTrial,
@@ -42,8 +41,8 @@ export function EnhancedDashboardLayout() {
         {/* Header con saludo personalizado */}
         <PersonalizedGreeting />
         
-        {/* Debug panel */}
-        <AccessControlDebug />
+        {/* Solo mostrar notificaciones si NO tiene acceso completo */}
+        {!accessControl.hasFullAccess && <PlanNotifications />}
         
         {/* Grid principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -73,25 +72,16 @@ export function EnhancedDashboardLayout() {
             />
           </div>
         </div>
-
-        {/* Notificaciones de plan */}
-        <PlanNotifications />
         
-        {/* Indicadores de uso de límites */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <LimitUsageIndicator 
-            resourceType="cartas_porte"
-          />
-          <LimitUsageIndicator 
-            resourceType="vehiculos"
-          />
-          <LimitUsageIndicator 
-            resourceType="conductores"
-          />
-          <LimitUsageIndicator 
-            resourceType="socios"
-          />
-        </div>
+        {/* Indicadores de uso de límites solo si tiene límites */}
+        {accessControl.limits.cartas_porte !== null && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <LimitUsageIndicator resourceType="cartas_porte" />
+            <LimitUsageIndicator resourceType="vehiculos" />
+            <LimitUsageIndicator resourceType="conductores" />
+            <LimitUsageIndicator resourceType="socios" />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 export const AccessControlDebug = () => {
-  const [isVisible, setIsVisible] = useState(true); // Siempre visible para debug
+  const [isVisible, setIsVisible] = useState(true);
   const { user } = useAuth();
   const { suscripcion } = useSuscripcion();
   const accessControl = useSimpleAccessControl();
@@ -26,7 +26,7 @@ export const AccessControlDebug = () => {
     <Card className="border-blue-200 bg-blue-50">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-sm">
-          <span>🔍 Debug de Acceso SIMPLE</span>
+          <span>🔍 DEBUG: Control de Acceso Simple</span>
           <Button
             variant="ghost"
             size="sm"
@@ -42,10 +42,10 @@ export const AccessControlDebug = () => {
           <div className="space-y-2">
             <h4 className="font-semibold text-blue-800">👤 Usuario</h4>
             <div className="grid grid-cols-2 gap-2">
-              <div>ID: {user?.id?.substring(0, 8)}...</div>
               <div>Email: {user?.email}</div>
               <div>Creado: {userCreatedAt?.toLocaleDateString('es-MX')}</div>
               <div>Trial hasta: {trialEndDate?.toLocaleDateString('es-MX')}</div>
+              <div>Ahora: {now.toLocaleDateString('es-MX')}</div>
             </div>
           </div>
 
@@ -79,9 +79,9 @@ export const AccessControlDebug = () => {
             </div>
           </div>
 
-          {/* Estado Final Simple */}
+          {/* Estado Final */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-blue-800">🚦 Control de Acceso SIMPLE</h4>
+            <h4 className="font-semibold text-blue-800">🚦 RESULTADO FINAL</h4>
             <div className="space-y-1">
               <div>Acceso completo: 
                 <Badge variant={accessControl.hasFullAccess ? "default" : "destructive"} className="ml-1">
@@ -98,15 +98,8 @@ export const AccessControlDebug = () => {
                   {accessControl.canCreateContent ? "SÍ" : "NO"}
                 </Badge>
               </div>
-              <div>Plan actual: {accessControl.planName}</div>
-            </div>
-          </div>
-
-          {/* Mensaje de Estado */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-blue-800">💬 Mensaje</h4>
-            <div className="text-xs bg-white p-2 rounded border">
-              <strong>Estado:</strong> {accessControl.statusMessage}
+              <div>Plan: {accessControl.planName}</div>
+              <div>Mensaje: {accessControl.statusMessage}</div>
             </div>
           </div>
         </CardContent>

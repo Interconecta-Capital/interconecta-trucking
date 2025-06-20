@@ -2,146 +2,110 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { usePermissionCheck } from '@/hooks/useUnifiedAccessControl';
-import { Calendar, Clock, AlertTriangle, Crown, Lock, TrendingUp } from 'lucide-react';
+import { useSimpleAccessControl } from '@/hooks/useSimpleAccessControl';
+import { Calendar, Clock, AlertTriangle, Crown, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function TrialStatusCard() {
-  const accessControl = usePermissionCheck();
+  const accessControl = useSimpleAccessControl();
   const navigate = useNavigate();
 
-  console.log('📊 TrialStatusCard rendering with:', {
+  console.log('📊 TrialStatusCard:', {
     hasFullAccess: accessControl.hasFullAccess,
     isBlocked: accessControl.isBlocked,
-    restrictionType: accessControl.restrictionType,
-    statusMessage: accessControl.statusMessage,
-    isSuperuser: accessControl.isSuperuser
+    isInActiveTrial: accessControl.isInActiveTrial,
+    daysRemaining: accessControl.daysRemaining,
+    statusMessage: accessControl.statusMessage
   });
 
-  // Superusers ven un card especial
-  if (accessControl.isSuperuser) {
+  // Si tiene acceso completo y está en trial, mostrar info del trial
+  if (accessControl.hasFullAccess && accessControl.isInActiveTrial) {
+    const getCardStyle = () => {
+      if (accessControl.daysRemaining <= 3) return 'border-yellow-500 bg-yellow-50';
+      return 'border-green-500 bg-green-50';
+    };
+
+    const getProgressValue = () => {
+      return ((14 - accessControl.daysRemaining) / 14) * 100;
+    };
+
     return (
-      <Card className="border-yellow-200 bg-yellow-50">
+      <Card className={getCardStyle()}>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-yellow-800">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4" />
+            Trial Activo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              Te quedan {accessControl.daysRemaining} días de prueba gratuita
+            </p>
+            
+            <div className="space-y-1">
+              <Progress value={getProgressValue()} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Trial gratuito</span>
+                <span>{accessControl.daysRemaining}/14 días</span>
+              </div>
+            </div>
+          </div>
+
+          {accessControl.daysRemaining <= 7 && (
+            <Button 
+              onClick={() => navigate('/planes')}
+              className="w-full"
+              variant={accessControl.daysRemaining <= 3 ? 'default' : 'outline'}
+              size="sm"
+            >
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Ver Planes Disponibles
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Si tiene plan pagado, mostrar info del plan
+  if (accessControl.hasFullAccess && !accessControl.isInActiveTrial) {
+    return (
+      <Card className="border-blue-500 bg-blue-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-blue-800">
             <Crown className="h-5 w-5" />
-            Superusuario
+            Plan Activo
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-yellow-700">
-            Acceso completo sin restricciones
+          <p className="text-sm text-blue-700">
+            {accessControl.statusMessage}
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const getCardStyle = () => {
-    switch (accessControl.restrictionType) {
-      case 'trial_expired':
-        return 'border-orange-300 bg-orange-50';
-      case 'payment_suspended':
-        return 'border-red-500 bg-red-50';
-      case 'grace_period':
-        return accessControl.urgencyLevel === 'critical' ? 'border-red-500 bg-red-50' : 'border-orange-500 bg-orange-50';
-      default:
-        if (accessControl.isInActiveTrial && accessControl.daysRemaining <= 3) return 'border-yellow-500 bg-yellow-50';
-        if (accessControl.isInActiveTrial) return 'border-green-500 bg-green-50';
-        return 'border-gray-300 bg-gray-50';
-    }
-  };
-
-  const getIcon = () => {
-    switch (accessControl.restrictionType) {
-      case 'trial_expired':
-        return AlertTriangle;
-      case 'payment_suspended':
-        return Lock;
-      case 'grace_period':
-        return accessControl.urgencyLevel === 'critical' ? AlertTriangle : Clock;
-      default:
-        return Calendar;
-    }
-  };
-
-  const getProgressValue = () => {
-    if (accessControl.isInActiveTrial) {
-      return ((14 - accessControl.daysRemaining) / 14) * 100;
-    }
-    if (accessControl.restrictionType === 'grace_period') {
-      return ((90 - accessControl.daysRemaining) / 90) * 100;
-    }
-    return 100;
-  };
-
-  const getButtonText = () => {
-    switch (accessControl.restrictionType) {
-      case 'trial_expired':
-        return 'Ver Planes';
-      case 'payment_suspended':
-        return 'Renovar Suscripción';
-      case 'grace_period':
-        return accessControl.urgencyLevel === 'critical' ? 'ADQUIRIR PLAN YA' : 'Ver Planes';
-      default:
-        return 'Ver Planes';
-    }
-  };
-
-  const shouldShowButton = () => {
-    return (
-      accessControl.restrictionType !== 'none' || 
-      (accessControl.isInActiveTrial && accessControl.daysRemaining <= 7)
-    );
-  };
-
-  const Icon = getIcon();
-
+  // Si no tiene acceso, mostrar mensaje de upgrade
   return (
-    <Card className={getCardStyle()}>
+    <Card className="border-orange-300 bg-orange-50">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Icon className="h-4 w-4" />
-          Estado de la Cuenta
+        <CardTitle className="flex items-center gap-2 text-orange-800">
+          <AlertTriangle className="h-4 w-4" />
+          Acceso Limitado
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{accessControl.statusMessage}</p>
-          
-          {accessControl.actionRequired && (
-            <p className="text-xs text-muted-foreground">{accessControl.actionRequired}</p>
-          )}
-          
-          {(accessControl.isInActiveTrial || accessControl.restrictionType === 'grace_period') && (
-            <div className="space-y-1">
-              <Progress value={getProgressValue()} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  {accessControl.isInActiveTrial ? 'Trial' : 'Período de gracia'}
-                </span>
-                <span>
-                  {accessControl.isInActiveTrial 
-                    ? `${accessControl.daysRemaining}/14 días` 
-                    : `${accessControl.daysRemaining}/90 días`
-                  }
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {shouldShowButton() && (
-          <Button 
-            onClick={() => navigate('/planes')}
-            className="w-full"
-            variant={accessControl.urgencyLevel === 'critical' || accessControl.restrictionType === 'payment_suspended' ? 'destructive' : 'default'}
-            size="sm"
-          >
-            <TrendingUp className="w-3 h-3 mr-1" />
-            {getButtonText()}
-          </Button>
-        )}
+        <p className="text-sm text-orange-700">{accessControl.statusMessage}</p>
+        <Button 
+          onClick={() => navigate('/planes')}
+          className="w-full bg-orange-600 hover:bg-orange-700"
+          size="sm"
+        >
+          <TrendingUp className="w-3 h-3 mr-1" />
+          Ver Planes
+        </Button>
       </CardContent>
     </Card>
   );
