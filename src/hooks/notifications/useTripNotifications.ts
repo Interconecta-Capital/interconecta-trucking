@@ -1,49 +1,40 @@
 
-import { useNotificationCore } from './useNotificationCore';
+import { useCallback } from 'react';
+import { useNotifications } from '../useNotifications';
 
 export const useTripNotifications = () => {
-  const { addNotification, createContextualNotification } = useNotificationCore();
+  const { showSuccess, showWarning, showInfo } = useNotifications();
 
   const tripNotifications = {
     viajeIniciado: (origen: string, destino: string) => {
-      createContextualNotification(
-        'success',
-        'Viaje Iniciado',
-        `Ruta: ${origen} → ${destino}`
-      );
-    },
-
-    viajeCompletado: (origen: string, destino: string) => {
-      createContextualNotification(
-        'success',
-        'Viaje Completado',
-        `Entrega exitosa en ${destino}`
-      );
-    },
-
-    retrasoDetectado: (retrasoMinutos: number, ubicacionActual: string) => {
-      addNotification({
-        type: 'warning',
-        title: 'Retraso Detectado',
-        message: `${retrasoMinutos} min de retraso en ${ubicacionActual}`,
-        persistent: true,
-        action: {
-          label: 'Ver Tracking',
-          onClick: () => console.log('Navigate to tracking')
-        }
+      showSuccess({
+        title: 'Viaje iniciado',
+        description: `Ruta: ${origen} → ${destino}`,
+        duration: 5000
       });
     },
 
-    emergencia: (ubicacion: string, descripcion: string) => {
-      addNotification({
-        type: 'error',
-        title: 'EMERGENCIA',
-        message: `${descripcion} en ${ubicacion}`,
-        persistent: true,
-        action: {
-          label: 'Atender',
-          onClick: () => console.log('Handle emergency')
-        }
+    viajeCompletado: (origen: string, destino: string) => {
+      showSuccess({
+        title: 'Viaje completado',
+        description: `Ruta completada: ${origen} → ${destino}`,
+        duration: 6000
+      });
+    },
+
+    retrasoDetectado: (retrasoMinutos: number) => {
+      showWarning({
+        title: 'Retraso detectado',
+        description: `El viaje presenta un retraso de ${retrasoMinutos} minutos`,
+        duration: 8000
+      });
+    },
+
+    cartaPorteGenerada: (folio: string) => {
+      showInfo({
+        title: 'Carta Porte generada',
+        description: `Carta Porte ${folio} creada exitosamente`,
+        duration: 4000
       });
     }
   };

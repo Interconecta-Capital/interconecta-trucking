@@ -1,42 +1,40 @@
 
-import { useNotificationCore } from './useNotificationCore';
+import { useCallback } from 'react';
+import { useNotifications } from '../useNotifications';
 
 export const useVehicleNotifications = () => {
-  const { addNotification, createContextualNotification } = useNotificationCore();
+  const { showWarning, showError, showSuccess } = useNotifications();
 
   const vehicleNotifications = {
-    estadoCambiado: (placa: string, estadoAnterior: string, estadoNuevo: string) => {
-      const esUrgente = estadoNuevo === 'fuera_servicio' || estadoNuevo === 'mantenimiento';
-      createContextualNotification(
-        esUrgente ? 'warning' : 'info',
-        'Estado de Vehículo Actualizado',
-        `${placa}: ${estadoAnterior} → ${estadoNuevo}`,
-        esUrgente
-      );
-    },
-
-    mantenimientoProgramado: (placa: string, fecha: string) => {
-      addNotification({
-        type: 'info',
-        title: 'Mantenimiento Programado',
-        message: `Vehículo ${placa} programado para ${fecha}`,
-        action: {
-          label: 'Ver Detalles',
-          onClick: () => console.log('Navigate to vehicle details')
-        }
+    documentoVencePronto: (placa: string, tipoDocumento: string, dias: number) => {
+      showWarning({
+        title: 'Documento por vencer',
+        description: `${tipoDocumento} del vehículo ${placa} vence en ${dias} día${dias !== 1 ? 's' : ''}`,
+        duration: 8000
       });
     },
 
-    documentoVencePronto: (placa: string, documento: string, dias: number) => {
-      addNotification({
-        type: 'warning',
-        title: 'Documento por Vencer',
-        message: `${documento} del vehículo ${placa} vence en ${dias} días`,
-        persistent: true,
-        action: {
-          label: 'Renovar',
-          onClick: () => console.log('Navigate to document renewal')
-        }
+    documentoVencido: (placa: string, tipoDocumento: string) => {
+      showError({
+        title: 'Documento vencido',
+        description: `${tipoDocumento} del vehículo ${placa} ha vencido`,
+        duration: 10000
+      });
+    },
+
+    mantenimientoProgramado: (placa: string, tipo: string, fecha: string) => {
+      showWarning({
+        title: 'Mantenimiento programado',
+        description: `${tipo} para vehículo ${placa} programado el ${fecha}`,
+        duration: 6000
+      });
+    },
+
+    estadoCambiado: (placa: string, estadoAnterior: string, estadoNuevo: string) => {
+      showSuccess({
+        title: 'Estado actualizado',
+        description: `Vehículo ${placa} cambió de ${estadoAnterior} a ${estadoNuevo}`,
+        duration: 4000
       });
     }
   };

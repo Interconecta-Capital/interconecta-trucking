@@ -2849,6 +2849,10 @@ export type Database = {
           colonias: Json
         }[]
       }
+      check_document_expiration: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       check_rate_limit: {
         Args: {
           p_identifier: string
@@ -2867,6 +2871,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_grace_users: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -2927,8 +2935,16 @@ export type Database = {
         }
         Returns: string
       }
+      process_expired_trials: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       record_rate_limit_attempt: {
         Args: { p_identifier: string; p_action_type: string; p_metadata?: Json }
+        Returns: undefined
+      }
+      run_automated_tasks: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       send_cleanup_warnings: {
