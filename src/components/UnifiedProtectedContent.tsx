@@ -28,34 +28,36 @@ export const UnifiedProtectedContent = ({
   const accessControl = usePermissionCheck();
   const navigate = useNavigate();
 
-  console.log('🛡️ UnifiedProtectedContent:', {
+  console.log('🛡️ UnifiedProtectedContent evaluando:', {
     requiredAction,
     resource,
     hasFullAccess: accessControl.hasFullAccess,
     canPerformAction: accessControl.canPerformAction(requiredAction),
     restrictionType: accessControl.restrictionType,
-    isSuperuser: accessControl.isSuperuser
+    isSuperuser: accessControl.isSuperuser,
+    isInActiveTrial: accessControl.isInActiveTrial,
+    daysRemaining: accessControl.daysRemaining
   });
 
   // Superusers pasan todas las verificaciones
   if (accessControl.isSuperuser) {
+    console.log('✅ Superuser: acceso completo');
     return <>{children}</>;
   }
 
-  // Verificar si puede realizar la acción requerida
-  const canPerform = accessControl.canPerformAction(requiredAction);
-  
-  // Si puede realizar la acción, mostrar contenido
-  if (canPerform && !accessControl.isBlocked) {
+  // Si tiene trial activo o plan pagado, permitir acceso
+  if (accessControl.hasFullAccess && accessControl.canPerformAction(requiredAction)) {
+    console.log('✅ Acceso permitido: trial activo o plan válido');
     return <>{children}</>;
   }
 
   // Si se proporciona un fallback y no debe bloquear, usar fallback
   if (fallback && !blockOnRestriction) {
+    console.log('📋 Usando fallback sin bloqueo');
     return <>{fallback}</>;
   }
 
-  // Determinar el tipo de alerta y mensaje basado en el estado
+  // Determinar el tipo de alerta basado en el estado
   const getAlertConfig = () => {
     switch (accessControl.restrictionType) {
       case 'trial_expired':
@@ -110,6 +112,8 @@ export const UnifiedProtectedContent = ({
 
   const alertConfig = getAlertConfig();
   const Icon = alertConfig.icon;
+
+  console.log('🚫 Mostrando restricción:', alertConfig.title);
 
   return (
     <div className={className}>

@@ -20,6 +20,14 @@ export function EnhancedDashboardLayout() {
   const { conductores } = useConductores();
   const { socios } = useSocios();
 
+  console.log('🏠 EnhancedDashboardLayout - Estado de acceso:', {
+    hasFullAccess: accessControl.hasFullAccess,
+    isBlocked: accessControl.isBlocked,
+    isInActiveTrial: accessControl.isInActiveTrial,
+    daysRemaining: accessControl.daysRemaining,
+    statusMessage: accessControl.statusMessage
+  });
+
   const cartasPorteCount = cartasPorte.length;
   const vehiculosCount = vehiculos.length;
   const conductoresCount = conductores.length;
@@ -34,8 +42,8 @@ export function EnhancedDashboardLayout() {
         {/* Header con saludo personalizado */}
         <PersonalizedGreeting />
         
-        {/* Debug panel - solo visible para superusers o cuando se activa */}
-        <AccessControlDebug />
+        {/* Debug panel - solo visible para superusers */}
+        {accessControl.isSuperuser && <AccessControlDebug />}
         
         {/* Grid principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

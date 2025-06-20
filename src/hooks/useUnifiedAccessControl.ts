@@ -45,19 +45,17 @@ export const useUnifiedAccessControl = (): AccessControlState => {
   const { trialInfo, loading: trialLoading } = useTrialTracking();
 
   const accessState = useMemo((): AccessControlState => {
-    console.log('🔐 UnifiedAccessControl - Evaluating access:', {
+    console.log('🔐 SIMPLIFICADO - UnifiedAccessControl evaluando:', {
       userId: user?.id,
       isSuperuser,
       trialInfo,
       suscripcion,
-      estaBloqueado: estaBloqueado(),
       loading: trialLoading
     });
 
-    // JERARQUÍA DE ACCESO:
     // 1. SUPERUSER: Acceso total siempre
     if (isSuperuser) {
-      console.log('✅ SUPERUSER: Full access granted');
+      console.log('✅ SUPERUSER: Acceso completo');
       return {
         hasFullAccess: true,
         isBlocked: false,
@@ -81,49 +79,24 @@ export const useUnifiedAccessControl = (): AccessControlState => {
       };
     }
 
-    // 2. VERIFICAR BLOQUEO ADMINISTRATIVO
-    if (estaBloqueado()) {
-      console.log('🚫 BLOCKED: Administrative block detected');
-      return {
-        hasFullAccess: false,
-        isBlocked: true,
-        canCreateContent: false,
-        canViewContent: true,
-        isInActiveTrial: false,
-        isTrialExpired: true,
-        daysRemaining: 0,
-        planName: 'Bloqueado',
-        isSuperuser: false,
-        restrictionType: 'payment_suspended',
-        urgencyLevel: 'critical',
-        statusMessage: 'Cuenta bloqueada por administración',
-        actionRequired: 'Contacte al administrador para reactivar su cuenta',
-        limits: {
-          cartas_porte: 0,
-          conductores: 0,
-          vehiculos: 0,
-          socios: 0
-        }
-      };
-    }
-
     const now = new Date();
     
-    // 3. VERIFICAR TRIAL ACTIVO
+    // 2. VERIFICAR TRIAL ACTIVO PRIMERO (prioridad máxima)
     if (trialInfo?.trialEndDate) {
       const trialEndDate = new Date(trialInfo.trialEndDate);
       const isTrialActive = trialEndDate > now;
       const daysRemaining = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
       
-      console.log('📅 TRIAL CHECK:', {
+      console.log('📅 VERIFICACIÓN DE TRIAL:', {
         trialEndDate: trialEndDate.toISOString(),
         now: now.toISOString(),
         isTrialActive,
         daysRemaining
       });
 
-      if (isTrialActive) {
-        console.log('✅ TRIAL ACTIVE: Full access during trial');
+      // Si el trial está activo, DAR ACCESO COMPLETO sin más verificaciones
+      if (isTrialActive && daysRemaining > 0) {
+        console.log('✅ TRIAL ACTIVO: Acceso completo garantizado');
         return {
           hasFullAccess: true,
           isBlocked: false,
@@ -145,46 +118,16 @@ export const useUnifiedAccessControl = (): AccessControlState => {
             socios: 10
           }
         };
-      } else {
-        console.log('❌ TRIAL EXPIRED: Access restricted');
-        return {
-          hasFullAccess: false,
-          isBlocked: true,
-          canCreateContent: false,
-          canViewContent: true,
-          isInActiveTrial: false,
-          isTrialExpired: true,
-          daysRemaining: 0,
-          planName: 'Trial Expirado',
-          isSuperuser: false,
-          restrictionType: 'trial_expired',
-          urgencyLevel: 'high',
-          statusMessage: 'Su período de prueba ha finalizado',
-          actionRequired: 'Adquiera un plan para continuar usando todas las funciones',
-          limits: {
-            cartas_porte: 0,
-            conductores: 0,
-            vehiculos: 0,
-            socios: 0
-          }
-        };
       }
     }
 
-    // 4. VERIFICAR SUSCRIPCIÓN PAGADA ACTIVA
+    // 3. VERIFICAR SUSCRIPCIÓN PAGADA ACTIVA
     if (suscripcion?.status === 'active' && suscripcion.plan) {
       const planEndDate = suscripcion.fecha_vencimiento ? new Date(suscripcion.fecha_vencimiento) : null;
       const isPlanActive = !planEndDate || planEndDate > now;
       
-      console.log('💳 PAID PLAN CHECK:', {
-        status: suscripcion.status,
-        planEndDate: planEndDate?.toISOString(),
-        isPlanActive,
-        plan: suscripcion.plan.nombre
-      });
-
       if (isPlanActive) {
-        console.log('✅ PAID PLAN ACTIVE: Full access');
+        console.log('✅ PLAN PAGADO ACTIVO: Acceso completo');
         return {
           hasFullAccess: true,
           isBlocked: false,
@@ -209,18 +152,38 @@ export const useUnifiedAccessControl = (): AccessControlState => {
       }
     }
 
+    // 4. VERIFICAR BLOQUEO ADMINISTRATIVO (solo después de verificar acceso válido)
+    if (estaBloqueado && estaBloqueado()) {
+      console.log('🚫 BLOQUEADO: Bloqueo administrativo detectado');
+      return {
+        hasFullAccess: false,
+        isBlocked: true,
+        canCreateContent: false,
+        canViewContent: true,
+        isInActiveTrial: false,
+        isTrialExpired: true,
+        daysRemaining: 0,
+        planName: 'Bloqueado',
+        isSuperuser: false,
+        restrictionType: 'payment_suspended',
+        urgencyLevel: 'critical',
+        statusMessage: 'Cuenta bloqueada por administración',
+        actionRequired: 'Contacte al administrador para reactivar su cuenta',
+        limits: {
+          cartas_porte: 0,
+          conductores: 0,
+          vehiculos: 0,
+          socios: 0
+        }
+      };
+    }
+
     // 5. VERIFICAR PERÍODO DE GRACIA
     if (suscripcion?.status === 'grace_period' && suscripcion.grace_period_end) {
       const gracePeriodEnd = new Date(suscripcion.grace_period_end);
       const isInGracePeriod = gracePeriodEnd > now;
       const graceDaysRemaining = Math.max(0, Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
       
-      console.log('⏰ GRACE PERIOD CHECK:', {
-        gracePeriodEnd: gracePeriodEnd.toISOString(),
-        isInGracePeriod,
-        graceDaysRemaining
-      });
-
       if (isInGracePeriod) {
         return {
           hasFullAccess: false,
@@ -229,7 +192,7 @@ export const useUnifiedAccessControl = (): AccessControlState => {
           canViewContent: true,
           isInActiveTrial: false,
           isTrialExpired: true,
-          daysRemaining: 0,
+          daysRemaining: graceDaysRemaining,
           planName: 'Período de Gracia',
           isSuperuser: false,
           restrictionType: 'grace_period',
@@ -246,8 +209,8 @@ export const useUnifiedAccessControl = (): AccessControlState => {
       }
     }
 
-    // 6. CASO POR DEFECTO: USUARIO SIN SUSCRIPCIÓN VÁLIDA
-    console.log('❌ NO VALID SUBSCRIPTION: Access denied');
+    // 6. CASO POR DEFECTO: Sin acceso válido
+    console.log('❌ SIN ACCESO VÁLIDO: Acceso denegado');
     return {
       hasFullAccess: false,
       isBlocked: true,
@@ -271,12 +234,12 @@ export const useUnifiedAccessControl = (): AccessControlState => {
     };
   }, [user, isSuperuser, suscripcion, trialInfo, estaBloqueado, trialLoading]);
 
-  console.log('📊 UnifiedAccessControl FINAL STATE:', accessState);
+  console.log('📊 ESTADO FINAL SIMPLIFICADO:', accessState);
   
   return accessState;
 };
 
-// Función de utilidad para verificar permisos específicos
+// Función de utilidad simplificada
 export const usePermissionCheck = () => {
   const accessState = useUnifiedAccessControl();
   

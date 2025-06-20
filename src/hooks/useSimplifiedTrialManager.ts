@@ -1,10 +1,11 @@
 
 import { useUnifiedAccessControl } from './useUnifiedAccessControl';
 
-// Hook simplificado que mantiene la interfaz del useTrialManager original
-// pero usando el nuevo sistema unificado para evitar dependencias circulares
+// Hook simplificado que solo usa el sistema unificado
 export const useSimplifiedTrialManager = () => {
   const accessControl = useUnifiedAccessControl();
+
+  console.log('🎯 useSimplifiedTrialManager usando estado unificado:', accessControl);
 
   return {
     // Estados principales
