@@ -1,52 +1,37 @@
 
-import { ReactNode } from 'react';
-import { GlobalHeader } from '@/components/GlobalHeader';
+import React from 'react';
 import { AppSidebar } from '@/components/AppSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UserMenu } from '@/components/UserMenu';
 
 interface BaseLayoutProps {
-  children: ReactNode;
-  showSidebar?: boolean;
+  children: React.ReactNode;
 }
 
-export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
-  const isMobile = useIsMobile();
-
-  if (!showSidebar) {
-    return (
-      <div className="min-h-screen bg-background">
-        <GlobalHeader />
-        <main className={cn(
-          "p-4",
-          // Espaciado específico para móvil
-          isMobile && "px-3 py-4",
-          // Espaciado para desktop
-          !isMobile && "p-6"
-        )}>
-          {children}
-        </main>
-      </div>
-    );
-  }
-
+export function BaseLayout({ children }: BaseLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex w-full">
+      <div className="flex h-screen w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col w-full">
-          <GlobalHeader />
-          <main className={cn(
-            "flex-1 overflow-auto",
-            // Espaciado específico para móvil
-            isMobile && "p-3",
-            // Espaciado para desktop
-            !isMobile && "p-6"
-          )}>
+        <SidebarInset className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-6">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+                alt="Interconecta Trucking Logo"
+                className="w-8 h-8 rounded-lg"
+              />
+              <h1 className="text-lg font-semibold">Interconecta Trucking</h1>
+            </div>
+            <UserMenu />
+          </header>
+          
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
-        </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
