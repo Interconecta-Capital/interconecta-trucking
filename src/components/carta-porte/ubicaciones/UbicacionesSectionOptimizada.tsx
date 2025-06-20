@@ -6,7 +6,6 @@ import { UbicacionesValidation } from './UbicacionesValidation';
 import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
 import { AutoRouteCalculator } from './AutoRouteCalculator';
-import { GoogleMapVisualization } from './GoogleMapVisualization';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
@@ -31,12 +30,9 @@ export function UbicacionesSectionOptimizada({
 }: UbicacionesSectionOptimizadaProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [showMap, setShowMap] = useState(false);
-  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
-  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [showViajeModal, setShowViajeModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [routeData, setRouteData] = useState<any>(null);
@@ -260,14 +256,12 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo mejorado de cálculo de distancia híbrido (evitar duplicados)
+  // Manejo simplificado de cálculo de distancia (una sola fuente)
   const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
     console.log('📏 Distancia calculada con sistema híbrido:', { distancia, tiempo });
     
     try {
-      // Evitar duplicados - solo actualizar si los valores son diferentes
       if (distanciaTotal !== distancia || tiempoEstimado !== tiempo) {
-        setIsCalculatingDistance(true);
         setDistanciaTotal(distancia);
         setTiempoEstimado(tiempo);
         setRouteData({
@@ -275,9 +269,7 @@ export function UbicacionesSectionOptimizada({
           duration_minutes: tiempo,
           google_data: routeGeometry?.google_data
         });
-        setShowMap(true);
         
-        // Notificar al componente padre (solo una vez)
         if (onDistanceCalculated) {
           onDistanceCalculated({
             distanciaTotal: distancia,
@@ -299,8 +291,6 @@ export function UbicacionesSectionOptimizada({
         description: "Error al procesar el cálculo de distancia.",
         variant: "destructive"
       });
-    } finally {
-      setIsCalculatingDistance(false);
     }
   };
 
@@ -388,8 +378,8 @@ export function UbicacionesSectionOptimizada({
         ubicacionesCount={ubicaciones.length}
         canCalculateDistances={canCalculateDistances}
         onAgregarUbicacion={handleAgregarUbicacion}
-        onCalcularDistancias={() => {}} // Removed since AutoRouteCalculator handles this
-        onCalcularRuta={() => {}} // Removed since AutoRouteCalculator handles this
+        onCalcularDistancias={() => {}}
+        onCalcularRuta={() => {}}
       />
 
       <UbicacionesValidation
@@ -397,24 +387,13 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Calculadora híbrida de rutas (Mapbox + Google Maps) - SOLO UNA INSTANCIA */}
+      {/* ÚNICO Calculadora híbrida de rutas con mapa integrado */}
       {canCalculateDistances && (
         <AutoRouteCalculator
           ubicaciones={ubicaciones}
           onDistanceCalculated={handleDistanceCalculated}
           distanciaTotal={distanciaTotal}
           tiempoEstimado={tiempoEstimado}
-        />
-      )}
-
-      {/* Mapa de Google Maps integrado - SOLO SI HAY DATOS DE RUTA */}
-      {showMap && ubicaciones.length >= 2 && routeData && (
-        <GoogleMapVisualization
-          ubicaciones={ubicaciones}
-          routeData={routeData}
-          isVisible={showMap}
-          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
-          isFullscreen={isMapFullscreen}
         />
       )}
 
