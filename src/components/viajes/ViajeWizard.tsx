@@ -205,7 +205,7 @@ export function ViajeWizard() {
           {data.currentStep === 1 && <FlowModeSelector />}
 
           {/* Steps Navigation */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-4 gap-4 mb-6" data-onboarding="wizard-steps">
             {STEPS.map((step) => {
               const isActive = step.id === data.currentStep;
               const isCompleted = step.id < data.currentStep;
@@ -221,6 +221,7 @@ export function ViajeWizard() {
                       ? 'border-green-500 bg-green-50'
                       : 'border-gray-200 bg-gray-50'
                   }`}
+                  data-onboarding={step.id === 4 ? "validaciones-step" : undefined}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Icon className={`h-4 w-4 ${
@@ -271,6 +272,7 @@ export function ViajeWizard() {
                 <Button
                   onClick={handleNext}
                   disabled={!canAdvance() || isProcessing}
+                  data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
                 >
                   Siguiente
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -280,6 +282,7 @@ export function ViajeWizard() {
                   onClick={handleConfirmarViaje}
                   disabled={isProcessing}
                   className="bg-green-600 hover:bg-green-700"
+                  data-onboarding="confirm-viaje-btn"
                 >
                   {isProcessing ? (
                     <>

@@ -33,7 +33,7 @@ export default function Viajes() {
         <PlanNotifications />
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" data-onboarding="viajes-header">
           <div className="flex items-center gap-3">
             <Truck className="h-6 w-6 text-blue-600" />
             <h1 className="text-3xl font-bold">Centro de Operaciones</h1>
@@ -47,7 +47,10 @@ export default function Viajes() {
               resource="cartas_porte"
               onAction={handleNuevoViaje}
             >
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                data-onboarding="nuevo-viaje-btn"
+              >
                 <Route className="h-4 w-4 mr-2" />
                 Programar Nuevo Viaje
               </Button>
@@ -82,11 +85,16 @@ export default function Viajes() {
 
         {/* Tabs de viajes */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-4" data-onboarding="viajes-tabs">
             <TabsTrigger value="activos">Viajes Activos</TabsTrigger>
             <TabsTrigger value="programados">Programados</TabsTrigger>
             <TabsTrigger value="historial">Historial</TabsTrigger>
-            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+            <TabsTrigger 
+              value="documentos"
+              data-onboarding="documentos-tab"
+            >
+              Documentos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="activos">
