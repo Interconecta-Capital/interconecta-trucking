@@ -58,7 +58,7 @@ export const useViajes = () => {
         fecha_inicio_programada: new Date().toISOString(),
         fecha_fin_programada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'}`,
-        tracking_data: wizardData,
+        tracking_data: JSON.parse(JSON.stringify(wizardData)), // Convert to proper JSON
         user_id: user.id
       };
 
