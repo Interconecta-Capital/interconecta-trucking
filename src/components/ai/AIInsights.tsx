@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,32 +41,32 @@ export function AIInsights() {
       setLoading(true);
       setError(null);
 
-      // Preparar datos del dashboard
+      // Preparar datos del dashboard - usar estados seguros
       const dashboardData = {
         cartasPorte: {
-          total: cartasPorte.length,
-          completadas: cartasPorte.filter(c => c.status === 'timbrada').length,
-          pendientes: cartasPorte.filter(c => c.status === 'borrador').length,
-          thisMonth: cartasPorte.filter(c => {
+          total: cartasPorte?.length || 0,
+          completadas: cartasPorte?.filter(c => c.status === 'timbrada')?.length || 0,
+          pendientes: cartasPorte?.filter(c => c.status === 'borrador')?.length || 0,
+          thisMonth: cartasPorte?.filter(c => {
             const created = new Date(c.created_at);
             const now = new Date();
             return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
-          }).length
+          })?.length || 0
         },
         vehiculos: {
-          total: vehiculos.length,
-          disponibles: vehiculos.filter(v => v.estado === 'disponible').length,
-          enUso: vehiculos.filter(v => v.estado === 'en_uso').length,
-          mantenimiento: vehiculos.filter(v => v.estado === 'mantenimiento').length
+          total: vehiculos?.length || 0,
+          disponibles: vehiculos?.filter(v => v.estado === 'disponible')?.length || 0,
+          enUso: vehiculos?.filter(v => v.estado === 'en_uso')?.length || 0,
+          mantenimiento: vehiculos?.filter(v => v.estado === 'mantenimiento')?.length || 0
         },
         conductores: {
-          total: conductores.length,
-          disponibles: conductores.filter(c => c.estado === 'disponible').length,
-          enViaje: conductores.filter(c => c.estado === 'en_viaje').length
+          total: conductores?.length || 0,
+          disponibles: conductores?.filter(c => c.estado === 'disponible')?.length || 0,
+          enViaje: conductores?.filter(c => c.estado === 'en_viaje')?.length || 0
         },
         socios: {
-          total: socios.length,
-          activos: socios.filter(s => s.estado === 'activo').length
+          total: socios?.length || 0,
+          activos: socios?.filter(s => s.estado === 'activo')?.length || 0
         }
       };
 
@@ -102,15 +101,15 @@ export function AIInsights() {
       const fallbackInsights: AIInsight[] = [
         {
           title: 'Eficiencia de Flota',
-          description: `Tienes ${vehiculos.filter(v => v.estado === 'disponible').length} vehículos disponibles de ${vehiculos.length} total`,
-          impact: vehiculos.filter(v => v.estado === 'disponible').length / vehiculos.length > 0.8 ? 'low' : 'high',
+          description: `Tienes ${vehiculos?.filter(v => v.estado === 'disponible')?.length || 0} vehículos disponibles de ${vehiculos?.length || 0} total`,
+          impact: (vehiculos?.filter(v => v.estado === 'disponible')?.length || 0) / (vehiculos?.length || 1) > 0.8 ? 'low' : 'high',
           action: 'Optimizar asignación de vehículos',
           metric: 'vehiculos',
           category: 'efficiency'
         },
         {
           title: 'Productividad Conductores',
-          description: `${conductores.filter(c => c.estado === 'en_viaje').length} conductores actualmente en viaje`,
+          description: `${conductores?.filter(c => c.estado === 'en_viaje')?.length || 0} conductores actualmente en viaje`,
           impact: 'medium',
           action: 'Revisar carga de trabajo',
           metric: 'conductores',
@@ -125,12 +124,12 @@ export function AIInsights() {
   };
 
   useEffect(() => {
-    if (cartasPorte.length > 0 || vehiculos.length > 0) {
+    if (cartasPorte?.length > 0 || vehiculos?.length > 0) {
       generateInsights();
     } else {
       setLoading(false);
     }
-  }, [cartasPorte.length, vehiculos.length, conductores.length, socios.length]);
+  }, [cartasPorte?.length, vehiculos?.length, conductores?.length, socios?.length]);
 
   const getImpactColor = (impact: string) => {
     switch (impact) {

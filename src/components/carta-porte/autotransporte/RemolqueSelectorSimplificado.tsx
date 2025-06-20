@@ -21,20 +21,20 @@ export function RemolqueSelectorSimplificado({ remolques, onChange }: RemolqueSe
   const { vehiculos, loading } = useVehiculos();
 
   // Filtrar remolques/trailers usando config_vehicular que contiene información del tipo
-  const filteredRemolques = vehiculos.filter(vehiculo => 
-    vehiculo.config_vehicular?.toLowerCase().includes('remolque') ||
-    vehiculo.config_vehicular?.toLowerCase().includes('trailer') ||
-    vehiculo.config_vehicular?.toLowerCase().includes('semirremolque')
+  const filteredRemolques = (vehiculos || []).filter(vehiculo => 
+    vehiculo?.config_vehicular?.toLowerCase().includes('remolque') ||
+    vehiculo?.config_vehicular?.toLowerCase().includes('trailer') ||
+    vehiculo?.config_vehicular?.toLowerCase().includes('semirremolque')
   ).filter(vehiculo =>
-    vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+    vehiculo?.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo?.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo?.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleRemolqueSelect = (vehiculo: any) => {
     const nuevoRemolque = {
-      placa: vehiculo.placa || '',
-      subtipo_rem: vehiculo.config_vehicular || ''
+      placa: vehiculo?.placa || '',
+      subtipo_rem: vehiculo?.config_vehicular || ''
     };
     onChange([...remolques, nuevoRemolque]);
     setShowSelector(false);
@@ -151,26 +151,26 @@ export function RemolqueSelectorSimplificado({ remolques, onChange }: RemolqueSe
               <div className="grid gap-2 max-h-48 overflow-y-auto">
                 {filteredRemolques.map((vehiculo) => (
                   <div
-                    key={vehiculo.id}
+                    key={vehiculo?.id}
                     className="p-3 border rounded-lg cursor-pointer transition-all hover:border-orange-300 hover:bg-orange-50"
                     onClick={() => handleRemolqueSelect(vehiculo)}
                   >
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="font-medium">
-                          {vehiculo.placa}
-                          {vehiculo.marca && vehiculo.modelo && (
+                          {vehiculo?.placa}
+                          {vehiculo?.marca && vehiculo?.modelo && (
                             <span className="text-gray-500 ml-2 font-normal">
                               {vehiculo.marca} {vehiculo.modelo}
                             </span>
                           )}
                         </div>
-                        {vehiculo.config_vehicular && (
+                        {vehiculo?.config_vehicular && (
                           <div className="text-xs text-gray-500">Tipo: {vehiculo.config_vehicular}</div>
                         )}
                       </div>
-                      <Badge variant={vehiculo.estado === 'disponible' ? 'default' : 'secondary'}>
-                        {vehiculo.estado}
+                      <Badge variant={vehiculo?.estado === 'disponible' ? 'default' : 'secondary'}>
+                        {vehiculo?.estado || 'N/A'}
                       </Badge>
                     </div>
                   </div>
