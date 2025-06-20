@@ -1,14 +1,13 @@
 
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { usePremiumNavigation } from "@/hooks/usePremiumNavigation";
 
 const Header = () => {
   const location = useLocation();
   const { scrollY } = usePremiumNavigation();
   
-  // Mostrar en todas las páginas que no sean protegidas
+  // Mostrar solo en landing page y auth pages
   const showHeader = location.pathname === '/' || location.pathname.startsWith('/auth');
   
   if (!showHeader) {
@@ -51,12 +50,12 @@ const Header = () => {
           
           {/* CTA Buttons */}
           <div className="flex items-center gap-3">
-            <Link to="/auth/login">
+            <Link to="/auth?tab=login">
               <Button variant="outline" className="btn-premium border-gray-30 text-gray-70 hover:border-blue-interconecta hover:text-blue-interconecta hover:bg-blue-light font-medium">
                 Iniciar Sesión
               </Button>
             </Link>
-            <Link to="/auth/trial">
+            <Link to="/auth?tab=register">
               <Button className="btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white font-semibold text-sm px-5 py-3 rounded-full interactive">
                 Probar gratis
               </Button>

@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signInWithGoogle,
-    signOut,
+    signOut: originalSignOut,
     resendConfirmation,
     updateProfile
   } = useAuthActions();
@@ -39,6 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Basic access control based on subscription
     return true; // For now, all authenticated users have access
+  };
+
+  // Enhanced signOut with proper redirection
+  const signOut = async () => {
+    try {
+      await originalSignOut();
+      // Redirect to auth page after successful logout
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Even if there's an error, redirect to auth
+      window.location.href = '/auth';
+    }
   };
 
   return (

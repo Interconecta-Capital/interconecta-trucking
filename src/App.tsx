@@ -7,7 +7,8 @@ import { AuthProvider } from "./hooks/useAuth"
 import { BaseLayout } from "./components/layout/BaseLayout"
 
 // Páginas principales
-import Index from "./pages/Index"
+import Landing from "./pages/Landing"
+import Auth from "./pages/Auth"
 import Dashboard from "./pages/Dashboard"
 import CartasPorteUnified from "./pages/CartasPorteUnified"
 import CartaPorteEditor from "./pages/CartaPorteEditor"
@@ -27,10 +28,15 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Redirigir página de inicio directamente al dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Página de Landing (pública) */}
+            <Route path="/" element={<Landing />} />
             
-            {/* Rutas principales con layout completo */}
+            {/* Página de autenticación */}
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/login" element={<Navigate to="/auth?tab=login" replace />} />
+            <Route path="/auth/register" element={<Navigate to="/auth?tab=register" replace />} />
+            
+            {/* Rutas principales con layout completo (protegidas) */}
             <Route path="/dashboard" element={
               <BaseLayout>
                 <Dashboard />
@@ -88,8 +94,8 @@ const App = () => (
             <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
             <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor/:id" replace />} />
             
-            {/* Redirección por defecto */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Redirección de rutas no encontradas */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
