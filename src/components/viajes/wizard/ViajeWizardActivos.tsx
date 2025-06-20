@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Truck, User, Search, AlertTriangle, CheckCircle, Scale, Clock } from 'l
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useAuth } from '@/hooks/useAuth';
-import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation';
+import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation.tsx';
 import { ViajeWizardData } from '../ViajeWizard';
 import { ContextualAlert } from '@/components/ui/contextual-alert';
 
