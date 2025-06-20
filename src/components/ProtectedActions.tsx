@@ -25,7 +25,12 @@ export const ProtectedActions = ({
   variant = 'default'
 }: ProtectedActionsProps) => {
   const { puedeCrear, isSuperuser } = useEnhancedPermissions();
-  const { canPerformAction, isInGracePeriod, isTrialExpired } = useTrialManager();
+  const { 
+    canPerformAction, 
+    hasFullAccess,
+    restrictionType,
+    getContextualMessage
+  } = useTrialManager();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
@@ -37,16 +42,15 @@ export const ProtectedActions = ({
       return;
     }
 
-    // Verificar si puede realizar la acción
+    // Verificar si puede realizar la acción según el trial manager
     if (!canPerformAction('create')) {
-      if (isInGracePeriod) {
-        toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
-      } else {
-        setShowUpgradeModal(true);
-      }
+      const message = getContextualMessage();
+      toast.error(message);
+      setShowUpgradeModal(true);
       return;
     }
 
+    // Verificar límites específicos del recurso
     const result = puedeCrear(resource);
     const puede = result?.puede ?? false;
     const razon = result?.razon;
@@ -63,18 +67,28 @@ export const ProtectedActions = ({
 
   // Si no hay children, renderizar como botón
   if (!children && action === 'create') {
-    // Durante período de gracia, mostrar botón bloqueado
-    if (isInGracePeriod) {
+    // Si no tiene acceso completo, mostrar botón bloqueado
+    if (!hasFullAccess) {
       return (
-        <Button 
-          disabled 
-          variant="outline" 
-          className="flex items-center gap-2 opacity-50"
-          onClick={handleAction}
-        >
-          <Lock className="h-4 w-4" />
-          Solo lectura
-        </Button>
+        <>
+          <Button 
+            disabled 
+            variant="outline" 
+            className="flex items-center gap-2 opacity-50"
+            onClick={handleAction}
+          >
+            <Lock className="h-4 w-4" />
+            {restrictionType === 'grace_period' ? 'Solo lectura' : 'Bloqueado'}
+          </Button>
+          
+          <UpgradeModal
+            isOpen={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(false)}
+            title={restrictionType === 'trial_expired' ? 'Período de Prueba Finalizado' : 'Acceso Restringido'}
+            description={getContextualMessage()}
+            blockedAction={`Crear ${resource.replace('_', ' ')}`}
+          />
+        </>
       );
     }
 
@@ -89,11 +103,7 @@ export const ProtectedActions = ({
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
           title="Actualiza tu Plan"
-          description={
-            isTrialExpired 
-              ? "Tu período de prueba ha expirado. Selecciona un plan para continuar creando registros."
-              : "Necesitas un plan activo para crear nuevos registros."
-          }
+          description="Necesitas un plan activo para crear nuevos registros."
           blockedAction={`Crear ${resource.replace('_', ' ')}`}
         />
       </>

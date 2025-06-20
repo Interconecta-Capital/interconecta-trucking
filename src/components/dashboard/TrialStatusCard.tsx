@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useTrialManager } from '@/hooks/useTrialManager';
 import { useSuperuser } from '@/hooks/useSuperuser';
-import { Calendar, Clock, AlertTriangle, Crown } from 'lucide-react';
+import { Calendar, Clock, AlertTriangle, Crown, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function TrialStatusCard() {
@@ -16,7 +16,8 @@ export function TrialStatusCard() {
     graceDaysRemaining,
     dataWillBeDeleted,
     getContextualMessage,
-    getUrgencyLevel
+    getUrgencyLevel,
+    restrictionType
   } = useTrialManager();
   
   const { isSuperuser } = useSuperuser();
@@ -45,18 +46,31 @@ export function TrialStatusCard() {
   const message = getContextualMessage();
 
   const getCardStyle = () => {
-    if (dataWillBeDeleted) return 'border-red-500 bg-red-50';
-    if (isInGracePeriod) return 'border-orange-500 bg-orange-50';
-    if (isTrialExpired) return 'border-red-300 bg-red-50';
-    if (isInActiveTrial && daysRemaining <= 3) return 'border-yellow-500 bg-yellow-50';
-    if (isInActiveTrial) return 'border-green-500 bg-green-50';
-    return 'border-gray-300 bg-gray-50';
+    switch (restrictionType) {
+      case 'trial_expired':
+        return 'border-orange-300 bg-orange-50';
+      case 'payment_suspended':
+        return 'border-red-500 bg-red-50';
+      case 'grace_period':
+        return dataWillBeDeleted ? 'border-red-500 bg-red-50' : 'border-orange-500 bg-orange-50';
+      default:
+        if (isInActiveTrial && daysRemaining <= 3) return 'border-yellow-500 bg-yellow-50';
+        if (isInActiveTrial) return 'border-green-500 bg-green-50';
+        return 'border-gray-300 bg-gray-50';
+    }
   };
 
   const getIcon = () => {
-    if (dataWillBeDeleted || urgency === 'critical') return AlertTriangle;
-    if (isInGracePeriod || isTrialExpired) return Clock;
-    return Calendar;
+    switch (restrictionType) {
+      case 'trial_expired':
+        return AlertTriangle;
+      case 'payment_suspended':
+        return Lock;
+      case 'grace_period':
+        return dataWillBeDeleted ? AlertTriangle : Clock;
+      default:
+        return Calendar;
+    }
   };
 
   const getProgressValue = () => {
@@ -67,6 +81,19 @@ export function TrialStatusCard() {
       return ((90 - graceDaysRemaining) / 90) * 100;
     }
     return 100;
+  };
+
+  const getButtonText = () => {
+    switch (restrictionType) {
+      case 'trial_expired':
+        return 'Ver Planes';
+      case 'payment_suspended':
+        return 'Renovar Suscripción';
+      case 'grace_period':
+        return dataWillBeDeleted ? 'Adquirir Plan YA' : 'Ver Planes';
+      default:
+        return 'Ver Planes';
+    }
   };
 
   const Icon = getIcon();
@@ -98,14 +125,14 @@ export function TrialStatusCard() {
           )}
         </div>
 
-        {!isInActiveTrial && (
+        {(restrictionType !== 'none' || (isInActiveTrial && daysRemaining <= 7)) && (
           <Button 
             onClick={() => navigate('/planes')}
             className="w-full"
-            variant={dataWillBeDeleted ? 'destructive' : 'default'}
+            variant={dataWillBeDeleted || restrictionType === 'payment_suspended' ? 'destructive' : 'default'}
             size="sm"
           >
-            {dataWillBeDeleted ? 'Adquirir Plan YA' : 'Ver Planes'}
+            {getButtonText()}
           </Button>
         )}
       </CardContent>
