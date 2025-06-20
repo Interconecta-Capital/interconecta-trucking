@@ -107,14 +107,11 @@ serve(async (req) => {
     };
   };
 
-  // Try to get API key from multiple possible environment variable names
-  const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY') || 
-                           Deno.env.get('Publicaciones_interconecta') ||
-                           Deno.env.get('GOOGLE_API_KEY') ||
-                           Deno.env.get('MAPS_API_KEY');
+  // Get the Google Maps API key from Supabase secrets
+  const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
   
   if (!googleMapsApiKey) {
-    console.error('❌ Google Maps API key not found');
+    console.error('❌ Google Maps API key not found in secrets');
     console.log('Available env vars:', Object.keys(Deno.env.toObject()).filter(key => 
       key.toLowerCase().includes('google') || key.toLowerCase().includes('map')
     ));
@@ -132,7 +129,7 @@ serve(async (req) => {
     );
   }
 
-  console.log('✅ API Key found and configured');
+  console.log('✅ Google Maps API Key found and configured');
 
   // Build waypoints string for Google API
   let waypointsParam = '';
@@ -147,7 +144,7 @@ serve(async (req) => {
   }
 
   // Enhanced Google Directions API call
-  const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypointsParam}&key=${googleMapsApiKey}&language=es&region=mx`;
+  const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypointsParam}&key=${googleMapsApiKey}&language=es&region=mx&units=metric`;
   
   console.log('🌐 Calling Google Directions API');
   
@@ -159,8 +156,7 @@ serve(async (req) => {
       signal: controller.signal,
       headers: {
         'User-Agent': 'CartaPorte-App/1.0',
-        'Accept': 'application/json',
-        'Referer': 'https://qulhweffinppyjpfkknh.supabase.co'
+        'Accept': 'application/json'
       }
     });
     
