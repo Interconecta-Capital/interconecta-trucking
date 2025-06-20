@@ -28,7 +28,13 @@ serve(async (req) => {
 
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!googleMapsApiKey) {
+      console.error('❌ Google Maps API key not configured');
       throw new Error('Google Maps API key not configured');
+    }
+
+    // Validate coordinates
+    if (!origin.lat || !origin.lng || !destination.lat || !destination.lng) {
+      throw new Error('Invalid coordinates provided');
     }
 
     // Build waypoints string for Google API
@@ -38,24 +44,51 @@ serve(async (req) => {
       waypointsParam = `&waypoints=${waypointStrings.join('|')}`;
     }
 
-    // Call Google Directions API
-    const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypointsParam}&key=${googleMapsApiKey}`;
+    // Call Google Directions API with more parameters for better routes
+    const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?` +
+      `origin=${origin.lat},${origin.lng}` +
+      `&destination=${destination.lat},${destination.lng}` +
+      `${waypointsParam}` +
+      `&mode=driving` +
+      `&units=metric` +
+      `&language=es` +
+      `&region=mx` +
+      `&key=${googleMapsApiKey}`;
     
     console.log('🌐 Calling Google Directions API');
+    console.log('🔗 URL (sin API key):', directionsUrl.replace(googleMapsApiKey, '[API_KEY]'));
+    
     const response = await fetch(directionsUrl);
+    
+    if (!response.ok) {
+      console.error('❌ HTTP Error:', response.status, response.statusText);
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log('📄 Google API Response Status:', data.status);
+
+    if (data.status === 'REQUEST_DENIED') {
+      console.error('❌ Google API Request Denied:', data.error_message);
+      throw new Error(`Google Maps API access denied: ${data.error_message || 'Invalid API key or insufficient permissions'}`);
+    }
+
+    if (data.status === 'ZERO_RESULTS') {
+      console.warn('⚠️ No routes found between the specified points');
+      throw new Error('No se encontraron rutas entre los puntos especificados');
+    }
 
     if (data.status !== 'OK') {
       console.error('❌ Google Directions API error:', data.status, data.error_message);
-      throw new Error(`Google Directions API error: ${data.status}`);
+      throw new Error(`Google Directions API error: ${data.status} - ${data.error_message || 'Unknown error'}`);
     }
 
     if (!data.routes || data.routes.length === 0) {
-      throw new Error('No routes found');
+      throw new Error('No routes found in response');
     }
 
     const route = data.routes[0];
-    const leg = route.legs[0];
+    console.log('📊 Route found with', route.legs.length, 'legs');
 
     // Calculate total distance and duration
     let totalDistance = 0;
@@ -64,6 +97,7 @@ serve(async (req) => {
     route.legs.forEach((leg: any) => {
       totalDistance += leg.distance.value; // meters
       totalDuration += leg.duration.value; // seconds
+      console.log(`📏 Leg: ${leg.distance.text}, ${leg.duration.text}`);
     });
 
     // Convert to km and minutes
@@ -85,12 +119,18 @@ serve(async (req) => {
           distance: leg.distance,
           duration: leg.duration,
           start_location: leg.start_location,
-          end_location: leg.end_location
+          end_location: leg.end_location,
+          start_address: leg.start_address,
+          end_address: leg.end_address
         }))
       }
     };
 
-    console.log('✅ Route calculated successfully:', result);
+    console.log('✅ Route calculated successfully:', {
+      distance: `${distanceKm} km`,
+      duration: `${durationMinutes} min`,
+      legs: route.legs.length
+    });
 
     return new Response(
       JSON.stringify(result),
@@ -105,10 +145,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Error in google-directions function:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: errorMessage,
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500,

@@ -50,7 +50,7 @@ export function UbicacionesList({
   return (
     <div className="space-y-4">
       {ubicaciones.map((ubicacion, index) => (
-        <Card key={index} className="border-l-4 border-l-blue-500">
+        <Card key={index} className="border-l-4 border-l-gray-300 bg-gray-50">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -63,7 +63,7 @@ export function UbicacionesList({
                   </span>
                 </div>
                 
-                <h3 className="font-medium text-lg mb-1">
+                <h3 className="font-medium text-lg mb-1 text-gray-900">
                   {ubicacion.nombreRemitenteDestinatario}
                 </h3>
                 
@@ -104,6 +104,7 @@ export function UbicacionesList({
                   variant="outline"
                   size="sm"
                   onClick={() => onEditarUbicacion(index)}
+                  className="border-gray-300 hover:bg-gray-100"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -113,7 +114,7 @@ export function UbicacionesList({
                   variant="outline"
                   size="sm"
                   onClick={() => onEliminarUbicacion(index)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 border-gray-300 hover:bg-red-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
