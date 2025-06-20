@@ -7,8 +7,8 @@ import { SociosTable } from '@/components/socios/SociosTable';
 import { SociosFilters } from '@/components/socios/SociosFilters';
 import { SocioFormDialog } from '@/components/socios/SocioFormDialog';
 import { SocioViewDialog } from '@/components/socios/SocioViewDialog';
-import { useSocios } from '@/hooks/useSocios';
-import { useAuth } from '@/hooks/useAuth';
+import { useStableSocios } from '@/hooks/useStableSocios';
+import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
@@ -16,16 +16,14 @@ import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
 export default function Socios() {
-  const { user } = useAuth();
-  const { socios, loading, error, eliminarSocio, recargar } = useSocios();
+  const { user } = useStableAuth();
+  const { socios, loading, error, eliminarSocio, recargar } = useStableSocios(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedSocio, setSelectedSocio] = useState<any>(null);
-
-  console.log('[Socios Page] User:', user?.id, 'Socios:', socios?.length, 'Loading:', loading, 'Error:', error);
 
   const handleNewSocio = () => {
     setSelectedSocio(null);
@@ -47,7 +45,7 @@ export default function Socios() {
       try {
         await eliminarSocio(socio.id);
       } catch (error) {
-        console.error('Error eliminando socio:', error);
+        // Error already handled by hook
       }
     }
   };
@@ -56,6 +54,7 @@ export default function Socios() {
     setShowCreateDialog(false);
     setShowEditDialog(false);
     setSelectedSocio(null);
+    // Reload data after successful operation
     recargar();
   };
 
@@ -69,7 +68,7 @@ export default function Socios() {
     return (
       <div className="container mx-auto py-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Error cargando socios: {error.message}</p>
+          <p className="text-red-800">Error cargando socios: {error}</p>
           <Button 
             variant="outline" 
             onClick={recargar}
@@ -104,13 +103,6 @@ export default function Socios() {
             buttonText="Nuevo Socio"
           />
         </div>
-
-        {/* Debug info */}
-        {user && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-            <p><strong>Debug:</strong> Usuario: {user.id} | Socios: {socios.length} | Cargando: {loading ? 'Sí' : 'No'}</p>
-          </div>
-        )}
 
         {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

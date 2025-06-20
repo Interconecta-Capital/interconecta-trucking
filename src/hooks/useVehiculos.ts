@@ -13,16 +13,12 @@ export interface Vehiculo {
   anio?: number;
   num_serie?: string;
   config_vehicular?: string;
-  peso_bruto_vehicular?: number;
-  capacidad_carga?: number;
-  numero_ejes?: number;
-  numero_llantas?: number;
-  tarjeta_circulacion?: string;
-  perm_sct?: string;
-  num_permiso_sct?: string;
   poliza_seguro?: string;
   vigencia_seguro?: string;
-  aseguradora?: string;
+  verificacion_vigencia?: string;
+  id_equipo_gps?: string;
+  fecha_instalacion_gps?: string;
+  acta_instalacion_gps?: string;
   estado: string;
   activo: boolean;
   created_at: string;
@@ -33,53 +29,19 @@ export const useVehiculos = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  console.log('[useVehiculos] Hook called with user:', user?.id);
-
-  const { data: vehiculos = [], isLoading: loading, error } = useQuery({
+  const { data: vehiculos = [], isLoading: loading } = useQuery({
     queryKey: ['vehiculos', user?.id],
     queryFn: async () => {
-      if (!user?.id) {
-        console.log('[useVehiculos] No user ID, returning empty array');
-        return [];
-      }
-      
-      console.log('[useVehiculos] Fetching vehiculos for user:', user.id);
+      if (!user?.id) return [];
       
       const { data, error } = await supabase
         .from('vehiculos')
-        .select(`
-          id,
-          user_id,
-          placa,
-          marca,
-          modelo,
-          anio,
-          num_serie,
-          config_vehicular,
-          peso_bruto_vehicular,
-          capacidad_carga,
-          numero_ejes,
-          numero_llantas,
-          tarjeta_circulacion,
-          perm_sct,
-          num_permiso_sct,
-          poliza_seguro,
-          vigencia_seguro,
-          aseguradora,
-          estado,
-          activo,
-          created_at,
-          updated_at
-        `)
+        .select('*')
         .eq('user_id', user.id)
+        .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[useVehiculos] Error fetching vehiculos:', error);
-        throw error;
-      }
-
-      console.log('[useVehiculos] Fetched vehiculos:', data?.length || 0);
+      if (error) throw error;
       return data || [];
     },
     enabled: !!user?.id,
@@ -139,7 +101,7 @@ export const useVehiculos = () => {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('vehiculos')
-        .delete()
+        .update({ activo: false })
         .eq('id', id);
 
       if (error) throw error;
@@ -154,20 +116,14 @@ export const useVehiculos = () => {
     }
   });
 
-  const refetch = () => {
-    queryClient.invalidateQueries({ queryKey: ['vehiculos', user?.id] });
-  };
-
   return { 
     vehiculos, 
     loading,
-    error: error as Error | null,
     crearVehiculo: createMutation.mutateAsync,
     actualizarVehiculo: updateMutation.mutateAsync,
     eliminarVehiculo: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    recargar: refetch
   };
 };

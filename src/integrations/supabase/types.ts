@@ -2616,8 +2616,6 @@ export type Database = {
           modelo: string | null
           num_permiso_sct: string | null
           num_serie: string | null
-          numero_ejes: number | null
-          numero_llantas: number | null
           numero_permisos_adicionales: string[] | null
           numero_serie_vin: string | null
           perm_sct: string | null
@@ -2651,8 +2649,6 @@ export type Database = {
           modelo?: string | null
           num_permiso_sct?: string | null
           num_serie?: string | null
-          numero_ejes?: number | null
-          numero_llantas?: number | null
           numero_permisos_adicionales?: string[] | null
           numero_serie_vin?: string | null
           perm_sct?: string | null
@@ -2686,8 +2682,6 @@ export type Database = {
           modelo?: string | null
           num_permiso_sct?: string | null
           num_serie?: string | null
-          numero_ejes?: number | null
-          numero_llantas?: number | null
           numero_permisos_adicionales?: string[] | null
           numero_serie_vin?: string | null
           perm_sct?: string | null
@@ -2826,10 +2820,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      assign_missing_trials: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       buscar_codigo_postal: {
         Args: { cp_input: string }
         Returns: {
@@ -2859,10 +2849,6 @@ export type Database = {
           colonias: Json
         }[]
       }
-      check_document_expiration: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       check_rate_limit: {
         Args: {
           p_identifier: string
@@ -2876,15 +2862,11 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      check_user_access: {
+      check_superuser_safe: {
         Args: { user_uuid: string }
         Returns: boolean
       }
       cleanup_expired_grace_users: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -2931,7 +2913,15 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
-      is_admin_user: {
+      get_user_tenant_safe: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_superuser_safe: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -2945,16 +2935,8 @@ export type Database = {
         }
         Returns: string
       }
-      process_expired_trials: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       record_rate_limit_attempt: {
         Args: { p_identifier: string; p_action_type: string; p_metadata?: Json }
-        Returns: undefined
-      }
-      run_automated_tasks: {
-        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       send_cleanup_warnings: {

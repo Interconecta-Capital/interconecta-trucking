@@ -1,13 +1,13 @@
 
 import { useState } from 'react';
-import { Plus, Car, Filter, Search } from 'lucide-react';
+import { Plus, Users, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
-import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
-import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
-import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
-import { useStableVehiculos } from '@/hooks/useStableVehiculos';
+import { SociosTable } from '@/components/socios/SociosTable';
+import { SociosFilters } from '@/components/socios/SociosFilters';
+import { SocioFormDialog } from '@/components/socios/SocioFormDialog';
+import { SocioViewDialog } from '@/components/socios/SocioViewDialog';
+import { useStableSocios } from '@/hooks/useStableSocios';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
@@ -15,35 +15,35 @@ import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
-export default function Vehiculos() {
+export default function StableSocios() {
   const { user } = useStableAuth();
-  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
+  const { socios, loading, error, eliminarSocio, recargar } = useStableSocios(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
+  const [selectedSocio, setSelectedSocio] = useState<any>(null);
 
-  const handleNewVehiculo = () => {
-    setSelectedVehiculo(null);
+  const handleNewSocio = () => {
+    setSelectedSocio(null);
     setShowCreateDialog(true);
   };
 
-  const handleEdit = (vehiculo: any) => {
-    setSelectedVehiculo(vehiculo);
+  const handleEdit = (socio: any) => {
+    setSelectedSocio(socio);
     setShowEditDialog(true);
   };
 
-  const handleView = (vehiculo: any) => {
-    setSelectedVehiculo(vehiculo);
+  const handleView = (socio: any) => {
+    setSelectedSocio(socio);
     setShowViewDialog(true);
   };
 
-  const handleDelete = async (vehiculo: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el vehículo con placa ${vehiculo.placa}?`)) {
+  const handleDelete = async (socio: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el socio ${socio.nombre_razon_social}?`)) {
       try {
-        await eliminarVehiculo(vehiculo.id);
+        await eliminarSocio(socio.id);
       } catch (error) {
         // Error already handled by hook
       }
@@ -53,22 +53,22 @@ export default function Vehiculos() {
   const handleSuccess = () => {
     setShowCreateDialog(false);
     setShowEditDialog(false);
-    setSelectedVehiculo(null);
+    setSelectedSocio(null);
     // Reload data after successful operation
     recargar();
   };
 
-  const filteredVehiculos = vehiculos.filter(vehiculo =>
-    vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSocios = socios.filter(socio =>
+    socio.nombre_razon_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    socio.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    socio.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (error) {
     return (
       <div className="container mx-auto py-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Error cargando vehículos: {error}</p>
+          <p className="text-red-800">Error cargando socios: {error}</p>
           <Button 
             variant="outline" 
             onClick={recargar}
@@ -82,7 +82,7 @@ export default function Vehiculos() {
   }
 
   return (
-    <ProtectedContent requiredFeature="vehiculos">
+    <ProtectedContent requiredFeature="socios">
       <div className="container mx-auto py-6 space-y-6">
         {/* Notificaciones de plan */}
         <PlanNotifications />
@@ -90,23 +90,23 @@ export default function Vehiculos() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Car className="h-6 w-6 text-blue-600" />
-            <h1 className="text-3xl font-bold">Vehículos</h1>
+            <Users className="h-6 w-6 text-blue-600" />
+            <h1 className="text-3xl font-bold">Socios Comerciales</h1>
             {loading && (
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
             )}
           </div>
           <ProtectedActions
             action="create"
-            resource="vehiculos"
-            onAction={handleNewVehiculo}
-            buttonText="Nuevo Vehículo"
+            resource="socios"
+            onAction={handleNewSocio}
+            buttonText="Nuevo Socio"
           />
         </div>
 
         {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
+          <LimitUsageIndicator resourceType="socios" className="md:col-span-2" />
         </div>
 
         {/* Filtros y búsqueda */}
@@ -114,7 +114,7 @@ export default function Vehiculos() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por placa, marca o modelo..."
+              placeholder="Buscar por nombre, RFC o email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -138,18 +138,18 @@ export default function Vehiculos() {
 
         {/* Filtros adicionales */}
         {showFilters && (
-          <VehiculosFilters />
+          <SociosFilters />
         )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-lg font-semibold">Total Vehículos</h3>
-            <p className="text-2xl text-blue-600">{vehiculos.length}</p>
+            <h3 className="text-lg font-semibold">Total Socios</h3>
+            <p className="text-2xl text-blue-600">{socios.length}</p>
           </div>
           <div className="bg-white p-4 rounded-lg border">
             <h3 className="text-lg font-semibold">Resultados</h3>
-            <p className="text-2xl text-green-600">{filteredVehiculos.length}</p>
+            <p className="text-2xl text-green-600">{filteredSocios.length}</p>
           </div>
           <div className="bg-white p-4 rounded-lg border">
             <h3 className="text-lg font-semibold">Estado</h3>
@@ -160,8 +160,8 @@ export default function Vehiculos() {
         </div>
 
         {/* Tabla */}
-        <VehiculosTable 
-          vehiculos={filteredVehiculos}
+        <SociosTable 
+          socios={filteredSocios}
           loading={loading}
           onEdit={handleEdit}
           onView={handleView}
@@ -169,26 +169,26 @@ export default function Vehiculos() {
         />
 
         {/* Diálogos */}
-        <VehiculoFormDialog
+        <SocioFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
           onSuccess={handleSuccess}
         />
 
-        <VehiculoFormDialog
+        <SocioFormDialog
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
-          vehiculo={selectedVehiculo}
+          socio={selectedSocio}
           onSuccess={handleSuccess}
         />
 
-        <VehiculoViewDialog
+        <SocioViewDialog
           open={showViewDialog}
           onOpenChange={setShowViewDialog}
-          vehiculo={selectedVehiculo}
+          socio={selectedSocio}
           onEdit={() => {
             setShowViewDialog(false);
-            handleEdit(selectedVehiculo);
+            handleEdit(selectedSocio);
           }}
         />
       </div>
