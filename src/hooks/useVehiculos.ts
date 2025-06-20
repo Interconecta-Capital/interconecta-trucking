@@ -13,12 +13,16 @@ export interface Vehiculo {
   anio?: number;
   num_serie?: string;
   config_vehicular?: string;
+  peso_bruto_vehicular?: number;
+  capacidad_carga?: number;
+  numero_ejes?: number;
+  numero_llantas?: number;
+  tarjeta_circulacion?: string;
+  perm_sct?: string;
+  num_permiso_sct?: string;
   poliza_seguro?: string;
   vigencia_seguro?: string;
-  verificacion_vigencia?: string;
-  id_equipo_gps?: string;
-  fecha_instalacion_gps?: string;
-  acta_instalacion_gps?: string;
+  aseguradora?: string;
   estado: string;
   activo: boolean;
   created_at: string;
@@ -29,19 +33,47 @@ export const useVehiculos = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: vehiculos = [], isLoading: loading } = useQuery({
+  const { data: vehiculos = [], isLoading: loading, error } = useQuery({
     queryKey: ['vehiculos', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
+      console.log('[useVehiculos] Loading vehicles for user:', user.id);
+      
       const { data, error } = await supabase
         .from('vehiculos')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          placa,
+          num_serie,
+          modelo,
+          marca,
+          anio,
+          config_vehicular,
+          peso_bruto_vehicular,
+          capacidad_carga,
+          tarjeta_circulacion,
+          perm_sct,
+          num_permiso_sct,
+          poliza_seguro,
+          vigencia_seguro,
+          aseguradora,
+          estado,
+          activo,
+          created_at,
+          updated_at
+        `)
         .eq('user_id', user.id)
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useVehiculos] Database error:', error);
+        throw new Error(`Error cargando vehículos: ${error.message}`);
+      }
+
+      console.log('[useVehiculos] Loaded', data?.length || 0, 'vehicles successfully');
       return data || [];
     },
     enabled: !!user?.id,
@@ -119,11 +151,13 @@ export const useVehiculos = () => {
   return { 
     vehiculos, 
     loading,
+    error: error?.message || null,
     crearVehiculo: createMutation.mutateAsync,
     actualizarVehiculo: updateMutation.mutateAsync,
     eliminarVehiculo: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    recargar: () => queryClient.invalidateQueries({ queryKey: ['vehiculos'] }),
   };
 };

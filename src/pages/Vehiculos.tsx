@@ -7,17 +7,16 @@ import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
 import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
 import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
-import { useStableVehiculos } from '@/hooks/useStableVehiculos';
-import { useStableAuth } from '@/hooks/useStableAuth';
+import { useVehiculos } from '@/hooks/useVehiculos';
+import { useAuth } from '@/hooks/useAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { toast } from 'sonner';
 
 export default function Vehiculos() {
-  const { user } = useStableAuth();
-  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
+  const { user } = useAuth();
+  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useVehiculos();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -54,7 +53,6 @@ export default function Vehiculos() {
     setShowCreateDialog(false);
     setShowEditDialog(false);
     setSelectedVehiculo(null);
-    // Reload data after successful operation
     recargar();
   };
 
@@ -84,10 +82,8 @@ export default function Vehiculos() {
   return (
     <ProtectedContent requiredFeature="vehiculos">
       <div className="container mx-auto py-6 space-y-6">
-        {/* Notificaciones de plan */}
         <PlanNotifications />
 
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Car className="h-6 w-6 text-blue-600" />
@@ -104,12 +100,10 @@ export default function Vehiculos() {
           />
         </div>
 
-        {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
         </div>
 
-        {/* Filtros y búsqueda */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -136,12 +130,8 @@ export default function Vehiculos() {
           </Button>
         </div>
 
-        {/* Filtros adicionales */}
-        {showFilters && (
-          <VehiculosFilters />
-        )}
+        {showFilters && <VehiculosFilters />}
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg border">
             <h3 className="text-lg font-semibold">Total Vehículos</h3>
@@ -159,7 +149,6 @@ export default function Vehiculos() {
           </div>
         </div>
 
-        {/* Tabla */}
         <VehiculosTable 
           vehiculos={filteredVehiculos}
           loading={loading}
@@ -168,7 +157,6 @@ export default function Vehiculos() {
           onDelete={handleDelete}
         />
 
-        {/* Diálogos */}
         <VehiculoFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}

@@ -5,8 +5,10 @@ import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { Calendar, Clock } from 'lucide-react';
 
 export function PlanBadge() {
-  const { trialInfo, loading } = useTimezoneAwareTrialTracking();
-  const { suscripcion, enPeriodoPrueba } = useSuscripcion();
+  const { trialInfo, loading: trialLoading } = useTimezoneAwareTrialTracking();
+  const { suscripcion, loading: subLoading } = useSuscripcion();
+
+  const loading = trialLoading || subLoading;
 
   if (loading) {
     return (
@@ -18,7 +20,7 @@ export function PlanBadge() {
   }
 
   // Si está en período de prueba, mostrar "Prueba" con días reales
-  if (trialInfo.isTrialActive || enPeriodoPrueba() || suscripcion?.status === 'trial') {
+  if (trialInfo.isTrialActive || suscripcion?.status === 'trial') {
     return (
       <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
         <Calendar className="h-3 w-3 mr-1" />
@@ -28,7 +30,7 @@ export function PlanBadge() {
   }
 
   // Si el trial expiró
-  if (trialInfo.isTrialExpired) {
+  if (trialInfo.isTrialExpired && !trialInfo.hasValidSubscription) {
     return (
       <Badge variant="destructive">
         <Calendar className="h-3 w-3 mr-1" />

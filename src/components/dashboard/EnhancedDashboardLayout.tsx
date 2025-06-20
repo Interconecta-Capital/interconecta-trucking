@@ -1,7 +1,6 @@
 
 import { BusinessMetricsGrid } from './BusinessMetricsGrid';
 import { OperationalAlertsPanel } from './OperationalAlertsPanel';
-import { BusinessPerformanceRankings } from './BusinessPerformanceRankings';
 import { ImprovedTrialStatusCard } from './ImprovedTrialStatusCard';
 import { ActiveNotificationsWidget } from './ActiveNotificationsWidget';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
@@ -28,9 +27,6 @@ export function EnhancedDashboardLayout() {
       
       {/* Widget de notificaciones activas */}
       <ActiveNotificationsWidget />
-      
-      {/* Rankings y análisis de rendimiento */}
-      <BusinessPerformanceRankings />
     </div>
   );
 }
