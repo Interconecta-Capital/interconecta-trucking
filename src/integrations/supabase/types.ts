@@ -2862,7 +2862,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      check_superuser_safe: {
+      check_user_access: {
         Args: { user_uuid: string }
         Returns: boolean
       }
@@ -2913,15 +2913,7 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
-      get_user_tenant_safe: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_superuser_safe: {
+      is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

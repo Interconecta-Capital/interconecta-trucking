@@ -4,6 +4,7 @@ import { useTrialManager } from './useTrialManager';
 import { useAccessPermissions } from './permissions/useAccessPermissions';
 import { useResourceLimits } from './permissions/useResourceLimits';
 import { usePlanStatus } from './permissions/usePlanStatus';
+import { useSuperuser } from './useSuperuser';
 
 export const usePermisosSubscripcion = () => {
   const { 
@@ -18,6 +19,8 @@ export const usePermisosSubscripcion = () => {
     hasFullAccess, 
     canPerformAction 
   } = useTrialManager();
+
+  const { isSuperuser } = useSuperuser();
 
   // Usar hooks especializados
   const {
@@ -52,6 +55,7 @@ export const usePermisosSubscripcion = () => {
     isTrialExpired,
     isInGracePeriod,
     hasFullAccess,
-    canPerformAction
+    canPerformAction,
+    isSuperuser
   };
 };

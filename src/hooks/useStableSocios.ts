@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -49,7 +48,7 @@ export const useStableSocios = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Query using correct column names from database
+        // Usar las nuevas políticas RLS unificadas
         const { data, error } = await supabase
           .from('socios')
           .select(`
@@ -70,20 +69,11 @@ export const useStableSocios = (userId?: string) => {
             updated_at
           `)
           .eq('user_id', userId)
+          .eq('activo', true)
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('[StableSocios] Database error:', error);
-          
-          // Handle specific error types
-          if (error.code === 'PGRST301') {
-            // Table doesn't exist or permission denied
-            throw new Error('No tienes permisos para ver los socios o la tabla no existe');
-          } else if (error.code === '406') {
-            // Not acceptable - likely RLS issue
-            throw new Error('Error de permisos en la base de datos');
-          }
-          
           throw new Error(`Error cargando socios: ${error.message}`);
         }
 

@@ -1,28 +1,59 @@
 
-import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { useTrialManager } from '@/hooks/useTrialManager';
+import { useSuscripcion } from '../useSuscripcion';
+import { useSuperuser } from '../useSuperuser';
 
 export const usePlanStatus = () => {
-  const { suscripcion } = useSuscripcion();
-  const { isInActiveTrial, isInGracePeriod, isTrialExpired } = useTrialManager();
+  const { suscripcion, planes } = useSuscripcion();
+  const { isSuperuser } = useSuperuser();
 
-  const getPlanActual = (): string => {
-    if (isInActiveTrial) {
-      return 'Trial Completo (14 días)';
+  const getPlanActual = () => {
+    if (isSuperuser) {
+      return {
+        nombre: 'Superuser',
+        descripcion: 'Acceso completo del sistema',
+        precio_mensual: 0,
+        limite_cartas_porte: null,
+        limite_conductores: null,
+        limite_vehiculos: null,
+        limite_socios: null,
+        puede_cancelar_cfdi: true,
+        puede_generar_xml: true,
+        puede_timbrar: true,
+        puede_tracking: true,
+        puede_acceder_administracion: true,
+        puede_acceder_funciones_avanzadas: true,
+        puede_acceder_enterprise: true,
+        activo: true
+      };
     }
-    
-    if (isInGracePeriod) {
-      return 'Período de Gracia (Solo Lectura)';
+
+    if (!suscripcion?.plan) {
+      // Plan básico por defecto
+      return planes.find(p => p.nombre.toLowerCase() === 'básico') || {
+        nombre: 'Trial',
+        descripcion: 'Período de prueba',
+        precio_mensual: 0,
+        limite_cartas_porte: 5,
+        limite_conductores: 2,
+        limite_vehiculos: 2,
+        limite_socios: 5,
+        puede_cancelar_cfdi: false,
+        puede_generar_xml: true,
+        puede_timbrar: false,
+        puede_tracking: false,
+        puede_acceder_administracion: false,
+        puede_acceder_funciones_avanzadas: false,
+        puede_acceder_enterprise: false,
+        activo: true
+      };
     }
-    
-    if (isTrialExpired && !suscripcion?.plan) {
-      return 'Sin Plan';
-    }
-    
-    return suscripcion?.plan?.nombre || 'Sin plan';
+
+    return suscripcion.plan;
   };
 
   return {
-    getPlanActual
+    getPlanActual,
+    planActual: getPlanActual(),
+    isSuperuser
   };
 };

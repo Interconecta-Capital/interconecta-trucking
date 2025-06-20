@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -49,7 +48,7 @@ export const useStableVehiculos = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Query using correct column names from database
+        // Usar las nuevas políticas RLS unificadas
         const { data, error } = await supabase
           .from('vehiculos')
           .select(`
@@ -77,23 +76,11 @@ export const useStableVehiculos = (userId?: string) => {
             updated_at
           `)
           .eq('user_id', userId)
+          .eq('activo', true)
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('[StableVehiculos] Database error:', error);
-          
-          // Handle specific error types for better user experience
-          if (error.code === 'PGRST301') {
-            // Table doesn't exist or permission denied
-            throw new Error('No tienes permisos para ver los vehículos o la tabla no existe');
-          } else if (error.code === '406') {
-            // Not acceptable - likely RLS issue or column permission problem
-            throw new Error('Error de permisos en la base de datos');
-          } else if (error.code === 'PGRST116') {
-            // Row not found - this is actually OK for an empty table
-            return [];
-          }
-          
           throw new Error(`Error cargando vehículos: ${error.message}`);
         }
 

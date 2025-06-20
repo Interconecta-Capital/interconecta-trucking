@@ -1,130 +1,85 @@
 
-import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { useConductores } from '@/hooks/useConductores';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useSocios } from '@/hooks/useSocios';
-import { useCartasPorte } from '@/hooks/useCartasPorte';
-import { useTrialManager } from '@/hooks/useTrialManager';
-import { ResourceType, PermissionResult, Limits, UsageData } from '@/types/permissions';
+import { useSuscripcion } from '../useSuscripcion';
+import { useSuperuser } from '../useSuperuser';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useStableAuth } from '../useStableAuth';
+
+type ResourceType = 'cartas_porte' | 'conductores' | 'vehiculos' | 'socios';
 
 export const useResourceLimits = () => {
-  const { suscripcion, verificarLimite, estaBloqueado } = useSuscripcion();
-  const { conductores } = useConductores();
-  const { vehiculos } = useVehiculos();
-  const { socios } = useSocios();
-  const { cartasPorte } = useCartasPorte();
-  const { isInActiveTrial, isTrialExpired, isInGracePeriod } = useTrialManager();
+  const { user } = useStableAuth();
+  const { suscripcion } = useSuscripcion();
+  const { isSuperuser } = useSuperuser();
 
-  const puedeCrear = (tipo: ResourceType): PermissionResult => {
-    // Durante trial activo, sin límites
-    if (isInActiveTrial) {
-      return { puede: true, razon: undefined };
-    }
+  // Obtener uso actual de recursos
+  const { data: usoActual = {} } = useQuery({
+    queryKey: ['resource-usage', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
 
-    // Durante período de gracia, solo lectura
-    if (isInGracePeriod) {
-      return { 
-        puede: false, 
-        razon: 'Durante el período de gracia no puede crear nuevos registros. Adquiera un plan para recuperar todas las funciones.' 
-      };
-    }
+      const [cartasResult, conductoresResult, vehiculosResult, sociosResult] = await Promise.all([
+        supabase.from('cartas_porte').select('id', { count: 'exact', head: true }).eq('usuario_id', user.id),
+        supabase.from('conductores').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('vehiculos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('socios').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+      ]);
 
-    if (estaBloqueado) {
-      return { 
-        puede: false, 
-        razon: 'Su cuenta está bloqueada por falta de pago' 
-      };
-    }
-
-    if (isTrialExpired && !suscripcion?.plan) {
       return {
-        puede: false,
-        razon: 'Su período de prueba ha vencido. Actualice su plan para continuar creando registros.'
+        cartas_porte: cartasResult.count || 0,
+        conductores: conductoresResult.count || 0,
+        vehiculos: vehiculosResult.count || 0,
+        socios: sociosResult.count || 0
       };
-    }
+    },
+    enabled: !!user?.id,
+    staleTime: 30 * 1000 // 30 segundos
+  });
 
-    // Lógica existente para usuarios con plan pagado
-    let cantidad = 0;
-    switch (tipo) {
-      case 'conductores':
-        cantidad = conductores?.length || 0;
-        break;
-      case 'vehiculos':
-        cantidad = vehiculos?.length || 0;
-        break;
-      case 'socios':
-        cantidad = socios?.length || 0;
-        break;
-      case 'cartas_porte':
-        cantidad = cartasPorte?.length || 0;
-        break;
-    }
-
-    const puedeCrearPorLimite = verificarLimite(tipo, cantidad);
-    
-    if (!puedeCrearPorLimite) {
-      const limite = suscripcion?.plan?.[`limite_${tipo}`];
-      return {
-        puede: false,
-        razon: `Ha alcanzado el límite de ${limite} ${tipo.replace('_', ' ')} para su plan actual`
-      };
-    }
-
-    return { puede: true };
-  };
-
-  const obtenerLimites = (): Limits => {
-    // Durante trial activo, sin límites
-    if (isInActiveTrial) {
+  const obtenerLimites = () => {
+    if (isSuperuser) {
       return {
         cartas_porte: null,
         conductores: null,
         vehiculos: null,
-        socios: null,
+        socios: null
       };
     }
 
-    if (!suscripcion?.plan) return {
-      cartas_porte: null,
-      conductores: null,
-      vehiculos: null,
-      socios: null,
-    };
-
+    const plan = suscripcion?.plan;
     return {
-      cartas_porte: suscripcion.plan.limite_cartas_porte,
-      conductores: suscripcion.plan.limite_conductores,
-      vehiculos: suscripcion.plan.limite_vehiculos,
-      socios: suscripcion.plan.limite_socios,
+      cartas_porte: plan?.limite_cartas_porte || 5,
+      conductores: plan?.limite_conductores || 2,
+      vehiculos: plan?.limite_vehiculos || 2,
+      socios: plan?.limite_socios || 5
     };
   };
 
-  const obtenerUsoActual = (): UsageData => {
+  const puedeCrear = (tipo: ResourceType): boolean => {
+    if (isSuperuser) return true;
+
     const limites = obtenerLimites();
-    
-    return {
-      cartas_porte: {
-        usado: cartasPorte?.length || 0,
-        limite: limites.cartas_porte || null
-      },
-      conductores: {
-        usado: conductores?.length || 0,
-        limite: limites.conductores || null
-      },
-      vehiculos: {
-        usado: vehiculos?.length || 0,
-        limite: limites.vehiculos || null
-      },
-      socios: {
-        usado: socios?.length || 0,
-        limite: limites.socios || null
-      },
-    };
+    const uso = usoActual[tipo] || 0;
+    const limite = limites[tipo];
+
+    // Sin límite (null) significa ilimitado
+    if (limite === null) return true;
+
+    return uso < limite;
+  };
+
+  const obtenerUsoActual = (tipo?: ResourceType) => {
+    if (tipo) {
+      return usoActual[tipo] || 0;
+    }
+    return usoActual;
   };
 
   return {
     puedeCrear,
     obtenerLimites,
-    obtenerUsoActual
+    obtenerUsoActual,
+    limites: obtenerLimites(),
+    uso: usoActual
   };
 };
