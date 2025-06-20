@@ -43,14 +43,14 @@ export function VehiculoSelectorSimplificado({ data, onChange }: VehiculoSelecto
         placa_vm: vehiculo.placa || '',
         anio_modelo_vm: vehiculo.anio || new Date().getFullYear(),
         config_vehicular: vehiculo.config_vehicular || '',
-        peso_bruto_vehicular: vehiculo.peso_bruto_vehicular || 0,
-        // Note: These fields would come from autotransporte table, not vehiculos
-        perm_sct: vehiculo.perm_sct || '',
-        num_permiso_sct: vehiculo.num_permiso_sct || '',
-        asegura_resp_civil: vehiculo.asegura_resp_civil || '',
-        poliza_resp_civil: vehiculo.poliza_resp_civil || vehiculo.poliza_seguro || '',
-        asegura_med_ambiente: vehiculo.asegura_med_ambiente || '',
-        poliza_med_ambiente: vehiculo.poliza_med_ambiente || ''
+        peso_bruto_vehicular: 0, // Default value since not in DB
+        // Use default values for fields not in database
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: vehiculo.poliza_seguro || '',
+        asegura_med_ambiente: '',
+        poliza_med_ambiente: ''
       });
     }
   };

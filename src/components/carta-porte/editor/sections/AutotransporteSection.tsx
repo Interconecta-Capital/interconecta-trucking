@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,14 +22,16 @@ export function AutotransporteSection({ data, onChange }: AutotransporteSectionP
   
   const { vehiculos, loading } = useVehiculos();
 
-  const filteredVehiculos = vehiculos.filter(vehiculo => 
-    vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+  const safeVehiculos = Array.isArray(vehiculos) ? vehiculos : [];
+
+  const filteredVehiculos = safeVehiculos.filter(vehiculo => 
+    vehiculo?.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo?.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo?.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleVehiculoSelect = (vehiculoId: string) => {
-    const vehiculo = vehiculos.find(v => v.id === vehiculoId);
+    const vehiculo = safeVehiculos.find(v => v?.id === vehiculoId);
     if (vehiculo) {
       setSelectedVehicleId(vehiculoId);
       onChange({
@@ -38,14 +39,15 @@ export function AutotransporteSection({ data, onChange }: AutotransporteSectionP
         placa_vm: vehiculo.placa || '',
         anio_modelo_vm: vehiculo.anio || new Date().getFullYear(),
         config_vehicular: vehiculo.config_vehicular || '',
-        perm_sct: vehiculo.perm_sct || '',
-        num_permiso_sct: vehiculo.num_permiso_sct || '',
-        asegura_resp_civil: vehiculo.asegura_resp_civil || '',
-        poliza_resp_civil: vehiculo.poliza_resp_civil || vehiculo.poliza_seguro || '',
-        asegura_med_ambiente: vehiculo.asegura_med_ambiente || '',
-        poliza_med_ambiente: vehiculo.poliza_med_ambiente || '',
-        peso_bruto_vehicular: vehiculo.peso_bruto_vehicular || 0,
-        tipo_carroceria: vehiculo.tipo_carroceria || ''
+        // Use default values for fields not available in DB
+        perm_sct: '',
+        num_permiso_sct: '',
+        asegura_resp_civil: '',
+        poliza_resp_civil: vehiculo.poliza_seguro || '',
+        asegura_med_ambiente: '',
+        poliza_med_ambiente: '',
+        peso_bruto_vehicular: 0,
+        tipo_carroceria: ''
       });
       setShowVehicleSelector(false);
     }
@@ -111,30 +113,30 @@ export function AutotransporteSection({ data, onChange }: AutotransporteSectionP
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {filteredVehiculos.map((vehiculo) => (
                     <div
-                      key={vehiculo.id}
+                      key={vehiculo?.id}
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedVehicleId === vehiculo.id
+                        selectedVehicleId === vehiculo?.id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => handleVehiculoSelect(vehiculo.id)}
+                      onClick={() => handleVehiculoSelect(vehiculo?.id || '')}
                     >
                       <div className="flex justify-between items-center">
                         <div>
                           <div className="font-medium text-sm">
-                            {vehiculo.placa}
-                            {vehiculo.marca && vehiculo.modelo && (
+                            {vehiculo?.placa || 'Sin placa'}
+                            {vehiculo?.marca && vehiculo?.modelo && (
                               <span className="text-gray-500 ml-2">
                                 {vehiculo.marca} {vehiculo.modelo}
                               </span>
                             )}
                           </div>
-                          {vehiculo.anio && (
+                          {vehiculo?.anio && (
                             <div className="text-xs text-gray-500">Año: {vehiculo.anio}</div>
                           )}
                         </div>
-                        <Badge variant={vehiculo.estado === 'disponible' ? 'default' : 'secondary'}>
-                          {vehiculo.estado}
+                        <Badge variant={vehiculo?.estado === 'disponible' ? 'default' : 'secondary'}>
+                          {vehiculo?.estado || 'N/A'}
                         </Badge>
                       </div>
                     </div>

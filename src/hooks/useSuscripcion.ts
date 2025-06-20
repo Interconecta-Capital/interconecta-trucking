@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-interface Plan {
+export interface Plan {
   id: string;
   nombre: string;
   precio_mensual: number;
@@ -12,6 +12,9 @@ interface Plan {
   limite_conductores?: number;
   limite_socios?: number;
 }
+
+// Export this interface for other components
+export interface PlanSuscripcion extends Plan {}
 
 interface Suscripcion {
   id: string;
