@@ -260,35 +260,38 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo mejorado de cálculo de distancia híbrido
+  // Manejo mejorado de cálculo de distancia híbrido (evitar duplicados)
   const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
     console.log('📏 Distancia calculada con sistema híbrido:', { distancia, tiempo });
     
     try {
-      setIsCalculatingDistance(true);
-      setDistanciaTotal(distancia);
-      setTiempoEstimado(tiempo);
-      setRouteData({
-        distance_km: distancia,
-        duration_minutes: tiempo,
-        google_data: routeGeometry?.google_data
-      });
-      setShowMap(true);
-      
-      // Notificar al componente padre
-      if (onDistanceCalculated) {
-        onDistanceCalculated({
-          distanciaTotal: distancia,
-          tiempoEstimado: tiempo
+      // Evitar duplicados - solo actualizar si los valores son diferentes
+      if (distanciaTotal !== distancia || tiempoEstimado !== tiempo) {
+        setIsCalculatingDistance(true);
+        setDistanciaTotal(distancia);
+        setTiempoEstimado(tiempo);
+        setRouteData({
+          distance_km: distancia,
+          duration_minutes: tiempo,
+          google_data: routeGeometry?.google_data
+        });
+        setShowMap(true);
+        
+        // Notificar al componente padre (solo una vez)
+        if (onDistanceCalculated) {
+          onDistanceCalculated({
+            distanciaTotal: distancia,
+            tiempoEstimado: tiempo
+          });
+        }
+        
+        console.log('✅ Distancia y ruta procesadas exitosamente');
+        
+        toast({
+          title: "Ruta calculada exitosamente",
+          description: `Distancia: ${distancia} km. Tiempo: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
         });
       }
-      
-      console.log('✅ Distancia y ruta procesadas exitosamente');
-      
-      toast({
-        title: "Ruta calculada exitosamente",
-        description: `Distancia: ${distancia} km. Tiempo: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
-      });
     } catch (error) {
       console.error('❌ Error procesando cálculo de distancia:', error);
       toast({
@@ -345,7 +348,9 @@ export function UbicacionesSectionOptimizada({
     validacion,
     canCalculateDistances,
     canContinue,
-    isInitialized
+    isInitialized,
+    distanciaTotal,
+    tiempoEstimado
   });
 
   // No renderizar hasta que esté inicializado
@@ -402,8 +407,8 @@ export function UbicacionesSectionOptimizada({
         />
       )}
 
-      {/* Mapa de Google Maps integrado */}
-      {showMap && ubicaciones.length >= 2 && (
+      {/* Mapa de Google Maps integrado - SOLO SI HAY DATOS DE RUTA */}
+      {showMap && ubicaciones.length >= 2 && routeData && (
         <GoogleMapVisualization
           ubicaciones={ubicaciones}
           routeData={routeData}

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Route, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useHybridRouteCalculation } from '@/hooks/useHybridRouteCalculation';
+import { useAccurateGeocodingMexico } from '@/hooks/useAccurateGeocodingMexico';
 import { Ubicacion } from '@/types/ubicaciones';
 import { RouteCalculationStatus } from './RouteCalculationStatus';
 import { RouteMetricsDisplay } from './RouteMetricsDisplay';
@@ -23,6 +24,7 @@ export function AutoRouteCalculator({
   tiempoEstimado
 }: AutoRouteCalculatorProps) {
   const { calculateRoute, isCalculating, routeData, error } = useHybridRouteCalculation();
+  const { geocodeByCodigoPostal } = useAccurateGeocodingMexico();
   const [autoCalculationDone, setAutoCalculationDone] = useState(false);
   const [lastCalculationHash, setLastCalculationHash] = useState<string>('');
 
@@ -52,7 +54,7 @@ export function AutoRouteCalculator({
     return JSON.stringify(locationData);
   };
 
-  // Función de geocodificación mejorada para coordenadas
+  // Función de geocodificación mejorada para coordenadas precisas
   const geocodeLocation = async (ubicacion: Ubicacion): Promise<{ lat: number; lng: number } | null> => {
     // Si ya tiene coordenadas, usarlas
     if (ubicacion.coordenadas) {
@@ -62,29 +64,21 @@ export function AutoRouteCalculator({
       };
     }
 
-    // Coordenadas basadas en código postal (simplificado para testing)
-    const cpMap: { [key: string]: { lat: number; lng: number } } = {
-      // México principales
-      '01000': { lat: 19.4326, lng: -99.1332 }, // CDMX Centro
-      '03100': { lat: 19.3927, lng: -99.1588 }, // Del Valle
-      '06700': { lat: 19.4284, lng: -99.1676 }, // Roma Norte
-      '11000': { lat: 19.4069, lng: -99.1716 }, // San Miguel Chapultepec
-      '62577': { lat: 18.8711, lng: -99.2211 }, // Jiutepec, Morelos
-      '22000': { lat: 32.5149, lng: -117.0382 }, // Tijuana, BC
-    };
-
-    const coords = cpMap[ubicacion.domicilio.codigoPostal];
+    // Usar geocodificación precisa por código postal
+    const coords = geocodeByCodigoPostal(ubicacion.domicilio.codigoPostal);
     if (coords) {
-      console.log(`📍 Coordenadas encontradas para CP ${ubicacion.domicilio.codigoPostal}:`, coords);
-      return coords;
+      console.log(`📍 Coordenadas precisas para CP ${ubicacion.domicilio.codigoPostal}:`, coords);
+      return {
+        lat: coords.lat,
+        lng: coords.lng
+      };
     }
 
-    // Coordenadas por defecto para México si no se encuentra
-    console.log(`⚠️ CP ${ubicacion.domicilio.codigoPostal} no encontrado, usando coordenadas por defecto`);
-    return { lat: 19.4326, lng: -99.1332 };
+    console.warn(`⚠️ No se pudieron obtener coordenadas para CP ${ubicacion.domicilio.codigoPostal}`);
+    return null;
   };
 
-  // Auto-calcular cuando cambian las ubicaciones
+  // Auto-calcular cuando cambian las ubicaciones (solo una vez por cambio)
   useEffect(() => {
     const performAutoCalculation = async () => {
       if (!canCalculate || isCalculating || !safeUbicaciones.length) return;
@@ -93,17 +87,20 @@ export function AutoRouteCalculator({
       
       // Solo calcular si las ubicaciones han cambiado y no tenemos distancia calculada
       if (currentHash !== lastCalculationHash && (!distanciaTotal || distanciaTotal === 0)) {
-        console.log('🔄 Auto-calculando ruta híbrida (Mapbox + Google Maps) por cambio en ubicaciones');
+        console.log('🔄 Auto-calculando ruta híbrida (Mapbox para distancia + Google Maps para visualización)');
         
         try {
-          // Geocodificar ubicaciones
+          // Geocodificar ubicaciones con datos precisos
           const origenCoords = await geocodeLocation(origen);
           const destinoCoords = await geocodeLocation(destino);
           
           if (!origenCoords || !destinoCoords) {
-            console.warn('⚠️ No se pudieron obtener coordenadas para origen/destino');
+            console.warn('⚠️ No se pudieron obtener coordenadas precisas para origen/destino');
             return;
           }
+
+          console.log('📍 Coordenadas origen:', origenCoords);
+          console.log('📍 Coordenadas destino:', destinoCoords);
 
           // Geocodificar intermedios si existen
           const waypoints = [];
@@ -112,13 +109,17 @@ export function AutoRouteCalculator({
             if (coords) waypoints.push(coords);
           }
 
-          console.log('🚀 Iniciando cálculo híbrido:', { origenCoords, destinoCoords, waypoints });
+          console.log('🚀 Iniciando cálculo híbrido con coordenadas precisas');
 
           // Calcular ruta híbrida
           const result = await calculateRoute(origenCoords, destinoCoords, waypoints);
           
           if (result && result.success) {
-            console.log('✅ Ruta híbrida calculada exitosamente, notificando componente padre');
+            console.log('✅ Ruta híbrida calculada exitosamente:', {
+              distancia: result.distance_km,
+              tiempo: result.duration_minutes
+            });
+            
             onDistanceCalculated(
               result.distance_km,
               result.duration_minutes,
@@ -127,11 +128,10 @@ export function AutoRouteCalculator({
             setAutoCalculationDone(true);
             setLastCalculationHash(currentHash);
           } else {
-            console.warn('⚠️ Cálculo de ruta híbrida falló, pero manteniendo ubicaciones');
+            console.warn('⚠️ Cálculo de ruta híbrida falló');
           }
         } catch (error) {
-          console.error('❌ Error en auto-cálculo híbrido (no crítico):', error);
-          // No lanzamos el error para evitar que se pierdan las ubicaciones
+          console.error('❌ Error en auto-cálculo híbrido:', error);
         }
       }
     };
@@ -139,7 +139,7 @@ export function AutoRouteCalculator({
     // Delay para evitar cálculos excesivos
     const timeoutId = setTimeout(performAutoCalculation, 1500);
     return () => clearTimeout(timeoutId);
-  }, [safeUbicaciones, canCalculate, distanciaTotal, lastCalculationHash]);
+  }, [safeUbicaciones, canCalculate, distanciaTotal, lastCalculationHash, isCalculating]);
 
   // Recalcular manualmente
   const handleManualRecalculation = async () => {
@@ -189,7 +189,7 @@ export function AutoRouteCalculator({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-gray-800">
           <Route className="h-5 w-5" />
-          Cálculo de Ruta - Mapbox + Google Maps
+          Cálculo Híbrido de Ruta
           {autoCalculationDone && !error && (
             <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800 border-green-200">
               <CheckCircle className="h-3 w-3 mr-1" />
@@ -204,7 +204,7 @@ export function AutoRouteCalculator({
           )}
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Distancia y tiempo calculados con Mapbox • Ruta visual con Google Maps
+          Distancia y tiempo: Mapbox • Ruta visual: Google Maps
         </p>
       </CardHeader>
       
