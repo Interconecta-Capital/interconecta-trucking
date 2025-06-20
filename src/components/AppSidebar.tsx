@@ -8,7 +8,7 @@ import {
   Shield,
   Truck,
   Users,
-  Plus,
+  Route,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -33,60 +33,76 @@ export const AppSidebar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>
+    <Sidebar variant="inset" collapsible="icon" className="border-r border-gray-20 bg-pure-white/95 backdrop-blur-premium">
+      <SidebarHeader className="border-b border-gray-20 px-6 py-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link to="/dashboard">
-                <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Truck className="size-6" />
-                </div>
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-semibold text-base">Interconecta</span>
-                  <span className="truncate text-sm">Sistema de Gestión</span>
-                </div>
-              </Link>
+            <SidebarMenuButton size="lg" className="font-semibold text-gray-90">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-blue-interconecta text-pure-white">
+                <Truck className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">InterConecta</span>
+                <span className="truncate text-xs text-gray-50">Trucking Platform</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      
+      <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sm font-medium">Navegación Principal</SidebarGroupLabel>
-          <SidebarMenu>
+          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2">
+            Principal
+          </SidebarGroupLabel>
+          <SidebarMenu className="space-y-1">
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/dashboard')} size="default" tooltip="Dashboard">
-                <Link to="/dashboard">
-                  <LayoutDashboard className="h-5 w-5" />
-                  <span className="text-sm">Dashboard</span>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/dashboard')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/dashboard') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="font-medium">Dashboard</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-
+            
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/carta-porte/editor')} size="default" tooltip="Nueva Carta Porte">
-                <Link to="/carta-porte/editor">
-                  <Plus className="h-5 w-5" />
-                  <span className="text-sm">Nueva Carta Porte</span>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/viajes')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/viajes') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/viajes" className="flex items-center gap-3 px-3 py-2.5">
+                  <Route className="h-4 w-4" />
+                  <span className="font-medium">Viajes</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-
+            
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/cartas-porte')} size="default" tooltip="Cartas Porte">
-                <Link to="/cartas-porte">
-                  <FileText className="h-5 w-5" />
-                  <span className="text-sm">Cartas Porte</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/viajes')} size="default" tooltip="Viajes">
-                <Link to="/viajes">
-                  <Truck className="h-5 w-5" />
-                  <span className="text-sm">Viajes</span>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/cartas-porte')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/cartas-porte') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/cartas-porte" className="flex items-center gap-3 px-3 py-2.5">
+                  <FileText className="h-4 w-4" />
+                  <span className="font-medium">Cartas Porte</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -94,74 +110,110 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sm font-medium">Gestión de Recursos</SidebarGroupLabel>
-          <SidebarMenu>
+          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
+            Recursos
+          </SidebarGroupLabel>
+          <SidebarMenu className="space-y-1">
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/vehiculos')} size="default" tooltip="Vehículos">
-                <Link to="/vehiculos">
-                  <Car className="h-5 w-5" />
-                  <span className="text-sm">Vehículos</span>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/vehiculos')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/vehiculos') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/vehiculos" className="flex items-center gap-3 px-3 py-2.5">
+                  <Car className="h-4 w-4" />
+                  <span className="font-medium">Vehículos</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-
+            
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
-                <Link to="/conductores">
-                  <Users className="h-5 w-5" />
-                  <span className="text-sm">Conductores</span>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/conductores')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/conductores') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/conductores" className="flex items-center gap-3 px-3 py-2.5">
+                  <Users className="h-4 w-4" />
+                  <span className="font-medium">Conductores</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-
+            
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/socios')} size="default" tooltip="Socios">
-                <Link to="/socios">
-                  <Building2 className="h-5 w-5" />
-                  <span className="text-sm">Socios</span>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/socios')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/socios') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/socios" className="flex items-center gap-3 px-3 py-2.5">
+                  <Building2 className="h-4 w-4" />
+                  <span className="font-medium">Socios</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 
-        {puedeAccederAdministracion().puede && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sm font-medium">Administración</SidebarGroupLabel>
-            <SidebarMenu>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
+            Sistema
+          </SidebarGroupLabel>
+          <SidebarMenu className="space-y-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/planes')}
+                className={`rounded-xl transition-all duration-200 ${
+                  isActive('/planes') 
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                }`}
+              >
+                <Link to="/planes" className="flex items-center gap-3 px-3 py-2.5">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="font-medium">Planes</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            {puedeAccederAdministracion && (
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive('/administracion')} size="default" tooltip="Administración">
-                  <Link to="/administracion">
-                    <Shield className="h-5 w-5" />
-                    <span className="text-sm">Administración</span>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActive('/administracion')}
+                  className={`rounded-xl transition-all duration-200 ${
+                    isActive('/administracion') 
+                      ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                      : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
+                  }`}
+                >
+                  <Link to="/administracion" className="flex items-center gap-3 px-3 py-2.5">
+                    <Shield className="h-4 w-4" />
+                    <span className="font-medium">Administración</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        )}
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sm font-medium">Configuración</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/planes')} size="default" tooltip="Planes">
-                <Link to="/planes">
-                  <CreditCard className="h-5 w-5" />
-                  <span className="text-sm">Planes</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <UserMenu />
-          </SidebarMenuItem>
-        </SidebarMenu>
+      
+      <SidebarFooter className="border-t border-gray-20 p-3">
+        <UserMenu />
       </SidebarFooter>
     </Sidebar>
-  );
-};
+  )
+}

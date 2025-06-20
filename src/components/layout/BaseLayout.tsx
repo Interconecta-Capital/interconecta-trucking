@@ -16,14 +16,14 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
 
   if (!showSidebar) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gray-05 apple-grid">
         <GlobalHeader />
         <main className={cn(
           "p-4",
           // Espaciado específico para móvil
-          isMobile && "px-3 py-4",
+          isMobile && "px-4 py-6",
           // Espaciado para desktop
-          !isMobile && "p-6"
+          !isMobile && "p-8"
         )}>
           {children}
         </main>
@@ -33,16 +33,16 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-background flex w-full">
+      <div className="min-h-screen bg-gray-05 flex w-full apple-grid">
         <AppSidebar />
         <div className="flex-1 flex flex-col w-full">
           <GlobalHeader />
           <main className={cn(
             "flex-1 overflow-auto",
             // Espaciado específico para móvil
-            isMobile && "p-3",
+            isMobile && "p-4",
             // Espaciado para desktop
-            !isMobile && "p-6"
+            !isMobile && "p-8"
           )}>
             {children}
           </main>

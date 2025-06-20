@@ -1,267 +1,71 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Users, Truck, BarChart3, UserCheck, Wrench, MapPin, CheckCircle, CalendarIcon, Route } from 'lucide-react';
-import { ConductorFormModal } from './ConductorFormModal';
-import { VehiculoFormModal } from './VehiculoFormModal';
-import { SocioFormModal } from './SocioFormModal';
-import { MantenimientoFormModal } from './MantenimientoFormModal';
-import { VerificacionFormModal } from './VerificacionFormModal';
-import { RevisionGPSFormModal } from './RevisionGPSFormModal';
-
-// Mock data para eventos próximos
-const mockEventos = [
-  {
-    fecha: new Date(2024, 5, 15),
-    tipo: 'viaje',
-    titulo: 'Viaje CDMX - Guadalajara',
-    color: 'bg-green-100 text-green-800'
-  },
-  {
-    fecha: new Date(2024, 5, 18),
-    tipo: 'mantenimiento',
-    titulo: 'Mantenimiento Preventivo',
-    color: 'bg-red-100 text-red-800'
-  },
-  {
-    fecha: new Date(2024, 5, 20),
-    tipo: 'entrega',
-    titulo: 'Entrega Cliente XYZ',
-    color: 'bg-blue-100 text-blue-800'
-  },
-  {
-    fecha: new Date(2024, 5, 22),
-    tipo: 'revision_gps',
-    titulo: 'Revisión GPS',
-    color: 'bg-purple-100 text-purple-800'
-  },
-  {
-    fecha: new Date(2024, 5, 25),
-    tipo: 'verificacion',
-    titulo: 'Verificación Vehicular',
-    color: 'bg-orange-100 text-orange-800'
-  }
-];
+import { Plus, FileText, Route, Car, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function QuickActionsCard() {
-  const navigate = useNavigate();
-  const [showConductorForm, setShowConductorForm] = useState(false);
-  const [showVehiculoForm, setShowVehiculoForm] = useState(false);
-  const [showSocioForm, setShowSocioForm] = useState(false);
-  const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
-  const [showVerificacionForm, setShowVerificacionForm] = useState(false);
-  const [showRevisionGPSForm, setShowRevisionGPSForm] = useState(false);
-
-  const handleProgramarViaje = () => {
-    navigate('/viajes/programar');
-  };
-
-  const handleVerDocumentos = () => {
-    navigate('/cartas-porte');
-  };
-
-  const handleVerViajes = () => {
-    navigate('/viajes');
-  };
-
   return (
-    <>
-      <div className="space-y-6">
-        {/* Acciones Principales de Operación */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Route className="h-5 w-5" />
-              Centro de Operaciones
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {/* CTA Principal - Programar Viaje */}
-            <Button 
-              className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white h-12 text-base font-semibold"
-              onClick={handleProgramarViaje}
-            >
-              <Route className="h-5 w-5 mr-3" />
-              Programar Nuevo Viaje
-            </Button>
-            
-            {/* Acciones Secundarias de Operación */}
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10 border-blue-200 hover:bg-blue-50"
-              onClick={handleVerViajes}
-            >
-              <Truck className="h-4 w-4 mr-2" />
-              Ver Viajes Activos
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={handleVerDocumentos}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Consultar Documentos
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Gestión de Recursos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Gestión de Recursos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={() => setShowConductorForm(true)}
-            >
-              <UserCheck className="h-4 w-4 mr-2" />
-              Nuevo Conductor
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={() => setShowVehiculoForm(true)}
-            >
-              <Truck className="h-4 w-4 mr-2" />
-              Nuevo Vehículo
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={() => setShowSocioForm(true)}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Nuevo Socio/Cliente
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Mantenimiento y Programación */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Programación
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={() => setShowMantenimientoForm(true)}
-            >
-              <Wrench className="h-4 w-4 mr-2" />
-              Programar Mantenimiento
-            </Button>
-
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={() => setShowVerificacionForm(true)}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Programar Verificación
-            </Button>
-
-            <Button 
-              variant="outline" 
-              className="w-full justify-start h-10"
-              onClick={() => setShowRevisionGPSForm(true)}
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              Revisión GPS
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start h-10">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Generar Reportes
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Próximos Eventos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Próximos Eventos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {mockEventos.slice(0, 3).map((evento, index) => (
-                <div key={index} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    {evento.tipo === 'viaje' && <Truck className="h-3 w-3 text-green-600" />}
-                    {evento.tipo === 'mantenimiento' && <Wrench className="h-3 w-3 text-red-600" />}
-                    {evento.tipo === 'entrega' && <MapPin className="h-3 w-3 text-orange-600" />}
-                    {evento.tipo === 'revision_gps' && <MapPin className="h-3 w-3 text-purple-600" />}
-                    {evento.tipo === 'verificacion' && <CheckCircle className="h-3 w-3 text-orange-600" />}
-                    <div>
-                      <p className="text-xs font-medium">{evento.titulo}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {evento.fecha.toLocaleDateString('es-ES', { 
-                          weekday: 'short', 
-                          day: 'numeric', 
-                          month: 'short' 
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className={`${evento.color} text-xs`}>
-                    {evento.tipo.replace('_', ' ')}
-                  </Badge>
-                </div>
-              ))}
+    <Card className="h-fit">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-gray-90">
+          <Plus className="h-5 w-5 text-blue-interconecta" />
+          Acciones Rápidas
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Link to="/viajes/programar">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-12 gap-3 text-left"
+          >
+            <Route className="h-4 w-4 text-blue-interconecta" />
+            <div className="text-left">
+              <div className="font-medium text-gray-90">Programar Nuevo Viaje</div>
+              <div className="text-xs text-gray-60">Crear operación logística completa</div>
             </div>
-            <Button variant="outline" className="w-full text-xs mt-2">
-              Ver todos los eventos
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Modales para formularios */}
-      <ConductorFormModal 
-        open={showConductorForm}
-        onOpenChange={setShowConductorForm}
-      />
-      
-      <VehiculoFormModal 
-        open={showVehiculoForm}
-        onOpenChange={setShowVehiculoForm}
-      />
-      
-      <SocioFormModal 
-        open={showSocioForm}
-        onOpenChange={setShowSocioForm}
-      />
-
-      <MantenimientoFormModal 
-        open={showMantenimientoForm}
-        onOpenChange={setShowMantenimientoForm}
-      />
-
-      <VerificacionFormModal 
-        open={showVerificacionForm}
-        onOpenChange={setShowVerificacionForm}
-      />
-
-      <RevisionGPSFormModal 
-        open={showRevisionGPSForm}
-        onOpenChange={setShowRevisionGPSForm}
-      />
-    </>
+          </Button>
+        </Link>
+        
+        <Link to="/carta-porte/editor">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-12 gap-3 text-left"
+          >
+            <FileText className="h-4 w-4 text-apple-green" />
+            <div className="text-left">
+              <div className="font-medium text-gray-90">Nueva Carta Porte</div>
+              <div className="text-xs text-gray-60">Crear documento fiscal SAT</div>
+            </div>
+          </Button>
+        </Link>
+        
+        <Link to="/vehiculos">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-12 gap-3 text-left"
+          >
+            <Car className="h-4 w-4 text-apple-orange" />
+            <div className="text-left">
+              <div className="font-medium text-gray-90">Registrar Vehículo</div>
+              <div className="text-xs text-gray-60">Agregar nueva unidad</div>
+            </div>
+          </Button>
+        </Link>
+        
+        <Link to="/conductores">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-12 gap-3 text-left"
+          >
+            <Users className="h-4 w-4 text-apple-purple" />
+            <div className="text-left">
+              <div className="font-medium text-gray-90">Registrar Conductor</div>
+              <div className="text-xs text-gray-60">Agregar nuevo operador</div>
+            </div>
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
