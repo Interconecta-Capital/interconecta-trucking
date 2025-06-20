@@ -1,10 +1,10 @@
 
 import { ReactNode } from 'react';
-import { usePermissionCheck } from '@/hooks/useUnifiedAccessControl';
+import { useSimpleAccessControl } from '@/hooks/useSimpleAccessControl';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Lock, AlertTriangle, Crown, Clock, TrendingUp } from 'lucide-react';
+import { Lock, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 
 interface UnifiedProtectedContentProps {
   children: ReactNode;
@@ -25,125 +25,75 @@ export const UnifiedProtectedContent = ({
   blockOnRestriction = true,
   className = ''
 }: UnifiedProtectedContentProps) => {
-  const accessControl = usePermissionCheck();
+  const accessControl = useSimpleAccessControl();
   const navigate = useNavigate();
 
-  console.log('🛡️ UnifiedProtectedContent evaluando:', {
+  console.log('🛡️ UnifiedProtectedContent con lógica simple:', {
     requiredAction,
     resource,
     hasFullAccess: accessControl.hasFullAccess,
-    canPerformAction: accessControl.canPerformAction(requiredAction),
-    restrictionType: accessControl.restrictionType,
-    isSuperuser: accessControl.isSuperuser,
+    canCreateContent: accessControl.canCreateContent,
+    canViewContent: accessControl.canViewContent,
+    isBlocked: accessControl.isBlocked,
     isInActiveTrial: accessControl.isInActiveTrial,
     daysRemaining: accessControl.daysRemaining
   });
 
-  // Superusers pasan todas las verificaciones
-  if (accessControl.isSuperuser) {
-    console.log('✅ Superuser: acceso completo');
-    return <>{children}</>;
-  }
-
-  // Si tiene trial activo o plan pagado, permitir acceso
-  if (accessControl.hasFullAccess && accessControl.canPerformAction(requiredAction)) {
-    console.log('✅ Acceso permitido: trial activo o plan válido');
-    return <>{children}</>;
-  }
-
-  // Si se proporciona un fallback y no debe bloquear, usar fallback
-  if (fallback && !blockOnRestriction) {
-    console.log('📋 Usando fallback sin bloqueo');
-    return <>{fallback}</>;
-  }
-
-  // Determinar el tipo de alerta basado en el estado
-  const getAlertConfig = () => {
-    switch (accessControl.restrictionType) {
-      case 'trial_expired':
-        return {
-          variant: 'destructive' as const,
-          icon: AlertTriangle,
-          iconColor: 'text-orange-600',
-          bgColor: 'bg-orange-50 border-orange-200',
-          title: 'Período de prueba finalizado',
-          message: accessControl.statusMessage,
-          buttonText: 'Ver Planes',
-          buttonColor: 'bg-orange-600 hover:bg-orange-700'
-        };
-      
-      case 'payment_suspended':
-        return {
-          variant: 'destructive' as const,
-          icon: Lock,
-          iconColor: 'text-red-600',
-          bgColor: 'bg-red-50 border-red-200',
-          title: 'Cuenta suspendida',
-          message: accessControl.statusMessage,
-          buttonText: 'Renovar Suscripción',
-          buttonColor: 'bg-red-600 hover:bg-red-700'
-        };
-      
-      case 'grace_period':
-        return {
-          variant: 'destructive' as const,
-          icon: Clock,
-          iconColor: 'text-yellow-600',
-          bgColor: 'bg-yellow-50 border-yellow-200',
-          title: 'Período de gracia',
-          message: accessControl.statusMessage,
-          buttonText: accessControl.urgencyLevel === 'critical' ? 'ADQUIRIR PLAN YA' : 'Ver Planes',
-          buttonColor: accessControl.urgencyLevel === 'critical' ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700'
-        };
-      
-      default:
-        return {
-          variant: 'default' as const,
-          icon: Lock,
-          iconColor: 'text-gray-600',
-          bgColor: 'bg-gray-50 border-gray-200',
-          title: 'Acceso restringido',
-          message: accessControl.statusMessage || 'No tiene permisos para acceder a este contenido',
-          buttonText: 'Ver Planes',
-          buttonColor: 'bg-gray-600 hover:bg-gray-700'
-        };
+  // SI TIENE ACCESO COMPLETO (trial activo o plan pagado), PERMITIR TODO
+  if (accessControl.hasFullAccess) {
+    const canPerform = requiredAction === 'read' ? accessControl.canViewContent : accessControl.canCreateContent;
+    if (canPerform) {
+      console.log('✅ Acceso permitido: tiene acceso completo');
+      return <>{children}</>;
     }
-  };
+  }
 
-  const alertConfig = getAlertConfig();
-  const Icon = alertConfig.icon;
+  // Si solo puede ver contenido pero requiere crear/modificar, mostrar restricción
+  if (accessControl.canViewContent && requiredAction !== 'read' && !accessControl.canCreateContent) {
+    console.log('👁️ Solo puede ver contenido');
+    if (fallback && !blockOnRestriction) {
+      return <>{fallback}</>;
+    }
+  }
 
-  console.log('🚫 Mostrando restricción:', alertConfig.title);
+  // Si está completamente bloqueado
+  if (accessControl.isBlocked) {
+    console.log('🚫 Acceso bloqueado completamente');
+    
+    if (fallback && !blockOnRestriction) {
+      return <>{fallback}</>;
+    }
 
-  return (
-    <div className={className}>
-      <Alert className={`${alertConfig.bgColor} border`} variant={alertConfig.variant}>
-        <Icon className={`h-4 w-4 ${alertConfig.iconColor}`} />
-        <AlertDescription>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium">{alertConfig.title}</div>
-              <div className="text-sm mt-1">{alertConfig.message}</div>
-              {accessControl.actionRequired && (
-                <div className="text-sm font-medium mt-2">{accessControl.actionRequired}</div>
+    return (
+      <div className={className}>
+        <Alert className="bg-orange-50 border-orange-200" variant="destructive">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">Trial Expirado</div>
+                <div className="text-sm mt-1">{accessControl.statusMessage}</div>
+              </div>
+              
+              {showUpgradePrompt && (
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/planes')}
+                  className="ml-4 bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  Ver Planes
+                </Button>
               )}
             </div>
-            
-            {showUpgradePrompt && (
-              <Button
-                size="sm"
-                onClick={() => navigate('/planes')}
-                className={`ml-4 ${alertConfig.buttonColor} text-white`}
-              >
-                <TrendingUp className="w-3 h-3 mr-1" />
-                {alertConfig.buttonText}
-              </Button>
-            )}
-          </div>
-        </AlertDescription>
-      </Alert>
-    </div>
-  );
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Caso por defecto: permitir acceso
+  return <>{children}</>;
 };
 
 // Componente específico para acciones

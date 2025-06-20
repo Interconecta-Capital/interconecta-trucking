@@ -11,16 +11,16 @@ import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useSocios } from '@/hooks/useSocios';
 import { AccessControlDebug } from '../debug/AccessControlDebug';
-import { usePermissionCheck } from '@/hooks/useUnifiedAccessControl';
+import { useSimpleAccessControl } from '@/hooks/useSimpleAccessControl';
 
 export function EnhancedDashboardLayout() {
-  const accessControl = usePermissionCheck();
+  const accessControl = useSimpleAccessControl();
   const { cartasPorte } = useCartasPorte();
   const { vehiculos } = useVehiculos();
   const { conductores } = useConductores();
   const { socios } = useSocios();
 
-  console.log('🏠 EnhancedDashboardLayout - Estado de acceso:', {
+  console.log('🏠 EnhancedDashboardLayout - Estado simple:', {
     hasFullAccess: accessControl.hasFullAccess,
     isBlocked: accessControl.isBlocked,
     isInActiveTrial: accessControl.isInActiveTrial,
@@ -42,8 +42,8 @@ export function EnhancedDashboardLayout() {
         {/* Header con saludo personalizado */}
         <PersonalizedGreeting />
         
-        {/* Debug panel - solo visible para superusers */}
-        {accessControl.isSuperuser && <AccessControlDebug />}
+        {/* Debug panel */}
+        <AccessControlDebug />
         
         {/* Grid principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

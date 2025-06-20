@@ -1,33 +1,25 @@
 
-import { useUnifiedAccessControl } from './useUnifiedAccessControl';
+import { useSimpleAccessControl } from './useSimpleAccessControl';
 
-// Hook simplificado que solo usa el sistema unificado
+// Hook simplificado que usa la lógica simple y clara
 export const useSimplifiedTrialManager = () => {
-  const accessControl = useUnifiedAccessControl();
+  const accessControl = useSimpleAccessControl();
 
-  console.log('🎯 useSimplifiedTrialManager usando estado unificado:', accessControl);
+  console.log('🎯 useSimplifiedTrialManager usando lógica simple:', accessControl);
 
   return {
     // Estados principales
     isInActiveTrial: accessControl.isInActiveTrial,
     isTrialExpired: accessControl.isTrialExpired,
-    isInGracePeriod: accessControl.restrictionType === 'grace_period',
     hasFullAccess: accessControl.hasFullAccess,
     daysRemaining: accessControl.daysRemaining,
-    graceDaysRemaining: accessControl.restrictionType === 'grace_period' ? accessControl.daysRemaining : 0,
     
-    // Estados derivados
-    trialStatus: accessControl.isInActiveTrial ? 'active' : 
-                accessControl.restrictionType === 'grace_period' ? 'grace_period' :
-                accessControl.isTrialExpired ? 'expired' : 'not_applicable',
-    shouldShowUpgradeModal: accessControl.isBlocked && accessControl.restrictionType !== 'none',
-    dataWillBeDeleted: accessControl.restrictionType === 'grace_period' && accessControl.urgencyLevel === 'critical',
-    restrictionType: accessControl.restrictionType,
+    // Estados derivados simples
+    trialStatus: accessControl.isInActiveTrial ? 'active' : 'expired',
+    shouldShowUpgradeModal: accessControl.isBlocked,
     
     // Funciones de utilidad
     canPerformAction: (actionType: string) => {
-      if (accessControl.isSuperuser) return true;
-      
       switch (actionType) {
         case 'read':
         case 'view':
@@ -42,8 +34,6 @@ export const useSimplifiedTrialManager = () => {
     },
     
     getContextualMessage: () => accessControl.statusMessage,
-    
-    getUrgencyLevel: () => accessControl.urgencyLevel,
     
     // Estado de carga
     loading: false
