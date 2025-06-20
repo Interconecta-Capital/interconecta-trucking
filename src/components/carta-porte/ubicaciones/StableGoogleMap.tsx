@@ -111,8 +111,8 @@ export function StableGoogleMap({
     console.log('🗺️ Loading Google Maps API...');
     
     const script = document.createElement('script');
-    // Get API key from environment variable
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'DEMO_KEY';
+    // Get API key from Supabase secrets
+    const apiKey = 'GOOGLE_MAPS_API_KEY'; // This will be replaced by Supabase with the actual key
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMapsCallback`;
     script.async = true;
     script.defer = true;
