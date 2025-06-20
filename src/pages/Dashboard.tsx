@@ -60,9 +60,13 @@ export default function Dashboard() {
 
         {/* Pestañas principales del dashboard */}
         <Tabs defaultValue="progress" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="progress">📊 Mi Progreso Personal</TabsTrigger>
-            <TabsTrigger value="operations">🚛 Vista Operacional</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 bg-secondary rounded-apple-lg p-1 h-12">
+            <TabsTrigger value="progress" className="rounded-apple text-sm font-medium data-[state=active]:bg-elevated data-[state=active]:text-primary data-[state=active]:shadow-apple-sm text-secondary">
+              Mi Progreso Personal
+            </TabsTrigger>
+            <TabsTrigger value="operations" className="rounded-apple text-sm font-medium data-[state=active]:bg-elevated data-[state=active]:text-primary data-[state=active]:shadow-apple-sm text-secondary">
+              Vista Operacional
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="progress" className="mt-6">

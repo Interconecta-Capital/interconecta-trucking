@@ -34,18 +34,18 @@ export function GlobalHeader() {
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-gray-20 bg-pure-white/95 backdrop-blur-premium px-6">
-        <SidebarTrigger className="text-gray-60 hover:text-gray-90 transition-colors duration-200" />
+      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-primary bg-elevated/95 backdrop-blur-xl px-6">
+        <SidebarTrigger className="text-tertiary hover:text-primary transition-apple" />
         
         <div className="flex flex-1 items-center gap-4">
           {/* Barra de búsqueda estilo Apple */}
           <form className="flex-1 max-w-lg">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-50" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-quaternary" />
               <Input
                 type="search"
                 placeholder={isMobile ? "Buscar..." : "Buscar cartas porte, viajes, vehículos..."}
-                className="w-full bg-gray-05 border-gray-20 rounded-xl pl-10 pr-4 py-3 text-sm placeholder:text-gray-50 focus:bg-pure-white focus:border-blue-interconecta focus:ring-1 focus:ring-blue-interconecta transition-all duration-200"
+                className="w-full bg-secondary border-primary rounded-apple pl-10 pr-4 py-3 text-sm placeholder:text-quaternary focus:bg-primary focus:border-focus transition-apple"
               />
             </div>
           </form>
@@ -60,18 +60,18 @@ export function GlobalHeader() {
                   <PlanBadge />
                 </div>
               </PopoverTrigger>
-              <PopoverContent className="w-80 bg-pure-white border-gray-20 rounded-2xl shadow-lg p-6" align="end">
+              <PopoverContent className="w-80 bg-elevated border-primary rounded-apple-lg shadow-apple-lg p-6" align="end">
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-90 text-lg">Uso Actual</h4>
+                  <h4 className="font-semibold text-primary text-lg">Uso Actual</h4>
                   <div className="space-y-3">
                     <LimitUsageIndicator resourceType="cartas_porte" />
                     <LimitUsageIndicator resourceType="conductores" />
                     <LimitUsageIndicator resourceType="vehiculos" />
                     <LimitUsageIndicator resourceType="socios" />
                   </div>
-                  <div className="pt-3 border-t border-gray-20">
+                  <div className="pt-3 border-t border-primary">
                     <Link to="/planes">
-                      <Button className="w-full bg-blue-interconecta hover:bg-blue-hover text-pure-white rounded-xl py-3 font-medium transition-all duration-200">
+                      <Button className="w-full bg-blue-primary hover:bg-blue-hover text-inverse rounded-apple py-3 font-medium transition-apple">
                         Ver Planes
                       </Button>
                     </Link>
@@ -83,7 +83,7 @@ export function GlobalHeader() {
           
           <Button 
             onClick={handleNuevoViaje}
-            className="bg-blue-interconecta hover:bg-blue-hover text-pure-white rounded-xl px-4 py-2.5 font-medium flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="bg-blue-primary hover:bg-blue-hover text-inverse rounded-apple px-4 py-2.5 font-medium flex items-center gap-2 transition-apple shadow-apple-sm hover:shadow-apple-md"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nuevo Viaje</span>
@@ -99,7 +99,7 @@ export function GlobalHeader() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-10 w-10 rounded-xl text-gray-60 hover:text-gray-90 hover:bg-gray-05 transition-all duration-200"
+              className="h-10 w-10 rounded-apple text-tertiary hover:text-primary hover:bg-secondary transition-apple"
               onClick={() => setShowSettings(true)}
             >
               <Settings className="h-4 w-4" />

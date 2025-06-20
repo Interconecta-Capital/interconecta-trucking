@@ -6,24 +6,21 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-apple text-sm font-medium transition-apple focus-ring-apple disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-blue-interconecta text-pure-white hover:bg-blue-hover shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0",
-        destructive:
-          "bg-apple-red text-pure-white hover:bg-red-600 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0",
-        outline:
-          "border border-gray-20 bg-pure-white hover:bg-gray-05 hover:text-gray-90 text-gray-70 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0",
-        secondary:
-          "bg-gray-10 text-gray-90 hover:bg-gray-20 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0",
-        ghost: "text-gray-70 hover:bg-gray-05 hover:text-gray-90 rounded-xl",
-        link: "text-blue-interconecta underline-offset-4 hover:underline",
+        default: "bg-blue-primary text-inverse hover:bg-blue-hover shadow-apple-sm hover:shadow-apple-md",
+        destructive: "bg-red-primary text-inverse hover:opacity-90 shadow-apple-sm hover:shadow-apple-md",
+        outline: "border border-primary bg-elevated hover:bg-secondary text-primary shadow-apple-sm hover:shadow-apple-md",
+        secondary: "bg-secondary text-primary hover:bg-tertiary shadow-apple-sm hover:shadow-apple-md",
+        ghost: "text-secondary hover:bg-secondary hover:text-primary rounded-apple",
+        link: "text-blue-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-lg px-3",
-        lg: "h-12 rounded-xl px-6",
+        sm: "h-9 rounded-apple px-3",
+        lg: "h-12 rounded-apple-lg px-6",
         icon: "h-10 w-10",
       },
     },
