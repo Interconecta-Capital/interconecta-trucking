@@ -54,14 +54,14 @@ export function EnhancedDashboardLayout() {
               cartasPendientes={0}
               cartasCompletadas={cartasPorteCount}
               totalVehiculos={vehiculosCount}
-              vehiculosActivos={vehiculosCount}
+              vehiculosDisponibles={vehiculosCount}
+              vehiculosEnUso={0}
+              vehiculosMantenimiento={0}
               totalConductores={conductoresCount}
-              conductoresActivos={conductoresCount}
+              conductoresDisponibles={conductoresCount}
+              conductoresEnViaje={0}
               totalSocios={sociosCount}
               sociosActivos={sociosCount}
-              viajesTotales={0}
-              viajesActivos={0}
-              viajesCompletados={0}
             />
           </div>
         </div>
