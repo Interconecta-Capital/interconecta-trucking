@@ -80,7 +80,7 @@ export function SmartAddressInput({
           placeholder={placeholder}
           disabled={disabled}
           className={className}
-          variant="address"
+          variant="direccion"
           showConfidence={true}
           minConfidence={0.6}
         />
