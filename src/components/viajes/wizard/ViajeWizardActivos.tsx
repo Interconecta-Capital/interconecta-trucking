@@ -1,35 +1,138 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Truck, User, Search, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Truck, User, Search, AlertTriangle, CheckCircle, Scale, Clock } from 'lucide-react';
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
 import { useConductores } from '@/hooks/useConductores';
 import { useAuth } from '@/hooks/useAuth';
+import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation';
 import { ViajeWizardData } from '../ViajeWizard';
+import { ContextualAlert } from '@/components/ui/contextual-alert';
 
 interface ViajeWizardActivosProps {
   data: ViajeWizardData;
   updateData: (updates: Partial<ViajeWizardData>) => void;
 }
 
+interface ValidationAlert {
+  id: string;
+  type: 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  dismissible: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}
+
 export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps) {
   const { user } = useAuth();
   const { vehiculos, loading: loadingVehiculos } = useStableVehiculos(user?.id);
   const { conductores, loading: loadingConductores } = useConductores();
+  const { validateWeightCapacity } = useGoogleRouteCalculation();
   const [searchVehiculo, setSearchVehiculo] = useState('');
   const [searchConductor, setSearchConductor] = useState('');
+  const [validationAlerts, setValidationAlerts] = useState<ValidationAlert[]>([]);
+
+  // Extraer peso de la mercancía desde la descripción
+  const extractPesoFromDescription = (descripcion: string): number | null => {
+    if (!descripcion) return null;
+    
+    const pesoMatch = descripcion.match(/(\d+)\s*(ton|toneladas|kg|kilogramos)/i);
+    if (pesoMatch) {
+      const cantidad = parseInt(pesoMatch[1]);
+      const unidad = pesoMatch[2].toLowerCase();
+      return unidad.includes('ton') ? cantidad * 1000 : cantidad;
+    }
+    return null;
+  };
+
+  // Validaciones en tiempo real
+  useEffect(() => {
+    const alerts: ValidationAlert[] = [];
+    
+    // Validación peso vs capacidad
+    if (data.vehiculo && data.descripcionMercancia) {
+      const pesoMercancia = extractPesoFromDescription(data.descripcionMercancia);
+      if (pesoMercancia && data.vehiculo.capacidad_carga) {
+        const validation = validateWeightCapacity(pesoMercancia, data.vehiculo.capacidad_carga);
+        
+        if (!validation.isValid) {
+          alerts.push({
+            id: 'peso-capacidad-critico',
+            type: 'error',
+            title: 'Sobrecarga Detectada',
+            message: validation.warning || 'El peso excede la capacidad del vehículo',
+            dismissible: false,
+            action: {
+              label: 'Ver Vehículos Alternativos',
+              onClick: () => setSearchVehiculo('capacidad_mayor')
+            }
+          });
+        } else if (validation.warning) {
+          alerts.push({
+            id: 'peso-capacidad-warning',
+            type: 'warning',
+            title: 'Carga Cercana al Límite',
+            message: validation.warning,
+            dismissible: true
+          });
+        }
+      }
+    }
+
+    // Validación conductor
+    if (data.conductor) {
+      const conductorAlertas = getConductorAlertas(data.conductor);
+      conductorAlertas.forEach((alerta, index) => {
+        alerts.push({
+          id: `conductor-${index}`,
+          type: alerta.includes('vence') ? 'warning' : 'info',
+          title: 'Documentación del Conductor',
+          message: alerta,
+          dismissible: true
+        });
+      });
+    }
+
+    // Validación vehículo
+    if (data.vehiculo) {
+      const vehiculoAlertas = getVehiculoAlertas(data.vehiculo);
+      vehiculoAlertas.forEach((alerta, index) => {
+        alerts.push({
+          id: `vehiculo-${index}`,
+          type: alerta.includes('vence') ? 'warning' : 'info',
+          title: 'Documentación del Vehículo',
+          message: alerta,
+          dismissible: true
+        });
+      });
+    }
+
+    setValidationAlerts(alerts);
+  }, [data.vehiculo, data.conductor, data.descripcionMercancia, validateWeightCapacity]);
 
   // Filtrar vehículos disponibles
-  const vehiculosDisponibles = vehiculos.filter(vehiculo =>
-    vehiculo.estado === 'disponible' &&
-    (vehiculo.placa?.toLowerCase().includes(searchVehiculo.toLowerCase()) ||
-     vehiculo.marca?.toLowerCase().includes(searchVehiculo.toLowerCase()))
-  );
+  const vehiculosDisponibles = vehiculos.filter(vehiculo => {
+    const matchesSearch = vehiculo.estado === 'disponible' &&
+      (vehiculo.placa?.toLowerCase().includes(searchVehiculo.toLowerCase()) ||
+       vehiculo.marca?.toLowerCase().includes(searchVehiculo.toLowerCase()));
+    
+    // Si hay peso de mercancía, priorizar vehículos con capacidad suficiente
+    if (searchVehiculo === 'capacidad_mayor' && data.descripcionMercancia) {
+      const pesoMercancia = extractPesoFromDescription(data.descripcionMercancia);
+      if (pesoMercancia && vehiculo.capacidad_carga) {
+        return vehiculo.capacidad_carga >= pesoMercancia;
+      }
+    }
+    
+    return matchesSearch;
+  });
 
   // Filtrar conductores disponibles
   const conductoresDisponibles = conductores.filter(conductor =>
@@ -42,11 +145,6 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
   const getVehiculoAlertas = (vehiculo: any) => {
     const alertas = [];
     
-    // Verificar capacidad vs mercancía (simulado)
-    if (vehiculo.capacidad_carga && vehiculo.capacidad_carga < 1000) {
-      alertas.push('Vehículo de carga ligera - Verificar compatibilidad con mercancía');
-    }
-
     // Verificar seguros próximos a vencer
     if (vehiculo.vigencia_seguro) {
       const fechaVencimiento = new Date(vehiculo.vigencia_seguro);
@@ -88,14 +186,51 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
     setSearchConductor('');
   };
 
+  const dismissAlert = (alertId: string) => {
+    setValidationAlerts(prev => prev.filter(alert => alert.id !== alertId));
+  };
+
   return (
     <div className="space-y-6">
+      {/* Sistema de Alertas Contextuales */}
+      {validationAlerts.length > 0 && (
+        <div className="space-y-3">
+          {validationAlerts.map((alert) => (
+            <ContextualAlert
+              key={alert.id}
+              type={alert.type}
+              title={alert.title}
+              message={alert.message}
+              action={alert.action}
+              dismissible={alert.dismissible}
+              onDismiss={alert.dismissible ? () => dismissAlert(alert.id) : undefined}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Sección Vehículo */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Truck className="h-5 w-5" />
             Seleccionar Vehículo
+            {data.vehiculo && data.descripcionMercancia && (
+              <div className="ml-auto">
+                {(() => {
+                  const peso = extractPesoFromDescription(data.descripcionMercancia);
+                  if (peso && data.vehiculo.capacidad_carga) {
+                    const validation = validateWeightCapacity(peso, data.vehiculo.capacidad_carga);
+                    return validation.isValid ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -113,7 +248,7 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                 />
               </div>
               
-              {searchVehiculo && (
+              {(searchVehiculo || searchVehiculo === 'capacidad_mayor') && (
                 <div className="border rounded-lg max-h-60 overflow-y-auto">
                   {loadingVehiculos ? (
                     <div className="p-4 text-center text-muted-foreground">
@@ -122,6 +257,10 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                   ) : vehiculosDisponibles.length > 0 ? (
                     vehiculosDisponibles.map((vehiculo) => {
                       const alertas = getVehiculoAlertas(vehiculo);
+                      const pesoMercancia = data.descripcionMercancia ? extractPesoFromDescription(data.descripcionMercancia) : null;
+                      const isRecommended = pesoMercancia && vehiculo.capacidad_carga && 
+                        pesoMercancia <= vehiculo.capacidad_carga * 0.8;
+                      
                       return (
                         <button
                           key={vehiculo.id}
@@ -130,15 +269,26 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium">
+                              <div className="font-medium flex items-center gap-2">
                                 {vehiculo.marca} {vehiculo.modelo} - {vehiculo.placa}
+                                {isRecommended && (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                                    <Scale className="h-3 w-3 mr-1" />
+                                    Recomendado
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 Capacidad: {vehiculo.capacidad_carga} kg
+                                {pesoMercancia && vehiculo.capacidad_carga && (
+                                  <span className="ml-2">
+                                    ({Math.round((pesoMercancia / vehiculo.capacidad_carga) * 100)}% utilización)
+                                  </span>
+                                )}
                               </div>
                               {alertas.length > 0 && (
                                 <div className="flex items-center gap-1 mt-1">
-                                  <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                  <Clock className="h-3 w-3 text-amber-500" />
                                   <span className="text-xs text-amber-600">
                                     {alertas.length} alerta(s)
                                   </span>
@@ -167,8 +317,25 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                   <div className="font-medium">
                     {data.vehiculo.marca} {data.vehiculo.modelo} - {data.vehiculo.placa}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
                     Capacidad: {data.vehiculo.capacidad_carga} kg
+                    {(() => {
+                      const peso = data.descripcionMercancia ? extractPesoFromDescription(data.descripcionMercancia) : null;
+                      if (peso && data.vehiculo.capacidad_carga) {
+                        const porcentaje = Math.round((peso / data.vehiculo.capacidad_carga) * 100);
+                        return (
+                          <Badge 
+                            variant="outline" 
+                            className={porcentaje > 100 ? 'bg-red-100 text-red-800' : 
+                                     porcentaje > 90 ? 'bg-yellow-100 text-yellow-800' : 
+                                     'bg-green-100 text-green-800'}
+                          >
+                            {porcentaje}% utilización
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
                 <Button
@@ -179,14 +346,6 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                   Cambiar
                 </Button>
               </div>
-
-              {/* Mostrar alertas del vehículo seleccionado */}
-              {getVehiculoAlertas(data.vehiculo).map((alerta, index) => (
-                <Alert key={index}>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{alerta}</AlertDescription>
-                </Alert>
-              ))}
             </div>
           )}
         </CardContent>
@@ -238,7 +397,7 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                               </div>
                               {alertas.length > 0 && (
                                 <div className="flex items-center gap-1 mt-1">
-                                  <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                  <Clock className="h-3 w-3 text-amber-500" />
                                   <span className="text-xs text-amber-600">
                                     {alertas.length} alerta(s)
                                   </span>
@@ -277,14 +436,6 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                   Cambiar
                 </Button>
               </div>
-
-              {/* Mostrar alertas del conductor seleccionado */}
-              {getConductorAlertas(data.conductor).map((alerta, index) => (
-                <Alert key={index}>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{alerta}</AlertDescription>
-                </Alert>
-              ))}
             </div>
           )}
         </CardContent>
@@ -299,6 +450,11 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Activos Asignados
               </Badge>
+              {validationAlerts.length === 0 && (
+                <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                  Sin Alertas
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-green-800">
               Vehículo y conductor asignados correctamente
