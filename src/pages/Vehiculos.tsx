@@ -7,8 +7,8 @@ import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
 import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
 import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
-import { useStableVehiculos } from '@/hooks/useStableVehiculos';
-import { useStableAuth } from '@/hooks/useStableAuth';
+import { useVehiculos } from '@/hooks/useVehiculos';
+import { useAuth } from '@/hooks/useAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
@@ -16,14 +16,16 @@ import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
 export default function Vehiculos() {
-  const { user } = useStableAuth();
-  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
+  const { user } = useAuth();
+  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useVehiculos();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
+
+  console.log('[Vehiculos Page] User:', user?.id, 'Vehiculos:', vehiculos?.length, 'Loading:', loading, 'Error:', error);
 
   const handleNewVehiculo = () => {
     setSelectedVehiculo(null);
@@ -45,7 +47,7 @@ export default function Vehiculos() {
       try {
         await eliminarVehiculo(vehiculo.id);
       } catch (error) {
-        // Error already handled by hook
+        console.error('Error eliminando vehículo:', error);
       }
     }
   };
@@ -54,7 +56,6 @@ export default function Vehiculos() {
     setShowCreateDialog(false);
     setShowEditDialog(false);
     setSelectedVehiculo(null);
-    // Reload data after successful operation
     recargar();
   };
 
@@ -68,7 +69,7 @@ export default function Vehiculos() {
     return (
       <div className="container mx-auto py-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Error cargando vehículos: {error}</p>
+          <p className="text-red-800">Error cargando vehículos: {error.message}</p>
           <Button 
             variant="outline" 
             onClick={recargar}
@@ -103,6 +104,13 @@ export default function Vehiculos() {
             buttonText="Nuevo Vehículo"
           />
         </div>
+
+        {/* Debug info */}
+        {user && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+            <p><strong>Debug:</strong> Usuario: {user.id} | Vehículos: {vehiculos.length} | Cargando: {loading ? 'Sí' : 'No'}</p>
+          </div>
+        )}
 
         {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
