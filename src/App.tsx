@@ -4,10 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./hooks/useAuth"
+import { AuthGuard } from "./components/auth/AuthGuard"
 import { BaseLayout } from "./components/layout/BaseLayout"
 
-// Páginas principales
+// Páginas públicas
 import Index from "./pages/Index"
+import Auth from "./pages/Auth"
+
+// Páginas protegidas
 import Dashboard from "./pages/Dashboard"
 import CartasPorteUnified from "./pages/CartasPorteUnified"
 import CartaPorteEditor from "./pages/CartaPorteEditor"
@@ -27,69 +31,95 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Redirigir página de inicio directamente al dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Página principal - Landing page para usuarios no autenticados */}
+            <Route path="/" element={<Index />} />
             
-            {/* Rutas principales con layout completo */}
+            {/* Página de autenticación */}
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Rutas protegidas - requieren autenticación */}
             <Route path="/dashboard" element={
-              <BaseLayout>
-                <Dashboard />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Dashboard />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
-            {/* Ruta principal de Cartas Porte - SOLO para gestión/listado */}
             <Route path="/cartas-porte" element={
-              <BaseLayout>
-                <CartasPorteUnified />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <CartasPorteUnified />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
             <Route path="/vehiculos" element={
-              <BaseLayout>
-                <Vehiculos />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Vehiculos />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
             <Route path="/conductores" element={
-              <BaseLayout>
-                <Conductores />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Conductores />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
             <Route path="/socios" element={
-              <BaseLayout>
-                <Socios />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Socios />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
             <Route path="/viajes" element={
-              <BaseLayout>
-                <Viajes />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Viajes />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
             <Route path="/administracion" element={
-              <BaseLayout>
-                <Administracion />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Administracion />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
             <Route path="/planes" element={
-              <BaseLayout>
-                <Planes />
-              </BaseLayout>
+              <AuthGuard>
+                <BaseLayout>
+                  <Planes />
+                </BaseLayout>
+              </AuthGuard>
             } />
             
-            {/* Editor de Carta Porte - PANTALLA COMPLETA sin layout para todos los módulos */}
-            <Route path="/carta-porte/editor/:id" element={<CartaPorteEditor />} />
-            <Route path="/carta-porte/editor" element={<CartaPorteEditor />} />
+            {/* Editor de Carta Porte - PANTALLA COMPLETA protegida */}
+            <Route path="/carta-porte/editor/:id" element={
+              <AuthGuard>
+                <CartaPorteEditor />
+              </AuthGuard>
+            } />
+            <Route path="/carta-porte/editor" element={
+              <AuthGuard>
+                <CartaPorteEditor />
+              </AuthGuard>
+            } />
             
-            {/* Redirección de rutas antiguas al nuevo sistema unificado */}
+            {/* Redirección de rutas antiguas */}
             <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
             <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor/:id" replace />} />
             
-            {/* Redirección por defecto */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Redirección por defecto - a la landing page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

@@ -1,27 +1,101 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, FolderOpen, BarChart3 } from "lucide-react";
+import { Plus, FileText, FolderOpen, BarChart3, LogIn, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 export default function Index() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // Redirigir usuarios autenticados al dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // Mostrar loading mientras verifica autenticación
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Solo mostrar landing page si el usuario NO está autenticado
+  if (user) {
+    return null; // Will redirect via useEffect
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header con botones de auth */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center space-x-2">
+            <img 
+              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
+              alt="Interconecta Trucking Logo"
+              className="h-10 w-10 rounded-lg"
+            />
+            <h1 className="text-2xl font-bold text-gray-900">Interconecta Trucking</h1>
+          </div>
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/auth?tab=login')}
+              className="flex items-center space-x-2"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Iniciar Sesión</span>
+            </Button>
+            <Button 
+              onClick={() => navigate('/auth?tab=register')}
+              className="flex items-center space-x-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Registrarse</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Sistema de Carta Porte 3.1
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
             Gestiona de manera eficiente tus documentos de Carta Porte con nuestro sistema integrado
           </p>
+          <div className="flex justify-center space-x-4">
+            <Button 
+              size="lg"
+              onClick={() => navigate('/auth?tab=register')}
+              className="flex items-center space-x-2"
+            >
+              <UserPlus className="h-5 w-5" />
+              <span>Comenzar Gratis</span>
+            </Button>
+            <Button 
+              variant="outline"
+              size="lg"
+              onClick={() => navigate('/auth?tab=login')}
+              className="flex items-center space-x-2"
+            >
+              <LogIn className="h-5 w-5" />
+              <span>Iniciar Sesión</span>
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Crear Nueva Carta Porte */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-blue-600" />
@@ -34,15 +108,15 @@ export default function Index() {
             <CardContent>
               <Button 
                 className="w-full" 
-                onClick={() => navigate('/carta-porte/nuevo')}
+                onClick={() => navigate('/auth')}
               >
-                Crear Nueva
+                Comenzar
               </Button>
             </CardContent>
           </Card>
 
           {/* Gestión de Borradores */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FolderOpen className="h-5 w-5 text-green-600" />
@@ -56,15 +130,15 @@ export default function Index() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate('/borradores')}
+                onClick={() => navigate('/auth')}
               >
-                Ver Borradores
+                Acceder
               </Button>
             </CardContent>
           </Card>
 
           {/* Cartas Porte Activas */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-purple-600" />
@@ -78,15 +152,15 @@ export default function Index() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate('/cartas-porte')}
+                onClick={() => navigate('/auth')}
               >
                 Ver Documentos
               </Button>
             </CardContent>
           </Card>
 
-          {/* Reportes y Estadísticas */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer md:col-span-2 lg:col-span-3">
+          {/* Panel de Control */}
+          <Card className="hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-3">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-orange-600" />
@@ -97,20 +171,26 @@ export default function Index() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-3 gap-4 mb-4">
                 <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600">0</div>
-                  <div className="text-sm text-gray-600">Borradores Activos</div>
+                  <div className="text-2xl font-bold text-blue-600">∞</div>
+                  <div className="text-sm text-gray-600">Borradores Ilimitados</div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">0</div>
-                  <div className="text-sm text-gray-600">Documentos Generados</div>
+                  <div className="text-2xl font-bold text-green-600">✓</div>
+                  <div className="text-sm text-gray-600">Cumplimiento SAT</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-purple-600">0</div>
-                  <div className="text-sm text-gray-600">Documentos Timbrados</div>
+                  <div className="text-2xl font-bold text-purple-600">⚡</div>
+                  <div className="text-sm text-gray-600">Timbrado Rápido</div>
                 </div>
               </div>
+              <Button 
+                className="w-full"
+                onClick={() => navigate('/auth')}
+              >
+                Acceder al Dashboard
+              </Button>
             </CardContent>
           </Card>
         </div>

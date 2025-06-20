@@ -1,6 +1,5 @@
 
 import { useAuth } from '@/hooks/useAuth';
-import { useDebugMonitor } from '@/hooks/useDebugMonitor';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,44 +9,25 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
-  const { logEvent } = useDebugMonitor();
   const navigate = useNavigate();
   const [timeoutReached, setTimeoutReached] = useState(false);
 
-  useEffect(() => {
-    logEvent('auth_guard_check', {
-      hasUser: !!user,
-      loading,
-      userId: user?.id,
-      currentPath: window.location.pathname,
-    });
-  }, [user, loading, logEvent]);
-
-  // Timeout más largo para AuthGuard - 15 segundos
+  // Timeout para evitar loading infinito
   useEffect(() => {
     if (loading) {
       const timeout = setTimeout(() => {
         console.warn('[AuthGuard] Authentication timeout reached');
-        logEvent('auth_guard_timeout', { 
-          timestamp: Date.now(),
-          timeoutDuration: 15000, // Aumentado de 8 a 15 segundos
-          currentPath: window.location.pathname
-        });
         setTimeoutReached(true);
-      }, 15000);
+      }, 10000);
 
       return () => clearTimeout(timeout);
     } else {
       setTimeoutReached(false);
     }
-  }, [loading, logEvent]);
+  }, [loading]);
 
-  // Loading state más específico
+  // Mostrar loading mientras verifica autenticación
   if (loading && !timeoutReached) {
-    logEvent('auth_guard_loading', { 
-      timestamp: Date.now(),
-      currentPath: window.location.pathname 
-    });
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -55,7 +35,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Verificando autenticación...</p>
             <div className="w-48 bg-secondary rounded-full h-1 mx-auto">
-              <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '70%' }}></div>
             </div>
           </div>
         </div>
@@ -63,33 +43,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Handle timeout case - usar navegación React Router
-  if (timeoutReached && !user) {
-    logEvent('auth_guard_timeout_redirect', { 
-      reason: 'timeout_no_user',
-      currentUrl: window.location.href 
-    });
-    
+  // Redirigir a auth si no hay usuario
+  if ((!user && !loading) || timeoutReached) {
     navigate('/auth', { replace: true });
     return null;
   }
-
-  // Redirect to auth if not authenticated - usar navegación React Router
-  if (!user && !loading) {
-    logEvent('auth_guard_redirect', { 
-      reason: 'no_user',
-      currentUrl: window.location.href 
-    });
-    
-    navigate('/auth', { replace: true });
-    return null;
-  }
-
-  logEvent('auth_guard_allowed', { 
-    userId: user?.id,
-    userEmail: user?.email,
-    currentPath: window.location.pathname
-  });
 
   return <>{children}</>;
 }

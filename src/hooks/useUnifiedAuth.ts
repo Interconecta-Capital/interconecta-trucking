@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -228,7 +227,7 @@ export const useUnifiedAuth = () => {
       password,
       options: {
         data: metadata,
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
     if (error) throw error;
@@ -252,6 +251,7 @@ export const useUnifiedAuth = () => {
       navigate('/auth', { replace: true });
     } catch (error) {
       console.error('[UnifiedAuth] Signout error:', error);
+      navigate('/auth', { replace: true });
     }
   }, [navigate]);
 

@@ -28,6 +28,7 @@ export function UserMenu() {
     try {
       await signOut();
       toast.success('Sesión cerrada exitosamente');
+      // signOut ya maneja la redirección en useUnifiedAuth
     } catch (error: any) {
       toast.error('Error al cerrar sesión: ' + error.message);
     }
