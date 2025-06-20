@@ -26,10 +26,13 @@ import Planes from "./pages/Planes";
  * Central place for defining the navigation items. Used for navigation components and routing.
  * 
  * IMPORTANTE: 
- * - /cartas-porte = Gestión y listado de documentos
+ * - /cartas-porte = Gestión y listado de documentos - PROTEGIDO
  * - /carta-porte/editor = Editor completo con todos los módulos (ubicaciones, mercancías, figuras, etc.) - PROTEGIDO
  * - /carta-porte/nuevo = Alias para crear nueva carta porte - PROTEGIDO
  * - /conductores = Gestión de conductores - PROTEGIDO
+ * - /vehiculos = Gestión de vehículos - PROTEGIDO
+ * - /socios = Gestión de socios - PROTEGIDO
+ * - /viajes = Gestión de viajes - PROTEGIDO
  */
 export const navItems = [
   {
@@ -49,7 +52,9 @@ export const navItems = [
     to: "/cartas-porte",
     icon: <FileTextIcon className="h-4 w-4" />,
     page: <CartasPorteUnified />,
-    description: "Gestión y listado de documentos de Carta Porte"
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Gestión y listado de documentos de Carta Porte - PROTEGIDO"
   },
   {
     title: "Editor Carta Porte",
@@ -76,6 +81,9 @@ export const navItems = [
     to: "/vehiculos",
     icon: <Car className="h-4 w-4" />,
     page: <Vehiculos />,
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Gestión de vehículos - PROTEGIDO"
   },
   {
     title: "Conductores",
@@ -91,12 +99,18 @@ export const navItems = [
     to: "/socios",
     icon: <Building2 className="h-4 w-4" />,
     page: <Socios />,
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Gestión de socios - PROTEGIDO"
   },
   {
     title: "Viajes",
     to: "/viajes",
     icon: <Truck className="h-4 w-4" />,
     page: <Viajes />,
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Gestión de viajes - PROTEGIDO"
   },
   {
     title: "Administración",

@@ -8,7 +8,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { VehiculoFormRefactored } from './forms/VehiculoFormRefactored';
-import { Truck } from 'lucide-react';
+import { Truck, Lock } from 'lucide-react';
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface VehiculoFormDialogProps {
   open: boolean;
@@ -18,6 +21,28 @@ interface VehiculoFormDialogProps {
 }
 
 export function VehiculoFormDialog({ open, onOpenChange, vehiculo, onSuccess }: VehiculoFormDialogProps) {
+  const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
+  const { getContextualMessage, canPerformAction } = useTrialManager();
+
+  console.log('🔍 VehiculoFormDialog Debug:', {
+    open,
+    isSuperuser,
+    hasFullAccess,
+    canPerformAction: canPerformAction('create')
+  });
+
+  // BLOQUEO TOTAL: Si no es superuser Y no tiene acceso completo, NO mostrar el modal
+  if (!isSuperuser && !hasFullAccess) {
+    console.log('❌ VehiculoFormDialog completely blocked - no access');
+    return null;
+  }
+
+  // BLOQUEO ADICIONAL: Si no puede realizar acciones de creación, NO mostrar el modal
+  if (!isSuperuser && !canPerformAction('create')) {
+    console.log('❌ VehiculoFormDialog blocked - cannot perform create action');
+    return null;
+  }
+
   const handleSuccess = () => {
     onOpenChange(false);
     onSuccess?.();
@@ -40,11 +65,23 @@ export function VehiculoFormDialog({ open, onOpenChange, vehiculo, onSuccess }: 
           </DialogDescription>
         </DialogHeader>
 
-        <VehiculoFormRefactored
-          vehiculoId={vehiculo?.id}
-          onSuccess={handleSuccess}
-          onCancel={handleCancel}
-        />
+        {/* VERIFICACIÓN FINAL: Mostrar alerta si por alguna razón no tiene acceso */}
+        {!hasFullAccess && !isSuperuser ? (
+          <div className="p-6">
+            <Alert className="border-red-200 bg-red-50">
+              <Lock className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {getContextualMessage()}
+              </AlertDescription>
+            </Alert>
+          </div>
+        ) : (
+          <VehiculoFormRefactored
+            vehiculoId={vehiculo?.id}
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

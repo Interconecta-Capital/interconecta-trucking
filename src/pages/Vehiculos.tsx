@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus, Car, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useVehiculos } from '@/hooks/useVehiculos';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
+import { ProtectedRouteGuard } from '@/components/ProtectedRouteGuard';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 
@@ -80,106 +80,112 @@ export default function Vehiculos() {
   }
 
   return (
-    <ProtectedContent requiredFeature="vehiculos">
-      <div className="container mx-auto py-6 space-y-6">
-        <PlanNotifications />
+    <ProtectedRouteGuard 
+      requiredAction="read" 
+      resource="vehiculos"
+      redirectTo="/dashboard"
+    >
+      <ProtectedContent requiredFeature="vehiculos">
+        <div className="container mx-auto py-6 space-y-6">
+          <PlanNotifications />
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Car className="h-6 w-6 text-blue-600" />
-            <h1 className="text-3xl font-bold">Vehículos</h1>
-            {loading && (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            )}
-          </div>
-          <ProtectedActions
-            action="create"
-            resource="vehiculos"
-            onAction={handleNewVehiculo}
-            buttonText="Nuevo Vehículo"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar por placa, marca o modelo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Car className="h-6 w-6 text-blue-600" />
+              <h1 className="text-3xl font-bold">Vehículos</h1>
+              {loading && (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              )}
+            </div>
+            <ProtectedActions
+              action="create"
+              resource="vehiculos"
+              onAction={handleNewVehiculo}
+              buttonText="Nuevo Vehículo"
             />
           </div>
-          <Button 
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtros
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={recargar}
-            disabled={loading}
-          >
-            Actualizar
-          </Button>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar por placa, marca o modelo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button 
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={recargar}
+              disabled={loading}
+            >
+              Actualizar
+            </Button>
+          </div>
+
+          {showFilters && <VehiculosFilters />}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg border">
+              <h3 className="text-lg font-semibold">Total Vehículos</h3>
+              <p className="text-2xl text-blue-600">{vehiculos.length}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg border">
+              <h3 className="text-lg font-semibold">Resultados</h3>
+              <p className="text-2xl text-green-600">{filteredVehiculos.length}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg border">
+              <h3 className="text-lg font-semibold">Estado</h3>
+              <p className={`text-sm ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
+                {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
+              </p>
+            </div>
+          </div>
+
+          <VehiculosTable 
+            vehiculos={filteredVehiculos}
+            loading={loading}
+            onEdit={handleEdit}
+            onView={handleView}
+            onDelete={handleDelete}
+          />
+
+          <VehiculoFormDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onSuccess={handleSuccess}
+          />
+
+          <VehiculoFormDialog
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            vehiculo={selectedVehiculo}
+            onSuccess={handleSuccess}
+          />
+
+          <VehiculoViewDialog
+            open={showViewDialog}
+            onOpenChange={setShowViewDialog}
+            vehiculo={selectedVehiculo}
+            onEdit={() => {
+              setShowViewDialog(false);
+              handleEdit(selectedVehiculo);
+            }}
+          />
         </div>
-
-        {showFilters && <VehiculosFilters />}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-lg font-semibold">Total Vehículos</h3>
-            <p className="text-2xl text-blue-600">{vehiculos.length}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-lg font-semibold">Resultados</h3>
-            <p className="text-2xl text-green-600">{filteredVehiculos.length}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="text-lg font-semibold">Estado</h3>
-            <p className={`text-sm ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
-              {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
-            </p>
-          </div>
-        </div>
-
-        <VehiculosTable 
-          vehiculos={filteredVehiculos}
-          loading={loading}
-          onEdit={handleEdit}
-          onView={handleView}
-          onDelete={handleDelete}
-        />
-
-        <VehiculoFormDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-          onSuccess={handleSuccess}
-        />
-
-        <VehiculoFormDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          vehiculo={selectedVehiculo}
-          onSuccess={handleSuccess}
-        />
-
-        <VehiculoViewDialog
-          open={showViewDialog}
-          onOpenChange={setShowViewDialog}
-          vehiculo={selectedVehiculo}
-          onEdit={() => {
-            setShowViewDialog(false);
-            handleEdit(selectedVehiculo);
-          }}
-        />
-      </div>
-    </ProtectedContent>
+      </ProtectedContent>
+    </ProtectedRouteGuard>
   );
 }

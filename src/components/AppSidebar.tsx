@@ -1,3 +1,4 @@
+
 import {
   Building2,
   Car,
@@ -40,8 +41,8 @@ export const AppSidebar = () => {
   // Verificar si puede crear cartas porte
   const canCreateCartaPorte = isSuperuser || (hasFullAccess && canPerformAction('create'));
   
-  // Verificar si puede acceder a funciones de conductores
-  const canAccessConductores = isSuperuser || hasFullAccess;
+  // Verificar si puede acceder a funciones protegidas
+  const canAccessProtectedFeatures = isSuperuser || hasFullAccess;
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -100,21 +101,51 @@ export const AppSidebar = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/cartas-porte')} size="default" tooltip="Cartas Porte">
-                <Link to="/cartas-porte">
-                  <FileText className="h-5 w-5" />
+              {canAccessProtectedFeatures ? (
+                <SidebarMenuButton asChild isActive={isActive('/cartas-porte')} size="default" tooltip="Cartas Porte">
+                  <Link to="/cartas-porte">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-sm">Cartas Porte</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton 
+                  disabled 
+                  size="default" 
+                  tooltip="Acceso Restringido"
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Lock className="h-5 w-5" />
                   <span className="text-sm">Cartas Porte</span>
-                </Link>
-              </SidebarMenuButton>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Bloqueado
+                  </Badge>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/viajes')} size="default" tooltip="Viajes">
-                <Link to="/viajes">
-                  <Truck className="h-5 w-5" />
+              {canAccessProtectedFeatures ? (
+                <SidebarMenuButton asChild isActive={isActive('/viajes')} size="default" tooltip="Viajes">
+                  <Link to="/viajes">
+                    <Truck className="h-5 w-5" />
+                    <span className="text-sm">Viajes</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton 
+                  disabled 
+                  size="default" 
+                  tooltip="Acceso Restringido"
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Lock className="h-5 w-5" />
                   <span className="text-sm">Viajes</span>
-                </Link>
-              </SidebarMenuButton>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Bloqueado
+                  </Badge>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
@@ -123,16 +154,31 @@ export const AppSidebar = () => {
           <SidebarGroupLabel className="text-sm font-medium">Gestión de Recursos</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/vehiculos')} size="default" tooltip="Vehículos">
-                <Link to="/vehiculos">
-                  <Car className="h-5 w-5" />
+              {canAccessProtectedFeatures ? (
+                <SidebarMenuButton asChild isActive={isActive('/vehiculos')} size="default" tooltip="Vehículos">
+                  <Link to="/vehiculos">
+                    <Car className="h-5 w-5" />
+                    <span className="text-sm">Vehículos</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton 
+                  disabled 
+                  size="default" 
+                  tooltip="Acceso Restringido"
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Lock className="h-5 w-5" />
                   <span className="text-sm">Vehículos</span>
-                </Link>
-              </SidebarMenuButton>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Bloqueado
+                  </Badge>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              {canAccessConductores ? (
+              {canAccessProtectedFeatures ? (
                 <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
                   <Link to="/conductores">
                     <Users className="h-5 w-5" />
@@ -156,12 +202,27 @@ export const AppSidebar = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/socios')} size="default" tooltip="Socios">
-                <Link to="/socios">
-                  <Building2 className="h-5 w-5" />
+              {canAccessProtectedFeatures ? (
+                <SidebarMenuButton asChild isActive={isActive('/socios')} size="default" tooltip="Socios">
+                  <Link to="/socios">
+                    <Building2 className="h-5 w-5" />
+                    <span className="text-sm">Socios</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton 
+                  disabled 
+                  size="default" 
+                  tooltip="Acceso Restringido"
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Lock className="h-5 w-5" />
                   <span className="text-sm">Socios</span>
-                </Link>
-              </SidebarMenuButton>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Bloqueado
+                  </Badge>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
