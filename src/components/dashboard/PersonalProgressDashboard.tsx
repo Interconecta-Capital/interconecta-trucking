@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +12,8 @@ import {
   DollarSign,
   CheckCircle,
   Zap,
-  Star
+  Star,
+  Activity
 } from 'lucide-react';
 import { usePersonalProgress } from '@/hooks/usePersonalProgress';
 import { ValueMetricsPanel } from './progress/ValueMetricsPanel';
