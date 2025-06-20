@@ -192,18 +192,38 @@ export const useTrialManager = () => {
       };
     }
 
-    // Estado por defecto: revisar si realmente no tiene trial
-    console.log('⚠️ Default state - checking if user has trial setup');
-    
-    // Si no hay suscripción en absoluto, asumir que puede estar en proceso de setup
-    if (!suscripcion) {
-      console.log('🔄 No subscription found - assuming trial setup in progress');
+    // Caso especial: Usuario recién creado/corregido sin suscripción activa aún
+    // NUEVO: Manejo mejorado para casos de corrección de cuenta
+    if (!suscripcion || (!suscripcion.status && !suscripcion.fecha_fin_prueba)) {
+      console.log('🔄 No complete subscription found - checking if user needs trial setup');
+      
+      // Si hay información de trial en profiles (trial_end_date), usarla
+      if (trialInfo?.trialEndDate && trialInfo.trialEndDate > now) {
+        console.log('✅ Using trial info from profiles table');
+        const profileTrialDays = Math.max(0, Math.ceil((trialInfo.trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        
+        return {
+          isInActiveTrial: true,
+          isTrialExpired: false,
+          isInGracePeriod: false,
+          hasFullAccess: true,
+          daysRemaining: profileTrialDays,
+          graceDaysRemaining: 0,
+          trialStatus: 'active',
+          shouldShowUpgradeModal: false,
+          dataWillBeDeleted: false,
+          restrictionType: 'none'
+        };
+      }
+      
+      // Si no hay información de trial, asumir que necesita configuración
+      console.log('⚠️ No trial information found - assuming trial setup needed');
       return {
-        isInActiveTrial: true, // Dar beneficio de la duda
+        isInActiveTrial: true, // Dar beneficio de la duda temporalmente
         isTrialExpired: false,
         isInGracePeriod: false,
         hasFullAccess: true,
-        daysRemaining: 14, // Asumir trial completo
+        daysRemaining: 6, // Días restantes estimados (considerando que acabamos de corregir la cuenta)
         graceDaysRemaining: 0,
         trialStatus: 'active',
         shouldShowUpgradeModal: false,
