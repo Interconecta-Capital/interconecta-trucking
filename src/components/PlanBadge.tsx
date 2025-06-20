@@ -1,11 +1,11 @@
 
 import { Badge } from '@/components/ui/badge';
-import { useTrialTracking } from '@/hooks/useTrialTracking';
+import { useTimezoneAwareTrialTracking } from '@/hooks/useTimezoneAwareTrialTracking';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { Calendar, Clock } from 'lucide-react';
 
 export function PlanBadge() {
-  const { trialInfo, loading } = useTrialTracking();
+  const { trialInfo, loading } = useTimezoneAwareTrialTracking();
   const { suscripcion, enPeriodoPrueba } = useSuscripcion();
 
   if (loading) {
@@ -17,7 +17,7 @@ export function PlanBadge() {
     );
   }
 
-  // Si está en período de prueba, mostrar "Prueba"
+  // Si está en período de prueba, mostrar "Prueba" con días reales
   if (trialInfo.isTrialActive || enPeriodoPrueba() || suscripcion?.status === 'trial') {
     return (
       <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">

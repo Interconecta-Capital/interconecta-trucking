@@ -17,7 +17,7 @@ export function EnhancedDashboardLayout() {
       
       {/* Grid con información clave */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Estado del trial */}
+        {/* Estado del trial con datos reales */}
         <ImprovedTrialStatusCard />
         
         {/* Alertas operacionales */}
