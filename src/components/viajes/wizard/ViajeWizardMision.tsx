@@ -7,9 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Package, Search, AlertTriangle, Users } from 'lucide-react';
+import { Package, Search, AlertTriangle, Users, Sparkles, CheckCircle2, Globe } from 'lucide-react';
 import { useSocios } from '@/hooks/useSocios';
 import { ViajeWizardData } from '../ViajeWizard';
+import { SmartMercanciaInput } from '@/components/ai/SmartMercanciaInput';
+import { useAIValidation } from '@/hooks/ai/useAIValidation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ViajeWizardMisionProps {
   data: ViajeWizardData;
@@ -20,6 +23,18 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   const { socios, loading: loadingSocios } = useSocios();
   const [searchCliente, setSearchCliente] = useState('');
   const [alertasMercancia, setAlertasMercancia] = useState<string[]>([]);
+  const [sugerenciasIA, setSugerenciasIA] = useState<any>(null);
+  const [showComercioExterior, setShowComercioExterior] = useState(false);
+
+  const {
+    autoValidateField,
+    getFieldValidation,
+    isFieldValid
+  } = useAIValidation({
+    enabled: true,
+    autoValidate: true,
+    debounceMs: 800
+  });
 
   // Filtrar socios por búsqueda
   const sociosFiltrados = socios.filter(socio =>
@@ -27,33 +42,81 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
     socio.rfc.toLowerCase().includes(searchCliente.toLowerCase())
   );
 
-  // Análisis de mercancía con IA (simulado)
+  // Análisis inteligente de mercancía con IA
   useEffect(() => {
     if (data.descripcionMercancia) {
       const texto = data.descripcionMercancia.toLowerCase();
       const alertas: string[] = [];
+      const nuevasSugerencias: any = {};
 
-      // Detectar materiales regulados
-      if (texto.includes('jaguar') || texto.includes('fauna') || texto.includes('animal')) {
-        alertas.push('Esta mercancía requiere permisos de SEMARNAT');
+      // Detección de comercio exterior
+      if (texto.includes('exportación') || texto.includes('importación') || texto.includes('export') || texto.includes('import')) {
+        setShowComercioExterior(true);
+        alertas.push('Operación de comercio exterior detectada - Se requieren datos adicionales');
       }
-      if (texto.includes('químico') || texto.includes('tóxico') || texto.includes('peligroso')) {
-        alertas.push('Material peligroso - Requiere documentación especial');
+
+      // Detección de productos específicos y sugerencias de IA
+      if (texto.includes('aguacate') || texto.includes('fruta')) {
+        nuevasSugerencias.claveBienesTransp = '01010101';
+        nuevasSugerencias.categoria = 'Frutas y Verduras';
+        nuevasSugerencias.fraccionArancelaria = texto.includes('aguacate') ? '08044000' : null;
+      } else if (texto.includes('cemento') || texto.includes('construcción')) {
+        nuevasSugerencias.claveBienesTransp = '23010000';
+        nuevasSugerencias.categoria = 'Materiales de Construcción';
+      } else if (texto.includes('químico') || texto.includes('tóxico') || texto.includes('peligroso')) {
+        alertas.push('Material peligroso detectado - Requiere documentación especial y permisos');
+        nuevasSugerencias.claveBienesTransp = '28000000';
+        nuevasSugerencias.categoria = 'Productos Químicos';
       }
-      if (texto.includes('importación') || texto.includes('exportación')) {
-        alertas.push('Operación de comercio exterior detectada');
+
+      // Detección de especies protegidas
+      if (texto.includes('jaguar') || texto.includes('fauna') || texto.includes('animal silvestre')) {
+        alertas.push('Especie protegida detectada - Requiere permisos de SEMARNAT');
+      }
+
+      // Detección de peso/cantidad
+      const pesoMatch = texto.match(/(\d+)\s*(ton|toneladas|kg|kilogramos)/i);
+      if (pesoMatch) {
+        const cantidad = parseInt(pesoMatch[1]);
+        const unidad = pesoMatch[2].toLowerCase();
+        const pesoKg = unidad.includes('ton') ? cantidad * 1000 : cantidad;
+        nuevasSugerencias.pesoDetectado = pesoKg;
+        nuevasSugerencias.cantidadDetectada = cantidad;
+        nuevasSugerencias.unidadDetectada = unidad;
       }
 
       setAlertasMercancia(alertas);
+      setSugerenciasIA(nuevasSugerencias);
     } else {
       setAlertasMercancia([]);
+      setSugerenciasIA(null);
+      setShowComercioExterior(false);
     }
   }, [data.descripcionMercancia]);
+
+  // Validación automática del RFC del cliente
+  useEffect(() => {
+    if (data.cliente?.rfc) {
+      autoValidateField('cliente_rfc', { rfc: data.cliente.rfc }, 'direccion');
+    }
+  }, [data.cliente?.rfc, autoValidateField]);
 
   const handleClienteSelect = (socio: any) => {
     updateData({ cliente: socio });
     setSearchCliente('');
   };
+
+  const handleMercanciaChange = (descripcion: string) => {
+    updateData({ descripcionMercancia: descripcion });
+  };
+
+  const handleMercanciaSelect = (mercanciaData: any) => {
+    console.log('🤖 IA sugiere datos de mercancía:', mercanciaData);
+    // Aquí se pueden aplicar automáticamente las sugerencias
+  };
+
+  const clienteValidation = getFieldValidation('cliente_rfc');
+  const isClienteRfcValid = isFieldValid('cliente_rfc');
 
   return (
     <div className="space-y-6">
@@ -63,6 +126,15 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
           <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5" />
             Cliente / Receptor
+            {data.cliente?.rfc && (
+              <div className="ml-auto">
+                {isClienteRfcValid ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                )}
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -109,7 +181,10 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
             <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
               <div>
                 <div className="font-medium">{data.cliente.nombre_razon_social}</div>
-                <div className="text-sm text-muted-foreground">{data.cliente.rfc}</div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  {data.cliente.rfc}
+                  {isClienteRfcValid && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                </div>
               </div>
               <Button
                 variant="outline"
@@ -119,6 +194,16 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
                 Cambiar
               </Button>
             </div>
+          )}
+
+          {/* Validación del RFC */}
+          {clienteValidation && !isClienteRfcValid && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                RFC inválido o no encontrado en el sistema
+              </AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
@@ -161,34 +246,113 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
         </CardContent>
       </Card>
 
-      {/* Sección Mercancía */}
+      {/* Sección Mercancía con IA */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
             Descripción de la Mercancía
+            <Sparkles className="h-4 w-4 text-purple-500" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Label htmlFor="descripcionMercancia">¿Qué vas a transportar?</Label>
-          <Textarea
-            id="descripcionMercancia"
-            placeholder="Describe la mercancía que vas a transportar..."
-            value={data.descripcionMercancia || ''}
-            onChange={(e) => updateData({ descripcionMercancia: e.target.value })}
-            className="min-h-[80px]"
-          />
           
-          {/* Alertas de IA */}
+          <SmartMercanciaInput
+            value={data.descripcionMercancia || ''}
+            onChange={handleMercanciaChange}
+            onMercanciaSelect={handleMercanciaSelect}
+            placeholder="Ej: 'Transporte de 20 toneladas de aguacate hass para exportación'"
+            field="descripcion_mercancia"
+            showValidation={true}
+            showClaveProducto={true}
+          />
+
+          {/* Sugerencias de IA */}
+          {sugerenciasIA && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-900">Sugerencias de IA</span>
+              </div>
+              
+              {sugerenciasIA.claveBienesTransp && (
+                <div className="mb-2">
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                    Clave BienesTransp: {sugerenciasIA.claveBienesTransp}
+                  </Badge>
+                  <span className="ml-2 text-sm text-blue-700">
+                    {sugerenciasIA.categoria}
+                  </span>
+                </div>
+              )}
+
+              {sugerenciasIA.pesoDetectado && (
+                <div className="mb-2">
+                  <span className="text-sm text-blue-700">
+                    Peso detectado: <strong>{sugerenciasIA.cantidadDetectada} {sugerenciasIA.unidadDetectada}</strong>
+                    ({sugerenciasIA.pesoDetectado} kg)
+                  </span>
+                </div>
+              )}
+
+              {sugerenciasIA.fraccionArancelaria && (
+                <div className="mb-2">
+                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                    Fracción Arancelaria: {sugerenciasIA.fraccionArancelaria}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Alertas de cumplimiento */}
           {alertasMercancia.length > 0 && (
             <div className="space-y-2">
               {alertasMercancia.map((alerta, index) => (
-                <div key={index} className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-amber-800">{alerta}</div>
-                </div>
+                <Alert key={index} variant="default" className="border-amber-200 bg-amber-50">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    {alerta}
+                  </AlertDescription>
+                </Alert>
               ))}
             </div>
+          )}
+
+          {/* Sección de Comercio Exterior */}
+          {showComercioExterior && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base text-orange-800">
+                  <Globe className="h-5 w-5" />
+                  Cumplimiento Adicional - Comercio Exterior
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="fraccionArancelaria">Fracción Arancelaria</Label>
+                  <Input
+                    id="fraccionArancelaria"
+                    placeholder="Ej: 08044000 (Aguacates)"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="regimenAduanero">Régimen Aduanero</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar régimen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A1">A1 - Exportación Definitiva</SelectItem>
+                      <SelectItem value="A3">A3 - Importación Definitiva</SelectItem>
+                      <SelectItem value="B1">B1 - Exportación Temporal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </CardContent>
       </Card>
@@ -201,6 +365,16 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
               <Badge variant="outline" className="bg-green-100 text-green-800">
                 Misión Definida
               </Badge>
+              {isClienteRfcValid && (
+                <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                  RFC Validado
+                </Badge>
+              )}
+              {sugerenciasIA?.claveBienesTransp && (
+                <Badge variant="outline" className="bg-purple-100 text-purple-800">
+                  IA Activada
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-green-800">
               Listo para establecer la ruta del viaje
