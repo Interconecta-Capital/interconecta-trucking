@@ -1,10 +1,12 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 import { useUnifiedAuth } from './useUnifiedAuth';
+import { useAuthActions } from './auth/useAuthActions';
 
 interface AuthContextType {
   user: any;
   loading: boolean;
+  isAuthenticated: boolean;
   hasAccess: (resource: string) => boolean;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<any>;
@@ -17,22 +19,33 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { 
-    user, 
-    loading, 
-    hasAccess, 
-    signOut, 
-    signIn, 
-    signUp, 
-    signInWithGoogle, 
-    resendConfirmation, 
-    updateProfile 
-  } = useUnifiedAuth();
+  const { user, loading, isAuthenticated } = useUnifiedAuth();
+  const {
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signOut,
+    resendConfirmation,
+    updateProfile
+  } = useAuthActions();
+
+  const hasAccess = (resource: string) => {
+    if (!user) return false;
+    
+    // Superuser has access to everything
+    const isSuperuser = user.user_metadata?.is_superuser === 'true' || 
+                       user.user_metadata?.is_admin === 'true';
+    if (isSuperuser) return true;
+    
+    // Basic access control based on subscription
+    return true; // For now, all authenticated users have access
+  };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      loading, 
+      loading,
+      isAuthenticated,
       hasAccess,
       signOut,
       signIn,
