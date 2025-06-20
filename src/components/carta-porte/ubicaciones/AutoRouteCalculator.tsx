@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Route, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation';
+import { useHybridRouteCalculation } from '@/hooks/useHybridRouteCalculation';
 import { Ubicacion } from '@/types/ubicaciones';
 import { RouteCalculationStatus } from './RouteCalculationStatus';
 import { RouteMetricsDisplay } from './RouteMetricsDisplay';
@@ -22,7 +22,7 @@ export function AutoRouteCalculator({
   distanciaTotal,
   tiempoEstimado
 }: AutoRouteCalculatorProps) {
-  const { calculateRoute, isCalculating, routeData, error } = useGoogleRouteCalculation();
+  const { calculateRoute, isCalculating, routeData, error } = useHybridRouteCalculation();
   const [autoCalculationDone, setAutoCalculationDone] = useState(false);
   const [lastCalculationHash, setLastCalculationHash] = useState<string>('');
 
@@ -93,7 +93,7 @@ export function AutoRouteCalculator({
       
       // Solo calcular si las ubicaciones han cambiado y no tenemos distancia calculada
       if (currentHash !== lastCalculationHash && (!distanciaTotal || distanciaTotal === 0)) {
-        console.log('🔄 Auto-calculando ruta con Google Maps por cambio en ubicaciones');
+        console.log('🔄 Auto-calculando ruta híbrida (Mapbox + Google Maps) por cambio en ubicaciones');
         
         try {
           // Geocodificar ubicaciones
@@ -112,13 +112,13 @@ export function AutoRouteCalculator({
             if (coords) waypoints.push(coords);
           }
 
-          console.log('🚀 Iniciando cálculo con Google Maps:', { origenCoords, destinoCoords, waypoints });
+          console.log('🚀 Iniciando cálculo híbrido:', { origenCoords, destinoCoords, waypoints });
 
-          // Calcular ruta
+          // Calcular ruta híbrida
           const result = await calculateRoute(origenCoords, destinoCoords, waypoints);
           
           if (result && result.success) {
-            console.log('✅ Ruta calculada exitosamente con Google Maps, notificando componente padre');
+            console.log('✅ Ruta híbrida calculada exitosamente, notificando componente padre');
             onDistanceCalculated(
               result.distance_km,
               result.duration_minutes,
@@ -127,10 +127,10 @@ export function AutoRouteCalculator({
             setAutoCalculationDone(true);
             setLastCalculationHash(currentHash);
           } else {
-            console.warn('⚠️ Cálculo de ruta falló, pero manteniendo ubicaciones');
+            console.warn('⚠️ Cálculo de ruta híbrida falló, pero manteniendo ubicaciones');
           }
         } catch (error) {
-          console.error('❌ Error en auto-cálculo con Google Maps (no crítico):', error);
+          console.error('❌ Error en auto-cálculo híbrido (no crítico):', error);
           // No lanzamos el error para evitar que se pierdan las ubicaciones
         }
       }
@@ -169,7 +169,7 @@ export function AutoRouteCalculator({
         setLastCalculationHash(createLocationHash());
       }
     } catch (error) {
-      console.error('❌ Error en recálculo manual con Google Maps:', error);
+      console.error('❌ Error en recálculo manual híbrido:', error);
     }
   };
 
@@ -189,7 +189,7 @@ export function AutoRouteCalculator({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-gray-800">
           <Route className="h-5 w-5" />
-          Cálculo Automático de Ruta - Google Maps
+          Cálculo de Ruta - Mapbox + Google Maps
           {autoCalculationDone && !error && (
             <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800 border-green-200">
               <CheckCircle className="h-3 w-3 mr-1" />
@@ -203,6 +203,9 @@ export function AutoRouteCalculator({
             </Badge>
           )}
         </CardTitle>
+        <p className="text-sm text-gray-600">
+          Distancia y tiempo calculados con Mapbox • Ruta visual con Google Maps
+        </p>
       </CardHeader>
       
       <CardContent className="space-y-4">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
@@ -261,9 +260,9 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo mejorado de cálculo de distancia con Google Maps
+  // Manejo mejorado de cálculo de distancia híbrido
   const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
-    console.log('📏 Distancia calculada con Google Maps:', { distancia, tiempo });
+    console.log('📏 Distancia calculada con sistema híbrido:', { distancia, tiempo });
     
     try {
       setIsCalculatingDistance(true);
@@ -393,7 +392,7 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Calculadora automática de rutas con Google Maps */}
+      {/* Calculadora híbrida de rutas (Mapbox + Google Maps) - SOLO UNA INSTANCIA */}
       {canCalculateDistances && (
         <AutoRouteCalculator
           ubicaciones={ubicaciones}

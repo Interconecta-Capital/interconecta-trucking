@@ -41,28 +41,7 @@ export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) 
 
   return (
     <div className="space-y-6">
-      {/* Calculadora automática de ruta */}
-      <AutoRouteCalculator
-        ubicaciones={data}
-        onDistanceCalculated={handleDistanceCalculated}
-        distanciaTotal={distanciaTotal}
-        tiempoEstimado={tiempoEstimado}
-      />
-
-      {/* Mapa mejorado con ruta */}
-      {showMap && (
-        <EnhancedMapVisualization
-          ubicaciones={data}
-          routeGeometry={routeGeometry}
-          distanciaTotal={distanciaTotal}
-          tiempoEstimado={tiempoEstimado}
-          isVisible={showMap}
-          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
-          isFullscreen={isMapFullscreen}
-        />
-      )}
-
-      {/* Sección optimizada de ubicaciones */}
+      {/* Sección optimizada de ubicaciones con calculadora híbrida integrada */}
       <UbicacionesSectionOptimizada
         data={data}
         onChange={onChange}
@@ -75,6 +54,19 @@ export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) 
           }
         }}
       />
+
+      {/* Mapa mejorado con ruta (solo si hay datos de ruta) */}
+      {showMap && (
+        <EnhancedMapVisualization
+          ubicaciones={data}
+          routeGeometry={routeGeometry}
+          distanciaTotal={distanciaTotal}
+          tiempoEstimado={tiempoEstimado}
+          isVisible={showMap}
+          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+          isFullscreen={isMapFullscreen}
+        />
+      )}
     </div>
   );
 }
