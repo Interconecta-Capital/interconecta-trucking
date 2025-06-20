@@ -46,10 +46,11 @@ export default function Viajes() {
               action="create"
               resource="cartas_porte"
               onAction={handleNuevoViaje}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <Route className="h-4 w-4 mr-2" />
-              Programar Nuevo Viaje
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Route className="h-4 w-4 mr-2" />
+                Programar Nuevo Viaje
+              </Button>
             </ProtectedActions>
           </div>
         </div>
