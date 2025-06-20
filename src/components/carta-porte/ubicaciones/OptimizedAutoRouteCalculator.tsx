@@ -3,12 +3,13 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Route, CheckCircle, AlertTriangle, MapPin, Clock, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
+import { Route, CheckCircle, AlertTriangle, MapPin, Clock, RefreshCw } from 'lucide-react';
 import { useHybridRouteCalculation } from '@/hooks/useHybridRouteCalculation';
 import { useAccurateGeocodingMexico } from '@/hooks/useAccurateGeocodingMexico';
 import { Ubicacion } from '@/types/ubicaciones';
 import { RouteCalculationStatus } from './RouteCalculationStatus';
 import { RouteControls } from './RouteControls';
+import { StableGoogleMap } from './StableGoogleMap';
 import { toast } from 'sonner';
 
 interface OptimizedAutoRouteCalculatorProps {
@@ -16,12 +17,6 @@ interface OptimizedAutoRouteCalculatorProps {
   onDistanceCalculated: (distancia: number, tiempo: number, geometry: any) => void;
   distanciaTotal?: number;
   tiempoEstimado?: number;
-}
-
-declare global {
-  interface Window {
-    google: any;
-  }
 }
 
 export function OptimizedAutoRouteCalculator({
@@ -38,13 +33,9 @@ export function OptimizedAutoRouteCalculator({
     lastCalculationHash: '',
     showMap: false,
     isMapFullscreen: false,
-    isMapLoaded: false,
-    mapError: '',
     retryCount: 0,
   });
 
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
   const calculationTimeoutRef = useRef<NodeJS.Timeout>();
   const stableRef = useRef({ ubicaciones, distanciaTotal, tiempoEstimado });
 
@@ -108,176 +99,6 @@ export function OptimizedAutoRouteCalculator({
     return null;
   }, [geocodeByCodigoPostal]);
 
-  // Load Google Maps API with better error handling
-  useEffect(() => {
-    if (window.google || !routeData) {
-      if (window.google) {
-        setCalculationState(prev => ({ ...prev, isMapLoaded: true, mapError: '' }));
-      }
-      return;
-    }
-
-    console.log('🗺️ Loading Google Maps API...');
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      console.log('✅ Google Maps API loaded successfully');
-      setCalculationState(prev => ({ 
-        ...prev, 
-        isMapLoaded: true, 
-        mapError: '',
-        showMap: true 
-      }));
-    };
-
-    script.onerror = () => {
-      console.error('❌ Error loading Google Maps API - Check API key');
-      setCalculationState(prev => ({ 
-        ...prev, 
-        mapError: 'Error loading Google Maps. Please verify API key configuration.',
-        isMapLoaded: false 
-      }));
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [routeData]);
-
-  // Initialize map when everything is ready
-  useEffect(() => {
-    if (!calculationState.isMapLoaded || 
-        !window.google || 
-        !mapRef.current || 
-        !calculationState.showMap || 
-        !routeData || 
-        calculationState.mapError) {
-      return;
-    }
-
-    console.log('🗺️ Initializing Google Map with route data');
-
-    try {
-      // Default center (Mexico City)
-      const defaultCenter = { lat: 19.4326, lng: -99.1332 };
-
-      // Initialize map
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        zoom: 6,
-        center: defaultCenter,
-        mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ]
-      });
-
-      // Add markers and route
-      const bounds = new window.google.maps.LatLngBounds();
-
-      // Add markers for each location
-      safeUbicaciones.forEach((ubicacion, index) => {
-        const coords = getCoordinatesForUbicacion(ubicacion);
-        
-        if (coords) {
-          const marker = new window.google.maps.Marker({
-            position: coords,
-            map: mapInstanceRef.current,
-            title: ubicacion.nombreRemitenteDestinatario || `${ubicacion.tipoUbicacion} ${index + 1}`,
-            icon: {
-              url: getMarkerIcon(ubicacion.tipoUbicacion),
-              scaledSize: new window.google.maps.Size(32, 32)
-            }
-          });
-
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `
-              <div class="p-2">
-                <h3 class="font-bold">${ubicacion.tipoUbicacion}</h3>
-                <p class="text-sm">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
-                <p class="text-xs text-gray-600">${ubicacion.domicilio.calle}, ${ubicacion.domicilio.municipio}</p>
-              </div>
-            `
-          });
-
-          marker.addListener('click', () => {
-            infoWindow.open(mapInstanceRef.current, marker);
-          });
-
-          bounds.extend(coords);
-        }
-      });
-
-      // Add route if available
-      if (routeData.google_data?.polyline) {
-        try {
-          const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.google_data.polyline);
-          
-          const routePath = new window.google.maps.Polyline({
-            path: decodedPath,
-            geodesic: true,
-            strokeColor: '#2563eb',
-            strokeOpacity: 0.8,
-            strokeWeight: 4
-          });
-
-          routePath.setMap(mapInstanceRef.current);
-          console.log('✅ Route displayed on map');
-        } catch (mapError) {
-          console.error('❌ Error displaying route on map:', mapError);
-        }
-      }
-
-      // Fit map to bounds
-      if (safeUbicaciones.length > 0) {
-        mapInstanceRef.current.fitBounds(bounds);
-        
-        if (safeUbicaciones.length === 1) {
-          mapInstanceRef.current.setZoom(15);
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ Error initializing Google Maps:', error);
-      setCalculationState(prev => ({ 
-        ...prev, 
-        mapError: 'Error initializing map.' 
-      }));
-    }
-
-  }, [calculationState.isMapLoaded, calculationState.showMap, routeData, safeUbicaciones, calculationState.mapError]);
-
-  const getCoordinatesForUbicacion = useCallback((ubicacion: Ubicacion) => {
-    if (ubicacion.coordenadas) {
-      return {
-        lat: ubicacion.coordenadas.latitud,
-        lng: ubicacion.coordenadas.longitud
-      };
-    }
-
-    const coords = geocodeByCodigoPostal(ubicacion.domicilio.codigoPostal);
-    return coords ? { lat: coords.lat, lng: coords.lng } : { lat: 19.4326, lng: -99.1332 };
-  }, [geocodeByCodigoPostal]);
-
-  const getMarkerIcon = (tipo: string) => {
-    const iconMap = {
-      'Origen': 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-      'Destino': 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-      'Paso Intermedio': 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
-    };
-    return iconMap[tipo as keyof typeof iconMap] || 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
-  };
-
   // Optimized auto-calculation with better error handling and persistence
   useEffect(() => {
     if (!canCalculate || isCalculating || !safeUbicaciones.length) return;
@@ -306,8 +127,6 @@ export function OptimizedAutoRouteCalculator({
           
           if (!origenCoords || !destinoCoords) {
             console.warn('⚠️ Could not obtain coordinates for origin/destination');
-            console.log('Origin coords:', origenCoords);
-            console.log('Destination coords:', destinoCoords);
             return;
           }
 
@@ -476,17 +295,12 @@ export function OptimizedAutoRouteCalculator({
         />
 
         {/* Error handling */}
-        {(error || calculationState.mapError) && (
+        {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              {error || calculationState.mapError}
+              {error}
             </p>
-            {calculationState.mapError && (
-              <p className="text-xs text-red-600 mt-1">
-                Para usar el mapa visual, configure una API key válida de Google Maps
-              </p>
-            )}
             <Button 
               variant="outline" 
               size="sm" 
@@ -531,53 +345,17 @@ export function OptimizedAutoRouteCalculator({
           </div>
         )}
 
-        {/* Integrated Google Map */}
+        {/* Stable Google Map Component */}
         {calculationState.showMap && routeData && (
-          <div className={`border border-blue-200 rounded-lg overflow-hidden ${calculationState.isMapFullscreen ? 'fixed inset-4 z-50 bg-white' : ''}`}>
-            <div className="flex items-center justify-between p-3 bg-blue-50 border-b border-blue-200">
-              <div className="flex items-center gap-2">
-                <Route className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Visualización de Ruta</span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setCalculationState(prev => ({ 
-                  ...prev, 
-                  isMapFullscreen: !prev.isMapFullscreen 
-                }))}
-              >
-                {calculationState.isMapFullscreen ? 
-                  <Minimize2 className="h-4 w-4" /> : 
-                  <Maximize2 className="h-4 w-4" />
-                }
-              </Button>
-            </div>
-            
-            <div className={`bg-gray-100 overflow-hidden ${calculationState.isMapFullscreen ? 'h-[calc(100vh-120px)]' : 'h-96'}`}>
-              {calculationState.mapError ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center p-4">
-                    <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Mapa no disponible</p>
-                    <p className="text-xs text-gray-500">Configure la API key de Google Maps</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div ref={mapRef} className="w-full h-full" />
-                  {!calculationState.isMapLoaded && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-sm text-gray-600">Cargando Google Maps...</p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+          <StableGoogleMap
+            ubicaciones={safeUbicaciones}
+            routeData={routeData}
+            isFullscreen={calculationState.isMapFullscreen}
+            onToggleFullscreen={() => setCalculationState(prev => ({ 
+              ...prev, 
+              isMapFullscreen: !prev.isMapFullscreen 
+            }))}
+          />
         )}
 
         <RouteControls

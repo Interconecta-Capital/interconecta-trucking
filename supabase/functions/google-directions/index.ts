@@ -28,7 +28,15 @@ serve(async (req) => {
 
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!googleMapsApiKey) {
+      console.error('❌ Google Maps API key not configured');
       throw new Error('Google Maps API key not configured');
+    }
+
+    console.log('✅ API Key found, length:', googleMapsApiKey.length);
+
+    // Validate coordinates
+    if (!origin.lat || !origin.lng || !destination.lat || !destination.lng) {
+      throw new Error('Invalid origin or destination coordinates');
     }
 
     // Build waypoints string for Google API
@@ -43,11 +51,25 @@ serve(async (req) => {
     
     console.log('🌐 Calling Google Directions API');
     const response = await fetch(directionsUrl);
+    
+    if (!response.ok) {
+      console.error('❌ HTTP error:', response.status, response.statusText);
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
     const data = await response.json();
+    console.log('📦 Google API Response status:', data.status);
 
     if (data.status !== 'OK') {
       console.error('❌ Google Directions API error:', data.status, data.error_message);
-      throw new Error(`Google Directions API error: ${data.status}`);
+      
+      // Provide more specific error messages
+      let errorMessage = `Google Directions API error: ${data.status}`;
+      if (data.error_message) {
+        errorMessage += ` - ${data.error_message}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     if (!data.routes || data.routes.length === 0) {
@@ -55,7 +77,6 @@ serve(async (req) => {
     }
 
     const route = data.routes[0];
-    const leg = route.legs[0];
 
     // Calculate total distance and duration
     let totalDistance = 0;
@@ -90,7 +111,11 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ Route calculated successfully:', result);
+    console.log('✅ Route calculated successfully:', {
+      distance: result.distance_km,
+      duration: result.duration_minutes,
+      legs: result.google_data.legs.length
+    });
 
     return new Response(
       JSON.stringify(result),
@@ -108,7 +133,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || 'Unknown error'
       }),
       { 
         status: 500,
