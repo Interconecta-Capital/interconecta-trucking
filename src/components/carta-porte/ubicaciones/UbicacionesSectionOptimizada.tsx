@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UbicacionesHeader } from './UbicacionesHeader';
@@ -383,14 +384,35 @@ export function UbicacionesSectionOptimizada({
         ubicacionesCount={ubicaciones.length}
         canCalculateDistances={canCalculateDistances}
         onAgregarUbicacion={handleAgregarUbicacion}
-        onCalcularDistancias={() => {}} 
-        onCalcularRuta={() => {}} 
+        onCalcularDistancias={() => {}} // Removed since AutoRouteCalculator handles this
+        onCalcularRuta={() => {}} // Removed since AutoRouteCalculator handles this
       />
 
       <UbicacionesValidation
         validacion={validacion}
         distanciaTotal={distanciaCalculada}
       />
+
+      {/* Calculadora automática de rutas con Google Maps */}
+      {canCalculateDistances && (
+        <AutoRouteCalculator
+          ubicaciones={ubicaciones}
+          onDistanceCalculated={handleDistanceCalculated}
+          distanciaTotal={distanciaTotal}
+          tiempoEstimado={tiempoEstimado}
+        />
+      )}
+
+      {/* Mapa de Google Maps integrado */}
+      {showMap && ubicaciones.length >= 2 && (
+        <GoogleMapVisualization
+          ubicaciones={ubicaciones}
+          routeData={routeData}
+          isVisible={showMap}
+          onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+          isFullscreen={isMapFullscreen}
+        />
+      )}
 
       <CardContent className="bg-white">
         <UbicacionesList
@@ -399,31 +421,6 @@ export function UbicacionesSectionOptimizada({
           onEliminarUbicacion={handleEliminarUbicacion}
           onAgregarUbicacion={handleAgregarUbicacion}
         />
-
-        {/* Calculadora automática de rutas con Google Maps - DESPUÉS de la lista */}
-        {canCalculateDistances && (
-          <div className="mt-6">
-            <AutoRouteCalculator
-              ubicaciones={ubicaciones}
-              onDistanceCalculated={handleDistanceCalculated}
-              distanciaTotal={distanciaTotal}
-              tiempoEstimado={tiempoEstimado}
-            />
-          </div>
-        )}
-
-        {/* Mapa de Google Maps integrado */}
-        {showMap && ubicaciones.length >= 2 && (
-          <div className="mt-6">
-            <GoogleMapVisualization
-              ubicaciones={ubicaciones}
-              routeData={routeData}
-              isVisible={showMap}
-              onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
-              isFullscreen={isMapFullscreen}
-            />
-          </div>
-        )}
 
         <UbicacionesNavigation
           onPrev={onPrev}
