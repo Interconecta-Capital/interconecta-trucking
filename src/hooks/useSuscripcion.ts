@@ -26,6 +26,7 @@ interface Suscripcion {
 export function useSuscripcion() {
   const { user } = useAuth();
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
+  const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
@@ -83,7 +84,24 @@ export function useSuscripcion() {
       }
     };
 
+    // Load available plans
+    const loadPlanes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('planes_suscripcion')
+          .select('*')
+          .eq('activo', true);
+        
+        if (data && !error) {
+          setPlanes(data);
+        }
+      } catch (error) {
+        console.error('[useSuscripcion] Error loading plans:', error);
+      }
+    };
+
     loadSuscripcion();
+    loadPlanes();
   }, [user?.id]);
 
   const enPeriodoPrueba = () => {
@@ -119,6 +137,7 @@ export function useSuscripcion() {
 
   return {
     suscripcion,
+    planes,
     loading,
     enPeriodoPrueba,
     suscripcionVencida,

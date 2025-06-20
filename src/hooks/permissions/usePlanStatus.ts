@@ -28,8 +28,10 @@ export const usePlanStatus = () => {
     }
 
     if (!suscripcion?.plan) {
-      // Plan básico por defecto
-      return planes.find(p => p.nombre.toLowerCase() === 'básico') || {
+      // Plan básico por defecto - Handle case where planes might be undefined
+      const planBasico = Array.isArray(planes) ? planes.find(p => p?.nombre?.toLowerCase() === 'básico') : null;
+      
+      return planBasico || {
         nombre: 'Trial',
         descripcion: 'Período de prueba',
         precio_mensual: 0,
