@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -156,6 +155,10 @@ export function CatalogoSelectorInteligente({
     }
   };
 
+  const handleRefetch = () => {
+    refetch();
+  };
+
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
@@ -244,7 +247,7 @@ export function CatalogoSelectorInteligente({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={refetch}
+                  onClick={handleRefetch}
                   className="h-6 px-2"
                 >
                   <RefreshCw className="h-3 w-3" />

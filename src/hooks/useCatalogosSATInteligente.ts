@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCatalogosHibrido } from './useCatalogosHibrido';
 import { CatalogosSATService } from '@/services/catalogosSAT';
@@ -215,7 +215,7 @@ export function useCatalogosSATInteligente(config: CatalogoConfig) {
   }, [config.enableIA, debouncedSearch, contextualData, generarSugerenciasIA]);
 
   // Buscar con IA cuando cambie el término
-  useState(() => {
+  useEffect(() => {
     if (config.enableIA && debouncedSearch && debouncedSearch.length >= 3) {
       generarSugerenciasIA(debouncedSearch, contextualData)
         .then(setSugerenciasIA);
