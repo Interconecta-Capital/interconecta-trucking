@@ -38,7 +38,7 @@ export class ViajeCartaPorteService {
         .from('viajes')
         .update({ 
           carta_porte_id: cartaPorte.id,
-          status: 'completado'
+          estado: 'completado'
         })
         .eq('id', viajeId);
 
