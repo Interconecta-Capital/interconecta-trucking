@@ -1,16 +1,23 @@
-import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreeting';
-import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
-import { DashboardMetricsGrid } from '@/components/dashboard/DashboardMetricsGrid';
+
+import { UnifiedProtectedContent } from '@/components/UnifiedProtectedContent';
 import { EnhancedDashboardLayout } from '@/components/dashboard/EnhancedDashboardLayout';
-import { ProtectedContent } from '@/components/ProtectedContent';
-import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
-import { PlanBadge } from '@/components/common/PlanBadge';
-import { useCartasPorte } from '@/hooks/useCartasPorte';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useConductores } from '@/hooks/useConductores';
-import { useSocios } from '@/hooks/useSocios';
 
 export default function Dashboard() {
-  return <EnhancedDashboardLayout />;
+  return (
+    <UnifiedProtectedContent
+      requiredAction="read"
+      blockOnRestriction={false}
+      showUpgradePrompt={false}
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900">Acceso Restringido</h2>
+            <p className="text-gray-600">No tiene permisos para acceder al dashboard.</p>
+          </div>
+        </div>
+      }
+    >
+      <EnhancedDashboardLayout />
+    </UnifiedProtectedContent>
+  );
 }

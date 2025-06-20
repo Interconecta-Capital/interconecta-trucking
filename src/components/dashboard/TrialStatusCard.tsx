@@ -2,29 +2,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useTrialManager } from '@/hooks/useTrialManager';
-import { useSuperuser } from '@/hooks/useSuperuser';
-import { Calendar, Clock, AlertTriangle, Crown, Lock } from 'lucide-react';
+import { usePermissionCheck } from '@/hooks/useUnifiedAccessControl';
+import { Calendar, Clock, AlertTriangle, Crown, Lock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function TrialStatusCard() {
-  const { 
-    isInActiveTrial, 
-    isTrialExpired, 
-    isInGracePeriod, 
-    daysRemaining, 
-    graceDaysRemaining,
-    dataWillBeDeleted,
-    getContextualMessage,
-    getUrgencyLevel,
-    restrictionType
-  } = useTrialManager();
-  
-  const { isSuperuser } = useSuperuser();
+  const accessControl = usePermissionCheck();
   const navigate = useNavigate();
 
+  console.log('📊 TrialStatusCard rendering with:', {
+    hasFullAccess: accessControl.hasFullAccess,
+    isBlocked: accessControl.isBlocked,
+    restrictionType: accessControl.restrictionType,
+    statusMessage: accessControl.statusMessage,
+    isSuperuser: accessControl.isSuperuser
+  });
+
   // Superusers ven un card especial
-  if (isSuperuser) {
+  if (accessControl.isSuperuser) {
     return (
       <Card className="border-yellow-200 bg-yellow-50">
         <CardHeader className="pb-3">
@@ -42,58 +37,62 @@ export function TrialStatusCard() {
     );
   }
 
-  const urgency = getUrgencyLevel();
-  const message = getContextualMessage();
-
   const getCardStyle = () => {
-    switch (restrictionType) {
+    switch (accessControl.restrictionType) {
       case 'trial_expired':
         return 'border-orange-300 bg-orange-50';
       case 'payment_suspended':
         return 'border-red-500 bg-red-50';
       case 'grace_period':
-        return dataWillBeDeleted ? 'border-red-500 bg-red-50' : 'border-orange-500 bg-orange-50';
+        return accessControl.urgencyLevel === 'critical' ? 'border-red-500 bg-red-50' : 'border-orange-500 bg-orange-50';
       default:
-        if (isInActiveTrial && daysRemaining <= 3) return 'border-yellow-500 bg-yellow-50';
-        if (isInActiveTrial) return 'border-green-500 bg-green-50';
+        if (accessControl.isInActiveTrial && accessControl.daysRemaining <= 3) return 'border-yellow-500 bg-yellow-50';
+        if (accessControl.isInActiveTrial) return 'border-green-500 bg-green-50';
         return 'border-gray-300 bg-gray-50';
     }
   };
 
   const getIcon = () => {
-    switch (restrictionType) {
+    switch (accessControl.restrictionType) {
       case 'trial_expired':
         return AlertTriangle;
       case 'payment_suspended':
         return Lock;
       case 'grace_period':
-        return dataWillBeDeleted ? AlertTriangle : Clock;
+        return accessControl.urgencyLevel === 'critical' ? AlertTriangle : Clock;
       default:
         return Calendar;
     }
   };
 
   const getProgressValue = () => {
-    if (isInActiveTrial) {
-      return ((14 - daysRemaining) / 14) * 100;
+    if (accessControl.isInActiveTrial) {
+      return ((14 - accessControl.daysRemaining) / 14) * 100;
     }
-    if (isInGracePeriod) {
-      return ((90 - graceDaysRemaining) / 90) * 100;
+    if (accessControl.restrictionType === 'grace_period') {
+      return ((90 - accessControl.daysRemaining) / 90) * 100;
     }
     return 100;
   };
 
   const getButtonText = () => {
-    switch (restrictionType) {
+    switch (accessControl.restrictionType) {
       case 'trial_expired':
         return 'Ver Planes';
       case 'payment_suspended':
         return 'Renovar Suscripción';
       case 'grace_period':
-        return dataWillBeDeleted ? 'Adquirir Plan YA' : 'Ver Planes';
+        return accessControl.urgencyLevel === 'critical' ? 'ADQUIRIR PLAN YA' : 'Ver Planes';
       default:
         return 'Ver Planes';
     }
+  };
+
+  const shouldShowButton = () => {
+    return (
+      accessControl.restrictionType !== 'none' || 
+      (accessControl.isInActiveTrial && accessControl.daysRemaining <= 7)
+    );
   };
 
   const Icon = getIcon();
@@ -108,30 +107,38 @@ export function TrialStatusCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-2">
-          <p className="text-sm font-medium">{message}</p>
+          <p className="text-sm font-medium">{accessControl.statusMessage}</p>
           
-          {(isInActiveTrial || isInGracePeriod) && (
+          {accessControl.actionRequired && (
+            <p className="text-xs text-muted-foreground">{accessControl.actionRequired}</p>
+          )}
+          
+          {(accessControl.isInActiveTrial || accessControl.restrictionType === 'grace_period') && (
             <div className="space-y-1">
               <Progress value={getProgressValue()} className="h-2" />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>
-                  {isInActiveTrial ? 'Trial' : 'Período de gracia'}
+                  {accessControl.isInActiveTrial ? 'Trial' : 'Período de gracia'}
                 </span>
                 <span>
-                  {isInActiveTrial ? `${daysRemaining}/14 días` : `${graceDaysRemaining}/90 días`}
+                  {accessControl.isInActiveTrial 
+                    ? `${accessControl.daysRemaining}/14 días` 
+                    : `${accessControl.daysRemaining}/90 días`
+                  }
                 </span>
               </div>
             </div>
           )}
         </div>
 
-        {(restrictionType !== 'none' || (isInActiveTrial && daysRemaining <= 7)) && (
+        {shouldShowButton() && (
           <Button 
             onClick={() => navigate('/planes')}
             className="w-full"
-            variant={dataWillBeDeleted || restrictionType === 'payment_suspended' ? 'destructive' : 'default'}
+            variant={accessControl.urgencyLevel === 'critical' || accessControl.restrictionType === 'payment_suspended' ? 'destructive' : 'default'}
             size="sm"
           >
+            <TrendingUp className="w-3 h-3 mr-1" />
             {getButtonText()}
           </Button>
         )}
