@@ -7,6 +7,8 @@ interface TrialInfo {
   isTrialActive: boolean;
   isTrialExpired: boolean;
   daysRemaining: number;
+  daysUsed: number;
+  totalTrialDays: number;
   trialEndDate: Date | null;
   hasValidSubscription: boolean;
   subscriptionStatus: string | null;
@@ -18,6 +20,8 @@ export function useTimezoneAwareTrialTracking() {
     isTrialActive: false,
     isTrialExpired: false,
     daysRemaining: 0,
+    daysUsed: 0,
+    totalTrialDays: 14,
     trialEndDate: null,
     hasValidSubscription: false,
     subscriptionStatus: null,
@@ -48,11 +52,14 @@ export function useTimezoneAwareTrialTracking() {
           const trialEndDate = new Date(userCreatedAt.getTime() + (14 * 24 * 60 * 60 * 1000)); // 14 days
           const now = new Date();
           const daysRemaining = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+          const daysUsed = Math.max(0, 14 - daysRemaining);
           
           setTrialInfo({
             isTrialActive: daysRemaining > 0,
             isTrialExpired: daysRemaining <= 0,
             daysRemaining,
+            daysUsed,
+            totalTrialDays: 14,
             trialEndDate,
             hasValidSubscription: false,
             subscriptionStatus: 'trial',
@@ -67,7 +74,9 @@ export function useTimezoneAwareTrialTracking() {
           new Date(createdAt.getTime() + (14 * 24 * 60 * 60 * 1000)); // 14 days default
 
         const now = new Date();
+        const totalTrialDays = 14;
         const daysRemaining = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        const daysUsed = Math.max(0, totalTrialDays - daysRemaining);
 
         // Try to get subscription info (but don't fail if it errors)
         let subscriptionStatus = 'trial';
@@ -92,6 +101,8 @@ export function useTimezoneAwareTrialTracking() {
           isTrialActive: daysRemaining > 0 && !hasValidSubscription,
           isTrialExpired: daysRemaining <= 0 && !hasValidSubscription,
           daysRemaining,
+          daysUsed,
+          totalTrialDays,
           trialEndDate,
           hasValidSubscription,
           subscriptionStatus,
@@ -104,6 +115,8 @@ export function useTimezoneAwareTrialTracking() {
           isTrialActive: true,
           isTrialExpired: false,
           daysRemaining: 14,
+          daysUsed: 0,
+          totalTrialDays: 14,
           trialEndDate: new Date(Date.now() + (14 * 24 * 60 * 60 * 1000)),
           hasValidSubscription: false,
           subscriptionStatus: 'trial',

@@ -19,12 +19,15 @@ interface Suscripcion {
   plan?: Plan;
   fecha_fin_prueba?: string;
   fecha_vencimiento?: string;
+  proximo_pago?: string;
+  stripe_customer_id?: string;
 }
 
 export function useSuscripcion() {
   const { user } = useAuth();
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
   useEffect(() => {
     if (!user?.id) {
@@ -88,9 +91,39 @@ export function useSuscripcion() {
     return suscripcion.status === 'trial';
   };
 
+  const suscripcionVencida = () => {
+    if (!suscripcion) return false;
+    if (suscripcion.status === 'past_due' || suscripcion.status === 'canceled') return true;
+    if (suscripcion.fecha_vencimiento) {
+      return new Date(suscripcion.fecha_vencimiento) < new Date();
+    }
+    return false;
+  };
+
+  const estaBloqueado = () => {
+    return suscripcionVencida() && !enPeriodoPrueba();
+  };
+
+  const abrirPortalCliente = async () => {
+    setIsOpeningPortal(true);
+    try {
+      // Placeholder for portal client functionality
+      console.log('Opening customer portal...');
+      // In real implementation, this would redirect to Stripe customer portal
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+    } finally {
+      setIsOpeningPortal(false);
+    }
+  };
+
   return {
     suscripcion,
     loading,
     enPeriodoPrueba,
+    suscripcionVencida,
+    estaBloqueado,
+    abrirPortalCliente,
+    isOpeningPortal,
   };
 }
