@@ -26,9 +26,17 @@ serve(async (req) => {
     console.log('📍 Destination:', destination);
     console.log('🛤️ Waypoints:', waypoints);
 
-    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    // Intentar diferentes nombres de secretos que pueden estar configurados
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY') || 
+                             Deno.env.get('Publicaciones_interconecta') ||
+                             Deno.env.get('GOOGLE_API_KEY') ||
+                             Deno.env.get('MAPS_API_KEY');
+    
     if (!googleMapsApiKey) {
-      console.error('❌ Google Maps API key not configured');
+      console.error('❌ Google Maps API key not found in any expected environment variable');
+      console.log('Available env vars:', Object.keys(Deno.env.toObject()).filter(key => 
+        key.toLowerCase().includes('google') || key.toLowerCase().includes('map')
+      ));
       
       // Provide enhanced fallback calculation
       console.log('🔄 Using enhanced fallback calculation');
@@ -45,7 +53,7 @@ serve(async (req) => {
             coordinates: ''
           },
           fallback: true,
-          fallback_reason: 'API key not configured',
+          fallback_reason: 'API key not configured correctly',
           google_data: {
             polyline: '',
             bounds: null,
@@ -61,7 +69,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ API Key configured');
+    console.log('✅ API Key found and configured');
 
     // Enhanced coordinate validation
     if (!origin.lat || !origin.lng || !destination.lat || !destination.lng ||
@@ -90,7 +98,7 @@ serve(async (req) => {
     let data;
     
     // Enhanced retry logic with exponential backoff
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -99,7 +107,8 @@ serve(async (req) => {
           signal: controller.signal,
           headers: {
             'User-Agent': 'CartaPorte-App/1.0',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Referer': 'https://qulhweffinppyjpfkknh.supabase.co'
           }
         });
         
@@ -107,7 +116,7 @@ serve(async (req) => {
         
         if (!response.ok) {
           console.error(`❌ HTTP error (attempt ${attempt}):`, response.status, response.statusText);
-          if (attempt === 5) {
+          if (attempt === 3) {
             throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
           }
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
@@ -120,7 +129,7 @@ serve(async (req) => {
         
       } catch (error) {
         console.error(`❌ Fetch error (attempt ${attempt}):`, error);
-        if (attempt === 5) {
+        if (attempt === 3) {
           throw error;
         }
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
