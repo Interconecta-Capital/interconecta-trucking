@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error('Google Maps API key not configured');
     }
 
-    console.log('✅ API Key found, length:', googleMapsApiKey.length);
+    console.log('✅ API Key configured');
 
     // Validate coordinates
     if (!origin.lat || !origin.lng || !destination.lat || !destination.lng) {
@@ -46,24 +46,74 @@ serve(async (req) => {
       waypointsParam = `&waypoints=${waypointStrings.join('|')}`;
     }
 
-    // Call Google Directions API
+    // Call Google Directions API with retry logic
     const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypointsParam}&key=${googleMapsApiKey}`;
     
     console.log('🌐 Calling Google Directions API');
-    const response = await fetch(directionsUrl);
+    let response;
+    let data;
     
-    if (!response.ok) {
-      console.error('❌ HTTP error:', response.status, response.statusText);
-      throw new Error(`HTTP error: ${response.status}`);
+    // Retry logic for API calls
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        response = await fetch(directionsUrl);
+        
+        if (!response.ok) {
+          console.error(`❌ HTTP error (attempt ${attempt}):`, response.status, response.statusText);
+          if (attempt === 3) {
+            throw new Error(`HTTP error: ${response.status}`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          continue;
+        }
+
+        data = await response.json();
+        break;
+      } catch (error) {
+        console.error(`❌ Fetch error (attempt ${attempt}):`, error);
+        if (attempt === 3) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
     }
 
-    const data = await response.json();
     console.log('📦 Google API Response status:', data.status);
 
     if (data.status !== 'OK') {
       console.error('❌ Google Directions API error:', data.status, data.error_message);
       
-      // Provide more specific error messages
+      // Provide fallback calculation for specific errors
+      if (data.status === 'ZERO_RESULTS' || data.status === 'NOT_FOUND') {
+        console.log('🔄 Providing fallback calculation');
+        const fallbackDistance = calculateDirectDistance(origin, destination);
+        const fallbackDuration = Math.round(fallbackDistance * 1.2); // 1.2 min per km estimate
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            distance_km: Math.round(fallbackDistance * 1.3 * 100) / 100, // Add 30% for real roads
+            duration_minutes: fallbackDuration,
+            route_geometry: {
+              type: 'LineString',
+              coordinates: '' // No polyline for fallback
+            },
+            fallback: true,
+            google_data: {
+              polyline: '',
+              bounds: null,
+              legs: []
+            }
+          }),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        );
+      }
+      
       let errorMessage = `Google Directions API error: ${data.status}`;
       if (data.error_message) {
         errorMessage += ` - ${data.error_message}`;
@@ -145,3 +195,16 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to calculate direct distance
+function calculateDirectDistance(origin: { lat: number; lng: number }, destination: { lat: number; lng: number }): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (destination.lat - origin.lat) * Math.PI / 180;
+  const dLon = (destination.lng - origin.lng) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(origin.lat * Math.PI / 180) * Math.cos(destination.lat * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}

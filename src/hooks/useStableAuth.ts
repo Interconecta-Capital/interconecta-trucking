@@ -1,45 +1,42 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-import { useNavigate } from 'react-router-dom';
+import { User, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
-type Usuario = Database['public']['Tables']['usuarios']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type Tenant = Database['public']['Tables']['tenants']['Row'];
-
-export interface StableAuthUser extends User {
-  profile?: Profile | null;
-  usuario?: Usuario | null;
-  tenant?: Tenant | null;
+interface UserProfile {
+  id: string;
+  nombre: string;
+  email: string;
+  empresa?: string;
+  rfc?: string;
+  telefono?: string;
+  plan_type?: string;
+  trial_end_date?: string;
 }
 
 interface AuthState {
-  user: StableAuthUser | null;
+  user: User | null;
   session: Session | null;
+  profile: UserProfile | null;
   loading: boolean;
   initialized: boolean;
-  error: string | null;
 }
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
 export const useStableAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
+  const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
+    profile: null,
     loading: true,
     initialized: false,
-    error: null,
   });
-  
-  const navigate = useNavigate();
+
   const mountedRef = useRef(true);
-  const initializationRef = useRef(false);
   const retryCountRef = useRef(0);
-  const lastUserIdRef = useRef<string | null>(null);
 
   const retryWithBackoff = useCallback(async (fn: () => Promise<any>, retries = MAX_RETRIES): Promise<any> => {
     try {
@@ -47,260 +44,167 @@ export const useStableAuth = () => {
     } catch (error) {
       if (retries > 0) {
         console.warn(`[StableAuth] Retrying operation, ${retries} attempts left`, error);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (MAX_RETRIES - retries + 1)));
         return retryWithBackoff(fn, retries - 1);
       }
       throw error;
     }
   }, []);
 
-  const loadUserData = useCallback(async (authUser: User): Promise<StableAuthUser> => {
-    if (!mountedRef.current || lastUserIdRef.current === authUser.id) {
-      return { ...authUser, profile: null, usuario: null, tenant: null };
-    }
-
-    lastUserIdRef.current = authUser.id;
-    console.log('[StableAuth] Loading user data for:', authUser.id);
+  const loadUserProfile = useCallback(async (userId: string) => {
+    if (!userId || !mountedRef.current) return null;
 
     try {
-      const loadData = async () => {
-        const [profileResult, usuarioResult] = await Promise.allSettled([
-          supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
-          supabase.from('usuarios').select('*').eq('auth_user_id', authUser.id).maybeSingle()
-        ]);
+      console.log('[StableAuth] Loading user profile for:', userId);
 
-        const profile = profileResult.status === 'fulfilled' && profileResult.value?.data 
-          ? profileResult.value.data 
-          : null;
+      const loadProfile = async () => {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-        const usuario = usuarioResult.status === 'fulfilled' && usuarioResult.value?.data 
-          ? usuarioResult.value.data 
-          : null;
-
-        let tenant: Tenant | null = null;
-        if (usuario?.tenant_id) {
-          try {
-            const tenantResult = await supabase
-              .from('tenants')
-              .select('*')
-              .eq('id', usuario.tenant_id)
-              .maybeSingle();
-            tenant = tenantResult.data;
-          } catch (error) {
-            console.warn('[StableAuth] Error loading tenant:', error);
+        if (error) {
+          console.error('[StableAuth] Profile error:', error);
+          // Don't throw error if profile doesn't exist, create default
+          if (error.code === 'PGRST116') {
+            console.log('[StableAuth] No profile found, using defaults');
+            return null;
           }
+          throw new Error(`Error loading profile: ${error.message}`);
         }
 
-        return { ...authUser, profile, usuario, tenant };
+        return profile;
       };
 
-      return await retryWithBackoff(loadData);
+      const profile = await retryWithBackoff(loadProfile);
+      console.log('[StableAuth] Profile loaded successfully:', profile?.nombre || 'Default User');
+      
+      return profile;
     } catch (error) {
-      console.error('[StableAuth] Error loading user data:', error);
-      return { ...authUser, profile: null, usuario: null, tenant: null };
+      console.error('[StableAuth] Error loading profile:', error);
+      return null;
     }
   }, [retryWithBackoff]);
 
-  const updateAuthState = useCallback(async (session: Session | null, skipUserLoad = false) => {
+  // Initialize auth
+  useEffect(() => {
     if (!mountedRef.current) return;
 
-    console.log('[StableAuth] Updating auth state, session:', !!session);
-
-    if (session?.user && !skipUserLoad) {
-      try {
-        setAuthState(prev => ({ ...prev, loading: true, error: null }));
-        const userData = await loadUserData(session.user);
-        
-        if (mountedRef.current) {
-          setAuthState({
-            user: userData,
-            session,
-            loading: false,
-            initialized: true,
-            error: null,
-          });
-        }
-      } catch (error) {
-        console.error('[StableAuth] Error updating auth state:', error);
-        if (mountedRef.current) {
-          setAuthState({
-            user: null,
-            session: null,
-            loading: false,
-            initialized: true,
-            error: error instanceof Error ? error.message : 'Error de autenticación',
-          });
-        }
-      }
-    } else {
-      if (mountedRef.current) {
-        setAuthState({
-          user: null,
-          session: null,
-          loading: false,
-          initialized: true,
-          error: null,
-        });
-      }
-    }
-  }, [loadUserData]);
-
-  useEffect(() => {
-    if (initializationRef.current) return;
-    initializationRef.current = true;
-
-    let authSubscription: any = null;
+    console.log('[StableAuth] Initializing authentication...');
 
     const initializeAuth = async () => {
       try {
-        console.log('[StableAuth] Initializing stable authentication...');
+        setState(prev => ({ ...prev, loading: true }));
 
-        // Set up auth state listener first
-        authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('[StableAuth] Auth state change:', event, !!session);
-          
-          // Handle different auth events
-          switch (event) {
-            case 'SIGNED_IN':
-              retryCountRef.current = 0;
-              setTimeout(() => updateAuthState(session), 100);
-              
-              // Navigate only from auth pages
-              const currentPath = window.location.pathname;
-              if (currentPath === '/' || currentPath === '/auth') {
-                navigate('/dashboard', { replace: true });
-              }
-              break;
-              
-            case 'SIGNED_OUT':
-              lastUserIdRef.current = null;
-              retryCountRef.current = 0;
-              await updateAuthState(null);
-              
-              // Navigate to auth unless already there
-              const authPath = window.location.pathname;
-              if (!authPath.includes('/auth') && authPath !== '/') {
-                navigate('/auth', { replace: true });
-              }
-              break;
-              
-            case 'TOKEN_REFRESHED':
-              // Update session only, don't reload user data
-              if (mountedRef.current) {
-                setAuthState(prev => ({ ...prev, session }));
-              }
-              break;
-              
-            default:
-              setTimeout(() => updateAuthState(session), 100);
-              break;
-          }
-        });
-
-        // Get initial session
-        const { data: { session }, error } = await retryWithBackoff(
-          () => supabase.auth.getSession()
-        );
-
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
         if (error) {
-          console.error('[StableAuth] Error getting initial session:', error);
-          if (mountedRef.current) {
-            setAuthState(prev => ({ 
-              ...prev, 
-              loading: false, 
-              initialized: true, 
-              error: error.message 
-            }));
-          }
-        } else {
-          await updateAuthState(session);
+          console.error('[StableAuth] Session error:', error);
+          throw error;
         }
 
-      } catch (error) {
-        console.error('[StableAuth] Error initializing auth:', error);
-        if (mountedRef.current) {
-          setAuthState({
+        if (session?.user && mountedRef.current) {
+          console.log('[StableAuth] Session found, loading user data');
+          const profile = await loadUserProfile(session.user.id);
+          
+          if (mountedRef.current) {
+            setState({
+              user: session.user,
+              session,
+              profile,
+              loading: false,
+              initialized: true,
+            });
+            console.log('[StableAuth] User data loaded successfully');
+          }
+        } else if (mountedRef.current) {
+          setState({
             user: null,
             session: null,
+            profile: null,
             loading: false,
             initialized: true,
-            error: error instanceof Error ? error.message : 'Error de inicialización',
           });
+          console.log('[StableAuth] No active session');
+        }
+      } catch (error) {
+        console.error('[StableAuth] Initialization error:', error);
+        if (mountedRef.current) {
+          setState(prev => ({
+            ...prev,
+            loading: false,
+            initialized: true,
+          }));
+          
+          if (retryCountRef.current >= MAX_RETRIES) {
+            toast.error('Error de autenticación. Por favor, recarga la página.');
+          }
+          retryCountRef.current++;
         }
       }
     };
 
     initializeAuth();
 
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mountedRef.current) return;
+
+      console.log('[StableAuth] Auth state change:', event, !!session);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await loadUserProfile(session.user.id);
+        if (mountedRef.current) {
+          setState({
+            user: session.user,
+            session,
+            profile,
+            loading: false,
+            initialized: true,
+          });
+        }
+      } else if (event === 'SIGNED_OUT') {
+        if (mountedRef.current) {
+          setState({
+            user: null,
+            session: null,
+            profile: null,
+            loading: false,
+            initialized: true,
+          });
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [loadUserProfile]);
+
+  // Cleanup
+  useEffect(() => {
     return () => {
       mountedRef.current = false;
-      if (authSubscription?.data?.subscription) {
-        authSubscription.data.subscription.unsubscribe();
-      }
     };
-  }, [updateAuthState, navigate, retryWithBackoff]);
-
-  // Auth actions with retry logic
-  const signIn = useCallback(async (email: string, password: string) => {
-    return await retryWithBackoff(async () => {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      return data;
-    });
-  }, [retryWithBackoff]);
+  }, []);
 
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      lastUserIdRef.current = null;
-      navigate('/auth', { replace: true });
+      toast.success('Sesión cerrada exitosamente');
     } catch (error) {
-      console.error('[StableAuth] Signout error:', error);
-      // Force navigation even on error
-      navigate('/auth', { replace: true });
+      console.error('[StableAuth] Sign out error:', error);
+      toast.error('Error al cerrar sesión');
     }
-  }, [navigate]);
-
-  const hasAccess = useCallback((resource: string): boolean => {
-    if (!authState.user) return false;
-    
-    if (authState.user.usuario?.rol_especial === 'superuser' || 
-        authState.user.usuario?.rol === 'superuser') {
-      return true;
-    }
-    
-    if (authState.user.usuario?.rol === 'admin') {
-      return !resource.includes('superuser');
-    }
-    
-    return ['dashboard', 'carta-porte', 'profile'].some(allowed => 
-      resource.includes(allowed)
-    );
-  }, [authState.user]);
-
-  const refreshUserData = useCallback(async () => {
-    if (authState.user && authState.session) {
-      try {
-        const userData = await loadUserData(authState.user);
-        setAuthState(prev => ({ ...prev, user: userData }));
-      } catch (error) {
-        console.error('[StableAuth] Error refreshing user data:', error);
-      }
-    }
-  }, [authState.user, authState.session, loadUserData]);
+  }, []);
 
   return {
-    user: authState.user,
-    session: authState.session,
-    loading: authState.loading,
-    initialized: authState.initialized,
-    error: authState.error,
-    signIn,
+    user: state.user,
+    session: state.session,
+    profile: state.profile,
+    loading: state.loading,
+    initialized: state.initialized,
     signOut,
-    hasAccess,
-    refreshUserData,
   };
 };

@@ -49,6 +49,7 @@ export const useStableVehiculos = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
+        // Simple query without complex joins that might cause 406 errors
         const { data, error } = await supabase
           .from('vehiculos')
           .select('*')

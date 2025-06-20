@@ -26,21 +26,72 @@ export function StableGoogleMap({
 }: StableGoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const [mapState, setMapState] = useState({
     isLoaded: false,
     isInitialized: false,
     error: '',
-    retryCount: 0
+    retryCount: 0,
+    containerReady: false
   });
 
-  // Load Google Maps API with proper error handling
+  // Check if container is ready
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const checkContainer = () => {
+      const container = mapRef.current;
+      if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
+        setMapState(prev => ({ ...prev, containerReady: true }));
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate check
+    if (checkContainer()) return;
+
+    // Use IntersectionObserver to detect when container becomes visible
+    if ('IntersectionObserver' in window) {
+      intersectionObserverRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.target === mapRef.current) {
+              if (checkContainer()) {
+                intersectionObserverRef.current?.disconnect();
+              }
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+
+      intersectionObserverRef.current.observe(mapRef.current);
+    } else {
+      // Fallback for browsers without IntersectionObserver
+      const interval = setInterval(() => {
+        if (checkContainer()) {
+          clearInterval(interval);
+        }
+      }, 500);
+
+      return () => clearInterval(interval);
+    }
+
+    return () => {
+      intersectionObserverRef.current?.disconnect();
+    };
+  }, []);
+
+  // Load Google Maps API
   useEffect(() => {
     if (window.google || mapState.isLoaded) return;
 
     console.log('🗺️ Loading Google Maps API...');
     
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY'}&libraries=geometry`;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBpZVhEF9lJbBg1cQhF2jQzPxF8cQhF2jQ';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async`;
     script.async = true;
     script.defer = true;
     
@@ -54,11 +105,11 @@ export function StableGoogleMap({
       }));
     };
 
-    script.onerror = () => {
-      console.error('❌ Error loading Google Maps API');
+    script.onerror = (error) => {
+      console.error('❌ Error loading Google Maps API:', error);
       setMapState(prev => ({ 
         ...prev, 
-        error: 'Error loading Google Maps. Please verify API key configuration.',
+        error: 'Error cargando Google Maps. Verifica la configuración de la API Key.',
         retryCount: prev.retryCount + 1 
       }));
     };
@@ -72,9 +123,10 @@ export function StableGoogleMap({
     };
   }, [mapState.retryCount]);
 
-  // Initialize map when API is ready and container exists
+  // Initialize map when everything is ready
   useEffect(() => {
     if (!mapState.isLoaded || 
+        !mapState.containerReady ||
         !window.google || 
         !mapRef.current || 
         mapState.isInitialized ||
@@ -85,11 +137,14 @@ export function StableGoogleMap({
     try {
       console.log('🗺️ Initializing Google Map...');
 
-      // Wait for container to be ready
       const container = mapRef.current;
+      
+      // Double-check container is ready
       if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.warn('⚠️ Map container not ready, retrying...');
-        setTimeout(() => setMapState(prev => ({ ...prev })), 500);
+        console.warn('⚠️ Map container not ready yet, waiting...');
+        setTimeout(() => {
+          setMapState(prev => ({ ...prev, containerReady: false }));
+        }, 1000);
         return;
       }
 
@@ -111,23 +166,29 @@ export function StableGoogleMap({
         ]
       });
 
-      // Add markers and route with error handling
-      if (ubicaciones && ubicaciones.length > 0) {
-        addMarkersAndRoute();
-      }
+      // Wait for map to be fully loaded
+      window.google.maps.event.addListenerOnce(mapInstanceRef.current, 'idle', () => {
+        console.log('🗺️ Map fully loaded');
+        
+        // Add markers and route
+        if (ubicaciones && ubicaciones.length > 0) {
+          addMarkersAndRoute();
+        }
 
-      setMapState(prev => ({ ...prev, isInitialized: true }));
-      console.log('✅ Google Map initialized successfully');
+        setMapState(prev => ({ ...prev, isInitialized: true }));
+      });
+
+      console.log('✅ Google Map initialization started');
 
     } catch (error) {
       console.error('❌ Error initializing Google Maps:', error);
       setMapState(prev => ({ 
         ...prev, 
-        error: 'Error initializing map. Please refresh the page.',
+        error: 'Error inicializando el mapa. Por favor, recarga la página.',
         retryCount: prev.retryCount + 1
       }));
     }
-  }, [mapState.isLoaded, ubicaciones, routeData]);
+  }, [mapState.isLoaded, mapState.containerReady, ubicaciones, routeData]);
 
   const addMarkersAndRoute = () => {
     if (!mapInstanceRef.current || !window.google) return;
@@ -168,8 +229,8 @@ export function StableGoogleMap({
         }
       });
 
-      // Add route if available
-      if (routeData?.google_data?.polyline && window.google.maps.geometry) {
+      // Add route if available and geometry library is loaded
+      if (routeData?.google_data?.polyline && window.google.maps.geometry?.encoding) {
         try {
           const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.google_data.polyline);
           
@@ -241,7 +302,8 @@ export function StableGoogleMap({
       ...prev, 
       error: '', 
       isLoaded: false, 
-      isInitialized: false 
+      isInitialized: false,
+      containerReady: false
     }));
   };
 
@@ -254,9 +316,11 @@ export function StableGoogleMap({
               <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
               <p className="text-sm text-red-600 mb-2">Mapa no disponible</p>
               <p className="text-xs text-gray-500 mb-4">{mapState.error}</p>
-              <Button variant="outline" size="sm" onClick={handleRetry}>
-                Reintentar
-              </Button>
+              {mapState.retryCount < 3 && (
+                <Button variant="outline" size="sm" onClick={handleRetry}>
+                  Reintentar
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -270,7 +334,7 @@ export function StableGoogleMap({
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-blue-600" />
           <span className="text-sm font-medium text-blue-800">Visualización de Ruta</span>
-          {mapState.isLoaded && !mapState.isInitialized && (
+          {!mapState.isInitialized && mapState.isLoaded && (
             <Badge variant="outline" className="ml-2">
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
               Inicializando
@@ -291,19 +355,15 @@ export function StableGoogleMap({
       
       <div className={`bg-gray-100 overflow-hidden ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'h-96'}`}>
         <div ref={mapRef} className="w-full h-full" />
-        {!mapState.isInitialized && mapState.isLoaded && (
+        {(!mapState.isInitialized || !mapState.containerReady) && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
             <div className="text-center">
               <Loader2 className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
-              <p className="text-sm text-gray-600">Inicializando mapa...</p>
-            </div>
-          </div>
-        )}
-        {!mapState.isLoaded && !mapState.error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
-              <p className="text-sm text-gray-600">Cargando Google Maps...</p>
+              <p className="text-sm text-gray-600">
+                {!mapState.isLoaded ? 'Cargando Google Maps...' : 
+                 !mapState.containerReady ? 'Preparando contenedor...' : 
+                 'Inicializando mapa...'}
+              </p>
             </div>
           </div>
         )}
