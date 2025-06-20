@@ -47,16 +47,6 @@ export class ViajeCartaPorteService {
         throw updateError;
       }
 
-      // 5. También actualizar la carta porte con el viaje_id
-      const { error: cpUpdateError } = await supabase
-        .from('cartas_porte')
-        .update({ viaje_id: viajeId })
-        .eq('id', cartaPorte.id);
-
-      if (cpUpdateError) {
-        console.error('Error vinculando carta porte con viaje:', cpUpdateError);
-      }
-
       console.log('✅ Carta Porte creada exitosamente desde viaje');
       
       return {
