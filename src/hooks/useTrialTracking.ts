@@ -1,2 +1,3 @@
-// Reemplazar completamente con la versión optimizada
-export { useOptimizedTrialTracking as useTrialTracking } from './useOptimizedTrialTracking';
+
+// Usar la nueva versión con zona horaria de México
+export { useTimezoneAwareTrialTracking as useTrialTracking } from './useTimezoneAwareTrialTracking';

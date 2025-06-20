@@ -1,8 +1,10 @@
 
-import { OptimizedDashboard } from './OptimizedDashboard';
-import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { TrialStatusCard } from './TrialStatusCard';
+import { BusinessMetricsGrid } from './BusinessMetricsGrid';
+import { OperationalAlertsPanel } from './OperationalAlertsPanel';
+import { BusinessPerformanceRankings } from './BusinessPerformanceRankings';
+import { ImprovedTrialStatusCard } from './ImprovedTrialStatusCard';
 import { ActiveNotificationsWidget } from './ActiveNotificationsWidget';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
 
 export function EnhancedDashboardLayout() {
   return (
@@ -10,19 +12,25 @@ export function EnhancedDashboardLayout() {
       {/* Notificaciones importantes del plan */}
       <PlanNotifications />
       
+      {/* Métricas de negocio principales */}
+      <BusinessMetricsGrid />
+      
       {/* Grid con información clave */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Estado del trial/suscripción */}
-        <TrialStatusCard />
+        {/* Estado del trial */}
+        <ImprovedTrialStatusCard />
         
-        {/* Widget de notificaciones activas */}
+        {/* Alertas operacionales */}
         <div className="lg:col-span-2">
-          <ActiveNotificationsWidget />
+          <OperationalAlertsPanel />
         </div>
       </div>
       
-      {/* Dashboard principal optimizado */}
-      <OptimizedDashboard />
+      {/* Widget de notificaciones activas */}
+      <ActiveNotificationsWidget />
+      
+      {/* Rankings y análisis de rendimiento */}
+      <BusinessPerformanceRankings />
     </div>
   );
 }
