@@ -1,18 +1,17 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Package, Search, AlertTriangle, Users, Sparkles, CheckCircle2, Globe } from 'lucide-react';
-import { useSocios } from '@/hooks/useSocios';
-import { ViajeWizardData } from '../ViajeWizard';
-import { SmartMercanciaInput } from '@/components/ai/SmartMercanciaInput';
-import { useAIValidation } from '@/hooks/ai/useAIValidation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Package, Search, AlertTriangle, Users, Sparkles, CheckCircle2, CheckCircle } from 'lucide-react';
+import { useSocios } from '@/hooks/useSocios';
+import { useAuth } from '@/hooks/useAuth';
+import { useAIValidation } from '@/hooks/ai/useAIValidation';
+import { ViajeWizardData } from '../ViajeWizard';
+import { SmartMercanciaInputMejorado } from '@/components/ai/SmartMercanciaInputMejorado';
 
 interface ViajeWizardMisionProps {
   data: ViajeWizardData;
@@ -21,6 +20,7 @@ interface ViajeWizardMisionProps {
 
 export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) {
   const { socios, loading: loadingSocios } = useSocios();
+  const { user } = useAuth();
   const [searchCliente, setSearchCliente] = useState('');
   const [alertasMercancia, setAlertasMercancia] = useState<string[]>([]);
   const [sugerenciasIA, setSugerenciasIA] = useState<any>(null);
@@ -258,7 +258,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
         <CardContent className="space-y-4">
           <Label htmlFor="descripcionMercancia">¿Qué vas a transportar?</Label>
           
-          <SmartMercanciaInput
+          <SmartMercanciaInputMejorado
             value={data.descripcionMercancia || ''}
             onChange={handleMercanciaChange}
             onMercanciaSelect={handleMercanciaSelect}
