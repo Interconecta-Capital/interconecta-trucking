@@ -61,21 +61,23 @@ export const useSuperuserManagement = () => {
   const createUser = useCallback(async (userData: CreateUserData): Promise<boolean> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('create_superuser', {
-        p_email: userData.email,
-        p_password: userData.password,
-        p_nombre: userData.nombre,
-        p_empresa: userData.empresa || 'Sistema'
+      const { data, error } = await supabase.functions.invoke('create-superuser', {
+        body: {
+          email: userData.email,
+          password: userData.password,
+          nombre: userData.nombre,
+          empresa: userData.empresa || 'Sistema'
+        }
       });
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         toast.success('Usuario creado exitosamente');
         await getAllUsers(); // Refresh list
         return true;
       } else {
-        toast.error(data.error || 'Error al crear usuario');
+        toast.error(data?.error || 'Error al crear usuario');
         return false;
       }
     } catch (error) {
@@ -90,13 +92,13 @@ export const useSuperuserManagement = () => {
   const updateUserRole = useCallback(async (userId: string, newRole: string, isSuperuser: boolean): Promise<boolean> => {
     try {
       if (isSuperuser) {
-        const { data, error } = await supabase.rpc('convert_to_superuser', {
-          p_user_id: userId
+        const { data, error } = await supabase.functions.invoke('convert-to-superuser', {
+          body: { email: userId } // Necesitamos el email, no el ID
         });
 
         if (error) throw error;
         
-        if (data.success) {
+        if (data?.success) {
           toast.success('Usuario convertido a superusuario');
           await getAllUsers();
           return true;

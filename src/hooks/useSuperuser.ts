@@ -24,29 +24,18 @@ export const useSuperuser = () => {
   // Convertir usuario existente a superuser
   const convertToSuperuser = useMutation({
     mutationFn: async (email: string) => {
-      // Buscar el usuario por email
-      const { data: profiles, error: searchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.toLowerCase())
-        .single();
-      
-      if (searchError || !profiles) {
-        throw new Error('Usuario no encontrado');
-      }
-
-      const { data, error } = await supabase.rpc('convert_to_superuser', {
-        p_user_id: profiles.id
+      const { data, error } = await supabase.functions.invoke('convert-to-superuser', {
+        body: { email }
       });
       
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      if (data.success) {
+    onSuccess: (data: any) => {
+      if (data?.success) {
         toast.success('Usuario convertido a superusuario exitosamente');
       } else {
-        toast.error(data.error || 'Error al convertir usuario');
+        toast.error(data?.error || 'Error al convertir usuario');
       }
     },
     onError: (error: any) => {
@@ -60,23 +49,25 @@ export const useSuperuser = () => {
       const testEmail = 'superuser@trucking.dev';
       const testPassword = 'SuperUser123!@#';
       
-      const { data, error } = await supabase.rpc('create_superuser', {
-        p_email: testEmail,
-        p_password: testPassword,
-        p_nombre: 'Super Usuario',
-        p_empresa: 'Sistema'
+      const { data, error } = await supabase.functions.invoke('create-superuser', {
+        body: {
+          email: testEmail,
+          password: testPassword,
+          nombre: 'Super Usuario',
+          empresa: 'Sistema'
+        }
       });
       
       if (error) throw error;
       
-      if (data.success) {
+      if (data?.success) {
         return {
           email: testEmail,
-          password: testPassword,
+          password: data.password || testPassword,
           message: data.message
         };
       } else {
-        throw new Error(data.error || 'Error al crear superusuario');
+        throw new Error(data?.error || 'Error al crear superusuario');
       }
     },
     onSuccess: () => {
