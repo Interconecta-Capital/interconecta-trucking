@@ -103,7 +103,7 @@ export function useAIValidation({
     const validation = validationResults[field];
     if (!validation) return true; // No validation means assumed valid
     
-    return validation.isValid && !(validation.warnings && validation.warnings.some(w => w.severity === 'critical'));
+    return validation.isValid && !validation.warnings.some(w => w.severity === 'critical');
   }, [validationResults]);
 
   const clearValidation = useCallback((field?: string) => {
@@ -126,16 +126,13 @@ export function useAIValidation({
     return autoFix.suggestedValue;
   }, []);
 
-  // Calcular estados globales con null checks
+  // Calcular estados globales
   useEffect(() => {
     const allResults = Object.values(validationResults);
     
-    const warnings = allResults.some(r => r && r.warnings && r.warnings.length > 0);
+    const warnings = allResults.some(r => r.warnings.length > 0);
     const critical = allResults.some(r => 
-      r && (
-        (r.warnings && r.warnings.some(w => w.severity === 'critical')) || 
-        !r.isValid
-      )
+      r.warnings.some(w => w.severity === 'critical') || !r.isValid
     );
 
     setHasWarnings(warnings);

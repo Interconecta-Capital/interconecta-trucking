@@ -33,17 +33,17 @@ export const AppSidebar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar variant="inset" collapsible="icon" className="border-r border-primary bg-elevated/95 backdrop-blur-xl">
-      <SidebarHeader className="border-b border-primary px-6 py-4">
+    <Sidebar variant="inset" collapsible="icon" className="border-r border-gray-20 bg-pure-white/95 backdrop-blur-premium">
+      <SidebarHeader className="border-b border-gray-20 px-6 py-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="font-semibold text-primary">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-apple bg-blue-primary text-inverse">
+            <SidebarMenuButton size="lg" className="font-semibold text-gray-90">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-blue-interconecta text-pure-white">
                 <Truck className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">InterConecta</span>
-                <span className="truncate text-xs text-quaternary">Trucking Platform</span>
+                <span className="truncate text-xs text-gray-50">Trucking Platform</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -52,7 +52,7 @@ export const AppSidebar = () => {
       
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-quaternary font-medium text-xs uppercase tracking-wide px-3 py-2">
+          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2">
             Principal
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -60,10 +60,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/dashboard')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/dashboard') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5">
@@ -77,10 +77,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/viajes')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/viajes') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/viajes" className="flex items-center gap-3 px-3 py-2.5">
@@ -94,10 +94,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/cartas-porte')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/cartas-porte') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/cartas-porte" className="flex items-center gap-3 px-3 py-2.5">
@@ -110,7 +110,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-quaternary font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
+          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
             Recursos
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -118,10 +118,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/vehiculos')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/vehiculos') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/vehiculos" className="flex items-center gap-3 px-3 py-2.5">
@@ -135,10 +135,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/conductores')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/conductores') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/conductores" className="flex items-center gap-3 px-3 py-2.5">
@@ -152,10 +152,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/socios')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/socios') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/socios" className="flex items-center gap-3 px-3 py-2.5">
@@ -168,7 +168,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-quaternary font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
+          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
             Sistema
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -176,10 +176,10 @@ export const AppSidebar = () => {
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/planes')}
-                className={`rounded-apple transition-apple ${
+                className={`rounded-xl transition-all duration-200 ${
                   isActive('/planes') 
-                    ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                    : 'text-secondary hover:bg-secondary hover:text-primary'
+                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                 }`}
               >
                 <Link to="/planes" className="flex items-center gap-3 px-3 py-2.5">
@@ -194,10 +194,10 @@ export const AppSidebar = () => {
                 <SidebarMenuButton 
                   asChild 
                   isActive={isActive('/administracion')}
-                  className={`rounded-apple transition-apple ${
+                  className={`rounded-xl transition-all duration-200 ${
                     isActive('/administracion') 
-                      ? 'bg-blue-primary text-inverse shadow-apple-sm' 
-                      : 'text-secondary hover:bg-secondary hover:text-primary'
+                      ? 'bg-blue-interconecta text-pure-white shadow-sm' 
+                      : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
                   }`}
                 >
                   <Link to="/administracion" className="flex items-center gap-3 px-3 py-2.5">
@@ -211,7 +211,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-primary p-3">
+      <SidebarFooter className="border-t border-gray-20 p-3">
         <UserMenu />
       </SidebarFooter>
     </Sidebar>

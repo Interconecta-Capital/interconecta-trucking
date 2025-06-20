@@ -16,7 +16,7 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
 
   if (!showSidebar) {
     return (
-      <div className="min-h-screen bg-secondary apple-grid">
+      <div className="min-h-screen bg-gray-05 apple-grid">
         <GlobalHeader />
         <main className={cn(
           "p-4",
@@ -33,7 +33,7 @@ export function BaseLayout({ children, showSidebar = true }: BaseLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-secondary flex w-full apple-grid">
+      <div className="min-h-screen bg-gray-05 flex w-full apple-grid">
         <AppSidebar />
         <div className="flex-1 flex flex-col w-full">
           <GlobalHeader />
