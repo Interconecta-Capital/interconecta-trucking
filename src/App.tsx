@@ -34,11 +34,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <OnboardingProvider>
-        <BrowserRouter>
-          <TrialCounter />
-          <OnboardingIntegration />
-          <AuthProvider>
+      <BrowserRouter>
+        <TrialCounter />
+        <AuthProvider>
+          <OnboardingProvider>
+            <OnboardingIntegration />
             <Routes>
               {/* Página principal - Landing page para usuarios no autenticados */}
               <Route path="/" element={<Index />} />
@@ -139,9 +139,9 @@ const App = () => (
               {/* Redirección por defecto - a la landing page */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </OnboardingProvider>
+          </OnboardingProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 )
