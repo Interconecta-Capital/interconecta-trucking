@@ -29,8 +29,8 @@ export function PlanBadge() {
     );
   }
 
-  // Si el trial expiró
-  if (trialInfo.isTrialExpired && !trialInfo.hasValidSubscription) {
+  // Si el trial expiró y no hay suscripción activa
+  if (trialInfo.isTrialExpired && suscripcion?.status !== 'active') {
     return (
       <Badge variant="destructive">
         <Calendar className="h-3 w-3 mr-1" />
