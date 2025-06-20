@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -49,7 +48,7 @@ export const useStableVehiculos = (userId?: string) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       const loadData = async () => {
-        // Query using correct column names from database
+        // Query using correct column names from database - REMOVED tarjeta_circulacion and aseguradora
         const { data, error } = await supabase
           .from('vehiculos')
           .select(`
@@ -65,12 +64,10 @@ export const useStableVehiculos = (userId?: string) => {
             capacidad_carga,
             numero_ejes,
             numero_llantas,
-            tarjeta_circulacion,
             perm_sct,
             num_permiso_sct,
             poliza_seguro,
             vigencia_seguro,
-            aseguradora,
             estado,
             activo,
             created_at,
