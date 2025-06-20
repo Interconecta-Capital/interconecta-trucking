@@ -29,22 +29,49 @@ serve(async (req) => {
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (!googleMapsApiKey) {
       console.error('❌ Google Maps API key not configured');
-      throw new Error('Google Maps API key not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Google Maps API key not configured in Supabase secrets',
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
     }
 
     // Validate coordinates
-    if (!origin.lat || !origin.lng || !destination.lat || !destination.lng) {
-      throw new Error('Invalid coordinates provided');
+    if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng) {
+      throw new Error('Invalid coordinates provided - origin and destination coordinates are required');
+    }
+
+    // Validate coordinate ranges
+    if (Math.abs(origin.lat) > 90 || Math.abs(origin.lng) > 180 || 
+        Math.abs(destination.lat) > 90 || Math.abs(destination.lng) > 180) {
+      throw new Error('Invalid coordinate ranges - latitude must be between -90 and 90, longitude between -180 and 180');
     }
 
     // Build waypoints string for Google API
     let waypointsParam = '';
-    if (waypoints.length > 0) {
-      const waypointStrings = waypoints.map(wp => `${wp.lat},${wp.lng}`);
-      waypointsParam = `&waypoints=${waypointStrings.join('|')}`;
+    if (waypoints && waypoints.length > 0) {
+      const validWaypoints = waypoints.filter(wp => 
+        wp && wp.lat && wp.lng && 
+        Math.abs(wp.lat) <= 90 && Math.abs(wp.lng) <= 180
+      );
+      
+      if (validWaypoints.length > 0) {
+        const waypointStrings = validWaypoints.map(wp => `${wp.lat},${wp.lng}`);
+        waypointsParam = `&waypoints=${waypointStrings.join('|')}`;
+        console.log(`🛤️ Adding ${validWaypoints.length} valid waypoints`);
+      }
     }
 
-    // Call Google Directions API with more parameters for better routes
+    // Call Google Directions API with optimized parameters for Mexico
     const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?` +
       `origin=${origin.lat},${origin.lng}` +
       `&destination=${destination.lat},${destination.lng}` +
@@ -53,16 +80,19 @@ serve(async (req) => {
       `&units=metric` +
       `&language=es` +
       `&region=mx` +
+      `&avoid=tolls` +
       `&key=${googleMapsApiKey}`;
     
     console.log('🌐 Calling Google Directions API');
-    console.log('🔗 URL (sin API key):', directionsUrl.replace(googleMapsApiKey, '[API_KEY]'));
+    console.log('🔗 URL (masked):', directionsUrl.replace(googleMapsApiKey, '[API_KEY_MASKED]'));
     
     const response = await fetch(directionsUrl);
     
     if (!response.ok) {
       console.error('❌ HTTP Error:', response.status, response.statusText);
-      throw new Error(`HTTP Error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Response body:', errorText);
+      throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
     }
     
     const data = await response.json();
@@ -75,16 +105,21 @@ serve(async (req) => {
 
     if (data.status === 'ZERO_RESULTS') {
       console.warn('⚠️ No routes found between the specified points');
-      throw new Error('No se encontraron rutas entre los puntos especificados');
+      throw new Error('No se encontraron rutas entre los puntos especificados. Verifica que las coordenadas sean válidas y accesibles por carretera.');
+    }
+
+    if (data.status === 'OVER_QUERY_LIMIT') {
+      console.error('❌ Google API quota exceeded');
+      throw new Error('Se ha excedido el límite de consultas a la API de Google Maps. Intenta más tarde.');
     }
 
     if (data.status !== 'OK') {
       console.error('❌ Google Directions API error:', data.status, data.error_message);
-      throw new Error(`Google Directions API error: ${data.status} - ${data.error_message || 'Unknown error'}`);
+      throw new Error(`Google Directions API error: ${data.status} - ${data.error_message || 'Error desconocido'}`);
     }
 
     if (!data.routes || data.routes.length === 0) {
-      throw new Error('No routes found in response');
+      throw new Error('No routes found in Google API response');
     }
 
     const route = data.routes[0];
@@ -94,10 +129,10 @@ serve(async (req) => {
     let totalDistance = 0;
     let totalDuration = 0;
 
-    route.legs.forEach((leg: any) => {
+    route.legs.forEach((leg: any, index: number) => {
       totalDistance += leg.distance.value; // meters
       totalDuration += leg.duration.value; // seconds
-      console.log(`📏 Leg: ${leg.distance.text}, ${leg.duration.text}`);
+      console.log(`📏 Leg ${index + 1}: ${leg.distance.text}, ${leg.duration.text}`);
     });
 
     // Convert to km and minutes

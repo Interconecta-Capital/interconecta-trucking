@@ -50,7 +50,7 @@ export function UbicacionesList({
   return (
     <div className="space-y-4">
       {ubicaciones.map((ubicacion, index) => (
-        <Card key={index} className="border-l-4 border-l-gray-300 bg-gray-50">
+        <Card key={index} className="border-l-4 border-l-gray-300 bg-white">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">

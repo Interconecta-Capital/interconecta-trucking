@@ -400,7 +400,7 @@ export function UbicacionesSectionOptimizada({
           onAgregarUbicacion={handleAgregarUbicacion}
         />
 
-        {/* Calculadora automática de rutas con Google Maps - REPOSICIONADO */}
+        {/* Calculadora automática de rutas con Google Maps - DESPUÉS de la lista */}
         {canCalculateDistances && (
           <div className="mt-6">
             <AutoRouteCalculator
