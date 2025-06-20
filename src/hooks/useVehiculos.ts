@@ -13,18 +13,8 @@ export interface Vehiculo {
   anio?: number;
   num_serie?: string;
   config_vehicular?: string;
-  peso_bruto_vehicular?: number;
-  capacidad_carga?: number;
   poliza_seguro?: string;
   vigencia_seguro?: string;
-  // Additional fields that may not exist in database but are expected by components
-  perm_sct?: string;
-  num_permiso_sct?: string;
-  asegura_resp_civil?: string;
-  poliza_resp_civil?: string;
-  asegura_med_ambiente?: string;
-  poliza_med_ambiente?: string;
-  tipo_carroceria?: string;
   verificacion_vigencia?: string;
   id_equipo_gps?: string;
   fecha_instalacion_gps?: string;
@@ -39,41 +29,19 @@ export const useVehiculos = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: vehiculos = [], isLoading: loading, error } = useQuery({
+  const { data: vehiculos = [], isLoading: loading } = useQuery({
     queryKey: ['vehiculos', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('[useVehiculos] Loading vehicles for user:', user.id);
-      
       const { data, error } = await supabase
         .from('vehiculos')
-        .select(`
-          id,
-          user_id,
-          placa,
-          marca,
-          modelo,
-          anio,
-          num_serie,
-          config_vehicular,
-          poliza_seguro,
-          vigencia_seguro,
-          estado,
-          activo,
-          created_at,
-          updated_at
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[useVehiculos] Database error:', error);
-        throw new Error(`Error cargando vehículos: ${error.message}`);
-      }
-
-      console.log('[useVehiculos] Loaded', data?.length || 0, 'vehicles successfully');
+      if (error) throw error;
       return data || [];
     },
     enabled: !!user?.id,
@@ -151,13 +119,11 @@ export const useVehiculos = () => {
   return { 
     vehiculos, 
     loading,
-    error: error?.message || null,
     crearVehiculo: createMutation.mutateAsync,
     actualizarVehiculo: updateMutation.mutateAsync,
     eliminarVehiculo: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    recargar: () => queryClient.invalidateQueries({ queryKey: ['vehiculos'] }),
   };
 };

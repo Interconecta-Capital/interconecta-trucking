@@ -9,7 +9,6 @@ import {
   Truck,
   Users,
   Plus,
-  Lock,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -26,23 +25,12 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
-import { useTrialManager } from '@/hooks/useTrialManager';
-import { Badge } from "@/components/ui/badge";
 
 export const AppSidebar = () => {
   const location = useLocation();
   const { puedeAccederAdministracion } = usePermisosSubscripcion();
-  const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
-  const { canPerformAction } = useTrialManager();
 
   const isActive = (path: string) => location.pathname === path;
-
-  // Verificar si puede crear cartas porte
-  const canCreateCartaPorte = isSuperuser || (hasFullAccess && canPerformAction('create'));
-  
-  // Verificar si puede acceder a funciones protegidas
-  const canAccessProtectedFeatures = isSuperuser || hasFullAccess;
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -77,75 +65,30 @@ export const AppSidebar = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              {canCreateCartaPorte ? (
-                <SidebarMenuButton asChild isActive={isActive('/carta-porte/editor')} size="default" tooltip="Nueva Carta Porte">
-                  <Link to="/carta-porte/editor">
-                    <Plus className="h-5 w-5" />
-                    <span className="text-sm">Nueva Carta Porte</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton 
-                  disabled 
-                  size="default" 
-                  tooltip="Acceso Restringido"
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Lock className="h-5 w-5" />
+              <SidebarMenuButton asChild isActive={isActive('/carta-porte/editor')} size="default" tooltip="Nueva Carta Porte">
+                <Link to="/carta-porte/editor">
+                  <Plus className="h-5 w-5" />
                   <span className="text-sm">Nueva Carta Porte</span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Bloqueado
-                  </Badge>
-                </SidebarMenuButton>
-              )}
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              {canAccessProtectedFeatures ? (
-                <SidebarMenuButton asChild isActive={isActive('/cartas-porte')} size="default" tooltip="Cartas Porte">
-                  <Link to="/cartas-porte">
-                    <FileText className="h-5 w-5" />
-                    <span className="text-sm">Cartas Porte</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton 
-                  disabled 
-                  size="default" 
-                  tooltip="Acceso Restringido"
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Lock className="h-5 w-5" />
+              <SidebarMenuButton asChild isActive={isActive('/cartas-porte')} size="default" tooltip="Cartas Porte">
+                <Link to="/cartas-porte">
+                  <FileText className="h-5 w-5" />
                   <span className="text-sm">Cartas Porte</span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Bloqueado
-                  </Badge>
-                </SidebarMenuButton>
-              )}
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              {canAccessProtectedFeatures ? (
-                <SidebarMenuButton asChild isActive={isActive('/viajes')} size="default" tooltip="Viajes">
-                  <Link to="/viajes">
-                    <Truck className="h-5 w-5" />
-                    <span className="text-sm">Viajes</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton 
-                  disabled 
-                  size="default" 
-                  tooltip="Acceso Restringido"
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Lock className="h-5 w-5" />
+              <SidebarMenuButton asChild isActive={isActive('/viajes')} size="default" tooltip="Viajes">
+                <Link to="/viajes">
+                  <Truck className="h-5 w-5" />
                   <span className="text-sm">Viajes</span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Bloqueado
-                  </Badge>
-                </SidebarMenuButton>
-              )}
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
@@ -154,75 +97,30 @@ export const AppSidebar = () => {
           <SidebarGroupLabel className="text-sm font-medium">Gestión de Recursos</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              {canAccessProtectedFeatures ? (
-                <SidebarMenuButton asChild isActive={isActive('/vehiculos')} size="default" tooltip="Vehículos">
-                  <Link to="/vehiculos">
-                    <Car className="h-5 w-5" />
-                    <span className="text-sm">Vehículos</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton 
-                  disabled 
-                  size="default" 
-                  tooltip="Acceso Restringido"
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Lock className="h-5 w-5" />
+              <SidebarMenuButton asChild isActive={isActive('/vehiculos')} size="default" tooltip="Vehículos">
+                <Link to="/vehiculos">
+                  <Car className="h-5 w-5" />
                   <span className="text-sm">Vehículos</span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Bloqueado
-                  </Badge>
-                </SidebarMenuButton>
-              )}
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              {canAccessProtectedFeatures ? (
-                <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
-                  <Link to="/conductores">
-                    <Users className="h-5 w-5" />
-                    <span className="text-sm">Conductores</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton 
-                  disabled 
-                  size="default" 
-                  tooltip="Acceso Restringido"
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Lock className="h-5 w-5" />
+              <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
+                <Link to="/conductores">
+                  <Users className="h-5 w-5" />
                   <span className="text-sm">Conductores</span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Bloqueado
-                  </Badge>
-                </SidebarMenuButton>
-              )}
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              {canAccessProtectedFeatures ? (
-                <SidebarMenuButton asChild isActive={isActive('/socios')} size="default" tooltip="Socios">
-                  <Link to="/socios">
-                    <Building2 className="h-5 w-5" />
-                    <span className="text-sm">Socios</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton 
-                  disabled 
-                  size="default" 
-                  tooltip="Acceso Restringido"
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Lock className="h-5 w-5" />
+              <SidebarMenuButton asChild isActive={isActive('/socios')} size="default" tooltip="Socios">
+                <Link to="/socios">
+                  <Building2 className="h-5 w-5" />
                   <span className="text-sm">Socios</span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Bloqueado
-                  </Badge>
-                </SidebarMenuButton>
-              )}
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

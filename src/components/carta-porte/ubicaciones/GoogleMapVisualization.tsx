@@ -1,9 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Route, Clock, Maximize2, Minimize2, AlertTriangle } from 'lucide-react';
+import { MapPin, Route, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import { Ubicacion } from '@/types/ubicaciones';
 
 interface GoogleMapVisualizationProps {
@@ -38,12 +37,9 @@ export function GoogleMapVisualization({
 }: GoogleMapVisualizationProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const polylineRef = useRef<any>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
 
-  // Load Google Maps API with the correct API key
+  // Load Google Maps API
   useEffect(() => {
     if (window.google) {
       setIsMapLoaded(true);
@@ -52,19 +48,16 @@ export function GoogleMapVisualization({
 
     // Create script element to load Google Maps
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAl1vKLZYb5h5How7tlpzrvFX2cbH4_qws&libraries=geometry&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=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&libraries=geometry`;
     script.async = true;
     script.defer = true;
     
     script.onload = () => {
-      console.log('🗺️ Google Maps API loaded successfully');
       setIsMapLoaded(true);
-      setMapError(null);
     };
 
-    script.onerror = (error) => {
-      console.error('❌ Error loading Google Maps API:', error);
-      setMapError('Error cargando Google Maps. Verifica tu conexión a internet.');
+    script.onerror = () => {
+      console.error('Error loading Google Maps API');
     };
 
     document.head.appendChild(script);
@@ -79,140 +72,116 @@ export function GoogleMapVisualization({
 
   // Initialize map when Google Maps is loaded
   useEffect(() => {
-    if (!isMapLoaded || !window.google || !mapRef.current || !isVisible || mapError) return;
+    if (!isMapLoaded || !window.google || !mapRef.current || !isVisible) return;
 
-    try {
-      console.log('🗺️ Initializing Google Map');
+    console.log('🗺️ Initializing Google Map');
 
-      // Default center (Mexico City)
-      const defaultCenter = { lat: 19.4326, lng: -99.1332 };
+    // Default center (Mexico City)
+    const defaultCenter = { lat: 19.4326, lng: -99.1332 };
 
-      // Initialize map
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        zoom: 6,
-        center: defaultCenter,
-        mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ],
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: false
-      });
+    // Initialize map
+    mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+      zoom: 6,
+      center: defaultCenter,
+      mapTypeId: window.google.maps.MapTypeId.ROADMAP,
+      styles: [
+        {
+          featureType: 'poi',
+          elementType: 'labels',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    });
 
-      console.log('✅ Google Map initialized successfully');
-      setMapError(null);
-    } catch (error) {
-      console.error('❌ Error initializing Google Map:', error);
-      setMapError('Error inicializando el mapa. Intenta recargar la página.');
-    }
-  }, [isMapLoaded, isVisible, mapError]);
+    console.log('✅ Google Map initialized');
+  }, [isMapLoaded, isVisible]);
 
   // Add markers and route when ubicaciones change
   useEffect(() => {
-    if (!mapInstanceRef.current || !ubicaciones.length || !window.google || mapError) return;
+    if (!mapInstanceRef.current || !ubicaciones.length || !window.google) return;
 
     console.log('📍 Adding markers and route to map');
 
-    try {
-      // Clear existing markers and routes
-      markersRef.current.forEach(marker => marker.setMap(null));
-      markersRef.current = [];
+    // Clear existing markers and routes
+    // (In a real implementation, you'd keep track of markers to remove them)
+
+    const bounds = new window.google.maps.LatLngBounds();
+    const markers: any[] = [];
+
+    // Add markers for each ubicacion
+    ubicaciones.forEach((ubicacion, index) => {
+      // Get coordinates (using mock for now)
+      const coords = getCoordinatesForUbicacion(ubicacion);
       
-      if (polylineRef.current) {
-        polylineRef.current.setMap(null);
-        polylineRef.current = null;
-      }
-
-      const bounds = new window.google.maps.LatLngBounds();
-
-      // Add markers for each ubicacion using AdvancedMarkerElement
-      ubicaciones.forEach((ubicacion, index) => {
-        const coords = getCoordinatesForUbicacion(ubicacion);
-        
-        if (coords) {
-          try {
-            // Use regular Marker for now since AdvancedMarkerElement requires additional setup
-            const marker = new window.google.maps.Marker({
-              position: coords,
-              map: mapInstanceRef.current,
-              title: ubicacion.nombreRemitenteDestinatario || `${ubicacion.tipoUbicacion} ${index + 1}`,
-              icon: {
-                url: getMarkerIcon(ubicacion.tipoUbicacion),
-                scaledSize: new window.google.maps.Size(32, 32)
-              }
-            });
-
-            // Add info window
-            const infoWindow = new window.google.maps.InfoWindow({
-              content: `
-                <div style="padding: 8px; max-width: 200px;">
-                  <h3 style="margin: 0 0 4px 0; font-weight: bold; color: #1f2937;">${ubicacion.tipoUbicacion}</h3>
-                  <p style="margin: 0 0 2px 0; font-size: 14px;">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
-                  <p style="margin: 0; font-size: 12px; color: #6b7280;">${ubicacion.domicilio.calle}, ${ubicacion.domicilio.municipio}</p>
-                </div>
-              `
-            });
-
-            marker.addListener('click', () => {
-              infoWindow.open(mapInstanceRef.current, marker);
-            });
-
-            markersRef.current.push(marker);
-            bounds.extend(coords);
-          } catch (markerError) {
-            console.warn('⚠️ Error creating marker:', markerError);
+      if (coords) {
+        const marker = new window.google.maps.Marker({
+          position: coords,
+          map: mapInstanceRef.current,
+          title: ubicacion.nombreRemitenteDestinatario || `${ubicacion.tipoUbicacion} ${index + 1}`,
+          icon: {
+            url: getMarkerIcon(ubicacion.tipoUbicacion),
+            scaledSize: new window.google.maps.Size(32, 32)
           }
+        });
+
+        // Add info window
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div class="p-2">
+              <h3 class="font-bold">${ubicacion.tipoUbicacion}</h3>
+              <p class="text-sm">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
+              <p class="text-xs text-gray-600">${ubicacion.domicilio.calle}, ${ubicacion.domicilio.municipio}</p>
+            </div>
+          `
+        });
+
+        marker.addListener('click', () => {
+          infoWindow.open(mapInstanceRef.current, marker);
+        });
+
+        markers.push(marker);
+        bounds.extend(coords);
+      }
+    });
+
+    // Add route if we have route data
+    if (routeData && routeData.google_data?.polyline) {
+      const directionsRenderer = new window.google.maps.DirectionsRenderer({
+        suppressMarkers: true, // We're using our custom markers
+        polylineOptions: {
+          strokeColor: '#2563eb',
+          strokeWeight: 4,
+          strokeOpacity: 0.8
         }
       });
 
-      // Add route if we have route data
-      if (routeData && routeData.google_data?.polyline && window.google.maps.geometry) {
-        try {
-          // Decode and display the polyline
-          const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.google_data.polyline);
-          
-          polylineRef.current = new window.google.maps.Polyline({
-            path: decodedPath,
-            geodesic: true,
-            strokeColor: '#2563eb',
-            strokeOpacity: 0.8,
-            strokeWeight: 4
-          });
+      directionsRenderer.setMap(mapInstanceRef.current);
 
-          polylineRef.current.setMap(mapInstanceRef.current);
-          console.log('✅ Route displayed on map');
-        } catch (routeError) {
-          console.warn('⚠️ Error displaying route:', routeError);
-        }
-      }
+      // Decode and display the polyline
+      const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.google_data.polyline);
+      
+      const routePath = new window.google.maps.Polyline({
+        path: decodedPath,
+        geodesic: true,
+        strokeColor: '#2563eb',
+        strokeOpacity: 0.8,
+        strokeWeight: 4
+      });
 
-      // Fit map to bounds
-      if (markersRef.current.length > 0) {
-        mapInstanceRef.current.fitBounds(bounds);
-        
-        // Add some padding and adjust zoom
-        if (markersRef.current.length === 1) {
-          mapInstanceRef.current.setZoom(15);
-        } else {
-          // Add padding for better visualization
-          setTimeout(() => {
-            const currentZoom = mapInstanceRef.current.getZoom();
-            if (currentZoom > 16) {
-              mapInstanceRef.current.setZoom(16);
-            }
-          }, 100);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error adding markers and route:', error);
-      setMapError('Error mostrando marcadores en el mapa.');
+      routePath.setMap(mapInstanceRef.current);
     }
-  }, [ubicaciones, routeData, mapError]);
+
+    // Fit map to bounds
+    if (markers.length > 0) {
+      mapInstanceRef.current.fitBounds(bounds);
+      
+      // Add some padding
+      if (markers.length === 1) {
+        mapInstanceRef.current.setZoom(15);
+      }
+    }
+
+  }, [ubicaciones, routeData]);
 
   const getCoordinatesForUbicacion = (ubicacion: Ubicacion) => {
     // If ubicacion has coordinates, use them
@@ -251,14 +220,6 @@ export function GoogleMapVisualization({
     return `${hours}h ${mins}m`;
   };
 
-  const handleRetry = () => {
-    setMapError(null);
-    setIsMapLoaded(false);
-    // Force reload of Google Maps
-    const scripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
-    scripts.forEach(script => script.remove());
-  };
-
   if (!isVisible) return null;
 
   return (
@@ -273,11 +234,6 @@ export function GoogleMapVisualization({
                 Ruta Calculada
               </Badge>
             )}
-            {mapError && (
-              <Badge variant="destructive">
-                Error
-              </Badge>
-            )}
           </CardTitle>
           {onToggleFullscreen && (
             <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
@@ -289,7 +245,7 @@ export function GoogleMapVisualization({
       
       <CardContent className="space-y-4">
         {/* Route metrics */}
-        {routeData && !mapError && (
+        {routeData && (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-blue-50 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
@@ -315,28 +271,14 @@ export function GoogleMapVisualization({
 
         {/* Google Map */}
         <div className={`bg-gray-100 rounded-lg overflow-hidden ${isFullscreen ? 'h-[calc(100vh-200px)]' : 'h-96'}`}>
-          {mapError ? (
+          <div ref={mapRef} className="w-full h-full" />
+          {!isMapLoaded && (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center p-6">
-                <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <p className="text-red-700 mb-4">{mapError}</p>
-                <Button onClick={handleRetry} variant="outline">
-                  Reintentar
-                </Button>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-sm text-gray-600">Cargando Google Maps...</p>
               </div>
             </div>
-          ) : (
-            <>
-              <div ref={mapRef} className="w-full h-full" />
-              {!isMapLoaded && !mapError && (
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-100">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-sm text-gray-600">Cargando Google Maps...</p>
-                  </div>
-                </div>
-              )}
-            </>
           )}
         </div>
 

@@ -51,20 +51,20 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         marca: vehiculoActual.marca || '',
         modelo: vehiculoActual.modelo || '',
         anio: vehiculoActual.anio?.toString() || '',
-        numero_serie_vin: vehiculoActual.num_serie || '', // Use num_serie from DB
+        numero_serie_vin: vehiculoActual.numero_serie_vin || vehiculoActual.num_serie || '',
         config_vehicular: vehiculoActual.config_vehicular || '',
-        perm_sct: '', // Default value since not in DB
-        num_permiso_sct: '', // Default value since not in DB
-        vigencia_permiso: '', // Default value since not in DB
-        asegura_resp_civil: '', // Default value since not in DB
-        poliza_resp_civil: vehiculoActual.poliza_seguro || '',
-        asegura_med_ambiente: '', // Default value since not in DB
-        poliza_med_ambiente: '', // Default value since not in DB
+        perm_sct: vehiculoActual.perm_sct || '',
+        num_permiso_sct: vehiculoActual.num_permiso_sct || '',
+        vigencia_permiso: vehiculoActual.vigencia_permiso || '',
+        asegura_resp_civil: vehiculoActual.asegura_resp_civil || '',
+        poliza_resp_civil: vehiculoActual.poliza_resp_civil || vehiculoActual.poliza_seguro || '',
+        asegura_med_ambiente: vehiculoActual.asegura_med_ambiente || '',
+        poliza_med_ambiente: vehiculoActual.poliza_med_ambiente || '',
         vigencia_seguro: vehiculoActual.vigencia_seguro || '',
-        capacidad_carga: '', // Default value since not in DB
-        tipo_carroceria: '', // Default value since not in DB
-        peso_bruto_vehicular: '', // Default value since not in DB
-        verificacion_vigencia: '', // Default value since not in DB
+        capacidad_carga: vehiculoActual.capacidad_carga?.toString() || '',
+        tipo_carroceria: vehiculoActual.tipo_carroceria || '',
+        peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
+        verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         estado: vehiculoActual.estado || 'disponible'
       });
     }

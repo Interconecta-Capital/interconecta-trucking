@@ -40,7 +40,7 @@ export function useHybridRouteCalculation() {
     setError(null);
 
     try {
-      console.log('🚀 Iniciando cálculo híbrido mejorado con nueva API');
+      console.log('🚀 Iniciando cálculo híbrido mejorado');
       console.log('📍 Origen:', origin);
       console.log('📍 Destino:', destination);
       console.log('🛤️ Waypoints:', waypoints);
@@ -50,40 +50,8 @@ export function useHybridRouteCalculation() {
         throw new Error('Coordenadas de origen o destino inválidas');
       }
 
-      // Paso 1: Intentar Google Maps primero (más preciso para visualización)
-      console.log('🗺️ Calculando con Google Maps API...');
-      let googleResult = null;
-      
-      try {
-        googleResult = await googleMapsService.calculateRoute(origin, destination, waypoints);
-        
-        if (googleResult && googleResult.success) {
-          console.log('✅ Google Maps calculation successful:', {
-            distance: googleResult.distance_km,
-            duration: googleResult.duration_minutes,
-            fallback: googleResult.fallback
-          });
-          
-          setRouteData(googleResult);
-          
-          if (!googleResult.fallback) {
-            toast.success(
-              `Ruta calculada: ${googleResult.distance_km} km (${Math.round(googleResult.duration_minutes / 60)}h ${googleResult.duration_minutes % 60}m)`
-            );
-          } else {
-            toast.warning(
-              `Ruta estimada: ${googleResult.distance_km} km (${googleResult.fallback_reason})`
-            );
-          }
-
-          return googleResult;
-        }
-      } catch (googleError) {
-        console.warn('⚠️ Google Maps service error:', googleError);
-      }
-
-      // Paso 2: Si Google Maps falla, usar Mapbox como fallback
-      console.log('📊 Google Maps falló, intentando con Mapbox...');
+      // Paso 1: Calcular distancia y tiempo con Mapbox (más preciso)
+      console.log('📊 Calculando con Mapbox...');
       const { data: mapboxData, error: mapboxError } = await supabase.functions.invoke('calculate-route', {
         body: {
           origin,
@@ -94,62 +62,81 @@ export function useHybridRouteCalculation() {
 
       if (mapboxError) {
         console.error('❌ Error en Mapbox:', mapboxError);
-        throw new Error('Ambos servicios de mapas fallaron');
+        // No lanzar error, continuar solo con Google Maps
+        toast.warning('Cálculo Mapbox falló, usando estimación alternativa');
       }
+
+      let mapboxSuccess = false;
+      let finalDistanceKm = 0;
+      let finalDurationMinutes = 0;
 
       if (mapboxData && mapboxData.success) {
-        console.log('✅ Mapbox calculation successful:', {
-          distance: mapboxData.distance_km,
-          duration: mapboxData.duration_minutes
-        });
-
-        const mapboxResult: HybridRouteResult = {
-          distance_km: mapboxData.distance_km,
-          duration_minutes: mapboxData.duration_minutes,
-          route_geometry: {
-            type: 'LineString',
-            coordinates: '' // Mapbox no proporciona polyline compatible con Google
-          },
-          success: true,
-          fallback: true,
-          fallback_reason: 'Google Maps no disponible, usando Mapbox'
-        };
-
-        setRouteData(mapboxResult);
-        
-        toast.success(
-          `Ruta calculada con Mapbox: ${mapboxResult.distance_km} km (${Math.round(mapboxResult.duration_minutes / 60)}h ${mapboxResult.duration_minutes % 60}m)`
-        );
-
-        return mapboxResult;
+        mapboxSuccess = true;
+        finalDistanceKm = mapboxData.distance_km;
+        finalDurationMinutes = mapboxData.duration_minutes;
+        console.log('✅ Mapbox exitoso:', { distance: finalDistanceKm, duration: finalDurationMinutes });
       }
 
-      // Paso 3: Si ambos fallan, cálculo directo estimado
-      console.warn('⚠️ Ambos servicios fallaron, usando estimación directa');
-      const directDistance = calculateDirectDistance(origin, destination);
-      const estimatedDistance = Math.round(directDistance * 1.3 * 100) / 100; // Factor 1.3 para rutas reales
-      const estimatedDuration = Math.round(estimatedDistance * 1.2); // Estimación: 1.2 min por km
+      // Paso 2: Intentar obtener geometría con Google Maps
+      console.log('🗺️ Obteniendo visualización con Google Maps...');
+      let googleResult = null;
+      
+      try {
+        googleResult = await googleMapsService.calculateRoute(origin, destination, waypoints);
+        
+        if (googleResult) {
+          console.log('✅ Google Maps response received:', {
+            success: googleResult.success,
+            fallback: googleResult.fallback,
+            distance: googleResult.distance_km
+          });
+        }
+      } catch (googleError) {
+        console.warn('⚠️ Google Maps service error:', googleError);
+      }
 
-      const fallbackResult: HybridRouteResult = {
-        distance_km: estimatedDistance,
-        duration_minutes: estimatedDuration,
+      // Si Mapbox falló, usar Google Maps para los cálculos también
+      if (!mapboxSuccess && googleResult && googleResult.success) {
+        finalDistanceKm = googleResult.distance_km;
+        finalDurationMinutes = googleResult.duration_minutes;
+        console.log('✅ Usando Google Maps para cálculos:', { distance: finalDistanceKm, duration: finalDurationMinutes });
+      }
+
+      // Si ambos fallaron, hacer cálculo estimado
+      if (!mapboxSuccess && (!googleResult || !googleResult.success)) {
+        console.warn('⚠️ Ambos servicios fallaron, usando estimación directa');
+        const directDistance = calculateDirectDistance(origin, destination);
+        finalDistanceKm = Math.round(directDistance * 1.3 * 100) / 100; // Factor 1.3 para rutas reales
+        finalDurationMinutes = Math.round(finalDistanceKm * 1.2); // Estimación: 1.2 min por km
+        
+        toast.warning(`Usando estimación directa: ${finalDistanceKm} km`);
+      }
+
+      // Combinar resultados
+      const hybridResult: HybridRouteResult = {
+        distance_km: finalDistanceKm,
+        duration_minutes: finalDurationMinutes,
         route_geometry: {
           type: 'LineString',
-          coordinates: ''
+          coordinates: googleResult?.route_geometry?.coordinates || ''
         },
+        google_data: googleResult?.google_data,
         success: true,
-        fallback: true,
-        fallback_reason: 'Servicios de mapas no disponibles, usando estimación directa'
+        fallback: googleResult?.fallback || false,
+        fallback_reason: googleResult?.fallback_reason
       };
 
-      setRouteData(fallbackResult);
+      console.log('✅ Cálculo híbrido completado:', hybridResult);
+      setRouteData(hybridResult);
       
-      toast.warning(
-        `Ruta estimada: ${estimatedDistance} km (sin servicios de mapas disponibles)`
-      );
+      if (finalDistanceKm > 0) {
+        const fallbackText = hybridResult.fallback ? ' (estimado)' : '';
+        toast.success(
+          `Ruta calculada: ${finalDistanceKm} km (${Math.round(finalDurationMinutes / 60)}h ${finalDurationMinutes % 60}m)${fallbackText}`
+        );
+      }
 
-      return fallbackResult;
-
+      return hybridResult;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido en cálculo';
       console.error('❌ Error en cálculo híbrido:', err);

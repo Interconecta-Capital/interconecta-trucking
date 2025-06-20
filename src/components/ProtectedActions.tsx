@@ -24,67 +24,38 @@ export const ProtectedActions = ({
   buttonText = 'Crear',
   variant = 'default'
 }: ProtectedActionsProps) => {
-  const { puedeCrear, isSuperuser, hasFullAccess, restrictionType } = useEnhancedPermissions();
-  const { 
-    canPerformAction, 
-    getContextualMessage,
-    isTrialExpired,
-    isInGracePeriod
-  } = useTrialManager();
+  const { puedeCrear, isSuperuser } = useEnhancedPermissions();
+  const { canPerformAction, isInGracePeriod, isTrialExpired } = useTrialManager();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-
-  console.log('🛡️ ProtectedActions Debug:', {
-    resource,
-    action,
-    isSuperuser,
-    hasFullAccess,
-    restrictionType,
-    canPerformAction: canPerformAction('create')
-  });
   
   const handleAction = () => {
-    console.log('🎯 Action attempted:', { resource, action, isSuperuser, hasFullAccess });
-
-    // Superusers pueden crear siempre
+    // Superusers can always create
     if (isSuperuser) {
-      console.log('✅ Superuser - action allowed');
       if (onAction) {
         onAction();
       }
       return;
     }
 
-    // BLOQUEO PRINCIPAL: Si no tiene acceso completo, bloquear completamente
-    if (!hasFullAccess) {
-      console.log('❌ Action blocked - no full access');
-      const message = getContextualMessage();
-      toast.error(message);
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    // Verificar si puede realizar la acción según el trial manager
+    // Verificar si puede realizar la acción
     if (!canPerformAction('create')) {
-      console.log('❌ Action blocked - cannot perform create action');
-      const message = getContextualMessage();
-      toast.error(message);
-      setShowUpgradeModal(true);
+      if (isInGracePeriod) {
+        toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
+      } else {
+        setShowUpgradeModal(true);
+      }
       return;
     }
 
-    // Verificar límites específicos del recurso solo si tiene acceso completo
     const result = puedeCrear(resource);
     const puede = result?.puede ?? false;
     const razon = result?.razon;
     
     if (!puede && razon) {
-      console.log('❌ Action blocked - resource limit:', razon);
       toast.error(razon);
-      setShowUpgradeModal(true);
       return;
     }
     
-    console.log('✅ Action allowed - executing');
     if (onAction) {
       onAction();
     }
@@ -92,72 +63,21 @@ export const ProtectedActions = ({
 
   // Si no hay children, renderizar como botón
   if (!children && action === 'create') {
-    // BOTÓN COMPLETAMENTE BLOQUEADO: Si no tiene acceso completo
-    if (!hasFullAccess) {
-      const getButtonText = () => {
-        if (isTrialExpired && !isInGracePeriod) {
-          return 'Período de Prueba Finalizado';
-        }
-        if (restrictionType === 'payment_suspended') {
-          return 'Cuenta Suspendida';
-        }
-        if (isInGracePeriod) {
-          return 'Solo Lectura';
-        }
-        return 'Acceso Restringido';
-      };
-
-      const getModalProps = () => {
-        if (isTrialExpired && !isInGracePeriod) {
-          return {
-            title: 'Período de Prueba Finalizado',
-            description: 'Su período de prueba ha finalizado. Adquiera un plan para continuar creando registros.'
-          };
-        }
-        if (restrictionType === 'payment_suspended') {
-          return {
-            title: 'Cuenta Suspendida',
-            description: 'Su cuenta está suspendida por falta de pago. Renueve su suscripción para continuar.'
-          };
-        }
-        if (isInGracePeriod) {
-          return {
-            title: 'Período de Gracia',
-            description: 'Su cuenta está en período de gracia. Solo puede consultar datos existentes.'
-          };
-        }
-        return {
-          title: 'Acceso Restringido',
-          description: 'No tiene acceso para realizar esta acción.'
-        };
-      };
-
-      const modalProps = getModalProps();
-
+    // Durante período de gracia, mostrar botón bloqueado
+    if (isInGracePeriod) {
       return (
-        <>
-          <Button 
-            disabled 
-            variant="outline" 
-            className="flex items-center gap-2 opacity-50 cursor-not-allowed"
-            onClick={handleAction}
-          >
-            <Lock className="h-4 w-4" />
-            {getButtonText()}
-          </Button>
-          
-          <UpgradeModal
-            isOpen={showUpgradeModal}
-            onClose={() => setShowUpgradeModal(false)}
-            title={modalProps.title}
-            description={modalProps.description}
-            blockedAction={`Crear ${resource.replace('_', ' ')}`}
-          />
-        </>
+        <Button 
+          disabled 
+          variant="outline" 
+          className="flex items-center gap-2 opacity-50"
+          onClick={handleAction}
+        >
+          <Lock className="h-4 w-4" />
+          Solo lectura
+        </Button>
       );
     }
 
-    // Si tiene acceso completo, mostrar botón normal
     return (
       <>
         <Button onClick={handleAction} variant={variant} className="flex items-center gap-2">
@@ -168,31 +88,18 @@ export const ProtectedActions = ({
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          title="Límite Alcanzado"
-          description="Ha alcanzado el límite de su plan actual."
+          title="Actualiza tu Plan"
+          description={
+            isTrialExpired 
+              ? "Tu período de prueba ha expirado. Selecciona un plan para continuar creando registros."
+              : "Necesitas un plan activo para crear nuevos registros."
+          }
           blockedAction={`Crear ${resource.replace('_', ' ')}`}
         />
       </>
     );
   }
 
-  // Si hay children, renderizar como wrapper pero BLOQUEAR si no tiene acceso
-  if (!hasFullAccess && !isSuperuser) {
-    console.log('❌ Children blocked - no full access');
-    return (
-      <div className="relative">
-        <div className="pointer-events-none opacity-50">
-          {children}
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 rounded">
-          <div className="text-center">
-            <Lock className="h-6 w-6 mx-auto text-gray-500 mb-2" />
-            <p className="text-sm text-gray-600">Acceso Restringido</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Si hay children, renderizar como wrapper
   return <>{children}</>;
 };

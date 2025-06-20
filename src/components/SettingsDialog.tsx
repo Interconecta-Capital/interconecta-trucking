@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
-import { useTimezoneAwareTrialTracking } from '@/hooks/useTimezoneAwareTrialTracking';
+import { useTrialTracking } from '@/hooks/useTrialTracking';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     isOpeningPortal
   } = useSuscripcion();
   const { obtenerUsoActual } = usePermisosSubscripcion();
-  const { trialInfo } = useTimezoneAwareTrialTracking();
+  const { trialInfo } = useTrialTracking();
   const [activeTab, setActiveTab] = useState('account');
 
   const usoActual = obtenerUsoActual();

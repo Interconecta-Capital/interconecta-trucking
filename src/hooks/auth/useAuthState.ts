@@ -4,7 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { AuthUser } from './types';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -15,7 +15,6 @@ export function useAuthState() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const loadUserData = async (authUser: User) => {
     try {
@@ -67,17 +66,6 @@ export function useAuthState() {
     }
   };
 
-  const shouldRedirectToDashboard = (pathname: string, user: AuthUser | null) => {
-    // Si hay usuario autenticado y está en landing o auth, redirigir a dashboard
-    return user && (pathname === '/' || pathname.startsWith('/auth'));
-  };
-
-  const shouldRedirectToAuth = (pathname: string, user: AuthUser | null) => {
-    // Si no hay usuario y está en una ruta protegida, redirigir a auth
-    const protectedRoutes = ['/dashboard', '/cartas-porte', '/vehiculos', '/conductores', '/socios', '/viajes', '/administracion', '/planes', '/carta-porte'];
-    return !user && protectedRoutes.some(route => pathname.startsWith(route));
-  };
-
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
@@ -90,20 +78,14 @@ export function useAuthState() {
           console.log('[AuthState] Session found, loading user data');
           await loadUserData(currentSession.user);
           
-          // Redirigir usuario autenticado desde landing/auth a dashboard
-          if (shouldRedirectToDashboard(location.pathname, currentSession.user as AuthUser)) {
-            console.log('[AuthState] Redirecting authenticated user to dashboard');
+          // Solo redirigir si estamos en la página de landing
+          if (window.location.pathname === '/') {
+            console.log('[AuthState] Redirecting authenticated user from landing to dashboard');
             navigate('/dashboard', { replace: true });
           }
         } else {
           console.log('[AuthState] No session found');
           setUser(null);
-          
-          // Redirigir usuario no autenticado desde rutas protegidas a auth
-          if (shouldRedirectToAuth(location.pathname, null)) {
-            console.log('[AuthState] Redirecting unauthenticated user to auth');
-            navigate('/auth', { replace: true });
-          }
         }
       } catch (error) {
         console.error('[AuthState] Error getting session:', error);
@@ -138,17 +120,17 @@ export function useAuthState() {
               await loadUserData(session.user);
               setLoading(false);
               
-              // Redirigir después de login exitoso
-              if (shouldRedirectToDashboard(location.pathname, session.user as AuthUser)) {
+              // Solo redirigir en casos específicos
+              if (window.location.pathname === '/' || window.location.pathname === '/auth') {
                 console.log('[AuthState] Redirecting after sign in to dashboard');
                 navigate('/dashboard', { replace: true });
               }
-            }, 500);
+            }, 500); // Aumentado de 100ms a 500ms
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
             setLoading(false);
-            // Redirigir a auth después de logout
-            if (location.pathname !== '/' && !location.pathname.startsWith('/auth')) {
+            // Solo redirigir si no estamos ya en auth o landing
+            if (!window.location.pathname.includes('/auth') && window.location.pathname !== '/') {
               navigate('/auth', { replace: true });
             }
           } else if (event === 'TOKEN_REFRESHED' && session?.user) {
@@ -159,7 +141,7 @@ export function useAuthState() {
               await loadUserData(session.user);
             }, 1000);
           }
-        }, 500);
+        }, 500); // Debounce aumentado de 200ms a 500ms
       }
     );
 
@@ -169,7 +151,7 @@ export function useAuthState() {
         clearTimeout(authChangeTimeout);
       }
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
   return { user, loading, session };
 }

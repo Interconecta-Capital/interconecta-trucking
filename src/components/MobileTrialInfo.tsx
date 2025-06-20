@@ -2,13 +2,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useTimezoneAwareTrialTracking } from '@/hooks/useTimezoneAwareTrialTracking';
+import { useTrialTracking } from '@/hooks/useTrialTracking';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { Calendar, Clock, AlertCircle, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function MobileTrialInfo() {
-  const { trialInfo, loading } = useTimezoneAwareTrialTracking();
+  const { trialInfo, loading } = useTrialTracking();
   const { suscripcion, enPeriodoPrueba } = useSuscripcion();
 
   if (loading) {

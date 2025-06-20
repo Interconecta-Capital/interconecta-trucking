@@ -1,12 +1,9 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, Users, Truck, BarChart3, UserCheck, Wrench, MapPin, CheckCircle, CalendarIcon } from 'lucide-react';
-import { ProtectedActions } from '@/components/ProtectedActions';
-import { ProtectedFeature } from '@/components/ProtectedFeature';
 import { ConductorFormModal } from './ConductorFormModal';
 import { VehiculoFormModal } from './VehiculoFormModal';
 import { SocioFormModal } from './SocioFormModal';
@@ -75,15 +72,13 @@ export function QuickActionsCard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <ProtectedFeature blockOnRestriction={true}>
-              <ProtectedActions 
-                action="create" 
-                resource="cartas_porte"
-                onAction={() => setShowCartaPorteForm(true)}
-                buttonText="Nueva Carta Porte"
-                variant="default"
-              />
-            </ProtectedFeature>
+            <Button 
+              className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white h-10"
+              onClick={() => setShowCartaPorteForm(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Carta Porte
+            </Button>
             
             <Button 
               variant="outline" 
@@ -94,71 +89,59 @@ export function QuickActionsCard() {
               Ver Documentos
             </Button>
             
-            <ProtectedFeature blockOnRestriction={true}>
-              <ProtectedActions 
-                action="create" 
-                resource="conductores"
-                onAction={() => setShowConductorForm(true)}
-                buttonText="Nuevo Conductor"
-                variant="outline"
-              />
-            </ProtectedFeature>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowConductorForm(true)}
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Nuevo Conductor
+            </Button>
             
-            <ProtectedFeature blockOnRestriction={true}>
-              <ProtectedActions 
-                action="create" 
-                resource="vehiculos"
-                onAction={() => setShowVehiculoForm(true)}
-                buttonText="Nuevo Vehículo"
-                variant="outline"
-              />
-            </ProtectedFeature>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowVehiculoForm(true)}
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Nuevo Vehículo
+            </Button>
             
-            <ProtectedFeature blockOnRestriction={true}>
-              <ProtectedActions 
-                action="create" 
-                resource="socios"
-                onAction={() => setShowSocioForm(true)}
-                buttonText="Nuevo Socio"
-                variant="outline"
-              />
-            </ProtectedFeature>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowSocioForm(true)}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Nuevo Socio
+            </Button>
 
-            <ProtectedFeature blockOnRestriction={true}>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-10"
-                onClick={() => setShowMantenimientoForm(true)}
-                disabled
-              >
-                <Wrench className="h-4 w-4 mr-2" />
-                Programar Mantenimiento
-              </Button>
-            </ProtectedFeature>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowMantenimientoForm(true)}
+            >
+              <Wrench className="h-4 w-4 mr-2" />
+              Programar Mantenimiento
+            </Button>
 
-            <ProtectedFeature blockOnRestriction={true}>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-10"
-                onClick={() => setShowVerificacionForm(true)}
-                disabled
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Programar Verificación
-              </Button>
-            </ProtectedFeature>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowVerificacionForm(true)}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Programar Verificación
+            </Button>
 
-            <ProtectedFeature blockOnRestriction={true}>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-10"
-                onClick={() => setShowRevisionGPSForm(true)}
-                disabled
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                Revisión GPS
-              </Button>
-            </ProtectedFeature>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-10"
+              onClick={() => setShowRevisionGPSForm(true)}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Revisión GPS
+            </Button>
             
             <Button variant="outline" className="w-full justify-start h-10">
               <BarChart3 className="h-4 w-4 mr-2" />

@@ -37,9 +37,7 @@ class GoogleMapsService {
     waypoints?: Coordinates[]
   ): Promise<RouteResult | null> {
     try {
-      console.log('🚀 Calculating route with Google Maps API');
-      console.log('📍 Origin:', origin);
-      console.log('📍 Destination:', destination);
+      console.log('🚀 Calculating route with Google Maps');
       
       if (!this.supabase) {
         const { supabase } = await import('@/integrations/supabase/client');
@@ -50,12 +48,14 @@ class GoogleMapsService {
         body: {
           origin,
           destination,
-          waypoints: waypoints || []
+          waypoints
         }
       });
 
       if (error) {
         console.error('❌ Error calling google-directions function:', error);
+        
+        // If we get a function error, return null so the hybrid system can use fallbacks
         console.log('⚠️ Google Maps service unavailable, will use fallback calculation');
         return null;
       }
@@ -85,72 +85,31 @@ class GoogleMapsService {
     }
   }
 
-  // Geocoding using Google Maps Geocoding API
+  // Geocoding using Google Maps Geocoding API (for future use)
   async geocodeAddress(address: string): Promise<Coordinates | null> {
     try {
-      console.log('🗺️ Geocoding address:', address);
-      
-      if (!this.supabase) {
-        const { supabase } = await import('@/integrations/supabase/client');
-        this.supabase = supabase;
+      // For now, return mock coordinates based on postal code
+      // This can be enhanced with actual Google Geocoding API
+      const cpMap: { [key: string]: Coordinates } = {
+        '01000': { lat: 19.4326, lng: -99.1332 }, // CDMX Centro
+        '03100': { lat: 19.3927, lng: -99.1588 }, // Del Valle
+        '06700': { lat: 19.4284, lng: -99.1676 }, // Roma Norte
+        '11000': { lat: 19.4069, lng: -99.1716 }, // San Miguel Chapultepec
+        '62577': { lat: 18.8711, lng: -99.2211 }, // Jiutepec, Morelos
+        '22000': { lat: 32.5149, lng: -117.0382 }, // Tijuana, BC
+      };
+
+      // Extract postal code from address
+      const cpMatch = address.match(/\b\d{5}\b/);
+      if (cpMatch) {
+        const cp = cpMatch[0];
+        return cpMap[cp] || { lat: 19.4326, lng: -99.1332 };
       }
 
-      // Call a new geocoding function
-      const { data, error } = await this.supabase.functions.invoke('google-geocoding', {
-        body: { address }
-      });
-
-      if (error || !data?.success) {
-        console.warn('⚠️ Geocoding failed, using fallback coordinates');
-        return this.getFallbackCoordinates(address);
-      }
-
-      return data.coordinates;
+      return { lat: 19.4326, lng: -99.1332 }; // Default Mexico City
     } catch (error) {
-      console.error('❌ Error geocoding address:', error);
-      return this.getFallbackCoordinates(address);
-    }
-  }
-
-  private getFallbackCoordinates(address: string): Coordinates {
-    // Extract postal code from address for better fallback
-    const cpMap: { [key: string]: Coordinates } = {
-      '01000': { lat: 19.4326, lng: -99.1332 }, // CDMX Centro
-      '03100': { lat: 19.3927, lng: -99.1588 }, // Del Valle
-      '06700': { lat: 19.4284, lng: -99.1676 }, // Roma Norte
-      '11000': { lat: 19.4069, lng: -99.1716 }, // San Miguel Chapultepec
-      '62577': { lat: 18.8711, lng: -99.2211 }, // Jiutepec, Morelos
-      '22000': { lat: 32.5149, lng: -117.0382 }, // Tijuana, BC
-    };
-
-    // Extract postal code from address
-    const cpMatch = address.match(/\b\d{5}\b/);
-    if (cpMatch) {
-      const cp = cpMatch[0];
-      return cpMap[cp] || { lat: 19.4326, lng: -99.1332 };
-    }
-
-    return { lat: 19.4326, lng: -99.1332 }; // Default Mexico City
-  }
-
-  // Validate Google Maps API configuration
-  async validateConfiguration(): Promise<boolean> {
-    try {
-      if (!this.supabase) {
-        const { supabase } = await import('@/integrations/supabase/client');
-        this.supabase = supabase;
-      }
-
-      // Test with a simple route calculation
-      const testResult = await this.calculateRoute(
-        { lat: 19.4326, lng: -99.1332 }, // Mexico City
-        { lat: 19.3927, lng: -99.1588 }  // Del Valle
-      );
-
-      return testResult !== null;
-    } catch (error) {
-      console.error('❌ Google Maps configuration validation failed:', error);
-      return false;
+      console.error('Error geocoding address:', error);
+      return null;
     }
   }
 }

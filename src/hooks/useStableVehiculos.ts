@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
-type Socio = Database['public']['Tables']['socios']['Row'];
+type Vehiculo = Database['public']['Tables']['vehiculos']['Row'];
 
-interface SociosState {
-  socios: Socio[];
+interface VehiculosState {
+  vehiculos: Vehiculo[];
   loading: boolean;
   error: string | null;
   initialized: boolean;
@@ -16,9 +16,9 @@ interface SociosState {
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
-export const useStableSocios = (userId?: string) => {
-  const [state, setState] = useState<SociosState>({
-    socios: [],
+export const useStableVehiculos = (userId?: string) => {
+  const [state, setState] = useState<VehiculosState>({
+    vehiculos: [],
     loading: true,
     error: null,
     initialized: false,
@@ -32,7 +32,7 @@ export const useStableSocios = (userId?: string) => {
       return await fn();
     } catch (error) {
       if (retries > 0) {
-        console.warn(`[StableSocios] Retrying operation, ${retries} attempts left`, error);
+        console.warn(`[StableVehiculos] Retrying operation, ${retries} attempts left`, error);
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (MAX_RETRIES - retries + 1)));
         return retryWithBackoff(fn, retries - 1);
       }
@@ -40,10 +40,10 @@ export const useStableSocios = (userId?: string) => {
     }
   }, []);
 
-  const cargarSocios = useCallback(async () => {
+  const cargarVehiculos = useCallback(async () => {
     if (!userId || !mountedRef.current) return;
 
-    console.log('[StableSocios] Loading partners for user:', userId);
+    console.log('[StableVehiculos] Loading vehicles for user:', userId);
 
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
@@ -51,19 +51,26 @@ export const useStableSocios = (userId?: string) => {
       const loadData = async () => {
         // Query using correct column names from database
         const { data, error } = await supabase
-          .from('socios')
+          .from('vehiculos')
           .select(`
             id,
             user_id,
-            nombre_razon_social,
-            rfc,
-            telefono,
-            email,
-            tipo_persona,
-            regimen_fiscal,
-            uso_cfdi,
-            direccion,
-            direccion_fiscal,
+            placa,
+            num_serie,
+            modelo,
+            marca,
+            anio,
+            config_vehicular,
+            peso_bruto_vehicular,
+            capacidad_carga,
+            numero_ejes,
+            numero_llantas,
+            tarjeta_circulacion,
+            perm_sct,
+            num_permiso_sct,
+            poliza_seguro,
+            vigencia_seguro,
+            aseguradora,
             estado,
             activo,
             created_at,
@@ -73,36 +80,39 @@ export const useStableSocios = (userId?: string) => {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('[StableSocios] Database error:', error);
+          console.error('[StableVehiculos] Database error:', error);
           
-          // Handle specific error types
+          // Handle specific error types for better user experience
           if (error.code === 'PGRST301') {
             // Table doesn't exist or permission denied
-            throw new Error('No tienes permisos para ver los socios o la tabla no existe');
+            throw new Error('No tienes permisos para ver los vehículos o la tabla no existe');
           } else if (error.code === '406') {
-            // Not acceptable - likely RLS issue
+            // Not acceptable - likely RLS issue or column permission problem
             throw new Error('Error de permisos en la base de datos');
+          } else if (error.code === 'PGRST116') {
+            // Row not found - this is actually OK for an empty table
+            return [];
           }
           
-          throw new Error(`Error cargando socios: ${error.message}`);
+          throw new Error(`Error cargando vehículos: ${error.message}`);
         }
 
         return data || [];
       };
 
-      const socios = await retryWithBackoff(loadData);
+      const vehiculos = await retryWithBackoff(loadData);
 
       if (mountedRef.current) {
         setState({
-          socios,
+          vehiculos,
           loading: false,
           error: null,
           initialized: true,
         });
-        console.log('[StableSocios] Loaded', socios.length, 'partners successfully');
+        console.log('[StableVehiculos] Loaded', vehiculos.length, 'vehicles successfully');
       }
     } catch (error) {
-      console.error('[StableSocios] Error loading partners:', error);
+      console.error('[StableVehiculos] Error loading vehicles:', error);
       if (mountedRef.current) {
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         setState(prev => ({
@@ -112,27 +122,27 @@ export const useStableSocios = (userId?: string) => {
           initialized: true,
         }));
         
-        // Only show toast on final failure after retries
+        // Only show toast on final failure after all retries
         if (retryCountRef.current >= MAX_RETRIES) {
-          toast.error(`Error cargando socios: ${errorMessage}`);
+          toast.error(`Error cargando vehículos: ${errorMessage}`);
         }
         retryCountRef.current++;
       }
     }
   }, [userId, retryWithBackoff]);
 
-  const agregarSocio = useCallback(async (socioData: Omit<Socio, 'id' | 'created_at' | 'updated_at'>) => {
+  const agregarVehiculo = useCallback(async (vehiculoData: Omit<Vehiculo, 'id' | 'created_at' | 'updated_at'>) => {
     if (!userId) throw new Error('Usuario no autenticado');
 
     try {
       const dataToInsert = {
-        ...socioData,
+        ...vehiculoData,
         user_id: userId,
       };
 
       const { data, error } = await retryWithBackoff(async () => {
         return await supabase
-          .from('socios')
+          .from('vehiculos')
           .insert([dataToInsert])
           .select()
           .single();
@@ -143,26 +153,26 @@ export const useStableSocios = (userId?: string) => {
       if (mountedRef.current && data) {
         setState(prev => ({
           ...prev,
-          socios: [data, ...prev.socios],
+          vehiculos: [data, ...prev.vehiculos],
         }));
-        toast.success('Socio agregado exitosamente');
+        toast.success('Vehículo agregado exitosamente');
       }
 
       return data;
     } catch (error) {
-      console.error('[StableSocios] Error adding partner:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error agregando socio';
+      console.error('[StableVehiculos] Error adding vehicle:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error agregando vehículo';
       toast.error(errorMessage);
       throw error;
     }
   }, [userId, retryWithBackoff]);
 
-  const actualizarSocio = useCallback(async (id: string, socioData: Partial<Socio>) => {
+  const actualizarVehiculo = useCallback(async (id: string, vehiculoData: Partial<Vehiculo>) => {
     try {
       const { data, error } = await retryWithBackoff(async () => {
         return await supabase
-          .from('socios')
-          .update(socioData)
+          .from('vehiculos')
+          .update(vehiculoData)
           .eq('id', id)
           .select()
           .single();
@@ -173,25 +183,25 @@ export const useStableSocios = (userId?: string) => {
       if (mountedRef.current && data) {
         setState(prev => ({
           ...prev,
-          socios: prev.socios.map(s => s.id === id ? data : s),
+          vehiculos: prev.vehiculos.map(v => v.id === id ? data : v),
         }));
-        toast.success('Socio actualizado exitosamente');
+        toast.success('Vehículo actualizado exitosamente');
       }
 
       return data;
     } catch (error) {
-      console.error('[StableSocios] Error updating partner:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error actualizando socio';
+      console.error('[StableVehiculos] Error updating vehicle:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error actualizando vehículo';
       toast.error(errorMessage);
       throw error;
     }
   }, [retryWithBackoff]);
 
-  const eliminarSocio = useCallback(async (id: string) => {
+  const eliminarVehiculo = useCallback(async (id: string) => {
     try {
       const { error } = await retryWithBackoff(async () => {
         return await supabase
-          .from('socios')
+          .from('vehiculos')
           .delete()
           .eq('id', id);
       });
@@ -201,32 +211,32 @@ export const useStableSocios = (userId?: string) => {
       if (mountedRef.current) {
         setState(prev => ({
           ...prev,
-          socios: prev.socios.filter(s => s.id !== id),
+          vehiculos: prev.vehiculos.filter(v => v.id !== id),
         }));
-        toast.success('Socio eliminado exitosamente');
+        toast.success('Vehículo eliminado exitosamente');
       }
     } catch (error) {
-      console.error('[StableSocios] Error deleting partner:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error eliminando socio';
+      console.error('[StableVehiculos] Error deleting vehicle:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error eliminando vehículo';
       toast.error(errorMessage);
       throw error;
     }
   }, [retryWithBackoff]);
 
-  // Load partners when userId changes with enhanced error recovery
+  // Load vehicles when userId changes with enhanced error recovery
   useEffect(() => {
     if (userId) {
       retryCountRef.current = 0;
-      cargarSocios();
+      cargarVehiculos();
     } else {
       setState({
-        socios: [],
+        vehiculos: [],
         loading: false,
         error: null,
         initialized: true,
       });
     }
-  }, [userId, cargarSocios]);
+  }, [userId, cargarVehiculos]);
 
   // Cleanup
   useEffect(() => {
@@ -236,13 +246,13 @@ export const useStableSocios = (userId?: string) => {
   }, []);
 
   return {
-    socios: state.socios,
+    vehiculos: state.vehiculos,
     loading: state.loading,
     error: state.error,
     initialized: state.initialized,
-    agregarSocio,
-    actualizarSocio,
-    eliminarSocio,
-    recargar: cargarSocios,
+    agregarVehiculo,
+    actualizarVehiculo,
+    eliminarVehiculo,
+    recargar: cargarVehiculos,
   };
 };

@@ -21,18 +21,15 @@ export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadge
     dataWillBeDeleted
   } = useTrialManager();
   
-  // Ensure planActual is always a string
-  const planName = planActual || 'Plan Básico';
-  
   const getPlanIcon = () => {
     if (isSuperuser) return Crown;
     if (dataWillBeDeleted) return Trash2;
     if (isInGracePeriod) return Clock;
     if (isInActiveTrial) return Gift;
     if (isTrialExpired) return AlertTriangle;
-    if (planName.includes('Enterprise')) return Shield;
-    if (planName.includes('Automatización') || planName.includes('Profesional')) return Zap;
-    if (planName.includes('Gestión') || planName.includes('Básico')) return Star;
+    if (planActual.includes('Enterprise')) return Shield;
+    if (planActual.includes('Automatización') || planActual.includes('Profesional')) return Zap;
+    if (planActual.includes('Gestión') || planActual.includes('Básico')) return Star;
     return null;
   };
 
@@ -42,8 +39,8 @@ export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadge
     if (isSuperuser) return 'default';
     if (isInGracePeriod) return 'secondary';
     if (isInActiveTrial) return 'default';
-    if (planName.includes('Enterprise')) return 'default';
-    if (planName.includes('Automatización') || planName.includes('Profesional')) return 'secondary';
+    if (planActual.includes('Enterprise')) return 'default';
+    if (planActual.includes('Automatización') || planActual.includes('Profesional')) return 'secondary';
     return 'outline';
   };
 
@@ -53,8 +50,8 @@ export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadge
     if (isSuperuser) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
     if (isInGracePeriod) return 'bg-orange-50 text-orange-700 border-orange-200';
     if (isInActiveTrial) return 'bg-green-50 text-green-700 border-green-200';
-    if (planName.includes('Enterprise')) return 'bg-purple-50 text-purple-700 border-purple-200';
-    if (planName.includes('Automatización') || planName.includes('Profesional')) return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (planActual.includes('Enterprise')) return 'bg-purple-50 text-purple-700 border-purple-200';
+    if (planActual.includes('Automatización') || planActual.includes('Profesional')) return 'bg-blue-50 text-blue-700 border-blue-200';
     return 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
@@ -72,7 +69,7 @@ export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadge
     if (dataWillBeDeleted) return `¡Datos eliminados en ${graceDaysRemaining} días!`;
     if (isInGracePeriod) return `Período de gracia: ${graceDaysRemaining} días`;
     if (isInActiveTrial) return `Trial: ${daysRemaining} días`;
-    return planName;
+    return planActual;
   };
 
   return (

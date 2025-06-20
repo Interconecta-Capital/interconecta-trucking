@@ -1,10 +1,15 @@
 
 export interface AlertConfig {
   id: string;
-  type: 'info' | 'warning' | 'critical';
+  type: 'critical' | 'error' | 'warning' | 'info';
   title: string;
   message: string;
   action: string;
-  dismissible?: boolean;
-  persistent?: boolean;
+  priority: number;
+  icon?: any;
+}
+
+export interface AlertStyles {
+  container: string;
+  button: string;
 }

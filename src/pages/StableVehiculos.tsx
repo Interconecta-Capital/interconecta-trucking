@@ -15,7 +15,7 @@ import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
-export default function Vehiculos() {
+export default function StableVehiculos() {
   const { user } = useStableAuth();
   const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
