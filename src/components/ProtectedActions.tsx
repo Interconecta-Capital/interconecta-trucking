@@ -29,16 +29,26 @@ export const ProtectedActions = ({
     canPerformAction, 
     hasFullAccess,
     restrictionType,
-    getContextualMessage
+    getContextualMessage,
+    isTrialExpired,
+    isInGracePeriod
   } = useTrialManager();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
-    // Superusers can always create
+    // Superusers pueden crear siempre
     if (isSuperuser) {
       if (onAction) {
         onAction();
       }
+      return;
+    }
+
+    // Si no tiene acceso completo, bloquear completamente
+    if (!hasFullAccess) {
+      const message = getContextualMessage();
+      toast.error(message);
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -50,13 +60,14 @@ export const ProtectedActions = ({
       return;
     }
 
-    // Verificar límites específicos del recurso
+    // Verificar límites específicos del recurso solo si tiene acceso completo
     const result = puedeCrear(resource);
     const puede = result?.puede ?? false;
     const razon = result?.razon;
     
     if (!puede && razon) {
       toast.error(razon);
+      setShowUpgradeModal(true);
       return;
     }
     
@@ -67,31 +78,72 @@ export const ProtectedActions = ({
 
   // Si no hay children, renderizar como botón
   if (!children && action === 'create') {
-    // Si no tiene acceso completo, mostrar botón bloqueado
+    // Si no tiene acceso completo, mostrar botón completamente bloqueado
     if (!hasFullAccess) {
+      const getButtonText = () => {
+        if (isTrialExpired && !isInGracePeriod) {
+          return 'Período de Prueba Finalizado';
+        }
+        if (restrictionType === 'payment_suspended') {
+          return 'Cuenta Suspendida';
+        }
+        if (isInGracePeriod) {
+          return 'Solo Lectura';
+        }
+        return 'Acceso Restringido';
+      };
+
+      const getModalProps = () => {
+        if (isTrialExpired && !isInGracePeriod) {
+          return {
+            title: 'Período de Prueba Finalizado',
+            description: 'Su período de prueba ha finalizado. Adquiera un plan para continuar creando registros.'
+          };
+        }
+        if (restrictionType === 'payment_suspended') {
+          return {
+            title: 'Cuenta Suspendida',
+            description: 'Su cuenta está suspendida por falta de pago. Renueve su suscripción para continuar.'
+          };
+        }
+        if (isInGracePeriod) {
+          return {
+            title: 'Período de Gracia',
+            description: 'Su cuenta está en período de gracia. Solo puede consultar datos existentes.'
+          };
+        }
+        return {
+          title: 'Acceso Restringido',
+          description: 'No tiene acceso para realizar esta acción.'
+        };
+      };
+
+      const modalProps = getModalProps();
+
       return (
         <>
           <Button 
             disabled 
             variant="outline" 
-            className="flex items-center gap-2 opacity-50"
+            className="flex items-center gap-2 opacity-50 cursor-not-allowed"
             onClick={handleAction}
           >
             <Lock className="h-4 w-4" />
-            {restrictionType === 'grace_period' ? 'Solo lectura' : 'Bloqueado'}
+            {getButtonText()}
           </Button>
           
           <UpgradeModal
             isOpen={showUpgradeModal}
             onClose={() => setShowUpgradeModal(false)}
-            title={restrictionType === 'trial_expired' ? 'Período de Prueba Finalizado' : 'Acceso Restringido'}
-            description={getContextualMessage()}
+            title={modalProps.title}
+            description={modalProps.description}
             blockedAction={`Crear ${resource.replace('_', ' ')}`}
           />
         </>
       );
     }
 
+    // Si tiene acceso completo, mostrar botón normal
     return (
       <>
         <Button onClick={handleAction} variant={variant} className="flex items-center gap-2">
@@ -102,8 +154,8 @@ export const ProtectedActions = ({
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          title="Actualiza tu Plan"
-          description="Necesitas un plan activo para crear nuevos registros."
+          title="Límite Alcanzado"
+          description="Ha alcanzado el límite de su plan actual."
           blockedAction={`Crear ${resource.replace('_', ' ')}`}
         />
       </>

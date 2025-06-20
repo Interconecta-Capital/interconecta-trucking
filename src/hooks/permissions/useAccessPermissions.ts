@@ -9,15 +9,25 @@ export const useAccessPermissions = () => {
   const { hasFullAccess, canPerformAction } = useTrialManager();
 
   const puedeAcceder = (recurso: string): boolean => {
+    // Superusers siempre pueden acceder
     if (isSuperuser) return true;
     
-    // Usar la lógica centralizada del trial manager
+    // Si no tiene acceso completo, solo permitir recursos básicos de solo lectura
     if (!hasFullAccess) {
-      // Solo permitir acceso a recursos básicos de lectura cuando no hay acceso completo
-      const recursosBasicosLectura = ['dashboard', 'profile', 'planes', 'logout'];
-      return recursosBasicosLectura.some(basico => recurso.includes(basico));
+      const recursosBasicosLectura = [
+        'dashboard', 
+        'profile', 
+        'planes', 
+        'logout',
+        'view_cartas_porte',
+        'view_conductores', 
+        'view_vehiculos',
+        'view_socios'
+      ];
+      return recursosBasicosLectura.some(basico => recurso.includes(basico) || recurso.includes('view'));
     }
 
+    // Con acceso completo, puede acceder a todo según su plan
     return true;
   };
 

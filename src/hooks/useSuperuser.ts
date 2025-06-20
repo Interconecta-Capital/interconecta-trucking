@@ -13,20 +13,41 @@ export const useSuperuser = () => {
     
     // Verificar desde metadata del usuario de auth
     const authMetadata = user.user_metadata || {};
-    return authMetadata.is_superuser === 'true' || authMetadata.is_admin === 'true';
+    const isAuthSuperuser = authMetadata.is_superuser === 'true' || authMetadata.is_admin === 'true';
+    
+    // También verificar desde el profile (plan_type = 'superuser')
+    // Esto se manejará en useProfile cuando esté disponible
+    
+    return isAuthSuperuser;
   }, [user]);
 
   // Convertir usuario existente a superuser
   const convertToSuperuser = useMutation({
     mutationFn: async (email: string) => {
-      const { data, error } = await supabase.functions.invoke('convert-to-superuser', {
-        body: { email }
+      // Buscar el usuario por email
+      const { data: profiles, error: searchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .single();
+      
+      if (searchError || !profiles) {
+        throw new Error('Usuario no encontrado');
+      }
+
+      const { data, error } = await supabase.rpc('convert_to_superuser', {
+        p_user_id: profiles.id
       });
+      
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('Usuario convertido a superusuario exitosamente');
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('Usuario convertido a superusuario exitosamente');
+      } else {
+        toast.error(data.error || 'Error al convertir usuario');
+      }
     },
     onError: (error: any) => {
       toast.error(`Error: ${error.message}`);
@@ -36,9 +57,27 @@ export const useSuperuser = () => {
   // Crear cuenta de superuser de prueba
   const createSuperuserAccount = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('create-test-superuser');
+      const testEmail = 'superuser@trucking.dev';
+      const testPassword = 'SuperUser123!@#';
+      
+      const { data, error } = await supabase.rpc('create_superuser', {
+        p_email: testEmail,
+        p_password: testPassword,
+        p_nombre: 'Super Usuario',
+        p_empresa: 'Sistema'
+      });
+      
       if (error) throw error;
-      return data;
+      
+      if (data.success) {
+        return {
+          email: testEmail,
+          password: testPassword,
+          message: data.message
+        };
+      } else {
+        throw new Error(data.error || 'Error al crear superusuario');
+      }
     },
     onSuccess: () => {
       toast.success('Cuenta de superusuario de prueba creada');
