@@ -11,7 +11,8 @@ import { ViajeWizardResumen } from './wizard/ViajeWizardResumen';
 import { toast } from 'sonner';
 import { useViajes } from '@/hooks/useViajes';
 import { ViajeCartaPorteService } from '@/services/viajes/ViajeCartaPorteService';
-import { ViajeWizardValidaciones } from './wizard/ViajeWizardValidaciones';
+import { ViajeWizardValidacionesEnhanced } from './wizard/ViajeWizardValidacionesEnhanced';
+import { AdaptiveFlowProvider, FlowModeSelector } from './wizard/AdaptiveFlowManager';
 import { ValidationProvider } from '@/contexts/ValidationProvider';
 
 export interface ViajeWizardData {
@@ -162,7 +163,7 @@ export function ViajeWizard() {
       case 3:
         return <ViajeWizardActivos data={data} updateData={updateData} />;
       case 4:
-        return <ViajeWizardValidaciones data={data} updateData={updateData} onNext={handleNext} onPrev={handlePrevious} />;
+        return <ViajeWizardValidacionesEnhanced data={data} updateData={updateData} onNext={handleNext} onPrev={handlePrevious} />;
       case 5:
         return <ViajeWizardResumen data={data} onConfirm={handleConfirmarViaje} />;
       default:
@@ -175,123 +176,128 @@ export function ViajeWizard() {
   const isProcessing = isCreatingViaje || isGeneratingDocuments;
 
   return (
-    <ValidationProvider>
-      <div className="container mx-auto py-6 max-w-4xl">
-        {/* Header del Wizard */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Route className="h-6 w-6 text-blue-600" />
-              <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
-            </div>
-            <Button variant="outline" onClick={handleCancel} disabled={isProcessing}>
-              Cancelar
-            </Button>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Paso {data.currentStep} de {STEPS.length}</span>
-              <span>{Math.round(progress)}% completado</span>
-            </div>
-            <Progress value={progress} className="w-full" />
-          </div>
-        </div>
-
-        {/* Steps Navigation */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {STEPS.map((step) => {
-            const isActive = step.id === data.currentStep;
-            const isCompleted = step.id < data.currentStep;
-            const Icon = step.icon;
-
-            return (
-              <div
-                key={step.id}
-                className={`p-3 rounded-lg border-2 transition-all ${
-                  isActive
-                    ? 'border-blue-500 bg-blue-50'
-                    : isCompleted
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Icon className={`h-4 w-4 ${
-                    isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
-                  }`} />
-                  <span className={`text-sm font-medium ${
-                    isActive ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-500'
-                  }`}>
-                    {step.title}
-                  </span>
-                </div>
-                <p className={`text-xs ${
-                  isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
-                }`}>
-                  {step.subtitle}
-                </p>
+    <AdaptiveFlowProvider>
+      <ValidationProvider>
+        <div className="container mx-auto py-6 max-w-4xl">
+          {/* Header del Wizard */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Route className="h-6 w-6 text-blue-600" />
+                <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Main Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              {currentStepInfo && <currentStepInfo.icon className="h-5 w-5" />}
-              {currentStepInfo?.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderStepContent()}
-          </CardContent>
-        </Card>
-
-        {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
-        {data.currentStep !== 4 && (
-          <div className="flex justify-between mt-6">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={data.currentStep === 1 || isProcessing}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Anterior
-            </Button>
-
-            {data.currentStep < 5 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canAdvance() || isProcessing}
-              >
-                Siguiente
-                <ArrowRight className="h-4 w-4 ml-2" />
+              <Button variant="outline" onClick={handleCancel} disabled={isProcessing}>
+                Cancelar
               </Button>
-            ) : (
-              <Button
-                onClick={handleConfirmarViaje}
-                disabled={isProcessing}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {isCreatingViaje ? 'Creando viaje...' : 'Generando documentos...'}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Confirmar y Emitir Documentos
-                  </>
-                )}
-              </Button>
-            )}
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Paso {data.currentStep} de {STEPS.length}</span>
+                <span>{Math.round(progress)}% completado</span>
+              </div>
+              <Progress value={progress} className="w-full" />
+            </div>
           </div>
-        )}
-      </div>
-    </ValidationProvider>
+
+          {/* Flow Mode Selector - Solo mostrar en el primer paso */}
+          {data.currentStep === 1 && <FlowModeSelector />}
+
+          {/* Steps Navigation */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            {STEPS.map((step) => {
+              const isActive = step.id === data.currentStep;
+              const isCompleted = step.id < data.currentStep;
+              const Icon = step.icon;
+
+              return (
+                <div
+                  key={step.id}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    isActive
+                      ? 'border-blue-500 bg-blue-50'
+                      : isCompleted
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon className={`h-4 w-4 ${
+                      isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                    }`} />
+                    <span className={`text-sm font-medium ${
+                      isActive ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-500'
+                    }`}>
+                      {step.title}
+                    </span>
+                  </div>
+                  <p className={`text-xs ${
+                    isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  }`}>
+                    {step.subtitle}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Main Content */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                {currentStepInfo && <currentStepInfo.icon className="h-5 w-5" />}
+                {currentStepInfo?.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+
+          {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
+          {data.currentStep !== 4 && (
+            <div className="flex justify-between mt-6">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={data.currentStep === 1 || isProcessing}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+
+              {data.currentStep < 5 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!canAdvance() || isProcessing}
+                >
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleConfirmarViaje}
+                  disabled={isProcessing}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {isCreatingViaje ? 'Creando viaje...' : 'Generando documentos...'}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Confirmar y Emitir Documentos
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </ValidationProvider>
+    </AdaptiveFlowProvider>
   );
 }
