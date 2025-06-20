@@ -21,6 +21,16 @@ interface Suscripcion {
   fecha_vencimiento?: string;
   proximo_pago?: string;
   stripe_customer_id?: string;
+  grace_period_start?: string;
+  grace_period_end?: string;
+  cleanup_warning_sent?: boolean;
+  final_warning_sent?: boolean;
+}
+
+interface Bloqueo {
+  activo: boolean;
+  mensaje_bloqueo?: string;
+  motivo?: string;
 }
 
 export function useSuscripcion() {
@@ -29,6 +39,9 @@ export function useSuscripcion() {
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
+  const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [bloqueo, setBloqueo] = useState<Bloqueo>({ activo: false });
 
   useEffect(() => {
     if (!user?.id) {
@@ -45,6 +58,10 @@ export function useSuscripcion() {
             status,
             fecha_fin_prueba,
             fecha_vencimiento,
+            grace_period_start,
+            grace_period_end,
+            cleanup_warning_sent,
+            final_warning_sent,
             plan:planes_suscripcion(
               id,
               nombre,
@@ -76,6 +93,22 @@ export function useSuscripcion() {
           });
         } else if (data) {
           setSuscripcion(data);
+        }
+
+        // Load bloqueo
+        const { data: bloqueoData } = await supabase
+          .from('bloqueos_usuario')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('activo', true)
+          .single();
+
+        if (bloqueoData) {
+          setBloqueo({
+            activo: true,
+            mensaje_bloqueo: bloqueoData.mensaje_bloqueo,
+            motivo: bloqueoData.motivo
+          });
         }
       } catch (error) {
         console.error('[useSuscripcion] Unexpected error:', error);
@@ -119,7 +152,29 @@ export function useSuscripcion() {
   };
 
   const estaBloqueado = () => {
-    return suscripcionVencida() && !enPeriodoPrueba();
+    return bloqueo.activo || (suscripcionVencida() && !enPeriodoPrueba());
+  };
+
+  const diasRestantesPrueba = () => {
+    if (!suscripcion?.fecha_fin_prueba) return 0;
+    const now = new Date();
+    const endDate = new Date(suscripcion.fecha_fin_prueba);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const verificarSuscripcion = async () => {
+    setIsVerifyingSubscription(true);
+    try {
+      // Placeholder for subscription verification
+      console.log('Verifying subscription...');
+      // In real implementation, this would check with payment provider
+    } catch (error) {
+      console.error('Error verifying subscription:', error);
+    } finally {
+      setIsVerifyingSubscription(false);
+    }
   };
 
   const abrirPortalCliente = async () => {
@@ -135,14 +190,33 @@ export function useSuscripcion() {
     }
   };
 
+  const crearCheckout = async (planId: string) => {
+    setIsCreatingCheckout(true);
+    try {
+      // Placeholder for checkout creation
+      console.log('Creating checkout for plan:', planId);
+      // In real implementation, this would create Stripe checkout session
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
+
   return {
     suscripcion,
     planes,
     loading,
+    bloqueo,
     enPeriodoPrueba,
     suscripcionVencida,
     estaBloqueado,
+    diasRestantesPrueba,
+    verificarSuscripcion,
+    isVerifyingSubscription,
     abrirPortalCliente,
     isOpeningPortal,
+    crearCheckout,
+    isCreatingCheckout,
   };
 }

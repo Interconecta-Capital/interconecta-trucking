@@ -17,6 +17,18 @@ export interface Vehiculo {
   capacidad_carga?: number;
   poliza_seguro?: string;
   vigencia_seguro?: string;
+  // Additional fields that may not exist in database but are expected by components
+  perm_sct?: string;
+  num_permiso_sct?: string;
+  asegura_resp_civil?: string;
+  poliza_resp_civil?: string;
+  asegura_med_ambiente?: string;
+  poliza_med_ambiente?: string;
+  tipo_carroceria?: string;
+  verificacion_vigencia?: string;
+  id_equipo_gps?: string;
+  fecha_instalacion_gps?: string;
+  acta_instalacion_gps?: string;
   estado: string;
   activo: boolean;
   created_at: string;
