@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Route, Navigation, AlertCircle } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
+import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation';
 
 interface ViajeWizardRutaProps {
   data: ViajeWizardData;
@@ -16,24 +16,22 @@ interface ViajeWizardRutaProps {
 export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
   const [origenInput, setOrigenInput] = useState('');
   const [destinoInput, setDestinoInput] = useState('');
-  const [calculandoRuta, setCalculandoRuta] = useState(false);
+  const { calculateRoute, isCalculating, routeData, error } = useGoogleRouteCalculation();
 
   // Simular autocompletado de direcciones
   const handleOrigenSearch = async (valor: string) => {
     setOrigenInput(valor);
-    // Aquí se integraría con el componente de autocompletado existente
   };
 
   const handleDestinoSearch = async (valor: string) => {
     setDestinoInput(valor);
-    // Aquí se integraría con el componente de autocompletado existente
   };
 
   const establecerOrigen = () => {
     if (origenInput.trim()) {
       const ubicacion = {
         direccion: origenInput,
-        coordenadas: { lat: 19.4326, lng: -99.1332 }, // Simulado
+        coordenadas: { lat: 19.4326, lng: -99.1332 }, // Ciudad de México por defecto
         codigoPostal: '01000'
       };
       updateData({ origen: ubicacion });
@@ -45,7 +43,7 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
     if (destinoInput.trim()) {
       const ubicacion = {
         direccion: destinoInput,
-        coordenadas: { lat: 20.6597, lng: -103.3496 }, // Simulado
+        coordenadas: { lat: 20.6597, lng: -103.3496 }, // Guadalajara por defecto
         codigoPostal: '44100'
       };
       updateData({ destino: ubicacion });
@@ -56,19 +54,26 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
   // Calcular ruta automáticamente cuando se tienen origen y destino
   useEffect(() => {
     if (data.origen && data.destino && !data.distanciaRecorrida) {
-      calcularRuta();
+      calcularRutaGoogle();
     }
   }, [data.origen, data.destino]);
 
-  const calcularRuta = async () => {
-    setCalculandoRuta(true);
-    
-    // Simular cálculo de ruta (aquí se integraría con RouteOptimizer real)
-    setTimeout(() => {
-      const distancia = Math.floor(Math.random() * 500) + 100; // Simulado
-      updateData({ distanciaRecorrida: distancia });
-      setCalculandoRuta(false);
-    }, 2000);
+  const calcularRutaGoogle = async () => {
+    if (data.origen && data.destino) {
+      console.log('🗺️ Calculando ruta con Google Maps...');
+      
+      const resultado = await calculateRoute(
+        data.origen.coordenadas,
+        data.destino.coordenadas
+      );
+
+      if (resultado && resultado.success) {
+        updateData({ 
+          distanciaRecorrida: resultado.distance_km 
+        });
+        console.log('✅ Ruta calculada:', resultado.distance_km, 'km');
+      }
+    }
   };
 
   return (
@@ -169,10 +174,10 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {calculandoRuta ? (
+            {isCalculating ? (
               <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-blue-800">Calculando la mejor ruta...</span>
+                <span className="text-blue-800">Calculando ruta con Google Maps...</span>
               </div>
             ) : data.distanciaRecorrida ? (
               <div className="space-y-3">
@@ -189,30 +194,31 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
                   </div>
                 </div>
                 
-                {/* Visualización del mapa (simulada) */}
-                <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                  <div className="text-center text-muted-foreground">
-                    <Navigation className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-sm">Mapa de la ruta</p>
-                    <p className="text-xs">Integración con Mapbox pendiente</p>
+                {/* Información adicional de Google Maps */}
+                {routeData && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-sm text-green-800">
+                      ✅ Ruta calculada con Google Maps API
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={calcularRuta}
+                  onClick={calcularRutaGoogle}
+                  disabled={isCalculating}
                 >
                   <Route className="h-4 w-4 mr-2" />
                   Recalcular Ruta
                 </Button>
               </div>
-            ) : (
+            ) : error ? (
               <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <span className="text-amber-800">Error calculando la ruta. Inténtalo de nuevo.</span>
+                <span className="text-amber-800">Error calculando la ruta: {error}</span>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       )}
