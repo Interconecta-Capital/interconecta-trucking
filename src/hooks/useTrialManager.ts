@@ -86,8 +86,8 @@ export const useTrialManager = () => {
       };
     }
 
-    // Lógica de trial activo
-    const isInActiveTrial = trialInfo.isInActiveTrial || suscripcion?.status === 'trial';
+    // Lógica de trial activo - usar las propiedades correctas
+    const isInActiveTrial = trialInfo.isTrialActive || suscripcion?.status === 'trial';
     const isTrialExpired = trialInfo.isTrialExpired && suscripcion?.status !== 'active';
     const daysRemaining = trialInfo.daysRemaining;
 
