@@ -6,11 +6,21 @@ import { useAuth } from './useAuth';
 export interface Plan {
   id: string;
   nombre: string;
+  descripcion?: string;
   precio_mensual: number;
+  precio_anual?: number;
+  dias_prueba?: number;
   limite_cartas_porte?: number;
   limite_vehiculos?: number;
   limite_conductores?: number;
   limite_socios?: number;
+  puede_cancelar_cfdi?: boolean;
+  puede_generar_xml?: boolean;
+  puede_timbrar?: boolean;
+  puede_tracking?: boolean;
+  puede_acceder_administracion?: boolean;
+  puede_acceder_funciones_avanzadas?: boolean;
+  puede_acceder_enterprise?: boolean;
 }
 
 // Export this interface for other components
@@ -68,11 +78,21 @@ export function useSuscripcion() {
             plan:planes_suscripcion(
               id,
               nombre,
+              descripcion,
               precio_mensual,
+              precio_anual,
+              dias_prueba,
               limite_cartas_porte,
               limite_vehiculos,
               limite_conductores,
-              limite_socios
+              limite_socios,
+              puede_cancelar_cfdi,
+              puede_generar_xml,
+              puede_timbrar,
+              puede_tracking,
+              puede_acceder_administracion,
+              puede_acceder_funciones_avanzadas,
+              puede_acceder_enterprise
             )
           `)
           .eq('user_id', user.id)
@@ -87,11 +107,20 @@ export function useSuscripcion() {
             plan: {
               id: 'basic',
               nombre: 'Básico',
+              descripcion: 'Plan básico de prueba',
               precio_mensual: 0,
+              dias_prueba: 14,
               limite_cartas_porte: 10,
               limite_vehiculos: 5,
               limite_conductores: 3,
               limite_socios: 2,
+              puede_generar_xml: true,
+              puede_timbrar: false,
+              puede_cancelar_cfdi: false,
+              puede_tracking: false,
+              puede_acceder_administracion: false,
+              puede_acceder_funciones_avanzadas: false,
+              puede_acceder_enterprise: false,
             }
           });
         } else if (data) {

@@ -53,10 +53,10 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
         config_vehicular: vehiculoActual.config_vehicular || '',
         poliza_seguro: vehiculoActual.poliza_seguro || '',
         vigencia_seguro: vehiculoActual.vigencia_seguro || '',
-        verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
-        id_equipo_gps: vehiculoActual.id_equipo_gps || '',
-        fecha_instalacion_gps: vehiculoActual.fecha_instalacion_gps || '',
-        acta_instalacion_gps: vehiculoActual.acta_instalacion_gps || '',
+        verificacion_vigencia: '',  // Default value since not in DB
+        id_equipo_gps: '',  // Default value since not in DB
+        fecha_instalacion_gps: '',  // Default value since not in DB
+        acta_instalacion_gps: '',  // Default value since not in DB
         estado: vehiculoActual.estado || 'disponible'
       });
       

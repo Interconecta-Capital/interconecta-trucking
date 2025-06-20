@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TrialInfo {
   isTrialActive: boolean;
@@ -9,12 +9,12 @@ interface TrialInfo {
   daysRemaining: number;
   daysUsed: number;
   totalTrialDays: number;
-  trialEndDate: Date | null;
-  hasValidSubscription: boolean;
-  subscriptionStatus: string | null;
+  timezone: string;
+  trialStartDate?: Date;
+  trialEndDate?: Date;
 }
 
-export function useTimezoneAwareTrialTracking() {
+export const useTimezoneAwareTrialTracking = () => {
   const { user } = useAuth();
   const [trialInfo, setTrialInfo] = useState<TrialInfo>({
     isTrialActive: false,
@@ -22,9 +22,7 @@ export function useTimezoneAwareTrialTracking() {
     daysRemaining: 0,
     daysUsed: 0,
     totalTrialDays: 14,
-    trialEndDate: null,
-    hasValidSubscription: false,
-    subscriptionStatus: null,
+    timezone: 'America/Mexico_City'
   });
   const [loading, setLoading] = useState(true);
 
@@ -36,98 +34,57 @@ export function useTimezoneAwareTrialTracking() {
 
     const loadTrialInfo = async () => {
       try {
-        console.log('[TimezoneTrialTracking] Loading trial info for:', user.id);
-
-        // Get profile data directly
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('created_at, trial_end_date')
+          .select('timezone, trial_end_date, created_at')
           .eq('id', user.id)
           .single();
 
-        if (profileError) {
-          console.warn('[TimezoneTrialTracking] Profile error:', profileError);
-          // Use fallback: calculate from user creation
-          const userCreatedAt = new Date(user.created_at);
-          const trialEndDate = new Date(userCreatedAt.getTime() + (14 * 24 * 60 * 60 * 1000)); // 14 days
-          const now = new Date();
-          const daysRemaining = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-          const daysUsed = Math.max(0, 14 - daysRemaining);
-          
-          setTrialInfo({
-            isTrialActive: daysRemaining > 0,
-            isTrialExpired: daysRemaining <= 0,
-            daysRemaining,
-            daysUsed,
-            totalTrialDays: 14,
-            trialEndDate,
-            hasValidSubscription: false,
-            subscriptionStatus: 'trial',
-          });
-          return;
-        }
-
-        // Calculate trial status from profile
-        const createdAt = new Date(profile.created_at);
-        const trialEndDate = profile.trial_end_date ? 
-          new Date(profile.trial_end_date) : 
-          new Date(createdAt.getTime() + (14 * 24 * 60 * 60 * 1000)); // 14 days default
+        const userTimezone = profile?.timezone || 'America/Mexico_City';
+        const trialEndDate = profile?.trial_end_date ? new Date(profile.trial_end_date) : null;
+        const trialStartDate = profile?.created_at ? new Date(profile.created_at) : null;
 
         const now = new Date();
         const totalTrialDays = 14;
-        const daysRemaining = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-        const daysUsed = Math.max(0, totalTrialDays - daysRemaining);
 
-        // Try to get subscription info (but don't fail if it errors)
-        let subscriptionStatus = 'trial';
-        let hasValidSubscription = false;
+        let isTrialActive = false;
+        let isTrialExpired = false;
+        let daysRemaining = 0;
+        let daysUsed = 0;
 
-        try {
-          const { data: subscription } = await supabase
-            .from('suscripciones')
-            .select('status')
-            .eq('user_id', user.id)
-            .single();
-
-          if (subscription) {
-            subscriptionStatus = subscription.status;
-            hasValidSubscription = ['active', 'trial'].includes(subscription.status);
+        if (trialEndDate) {
+          const diffTime = trialEndDate.getTime() - now.getTime();
+          daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (daysRemaining > 0) {
+            isTrialActive = true;
+            daysUsed = totalTrialDays - daysRemaining;
+          } else {
+            isTrialExpired = true;
+            daysUsed = totalTrialDays;
           }
-        } catch (subError) {
-          console.warn('[TimezoneTrialTracking] Subscription query failed, using defaults');
         }
 
         setTrialInfo({
-          isTrialActive: daysRemaining > 0 && !hasValidSubscription,
-          isTrialExpired: daysRemaining <= 0 && !hasValidSubscription,
-          daysRemaining,
-          daysUsed,
+          isTrialActive,
+          isTrialExpired,
+          daysRemaining: Math.max(0, daysRemaining),
+          daysUsed: Math.max(0, daysUsed),
           totalTrialDays,
-          trialEndDate,
-          hasValidSubscription,
-          subscriptionStatus,
+          timezone: userTimezone,
+          trialStartDate,
+          trialEndDate
         });
 
       } catch (error) {
-        console.error('[TimezoneTrialTracking] Error:', error);
-        // Fallback to safe defaults
-        setTrialInfo({
-          isTrialActive: true,
-          isTrialExpired: false,
-          daysRemaining: 14,
-          daysUsed: 0,
-          totalTrialDays: 14,
-          trialEndDate: new Date(Date.now() + (14 * 24 * 60 * 60 * 1000)),
-          hasValidSubscription: false,
-          subscriptionStatus: 'trial',
-        });
+        console.error('Error loading trial info:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadTrialInfo();
-  }, [user?.id, user?.created_at]);
+  }, [user?.id]);
 
   return { trialInfo, loading };
-}
+};
