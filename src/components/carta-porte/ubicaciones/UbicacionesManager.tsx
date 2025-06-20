@@ -31,11 +31,11 @@ export function UbicacionesManager({
   const { toast } = useToast();
   const { createViaje, isCreating } = useViajeCreation();
 
-  // This function is just a placeholder that returns a trigger function
-  // The actual form handling is done in the parent component
+  // This function triggers the parent to show the form
   const handleAgregarUbicacion = useCallback(() => {
     console.log('➕ Manager: Iniciando agregar ubicación');
     // This is just a trigger - the actual form display is handled by parent
+    // We don't call onAgregarUbicacion here since that's for when we have actual data
     return 'trigger-form';
   }, []);
 
