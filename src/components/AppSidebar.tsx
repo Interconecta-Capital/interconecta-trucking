@@ -1,4 +1,3 @@
-
 import {
   Building2,
   Car,
@@ -40,6 +39,9 @@ export const AppSidebar = () => {
 
   // Verificar si puede crear cartas porte
   const canCreateCartaPorte = isSuperuser || (hasFullAccess && canPerformAction('create'));
+  
+  // Verificar si puede acceder a funciones de conductores
+  const canAccessConductores = isSuperuser || hasFullAccess;
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -130,12 +132,27 @@ export const AppSidebar = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
-                <Link to="/conductores">
-                  <Users className="h-5 w-5" />
+              {canAccessConductores ? (
+                <SidebarMenuButton asChild isActive={isActive('/conductores')} size="default" tooltip="Conductores">
+                  <Link to="/conductores">
+                    <Users className="h-5 w-5" />
+                    <span className="text-sm">Conductores</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton 
+                  disabled 
+                  size="default" 
+                  tooltip="Acceso Restringido"
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Lock className="h-5 w-5" />
                   <span className="text-sm">Conductores</span>
-                </Link>
-              </SidebarMenuButton>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Bloqueado
+                  </Badge>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
 
             <SidebarMenuItem>

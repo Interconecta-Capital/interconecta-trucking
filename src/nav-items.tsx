@@ -29,6 +29,7 @@ import Planes from "./pages/Planes";
  * - /cartas-porte = Gestión y listado de documentos
  * - /carta-porte/editor = Editor completo con todos los módulos (ubicaciones, mercancías, figuras, etc.) - PROTEGIDO
  * - /carta-porte/nuevo = Alias para crear nueva carta porte - PROTEGIDO
+ * - /conductores = Gestión de conductores - PROTEGIDO
  */
 export const navItems = [
   {
@@ -81,6 +82,9 @@ export const navItems = [
     to: "/conductores",
     icon: <Users className="h-4 w-4" />,
     page: <Conductores />,
+    requiresAuth: true,
+    protectedRoute: true,
+    description: "Gestión de conductores - PROTEGIDO"
   },
   {
     title: "Socios",

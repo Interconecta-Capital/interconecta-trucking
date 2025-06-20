@@ -15,7 +15,10 @@ import { ConductorSCTFields } from './forms/ConductorSCTFields';
 import { ConductorContactFields } from './forms/ConductorContactFields';
 import { FormStepper } from './forms/FormStepper';
 import { toast } from 'sonner';
-import { User, ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { User, ChevronLeft, ChevronRight, Save, Lock } from 'lucide-react';
+import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useTrialManager } from '@/hooks/useTrialManager';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ConductorFormDialogProps {
   open: boolean;
@@ -56,6 +59,27 @@ export function ConductorFormDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { createConductor, updateConductor, loading } = useConductores();
+  const { isSuperuser, hasFullAccess } = useEnhancedPermissions();
+  const { getContextualMessage, canPerformAction } = useTrialManager();
+
+  console.log('🔍 ConductorFormDialog Debug:', {
+    open,
+    isSuperuser,
+    hasFullAccess,
+    canPerformAction: canPerformAction('create')
+  });
+
+  // BLOQUEO TOTAL: Si no es superuser Y no tiene acceso completo, NO mostrar el modal
+  if (!isSuperuser && !hasFullAccess) {
+    console.log('❌ ConductorFormDialog completely blocked - no access');
+    return null;
+  }
+
+  // BLOQUEO ADICIONAL: Si no puede realizar acciones de creación, NO mostrar el modal
+  if (!isSuperuser && !canPerformAction('create')) {
+    console.log('❌ ConductorFormDialog blocked - cannot perform create action');
+    return null;
+  }
 
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -171,57 +195,69 @@ export function ConductorFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <FormStepper
-            steps={steps}
-            currentStep={currentStep}
-            onStepChange={setCurrentStep}
-          />
-
-          <div className="min-h-[400px]">
-            {renderStepContent()}
+        {/* VERIFICACIÓN FINAL: Mostrar alerta si por alguna razón no tiene acceso */}
+        {!hasFullAccess && !isSuperuser ? (
+          <div className="p-6">
+            <Alert className="border-red-200 bg-red-50">
+              <Lock className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {getContextualMessage()}
+              </AlertDescription>
+            </Alert>
           </div>
+        ) : (
+          <div className="space-y-6">
+            <FormStepper
+              steps={steps}
+              currentStep={currentStep}
+              onStepChange={setCurrentStep}
+            />
 
-          <div className="flex justify-between pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Anterior
-            </Button>
+            <div className="min-h-[400px]">
+              {renderStepContent()}
+            </div>
 
-            <div className="flex gap-2">
+            <div className="flex justify-between pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={loading}
+                onClick={handlePrevious}
+                disabled={currentStep === 0}
                 className="flex items-center gap-2"
               >
-                {currentStep === steps.length - 1 ? (
-                  <>
-                    <Save className="h-4 w-4" />
-                    {loading ? 'Guardando...' : (conductor ? 'Actualizar' : 'Crear Conductor')}
-                  </>
-                ) : (
-                  <>
-                    Siguiente
-                    <ChevronRight className="h-4 w-4" />
-                  </>
-                )}
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
               </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleNext}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  {currentStep === steps.length - 1 ? (
+                    <>
+                      <Save className="h-4 w-4" />
+                      {loading ? 'Guardando...' : (conductor ? 'Actualizar' : 'Crear Conductor')}
+                    </>
+                  ) : (
+                    <>
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

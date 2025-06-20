@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Edit, Trash2, Eye, Phone, Mail, AlertTriangle } from 'lucide-react';
 import { Conductor } from '@/types/cartaPorte';
+import { ProtectedActions } from '@/components/ProtectedActions';
 
 interface ConductoresTableProps {
   conductores: Conductor[];
@@ -164,22 +164,34 @@ export function ConductoresTable({ conductores, onEdit, onDelete, onView }: Cond
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(conductor)}
-                        className="h-8 w-8 p-0"
+                      
+                      <ProtectedActions
+                        action="create"
+                        resource="conductores"
+                        onAction={() => onEdit(conductor)}
                       >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(conductor)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </ProtectedActions>
+                      
+                      <ProtectedActions
+                        action="create"
+                        resource="conductores"
+                        onAction={() => onDelete(conductor)}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </ProtectedActions>
                     </div>
                   </TableCell>
                 </TableRow>
