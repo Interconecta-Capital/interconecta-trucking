@@ -26,7 +26,11 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   const [alertasMercancia, setAlertasMercancia] = useState<string[]>([]);
   const [sugerenciasIA, setSugerenciasIA] = useState<any>(null);
   const [showComercioExterior, setShowComercioExterior] = useState(false);
-  const [rfcValidation, setRfcValidation] = useState({ esValido: false, errores: [], tipo: null });
+  const [rfcValidation, setRfcValidation] = useState<{ esValido: boolean; errores: string[]; tipo: string | null }>({ 
+    esValido: false, 
+    errores: [], 
+    tipo: null 
+  });
 
   const {
     autoValidateField,
@@ -48,7 +52,11 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   useEffect(() => {
     if (data.cliente?.rfc) {
       const validation = RFCValidator.validarRFC(data.cliente.rfc);
-      setRfcValidation(validation);
+      setRfcValidation({
+        esValido: validation.esValido,
+        errores: validation.errores,
+        tipo: validation.tipo || null
+      });
       
       // Comunicar el estado de validación al componente padre
       updateData({ 

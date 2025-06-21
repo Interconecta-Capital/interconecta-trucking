@@ -1,83 +1,97 @@
 
-import { useState } from 'react';
-import { googleMapsService } from '@/services/googleMapsService';
-import { toast } from 'sonner';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-interface RoutePoint {
+interface Coordinates {
   lat: number;
   lng: number;
 }
 
-interface GoogleRouteResult {
+interface RouteCalculationResult {
+  success: boolean;
   distance_km: number;
   duration_minutes: number;
-  route_geometry: {
-    type: string;
-    coordinates: string;
-  };
-  google_data?: {
-    polyline: string;
-    bounds: any;
-    legs: any[];
-  };
-  success: boolean;
+  fallback?: boolean;
+  fallback_reason?: string;
+  google_data?: any;
+  error?: string;
 }
 
-export function useGoogleRouteCalculation() {
+export const useGoogleRouteCalculation = () => {
   const [isCalculating, setIsCalculating] = useState(false);
-  const [routeData, setRouteData] = useState<GoogleRouteResult | null>(null);
+  const [routeData, setRouteData] = useState<RouteCalculationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const calculateRoute = async (
-    origin: RoutePoint,
-    destination: RoutePoint,
-    waypoints?: RoutePoint[]
-  ): Promise<GoogleRouteResult | null> => {
+  const calculateRoute = useCallback(async (
+    origin: Coordinates,
+    destination: Coordinates,
+    waypoints?: Coordinates[]
+  ): Promise<RouteCalculationResult | null> => {
+    console.log('🗺️ Iniciando cálculo de ruta con Google Directions API');
+    
     setIsCalculating(true);
     setError(null);
-
+    
     try {
-      console.log('🚀 Iniciando cálculo de ruta con Google Maps');
-      console.log('📍 Origen:', origin);
-      console.log('📍 Destino:', destination);
-      console.log('🛤️ Waypoints:', waypoints);
-      
-      const result = await googleMapsService.calculateRoute(origin, destination, waypoints);
+      // Llamar a la Edge Function de Supabase
+      const { data, error: functionError } = await supabase.functions.invoke('google-directions', {
+        body: {
+          origin,
+          destination,
+          waypoints: waypoints || []
+        }
+      });
 
-      if (!result || !result.success) {
-        throw new Error('No se pudo calcular la ruta con Google Maps');
+      if (functionError) {
+        console.error('❌ Error en Edge Function:', functionError);
+        setError(`Error de servidor: ${functionError.message}`);
+        return null;
       }
 
-      console.log('✅ Ruta calculada exitosamente con Google Maps:', result);
-      setRouteData(result);
-      
-      toast.success(
-        `Ruta calculada: ${result.distance_km} km (${Math.round(result.duration_minutes / 60)}h ${result.duration_minutes % 60}m)`
-      );
+      if (!data) {
+        console.error('❌ No se recibieron datos de la función');
+        setError('No se pudieron obtener datos de ruta');
+        return null;
+      }
 
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      console.error('❌ Error calculando ruta con Google Maps:', err);
-      setError(errorMessage);
+      console.log('✅ Respuesta de Google Directions:', data);
       
-      toast.error(`Error al calcular ruta: ${errorMessage}`);
+      if (data.success) {
+        setRouteData(data);
+        
+        if (data.fallback) {
+          console.log('⚠️ Usando cálculo de distancia estimado:', data.fallback_reason);
+        } else {
+          console.log('🎯 Ruta calculada con Google Maps API exitosamente');
+        }
+        
+        return data;
+      } else {
+        console.error('❌ Error calculando ruta:', data.error);
+        setError(data.error || 'Error desconocido');
+        return null;
+      }
+
+    } catch (err) {
+      console.error('❌ Error en calculateRoute:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error de conexión';
+      setError(errorMessage);
       return null;
     } finally {
       setIsCalculating(false);
     }
-  };
+  }, []);
 
-  const clearRoute = () => {
+  const resetRouteData = useCallback(() => {
     setRouteData(null);
     setError(null);
-  };
+  }, []);
 
   return {
     calculateRoute,
-    clearRoute,
     isCalculating,
     routeData,
-    error
+    error,
+    resetRouteData
   };
-}
+};
