@@ -7,8 +7,8 @@ import { Edit, Trash2, Link } from 'lucide-react';
 interface Remolque {
   id: string;
   placa: string;
-  marca: string;
-  modelo: string;
+  marca?: string;
+  modelo?: string;
   anio?: number;
   estado: string;
   activo: boolean;
@@ -83,18 +83,14 @@ export function RemolquesTable({ remolques, loading, onEdit, onDelete }: Remolqu
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Marca</p>
-                <p className="font-medium">{remolque.marca || 'No especificada'}</p>
+                <p className="text-sm text-muted-foreground">Tipo</p>
+                <p className="font-medium">{remolque.tipo_remolque || 'No especificado'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Modelo</p>
-                <p className="font-medium">{remolque.modelo || 'No especificado'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Año</p>
-                <p className="font-medium">{remolque.anio || 'No especificado'}</p>
+                <p className="text-sm text-muted-foreground">Estado</p>
+                <p className="font-medium capitalize">{remolque.estado}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Capacidad</p>

@@ -20,8 +20,10 @@ export function ConductorVehiculoAsignacionFields({ formData, onFieldChange }: C
 
   const vehiculosDisponibles = vehiculos.filter(v => v.estado === 'disponible' || v.id === formData.vehiculo_asignado_id);
   const vehiculoSeleccionado = vehiculos.find(v => v.id === formData.vehiculo_asignado_id);
-  const remolqueDelVehiculo = vehiculoSeleccionado?.remolque_asignado_id 
-    ? remolques.find(r => r.id === vehiculoSeleccionado.remolque_asignado_id)
+  
+  // Buscar remolque asignado al vehículo seleccionado
+  const remolqueDelVehiculo = vehiculoSeleccionado?.id 
+    ? remolques.find(r => r.vehiculo_asignado_id === vehiculoSeleccionado.id)
     : null;
 
   return (
