@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveCard, ResponsiveCardContent, ResponsiveCardHeader, ResponsiveCardTitle } from '@/components/ui/responsive-card';
+import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,8 +20,10 @@ import {
 import { useViajes } from '@/hooks/useViajes';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { Viaje } from '@/hooks/useViajes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const ViajesActivos = () => {
+  const isMobile = useIsMobile();
   const { viajes, isLoading } = useViajes();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
@@ -111,65 +114,68 @@ export const ViajesActivos = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filtros y búsqueda estilo Apple */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Filtros y búsqueda responsivos */}
+      <div className={`flex gap-4 bg-gray-05 p-4 rounded-2xl ${isMobile ? 'flex-col' : 'flex-row'}`}>
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
           <Input
             placeholder="Buscar por origen, destino o carta porte..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
+            className={`pl-12 border-0 bg-pure-white shadow-sm ${isMobile ? 'h-12 text-base' : 'h-12'}`}
           />
         </div>
         <Button 
           variant="outline"
-          className="h-12 px-6 bg-pure-white shadow-sm border-0"
+          className={`bg-pure-white shadow-sm border-0 ${isMobile ? 'h-12 w-full justify-center' : 'h-12 px-6'}`}
         >
           <Filter className="h-4 w-4 mr-2" />
           Filtros
         </Button>
       </div>
 
-      {/* Lista de viajes con diseño Apple */}
+      {/* Lista de viajes responsiva */}
       {viajesActivos.length === 0 ? (
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-05 to-gray-10">
-          <CardContent className="p-16">
+        <ResponsiveCard className="border-0 shadow-sm bg-gradient-to-br from-gray-05 to-gray-10">
+          <ResponsiveCardContent className={isMobile ? "p-8" : "p-16"}>
             <div className="text-center">
               <div className="w-16 h-16 bg-gray-20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Truck className="h-8 w-8 text-gray-50" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-90 mb-3">
+              <h3 className={`font-semibold text-gray-90 mb-3 ${isMobile ? 'text-lg' : 'text-xl'}`}>
                 No hay viajes activos
               </h3>
               <p className="text-gray-60 max-w-md mx-auto">
                 {searchTerm ? 'No se encontraron viajes con ese criterio de búsqueda' : 'Todos los viajes están completados o no hay viajes programados'}
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </ResponsiveCardContent>
+        </ResponsiveCard>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ResponsiveGrid 
+          cols={{ default: 1, lg: 2 }} 
+          gap={{ default: 4, sm: 6 }}
+        >
           {viajesActivos.map((viaje) => (
-            <Card key={viaje.id} className="group hover:shadow-lg transition-all duration-200 border-gray-20 bg-pure-white">
-              <CardHeader className="pb-4">
+            <ResponsiveCard key={viaje.id} className="group hover:shadow-lg transition-all duration-200">
+              <ResponsiveCardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold text-gray-90 group-hover:text-blue-interconecta transition-colors">
+                  <ResponsiveCardTitle className="group-hover:text-blue-interconecta transition-colors">
                     {viaje.carta_porte_id}
-                  </CardTitle>
+                  </ResponsiveCardTitle>
                   {getEstadoBadge(viaje.estado)}
                 </div>
-              </CardHeader>
+              </ResponsiveCardHeader>
               
-              <CardContent className="space-y-6">
-                {/* Ruta con diseño mejorado */}
+              <ResponsiveCardContent className={`space-y-4 ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
+                {/* Ruta optimizada para móvil */}
                 <div className="space-y-3 p-4 bg-gray-05 rounded-xl">
                   <div className="flex items-start gap-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <span className="text-xs font-medium text-gray-60 uppercase tracking-wider">Origen</span>
-                      <p className="text-sm font-medium text-gray-90">{viaje.origen}</p>
+                      <p className={`font-medium text-gray-90 truncate ${isMobile ? 'text-sm' : 'text-sm'}`}>{viaje.origen}</p>
                     </div>
                   </div>
                   
@@ -177,14 +183,14 @@ export const ViajesActivos = () => {
                   
                   <div className="flex items-start gap-3">
                     <div className="w-3 h-3 bg-red-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <span className="text-xs font-medium text-gray-60 uppercase tracking-wider">Destino</span>
-                      <p className="text-sm font-medium text-gray-90">{viaje.destino}</p>
+                      <p className={`font-medium text-gray-90 truncate ${isMobile ? 'text-sm' : 'text-sm'}`}>{viaje.destino}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Progreso visual mejorado */}
+                {/* Progreso visual */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-gray-70">Progreso del viaje</span>
@@ -196,8 +202,8 @@ export const ViajesActivos = () => {
                   />
                 </div>
 
-                {/* Información temporal reorganizada */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Información temporal responsiva */}
+                <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   <div className="p-3 bg-blue-light rounded-xl">
                     <div className="flex items-center gap-2 mb-1">
                       <Clock className="h-4 w-4 text-blue-interconecta" />
@@ -222,9 +228,9 @@ export const ViajesActivos = () => {
                   </div>
                 </div>
 
-                {/* Recursos asignados con mejor diseño */}
+                {/* Recursos asignados responsivos */}
                 <div className="flex items-center justify-between p-3 bg-gray-05 rounded-xl">
-                  <div className="flex items-center gap-4">
+                  <div className={`flex items-center gap-4 ${isMobile ? 'flex-wrap' : ''}`}>
                     {viaje.vehiculo_id && (
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-blue-interconecta rounded-lg flex items-center justify-center">
@@ -244,22 +250,24 @@ export const ViajesActivos = () => {
                   </div>
                 </div>
 
-                {/* Acciones mejoradas */}
-                <div className="flex gap-3 pt-2">
+                {/* Acciones responsivas */}
+                <div className={`flex gap-3 pt-2 ${isMobile ? 'flex-col' : 'flex-row'}`}>
                   <Button 
                     onClick={() => handleVerTracking(viaje)}
-                    className="flex-1 h-11"
+                    className={`h-11 ${isMobile ? 'w-full' : 'flex-1'}`}
                     size="sm"
                   >
                     <Navigation className="h-4 w-4 mr-2" />
                     Ver Tracking
                   </Button>
-                  <Button variant="outline" size="sm" className="h-11 px-4">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  {!isMobile && (
+                    <Button variant="outline" size="sm" className="h-11 px-4">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
 
-                {/* Alertas específicas mejoradas */}
+                {/* Alertas específicas */}
                 {viaje.estado === 'retrasado' && (
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl">
                     <div className="flex items-center gap-3">
@@ -280,10 +288,10 @@ export const ViajesActivos = () => {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </ResponsiveCardContent>
+            </ResponsiveCard>
           ))}
-        </div>
+        </ResponsiveGrid>
       )}
 
       {/* Modal de tracking */}

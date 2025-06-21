@@ -1,12 +1,6 @@
 
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogDescription, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { VehiculoFormRefactored } from './forms/VehiculoFormRefactored';
 import { Truck } from 'lucide-react';
 
@@ -28,24 +22,24 @@ export function VehiculoFormDialog({ open, onOpenChange, vehiculo, onSuccess }: 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5" />
             {vehiculo ? 'Editar Vehículo' : 'Nuevo Vehículo'}
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             {vehiculo ? 'Modifica los datos del vehículo' : 'Ingresa los datos del nuevo vehículo con información SAT completa'}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <VehiculoFormRefactored
           vehiculoId={vehiculo?.id}
           onSuccess={handleSuccess}
           onCancel={handleCancel}
         />
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

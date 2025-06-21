@@ -21,10 +21,13 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
         <GlobalHeader />
         <main className={cn(
           "transition-all duration-200",
-          isMobile ? "p-4" : "p-6 lg:p-8",
+          // Responsive padding with proper mobile spacing
+          "p-3 sm:p-4 md:p-6 lg:p-8",
+          // Better mobile viewport handling
+          "min-h-[calc(100vh-64px)] md:min-h-[calc(100vh-72px)]",
           className
         )}>
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-7xl w-full">
             {children}
           </div>
         </main>
@@ -40,10 +43,13 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
           <GlobalHeader />
           <main className={cn(
             "flex-1 overflow-auto transition-all duration-200",
-            isMobile ? "p-4" : "p-6 lg:p-8",
+            // Enhanced responsive padding
+            "p-3 sm:p-4 md:p-6 lg:p-8",
+            // Better mobile spacing
+            "space-y-4 sm:space-y-6",
             className
           )}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="mx-auto max-w-7xl w-full space-y-4 sm:space-y-6">
               {children}
             </div>
           </main>
