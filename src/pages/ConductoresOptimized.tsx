@@ -6,30 +6,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Search, UserPlus, Filter } from 'lucide-react';
 import { useConductores } from '@/hooks/useConductores';
 import { ConductoresTable } from '@/components/conductores/ConductoresTable';
-import { ConductorModal } from '@/components/conductores/ConductorModal';
-import { ConductorDeleteDialog } from '@/components/conductores/ConductorDeleteDialog';
-import { ConductorViewModal } from '@/components/conductores/ConductorViewModal';
+import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
+import { ConductorViewDialog } from '@/components/conductores/ConductorViewDialog';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { PermissionsDebug } from '@/components/debug/PermissionsDebug';
 import { toast } from 'sonner';
 import type { Conductor } from '@/types/cartaPorte';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ConductoresOptimized() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedConductor, setSelectedConductor] = useState<Conductor | null>(null);
   
   const { 
     conductores = [], 
-    isLoading, 
+    loading, 
     createConductor, 
     updateConductor, 
-    deleteConductor,
-    isCreating,
-    isUpdating,
-    isDeleting
+    deleteConductor
   } = useConductores();
 
   const filteredConductores = conductores.filter((conductor) =>
@@ -41,17 +48,17 @@ export default function ConductoresOptimized() {
 
   const handleCreate = () => {
     setSelectedConductor(null);
-    setIsModalOpen(true);
+    setIsCreateDialogOpen(true);
   };
 
   const handleEdit = (conductor: Conductor) => {
     setSelectedConductor(conductor);
-    setIsModalOpen(true);
+    setIsEditDialogOpen(true);
   };
 
   const handleView = (conductor: Conductor) => {
     setSelectedConductor(conductor);
-    setIsViewModalOpen(true);
+    setIsViewDialogOpen(true);
   };
 
   const handleDelete = (conductor: Conductor) => {
@@ -59,20 +66,14 @@ export default function ConductoresOptimized() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSave = async (data: Partial<Conductor>) => {
-    try {
-      if (selectedConductor) {
-        await updateConductor({ ...selectedConductor, ...data });
-        toast.success('Conductor actualizado exitosamente');
-      } else {
-        await createConductor(data as Omit<Conductor, 'id' | 'created_at' | 'updated_at'>);
-        toast.success('Conductor creado exitosamente');
-      }
-      setIsModalOpen(false);
-      setSelectedConductor(null);
-    } catch (error) {
-      toast.error('Error al guardar el conductor');
-    }
+  const handleCreateSuccess = () => {
+    setIsCreateDialogOpen(false);
+    setSelectedConductor(null);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setSelectedConductor(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -88,7 +89,7 @@ export default function ConductoresOptimized() {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center justify-center h-64">
@@ -153,37 +154,46 @@ export default function ConductoresOptimized() {
         </CardContent>
       </Card>
 
-      <ConductorModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedConductor(null);
-        }}
-        onSave={handleSave}
-        conductor={selectedConductor}
-        isLoading={isCreating || isUpdating}
+      {/* Create Conductor Dialog */}
+      <ConductorFormDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSuccess={handleCreateSuccess}
       />
 
-      <ConductorDeleteDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => {
-          setIsDeleteDialogOpen(false);
-          setSelectedConductor(null);
-        }}
-        onConfirm={handleConfirmDelete}
+      {/* Edit Conductor Dialog */}
+      <ConductorFormDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
         conductor={selectedConductor}
-        isLoading={isDeleting}
+        onSuccess={handleEditSuccess}
       />
 
-      <ConductorViewModal
-        isOpen={isViewModalOpen}
-        onClose={() => {
-          setIsViewModalOpen(false);
-          setSelectedConductor(null);
-        }}
+      {/* View Conductor Dialog */}
+      <ConductorViewDialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
         conductor={selectedConductor}
         onEdit={handleEdit}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar conductor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El conductor "{selectedConductor?.nombre}" será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
