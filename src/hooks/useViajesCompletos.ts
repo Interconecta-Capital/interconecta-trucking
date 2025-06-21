@@ -38,11 +38,11 @@ export interface ViajeCompleto {
     tipo_carroceria?: string;
     capacidad_carga?: number;
     anio?: number;
-    // Remolque asociado
+    // Remolque asociado REAL
     remolque?: {
       id: string;
       placa: string;
-      tipo: string;
+      subtipo_rem: string;
       capacidad_adicional?: number;
     };
   };
@@ -75,11 +75,11 @@ export interface ViajeCompleto {
 export const useViajesCompletos = () => {
   const queryClient = useQueryClient();
 
-  // Obtener viajes con información completa usando joins reales
+  // Obtener viajes con información completa usando joins reales con remolques
   const { data: viajes = [], isLoading, error } = useQuery({
     queryKey: ['viajes-completos'],
     queryFn: async () => {
-      console.log('🚛 Obteniendo viajes con información completa...');
+      console.log('🚛 Obteniendo viajes con información completa desde BD...');
       
       const { data, error } = await supabase
         .from('viajes')
@@ -111,10 +111,10 @@ export const useViajesCompletos = () => {
         throw error;
       }
 
-      console.log(`📊 ${data?.length || 0} viajes obtenidos`);
+      console.log(`📊 ${data?.length || 0} viajes obtenidos desde BD`);
 
-      // Enriquecer con datos parseados del tracking_data
-      const viajesEnriquecidos = data?.map(viaje => {
+      // Enriquecer con datos reales de remolques y eliminar datos estáticos
+      const viajesEnriquecidos = await Promise.all(data?.map(async (viaje) => {
         let trackingData: any = {};
         let mercancias: any[] = [];
         let cliente: any = null;
@@ -130,20 +130,46 @@ export const useViajesCompletos = () => {
         } else if (viaje.tracking_data && typeof viaje.tracking_data === 'object') {
           trackingData = viaje.tracking_data;
         }
+
+        // Obtener remolque REAL asociado al vehículo
+        let remolqueReal = null;
+        if (viaje.vehiculo?.id) {
+          const { data: remolqueData } = await supabase
+            .from('remolques_ccp')
+            .select('*')
+            .eq('autotransporte_id', viaje.vehiculo.id)
+            .single();
+          
+          if (remolqueData) {
+            remolqueReal = {
+              id: remolqueData.id,
+              placa: remolqueData.placa,
+              subtipo_rem: remolqueData.subtipo_rem,
+              capacidad_adicional: 0 // Se puede agregar este campo a la BD
+            };
+          }
+        }
         
-        // Extraer mercancías
-        if (trackingData.mercancias && Array.isArray(trackingData.mercancias)) {
-          mercancias = trackingData.mercancias.map((m: any, index: number) => ({
-            id: m.id || `mercancia-${index}`,
-            descripcion: m.descripcion || 'Sin descripción',
-            cantidad: m.cantidad || 0,
-            peso_kg: m.peso_kg || 0,
-            valor_total: m.valor_total || 0,
-            tipo_embalaje: m.tipo_embalaje || 'N/A'
-          }));
+        // Extraer mercancías REALES de la BD
+        if (viaje.carta_porte_id) {
+          const { data: mercanciasData } = await supabase
+            .from('mercancias')
+            .select('*')
+            .eq('carta_porte_id', viaje.carta_porte_id);
+          
+          if (mercanciasData && mercanciasData.length > 0) {
+            mercancias = mercanciasData.map((m: any) => ({
+              id: m.id,
+              descripcion: m.descripcion || 'Sin descripción',
+              cantidad: m.cantidad || 0,
+              peso_kg: m.peso_kg || 0,
+              valor_total: m.valor_mercancia || 0,
+              tipo_embalaje: m.tipo_embalaje || 'N/A'
+            }));
+          }
         }
 
-        // Extraer cliente
+        // Extraer cliente REAL
         if (trackingData.cliente) {
           cliente = {
             nombre: trackingData.cliente.nombre || 'Cliente no especificado',
@@ -152,27 +178,49 @@ export const useViajesCompletos = () => {
           };
         }
 
-        // Crear carta_porte básica
-        const carta_porte = {
+        // Obtener información REAL de la carta porte
+        let carta_porte = {
           id: viaje.carta_porte_id || '',
-          folio: trackingData.folio || '',
-          uuid_fiscal: trackingData.uuid_fiscal || '',
-          status: trackingData.status || 'borrador',
-          xml_generado: trackingData.xml_generado || '',
-          fecha_timbrado: trackingData.fecha_timbrado || ''
+          folio: '',
+          uuid_fiscal: '',
+          status: 'borrador',
+          xml_generado: '',
+          fecha_timbrado: ''
         };
+
+        if (viaje.carta_porte_id) {
+          const { data: cartaPorteData } = await supabase
+            .from('cartas_porte')
+            .select('folio, uuid_fiscal, status, xml_generado, fecha_timbrado')
+            .eq('id', viaje.carta_porte_id)
+            .single();
+          
+          if (cartaPorteData) {
+            carta_porte = {
+              id: viaje.carta_porte_id,
+              folio: cartaPorteData.folio || '',
+              uuid_fiscal: cartaPorteData.uuid_fiscal || '',
+              status: cartaPorteData.status || 'borrador',
+              xml_generado: cartaPorteData.xml_generado || '',
+              fecha_timbrado: cartaPorteData.fecha_timbrado || ''
+            };
+          }
+        }
         
         return {
           ...viaje,
           mercancias,
           cliente,
           conductor: viaje.conductor,
-          vehiculo: viaje.vehiculo,
+          vehiculo: viaje.vehiculo ? {
+            ...viaje.vehiculo,
+            remolque: remolqueReal
+          } : null,
           carta_porte
         };
-      }) || [];
+      }) || []);
 
-      console.log('✅ Viajes enriquecidos:', viajesEnriquecidos.length);
+      console.log('✅ Viajes enriquecidos con datos REALES:', viajesEnriquecidos.length);
       return viajesEnriquecidos as ViajeCompleto[];
     },
     staleTime: 30000, // Cache por 30 segundos
@@ -242,7 +290,6 @@ export const useViajesCompletos = () => {
     }
   });
 
-  // Asignar recursos al viaje
   const asignarRecursos = useMutation({
     mutationFn: async ({ 
       viajeId, 
@@ -290,7 +337,6 @@ export const useViajesCompletos = () => {
     }
   });
 
-  // Eliminar viaje
   const eliminarViaje = useMutation({
     mutationFn: async (viajeId: string) => {
       console.log(`🗑️ Eliminando viaje: ${viajeId}`);
@@ -318,7 +364,7 @@ export const useViajesCompletos = () => {
   });
 
   return {
-    // Datos
+    // Datos REALES de la BD
     viajes,
     viajesActivos,
     viajesHistorial,

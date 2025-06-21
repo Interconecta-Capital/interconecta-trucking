@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { VehiculoBasicFields } from './VehiculoBasicFields';
 import { VehiculoSegurosFields } from './VehiculoSegurosFields';
 import { VehiculoPermisosSCTFields } from './VehiculoPermisosSCTFields';
 import { VehiculoEspecificacionesFields } from './VehiculoEspecificacionesFields';
+import { RemolqueSelector } from './RemolqueSelector';
 import { Truck } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -150,6 +150,17 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
             formData={formData}
             onFieldChange={handleFieldChange}
           />
+
+          {/* Nueva sección de remolques */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Configuración de Remolque</h3>
+            <RemolqueSelector 
+              vehiculoId={vehiculoId}
+              onRemolqueChange={(remolqueId) => {
+                console.log('Remolque seleccionado:', remolqueId);
+              }}
+            />
+          </div>
 
           <div className="flex gap-2 pt-4">
             {onCancel && (

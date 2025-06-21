@@ -16,9 +16,11 @@ import {
   Trash2,
   Navigation,
   FileText,
-  Download
+  Download,
+  Stamp
 } from 'lucide-react';
 import { ViajeCompleto } from '@/hooks/useViajesCompletos';
+import { useRealDocumentGeneration } from '@/hooks/useRealDocumentGeneration';
 import { toast } from 'sonner';
 
 interface ViajeActionsMenuProps {
@@ -36,6 +38,16 @@ export const ViajeActionsMenu = ({
   onEliminarViaje,
   onVerTracking 
 }: ViajeActionsMenuProps) => {
+  const {
+    generarPDFReal,
+    generarXMLReal,
+    generarHojaRutaReal,
+    timbrarDocumentoReal,
+    isGeneratingPDF,
+    isGeneratingXML,
+    isGeneratingHojaRuta
+  } = useRealDocumentGeneration();
+
   const [showObservacionesDialog, setShowObservacionesDialog] = useState(false);
   const [observaciones, setObservaciones] = useState('');
   const [accionPendiente, setAccionPendiente] = useState<string | null>(null);
@@ -62,15 +74,21 @@ export const ViajeActionsMenu = ({
     setShowAsignarDialog(false);
   };
 
-  const handleGenerarDocumento = (tipo: 'xml' | 'pdf' | 'hoja-ruta') => {
-    // TODO: Implementar generación real de documentos
-    toast.info(`Generando ${tipo.toUpperCase()}...`);
-    
-    // Simular descarga
-    setTimeout(() => {
-      const filename = `${viaje.carta_porte_id}_${tipo}.${tipo === 'pdf' || tipo === 'hoja-ruta' ? 'pdf' : 'xml'}`;
-      toast.success(`${tipo.toUpperCase()} generado: ${filename}`);
-    }, 2000);
+  const handleGenerarDocumento = async (tipo: 'xml' | 'pdf' | 'hoja-ruta' | 'timbrar') => {
+    switch (tipo) {
+      case 'xml':
+        await generarXMLReal(viaje);
+        break;
+      case 'pdf':
+        await generarPDFReal(viaje);
+        break;
+      case 'hoja-ruta':
+        await generarHojaRutaReal(viaje);
+        break;
+      case 'timbrar':
+        await timbrarDocumentoReal(viaje);
+        break;
+    }
   };
 
   const getEstadoLabel = (estado: string) => {
@@ -138,20 +156,37 @@ export const ViajeActionsMenu = ({
 
           <DropdownMenuSeparator />
 
-          {/* Generación de documentos */}
-          <DropdownMenuItem onClick={() => handleGenerarDocumento('xml')}>
+          {/* Generación REAL de documentos */}
+          <DropdownMenuItem 
+            onClick={() => handleGenerarDocumento('xml')}
+            disabled={isGeneratingXML}
+          >
             <FileText className="h-4 w-4 mr-2" />
-            Generar XML SAT
+            {isGeneratingXML ? 'Generando XML...' : 'Generar XML SAT'}
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={() => handleGenerarDocumento('pdf')}>
+          <DropdownMenuItem 
+            onClick={() => handleGenerarDocumento('pdf')}
+            disabled={isGeneratingPDF}
+          >
             <FileText className="h-4 w-4 mr-2" />
-            Generar PDF Carta Porte
+            {isGeneratingPDF ? 'Generando PDF...' : 'Generar PDF Carta Porte'}
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={() => handleGenerarDocumento('hoja-ruta')}>
+          <DropdownMenuItem 
+            onClick={() => handleGenerarDocumento('hoja-ruta')}
+            disabled={isGeneratingHojaRuta}
+          >
             <Download className="h-4 w-4 mr-2" />
-            Generar Hoja de Ruta
+            {isGeneratingHojaRuta ? 'Generando Hoja...' : 'Generar Hoja de Ruta'}
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          {/* Timbrado */}
+          <DropdownMenuItem onClick={() => handleGenerarDocumento('timbrar')}>
+            <Stamp className="h-4 w-4 mr-2" />
+            Timbrar Documento
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -206,7 +241,6 @@ export const ViajeActionsMenu = ({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para asignar recursos */}
       <Dialog open={showAsignarDialog} onOpenChange={setShowAsignarDialog}>
         <DialogContent>
           <DialogHeader>
