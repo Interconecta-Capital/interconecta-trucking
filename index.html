@@ -3,34 +3,97 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Interconecta Trucking - Gestión Inteligente de Cartas Porte</title>
-    <meta name="description" content="Plataforma líder con IA en gestión de cartas porte y control administrativo para transportistas mexicanos" />
-    <meta name="author" content="Interconecta Trucking" />
-    
-    <!-- DNS prefetch and preconnect for faster font loading -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com">
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <title>Interconecta Trucking - El Centro de Comando para tu Logística</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Preload critical fonts for better LCP -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap">
-    
-    <!-- Load fonts with swap for better performance -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <link rel="icon" href="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" type="image/png">
-
-    <meta property="og:title" content="Interconecta Trucking - Gestión Inteligente de Cartas Porte" />
-    <meta property="og:description" content="Plataforma líder con IA en gestión de cartas porte y control administrativo para transportistas mexicanos" />
-    <meta property="og:type" content="website" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #000000;
+        color: #F5F5F7;
+      }
+      .apple-gradient-text {
+        background: -webkit-linear-gradient(45deg, #A7B3C1, #F5F5F7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .btn-primary {
+        background-color: #0071e3;
+        color: white;
+        transition: background-color 0.3s ease;
+      }
+      .btn-primary:hover {
+        background-color: #0077ed;
+      }
+      .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #F5F5F7;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        transition: background-color 0.3s ease;
+      }
+      .btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+      .feature-card {
+        background: linear-gradient(145deg, #1c1c1e, #111113);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .glass-nav {
+        background: rgba(18, 18, 18, 0.7);
+        backdrop-filter: saturate(180%) blur(20px);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+      }
+      .scroll-animation {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+      }
+      .scroll-animation.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
   </head>
-
-  <body>
+  <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Scroll animations
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      // Esperar a que el DOM se cargue
+      document.addEventListener('DOMContentLoaded', () => {
+        // Observar elementos con la clase scroll-animation cuando se añadan al DOM
+        const observeScrollAnimations = () => {
+          document.querySelectorAll('.scroll-animation').forEach(el => {
+            observer.observe(el);
+          });
+        };
+        
+        // Observar inmediatamente los elementos existentes
+        observeScrollAnimations();
+        
+        // Observar nuevos elementos que se añadan dinámicamente
+        const mutationObserver = new MutationObserver(() => {
+          observeScrollAnimations();
+        });
+        
+        mutationObserver.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      });
+    </script>
   </body>
 </html>

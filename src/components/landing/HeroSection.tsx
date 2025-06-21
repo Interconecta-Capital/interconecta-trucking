@@ -1,134 +1,101 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useEffect, useRef } from "react";
 
 const HeroSection = () => {
-  const { ref, isRevealed } = useScrollReveal({ threshold: 0.1 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles: Array<{
+      x: number;
+      y: number;
+      radius: number;
+      vx: number;
+      vy: number;
+    }> = [];
+    const particleCount = 100;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5,
+        vx: Math.random() * 0.5 - 0.25,
+        vy: Math.random() * 0.5 - 0.25
+      });
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(245, 245, 247, 0.5)';
+
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animate);
+    };
+    animate();
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center text-center premium-grid pt-32 pb-24 px-6">
-      
-      {/* Main Content */}
-      <div className="container mx-auto max-w-4xl relative z-10">
-        <div ref={ref} className={`space-y-8 ${isRevealed ? '' : ''}`}>
-          
-          {/* Hero Badge */}
-          <div className="animate-slide-up">
-            <div className="inline-flex items-center gap-2 bg-blue-light border border-blue-interconecta/20 px-4 py-2 rounded-full text-[13px] font-semibold text-blue-interconecta animate-float">
-              <span>Primera Plataforma IA Especializada en Transporte Mexicano</span>
+    <header className="relative text-center py-24 md:py-40 overflow-hidden bg-black text-white">
+      <canvas 
+        ref={canvasRef}
+        className="absolute top-0 left-0 w-full h-full z-0"
+      />
+      <div className="relative z-10 max-w-4xl mx-auto px-6">
+        <h1 className="text-4xl md:text-7xl font-bold apple-gradient-text leading-tight tracking-tighter">
+          El Centro de Comando para tu Logística.
+        </h1>
+        <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
+          Planifica tus viajes sin esfuerzo. Nosotros generamos la Carta Porte perfecta, siempre.
+        </p>
+        <div className="mt-10 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+          <Link to="/auth">
+            <Button className="btn-primary px-6 py-3 rounded-full font-semibold">
+              Programar mi Primer Viaje
+            </Button>
+          </Link>
+          <Button variant="ghost" className="btn-secondary px-6 py-3 rounded-full font-semibold">
+            Ver Demo →
+          </Button>
+        </div>
+        <div className="mt-20 scroll-animation">
+          <div className="mx-auto rounded-2xl shadow-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-8 max-w-4xl">
+            <div className="bg-gray-700 h-64 rounded-lg flex items-center justify-center text-gray-400">
+              Mockup del ViajeWizard UI
             </div>
           </div>
-          
-          {/* Hero Title */}
-          <div className="animate-slide-up-delay-1">
-            <h1 className="text-hero font-bold leading-hero tracking-hero mb-6">
-              La Plataforma Completa para<br />
-              <span className="font-normal gradient-text-blue">Transportistas Mexicanos</span>
-            </h1>
-          </div>
-          
-          {/* Hero Subtitle */}
-          <div className="animate-slide-up-delay-2">
-            <p className="text-body-xl text-gray-60 leading-relaxed max-w-3xl mx-auto">
-              Gestiona cartas porte con inteligencia artificial, importa datos masivamente y 
-              automatiza procesos. Cumple con todas las regulaciones SAT de manera fácil y 
-              eficiente.
-            </p>
-          </div>
-          
-          {/* CTA Buttons */}
-          <div className="animate-slide-up-delay-3">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/auth/trial">
-                <Button className="btn-premium bg-blue-interconecta hover:bg-blue-hover text-pure-white px-8 py-4 text-base font-semibold rounded-12 interactive">
-                  <span>Prueba 14 días gratis</span>
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/auth/login">
-                <Button variant="outline" className="btn-premium border border-gray-30 text-gray-70 hover:border-blue-interconecta hover:text-blue-interconecta hover:bg-blue-light px-8 py-4 text-base font-semibold rounded-12 interactive">
-                  <Play className="mr-2 h-5 w-5" />
-                  <span>Iniciar sesión</span>
-                </Button>
-              </Link>
-            </div>
-          </div>
-          
-          {/* Stats Row */}
-          <div className="animate-slide-up-delay-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mt-16">
-              <div className="text-center">
-                <div className="text-title font-bold text-blue-interconecta text-mono">$2.5M</div>
-                <div className="text-caption text-gray-60">En multas evitadas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-title font-bold text-blue-interconecta text-mono">500+</div>
-                <div className="text-caption text-gray-60">Cartas porte diarias</div>
-              </div>
-              <div className="text-center">
-                <div className="text-title font-bold text-blue-interconecta text-mono">99.9%</div>
-                <div className="text-caption text-gray-60">Precisión IA</div>
-              </div>
-              <div className="text-center">
-                <div className="text-title font-bold text-blue-interconecta text-mono">15 min</div>
-                <div className="text-caption text-gray-60">vs 2 horas manual</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Device Mockup */}
-          <div className="animate-slide-up-delay-4">
-            <div className="max-w-3xl mx-auto mt-16">
-              <div className="relative card-premium p-6 shadow-xl overflow-hidden">
-                
-                {/* Device Header */}
-                <div className="flex items-center gap-2 pb-4 border-b border-gray-20 mb-6">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <div className="ml-auto text-sm font-semibold text-gray-70">Interconecta — Dashboard</div>
-                </div>
-                
-                {/* Dashboard Preview */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="card-premium p-5 text-left transition-all duration-300 hover:bg-pure-white hover:shadow-md hover:-translate-y-1">
-                    <div className="text-caption text-gray-60 mb-2">Viajes activos</div>
-                    <div className="text-[32px] font-bold text-pure-black mb-1 text-mono">12</div>
-                    <div className="text-[13px] font-semibold text-blue-interconecta">+3 esta semana</div>
-                  </div>
-                  
-                  <div className="card-premium p-5 text-left transition-all duration-300 hover:bg-pure-white hover:shadow-md hover:-translate-y-1">
-                    <div className="text-caption text-gray-60 mb-2">Ingresos mes</div>
-                    <div className="text-[32px] font-bold text-pure-black mb-1 text-mono">$287K</div>
-                    <div className="text-[13px] font-semibold text-blue-interconecta">+18% vs anterior</div>
-                  </div>
-                  
-                  <div className="card-premium p-5 text-left transition-all duration-300 hover:bg-pure-white hover:shadow-md hover:-translate-y-1">
-                    <div className="text-caption text-gray-60 mb-2">Cartas porte</div>
-                    <div className="text-[32px] font-bold text-pure-black mb-1 text-mono">847</div>
-                    <div className="text-[13px] font-semibold text-blue-interconecta">Automatización IA</div>
-                  </div>
-                  
-                  <div className="card-premium p-5 text-left transition-all duration-300 hover:bg-pure-white hover:shadow-md hover:-translate-y-1">
-                    <div className="text-caption text-gray-60 mb-2">Errores SAT</div>
-                    <div className="text-[32px] font-bold text-pure-black mb-1 text-mono">0</div>
-                    <div className="text-[13px] font-semibold text-blue-interconecta">Perfección total</div>
-                  </div>
-                </div>
-                
-                {/* Status Indicator */}
-                <div className="bg-blue-light border border-blue-interconecta/20 rounded-8 px-4 py-3 text-center text-sm font-semibold text-blue-interconecta">
-                  ✨ Todas las cartas porte generadas automáticamente
-                </div>
-              </div>
-            </div>
-          </div>
-          
         </div>
       </div>
-    </section>
+    </header>
   );
 };
 
