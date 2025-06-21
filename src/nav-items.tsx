@@ -1,4 +1,3 @@
-
 import { 
   HomeIcon, 
   FileTextIcon, 
@@ -93,7 +92,7 @@ export const navItems = [
     to: "/configuracion/empresa",
     icon: <Building2 className="h-4 w-4" />,
     page: <ConfiguracionEmpresa />,
-    hideFromNav: true,
+    hideFromNav: false, // Ahora visible en navegación
     description: "Configuración de datos fiscales y certificados digitales"
   },
   {
