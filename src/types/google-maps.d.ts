@@ -27,6 +27,11 @@ declare global {
         };
         Polyline: any;
         NavigationControl: any;
+        Size: any;
+        Animation: {
+          DROP: any;
+          BOUNCE: any;
+        };
         ControlPosition: {
           TOP_CENTER: number;
           TOP_LEFT: number;
