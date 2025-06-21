@@ -16,7 +16,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (isMobile) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {children}
         <AIInsights />
         <DocumentosProcesadosWidget />
@@ -28,29 +28,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {children}
       
-      {/* Desktop layout - calendario, insights con IA y documentos procesados */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* Desktop layout optimizado */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Calendario principal */}
         <div className="lg:col-span-2">
           <EnhancedCalendarView />
         </div>
+        
+        {/* Panel lateral de insights */}
         <div className="lg:col-span-1">
           <AIInsights />
         </div>
-        <div className="lg:col-span-1">
-          <div className="space-y-4">
-            <DocumentosProcesadosWidget />
-            <QuickActionsCard />
-          </div>
+        
+        {/* Panel lateral de acciones */}
+        <div className="lg:col-span-1 space-y-6">
+          <DocumentosProcesadosWidget />
+          <QuickActionsCard />
         </div>
       </div>
 
-      {/* Analytics Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 md:gap-6">
-        <AnalyticsPanel />
-      </div>
+      {/* Panel de analytics completo */}
+      <AnalyticsPanel />
     </div>
   );
 }

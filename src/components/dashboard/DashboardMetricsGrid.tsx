@@ -100,26 +100,26 @@ export function DashboardMetricsGrid({
 
   const getColorClasses = (color: string) => {
     const colors = {
-      blue: 'text-blue-600 bg-blue-100',
-      green: 'text-green-600 bg-green-100',
-      purple: 'text-purple-600 bg-purple-100',
-      orange: 'text-orange-600 bg-orange-100'
+      blue: 'text-blue-interconecta bg-blue-light',
+      green: 'text-green-600 bg-green-50',
+      purple: 'text-purple-600 bg-purple-50',
+      orange: 'text-orange-600 bg-orange-50'
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card key={index} className="animate-pulse">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-10 w-10 rounded-xl" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16 mb-2" />
-              <Skeleton className="h-3 w-32 mb-3" />
+            <CardContent className="space-y-4">
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-32" />
               <Skeleton className="h-2 w-full" />
             </CardContent>
           </Card>
@@ -129,41 +129,44 @@ export function DashboardMetricsGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => {
         const Icon = metric.icon;
         return (
-          <Card key={index} className="relative">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium">
-                  {metric.title}
-                </CardTitle>
-                {metric.hasInsights && (
-                  <Badge variant="outline" className="text-xs gap-1 px-1.5 py-0">
-                    <Brain className="h-3 w-3" />
-                    <span>IA</span>
-                  </Badge>
-                )}
-              </div>
-              <div className={`p-2 rounded-full ${getColorClasses(metric.color)}`}>
-                <Icon className="h-4 w-4" />
+          <Card key={index} className="group hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-xl ${getColorClasses(metric.color)} transition-all duration-200 group-hover:scale-105`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-gray-90">
+                    {metric.title}
+                  </CardTitle>
+                  {metric.hasInsights && (
+                    <Badge variant="outline" className="mt-1 text-xs gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 border-purple-200">
+                      <Brain className="h-3 w-3" />
+                      <span>IA</span>
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-2xl font-bold">{metric.total}</div>
+            
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl font-bold text-gray-90">{metric.total}</div>
                 {metric.total > 0 && getTrendIcon(metric.progress, 70)}
               </div>
               
-              <p className="text-xs text-muted-foreground mb-3">
+              <p className="text-sm text-gray-60">
                 {metric.subtitle}
               </p>
               
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span>Eficiencia</span>
-                  <span className={getEfficiencyColor(metric.progress)}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-60">Eficiencia</span>
+                  <span className={`font-medium ${getEfficiencyColor(metric.progress)}`}>
                     {Math.round(metric.progress)}%
                   </span>
                 </div>
@@ -174,7 +177,7 @@ export function DashboardMetricsGrid({
               </div>
 
               {metric.hasInsights && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-purple-600">
+                <div className="flex items-center gap-2 pt-2 text-xs text-purple-600 border-t border-gray-10">
                   <Activity className="h-3 w-3" />
                   <span>Insights disponibles</span>
                 </div>
