@@ -77,7 +77,7 @@ export default function StableVehiculos() {
             <Button 
               variant="outline" 
               onClick={recargar}
-              className="bg-pure-white"
+              className="bg-white-force"
             >
               Reintentar
             </Button>
@@ -106,7 +106,7 @@ export default function StableVehiculos() {
               resource="vehiculos"
               onAction={handleNewRemolque}
             >
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 bg-white-force">
                 <Wrench className="h-4 w-4" />
                 Nuevo Remolque
               </Button>
@@ -133,13 +133,13 @@ export default function StableVehiculos() {
               placeholder="Buscar por placa, marca o modelo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
+              className="pl-12 h-12 border-0 bg-white-force shadow-sm"
             />
           </div>
           <Button 
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="h-12 px-6 bg-pure-white shadow-sm border-0"
+            className="h-12 px-6 bg-white-force shadow-sm border-0"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
@@ -148,7 +148,7 @@ export default function StableVehiculos() {
             variant="outline"
             onClick={recargar}
             disabled={loading}
-            className="h-12 px-6 bg-pure-white shadow-sm border-0"
+            className="h-12 px-6 bg-white-force shadow-sm border-0"
           >
             Actualizar
           </Button>
