@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,49 +8,109 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMessage';
 import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
+import { useEffect, useRef } from 'react';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'login';
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<'main' | 'magic-link' | 'forgot-password'>('main');
-  
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Particle animation effect
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles: Array<{
+      x: number;
+      y: number;
+      radius: number;
+      vx: number;
+      vy: number;
+    }> = [];
+    const particleCount = 50;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5,
+        vx: Math.random() * 0.3 - 0.15,
+        vy: Math.random() * 0.3 - 0.15
+      });
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(245, 245, 247, 0.3)';
+
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animate);
+    };
+    animate();
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (currentView === 'magic-link') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-05 p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-6">
-            <Link 
-              to="/" 
-              className="inline-flex items-center text-gray-60 hover:text-blue-interconecta transition-colors mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al inicio
-            </Link>
-            
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-                alt="Interconecta Trucking Logo"
-                className="h-16 w-16 rounded-xl"
-              />
+      <div className="min-h-screen bg-black text-white relative overflow-hidden">
+        <canvas 
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full z-0"
+        />
+        <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-6">
+              <Link 
+                to="/" 
+                className="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-6"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver al inicio
+              </Link>
+              
+              <h1 className="text-3xl md:text-4xl font-bold apple-gradient-text mb-2">
+                Interconecta
+              </h1>
+              <p className="text-gray-400">
+                El Centro de Comando para tu Logística
+              </p>
             </div>
-            <h1 className="text-subtitle font-bold text-pure-black">
-              Interconecta Trucking
-            </h1>
-            <p className="text-gray-60">
-              Sistema de Gestión de Cartas Porte
-            </p>
+            
+            <MagicLinkForm onBack={() => setCurrentView('main')} />
           </div>
-          
-          <MagicLinkForm onBack={() => setCurrentView('main')} />
         </div>
       </div>
     );
@@ -57,101 +118,104 @@ export default function Auth() {
 
   if (currentView === 'forgot-password') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-05 p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-6">
-            <Link 
-              to="/" 
-              className="inline-flex items-center text-gray-60 hover:text-blue-interconecta transition-colors mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al inicio
-            </Link>
-            
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-                alt="Interconecta Trucking Logo"
-                className="h-16 w-16 rounded-xl"
-              />
+      <div className="min-h-screen bg-black text-white relative overflow-hidden">
+        <canvas 
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full z-0"
+        />
+        <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-6">
+              <Link 
+                to="/" 
+                className="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-6"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver al inicio
+              </Link>
+              
+              <h1 className="text-3xl md:text-4xl font-bold apple-gradient-text mb-2">
+                Interconecta
+              </h1>
+              <p className="text-gray-400">
+                El Centro de Comando para tu Logística
+              </p>
             </div>
-            <h1 className="text-subtitle font-bold text-pure-black">
-              Interconecta Trucking
-            </h1>
-            <p className="text-gray-60">
-              Sistema de Gestión de Cartas Porte
-            </p>
+            
+            <ForgotPasswordForm onBack={() => setCurrentView('main')} />
           </div>
-          
-          <ForgotPasswordForm onBack={() => setCurrentView('main')} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-05 p-4">
-      <div className="w-full max-w-md">
-        {/* Header con enlace de regreso */}
-        <div className="text-center mb-6">
-          <Link 
-            to="/" 
-            className="inline-flex items-center text-gray-60 hover:text-blue-interconecta transition-colors mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al inicio
-          </Link>
-          
-          <div className="flex justify-center mb-4">
-            <img 
-              src="/lovable-uploads/0312ae2e-aab8-4f79-8a82-78bf9d173564.png" 
-              alt="Interconecta Trucking Logo"
-              className="h-16 w-16 rounded-xl"
-            />
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <canvas 
+        ref={canvasRef}
+        className="absolute top-0 left-0 w-full h-full z-0"
+      />
+      
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-md">
+          {/* Header con enlace de regreso */}
+          <div className="text-center mb-8">
+            <Link 
+              to="/" 
+              className="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-6"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al inicio
+            </Link>
+            
+            <h1 className="text-3xl md:text-4xl font-bold apple-gradient-text mb-2">
+              Interconecta
+            </h1>
+            <p className="text-gray-400">
+              El Centro de Comando para tu Logística
+            </p>
           </div>
-          <h1 className="text-subtitle font-bold text-pure-black">
-            Interconecta Trucking
-          </h1>
-          <p className="text-gray-60">
-            Sistema de Gestión de Cartas Porte
-          </p>
-        </div>
 
-        <Card className="card-premium border-gray-20 shadow-lg">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-subtitle font-bold text-pure-black">Accede a tu cuenta</CardTitle>
-            <CardDescription className="text-gray-60">
-              Ingresa tus credenciales para continuar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue={defaultTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                <TabsTrigger value="register">Registrarse</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <LoginForm onShowMagicLink={() => setCurrentView('magic-link')} onShowForgotPassword={() => setCurrentView('forgot-password')} />
-              </TabsContent>
-              
-              <TabsContent value="register">
-                <RegisterForm />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+          <Card className="feature-card border border-gray-800">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="text-2xl font-bold text-white">Accede a tu cuenta</CardTitle>
+              <CardDescription className="text-gray-400">
+                Ingresa tus credenciales para continuar
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
+                  <TabsTrigger value="login" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                    Iniciar Sesión
+                  </TabsTrigger>
+                  <TabsTrigger value="register" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+                    Registrarse
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="login">
+                  <LoginForm onShowMagicLink={() => setCurrentView('magic-link')} onShowForgotPassword={() => setCurrentView('forgot-password')} />
+                </TabsContent>
+                
+                <TabsContent value="register">
+                  <RegisterForm />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
-        {/* Enlace a prueba gratuita */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-60 mb-2">
-            ¿Nuevo en Interconecta Trucking?
-          </p>
-          <Link to="/auth/trial">
-            <Button variant="outline" className="w-full border-blue-interconecta text-blue-interconecta hover:bg-blue-light">
-              Comenzar prueba gratuita de 14 días
-            </Button>
-          </Link>
+          {/* Enlace a prueba gratuita */}
+          <div className="text-center mt-6">
+            <p className="text-sm text-gray-400 mb-3">
+              ¿Nuevo en Interconecta Trucking?
+            </p>
+            <Link to="/auth?tab=register">
+              <Button className="btn-primary w-full rounded-full font-semibold">
+                Comenzar prueba gratuita de 14 días
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -166,6 +230,7 @@ interface LoginFormProps {
 function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -187,11 +252,9 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
       toast.success('¡Bienvenido de vuelta!');
       navigate('/dashboard');
     } catch (error: any) {
-      // Check if this is an unconfirmed user
       const isUnconfirmed = checkIfUserIsUnconfirmed(email, error);
       
       if (!isUnconfirmed) {
-        // Show original error if not unconfirmed user issue
         toast.error(error.message || 'Error al iniciar sesión');
       }
     } finally {
@@ -206,10 +269,10 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-20" />
+            <span className="w-full border-t border-gray-700" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-gray-60 font-inter">
+            <span className="bg-black px-2 text-gray-400">
               O accede con
             </span>
           </div>
@@ -218,8 +281,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         <div className="space-y-3">
           <Button
             onClick={onShowMagicLink}
-            variant="outline"
-            className="w-full border-gray-20 text-gray-60 hover:bg-gray-20 font-inter"
+            className="btn-secondary w-full rounded-full font-semibold"
           >
             Link Mágico (Sin contraseña)
           </Button>
@@ -227,7 +289,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="login-email" className="font-inter">
+            <Label htmlFor="login-email" className="text-gray-300">
               Correo Electrónico
             </Label>
             <Input
@@ -237,28 +299,43 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border-gray-20"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="login-password" className="font-inter">
+            <Label htmlFor="login-password" className="text-gray-300">
               Contraseña
             </Label>
-            <Input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="border-gray-20"
-            />
+            <div className="relative">
+              <Input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+              </Button>
+            </div>
           </div>
           
           <div className="text-right">
             <button
               type="button"
               onClick={onShowForgotPassword}
-              className="text-sm text-gray-60 hover:text-blue-interconecta font-inter underline"
+              className="text-sm text-gray-400 hover:text-white underline"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -266,16 +343,15 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
           
           <Button 
             type="submit" 
-            className="w-full bg-blue-interconecta hover:bg-blue-light font-sora" 
+            className="btn-primary w-full rounded-full font-semibold" 
             disabled={loading}
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </Button>
         </form>
         
-        {/* Help text for unconfirmed users */}
         <div className="text-center">
-          <p className="text-xs text-gray-60 font-inter">
+          <p className="text-xs text-gray-400">
             ¿Te registraste pero no verificaste tu correo?{' '}
             <button
               type="button"
@@ -286,7 +362,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
                   toast.error('Por favor ingresa tu correo electrónico primero');
                 }
               }}
-              className="text-gray-60 hover:text-blue-interconecta underline"
+              className="text-gray-400 hover:text-white underline"
             >
               Reenviar verificación
             </button>
@@ -294,7 +370,6 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         </div>
       </div>
       
-      {/* Unconfirmed User Dialog */}
       {showUnconfirmedDialog && unconfirmedEmail && (
         <UnconfirmedUserDialog
           email={unconfirmedEmail}
@@ -318,6 +393,8 @@ function RegisterForm() {
   });
   const [loading, setLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -377,10 +454,10 @@ function RegisterForm() {
       
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-20" />
+          <span className="w-full border-t border-gray-700" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-60 font-inter">
+          <span className="bg-black px-2 text-gray-400">
             O regístrate con email
           </span>
         </div>
@@ -389,89 +466,119 @@ function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="nombre" className="font-inter">Nombre</Label>
+            <Label htmlFor="nombre" className="text-gray-300">Nombre</Label>
             <Input
               id="nombre"
               value={formData.nombre}
               onChange={(e) => handleChange('nombre', e.target.value)}
               required
-              className="border-gray-20"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="telefono" className="font-inter">Teléfono</Label>
+            <Label htmlFor="telefono" className="text-gray-300">Teléfono</Label>
             <Input
               id="telefono"
               value={formData.telefono}
               onChange={(e) => handleChange('telefono', e.target.value)}
-              className="border-gray-20"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
             />
           </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="empresa" className="font-inter">Empresa</Label>
+          <Label htmlFor="empresa" className="text-gray-300">Empresa</Label>
           <Input
             id="empresa"
             value={formData.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             required
-            className="border-gray-20"
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="rfc" className="font-inter">RFC de la Empresa</Label>
+          <Label htmlFor="rfc" className="text-gray-300">RFC de la Empresa</Label>
           <Input
             id="rfc"
             value={formData.rfc}
             onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
             required
             maxLength={13}
-            className="border-gray-20"
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-email" className="font-inter">Correo Electrónico</Label>
+          <Label htmlFor="register-email" className="text-gray-300">Correo Electrónico</Label>
           <Input
             id="register-email"
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             required
-            className="border-gray-20"
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-password" className="font-inter">Contraseña</Label>
-          <Input
-            id="register-password"
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-            required
-            minLength={6}
-            className="border-gray-20"
-          />
+          <Label htmlFor="register-password" className="text-gray-300">Contraseña</Label>
+          <div className="relative">
+            <Input
+              id="register-password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              required
+              minLength={6}
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirm-password" className="font-inter">Confirmar Contraseña</Label>
-          <Input
-            id="confirm-password"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={(e) => handleChange('confirmPassword', e.target.value)}
-            required
-            className="border-gray-20"
-          />
+          <Label htmlFor="confirm-password" className="text-gray-300">Confirmar Contraseña</Label>
+          <div className="relative">
+            <Input
+              id="confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange('confirmPassword', e.target.value)}
+              required
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </Button>
+          </div>
         </div>
         
         <Button 
           type="submit" 
-          className="w-full bg-blue-interconecta hover:bg-blue-light font-sora" 
+          className="btn-primary w-full rounded-full font-semibold" 
           disabled={loading}
         >
           {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
