@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { useTrialManager } from '@/hooks/useTrialManager';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { AlertTriangle, TrendingUp, Gift, Clock, Trash2 } from 'lucide-react';
@@ -12,7 +12,7 @@ export const useAlertManager = () => {
     estaBloqueado, 
     suscripcionVencida, 
     isSuperuser 
-  } = useEnhancedPermissions();
+  } = useUnifiedPermissions();
   const { 
     isInActiveTrial, 
     isTrialExpired,
@@ -101,27 +101,31 @@ export const useAlertManager = () => {
     // Alertas de límites (solo para usuarios con plan pagado)
     if (!isInActiveTrial && !isTrialExpired && !isInGracePeriod) {
       Object.entries(usoActual).forEach(([resource, data]) => {
-        if (data.limite !== null && data.limite !== undefined) {
-          const porcentaje = (data.usado / data.limite) * 100;
+        if (data && typeof data === 'object' && 'limite' in data && 'usado' in data) {
+          const resourceData = data as { limite: number | null; usado: number };
           
-          if (porcentaje >= 100) {
-            alerts.push({
-              id: `limit-exceeded-${resource}`,
-              type: 'error',
-              title: `Límite de ${resource.replace('_', ' ')} excedido`,
-              message: `Ha alcanzado el límite de ${data.limite}. Actualice su plan para continuar.`,
-              action: 'Actualizar Plan',
-              priority: 5
-            });
-          } else if (porcentaje >= 90) {
-            alerts.push({
-              id: `limit-warning-${resource}`,
-              type: 'warning',
-              title: `Cerca del límite de ${resource.replace('_', ' ')}`,
-              message: `Ha usado ${data.usado} de ${data.limite}. Considere actualizar su plan.`,
-              action: 'Ver Planes',
-              priority: 6
-            });
+          if (resourceData.limite !== null && resourceData.limite !== undefined) {
+            const porcentaje = (resourceData.usado / resourceData.limite) * 100;
+            
+            if (porcentaje >= 100) {
+              alerts.push({
+                id: `limit-exceeded-${resource}`,
+                type: 'error',
+                title: `Límite de ${resource.replace('_', ' ')} excedido`,
+                message: `Ha alcanzado el límite de ${resourceData.limite}. Actualice su plan para continuar.`,
+                action: 'Actualizar Plan',
+                priority: 5
+              });
+            } else if (porcentaje >= 90) {
+              alerts.push({
+                id: `limit-warning-${resource}`,
+                type: 'warning',
+                title: `Cerca del límite de ${resource.replace('_', ' ')}`,
+                message: `Ha usado ${resourceData.usado} de ${resourceData.limite}. Considere actualizar su plan.`,
+                action: 'Ver Planes',
+                priority: 6
+              });
+            }
           }
         }
       });

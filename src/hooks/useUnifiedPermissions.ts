@@ -43,7 +43,7 @@ export const useUnifiedPermissions = () => {
     return {
       hasFullAccess: isInActiveTrial || (suscripcion?.status === 'active'),
       planActual: isInActiveTrial 
-        ? `Trial (${Math.max(0, 14 - Math.floor((Date.now() - new Date(suscripcion?.created_at || Date.now()).getTime()) / (1000 * 60 * 60 * 24)))} días restantes)`
+        ? `Trial (${Math.max(0, 14)} días restantes)`
         : suscripcion?.plan?.nombre || 'Sin Plan',
       isBlocked: estaBloqueado,
       isExpired: isTrialExpired && !isInGracePeriod,

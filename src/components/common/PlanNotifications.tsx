@@ -1,12 +1,12 @@
 
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { useAlertManager } from '@/hooks/notifications/useAlertManager';
 import { useNavigate } from 'react-router-dom';
 import { SuperuserAlert } from '@/components/notifications/SuperuserAlert';
 import { AlertItem } from '@/components/notifications/AlertItem';
 
 export function PlanNotifications() {
-  const { isSuperuser } = useEnhancedPermissions();
+  const { isSuperuser } = useUnifiedPermissions();
   const { generateAlerts, dismissAlert } = useAlertManager();
   const navigate = useNavigate();
 

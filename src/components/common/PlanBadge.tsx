@@ -1,7 +1,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Crown, Shield, Star, Zap, Gift, AlertTriangle, Clock, Trash2 } from 'lucide-react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { useTrialManager } from '@/hooks/useTrialManager';
 
 interface PlanBadgeProps {
@@ -11,7 +11,7 @@ interface PlanBadgeProps {
 }
 
 export function PlanBadge({ size = 'md', showIcon = true, className }: PlanBadgeProps) {
-  const { planActual, isSuperuser, estaBloqueado, suscripcionVencida } = useEnhancedPermissions();
+  const { planActual, isSuperuser, estaBloqueado, suscripcionVencida } = useUnifiedPermissions();
   const { 
     isInActiveTrial, 
     isTrialExpired, 
