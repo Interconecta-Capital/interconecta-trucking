@@ -25,27 +25,20 @@ export const ProtectedActions = ({
   variant = 'default',
   fallbackButton = true
 }: ProtectedActionsProps) => {
-  const { 
-    puedeCrear, 
-    isSuperuser, 
-    canPerformAction, 
-    isInGracePeriod, 
-    isTrialExpired 
-  } = useUnifiedPermissions();
-  
+  const permissions = useUnifiedPermissions();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
     try {
       // Superusers pueden hacer todo sin restricciones
-      if (isSuperuser) {
+      if (permissions.isSuperuser) {
         onAction?.();
         return;
       }
 
       // Verificar si puede realizar la acción básica
-      if (!canPerformAction('create')) {
-        if (isInGracePeriod) {
+      if (!permissions.canPerformAction('create')) {
+        if (permissions.isInGracePeriod) {
           toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
         } else {
           setShowUpgradeModal(true);
@@ -54,7 +47,7 @@ export const ProtectedActions = ({
       }
 
       // Verificar límites específicos del recurso
-      const result = puedeCrear(resource);
+      const result = permissions.puedeCrear(resource);
       
       if (!result.puede && result.razon) {
         toast.error(result.razon);
@@ -75,7 +68,7 @@ export const ProtectedActions = ({
   // Renderizar botón simple si no hay children
   if (!children && action === 'create') {
     // Durante período de gracia, mostrar botón bloqueado
-    if (isInGracePeriod) {
+    if (permissions.isInGracePeriod) {
       return (
         <Button 
           disabled 
@@ -101,7 +94,7 @@ export const ProtectedActions = ({
           onClose={() => setShowUpgradeModal(false)}
           title="Actualiza tu Plan"
           description={
-            isTrialExpired 
+            permissions.isTrialExpired 
               ? "Tu período de prueba ha expirado. Selecciona un plan para continuar creando registros."
               : "Necesitas un plan activo para crear nuevos registros."
           }

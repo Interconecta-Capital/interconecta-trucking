@@ -44,7 +44,7 @@ export interface UnifiedPermissions {
     conductores: { used: number; limit: number | null };
     vehiculos: { used: number; limit: number | null };
     socios: { used: number; limit: number | null };
-    cartasPorte: { used: number; limit: number | null };
+    cartas_porte: { used: number; limit: number | null };
   };
   
   // Información del plan
@@ -54,6 +54,20 @@ export interface UnifiedPermissions {
     daysRemaining?: number;
     expiresAt?: Date;
   };
+
+  // Propiedades de compatibilidad con el sistema anterior
+  isSuperuser: boolean;
+  planActual: string;
+  estaBloqueado: boolean;
+  suscripcionVencida: boolean;
+  isTrialExpired: boolean;
+  isInGracePeriod: boolean;
+  
+  // Métodos de compatibilidad
+  puedeCrear: (resource: string) => { puede: boolean; razon?: string };
+  puedeAcceder: (feature: string) => { puede: boolean; razon?: string };
+  canPerformAction: (action: string) => boolean;
+  obtenerUsoActual: () => any;
 }
 
 export const useUnifiedPermissions = (): UnifiedPermissions => {
@@ -69,9 +83,19 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
   const { cartasPorte } = useCartasPorte();
 
   return useMemo(() => {
+    // Cálculos comunes
+    const conductoresUsed = conductores?.length || 0;
+    const vehiculosUsed = vehiculos?.length || 0;
+    const sociosUsed = socios?.length || 0;
+    const cartasPorteUsed = cartasPorte?.length || 0;
+    
+    const isTrialExpiredCalc = trialInfo.isTrialExpired || false;
+    const isInGracePeriodCalc = trialInfo.daysRemaining < -14 && trialInfo.daysRemaining > -30;
+    const suscripcionVencidaCalc = suscripcion?.status === 'expired' || suscripcion?.status === 'cancelled';
+
     // REGLA 1: SUPERUSUARIO (Acceso Total e Incondicional)
     if (isSuperuser) {
-      return {
+      const basePermissions = {
         hasFullAccess: true,
         accessLevel: 'superuser' as const,
         accessReason: 'Acceso de Superusuario - Sin restricciones',
@@ -90,22 +114,38 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canAccessEnterprise: { allowed: true, reason: 'Superusuario' },
         
         usage: {
-          conductores: { used: conductores?.length || 0, limit: null },
-          vehiculos: { used: vehiculos?.length || 0, limit: null },
-          socios: { used: socios?.length || 0, limit: null },
-          cartasPorte: { used: cartasPorte?.length || 0, limit: null },
+          conductores: { used: conductoresUsed, limit: null },
+          vehiculos: { used: vehiculosUsed, limit: null },
+          socios: { used: sociosUsed, limit: null },
+          cartas_porte: { used: cartasPorteUsed, limit: null },
         },
         
         planInfo: {
           name: 'Acceso de Superusuario',
           type: 'paid' as const
-        }
+        },
+
+        // Compatibilidad
+        isSuperuser: true,
+        planActual: 'Superusuario',
+        estaBloqueado: false,
+        suscripcionVencida: false,
+        isTrialExpired: false,
+        isInGracePeriod: false,
+      };
+
+      return {
+        ...basePermissions,
+        puedeCrear: () => ({ puede: true, razon: 'Superusuario' }),
+        puedeAcceder: () => ({ puede: true, razon: 'Superusuario' }),
+        canPerformAction: () => true,
+        obtenerUsoActual: () => basePermissions.usage
       };
     }
 
     // REGLA 2: PERIODO DE PRUEBA (14 Días)
-    if (trialInfo.isTrialActive && !trialInfo.isTrialExpired) {
-      return {
+    if (trialInfo.isTrialActive && !isTrialExpiredCalc) {
+      const basePermissions = {
         hasFullAccess: true,
         accessLevel: 'trial' as const,
         accessReason: `Día ${trialInfo.daysUsed} de ${trialInfo.totalTrialDays} de prueba gratuita`,
@@ -124,10 +164,10 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canAccessEnterprise: { allowed: false, reason: 'Funciones Enterprise requieren plan pagado' },
         
         usage: {
-          conductores: { used: conductores?.length || 0, limit: null },
-          vehiculos: { used: vehiculos?.length || 0, limit: null },
-          socios: { used: socios?.length || 0, limit: null },
-          cartasPorte: { used: cartasPorte?.length || 0, limit: null },
+          conductores: { used: conductoresUsed, limit: null },
+          vehiculos: { used: vehiculosUsed, limit: null },
+          socios: { used: sociosUsed, limit: null },
+          cartas_porte: { used: cartasPorteUsed, limit: null },
         },
         
         planInfo: {
@@ -135,13 +175,29 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           type: 'trial' as const,
           daysRemaining: trialInfo.daysRemaining,
           expiresAt: trialInfo.trialEndDate || undefined
-        }
+        },
+
+        // Compatibilidad
+        isSuperuser: false,
+        planActual: 'Trial',
+        estaBloqueado: false,
+        suscripcionVencida: false,
+        isTrialExpired: false,
+        isInGracePeriod: false,
+      };
+
+      return {
+        ...basePermissions,
+        puedeCrear: () => ({ puede: true, razon: 'Período de prueba activo' }),
+        puedeAcceder: () => ({ puede: true, razon: 'Período de prueba activo' }),
+        canPerformAction: () => true,
+        obtenerUsoActual: () => basePermissions.usage
       };
     }
 
     // REGLA 3: CUENTA BLOQUEADA
     if (estaBloqueado) {
-      return {
+      const basePermissions = {
         hasFullAccess: false,
         accessLevel: 'blocked' as const,
         accessReason: 'Cuenta bloqueada por falta de pago',
@@ -160,28 +216,40 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canAccessEnterprise: { allowed: false, reason: 'Cuenta bloqueada' },
         
         usage: {
-          conductores: { used: conductores?.length || 0, limit: 0 },
-          vehiculos: { used: vehiculos?.length || 0, limit: 0 },
-          socios: { used: socios?.length || 0, limit: 0 },
-          cartasPorte: { used: cartasPorte?.length || 0, limit: 0 },
+          conductores: { used: conductoresUsed, limit: 0 },
+          vehiculos: { used: vehiculosUsed, limit: 0 },
+          socios: { used: sociosUsed, limit: 0 },
+          cartas_porte: { used: cartasPorteUsed, limit: 0 },
         },
         
         planInfo: {
           name: 'Cuenta Bloqueada',
           type: 'none' as const
-        }
+        },
+
+        // Compatibilidad
+        isSuperuser: false,
+        planActual: 'Bloqueado',
+        estaBloqueado: true,
+        suscripcionVencida: suscripcionVencidaCalc,
+        isTrialExpired: isTrialExpiredCalc,
+        isInGracePeriod: isInGracePeriodCalc,
+      };
+
+      return {
+        ...basePermissions,
+        puedeCrear: () => ({ puede: false, razon: 'Cuenta bloqueada' }),
+        puedeAcceder: () => ({ puede: false, razon: 'Cuenta bloqueada' }),
+        canPerformAction: () => false,
+        obtenerUsoActual: () => basePermissions.usage
       };
     }
 
     // REGLA 4: SUSCRIPCIÓN ACTIVA Y LÍMITES
     if (suscripcion?.status === 'active' && suscripcion.plan) {
       const plan = suscripcion.plan;
-      const conductoresUsed = conductores?.length || 0;
-      const vehiculosUsed = vehiculos?.length || 0;
-      const sociosUsed = socios?.length || 0;
-      const cartasPorteUsed = cartasPorte?.length || 0;
       
-      return {
+      const basePermissions = {
         hasFullAccess: false,
         accessLevel: 'paid' as const,
         accessReason: `Plan '${plan.nombre}' activo`,
@@ -255,23 +323,63 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           conductores: { used: conductoresUsed, limit: plan.limite_conductores },
           vehiculos: { used: vehiculosUsed, limit: plan.limite_vehiculos },
           socios: { used: sociosUsed, limit: plan.limite_socios },
-          cartasPorte: { used: cartasPorteUsed, limit: plan.limite_cartas_porte },
+          cartas_porte: { used: cartasPorteUsed, limit: plan.limite_cartas_porte },
         },
         
         planInfo: {
           name: plan.nombre,
           type: 'paid' as const,
           expiresAt: suscripcion.fecha_vencimiento ? new Date(suscripcion.fecha_vencimiento) : undefined
-        }
+        },
+
+        // Compatibilidad
+        isSuperuser: false,
+        planActual: plan.nombre,
+        estaBloqueado: false,
+        suscripcionVencida: suscripcionVencidaCalc,
+        isTrialExpired: isTrialExpiredCalc,
+        isInGracePeriod: isInGracePeriodCalc,
+      };
+
+      return {
+        ...basePermissions,
+        puedeCrear: (resource: string) => {
+          const resourceMap = {
+            conductores: basePermissions.canCreateConductor,
+            vehiculos: basePermissions.canCreateVehiculo,
+            socios: basePermissions.canCreateSocio,
+            cartas_porte: basePermissions.canCreateCartaPorte,
+          };
+          const permission = resourceMap[resource as keyof typeof resourceMap];
+          return permission ? { puede: permission.allowed, razon: permission.reason } : { puede: false, razon: 'Recurso no encontrado' };
+        },
+        puedeAcceder: (feature: string) => {
+          const featureMap = {
+            timbrar: basePermissions.canTimbrar,
+            generar_xml: basePermissions.canGenerateXML,
+            cancelar_cfdi: basePermissions.canCancelCFDI,
+            tracking: basePermissions.canUseTracking,
+            admin: basePermissions.canAccessAdmin,
+            advanced: basePermissions.canAccessAdvanced,
+            enterprise: basePermissions.canAccessEnterprise,
+          };
+          const permission = featureMap[feature as keyof typeof featureMap];
+          return permission ? { puede: permission.allowed, razon: permission.reason } : { puede: false, razon: 'Funcionalidad no encontrada' };
+        },
+        canPerformAction: (action: string) => {
+          if (action === 'create') return true; // Plan activo permite crear
+          return false;
+        },
+        obtenerUsoActual: () => basePermissions.usage
       };
     }
 
     // REGLA 5: PERÍODO DE GRACIA O TRIAL EXPIRADO
-    if (trialInfo.isTrialExpired || trialInfo.isInGracePeriod) {
-      return {
+    if (isTrialExpiredCalc || isInGracePeriodCalc) {
+      const basePermissions = {
         hasFullAccess: false,
         accessLevel: 'expired' as const,
-        accessReason: trialInfo.isInGracePeriod ? 
+        accessReason: isInGracePeriodCalc ? 
           'Período de gracia - Solo lectura' : 
           'Período de prueba finalizado',
         
@@ -289,21 +397,37 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canAccessEnterprise: { allowed: false, reason: 'Período de prueba finalizado' },
         
         usage: {
-          conductores: { used: conductores?.length || 0, limit: 0 },
-          vehiculos: { used: vehiculos?.length || 0, limit: 0 },
-          socios: { used: socios?.length || 0, limit: 0 },
-          cartasPorte: { used: cartasPorte?.length || 0, limit: 0 },
+          conductores: { used: conductoresUsed, limit: 0 },
+          vehiculos: { used: vehiculosUsed, limit: 0 },
+          socios: { used: sociosUsed, limit: 0 },
+          cartas_porte: { used: cartasPorteUsed, limit: 0 },
         },
         
         planInfo: {
-          name: trialInfo.isInGracePeriod ? 'Período de Gracia' : 'Trial Expirado',
+          name: isInGracePeriodCalc ? 'Período de Gracia' : 'Trial Expirado',
           type: 'none' as const
-        }
+        },
+
+        // Compatibilidad
+        isSuperuser: false,
+        planActual: 'Expirado',
+        estaBloqueado: false,
+        suscripcionVencida: suscripcionVencidaCalc,
+        isTrialExpired: isTrialExpiredCalc,
+        isInGracePeriod: isInGracePeriodCalc,
+      };
+
+      return {
+        ...basePermissions,
+        puedeCrear: () => ({ puede: false, razon: 'Período de prueba finalizado' }),
+        puedeAcceder: () => ({ puede: false, razon: 'Período de prueba finalizado' }),
+        canPerformAction: () => false,
+        obtenerUsoActual: () => basePermissions.usage
       };
     }
 
     // REGLA 6: POR DEFECTO (SIN ACCESO)
-    return {
+    const basePermissions = {
       hasFullAccess: false,
       accessLevel: 'expired' as const,
       accessReason: 'No tiene plan activo',
@@ -322,25 +446,41 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
       canAccessEnterprise: { allowed: false, reason: 'No tiene plan activo' },
       
       usage: {
-        conductores: { used: conductores?.length || 0, limit: 0 },
-        vehiculos: { used: vehiculos?.length || 0, limit: 0 },
-        socios: { used: socios?.length || 0, limit: 0 },
-        cartasPorte: { used: cartasPorte?.length || 0, limit: 0 },
+        conductores: { used: conductoresUsed, limit: 0 },
+        vehiculos: { used: vehiculosUsed, limit: 0 },
+        socios: { used: sociosUsed, limit: 0 },
+        cartas_porte: { used: cartasPorteUsed, limit: 0 },
       },
       
       planInfo: {
         name: 'Sin Plan',
         type: 'none' as const
-      }
+      },
+
+      // Compatibilidad
+      isSuperuser: false,
+      planActual: 'Sin Plan',
+      estaBloqueado: estaBloqueado,
+      suscripcionVencida: suscripcionVencidaCalc,
+      isTrialExpired: isTrialExpiredCalc,
+      isInGracePeriod: isInGracePeriodCalc,
+    };
+
+    return {
+      ...basePermissions,
+      puedeCrear: () => ({ puede: false, razon: 'No tiene plan activo' }),
+      puedeAcceder: () => ({ puede: false, razon: 'No tiene plan activo' }),
+      canPerformAction: () => false,
+      obtenerUsoActual: () => basePermissions.usage
     };
   }, [
     isSuperuser,
     suscripcion,
     trialInfo,
     estaBloqueado,
-    conductores?.length,
-    vehiculos?.length,
-    socios?.length,
-    cartasPorte?.length
+    conductoresUsed,
+    vehiculosUsed,
+    sociosUsed,
+    cartasPorteUsed
   ]);
 };

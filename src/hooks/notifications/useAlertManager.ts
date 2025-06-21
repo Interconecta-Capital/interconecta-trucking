@@ -7,12 +7,7 @@ import { AlertTriangle, TrendingUp, Gift, Clock, Trash2 } from 'lucide-react';
 import { AlertConfig } from '@/types/alerts';
 
 export const useAlertManager = () => {
-  const { 
-    obtenerUsoActual, 
-    estaBloqueado, 
-    suscripcionVencida, 
-    isSuperuser 
-  } = useUnifiedPermissions();
+  const permissions = useUnifiedPermissions();
   const { 
     isInActiveTrial, 
     isTrialExpired,
@@ -28,7 +23,7 @@ export const useAlertManager = () => {
   };
 
   const generateAlerts = (): AlertConfig[] => {
-    const usoActual = obtenerUsoActual();
+    const usoActual = permissions.obtenerUsoActual();
     const alerts: AlertConfig[] = [];
 
     // Alertas críticas de período de gracia
@@ -55,7 +50,7 @@ export const useAlertManager = () => {
     }
 
     // Alertas críticas de bloqueo
-    if (estaBloqueado) {
+    if (permissions.estaBloqueado) {
       alerts.push({
         id: 'blocked',
         type: 'critical',
@@ -64,7 +59,7 @@ export const useAlertManager = () => {
         action: 'Renovar Suscripción',
         priority: 1
       });
-    } else if (suscripcionVencida || (isTrialExpired && !isInGracePeriod)) {
+    } else if (permissions.suscripcionVencida || (isTrialExpired && !isInGracePeriod)) {
       alerts.push({
         id: 'expired',
         type: 'critical',

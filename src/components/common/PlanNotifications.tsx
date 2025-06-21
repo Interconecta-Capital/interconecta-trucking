@@ -6,12 +6,12 @@ import { SuperuserAlert } from '@/components/notifications/SuperuserAlert';
 import { AlertItem } from '@/components/notifications/AlertItem';
 
 export function PlanNotifications() {
-  const { isSuperuser } = useUnifiedPermissions();
+  const permissions = useUnifiedPermissions();
   const { generateAlerts, dismissAlert } = useAlertManager();
   const navigate = useNavigate();
 
   // Superusers no ven notificaciones excepto su badge
-  if (isSuperuser) {
+  if (permissions.isSuperuser) {
     return <SuperuserAlert />;
   }
 

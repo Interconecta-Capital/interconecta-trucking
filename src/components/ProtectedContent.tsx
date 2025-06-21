@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Lock, TrendingUp, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { FunctionalityType } from '@/types/permissions';
 
 interface ProtectedContentProps {
   children: ReactNode;
-  requiredFeature?: FunctionalityType;
+  requiredFeature?: string;
   requiredPlan?: string;
   fallback?: ReactNode;
   showUpgrade?: boolean;
@@ -23,18 +22,11 @@ export const ProtectedContent = ({
   fallback,
   showUpgrade = true
 }: ProtectedContentProps) => {
-  const { 
-    puedeAcceder, 
-    planActual, 
-    estaBloqueado, 
-    suscripcionVencida, 
-    isSuperuser 
-  } = useUnifiedPermissions();
-  
+  const permissions = useUnifiedPermissions();
   const navigate = useNavigate();
   
   // Superusers bypass all restrictions
-  if (isSuperuser) {
+  if (permissions.isSuperuser) {
     return (
       <div className="space-y-4">
         <Alert className="border-yellow-200 bg-yellow-50">
@@ -54,7 +46,7 @@ export const ProtectedContent = ({
   }
 
   // Verificar bloqueos primero
-  if (estaBloqueado) {
+  if (permissions.estaBloqueado) {
     return (
       <Alert className="border-red-200 bg-red-50">
         <Lock className="h-4 w-4 text-red-600" />
@@ -75,7 +67,7 @@ export const ProtectedContent = ({
     );
   }
 
-  if (suscripcionVencida) {
+  if (permissions.suscripcionVencida) {
     return (
       <Alert className="border-orange-200 bg-orange-50">
         <Lock className="h-4 w-4 text-orange-600" />
@@ -98,7 +90,7 @@ export const ProtectedContent = ({
 
   // Verificar funcionalidad específica
   if (requiredFeature) {
-    const result = puedeAcceder(requiredFeature);
+    const result = permissions.puedeAcceder(requiredFeature);
     
     if (!result.puede) {
       if (fallback) return <>{fallback}</>;
@@ -125,7 +117,7 @@ export const ProtectedContent = ({
   }
 
   // Verificar plan específico
-  if (requiredPlan && planActual !== requiredPlan) {
+  if (requiredPlan && permissions.planActual !== requiredPlan) {
     if (fallback) return <>{fallback}</>;
     
     return (
@@ -133,7 +125,7 @@ export const ProtectedContent = ({
         <Lock className="h-4 w-4 text-purple-600" />
         <AlertDescription className="flex items-center justify-between">
           <span className="text-purple-800">
-            Esta funcionalidad requiere el plan {requiredPlan}. Plan actual: {planActual}
+            Esta funcionalidad requiere el plan {requiredPlan}. Plan actual: {permissions.planActual}
           </span>
           {showUpgrade && (
             <Button 

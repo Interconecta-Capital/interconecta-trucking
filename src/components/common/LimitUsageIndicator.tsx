@@ -14,11 +14,11 @@ interface LimitUsageIndicatorProps {
 }
 
 export function LimitUsageIndicator({ resourceType, className, showUpgrade = true }: LimitUsageIndicatorProps) {
-  const { obtenerUsoActual, planActual, isSuperuser } = useUnifiedPermissions();
+  const permissions = useUnifiedPermissions();
   const navigate = useNavigate();
   
   // Superusers no tienen límites
-  if (isSuperuser) {
+  if (permissions.isSuperuser) {
     return (
       <Card className={className}>
         <CardContent className="p-4">
@@ -33,7 +33,7 @@ export function LimitUsageIndicator({ resourceType, className, showUpgrade = tru
     );
   }
 
-  const usoActual = obtenerUsoActual();
+  const usoActual = permissions.obtenerUsoActual();
   const recurso = usoActual[resourceType];
   
   if (!recurso) return null;
@@ -90,7 +90,7 @@ export function LimitUsageIndicator({ resourceType, className, showUpgrade = tru
           
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              Plan: {planActual}
+              Plan: {permissions.planActual}
             </span>
             
             {showUpgrade && (cercaDelLimite || limiteExcedido) && (
