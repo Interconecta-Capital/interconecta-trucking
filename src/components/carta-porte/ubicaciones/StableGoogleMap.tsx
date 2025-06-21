@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Maximize2, Minimize2, AlertTriangle, MapPin, Loader2 } from 'lucide-react';
+import { Maximize2, Minimize2, AlertTriangle, MapPin, Loader2, Settings } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StableGoogleMapProps {
   ubicaciones: any[];
@@ -27,136 +28,121 @@ export function StableGoogleMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const scriptLoadedRef = useRef(false);
-  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const [mapState, setMapState] = useState({
     isLoaded: false,
     isInitialized: false,
     error: '',
     retryCount: 0,
-    containerReady: false
+    containerReady: false,
+    apiKeyValid: false
   });
 
-  // Check if container is ready and visible
+  // Check if container is ready
   useEffect(() => {
     if (!mapRef.current) return;
 
     const checkContainer = () => {
       const container = mapRef.current;
       if (container && container.offsetWidth > 0 && container.offsetHeight > 0) {
-        console.log('✅ Map container is ready:', {
-          width: container.offsetWidth,
-          height: container.offsetHeight
-        });
+        console.log('✅ Map container is ready');
         setMapState(prev => ({ ...prev, containerReady: true }));
         return true;
       }
       return false;
     };
 
-    // Immediate check
     if (checkContainer()) return;
 
-    // Use ResizeObserver as fallback for better compatibility
     if ('ResizeObserver' in window) {
       const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
-          if (entry.target === mapRef.current) {
-            if (checkContainer()) {
-              resizeObserver.disconnect();
-            }
+          if (entry.target === mapRef.current && checkContainer()) {
+            resizeObserver.disconnect();
           }
         }
       });
 
       resizeObserver.observe(mapRef.current);
-
       return () => resizeObserver.disconnect();
-    } else if ('IntersectionObserver' in window) {
-      // Fallback to IntersectionObserver
-      intersectionObserverRef.current = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.target === mapRef.current) {
-              if (checkContainer()) {
-                intersectionObserverRef.current?.disconnect();
-              }
-            }
-          });
-        },
-        { threshold: 0.1 }
-      );
-
-      intersectionObserverRef.current.observe(mapRef.current);
-
-      return () => {
-        intersectionObserverRef.current?.disconnect();
-      };
-    } else {
-      // Final fallback for older browsers
-      const interval = setInterval(() => {
-        if (checkContainer()) {
-          clearInterval(interval);
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
     }
   }, []);
 
-  // Load Google Maps API with your API key
+  // Load Google Maps API with proper key management
   useEffect(() => {
     if (scriptLoadedRef.current || window.google || mapState.isLoaded) return;
 
-    console.log('🗺️ Loading Google Maps API...');
-    
-    const script = document.createElement('script');
-    // Using your Google Maps API key from Supabase secrets
-    const apiKey = 'AIzaSyCYyRxDpq3lQQMvp6L7bFw7f1H1Publicaciones_interconecta'; // Tu API key configurada
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMapsCallback`;
-    script.async = true;
-    script.defer = true;
-    
-    // Create a global callback with proper typing - only if not already defined
-    if (!window.initGoogleMapsCallback) {
-      window.initGoogleMapsCallback = () => {
-        console.log('✅ Google Maps API loaded successfully');
-        scriptLoadedRef.current = true;
+    const loadGoogleMaps = async () => {
+      try {
+        console.log('🗺️ Loading Google Maps API...');
+        
+        // Get API key from Supabase secrets
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        
+        if (error || !data?.apiKey) {
+          console.warn('⚠️ No se pudo obtener Google Maps API key, usando fallback');
+          setMapState(prev => ({ 
+            ...prev, 
+            error: 'Google Maps no disponible. Configure su API key en Supabase Secrets.',
+            apiKeyValid: false
+          }));
+          return;
+        }
+
+        const apiKey = data.apiKey;
+        setMapState(prev => ({ ...prev, apiKeyValid: true }));
+
+        // Create global callback
+        window.initGoogleMapsCallback = () => {
+          console.log('✅ Google Maps API loaded successfully');
+          scriptLoadedRef.current = true;
+          setMapState(prev => ({ 
+            ...prev, 
+            isLoaded: true, 
+            error: '',
+            retryCount: 0 
+          }));
+        };
+
+        // Load script with async loading
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMapsCallback`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onerror = () => {
+          console.error('❌ Error loading Google Maps API');
+          setMapState(prev => ({ 
+            ...prev, 
+            error: 'Error cargando Google Maps. Verifica la configuración de la API Key.',
+            retryCount: prev.retryCount + 1,
+            apiKeyValid: false
+          }));
+        };
+
+        document.head.appendChild(script);
+
+      } catch (error) {
+        console.error('❌ Error inicializando Google Maps:', error);
         setMapState(prev => ({ 
           ...prev, 
-          isLoaded: true, 
-          error: '',
-          retryCount: 0 
+          error: 'Error de inicialización',
+          apiKeyValid: false
         }));
-      };
-    }
-
-    script.onerror = (error) => {
-      console.error('❌ Error loading Google Maps API:', error);
-      setMapState(prev => ({ 
-        ...prev, 
-        error: 'Error cargando Google Maps. Verifica la configuración de la API Key.',
-        retryCount: prev.retryCount + 1 
-      }));
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
       }
     };
+
+    loadGoogleMaps();
   }, [mapState.retryCount]);
 
-  // Initialize map when everything is ready
+  // Initialize map when ready
   useEffect(() => {
     if (!mapState.isLoaded || 
         !mapState.containerReady ||
         !window.google || 
-        !window.google.maps ||
         !mapRef.current || 
         mapState.isInitialized ||
-        mapState.error) {
+        mapState.error ||
+        !mapState.apiKeyValid) {
       return;
     }
 
@@ -165,19 +151,13 @@ export function StableGoogleMap({
 
       const container = mapRef.current;
       
-      // Triple-check container is ready
       if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.warn('⚠️ Map container not ready yet, retrying...');
-        setTimeout(() => {
-          setMapState(prev => ({ ...prev, containerReady: false }));
-        }, 1000);
+        console.warn('⚠️ Map container not ready yet');
         return;
       }
 
-      // Default center (Mexico City)
       const defaultCenter = { lat: 19.4326, lng: -99.1332 };
 
-      // Initialize map with defensive options
       mapInstanceRef.current = new window.google.maps.Map(container, {
         zoom: 6,
         center: defaultCenter,
@@ -185,27 +165,17 @@ export function StableGoogleMap({
         gestureHandling: 'greedy',
         mapTypeControl: true,
         streetViewControl: false,
-        fullscreenControl: false,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ]
+        fullscreenControl: false
       });
 
-      // Wait for map to be fully loaded with timeout
       const timeoutId = setTimeout(() => {
-        console.warn('⚠️ Map initialization timeout, proceeding anyway');
         setMapState(prev => ({ ...prev, isInitialized: true }));
-      }, 10000);
+      }, 5000);
 
       window.google.maps.event.addListenerOnce(mapInstanceRef.current, 'idle', () => {
         console.log('🗺️ Map fully loaded and ready');
         clearTimeout(timeoutId);
         
-        // Add markers and route after map is ready
         if (ubicaciones && ubicaciones.length > 0) {
           setTimeout(() => addMarkersAndRoute(), 500);
         }
@@ -213,17 +183,15 @@ export function StableGoogleMap({
         setMapState(prev => ({ ...prev, isInitialized: true }));
       });
 
-      console.log('✅ Google Map initialization started');
-
     } catch (error) {
       console.error('❌ Error initializing Google Maps:', error);
       setMapState(prev => ({ 
         ...prev, 
-        error: 'Error inicializando el mapa. Reintentando...',
+        error: 'Error inicializando el mapa',
         retryCount: prev.retryCount + 1
       }));
     }
-  }, [mapState.isLoaded, mapState.containerReady, ubicaciones, routeData]);
+  }, [mapState.isLoaded, mapState.containerReady, mapState.apiKeyValid]);
 
   const addMarkersAndRoute = () => {
     if (!mapInstanceRef.current || !window.google || !window.google.maps) {
@@ -349,12 +317,35 @@ export function StableGoogleMap({
       isLoaded: false, 
       isInitialized: false,
       containerReady: false,
-      retryCount: 0
+      retryCount: 0,
+      apiKeyValid: false
     }));
     scriptLoadedRef.current = false;
   };
 
-  // Show error state with retry option
+  // Configuration needed state
+  if (!mapState.apiKeyValid && mapState.error) {
+    return (
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="text-center">
+              <Settings className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+              <p className="text-sm text-yellow-800 mb-2">Google Maps requiere configuración</p>
+              <p className="text-xs text-yellow-700 mb-4">
+                Configure su Google Maps API key en Supabase Edge Function Secrets
+              </p>
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                Verificar configuración
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error with retry
   if (mapState.error && mapState.retryCount < 3) {
     return (
       <Card className="border-red-200">
@@ -374,7 +365,7 @@ export function StableGoogleMap({
     );
   }
 
-  // Show permanent error after 3 retries
+  // Permanent error
   if (mapState.error && mapState.retryCount >= 3) {
     return (
       <Card className="border-red-200">
@@ -383,7 +374,7 @@ export function StableGoogleMap({
             <div className="text-center">
               <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
               <p className="text-sm text-red-600 mb-2">Servicio de mapas no disponible</p>
-              <p className="text-xs text-gray-500">Por favor, verifica tu configuración de API Key</p>
+              <p className="text-xs text-gray-500">Por favor, configure su Google Maps API key</p>
             </div>
           </div>
         </CardContent>
@@ -431,9 +422,6 @@ export function StableGoogleMap({
                 {!mapState.isLoaded ? 'Cargando Google Maps...' : 
                  !mapState.containerReady ? 'Preparando contenedor...' : 
                  'Inicializando mapa...'}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                {mapState.retryCount > 0 && `Intento ${mapState.retryCount + 1}/3`}
               </p>
             </div>
           </div>
