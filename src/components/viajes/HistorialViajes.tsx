@@ -1,292 +1,148 @@
 
 import { useState } from 'react';
-import { ResponsiveCard, ResponsiveCardContent, ResponsiveCardHeader, ResponsiveCardTitle } from '@/components/ui/responsive-card';
-import { ResponsiveGrid } from '@/components/ui/responsive-grid';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { 
-  MapPin, 
-  Clock, 
-  Truck, 
-  User, 
-  Search,
-  Filter,
-  MoreHorizontal,
-  Package,
-  Eye,
-  Download,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
-import { useViajesCompletos } from '@/hooks/useViajesCompletos';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+import { Clock, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { ViajeDetalleModal } from './modals/ViajeDetalleModal';
 
-export const HistorialViajes = () => {
-  const isMobile = useIsMobile();
-  const { viajesHistorial, isLoading } = useViajesCompletos();
-  const [searchTerm, setSearchTerm] = useState('');
+export function HistorialViajes() {
+  const [detalleModal, setDetalleModal] = useState<{ open: boolean; viaje: any }>({
+    open: false,
+    viaje: null
+  });
 
-  // Filtrar viajes por búsqueda
-  const viajesFiltrados = viajesHistorial.filter(viaje => 
-    viaje.origen.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    viaje.destino.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    viaje.carta_porte_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    viaje.conductor?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    viaje.vehiculo?.placa.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Mock data para el historial - en el futuro se conectará con la API
+  const historialViajes = [
+    {
+      id: '1',
+      carta_porte_id: 'CP-001',
+      origen: 'Ciudad de México',
+      destino: 'Guadalajara',
+      estado: 'completado',
+      fecha_inicio_programada: '2024-06-10T08:00:00Z',
+      fecha_inicio_real: '2024-06-10T08:15:00Z',
+      fecha_fin: '2024-06-10T18:00:00Z',
+      conductor: 'Juan Pérez',
+      vehiculo: 'ABC-123',
+      observaciones: 'Viaje completado sin incidencias'
+    },
+    {
+      id: '2',
+      carta_porte_id: 'CP-002',
+      origen: 'Monterrey',
+      destino: 'Tijuana',
+      estado: 'cancelado',
+      fecha_inicio_programada: '2024-06-09T06:00:00Z',
+      fecha_inicio_real: null,
+      fecha_fin: null,
+      conductor: 'María García',
+      vehiculo: 'XYZ-789',
+      observaciones: 'Cancelado por problemas mecánicos en el vehículo'
+    }
+  ];
+
+  const handleVerDetalles = (viaje: any) => {
+    setDetalleModal({ open: true, viaje });
+  };
 
   const getEstadoBadge = (estado: string) => {
-    const configs = {
-      completado: { label: 'Completado', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      cancelado: { label: 'Cancelado', className: 'bg-red-100 text-red-800', icon: XCircle }
-    };
-    
-    const config = configs[estado as keyof typeof configs] || 
-                  { label: estado, className: 'bg-gray-100 text-gray-800', icon: Clock };
-    
-    const IconComponent = config.icon;
-    
-    return (
-      <Badge className={config.className}>
-        <IconComponent className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
+    switch (estado) {
+      case 'completado':
+        return <Badge className="bg-green-100 text-green-800">Completado</Badge>;
+      case 'cancelado':
+        return <Badge className="bg-red-100 text-red-800">Cancelado</Badge>;
+      default:
+        return <Badge variant="secondary">{estado}</Badge>;
+    }
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('es-MX', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const getEstadoIcon = (estado: string) => {
+    switch (estado) {
+      case 'completado':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'cancelado':
+        return <XCircle className="h-5 w-5 text-red-600" />;
+      default:
+        return <Clock className="h-5 w-5 text-gray-600" />;
+    }
   };
-
-  const calcularDuracionViaje = (fechaInicio: string, fechaFin?: string) => {
-    if (!fechaFin) return 'N/A';
-    
-    const inicio = new Date(fechaInicio);
-    const fin = new Date(fechaFin);
-    const diferencia = fin.getTime() - inicio.getTime();
-    
-    const horas = Math.floor(diferencia / (1000 * 60 * 60));
-    const dias = Math.floor(horas / 24);
-    
-    if (dias > 0) return `${dias}d ${horas % 24}h`;
-    return `${horas}h`;
-  };
-
-  const calcularPesoTotal = (mercancias: any[]) => {
-    return mercancias?.reduce((total, m) => total + (m.peso_kg * m.cantidad || 0), 0) || 0;
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-interconecta mx-auto"></div>
-          <p className="mt-2 text-gray-60">Cargando historial...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Filtros y búsqueda */}
-      <div className={`flex gap-4 bg-gray-05 p-4 rounded-2xl ${isMobile ? 'flex-col' : 'flex-row'}`}>
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
-          <Input
-            placeholder="Buscar en historial por origen, destino, carta porte..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`pl-12 border-0 bg-pure-white shadow-sm ${isMobile ? 'h-12 text-base' : 'h-12'}`}
-          />
-        </div>
-        <Button 
-          variant="outline"
-          className={`bg-pure-white shadow-sm border-0 ${isMobile ? 'h-12 w-full justify-center' : 'h-12 px-6'}`}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Filtros
-        </Button>
+    <>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Historial de Viajes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              {historialViajes.map((viaje) => (
+                <Card key={viaje.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        {getEstadoIcon(viaje.estado)}
+                        <h3 className="font-semibold">Carta Porte: {viaje.carta_porte_id}</h3>
+                        {getEstadoBadge(viaje.estado)}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleVerDetalles(viaje)}
+                      >
+                        Ver Detalles
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-green-600" />
+                          <span className="font-medium">Origen:</span> {viaje.origen}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-red-600" />
+                          <span className="font-medium">Destino:</span> {viaje.destino}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">Inicio:</span> 
+                          {new Date(viaje.fecha_inicio_programada).toLocaleString()}
+                        </div>
+                        {viaje.fecha_fin && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-green-600" />
+                            <span className="font-medium">Fin:</span> 
+                            {new Date(viaje.fecha_fin).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
+                      <span><span className="font-medium">Conductor:</span> {viaje.conductor}</span>
+                      <span><span className="font-medium">Vehículo:</span> {viaje.vehiculo}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Lista de viajes en historial */}
-      {viajesFiltrados.length === 0 ? (
-        <ResponsiveCard className="border-0 shadow-sm bg-gradient-to-br from-gray-05 to-gray-10">
-          <ResponsiveCardContent className={isMobile ? "p-8" : "p-16"}>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Clock className="h-8 w-8 text-gray-50" />
-              </div>
-              <h3 className={`font-semibold text-gray-90 mb-3 ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                No hay viajes en el historial
-              </h3>
-              <p className="text-gray-60 max-w-md mx-auto">
-                {searchTerm ? 'No se encontraron viajes con ese criterio de búsqueda' : 'Aún no tienes viajes completados o cancelados'}
-              </p>
-            </div>
-          </ResponsiveCardContent>
-        </ResponsiveCard>
-      ) : (
-        <ResponsiveGrid 
-          cols={{ default: 1, lg: 2 }} 
-          gap={{ default: 4, sm: 6 }}
-        >
-          {viajesFiltrados.map((viaje) => (
-            <ResponsiveCard key={viaje.id} className="group hover:shadow-lg transition-all duration-200">
-              <ResponsiveCardHeader>
-                <div className="flex items-center justify-between">
-                  <ResponsiveCardTitle className="group-hover:text-blue-interconecta transition-colors">
-                    {viaje.carta_porte_id}
-                  </ResponsiveCardTitle>
-                  <div className="flex items-center gap-2">
-                    {getEstadoBadge(viaje.estado)}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => {}}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalles
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {}}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar XML
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {}}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar PDF
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </ResponsiveCardHeader>
-              
-              <ResponsiveCardContent className={`space-y-4 ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
-                {/* Ruta */}
-                <div className="space-y-3 p-4 bg-gray-05 rounded-xl">
-                  <div className="flex items-start gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-medium text-gray-60 uppercase tracking-wider">Origen</span>
-                      <p className={`font-medium text-gray-90 truncate ${isMobile ? 'text-sm' : 'text-sm'}`}>{viaje.origen}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="ml-1.5 border-l-2 border-dashed border-gray-20 h-4"></div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-medium text-gray-60 uppercase tracking-wider">Destino</span>
-                      <p className={`font-medium text-gray-90 truncate ${isMobile ? 'text-sm' : 'text-sm'}`}>{viaje.destino}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cliente y carga */}
-                {(viaje.cliente || viaje.mercancias?.length) && (
-                  <div className="p-3 bg-blue-50 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Package className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs font-medium text-blue-600 uppercase tracking-wider">Carga Transportada</span>
-                    </div>
-                    {viaje.cliente && (
-                      <p className="text-sm font-medium text-gray-90 mb-1">
-                        Cliente: {viaje.cliente.nombre}
-                      </p>
-                    )}
-                    {viaje.mercancias?.length > 0 && (
-                      <div className="text-sm text-gray-70">
-                        <p>{viaje.mercancias.length} tipo(s) de mercancía</p>
-                        <p>Peso total transportado: {calcularPesoTotal(viaje.mercancias).toFixed(0)} kg</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tiempos del viaje */}
-                <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                  <div className="p-3 bg-green-50 rounded-xl">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-green-600" />
-                      <span className="text-xs font-medium text-green-600 uppercase tracking-wider">
-                        {viaje.estado === 'completado' ? 'Completado' : 'Cancelado'}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-90">
-                      {viaje.fecha_fin_real ? formatDateTime(viaje.fecha_fin_real) : 'N/A'}
-                    </p>
-                  </div>
-                  
-                  <div className="p-3 bg-blue-50 rounded-xl">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs font-medium text-blue-600 uppercase tracking-wider">Duración</span>
-                    </div>
-                    <p className="text-sm font-bold text-gray-90">
-                      {calcularDuracionViaje(viaje.fecha_inicio_programada, viaje.fecha_fin_real)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Recursos que participaron */}
-                <div className="flex items-center justify-between p-3 bg-gray-05 rounded-xl">
-                  <div className={`flex items-center gap-4 ${isMobile ? 'flex-wrap' : ''}`}>
-                    {viaje.vehiculo ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-interconecta rounded-lg flex items-center justify-center">
-                          <Truck className="h-4 w-4 text-pure-white" />
-                        </div>
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-90">{viaje.vehiculo.placa}</p>
-                          <p className="text-xs text-gray-60">{viaje.vehiculo.marca} {viaje.vehiculo.modelo}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-50">Sin vehículo registrado</div>
-                    )}
-                    
-                    {viaje.conductor ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                          <User className="h-4 w-4 text-pure-white" />
-                        </div>
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-90">{viaje.conductor.nombre}</p>
-                          <p className="text-xs text-gray-60">Lic. {viaje.conductor.tipo_licencia || 'N/A'}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-50">Sin conductor registrado</div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Observaciones si las hay */}
-                {viaje.observaciones && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Observaciones:</strong> {viaje.observaciones}
-                    </p>
-                  </div>
-                )}
-              </ResponsiveCardContent>
-            </ResponsiveCard>
-          ))}
-        </ResponsiveGrid>
-      )}
-    </div>
+      <ViajeDetalleModal
+        open={detalleModal.open}
+        onOpenChange={(open) => setDetalleModal({ open, viaje: detalleModal.viaje })}
+        viaje={detalleModal.viaje}
+      />
+    </>
   );
-};
+}
