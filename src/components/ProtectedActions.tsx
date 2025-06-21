@@ -3,7 +3,7 @@ import { ReactNode, useState } from 'react';
 import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
 import { useTrialManager } from '@/hooks/useTrialManager';
 import { Button } from '@/components/ui/button';
-import { Plus, Lock, Eye } from 'lucide-react';
+import { Plus, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeModal } from '@/components/common/UpgradeModal';
 
@@ -14,6 +14,7 @@ interface ProtectedActionsProps {
   onAction?: () => void;
   buttonText?: string;
   variant?: 'default' | 'outline' | 'ghost';
+  fallbackButton?: boolean;
 }
 
 export const ProtectedActions = ({ 
@@ -22,46 +23,51 @@ export const ProtectedActions = ({
   resource, 
   onAction,
   buttonText = 'Crear',
-  variant = 'default'
+  variant = 'default',
+  fallbackButton = true
 }: ProtectedActionsProps) => {
   const { puedeCrear, isSuperuser } = useEnhancedPermissions();
   const { canPerformAction, isInGracePeriod, isTrialExpired } = useTrialManager();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
-    // Superusers can always create
-    if (isSuperuser) {
-      if (onAction) {
-        onAction();
+    try {
+      // Superusers can always create
+      if (isSuperuser) {
+        onAction?.();
+        return;
       }
-      return;
-    }
 
-    // Verificar si puede realizar la acción
-    if (!canPerformAction('create')) {
-      if (isInGracePeriod) {
-        toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
-      } else {
-        setShowUpgradeModal(true);
+      // Verificar si puede realizar la acción
+      if (!canPerformAction('create')) {
+        if (isInGracePeriod) {
+          toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
+        } else {
+          setShowUpgradeModal(true);
+        }
+        return;
       }
-      return;
-    }
 
-    const result = puedeCrear(resource);
-    const puede = result?.puede ?? false;
-    const razon = result?.razon;
-    
-    if (!puede && razon) {
-      toast.error(razon);
-      return;
-    }
-    
-    if (onAction) {
-      onAction();
+      const result = puedeCrear(resource);
+      const puede = result?.puede ?? true; // Default a true si no hay resultado
+      const razon = result?.razon;
+      
+      if (!puede && razon) {
+        toast.error(razon);
+        return;
+      }
+      
+      onAction?.();
+    } catch (error) {
+      console.error('Error in ProtectedActions:', error);
+      // En caso de error, permitir la acción como fallback
+      if (fallbackButton) {
+        onAction?.();
+      }
     }
   };
 
-  // Si no hay children, renderizar como botón
+  // Renderizar botón simple si no hay children
   if (!children && action === 'create') {
     // Durante período de gracia, mostrar botón bloqueado
     if (isInGracePeriod) {

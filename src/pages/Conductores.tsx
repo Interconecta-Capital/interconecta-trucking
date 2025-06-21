@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,10 @@ import { Plus, Users, Search, Filter, AlertTriangle, UserCheck } from 'lucide-re
 import { ConductoresTable } from '@/components/conductores/ConductoresTable';
 import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
 import { ConductorViewDialog } from '@/components/conductores/ConductorViewDialog';
+import { ProtectedActions } from '@/components/ProtectedActions';
+import { ProtectedContent } from '@/components/ProtectedContent';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { useConductores } from '@/hooks/useConductores';
 import { Conductor } from '@/types/cartaPorte';
 import { toast } from 'sonner';
@@ -47,6 +50,11 @@ export default function Conductores() {
     return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
   }).length;
 
+  const handleNewConductor = () => {
+    setSelectedConductor(null);
+    setShowFormDialog(true);
+  };
+
   const handleSuccess = () => {
     fetchConductores();
     setShowFormDialog(false);
@@ -83,176 +91,181 @@ export default function Conductores() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Conductores</h1>
-              <p className="text-gray-600">Gestión completa de conductores del sistema</p>
+    <ProtectedContent requiredFeature="conductores">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {/* Notificaciones de plan */}
+          <PlanNotifications />
+
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Conductores</h1>
+                <p className="text-gray-600">Gestión completa de conductores del sistema</p>
+              </div>
             </div>
+            <ProtectedActions
+              action="create"
+              resource="conductores"
+              onAction={handleNewConductor}
+              buttonText="Nuevo Conductor"
+              variant="default"
+            />
           </div>
-          <Button 
-            onClick={() => {
-              setSelectedConductor(null);
-              setShowFormDialog(true);
+
+          {/* Indicador de límites */}
+          <LimitUsageIndicator resourceType="conductores" />
+
+          {/* Estadísticas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Conductores</p>
+                    <p className="text-2xl font-bold text-gray-900">{totalConductores}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <UserCheck className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Disponibles</p>
+                    <p className="text-2xl font-bold text-gray-900">{conductoresActivos}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <AlertTriangle className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Licencias por Vencer</p>
+                    <p className="text-2xl font-bold text-gray-900">{licenciasProximasVencer}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filtros */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="search">Buscar</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="search"
+                      placeholder="Nombre, RFC o licencia..."
+                      value={filters.searchTerm}
+                      onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="estado">Estado</Label>
+                  <Select 
+                    value={filters.estado} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, estado: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos los estados" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="disponible">Disponible</SelectItem>
+                      <SelectItem value="en_viaje">En Viaje</SelectItem>
+                      <SelectItem value="descanso">Descanso</SelectItem>
+                      <SelectItem value="inactivo">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipoLicencia">Tipo de Licencia</Label>
+                  <Select 
+                    value={filters.tipoLicencia} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, tipoLicencia: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos los tipos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="A">Tipo A</SelectItem>
+                      <SelectItem value="B">Tipo B</SelectItem>
+                      <SelectItem value="C">Tipo C</SelectItem>
+                      <SelectItem value="D">Tipo D</SelectItem>
+                      <SelectItem value="E">Tipo E</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={clearFilters}
+                    className="w-full"
+                  >
+                    Limpiar Filtros
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tabla de Conductores */}
+          <ConductoresTable
+            conductores={filteredConductores}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onView={handleView}
+          />
+
+          {/* Diálogos */}
+          <ConductorFormDialog
+            open={showFormDialog}
+            onOpenChange={setShowFormDialog}
+            conductor={selectedConductor}
+            onSuccess={handleSuccess}
+          />
+
+          <ConductorViewDialog
+            open={showViewDialog}
+            onOpenChange={setShowViewDialog}
+            conductor={selectedConductor}
+            onEdit={(conductor) => {
+              setShowViewDialog(false);
+              handleEdit(conductor);
             }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            Nuevo Conductor
-          </Button>
+          />
         </div>
-
-        {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Conductores</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalConductores}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <UserCheck className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Disponibles</p>
-                  <p className="text-2xl font-bold text-gray-900">{conductoresActivos}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Licencias por Vencer</p>
-                  <p className="text-2xl font-bold text-gray-900">{licenciasProximasVencer}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filtros */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtros
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="search">Buscar</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="search"
-                    placeholder="Nombre, RFC o licencia..."
-                    value={filters.searchTerm}
-                    onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="estado">Estado</Label>
-                <Select 
-                  value={filters.estado} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, estado: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los estados" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="disponible">Disponible</SelectItem>
-                    <SelectItem value="en_viaje">En Viaje</SelectItem>
-                    <SelectItem value="descanso">Descanso</SelectItem>
-                    <SelectItem value="inactivo">Inactivo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="tipoLicencia">Tipo de Licencia</Label>
-                <Select 
-                  value={filters.tipoLicencia} 
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, tipoLicencia: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los tipos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="A">Tipo A</SelectItem>
-                    <SelectItem value="B">Tipo B</SelectItem>
-                    <SelectItem value="C">Tipo C</SelectItem>
-                    <SelectItem value="D">Tipo D</SelectItem>
-                    <SelectItem value="E">Tipo E</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-end">
-                <Button 
-                  variant="outline" 
-                  onClick={clearFilters}
-                  className="w-full"
-                >
-                  Limpiar Filtros
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabla de Conductores */}
-        <ConductoresTable
-          conductores={filteredConductores}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onView={handleView}
-        />
-
-        {/* Diálogos */}
-        <ConductorFormDialog
-          open={showFormDialog}
-          onOpenChange={setShowFormDialog}
-          conductor={selectedConductor}
-          onSuccess={handleSuccess}
-        />
-
-        <ConductorViewDialog
-          open={showViewDialog}
-          onOpenChange={setShowViewDialog}
-          conductor={selectedConductor}
-          onEdit={(conductor) => {
-            setShowViewDialog(false);
-            handleEdit(conductor);
-          }}
-        />
       </div>
-    </div>
+    </ProtectedContent>
   );
 }
