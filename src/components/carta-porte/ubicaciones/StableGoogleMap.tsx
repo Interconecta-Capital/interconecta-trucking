@@ -116,17 +116,19 @@ export function StableGoogleMap({
     script.async = true;
     script.defer = true;
     
-    // Create a global callback with proper typing
-    window.initGoogleMapsCallback = () => {
-      console.log('✅ Google Maps API loaded successfully');
-      scriptLoadedRef.current = true;
-      setMapState(prev => ({ 
-        ...prev, 
-        isLoaded: true, 
-        error: '',
-        retryCount: 0 
-      }));
-    };
+    // Create a global callback with proper typing - only if not already defined
+    if (!window.initGoogleMapsCallback) {
+      window.initGoogleMapsCallback = () => {
+        console.log('✅ Google Maps API loaded successfully');
+        scriptLoadedRef.current = true;
+        setMapState(prev => ({ 
+          ...prev, 
+          isLoaded: true, 
+          error: '',
+          retryCount: 0 
+        }));
+      };
+    }
 
     script.onerror = (error) => {
       console.error('❌ Error loading Google Maps API:', error);
@@ -142,10 +144,6 @@ export function StableGoogleMap({
     return () => {
       if (script.parentNode) {
         script.parentNode.removeChild(script);
-      }
-      // Clean up global callback
-      if (window.initGoogleMapsCallback) {
-        delete window.initGoogleMapsCallback;
       }
     };
   }, [mapState.retryCount]);

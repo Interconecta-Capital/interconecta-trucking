@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 declare global {
   interface Window {
     google: any;
-    initGoogleMapsCallback: () => void;
+    initGoogleMapsCallback?: () => void;
   }
 }
 
