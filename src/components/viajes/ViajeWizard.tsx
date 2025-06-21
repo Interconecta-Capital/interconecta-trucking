@@ -73,7 +73,6 @@ export function ViajeWizard() {
   const navigate = useNavigate();
   const { crearViaje, isCreatingViaje } = useViajes();
   const { 
-    userRole, 
     startWizardTutorial, 
     isWizardTutorialActive,
     wizardStep 
@@ -86,19 +85,20 @@ export function ViajeWizard() {
   });
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
+  const [tutorialStarted, setTutorialStarted] = useState(false);
 
-  // Auto-start tutorial for new users
+  // Iniciar tutorial solo la primera vez que se abre el wizard
   useEffect(() => {
-    const shouldStartTutorial = userRole === 'nuevo' || userRole === 'transportista';
-    const tutorialCompleted = localStorage.getItem(`wizard_tutorial_completed`);
+    const hasStartedTutorial = sessionStorage.getItem('wizard_tutorial_started');
+    const neverShow = localStorage.getItem('never_show_wizard_tutorial');
     
-    if (shouldStartTutorial && !tutorialCompleted && !isWizardTutorialActive) {
-      setTimeout(() => {
-        console.log('🎓 Auto-starting wizard tutorial for new user');
-        startWizardTutorial();
-      }, 1000);
+    if (!hasStartedTutorial && neverShow !== 'true' && !tutorialStarted) {
+      console.log('🎓 Starting wizard tutorial for first-time user in ViajeWizard');
+      startWizardTutorial();
+      setTutorialStarted(true);
+      sessionStorage.setItem('wizard_tutorial_started', 'true');
     }
-  }, [userRole, startWizardTutorial, isWizardTutorialActive]);
+  }, [startWizardTutorial, tutorialStarted]);
 
   const updateData = (updates: Partial<ViajeWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -261,16 +261,18 @@ export function ViajeWizard() {
     <AdaptiveFlowProvider>
       <ValidationProvider>
         <div className="container mx-auto py-6 max-w-4xl">
-          {/* Tutorial Component */}
-          <WizardTutorial 
-            currentWizardStep={data.currentStep}
-            onNext={() => {
-              // Tutorial navigation logic if needed
-            }}
-            onSkip={() => {
-              console.log('Tutorial skipped by user');
-            }}
-          />
+          {/* Tutorial Component - Solo aparece si está activo */}
+          {isWizardTutorialActive && (
+            <WizardTutorial 
+              currentWizardStep={data.currentStep}
+              onNext={() => {
+                // Tutorial navigation logic if needed
+              }}
+              onSkip={() => {
+                console.log('Tutorial skipped by user');
+              }}
+            />
+          )}
 
           {/* Header del Wizard */}
           <div className="mb-6">
