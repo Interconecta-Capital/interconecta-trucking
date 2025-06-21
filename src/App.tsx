@@ -1,189 +1,156 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/hooks/useAuth';
-import Dashboard from '@/pages/Dashboard';
-import Viajes from '@/pages/Viajes';
-import Socios from '@/pages/Socios';
-import Conductores from '@/pages/Conductores';
-import Vehiculos from '@/pages/Vehiculos';
-import Usuarios from '@/pages/Usuarios';
-import Auth from '@/pages/Auth';
-import ResetPassword from '@/pages/ResetPassword';
-import ForgotPassword from '@/pages/ForgotPassword';
-import Facturas from '@/pages/Facturas';
-import Reportes from '@/pages/Reportes';
-import Tracking from '@/pages/Tracking';
-import ViajeDetail from '@/pages/ViajeDetail';
-import Perfil from '@/pages/Perfil';
-import Notificaciones from '@/pages/Notificaciones';
-import Seguridad from '@/pages/Seguridad';
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { AuthProvider } from "./hooks/useAuth"
+import { AuthGuard } from "./components/auth/AuthGuard"
+import { BaseLayout } from "./components/layout/BaseLayout"
 import { OnboardingProvider } from '@/contexts/OnboardingProvider';
-import { SecurityProvider } from '@/components/SecurityProvider';
-import { Toaster } from 'sonner';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
-import { CSRFProvider } from '@/components/security/CSRFProtection';
-import { SecurityHeaders } from '@/components/security/SecurityHeaders';
-import { EnhancedSecurityProvider } from '@/components/auth/EnhancedSecurityProvider';
+import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration';
 
-// Create QueryClient instance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Páginas públicas
+import Index from "./pages/Index"
+import Auth from "./pages/Auth"
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <CSRFProvider>
-        <SecurityHeaders />
-        <BrowserRouter>
-          <AuthProvider>
-            <OnboardingProvider>
-              <SecurityProvider>
-                <EnhancedSecurityProvider>
-                  <div className="min-h-screen bg-background font-sans antialiased">
-                    <Toaster />
-                    <Routes>
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/auth/register" element={<Auth />} />
-                      <Route path="/auth/reset-password" element={<ResetPassword />} />
-                      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/" element={<Auth />} />
+// Páginas protegidas
+import Dashboard from "./pages/Dashboard"
+import CartasPorteUnified from "./pages/CartasPorteUnified"
+import CartaPorteEditor from "./pages/CartaPorteEditor"
+import Vehiculos from "./pages/Vehiculos"
+import Conductores from "./pages/Conductores"
+import Socios from "./pages/Socios"
+import Viajes from "./pages/Viajes"
+import Remolques from "./pages/Remolques"
+import Administracion from "./pages/Administracion"
+import Planes from "./pages/Planes"
 
-                      <Route
-                        path="/dashboard"
-                        element={
-                          <ProtectedRoute>
-                            <Dashboard />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/viajes"
-                        element={
-                          <ProtectedRoute>
-                            <Viajes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/viajes/:id"
-                        element={
-                          <ProtectedRoute>
-                            <ViajeDetail />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/socios"
-                        element={
-                          <ProtectedRoute>
-                            <Socios />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/conductores"
-                        element={
-                          <ProtectedRoute>
-                            <Conductores />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/vehiculos"
-                        element={
-                          <ProtectedRoute>
-                            <Vehiculos />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/usuarios"
-                        element={
-                          <ProtectedRoute>
-                            <Usuarios />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/facturas"
-                        element={
-                          <ProtectedRoute>
-                            <Facturas />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/reportes"
-                        element={
-                          <ProtectedRoute>
-                            <Reportes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/tracking"
-                        element={
-                          <ProtectedRoute>
-                            <Tracking />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/perfil"
-                        element={
-                          <ProtectedRoute>
-                            <Perfil />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/notificaciones"
-                        element={
-                          <ProtectedRoute>
-                            <Notificaciones />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seguridad"
-                        element={
-                          <ProtectedRoute>
-                            <Seguridad />
-                          </ProtectedRoute>
-                        }
-                      />
-                    </Routes>
-                  </div>
-                </EnhancedSecurityProvider>
-              </SecurityProvider>
-            </OnboardingProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </CSRFProvider>
-    </QueryClientProvider>
-  );
-}
+// Nuevos componentes
+import { ViajeWizard } from "./components/viajes/ViajeWizard"
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+const queryClient = new QueryClient()
 
-  if (loading) {
-    return <div>Cargando...</div>;
-  }
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <BrowserRouter>
+        <AuthProvider>
+          <OnboardingProvider>
+            <OnboardingIntegration />
+            <Routes>
+              {/* Página principal - Landing page para usuarios no autenticados */}
+              <Route path="/" element={<Index />} />
+              
+              {/* Página de autenticación */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Rutas protegidas - requieren autenticación */}
+              <Route path="/dashboard" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Dashboard />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/cartas-porte" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <CartasPorteUnified />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/vehiculos" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Vehiculos />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/remolques" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Remolques />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/conductores" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Conductores />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/socios" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Socios />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/viajes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Viajes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              {/* Nueva ruta del Wizard de Viajes */}
+              <Route path="/viajes/programar" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ViajeWizard />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/administracion" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Administracion />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/planes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Planes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              {/* Editor de Carta Porte - PANTALLA COMPLETA protegida */}
+              <Route path="/carta-porte/editor/:id" element={
+                <AuthGuard>
+                  <CartaPorteEditor />
+                </AuthGuard>
+              } />
+              <Route path="/carta-porte/editor" element={
+                <AuthGuard>
+                  <CartaPorteEditor />
+                </AuthGuard>
+              } />
+              
+              {/* Redirección de rutas antiguas */}
+              <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
+              <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor/:id" replace />} />
+              
+              {/* Redirección por defecto - a la landing page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </OnboardingProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+)
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-export default App;
+export default App
