@@ -33,7 +33,7 @@ export function ViajesErrorDisplay({
             <strong>Error:</strong> {error.message}
             <br />
             <small className="text-muted-foreground">
-              Tipo: {error.type} | Contexto: {error.context || 'N/A'}
+              Tipo: {error.type} | Contexto: {error.source || 'N/A'}
             </small>
           </AlertDescription>
         </Alert>
