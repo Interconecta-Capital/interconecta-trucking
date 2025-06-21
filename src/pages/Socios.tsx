@@ -12,7 +12,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { useStableSocios } from '@/hooks/useStableSocios';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActions } from '@/components/ProtectedActions';
+import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 
@@ -27,6 +27,7 @@ export default function Socios() {
   const [selectedSocio, setSelectedSocio] = useState<any>(null);
 
   const handleNewSocio = () => {
+    console.log('[Socios] 🆕 Iniciando creación de nuevo socio');
     setSelectedSocio(null);
     setShowCreateDialog(true);
   };
@@ -97,11 +98,13 @@ export default function Socios() {
           icon={Users}
           className="mb-8"
         >
-          <ProtectedActions
-            action="create"
+          {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
+          <ProtectedActionsV2
             resource="socios"
             onAction={handleNewSocio}
             buttonText="Nuevo Socio"
+            variant="default"
+            showReason={true}
           />
         </SectionHeader>
 

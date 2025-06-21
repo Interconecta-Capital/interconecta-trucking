@@ -14,7 +14,7 @@ interface ProtectedActionsV2Props {
 }
 
 /**
- * Componente de Acciones Protegidas V2 - SOLO PARA TESTING FASE 1
+ * Componente de Acciones Protegidas V2 - SOLO PARA TESTING FASE 2
  * 
  * Este componente utiliza el nuevo hook useUnifiedPermissionsV2
  * y está diseñado para reemplazar gradualmente ProtectedActions
