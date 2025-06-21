@@ -58,17 +58,31 @@ export function DocumentosVista() {
       if (errorCP) throw errorCP;
 
       // Transformar datos para el componente
-      const documentosTransformados = documentosCP?.map(doc => ({
-        id: doc.id,
-        tipo_documento: doc.tipo_documento,
-        fecha_generacion: doc.fecha_generacion,
-        carta_porte_id: doc.carta_porte_id,
-        version_documento: doc.version_documento,
-        metadatos: doc.metadatos || {},
-        carta_porte_folio: doc.cartas_porte?.folio || 'Sin folio',
-        viaje_origen: doc.metadatos?.origen || 'No especificado',
-        viaje_destino: doc.metadatos?.destino || 'No especificado'
-      })) || [];
+      const documentosTransformados = documentosCP?.map(doc => {
+        // Safely access metadatos properties
+        let metadatos = {};
+        if (doc.metadatos && typeof doc.metadatos === 'object') {
+          metadatos = doc.metadatos as Record<string, any>;
+        } else if (doc.metadatos && typeof doc.metadatos === 'string') {
+          try {
+            metadatos = JSON.parse(doc.metadatos);
+          } catch {
+            metadatos = {};
+          }
+        }
+
+        return {
+          id: doc.id,
+          tipo_documento: doc.tipo_documento,
+          fecha_generacion: doc.fecha_generacion,
+          carta_porte_id: doc.carta_porte_id,
+          version_documento: doc.version_documento,
+          metadatos: metadatos,
+          carta_porte_folio: doc.cartas_porte?.folio || 'Sin folio',
+          viaje_origen: (metadatos as any)?.origen || 'No especificado',
+          viaje_destino: (metadatos as any)?.destino || 'No especificado'
+        };
+      }) || [];
 
       setDocumentos(documentosTransformados);
     } catch (error) {
