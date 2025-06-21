@@ -9,9 +9,8 @@ const corsHeaders = {
 
 interface TimbradoRequest {
   xml: string;
-  carta_porte_id: string;
-  rfc_emisor: string;
-  rfc_receptor: string;
+  ambiente: 'sandbox' | 'production';
+  tipo_documento: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,36 +23,31 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const fiscalApiKey = Deno.env.get('FISCAL_API_KEY')!;
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    const { xml, carta_porte_id, rfc_emisor, rfc_receptor }: TimbradoRequest = await req.json();
-
-    console.log('Iniciando timbrado con FISCAL API para carta porte:', carta_porte_id);
-
-    // Preparar datos para FISCAL API
-    const fiscalApiData = {
-      xml: xml,
-      ambiente: 'sandbox', // Cambiar a 'production' cuando sea necesario
-      tipo_documento: 'carta_porte'
-    };
-
-    // Llamar a FISCAL API para timbrado
-    const fiscalResponse = await fetch('https://api.fiscalapi.com/v1/cfdi/stamp', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${fiscalApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(fiscalApiData),
-    });
-
-    if (!fiscalResponse.ok) {
-      const errorData = await fiscalResponse.text();
-      console.error('Error en FISCAL API:', errorData);
+    if (!fiscalApiKey) {
+      console.error('FISCAL_API_KEY no configurado');
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Error de FISCAL API: ${errorData}`
+          error: 'Configuración de PAC incompleta - contacte al administrador'
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { xml, ambiente, tipo_documento }: TimbradoRequest = await req.json();
+
+    console.log(`🔄 Iniciando timbrado ${ambiente} con FISCAL API para tipo: ${tipo_documento}`);
+
+    // Validar XML antes de enviar
+    if (!xml || xml.trim().length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'XML vacío o inválido'
         }),
         {
           status: 400,
@@ -62,65 +56,119 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const fiscalResult = await fiscalResponse.json();
-    console.log('Respuesta de FISCAL API:', fiscalResult);
+    // Preparar datos para FISCAL API
+    const fiscalApiData = {
+      xml_content: xml,
+      environment: ambiente === 'sandbox' ? 'test' : 'production',
+      document_type: tipo_documento
+    };
 
-    // Extraer datos del timbrado
+    const apiUrl = ambiente === 'sandbox' 
+      ? 'https://sandbox.fiscalapi.com/v1/cfdi/stamp'
+      : 'https://api.fiscalapi.com/v1/cfdi/stamp';
+
+    console.log(`📡 Enviando a FISCAL API: ${apiUrl}`);
+
+    // Llamar a FISCAL API para timbrado
+    const fiscalResponse = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${fiscalApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(fiscalApiData),
+    });
+
+    const responseText = await fiscalResponse.text();
+    console.log(`📥 Respuesta FISCAL API (${fiscalResponse.status}):`, responseText);
+
+    if (!fiscalResponse.ok) {
+      let errorMessage = 'Error de comunicación con PAC';
+      
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        errorMessage = `HTTP ${fiscalResponse.status}: ${responseText}`;
+      }
+
+      console.error('❌ Error en FISCAL API:', errorMessage);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Error PAC: ${errorMessage}`
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    let fiscalResult;
+    try {
+      fiscalResult = JSON.parse(responseText);
+    } catch (error) {
+      console.error('❌ Error parseando respuesta PAC:', error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Respuesta inválida del proveedor PAC'
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    // Validar estructura de respuesta
+    if (!fiscalResult.success || !fiscalResult.data) {
+      console.error('❌ Respuesta PAC sin éxito:', fiscalResult);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: fiscalResult.message || 'Error en proceso de timbrado'
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    // Extraer datos del timbrado exitoso
     const {
       uuid,
       xml_timbrado,
       qr_code,
       cadena_original,
       sello_digital,
-      folio_fiscal
+      folio_fiscal,
+      fecha_timbrado,
+      certificado_sat
     } = fiscalResult.data;
 
-    // Actualizar carta porte en base de datos
-    const { error: updateError } = await supabase
-      .from('cartas_porte')
-      .update({
-        status: 'timbrado',
-        uuid_fiscal: uuid,
-        xml_generado: xml_timbrado,
-        fecha_timbrado: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', carta_porte_id);
+    console.log(`✅ Timbrado exitoso - UUID: ${uuid}`);
 
-    if (updateError) {
-      console.error('Error actualizando carta porte:', updateError);
-      throw updateError;
-    }
-
-    // Crear registro de tracking
-    const { error: trackingError } = await supabase
-      .from('tracking_carta_porte')
-      .insert({
-        carta_porte_id,
-        evento: 'timbrado',
-        descripcion: 'Carta Porte timbrada exitosamente',
-        uuid_fiscal: uuid,
-        metadata: {
-          folio_fiscal,
-          cadena_original,
-          sello_digital
-        }
-      });
-
-    if (trackingError) {
-      console.error('Error creando tracking:', trackingError);
-    }
+    // Generar respuesta estandarizada
+    const timbradoResponse = {
+      success: true,
+      uuid,
+      xmlTimbrado: xml_timbrado,
+      qrCode: qr_code,
+      cadenaOriginal: cadena_original,
+      selloDigital: sello_digital,
+      folio: folio_fiscal,
+      fechaTimbrado: fecha_timbrado,
+      certificadoSAT: certificado_sat,
+      ambiente: ambiente,
+      pac: 'FISCAL_API'
+    };
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        uuid,
-        xmlTimbrado: xml_timbrado,
-        qrCode: qr_code,
-        cadenaOriginal: cadena_original,
-        selloDigital: sello_digital,
-        folio: folio_fiscal
-      }),
+      JSON.stringify(timbradoResponse),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -128,11 +176,11 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Error en timbrado:', error);
+    console.error('💥 Error interno en timbrado:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: `Error interno: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        error: `Error interno del servidor: ${error instanceof Error ? error.message : 'Error desconocido'}`
       }),
       {
         status: 500,

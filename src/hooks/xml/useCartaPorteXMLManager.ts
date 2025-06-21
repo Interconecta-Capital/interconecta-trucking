@@ -1,88 +1,189 @@
 
 import { useState } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
-import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
+import { XMLGeneratorEnhanced } from '@/services/xml/xmlGeneratorEnhanced';
+import { PACServiceReal } from '@/services/xml/pacServiceReal';
 import { toast } from 'sonner';
+
+export interface TimbradoResult {
+  success: boolean;
+  uuid?: string;
+  xmlTimbrado?: string;
+  qrCode?: string;
+  cadenaOriginal?: string;
+  selloDigital?: string;
+  folio?: string;
+  fechaTimbrado?: string;
+  pac?: string;
+  error?: string;
+}
 
 export function useCartaPorteXMLManager() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTimbring, setIsTimbring] = useState(false);
-  const [xmlGenerado, setXmlGenerado] = useState<string | null>(null);
-  const [xmlTimbrado, setXmlTimbrado] = useState<string | null>(null);
+  const [xmlGenerado, setXMLGenerado] = useState<string | null>(null);
+  const [xmlTimbrado, setXMLTimbrado] = useState<string | null>(null);
   const [datosTimbre, setDatosTimbre] = useState<any>(null);
 
   const generarXML = async (cartaPorteData: CartaPorteData) => {
     setIsGenerating(true);
     try {
-      const result = await XMLCartaPorteGenerator.generarXML(cartaPorteData);
+      console.log('🚀 Generando XML con validaciones SAT 3.1...');
+      
+      const result = await XMLGeneratorEnhanced.generarXMLCompleto(cartaPorteData);
+      
       if (result.success && result.xml) {
-        setXmlGenerado(result.xml);
-        toast.success('XML generado correctamente');
-        return { success: true, xml: result.xml };
+        setXMLGenerado(result.xml);
+        
+        const score = result.validationDetails?.score || 0;
+        toast.success(
+          `XML generado exitosamente (Score: ${score}%)`,
+          {
+            description: result.warnings?.length ? 
+              `${result.warnings.length} advertencias encontradas` : 
+              'Todas las validaciones pasaron'
+          }
+        );
+
+        // Mostrar advertencias si las hay
+        if (result.warnings && result.warnings.length > 0) {
+          result.warnings.slice(0, 3).forEach(warning => {
+            toast.warning('Advertencia SAT', { description: warning });
+          });
+        }
+
+        return result;
       } else {
-        toast.error('Error al generar XML');
-        return { success: false, errors: result.errors };
+        const errorMsg = result.errors?.join(', ') || 'Error desconocido';
+        toast.error('Error al generar XML', { description: errorMsg });
+        console.error('Errores de validación:', result.errors);
+        return result;
       }
     } catch (error) {
-      console.error('Error generando XML:', error);
+      console.error('💥 Error generando XML:', error);
+      const errorResult = {
+        success: false,
+        errors: [`Error interno: ${error instanceof Error ? error.message : 'Error desconocido'}`]
+      };
       toast.error('Error al generar XML');
-      return { success: false, errors: ['Error interno'] };
+      return errorResult;
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const timbrarCartaPorte = async (cartaPorteData: CartaPorteData) => {
+  const timbrarCartaPorte = async (cartaPorteData: CartaPorteData): Promise<TimbradoResult> => {
+    const xmlParaTimbrar = xmlGenerado;
+    
+    if (!xmlParaTimbrar) {
+      const errorResult = {
+        success: false,
+        error: 'No hay XML generado para timbrar'
+      };
+      toast.error('Error', { description: errorResult.error });
+      return errorResult;
+    }
+
     setIsTimbring(true);
     try {
-      // Simulated timbrado process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🔄 Iniciando proceso de timbrado PAC...');
       
-      const mockTimbre = {
-        uuid: 'ABC123-DEF456-GHI789',
-        fecha_timbrado: new Date().toISOString(),
-        ambiente: 'test'
-      };
+      const resultado = await PACServiceReal.timbrarCartaPorte(xmlParaTimbrar, 'sandbox');
       
-      setDatosTimbre(mockTimbre);
-      setXmlTimbrado('<?xml version="1.0"?><!-- Timbrado XML --><root></root>');
-      toast.success('Carta Porte timbrada correctamente');
-      
-      return { success: true, ...mockTimbre };
+      if (resultado.success) {
+        setXMLTimbrado(resultado.xmlTimbrado || null);
+        setDatosTimbre({
+          uuid: resultado.uuid,
+          folio: resultado.folio,
+          qrCode: resultado.qrCode,
+          cadenaOriginal: resultado.cadenaOriginal,
+          selloDigital: resultado.selloDigital,
+          fechaTimbrado: resultado.fechaTimbrado,
+          pac: resultado.pac
+        });
+
+        toast.success('Timbrado exitoso', {
+          description: `UUID: ${resultado.uuid}`,
+          duration: 5000
+        });
+
+        return resultado;
+      } else {
+        const errorMsg = resultado.error || 'Error en timbrado';
+        toast.error('Error en timbrado PAC', { description: errorMsg });
+        return resultado;
+      }
     } catch (error) {
-      console.error('Error timbrando:', error);
-      toast.error('Error al timbrar la Carta Porte');
-      return { success: false };
+      console.error('💥 Error al timbrar:', error);
+      const errorResult = {
+        success: false,
+        error: `Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      };
+      toast.error('Error al timbrar');
+      return errorResult;
     } finally {
       setIsTimbring(false);
     }
   };
 
-  const descargarXML = (tipo: 'generado' | 'timbrado') => {
-    const xml = tipo === 'generado' ? xmlGenerado : xmlTimbrado;
-    if (!xml) return;
-    
-    const blob = new Blob([xml], { type: 'application/xml' });
+  const validarConexionPAC = async () => {
+    try {
+      console.log('🔍 Validando conexión con PAC...');
+      const resultado = await PACServiceReal.validarConexion('sandbox');
+      
+      if (resultado.success) {
+        toast.success('Conexión PAC válida', {
+          description: resultado.message
+        });
+      } else {
+        toast.error('Error de conexión PAC', {
+          description: resultado.message
+        });
+      }
+      
+      return resultado;
+    } catch (error) {
+      console.error('💥 Error validando PAC:', error);
+      toast.error('Error validando conexión PAC');
+      return {
+        success: false,
+        message: 'Error de conexión'
+      };
+    }
+  };
+
+  const descargarXML = (tipo: 'generado' | 'firmado' | 'timbrado' = 'generado') => {
+    let xmlContent = '';
+    let fileName = '';
+
+    switch (tipo) {
+      case 'timbrado':
+        xmlContent = xmlTimbrado || '';
+        fileName = `carta-porte-timbrada-${Date.now()}.xml`;
+        break;
+      case 'generado':
+      default:
+        xmlContent = xmlGenerado || '';
+        fileName = `carta-porte-generada-${Date.now()}.xml`;
+        break;
+    }
+
+    if (!xmlContent) {
+      toast.error(`No hay XML ${tipo} disponible para descargar`);
+      return;
+    }
+
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `carta-porte-${tipo}-${Date.now()}.xml`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
 
-  const validarConexionPAC = async () => {
-    try {
-      // Simulated PAC validation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Conexión con PAC validada correctamente');
-      return { success: true };
-    } catch (error) {
-      toast.error('Error al validar conexión con PAC');
-      return { success: false };
-    }
+    toast.success(`XML ${tipo} descargado correctamente`);
   };
 
   return {
@@ -93,7 +194,7 @@ export function useCartaPorteXMLManager() {
     datosTimbre,
     generarXML,
     timbrarCartaPorte,
-    descargarXML,
-    validarConexionPAC
+    validarConexionPAC,
+    descargarXML
   };
 }

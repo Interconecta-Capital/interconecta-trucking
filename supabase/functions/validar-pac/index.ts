@@ -6,6 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface ValidacionRequest {
+  ambiente: 'sandbox' | 'production';
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -14,20 +18,55 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const fiscalApiKey = Deno.env.get('FISCAL_API_KEY')!;
 
+    if (!fiscalApiKey) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'FISCAL_API_KEY no configurado - contacte al administrador'
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
+    const { ambiente }: ValidacionRequest = await req.json();
+
+    // Determinar URL según ambiente
+    const statusUrl = ambiente === 'sandbox' 
+      ? 'https://sandbox.fiscalapi.com/v1/status'
+      : 'https://api.fiscalapi.com/v1/status';
+
+    console.log(`🔍 Validando conexión PAC en ambiente: ${ambiente}`);
+
     // Validar conexión con FISCAL API
-    const response = await fetch('https://api.fiscalapi.com/v1/status', {
+    const response = await fetch(statusUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${fiscalApiKey}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
     });
 
+    const responseData = await response.text();
+    console.log(`📡 Respuesta validación PAC (${response.status}):`, responseData);
+
     if (!response.ok) {
+      let errorMessage = 'Error de conexión con PAC';
+      
+      try {
+        const errorData = JSON.parse(responseData);
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = `HTTP ${response.status}: ${responseData}`;
+      }
+
       return new Response(
         JSON.stringify({
           success: false,
-          message: 'Error de conexión con FISCAL API'
+          message: `Error de conexión PAC: ${errorMessage}`
         }),
         {
           status: 200,
@@ -36,13 +75,38 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const statusData = await response.json();
+    let statusData;
+    try {
+      statusData = JSON.parse(responseData);
+    } catch {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Respuesta inválida del proveedor PAC'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
 
+    // Validar estructura de respuesta
+    const isHealthy = statusData.status === 'ok' || statusData.status === 'active';
+    
     return new Response(
       JSON.stringify({
-        success: true,
-        message: `Conexión exitosa con FISCAL API. Estado: ${statusData.status}`,
-        data: statusData
+        success: isHealthy,
+        message: isHealthy 
+          ? `Conexión PAC exitosa en ambiente ${ambiente}. Estado: ${statusData.status}`
+          : `PAC no disponible. Estado: ${statusData.status}`,
+        data: {
+          ambiente,
+          estado: statusData.status,
+          proveedor: 'FISCAL_API',
+          timestamp: new Date().toISOString(),
+          detalles: statusData
+        }
       }),
       {
         status: 200,
@@ -51,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Error validando PAC:', error);
+    console.error('💥 Error validando PAC:', error);
     return new Response(
       JSON.stringify({
         success: false,
