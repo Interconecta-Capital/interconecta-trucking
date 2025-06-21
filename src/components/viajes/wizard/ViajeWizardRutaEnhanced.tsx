@@ -51,8 +51,10 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
 
     setCalculandoRuta(true);
     try {
-      // Simular geocodificación y cálculo de ruta
+      // Crear objetos Ubicacion completos con id e idUbicacion
       const origenGeo = await geocodificarUbicacion({
+        id: `origen-${Date.now()}`,
+        idUbicacion: 'OR000001',
         tipoUbicacion: 'Origen',
         nombreRemitenteDestinatario: 'Origen',
         rfcRemitenteDestinatario: '',
@@ -63,12 +65,14 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           estado: 'Ciudad de México',
           pais: 'MEX',
           codigoPostal: '06600',
-          colonia: 'Centro' // Agregada propiedad faltante
+          colonia: 'Centro'
         },
         fechaHoraSalidaLlegada: fechaSalida
       });
 
       const destinoGeo = await geocodificarUbicacion({
+        id: `destino-${Date.now()}`,
+        idUbicacion: 'DE000001',
         tipoUbicacion: 'Destino',
         nombreRemitenteDestinatario: 'Destino',
         rfcRemitenteDestinatario: '',
@@ -79,7 +83,7 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           estado: 'Jalisco',
           pais: 'MEX',
           codigoPostal: '44100',
-          colonia: 'Centro Histórico' // Agregada propiedad faltante
+          colonia: 'Centro Histórico'
         },
         fechaHoraSalidaLlegada: fechaLlegada
       });
