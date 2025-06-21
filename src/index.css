@@ -44,66 +44,68 @@
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 208 100% 55%;
 
-    /* Sistema de Diseño Híbrido Interconecta */
+    /* Sistema de Diseño Apple-inspired para App */
     
-    /* Colores Base Híbridos */
+    /* Colores Sistema Base */
     --pure-white: #FFFFFF;
     --pure-black: #000000;
-    --hybrid-background: #FAFAFA;      /* Fondo principal suave */
-    --hybrid-surface: #FFFFFF;        /* Superficie de cards */
-    --hybrid-overlay: rgba(255, 255, 255, 0.95);
     
-    /* Sistema de Grises Refinado */
-    --gray-05: #FAFAFA;
-    --gray-10: #F8F9FA;
-    --gray-15: #F1F3F4;
-    --gray-20: #E8E8E8;
-    --gray-30: #D6D6D6;
-    --gray-40: #A3A3A3;
-    --gray-50: #737373;
-    --gray-60: #525252;
-    --gray-70: #404040;
-    --gray-80: #262626;
-    --gray-90: #171717;
+    /* Sistema de Grises Refinado tipo Apple */
+    --system-gray-1: #F8F9FA;     /* Casi blanco, para backgrounds suaves */
+    --system-gray-2: #F1F3F4;     /* Muy claro, para separaciones */
+    --system-gray-3: #E1E5E9;     /* Claro, para bordes */
+    --system-gray-4: #C7CDD3;     /* Medio-claro, para elementos deshabilitados */
+    --system-gray-5: #8E9BA8;     /* Medio, para texto secundario */
+    --system-gray-6: #6B7684;     /* Medio-oscuro, para iconos */
+    --system-gray-7: #384047;     /* Oscuro, para texto principal */
+    --system-gray-8: #1F2937;     /* Muy oscuro, para títulos */
     
-    /* Sistema Azul Interconecta */
-    --blue-interconecta: #1A69FA;
-    --blue-hover: #0F47B3;
-    --blue-light: #F0F8FF;
-    --blue-gradient-start: #1e3a8a;
-    --blue-gradient-end: #1e40af;
+    /* Azul Sistema Principal */
+    --system-blue: #007AFF;       /* Azul Apple característico */
+    --system-blue-light: #4DA2FF; /* Versión más clara para hover */
+    --system-blue-dark: #0056CC;  /* Versión más oscura para pressed */
+    --system-blue-bg: #F0F8FF;    /* Fondo azul muy suave */
     
-    /* Fondos Híbridos */
-    --background-main: var(--hybrid-background);
-    --background-card: var(--hybrid-surface);
-    --background-sidebar: linear-gradient(180deg, var(--blue-gradient-start) 0%, var(--blue-gradient-end) 100%);
-    --background-input: var(--pure-white);
-    --background-input-focus: var(--blue-light);
+    /* Variables del Sistema Unificado */
+    --system-background: var(--system-gray-1);          /* Fondo principal app */
+    --system-surface: var(--pure-white);                /* Superficie de cards/modals */
+    --system-border: var(--system-gray-3);              /* Bordes generales */
+    --system-border-focus: var(--system-blue);          /* Bordes en focus */
     
-    /* Bordes Híbridos */
-    --border-light: #E8E8E8;
-    --border-medium: #D6D6D6;
-    --border-focus: var(--blue-interconecta);
+    /* Texto Sistema */
+    --system-text-primary: var(--system-gray-8);        /* Texto principal */
+    --system-text-secondary: var(--system-gray-6);      /* Texto secundario */
+    --system-text-tertiary: var(--system-gray-5);       /* Texto terciario */
+    --system-text-disabled: var(--system-gray-4);       /* Texto deshabilitado */
     
-    /* Sombras Híbridas */
-    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-    --shadow-strong: 0 8px 25px rgba(26, 105, 250, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
-    --shadow-card-hover: 0 12px 32px rgba(26, 105, 250, 0.15), 0 6px 12px rgba(0, 0, 0, 0.08);
+    /* Colores de Acción */
+    --system-primary: var(--system-blue);
+    --system-primary-hover: var(--system-blue-light);
+    --system-primary-pressed: var(--system-blue-dark);
+    --system-accent: var(--system-blue);
+    --system-accent-bg: var(--system-blue-bg);
     
-    /* Efectos Glass Híbridos */
-    --glass-light: rgba(255, 255, 255, 0.8);
-    --glass-medium: rgba(255, 255, 255, 0.9);
-    --glass-strong: rgba(255, 255, 255, 0.95);
+    /* Sidebar Específico */
+    --system-sidebar-bg: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+    --system-sidebar-text: var(--pure-white);
+    --system-sidebar-text-secondary: rgba(255, 255, 255, 0.7);
+    --system-sidebar-border: rgba(255, 255, 255, 0.1);
     
-    /* Tipografía */
-    --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Sombras Sistema */
+    --system-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --system-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+    --system-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+    --system-shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.16);
     
-    /* Transiciones Híbridas */
-    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-smooth: all 0.3s cubic-bezier(0.33, 1, 0.68, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Estados de Interacción */
+    --system-hover-bg: rgba(0, 122, 255, 0.04);
+    --system-pressed-bg: rgba(0, 122, 255, 0.08);
+    --system-selected-bg: var(--system-blue-bg);
+    
+    /* Transiciones Sistema */
+    --system-transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --system-transition-normal: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --system-transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -139,277 +141,156 @@
 
   body {
     @apply text-foreground;
-    font-family: var(--font-sans);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-weight: 400;
     line-height: 1.47;
-    color: var(--gray-90);
-    background: var(--background-main);
+    color: var(--system-text-primary);
+    background: var(--system-background);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1;
   }
-
-  /* Tipografía Híbrida */
-  .text-hero {
-    font-size: clamp(48px, 8vw, 96px);
-    font-weight: 700;
-    line-height: 0.9;
-    letter-spacing: -0.04em;
-    font-feature-settings: 'kern' 1, 'liga' 1;
-  }
-
-  .text-display {
-    font-size: clamp(36px, 6vw, 72px);
-    font-weight: 700;
-    line-height: 0.95;
-    letter-spacing: -0.03em;
-  }
-
-  .text-title {
-    font-size: clamp(24px, 4vw, 48px);
-    font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-  }
-
-  .text-subtitle {
-    font-size: clamp(18px, 3vw, 32px);
-    font-weight: 500;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-  }
-
-  .text-body-xl {
-    font-size: 20px;
-    font-weight: 400;
-    line-height: 1.47;
-    letter-spacing: -0.008em;
-  }
-
-  .text-body-lg {
-    font-size: 17px;
-    font-weight: 400;
-    line-height: 1.47;
-    letter-spacing: -0.006em;
-  }
-
-  .text-body {
-    font-size: 15px;
-    font-weight: 400;
-    line-height: 1.47;
-    letter-spacing: -0.004em;
-  }
-
-  .text-caption {
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1.364;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .text-mono {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Scrollbar Híbrido */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--gray-05);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--gray-30);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--blue-interconecta);
-  }
-
-  /* Animaciones Híbridas */
-  @keyframes hybrid-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes hybrid-scale-in {
-    from {
-      opacity: 0;
-      transform: scale(0.96);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes hybrid-slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-hybrid-fade-in {
-    animation: hybrid-fade-in 0.3s var(--transition-smooth);
-  }
-
-  .animate-hybrid-scale-in {
-    animation: hybrid-scale-in 0.2s var(--transition-smooth);
-  }
-
-  .animate-hybrid-slide-up {
-    animation: hybrid-slide-up 0.4s var(--transition-smooth);
-  }
 }
 
 @layer components {
-  /* Componentes Híbridos Base */
-  .hybrid-card {
-    background: var(--background-card);
-    border: 1px solid var(--border-light);
+  /* Componentes Sistema Apple-inspired */
+  .system-card {
+    background: var(--system-surface);
+    border: 1px solid var(--system-border);
     border-radius: 16px;
-    box-shadow: var(--shadow-soft);
-    transition: var(--transition-base);
+    box-shadow: var(--system-shadow-sm);
+    transition: var(--system-transition-normal);
   }
 
-  .hybrid-card:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-2px);
-    border-color: var(--border-medium);
+  .system-card:hover {
+    box-shadow: var(--system-shadow-md);
+    border-color: var(--system-border-focus);
+    transform: translateY(-1px);
   }
 
-  .hybrid-button-primary {
-    background: var(--blue-interconecta);
+  .system-button-primary {
+    background: var(--system-primary);
     color: var(--pure-white);
     border: none;
     border-radius: 12px;
-    font-weight: 500;
-    transition: var(--transition-base);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 24px;
+    transition: var(--system-transition-fast);
+    box-shadow: var(--system-shadow-sm);
   }
 
-  .hybrid-button-primary:hover {
-    background: var(--blue-hover);
+  .system-button-primary:hover {
+    background: var(--system-primary-hover);
+    box-shadow: var(--system-shadow-md);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-strong);
   }
 
-  .hybrid-button-secondary {
-    background: var(--pure-white);
-    color: var(--gray-70);
-    border: 1px solid var(--border-light);
+  .system-button-primary:active {
+    background: var(--system-primary-pressed);
+    transform: translateY(0);
+    box-shadow: var(--system-shadow-sm);
+  }
+
+  .system-button-secondary {
+    background: var(--system-surface);
+    color: var(--system-text-primary);
+    border: 1px solid var(--system-border);
     border-radius: 12px;
     font-weight: 500;
-    transition: var(--transition-base);
+    font-size: 15px;
+    padding: 12px 24px;
+    transition: var(--system-transition-fast);
+    box-shadow: var(--system-shadow-sm);
   }
 
-  .hybrid-button-secondary:hover {
-    background: var(--gray-05);
-    border-color: var(--border-medium);
+  .system-button-secondary:hover {
+    background: var(--system-hover-bg);
+    border-color: var(--system-border-focus);
+    box-shadow: var(--system-shadow-md);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-medium);
   }
 
-  .hybrid-input {
-    background: var(--background-input) !important;
-    border: 1px solid var(--border-light);
+  .system-input {
+    background: var(--system-surface) !important;
+    border: 1.5px solid var(--system-border);
     border-radius: 12px;
-    color: var(--gray-90);
-    transition: var(--transition-base);
+    color: var(--system-text-primary);
+    font-size: 15px;
+    padding: 12px 16px;
+    transition: var(--system-transition-fast);
+    box-shadow: var(--system-shadow-sm);
   }
 
-  .hybrid-input:focus {
-    background: var(--background-input-focus) !important;
-    border-color: var(--border-focus);
+  .system-input:focus {
+    background: var(--system-surface) !important;
+    border-color: var(--system-border-focus);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(26, 105, 250, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1), var(--system-shadow-sm);
   }
 
-  .hybrid-input::placeholder {
-    color: var(--gray-50);
+  .system-input::placeholder {
+    color: var(--system-text-tertiary);
   }
 
-  /* Glass Effects Híbridos */
-  .hybrid-glass-light {
-    background: var(--glass-light);
+  .system-navbar {
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid var(--system-border);
+    box-shadow: var(--system-shadow-sm);
   }
 
-  .hybrid-glass-medium {
-    background: var(--glass-medium);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+  .system-sidebar {
+    background: var(--system-sidebar-bg);
+    border-right: 1px solid var(--system-sidebar-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
-  /* Sidebar Híbrido */
-  .hybrid-sidebar {
-    background: var(--background-sidebar);
-    border-right: 1px solid var(--border-light);
+  .system-sidebar-item {
+    color: var(--system-sidebar-text-secondary);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 4px 8px;
+    transition: var(--system-transition-fast);
+    font-weight: 500;
+  }
+
+  .system-sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--system-sidebar-text);
+    transform: translateX(2px);
+  }
+
+  .system-sidebar-item.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--system-sidebar-text);
+    box-shadow: var(--system-shadow-sm);
   }
 }
 
 @layer utilities {
-  /* Utilidades Híbridas */
-  .bg-hybrid-main { background-color: var(--background-main); }
-  .bg-hybrid-card { background-color: var(--background-card); }
-  .bg-hybrid-input { background-color: var(--background-input) !important; }
+  /* Utilidades del Sistema */
+  .bg-system-background { background-color: var(--system-background); }
+  .bg-system-surface { background-color: var(--system-surface); }
+  .bg-system-accent-bg { background-color: var(--system-accent-bg); }
   
-  .text-hybrid-primary { color: var(--gray-90); }
-  .text-hybrid-secondary { color: var(--gray-60); }
-  .text-hybrid-accent { color: var(--blue-interconecta); }
+  .text-system-text-primary { color: var(--system-text-primary); }
+  .text-system-text-secondary { color: var(--system-text-secondary); }
+  .text-system-text-tertiary { color: var(--system-text-tertiary); }
+  .text-system-primary { color: var(--system-primary); }
+  .text-system-accent { color: var(--system-accent); }
   
-  .border-hybrid-light { border-color: var(--border-light); }
-  .border-hybrid-medium { border-color: var(--border-medium); }
-  .border-hybrid-focus { border-color: var(--border-focus); }
+  .border-system-border { border-color: var(--system-border); }
+  .border-system-focus { border-color: var(--system-border-focus); }
   
-  .shadow-hybrid-soft { box-shadow: var(--shadow-soft); }
-  .shadow-hybrid-medium { box-shadow: var(--shadow-medium); }
-  .shadow-hybrid-strong { box-shadow: var(--shadow-strong); }
-  .shadow-hybrid-card-hover { box-shadow: var(--shadow-card-hover); }
-
-  /* Forzar fondos específicos */
+  .shadow-system-sm { box-shadow: var(--system-shadow-sm); }
+  .shadow-system-md { box-shadow: var(--system-shadow-md); }
+  .shadow-system-lg { box-shadow: var(--system-shadow-lg); }
+  
+  /* Forzar backgrounds específicos */
   .force-white-bg { background-color: var(--pure-white) !important; }
-  .force-hybrid-input-bg { background-color: var(--background-input) !important; }
-
-  /* Responsive Touch */
-  @media (hover: none) and (pointer: coarse) {
-    .hybrid-button-primary,
-    .hybrid-button-secondary {
-      min-height: 44px;
-      min-width: 44px;
-    }
-  }
-
-  /* Reduced Motion */
-  @media (prefers-reduced-motion: reduce) {
-    .hybrid-card,
-    .hybrid-button-primary,
-    .hybrid-button-secondary,
-    .animate-hybrid-fade-in,
-    .animate-hybrid-scale-in,
-    .animate-hybrid-slide-up {
-      transition: none;
-      animation: none;
-    }
-  }
+  .force-system-surface-bg { background-color: var(--system-surface) !important; }
 }

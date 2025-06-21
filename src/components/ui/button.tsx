@@ -6,19 +6,19 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-interconecta focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-system-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "hybrid-button-primary",
+        default: "system-button-primary",
         destructive:
-          "bg-red-500 text-white hover:bg-red-600 shadow-hybrid-soft hover:shadow-hybrid-medium hover:-translate-y-0.5 active:translate-y-0",
+          "bg-red-500 text-white hover:bg-red-600 shadow-system-sm hover:shadow-system-md hover:-translate-y-0.5 active:translate-y-0",
         outline:
-          "hybrid-button-secondary",
+          "system-button-secondary",
         secondary:
-          "bg-hybrid-card text-hybrid-primary hover:bg-gray-05 shadow-hybrid-soft hover:shadow-hybrid-medium hover:-translate-y-0.5 active:translate-y-0 border border-hybrid-light",
-        ghost: "text-hybrid-secondary hover:bg-gray-05 hover:text-hybrid-primary rounded-xl",
-        link: "text-blue-interconecta underline-offset-4 hover:underline",
+          "bg-system-surface text-system-text-primary hover:bg-system-gray-1 shadow-system-sm hover:shadow-system-md hover:-translate-y-0.5 active:translate-y-0 border border-system-border",
+        ghost: "text-system-text-secondary hover:bg-system-gray-1 hover:text-system-text-primary rounded-xl",
+        link: "text-system-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",

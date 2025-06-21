@@ -20,8 +20,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-				'mono': ['SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', 'monospace'],
+				'sans': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -67,52 +66,44 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Sistema Híbrido Interconecta
-				'hybrid': {
-					'main': 'var(--background-main)',
-					'card': 'var(--background-card)',
-					'input': 'var(--background-input)',
-					'primary': 'var(--gray-90)',
-					'secondary': 'var(--gray-60)',
-					'accent': 'var(--blue-interconecta)'
-				},
-				'blue-interconecta': 'var(--blue-interconecta)',
-				'blue-hover': 'var(--blue-hover)',
-				'blue-light': 'var(--blue-light)',
-			},
-			spacing: {
-				'1': '4px',
-				'2': '8px',
-				'3': '12px',
-				'4': '16px',
-				'5': '20px',
-				'6': '24px',
-				'8': '32px',
-				'10': '40px',
-				'12': '48px',
-				'16': '64px',
-				'20': '80px',
-				'24': '96px',
-				'32': '128px',
+				// Sistema Apple-inspired
+				'system': {
+					'background': 'var(--system-background)',
+					'surface': 'var(--system-surface)',
+					'border': 'var(--system-border)',
+					'border-focus': 'var(--system-border-focus)',
+					'primary': 'var(--system-primary)',
+					'primary-hover': 'var(--system-primary-hover)',
+					'accent': 'var(--system-accent)',
+					'accent-bg': 'var(--system-accent-bg)',
+					'text': {
+						'primary': 'var(--system-text-primary)',
+						'secondary': 'var(--system-text-secondary)',
+						'tertiary': 'var(--system-text-tertiary)',
+						'disabled': 'var(--system-text-disabled)'
+					},
+					'gray': {
+						'1': 'var(--system-gray-1)',
+						'2': 'var(--system-gray-2)',
+						'3': 'var(--system-gray-3)',
+						'4': 'var(--system-gray-4)',
+						'5': 'var(--system-gray-5)',
+						'6': 'var(--system-gray-6)',
+						'7': 'var(--system-gray-7)',
+						'8': 'var(--system-gray-8)'
+					}
+				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)',
-				'2': '2px',
-				'4': '4px',
-				'6': '6px',
-				'8': '8px',
-				'12': '12px',
-				'16': '16px',
-				'24': '24px',
-				'full': '9999px',
 			},
 			boxShadow: {
-				'hybrid-soft': 'var(--shadow-soft)',
-				'hybrid-medium': 'var(--shadow-medium)',
-				'hybrid-strong': 'var(--shadow-strong)',
-				'hybrid-card-hover': 'var(--shadow-card-hover)',
+				'system-sm': 'var(--system-shadow-sm)',
+				'system-md': 'var(--system-shadow-md)',
+				'system-lg': 'var(--system-shadow-lg)',
+				'system-xl': 'var(--system-shadow-xl)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -130,30 +121,16 @@ export default {
 					to: {
 						height: '0'
 					}
-				},
-				'hybrid-fade-in': {
-					'0%': { opacity: '0', transform: 'translateY(8px)' },
-					'100%': { opacity: '1', transform: 'translateY(0)' }
-				},
-				'hybrid-scale-in': {
-					'0%': { opacity: '0', transform: 'scale(0.96)' },
-					'100%': { opacity: '1', transform: 'scale(1)' }
-				},
-				'hybrid-slide-up': {
-					'0%': { opacity: '0', transform: 'translateY(16px)' },
-					'100%': { opacity: '1', transform: 'translateY(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'hybrid-fade-in': 'hybrid-fade-in 0.3s cubic-bezier(0.33, 1, 0.68, 1)',
-				'hybrid-scale-in': 'hybrid-scale-in 0.2s cubic-bezier(0.33, 1, 0.68, 1)',
-				'hybrid-slide-up': 'hybrid-slide-up 0.4s cubic-bezier(0.33, 1, 0.68, 1)',
+				'accordion-up': 'accordion-up 0.2s ease-out'
 			},
 			transitionTimingFunction: {
-				'hybrid-smooth': 'cubic-bezier(0.33, 1, 0.68, 1)',
-				'hybrid-bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+				'system-fast': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'system-normal': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'system-slow': 'cubic-bezier(0.4, 0, 0.2, 1)',
 			},
 		}
 	},
