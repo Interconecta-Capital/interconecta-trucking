@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAIValidation } from '@/hooks/ai/useAIValidation';
 import { ViajeWizardData } from '../ViajeWizard';
 import { SmartMercanciaInputMejorado } from '@/components/ai/SmartMercanciaInputMejorado';
+import { RFCValidator } from '@/utils/rfcValidation';
 
 interface ViajeWizardMisionProps {
   data: ViajeWizardData;
@@ -25,6 +26,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   const [alertasMercancia, setAlertasMercancia] = useState<string[]>([]);
   const [sugerenciasIA, setSugerenciasIA] = useState<any>(null);
   const [showComercioExterior, setShowComercioExterior] = useState(false);
+  const [rfcValidation, setRfcValidation] = useState({ esValido: false, errores: [], tipo: null });
 
   const {
     autoValidateField,
@@ -41,6 +43,25 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
     socio.nombre_razon_social.toLowerCase().includes(searchCliente.toLowerCase()) ||
     socio.rfc.toLowerCase().includes(searchCliente.toLowerCase())
   );
+
+  // Validar RFC del cliente cuando cambia
+  useEffect(() => {
+    if (data.cliente?.rfc) {
+      const validation = RFCValidator.validarRFC(data.cliente.rfc);
+      setRfcValidation(validation);
+      
+      // Comunicar el estado de validación al componente padre
+      updateData({ 
+        clienteRfcValido: validation.esValido 
+      });
+
+      // Validación automática adicional con IA
+      autoValidateField('cliente_rfc', { rfc: data.cliente.rfc }, 'direccion');
+    } else {
+      setRfcValidation({ esValido: false, errores: [], tipo: null });
+      updateData({ clienteRfcValido: false });
+    }
+  }, [data.cliente?.rfc, autoValidateField, updateData]);
 
   // Análisis inteligente de mercancía con IA
   useEffect(() => {
@@ -128,10 +149,10 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
             Cliente / Receptor
             {data.cliente?.rfc && (
               <div className="ml-auto">
-                {isClienteRfcValid ? (
+                {rfcValidation.esValido ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
                 )}
               </div>
             )}
@@ -178,32 +199,49 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div>
-                <div className="font-medium">{data.cliente.nombre_razon_social}</div>
-                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                  {data.cliente.rfc}
-                  {isClienteRfcValid && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            <div className="space-y-3">
+              <div className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                rfcValidation.esValido 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div>
+                  <div className="font-medium">{data.cliente.nombre_razon_social}</div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    {data.cliente.rfc}
+                    {rfcValidation.esValido ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                  {rfcValidation.tipo && rfcValidation.esValido && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs mt-1">
+                      Persona {rfcValidation.tipo === 'fisica' ? 'Física' : 'Moral'}
+                    </Badge>
+                  )}
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateData({ cliente: undefined })}
+                >
+                  Cambiar
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => updateData({ cliente: undefined })}
-              >
-                Cambiar
-              </Button>
-            </div>
-          )}
 
-          {/* Validación del RFC */}
-          {clienteValidation && !isClienteRfcValid && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                RFC inválido o no encontrado en el sistema
-              </AlertDescription>
-            </Alert>
+              {/* Mostrar errores de validación del RFC */}
+              {!rfcValidation.esValido && rfcValidation.errores.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>RFC inválido:</strong> {rfcValidation.errores[0]}
+                    <br />
+                    <span className="text-sm">No podrás continuar con un RFC inválido.</span>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -359,25 +397,42 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
 
       {/* Resumen de la sección */}
       {data.cliente && data.tipoServicio && data.descripcionMercancia && (
-        <Card className="bg-green-50 border-green-200">
+        <Card className={`border-2 ${
+          rfcValidation.esValido 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-amber-50 border-amber-200'
+        }`}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="bg-green-100 text-green-800">
-                Misión Definida
-              </Badge>
-              {isClienteRfcValid && (
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                  RFC Validado
-                </Badge>
-              )}
-              {sugerenciasIA?.claveBienesTransp && (
-                <Badge variant="outline" className="bg-purple-100 text-purple-800">
-                  IA Activada
+              {rfcValidation.esValido ? (
+                <>
+                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                    Misión Definida
+                  </Badge>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                    RFC Validado
+                  </Badge>
+                  {sugerenciasIA?.claveBienesTransp && (
+                    <Badge variant="outline" className="bg-purple-100 text-purple-800">
+                      IA Activada
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                  RFC Requerido
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-green-800">
-              Listo para establecer la ruta del viaje
+            <p className={`text-sm ${
+              rfcValidation.esValido 
+                ? 'text-green-800' 
+                : 'text-amber-800'
+            }`}>
+              {rfcValidation.esValido 
+                ? 'Listo para establecer la ruta del viaje'
+                : 'Verifica que el RFC del cliente sea válido para continuar'
+              }
             </p>
           </CardContent>
         </Card>

@@ -31,6 +31,8 @@ export interface ViajeWizardData {
   // Estado general
   currentStep: number;
   isValid: boolean;
+  // Validaciones específicas
+  clienteRfcValido?: boolean;
 }
 
 const STEPS = [
@@ -71,7 +73,8 @@ export function ViajeWizard() {
   const { crearViaje, isCreatingViaje } = useViajes();
   const [data, setData] = useState<ViajeWizardData>({
     currentStep: 1,
-    isValid: false
+    isValid: false,
+    clienteRfcValido: false
   });
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
@@ -83,7 +86,12 @@ export function ViajeWizard() {
   const canAdvance = () => {
     switch (data.currentStep) {
       case 1:
-        return data.cliente && data.tipoServicio && data.descripcionMercancia;
+        // Validación estricta: todos los campos requeridos Y RFC válido
+        const hasBasicData = data.cliente && data.tipoServicio && data.descripcionMercancia;
+        const hasValidRfc = data.clienteRfcValido === true;
+        
+        // Solo permitir avanzar si tiene datos básicos Y RFC válido
+        return hasBasicData && hasValidRfc;
       case 2:
         return data.origen && data.destino;
       case 3:
@@ -192,6 +200,29 @@ export function ViajeWizard() {
   const currentStepInfo = STEPS.find(step => step.id === data.currentStep);
   const progress = (data.currentStep / STEPS.length) * 100;
   const isProcessing = isCreatingViaje || isGeneratingDocuments;
+
+  // Obtener mensaje de validación específico para el paso 1
+  const getStep1ValidationMessage = () => {
+    if (data.currentStep !== 1) return null;
+    
+    if (!data.cliente) {
+      return "Selecciona un cliente para continuar";
+    }
+    
+    if (!data.tipoServicio) {
+      return "Selecciona el tipo de servicio";
+    }
+    
+    if (!data.descripcionMercancia) {
+      return "Describe la mercancía a transportar";
+    }
+    
+    if (data.clienteRfcValido === false) {
+      return "El RFC del cliente debe ser válido para continuar";
+    }
+    
+    return null;
+  };
 
   return (
     <AdaptiveFlowProvider>
@@ -304,14 +335,24 @@ export function ViajeWizard() {
                 Anterior
               </Button>
 
-              <Button
-                onClick={handleNext}
-                disabled={!canAdvance() || isProcessing || viajeConfirmado}
-                data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
-              >
-                Siguiente
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+              <div className="flex flex-col items-end gap-2">
+                {/* Mensaje de validación específico */}
+                {getStep1ValidationMessage() && (
+                  <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md border border-red-200">
+                    {getStep1ValidationMessage()}
+                  </div>
+                )}
+                
+                <Button
+                  onClick={handleNext}
+                  disabled={!canAdvance() || isProcessing || viajeConfirmado}
+                  data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
+                  className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
