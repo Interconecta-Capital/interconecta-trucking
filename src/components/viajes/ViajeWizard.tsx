@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +8,14 @@ import { ViajeWizardMision } from './wizard/ViajeWizardMision';
 import { ViajeWizardRuta } from './wizard/ViajeWizardRuta';
 import { ViajeWizardActivos } from './wizard/ViajeWizardActivos';
 import { ViajeWizardResumen } from './wizard/ViajeWizardResumen';
+import { WizardTutorial } from '@/components/onboarding/WizardTutorial';
 import { toast } from 'sonner';
 import { useViajes } from '@/hooks/useViajes';
 import { ViajeCartaPorteService } from '@/services/viajes/ViajeCartaPorteService';
 import { ViajeWizardValidacionesEnhanced } from './wizard/ViajeWizardValidacionesEnhanced';
 import { AdaptiveFlowProvider, FlowModeSelector } from './wizard/AdaptiveFlowManager';
 import { ValidationProvider } from '@/contexts/ValidationProvider';
+import { useOnboarding } from '@/contexts/OnboardingProvider';
 
 export interface ViajeWizardData {
   // Paso A: Misión
@@ -71,6 +72,13 @@ const STEPS = [
 export function ViajeWizard() {
   const navigate = useNavigate();
   const { crearViaje, isCreatingViaje } = useViajes();
+  const { 
+    userRole, 
+    startWizardTutorial, 
+    isWizardTutorialActive,
+    wizardStep 
+  } = useOnboarding();
+  
   const [data, setData] = useState<ViajeWizardData>({
     currentStep: 1,
     isValid: false,
@@ -78,6 +86,19 @@ export function ViajeWizard() {
   });
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
+
+  // Auto-start tutorial for new users
+  useEffect(() => {
+    const shouldStartTutorial = userRole === 'nuevo' || userRole === 'transportista';
+    const tutorialCompleted = localStorage.getItem(`wizard_tutorial_completed`);
+    
+    if (shouldStartTutorial && !tutorialCompleted && !isWizardTutorialActive) {
+      setTimeout(() => {
+        console.log('🎓 Auto-starting wizard tutorial for new user');
+        startWizardTutorial();
+      }, 1000);
+    }
+  }, [userRole, startWizardTutorial, isWizardTutorialActive]);
 
   const updateData = (updates: Partial<ViajeWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -183,11 +204,23 @@ export function ViajeWizard() {
   const renderStepContent = () => {
     switch (data.currentStep) {
       case 1:
-        return <ViajeWizardMision data={data} updateData={updateData} />;
+        return (
+          <div data-onboarding="cliente-section">
+            <ViajeWizardMision data={data} updateData={updateData} />
+          </div>
+        );
       case 2:
-        return <ViajeWizardRuta data={data} updateData={updateData} />;
+        return (
+          <div data-onboarding="ruta-section">
+            <ViajeWizardRuta data={data} updateData={updateData} />
+          </div>
+        );
       case 3:
-        return <ViajeWizardActivos data={data} updateData={updateData} />;
+        return (
+          <div data-onboarding="activos-section">
+            <ViajeWizardActivos data={data} updateData={updateData} />
+          </div>
+        );
       case 4:
         return <ViajeWizardValidacionesEnhanced data={data} updateData={updateData} onNext={handleNext} onPrev={handlePrevious} />;
       case 5:
@@ -228,12 +261,30 @@ export function ViajeWizard() {
     <AdaptiveFlowProvider>
       <ValidationProvider>
         <div className="container mx-auto py-6 max-w-4xl">
+          {/* Tutorial Component */}
+          <WizardTutorial 
+            currentWizardStep={data.currentStep}
+            onNext={() => {
+              // Tutorial navigation logic if needed
+            }}
+            onSkip={() => {
+              console.log('Tutorial skipped by user');
+            }}
+          />
+
           {/* Header del Wizard */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Route className="h-6 w-6 text-blue-600" />
-                <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
+                <div>
+                  <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
+                  {isWizardTutorialActive && (
+                    <p className="text-sm text-blue-600 mt-1">
+                      🎓 Tutorial activo - Te guiaremos paso a paso
+                    </p>
+                  )}
+                </div>
               </div>
               <Button 
                 variant="outline" 

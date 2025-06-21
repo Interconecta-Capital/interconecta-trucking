@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -12,6 +11,9 @@ interface OnboardingStepData {
   role?: UserRole[];
   prerequisite?: string;
   completed: boolean;
+  detailedExplanation?: string;
+  actionRequired?: string;
+  tips?: string[];
 }
 
 interface OnboardingContextType {
@@ -27,9 +29,127 @@ interface OnboardingContextType {
   hideHint: () => void;
   isStepCompleted: (stepId: string) => boolean;
   shouldShowHint: (hintId: string) => boolean;
+  startWizardTutorial: () => void;
+  isWizardTutorialActive: boolean;
+  wizardStep: string | null;
+  nextWizardStep: () => void;
+  skipWizardTutorial: () => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+
+const WIZARD_TUTORIAL_STEPS = {
+  welcome: {
+    id: 'welcome',
+    title: '¡Bienvenido al Asistente de Viajes!',
+    description: 'Te guiaré paso a paso para crear tu primer viaje con todos los documentos SAT requeridos.',
+    detailedExplanation: 'Este asistente te ayudará a generar automáticamente una Carta Porte CFDI 3.1 completamente válida. No te preocupes por los detalles técnicos, el sistema se encarga de todo.',
+    tips: [
+      'Todos los campos se validan automáticamente',
+      'El sistema detecta errores antes de que sucedan',
+      'Los documentos se generan al finalizar'
+    ],
+    completed: false
+  },
+  cliente: {
+    id: 'cliente',
+    title: 'Seleccionar Cliente',
+    description: 'Primero necesitamos identificar para quién es este viaje.',
+    targetElement: '[data-onboarding="cliente-section"]',
+    detailedExplanation: 'El cliente es la persona o empresa que recibirá la mercancía. Su RFC debe estar registrado en el SAT y será validado automáticamente.',
+    actionRequired: 'Busca y selecciona un cliente de tu base de datos',
+    tips: [
+      'Puedes buscar por nombre o RFC',
+      'El RFC se valida automáticamente',
+      'Solo clientes con RFC válido pueden continuar'
+    ],
+    completed: false
+  },
+  tipoServicio: {
+    id: 'tipoServicio',
+    title: 'Tipo de Servicio',
+    description: 'Define si es un flete pagado o traslado propio.',
+    targetElement: '[data-onboarding="tipo-servicio-section"]',
+    detailedExplanation: 'Esto determina el tipo de CFDI que se generará: Ingreso (si cobras por el transporte) o Traslado (si es mercancía propia).',
+    actionRequired: 'Selecciona el tipo de operación que realizarás',
+    tips: [
+      'Flete Pagado: Generas un CFDI de Ingreso',
+      'Traslado Propio: Generas un CFDI de Traslado',
+      'Esta decisión afecta la documentación fiscal'
+    ],
+    completed: false
+  },
+  mercancia: {
+    id: 'mercancia',
+    title: 'Descripción de Mercancía',
+    description: 'Describe qué vas a transportar con ayuda de IA.',
+    targetElement: '[data-onboarding="mercancia-section"]',
+    detailedExplanation: 'Nuestro sistema de IA analizará tu descripción y sugerirá automáticamente las claves SAT correctas, alertas de cumplimiento y datos técnicos.',
+    actionRequired: 'Describe detalladamente la mercancía a transportar',
+    tips: [
+      'Incluye peso, tipo de producto y cantidad',
+      'El sistema detecta productos peligrosos automáticamente',
+      'Para exportación, menciona "exportación" en la descripción'
+    ],
+    completed: false
+  },
+  ruta: {
+    id: 'ruta',
+    title: 'Establecer Ruta',
+    description: 'Define origen y destino con cálculo automático de distancia.',
+    targetElement: '[data-onboarding="ruta-section"]',
+    detailedExplanation: 'El sistema calculará automáticamente la distancia real usando Google Maps API. Esta información es requerida para la Carta Porte.',
+    actionRequired: 'Ingresa las direcciones de origen y destino',
+    tips: [
+      'Las direcciones se validan automáticamente',
+      'La distancia se calcula con Google Maps',
+      'El tiempo estimado se genera automáticamente'
+    ],
+    completed: false
+  },
+  activos: {
+    id: 'activos',
+    title: 'Asignar Vehículo y Conductor',
+    description: 'Selecciona los activos que realizarán el viaje.',
+    targetElement: '[data-onboarding="activos-section"]',
+    detailedExplanation: 'Tanto el vehículo como el conductor deben estar registrados en tu sistema y tener la documentación vigente.',
+    actionRequired: 'Selecciona vehículo y conductor del viaje',
+    tips: [
+      'Solo aparecen vehículos con documentos vigentes',
+      'Los conductores deben tener licencia actualizada',
+      'La capacidad del vehículo debe ser suficiente'
+    ],
+    completed: false
+  },
+  validaciones: {
+    id: 'validaciones',
+    title: 'Validaciones Avanzadas',
+    description: 'El sistema verifica el cumplimiento normativo automáticamente.',
+    targetElement: '[data-onboarding="validaciones-step"]',
+    detailedExplanation: 'Nuestro motor de IA revisa más de 50 puntos de cumplimiento SAT para asegurar que tu documento será aceptado sin rechazos.',
+    actionRequired: 'Revisa y corrige cualquier alerta mostrada',
+    tips: [
+      'Las validaciones se ejecutan automáticamente',
+      'Los errores críticos bloquean el avance',
+      'Las sugerencias mejoran la calidad del documento'
+    ],
+    completed: false
+  },
+  confirmacion: {
+    id: 'confirmacion',
+    title: 'Confirmar y Generar Documentos',
+    description: 'Revisa todo y genera los documentos fiscales.',
+    targetElement: '[data-onboarding="confirm-viaje-btn"]',
+    detailedExplanation: 'Al confirmar se generarán automáticamente: Carta Porte XML, PDF imprimible, y el registro del viaje en tu sistema.',
+    actionRequired: 'Confirma todos los datos y genera los documentos',
+    tips: [
+      'Los documentos se generan automáticamente',
+      'El XML está firmado digitalmente',
+      'El viaje queda registrado para seguimiento'
+    ],
+    completed: false
+  }
+};
 
 const ONBOARDING_STEPS: Record<string, OnboardingStepData> = {
   welcome: {
@@ -76,6 +196,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const [userRole, setUserRole] = useState<UserRole>('nuevo');
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [activeHint, setActiveHint] = useState<string | null>(null);
+  
+  // Wizard Tutorial State
+  const [isWizardTutorialActive, setIsWizardTutorialActive] = useState(false);
+  const [wizardStep, setWizardStep] = useState<string | null>(null);
 
   // Determinar rol del usuario
   useEffect(() => {
@@ -187,6 +311,53 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     return false;
   }, []);
 
+  const startWizardTutorial = useCallback(() => {
+    console.log('🎓 Starting wizard tutorial for new user');
+    setIsWizardTutorialActive(true);
+    setWizardStep('welcome');
+    
+    // Save that wizard tutorial has started
+    localStorage.setItem(`wizard_tutorial_${user?.id}`, JSON.stringify({
+      active: true,
+      currentStep: 'welcome',
+      startedAt: Date.now()
+    }));
+  }, [user?.id]);
+
+  const nextWizardStep = useCallback(() => {
+    const stepKeys = Object.keys(WIZARD_TUTORIAL_STEPS);
+    const currentIndex = stepKeys.indexOf(wizardStep || '');
+    const nextStep = stepKeys[currentIndex + 1];
+    
+    if (nextStep) {
+      setWizardStep(nextStep);
+      localStorage.setItem(`wizard_tutorial_${user?.id}`, JSON.stringify({
+        active: true,
+        currentStep: nextStep,
+        updatedAt: Date.now()
+      }));
+    } else {
+      // Tutorial completed
+      setIsWizardTutorialActive(false);
+      setWizardStep(null);
+      localStorage.setItem(`wizard_tutorial_${user?.id}`, JSON.stringify({
+        active: false,
+        completed: true,
+        completedAt: Date.now()
+      }));
+    }
+  }, [wizardStep, user?.id]);
+
+  const skipWizardTutorial = useCallback(() => {
+    setIsWizardTutorialActive(false);
+    setWizardStep(null);
+    localStorage.setItem(`wizard_tutorial_${user?.id}`, JSON.stringify({
+      active: false,
+      skipped: true,
+      skippedAt: Date.now()
+    }));
+  }, [user?.id]);
+
   const onboardingProgress = (completedSteps.length / Object.keys(ONBOARDING_STEPS).length) * 100;
 
   const value: OnboardingContextType = {
@@ -201,7 +372,12 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     showHint,
     hideHint,
     isStepCompleted,
-    shouldShowHint
+    shouldShowHint,
+    startWizardTutorial,
+    isWizardTutorialActive,
+    wizardStep,
+    nextWizardStep,
+    skipWizardTutorial
   };
 
   return (
@@ -218,3 +394,6 @@ export function useOnboarding() {
   }
   return context;
 }
+
+// Export wizard steps for use in components
+export { WIZARD_TUTORIAL_STEPS };

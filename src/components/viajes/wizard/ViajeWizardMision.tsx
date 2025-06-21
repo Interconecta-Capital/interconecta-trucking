@@ -150,7 +150,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   return (
     <div className="space-y-6">
       {/* Sección Cliente */}
-      <Card>
+      <Card data-onboarding="cliente-section">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5" />
@@ -178,6 +178,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
                   value={searchCliente}
                   onChange={(e) => setSearchCliente(e.target.value)}
                   className="pl-10"
+                  data-onboarding="cliente-search"
                 />
               </div>
               
@@ -212,7 +213,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
                 rfcValidation.esValido 
                   ? 'bg-green-50 border-green-200' 
                   : 'bg-red-50 border-red-200'
-              }`}>
+              }`} data-onboarding="cliente-selected">
                 <div>
                   <div className="font-medium">{data.cliente.nombre_razon_social}</div>
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -255,7 +256,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
       </Card>
 
       {/* Sección Tipo de Servicio */}
-      <Card>
+      <Card data-onboarding="tipo-servicio-section">
         <CardHeader>
           <CardTitle className="text-lg">Tipo de Servicio</CardTitle>
         </CardHeader>
@@ -267,7 +268,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
               updateData({ tipoServicio: value })
             }
           >
-            <SelectTrigger className="mt-2">
+            <SelectTrigger className="mt-2" data-onboarding="tipo-servicio-select">
               <SelectValue placeholder="Seleccionar tipo de servicio" />
             </SelectTrigger>
             <SelectContent>
@@ -293,7 +294,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
       </Card>
 
       {/* Sección Mercancía con IA */}
-      <Card>
+      <Card data-onboarding="mercancia-section">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
@@ -304,15 +305,17 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
         <CardContent className="space-y-4">
           <Label htmlFor="descripcionMercancia">¿Qué vas a transportar?</Label>
           
-          <SmartMercanciaInputMejorado
-            value={data.descripcionMercancia || ''}
-            onChange={handleMercanciaChange}
-            onMercanciaSelect={handleMercanciaSelect}
-            placeholder="Ej: 'Transporte de 20 toneladas de aguacate hass para exportación'"
-            field="descripcion_mercancia"
-            showValidation={true}
-            showClaveProducto={true}
-          />
+          <div data-onboarding="mercancia-input">
+            <SmartMercanciaInputMejorado
+              value={data.descripcionMercancia || ''}
+              onChange={handleMercanciaChange}
+              onMercanciaSelect={handleMercanciaSelect}
+              placeholder="Ej: 'Transporte de 20 toneladas de aguacate hass para exportación'"
+              field="descripcion_mercancia"
+              showValidation={true}
+              showClaveProducto={true}
+            />
+          </div>
 
           {/* Sugerencias de IA */}
           {sugerenciasIA && (
