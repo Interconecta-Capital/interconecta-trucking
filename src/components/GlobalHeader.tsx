@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useTrialTracking } from '@/hooks/useTrialTracking';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useNavigate } from 'react-router-dom';
+import { useSuperuser } from '@/hooks/useSuperuser';
 
 export function GlobalHeader() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export function GlobalHeader() {
   const isMobile = useIsMobile();
   const { trialInfo } = useTrialTracking();
   const { suscripcion, enPeriodoPrueba } = useSuscripcion();
+  const { isSuperuser } = useSuperuser();
 
   // En móvil, ocultar PlanBadge si está en período de prueba
   const shouldShowPlanBadge = !isMobile || 
@@ -89,11 +91,11 @@ export function GlobalHeader() {
             <span className="hidden sm:inline">Nuevo Viaje</span>
           </Button>
           
-          {/* ScheduleDropdown - Ahora visible en móvil también */}
-          <ScheduleDropdown />
+          {/* ScheduleDropdown - Solo visible para superusuarios */}
+          {isSuperuser && <ScheduleDropdown />}
           
-          {/* Notificaciones */}
-          <NotificationsPopover />
+          {/* Notificaciones - Solo visible para superusuarios */}
+          {isSuperuser && <NotificationsPopover />}
           
           {!isMobile && (
             <Button 

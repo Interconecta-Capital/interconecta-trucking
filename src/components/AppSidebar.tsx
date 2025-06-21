@@ -9,8 +9,9 @@ import {
   Truck,
   Users,
   Route,
+  Plus,
 } from "lucide-react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { UserMenu } from "@/components/UserMenu"
 import {
@@ -26,27 +27,34 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useSuperuser } from '@/hooks/useSuperuser';
 
 export const AppSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { puedeAccederAdministracion } = usePermisosSubscripcion();
+  const { isSuperuser } = useSuperuser();
   const { state } = useSidebar();
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === "collapsed";
 
+  const handleNuevoViaje = () => {
+    navigate('/viajes/programar');
+  };
+
   return (
     <Sidebar 
       variant="inset" 
       collapsible="icon" 
-      className="border-r border-gray-200 bg-white/95 backdrop-blur-sm shadow-sm"
+      className="border-r border-slate-200 bg-white shadow-sm"
     >
-      <SidebarHeader className="border-b border-gray-100 px-4 py-3">
+      <SidebarHeader className="border-b border-slate-100 px-4 py-3 bg-slate-50/50">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton 
               size="lg" 
-              className="font-semibold text-gray-900 hover:bg-gray-50 data-[state=open]:bg-gray-50"
+              className="font-semibold text-slate-900 hover:bg-slate-100 data-[state=open]:bg-slate-100 transition-colors"
               tooltip={isCollapsed ? "InterConecta" : undefined}
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
@@ -54,8 +62,8 @@ export const AppSidebar = () => {
               </div>
               {!isCollapsed && (
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-gray-900">InterConecta</span>
-                  <span className="truncate text-xs text-gray-500">Trucking Platform</span>
+                  <span className="truncate font-semibold text-slate-900">InterConecta</span>
+                  <span className="truncate text-xs text-slate-600">Trucking Platform</span>
                 </div>
               )}
             </SidebarMenuButton>
@@ -63,20 +71,35 @@ export const AppSidebar = () => {
         </SidebarMenu>
       </SidebarHeader>
       
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-2 py-4 bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-500 font-medium text-xs uppercase tracking-wide px-3 py-2">
+          <SidebarGroupLabel className="text-slate-600 font-medium text-xs uppercase tracking-wide px-3 py-2">
             Principal
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                onClick={handleNuevoViaje}
+                className={`rounded-lg transition-all duration-200 bg-blue-600 text-white shadow-sm hover:bg-blue-700 cursor-pointer`}
+                tooltip={isCollapsed ? "Nuevo Viaje" : undefined}
+              >
+                <div className="flex items-center gap-3 px-3 py-2.5 min-w-0 w-full">
+                  <Plus className="h-4 w-4 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <span className="font-medium truncate">Nuevo Viaje</span>
+                  )}
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton 
                 asChild 
                 isActive={isActive('/dashboard')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/dashboard') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Dashboard" : undefined}
               >
@@ -95,8 +118,8 @@ export const AppSidebar = () => {
                 isActive={isActive('/viajes')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/viajes') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Viajes" : undefined}
               >
@@ -115,8 +138,8 @@ export const AppSidebar = () => {
                 isActive={isActive('/cartas-porte')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/cartas-porte') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Cartas Porte" : undefined}
               >
@@ -132,7 +155,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-500 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
+          <SidebarGroupLabel className="text-slate-600 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
             Recursos
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -142,8 +165,8 @@ export const AppSidebar = () => {
                 isActive={isActive('/vehiculos')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/vehiculos') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Vehículos" : undefined}
               >
@@ -162,8 +185,8 @@ export const AppSidebar = () => {
                 isActive={isActive('/conductores')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/conductores') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Conductores" : undefined}
               >
@@ -182,8 +205,8 @@ export const AppSidebar = () => {
                 isActive={isActive('/socios')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/socios') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Socios" : undefined}
               >
@@ -199,7 +222,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-500 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
+          <SidebarGroupLabel className="text-slate-600 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
             Sistema
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -209,8 +232,8 @@ export const AppSidebar = () => {
                 isActive={isActive('/planes')}
                 className={`rounded-lg transition-all duration-200 ${
                   isActive('/planes') 
-                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
                 tooltip={isCollapsed ? "Planes" : undefined}
               >
@@ -223,15 +246,16 @@ export const AppSidebar = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {puedeAccederAdministracion && (
+            {/* Solo mostrar administración para superusuarios */}
+            {isSuperuser && (
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
                   isActive={isActive('/administracion')}
                   className={`rounded-lg transition-all duration-200 ${
                     isActive('/administracion') 
-                      ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                   tooltip={isCollapsed ? "Administración" : undefined}
                 >
@@ -248,7 +272,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-gray-100 p-2">
+      <SidebarFooter className="border-t border-slate-100 p-2 bg-slate-50/30">
         <UserMenu />
       </SidebarFooter>
     </Sidebar>
