@@ -6,8 +6,17 @@ import Viajes from '@/pages/Viajes';
 import Socios from '@/pages/Socios';
 import Conductores from '@/pages/Conductores';
 import Vehiculos from '@/pages/Vehiculos';
+import Usuarios from '@/pages/Usuarios';
 import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
+import ForgotPassword from '@/pages/ForgotPassword';
+import Facturas from '@/pages/Facturas';
+import Reportes from '@/pages/Reportes';
+import Tracking from '@/pages/Tracking';
+import ViajeDetail from '@/pages/ViajeDetail';
+import Perfil from '@/pages/Perfil';
+import Notificaciones from '@/pages/Notificaciones';
+import Seguridad from '@/pages/Seguridad';
 import { OnboardingProvider } from '@/contexts/OnboardingProvider';
 import { SecurityProvider } from '@/components/SecurityProvider';
 import { Toaster } from 'sonner';
@@ -33,17 +42,18 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <CSRFProvider>
         <SecurityHeaders />
-        <AuthProvider>
-          <OnboardingProvider>
-            <SecurityProvider>
-              <EnhancedSecurityProvider>
-                <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
+            <OnboardingProvider>
+              <SecurityProvider>
+                <EnhancedSecurityProvider>
                   <div className="min-h-screen bg-background font-sans antialiased">
                     <Toaster />
                     <Routes>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/auth/register" element={<Auth />} />
                       <Route path="/auth/reset-password" element={<ResetPassword />} />
+                      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                       <Route path="/" element={<Auth />} />
 
                       <Route
@@ -59,6 +69,14 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <Viajes />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/viajes/:id"
+                        element={
+                          <ProtectedRoute>
+                            <ViajeDetail />
                           </ProtectedRoute>
                         }
                       />
@@ -86,13 +104,69 @@ function App() {
                           </ProtectedRoute>
                         }
                       />
+                      <Route
+                        path="/usuarios"
+                        element={
+                          <ProtectedRoute>
+                            <Usuarios />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/facturas"
+                        element={
+                          <ProtectedRoute>
+                            <Facturas />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/reportes"
+                        element={
+                          <ProtectedRoute>
+                            <Reportes />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/tracking"
+                        element={
+                          <ProtectedRoute>
+                            <Tracking />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/perfil"
+                        element={
+                          <ProtectedRoute>
+                            <Perfil />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/notificaciones"
+                        element={
+                          <ProtectedRoute>
+                            <Notificaciones />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seguridad"
+                        element={
+                          <ProtectedRoute>
+                            <Seguridad />
+                          </ProtectedRoute>
+                        }
+                      />
                     </Routes>
                   </div>
-                </BrowserRouter>
-              </EnhancedSecurityProvider>
-            </SecurityProvider>
-          </OnboardingProvider>
-        </AuthProvider>
+                </EnhancedSecurityProvider>
+              </SecurityProvider>
+            </OnboardingProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </CSRFProvider>
     </QueryClientProvider>
   );
