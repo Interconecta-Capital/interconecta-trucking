@@ -7,6 +7,7 @@ import { useConductores } from '@/hooks/useConductores';
 import { ConductorBasicFields } from './ConductorBasicFields';
 import { ConductorLicenciaFields } from './ConductorLicenciaFields';
 import { ConductorSCTFields } from './ConductorSCTFields';
+import { ConductorDireccionFields } from './ConductorDireccionFields';
 import { FormStepper } from './FormStepper';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -40,7 +41,12 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
     {
       id: 'basic',
       title: 'Información Personal',
-      description: 'Datos básicos del conductor'
+      description: 'Datos básicos y foto del conductor'
+    },
+    {
+      id: 'address',
+      title: 'Dirección',
+      description: 'Dirección completa del conductor'
     },
     {
       id: 'license',
@@ -69,10 +75,13 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
           return false;
         }
         break;
-      case 1: // License info
+      case 1: // Address
+        // Optional validation for address
+        break;
+      case 2: // License info
         // Optional validation for license
         break;
-      case 2: // SCT info
+      case 3: // SCT info
         // Optional validation for SCT
         break;
     }
@@ -96,11 +105,16 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
 
     setLoading(true);
     try {
+      // Prepare data for submission (excluding preview fields)
+      const submitData = { ...formData };
+      delete submitData.foto_preview;
+      delete submitData.foto_file;
+
       if (conductorId) {
-        await updateConductor(conductorId, formData);
+        await updateConductor(conductorId, submitData);
         toast.success('Conductor actualizado exitosamente');
       } else {
-        await createConductor(formData);
+        await createConductor(submitData);
         toast.success('Conductor creado exitosamente');
       }
       onSuccess?.();
@@ -137,13 +151,21 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
         );
       case 1:
         return (
-          <ConductorLicenciaFields
+          <ConductorDireccionFields
             formData={formData}
             onFieldChange={handleFieldChange}
             errors={fieldErrors}
           />
         );
       case 2:
+        return (
+          <ConductorLicenciaFields
+            formData={formData}
+            onFieldChange={handleFieldChange}
+            errors={fieldErrors}
+          />
+        );
+      case 3:
         return (
           <ConductorSCTFields
             formData={formData}

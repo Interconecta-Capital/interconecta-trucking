@@ -3,7 +3,8 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User } from 'lucide-react';
+import { User, Upload, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ConductorBasicFieldsProps {
   formData: any;
@@ -12,6 +13,21 @@ interface ConductorBasicFieldsProps {
 }
 
 export function ConductorBasicFields({ formData, onFieldChange, errors }: ConductorBasicFieldsProps) {
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Create a preview URL for the image
+      const previewUrl = URL.createObjectURL(file);
+      onFieldChange('foto_preview', previewUrl);
+      onFieldChange('foto_file', file);
+    }
+  };
+
+  const removePhoto = () => {
+    onFieldChange('foto_preview', null);
+    onFieldChange('foto_file', null);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -21,6 +37,55 @@ export function ConductorBasicFields({ formData, onFieldChange, errors }: Conduc
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Foto del Conductor */}
+        <div className="space-y-2">
+          <Label>Foto del Conductor</Label>
+          <div className="flex items-center gap-4">
+            {formData.foto_preview ? (
+              <div className="relative">
+                <img 
+                  src={formData.foto_preview} 
+                  alt="Foto del conductor" 
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                  onClick={removePhoto}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                <User className="h-8 w-8 text-gray-400" />
+              </div>
+            )}
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                id="foto-upload"
+              />
+              <label htmlFor="foto-upload">
+                <Button type="button" variant="outline" className="cursor-pointer" asChild>
+                  <span className="flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    Subir Foto
+                  </span>
+                </Button>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                JPG, PNG hasta 2MB
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div>
           <Label htmlFor="nombre">Nombre completo *</Label>
           <Input
