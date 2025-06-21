@@ -15,6 +15,7 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { useDebugPermissions } from '@/hooks/useDebugPermissions';
 
 export default function Vehiculos() {
   const { user } = useStableAuth();
@@ -26,7 +27,12 @@ export default function Vehiculos() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
 
+  // Debug permissions
+  const debugInfo = useDebugPermissions();
+  console.log('Vehiculos page debug info:', debugInfo);
+
   const handleNewVehiculo = () => {
+    console.log('Vehiculos: handleNewVehiculo called');
     setSelectedVehiculo(null);
     setShowCreateDialog(true);
   };
@@ -87,6 +93,15 @@ export default function Vehiculos() {
   return (
     <ProtectedContent requiredFeature="vehiculos">
       <div className="container mx-auto py-8 space-y-8 max-w-7xl">
+        {/* Debug info - temporal */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-4 text-xs">
+          <p><strong>Debug:</strong> Plan: {debugInfo.subscription.planActual}</p>
+          <p>Puede crear vehículos: {debugInfo.permissions.puedeCrearVehiculos?.puede ? 'SÍ' : 'NO'}</p>
+          {debugInfo.permissions.puedeCrearVehiculos?.razon && (
+            <p>Razón: {debugInfo.permissions.puedeCrearVehiculos.razon}</p>
+          )}
+        </div>
+
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
@@ -100,7 +115,7 @@ export default function Vehiculos() {
           <ProtectedActions
             action="create"
             resource="vehiculos"
-            onAction={() => setShowCreateDialog(true)}
+            onAction={handleNewVehiculo}
             buttonText="Nuevo Vehículo"
           />
         </SectionHeader>
@@ -162,7 +177,11 @@ export default function Vehiculos() {
               <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-700">{filteredVehiculos.length}</p>
+              <p className="text-3xl font-bold text-green-700">{vehiculos.filter(vehiculo =>
+                vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+              ).length}</p>
             </CardContent>
           </Card>
           
@@ -180,7 +199,11 @@ export default function Vehiculos() {
 
         {/* Tabla */}
         <VehiculosTable 
-          vehiculos={filteredVehiculos}
+          vehiculos={vehiculos.filter(vehiculo =>
+            vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+          )}
           loading={loading}
           onEdit={(vehiculo) => {
             setSelectedVehiculo(vehiculo);
