@@ -2552,6 +2552,30 @@ export type Database = {
           },
         ]
       }
+      unificacion_audit: {
+        Row: {
+          accion: string
+          detalles: Json | null
+          fase: string
+          id: string
+          timestamp: string | null
+        }
+        Insert: {
+          accion: string
+          detalles?: Json | null
+          fase: string
+          id?: string
+          timestamp?: string | null
+        }
+        Update: {
+          accion?: string
+          detalles?: Json | null
+          fase?: string
+          id?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -3033,6 +3057,10 @@ export type Database = {
         Returns: string
       }
       is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_superuser_optimized: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
