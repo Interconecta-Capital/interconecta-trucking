@@ -1,238 +1,226 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, Eye, Calendar, Search } from 'lucide-react';
-import { useDocumentosEntidades, type DocumentoEntidad } from '@/hooks/useDocumentosEntidades';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useConductores } from '@/hooks/useConductores';
-import { useSocios } from '@/hooks/useSocios';
+import { Badge } from '@/components/ui/badge';
+import { FileText, Download, Eye, Search, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+
+interface DocumentoViaje {
+  id: string;
+  tipo_documento: string;
+  fecha_generacion: string;
+  carta_porte_id: string;
+  version_documento: string;
+  metadatos: any;
+  viaje_id?: string;
+  viaje_origen?: string;
+  viaje_destino?: string;
+  carta_porte_folio?: string;
+}
 
 export function DocumentosVista() {
-  const [documentos, setDocumentos] = useState<DocumentoEntidad[]>([]);
-  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
-  const [filtroEntidad, setFiltroEntidad] = useState<string>('todos');
-  const [busqueda, setBusqueda] = useState('');
+  const { user } = useAuth();
+  const [documentos, setDocumentos] = useState<DocumentoViaje[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const { cargarDocumentos } = useDocumentosEntidades();
-  const { vehiculos } = useVehiculos();
-  const { conductores } = useConductores();
-  const { socios } = useSocios();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tipoFiltro, setTipoFiltro] = useState('todos');
 
   useEffect(() => {
-    const cargarTodosDocumentos = async () => {
+    if (user?.id) {
+      cargarDocumentos();
+    }
+  }, [user?.id]);
+
+  const cargarDocumentos = async () => {
+    try {
       setLoading(true);
-      const todosDocumentos: DocumentoEntidad[] = [];
       
-      // Cargar documentos de vehículos
-      for (const vehiculo of vehiculos) {
-        const docs = await cargarDocumentos('vehiculo', vehiculo.id);
-        todosDocumentos.push(...docs);
-      }
-      
-      // Cargar documentos de conductores
-      for (const conductor of conductores) {
-        const docs = await cargarDocumentos('conductor', conductor.id);
-        todosDocumentos.push(...docs);
-      }
-      
-      // Cargar documentos de socios
-      for (const socio of socios) {
-        const docs = await cargarDocumentos('socio', socio.id);
-        todosDocumentos.push(...docs);
-      }
-      
-      setDocumentos(todosDocumentos);
+      // Obtener documentos de cartas porte
+      const { data: documentosCP, error: errorCP } = await supabase
+        .from('carta_porte_documentos')
+        .select(`
+          *,
+          cartas_porte!inner(
+            id,
+            folio,
+            usuario_id,
+            nombre_documento
+          )
+        `)
+        .eq('cartas_porte.usuario_id', user?.id)
+        .eq('activo', true)
+        .order('fecha_generacion', { ascending: false });
+
+      if (errorCP) throw errorCP;
+
+      // Transformar datos para el componente
+      const documentosTransformados = documentosCP?.map(doc => ({
+        id: doc.id,
+        tipo_documento: doc.tipo_documento,
+        fecha_generacion: doc.fecha_generacion,
+        carta_porte_id: doc.carta_porte_id,
+        version_documento: doc.version_documento,
+        metadatos: doc.metadatos || {},
+        carta_porte_folio: doc.cartas_porte?.folio || 'Sin folio',
+        viaje_origen: doc.metadatos?.origen || 'No especificado',
+        viaje_destino: doc.metadatos?.destino || 'No especificado'
+      })) || [];
+
+      setDocumentos(documentosTransformados);
+    } catch (error) {
+      console.error('Error cargando documentos:', error);
+      toast.error('Error al cargar documentos');
+    } finally {
       setLoading(false);
-    };
-
-    if (vehiculos.length > 0 || conductores.length > 0 || socios.length > 0) {
-      cargarTodosDocumentos();
     }
-  }, [vehiculos, conductores, socios, cargarDocumentos]);
-
-  const documentosFiltrados = documentos.filter(doc => {
-    const matchBusqueda = doc.nombre_archivo.toLowerCase().includes(busqueda.toLowerCase()) ||
-                         doc.tipo_documento.toLowerCase().includes(busqueda.toLowerCase());
-    const matchTipo = filtroTipo === 'todos' || doc.tipo_documento === filtroTipo;
-    const matchEntidad = filtroEntidad === 'todos' || doc.entidad_tipo === filtroEntidad;
-    
-    return matchBusqueda && matchTipo && matchEntidad;
-  });
-
-  const obtenerNombreEntidad = (doc: DocumentoEntidad) => {
-    if (doc.entidad_tipo === 'vehiculo') {
-      const vehiculo = vehiculos.find(v => v.id === doc.entidad_id);
-      return vehiculo?.placa || 'Vehículo';
-    } else if (doc.entidad_tipo === 'conductor') {
-      const conductor = conductores.find(c => c.id === doc.entidad_id);
-      return conductor?.nombre || 'Conductor';
-    } else if (doc.entidad_tipo === 'socio') {
-      const socio = socios.find(s => s.id === doc.entidad_id);
-      return socio?.nombre_razon_social || 'Socio';
-    }
-    return 'Desconocido';
   };
 
-  const obtenerEstadoVencimiento = (fechaVencimiento?: string) => {
-    if (!fechaVencimiento) return null;
+  const descargarDocumento = async (documento: DocumentoViaje) => {
+    try {
+      // TODO: Implementar descarga real del documento
+      console.log('Descargando documento:', documento);
+      toast.success('Descarga iniciada');
+    } catch (error) {
+      console.error('Error descargando documento:', error);
+      toast.error('Error al descargar documento');
+    }
+  };
+
+  const verDocumento = async (documento: DocumentoViaje) => {
+    try {
+      // TODO: Implementar visor de documentos
+      console.log('Viendo documento:', documento);
+      toast.info('Abriendo visor de documentos');
+    } catch (error) {
+      console.error('Error viendo documento:', error);
+      toast.error('Error al abrir documento');
+    }
+  };
+
+  const documentosFiltrados = documentos.filter(doc => {
+    const coincideBusqueda = !searchTerm || 
+      doc.carta_porte_folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.viaje_origen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.viaje_destino?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const fecha = new Date(fechaVencimiento);
-    const hoy = new Date();
-    const diasHastaVencimiento = Math.ceil((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+    const coincideTipo = tipoFiltro === 'todos' || doc.tipo_documento === tipoFiltro;
     
-    if (diasHastaVencimiento < 0) {
-      return { estado: 'vencido', dias: Math.abs(diasHastaVencimiento), color: 'bg-red-100 text-red-800' };
-    } else if (diasHastaVencimiento <= 30) {
-      return { estado: 'por_vencer', dias: diasHastaVencimiento, color: 'bg-yellow-100 text-yellow-800' };
-    } else {
-      return { estado: 'vigente', dias: diasHastaVencimiento, color: 'bg-green-100 text-green-800' };
+    return coincideBusqueda && coincideTipo;
+  });
+
+  const getTipoBadgeColor = (tipo: string) => {
+    switch (tipo) {
+      case 'PDF':
+        return 'bg-red-100 text-red-800';
+      case 'XML':
+        return 'bg-blue-100 text-blue-800';
+      case 'carta_porte':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Cargando documentos...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8">
+        <p className="text-gray-600">Cargando documentos...</p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Filtros y búsqueda */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Documentos del Sistema
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar documentos..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={filtroEntidad} onValueChange={setFiltroEntidad}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de entidad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todas las entidades</SelectItem>
-                <SelectItem value="vehiculo">Vehículos</SelectItem>
-                <SelectItem value="conductor">Conductores</SelectItem>
-                <SelectItem value="socio">Socios</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de documento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los documentos</SelectItem>
-                <SelectItem value="Tarjeta de Circulación">Tarjeta de Circulación</SelectItem>
-                <SelectItem value="Licencia de Conducir">Licencia de Conducir</SelectItem>
-                <SelectItem value="Póliza de Seguro">Póliza de Seguro</SelectItem>
-                <SelectItem value="Verificación Vehicular">Verificación Vehicular</SelectItem>
-                <SelectItem value="Acta Constitutiva">Acta Constitutiva</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <div className="text-sm text-muted-foreground flex items-center">
-              Total: {documentosFiltrados.length} documentos
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar por folio, origen o destino..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <select
+          value={tipoFiltro}
+          onChange={(e) => setTipoFiltro(e.target.value)}
+          className="px-3 py-2 border rounded-md"
+        >
+          <option value="todos">Todos los tipos</option>
+          <option value="PDF">PDF</option>
+          <option value="XML">XML</option>
+          <option value="carta_porte">Carta Porte</option>
+        </select>
+      </div>
 
       {/* Lista de documentos */}
-      <div className="grid gap-4">
-        {documentosFiltrados.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center p-8">
-              <div className="text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No se encontraron documentos</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          documentosFiltrados.map((doc) => {
-            const nombreEntidad = obtenerNombreEntidad(doc);
-            const estadoVencimiento = obtenerEstadoVencimiento(doc.fecha_vencimiento);
-            
-            return (
-              <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <h3 className="font-semibold">{doc.tipo_documento}</h3>
-                        <Badge variant="outline" className="capitalize">
-                          {doc.entidad_tipo}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
-                        <div>
-                          <span className="font-medium">Entidad:</span> {nombreEntidad}
-                        </div>
-                        <div>
-                          <span className="font-medium">Archivo:</span> {doc.nombre_archivo}
-                        </div>
-                        <div>
-                          <span className="font-medium">Subido:</span> {new Date(doc.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      
-                      {estadoVencimiento && (
-                        <div className="mt-2">
-                          <Badge className={estadoVencimiento.color}>
-                            {estadoVencimiento.estado === 'vencido' && `Vencido hace ${estadoVencimiento.dias} días`}
-                            {estadoVencimiento.estado === 'por_vencer' && `Vence en ${estadoVencimiento.dias} días`}
-                            {estadoVencimiento.estado === 'vigente' && `Vigente ${estadoVencimiento.dias} días más`}
-                          </Badge>
-                        </div>
-                      )}
+      {documentosFiltrados.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No hay documentos disponibles</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Los documentos generados aparecerán aquí
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {documentosFiltrados.map((documento) => (
+            <Card key={documento.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <h3 className="font-semibold">{documento.carta_porte_folio}</h3>
+                      <Badge className={getTipoBadgeColor(documento.tipo_documento)}>
+                        {documento.tipo_documento}
+                      </Badge>
+                      <Badge variant="outline">{documento.version_documento}</Badge>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-1" />
-                        Descargar
-                      </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                      <div>
+                        <span className="font-medium">Origen:</span> {documento.viaje_origen}
+                      </div>
+                      <div>
+                        <span className="font-medium">Destino:</span> {documento.viaje_destino}
+                      </div>
+                      <div>
+                        <span className="font-medium">Fecha:</span> {' '}
+                        {new Date(documento.fecha_generacion).toLocaleDateString('es-MX')}
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                  
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => verDocumento(documento)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => descargarDocumento(documento)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -100,7 +100,7 @@ export default function Socios() {
           <ProtectedActions
             action="create"
             resource="socios"
-            onAction={() => setShowCreateDialog(true)}
+            onAction={handleNewSocio}
             buttonText="Nuevo Socio"
           />
         </SectionHeader>

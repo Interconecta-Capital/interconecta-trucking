@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './FileUpload';
 import { toast } from 'sonner';
-import { User, FileText, MapPin } from 'lucide-react';
+import { User, FileText, MapPin, Upload, Check } from 'lucide-react';
 
 interface SocioFormAdvancedProps {
   socio?: any;
@@ -29,7 +30,7 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
       email: socio?.email || '',
       direccion: socio?.direccion || '',
       codigo_postal: socio?.codigo_postal || '',
-      colonia: socio?.colonia || '', // Campo agregado
+      colonia: socio?.colonia || '',
       ciudad: socio?.ciudad || '',
       estado: socio?.estado || '',
       tipo_socio: socio?.tipo_socio || 'proveedor',
@@ -71,6 +72,9 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
       setLoading(false);
     }
   };
+
+  // Verificar si ya tiene constancia fiscal subida
+  const hasExistingCSF = socio?.constancia_fiscal_path;
 
   return (
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
@@ -202,10 +206,11 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="codigo_postal">Código Postal</Label>
+              <Label htmlFor="codigo_postal">Código Postal *</Label>
               <Input
                 id="codigo_postal"
                 {...register('codigo_postal', {
+                  required: 'El código postal es requerido',
                   pattern: {
                     value: /^\d{5}$/,
                     message: 'Debe tener 5 dígitos'
@@ -220,12 +225,15 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="colonia">Colonia</Label>
+              <Label htmlFor="colonia">Colonia *</Label>
               <Input
                 id="colonia"
-                {...register('colonia')}
+                {...register('colonia', { required: 'La colonia es requerida' })}
                 placeholder="Nombre de la colonia"
               />
+              {errors.colonia && (
+                <p className="text-sm text-red-500">{errors.colonia.message as string}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -292,14 +300,35 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FileUpload
-            label="Constancia de Situación Fiscal"
-            accept=".pdf"
-            multiple={false}
-            onFilesChange={setConstanciaFiles}
-            maxSize={5}
-            description="Archivo PDF de máximo 5MB con la constancia actualizada del SAT"
-          />
+          {hasExistingCSF ? (
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <Check className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-green-800">Constancia de Situación Fiscal</p>
+                <p className="text-xs text-green-600">Archivo cargado previamente</p>
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  // TODO: Implementar descarga/visualización del archivo existente
+                  console.log('Ver CSF existente');
+                }}
+              >
+                Ver Archivo
+              </Button>
+            </div>
+          ) : (
+            <FileUpload
+              label="Constancia de Situación Fiscal"
+              accept=".pdf"
+              multiple={false}
+              onFilesChange={setConstanciaFiles}
+              maxSize={5}
+              description="Archivo PDF de máximo 5MB con la constancia actualizada del SAT"
+            />
+          )}
         </CardContent>
       </Card>
 

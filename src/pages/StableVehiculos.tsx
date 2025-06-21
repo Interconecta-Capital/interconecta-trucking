@@ -1,61 +1,52 @@
+
 import { useState } from 'react';
-import { Plus, Car, Filter, Search, Truck } from 'lucide-react';
+import { Plus, Truck, Filter, Search, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
-import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
 import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
-import { RemolquesTable } from '@/components/vehiculos/RemolquesTable';
-import { RemolqueFormDialog } from '@/components/vehiculos/RemolqueFormDialog';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
-import { useRemolques } from '@/hooks/useRemolques';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { toast } from 'sonner';
 
 export default function StableVehiculos() {
   const { user } = useStableAuth();
-  const { vehiculos, loading: vehiculosLoading, error: vehiculosError, eliminarVehiculo, recargar: recargarVehiculos } = useStableVehiculos(user?.id);
-  const { remolques, loading: remolquesLoading, error: remolquesError, eliminarRemolque, recargar: recargarRemolques } = useRemolques(user?.id);
-  
+  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [showCreateVehiculoDialog, setShowCreateVehiculoDialog] = useState(false);
-  const [showEditVehiculoDialog, setShowEditVehiculoDialog] = useState(false);
-  const [showViewVehiculoDialog, setShowViewVehiculoDialog] = useState(false);
-  const [showCreateRemolqueDialog, setShowCreateRemolqueDialog] = useState(false);
-  const [showEditRemolqueDialog, setShowEditRemolqueDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
-  const [selectedRemolque, setSelectedRemolque] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('vehiculos');
 
   const handleNewVehiculo = () => {
     setSelectedVehiculo(null);
-    setShowCreateVehiculoDialog(true);
+    setShowCreateDialog(true);
   };
 
   const handleNewRemolque = () => {
-    setSelectedRemolque(null);
-    setShowCreateRemolqueDialog(true);
+    // TODO: Implementar modal para crear remolque
+    console.log('Crear nuevo remolque');
   };
 
-  const handleEditVehiculo = (vehiculo: any) => {
+  const handleEdit = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
-    setShowEditVehiculoDialog(true);
+    setShowEditDialog(true);
   };
 
-  const handleViewVehiculo = (vehiculo: any) => {
+  const handleView = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
-    setShowViewVehiculoDialog(true);
+    setShowViewDialog(true);
   };
 
-  const handleDeleteVehiculo = async (vehiculo: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el vehículo con placa ${vehiculo.placa}?`)) {
+  const handleDelete = async (vehiculo: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.placa}?`)) {
       try {
         await eliminarVehiculo(vehiculo.id);
       } catch (error) {
@@ -64,30 +55,11 @@ export default function StableVehiculos() {
     }
   };
 
-  const handleEditRemolque = (remolque: any) => {
-    setSelectedRemolque(remolque);
-    setShowEditRemolqueDialog(true);
-  };
-
-  const handleDeleteRemolque = async (remolque: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el remolque con placa ${remolque.placa}?`)) {
-      try {
-        await eliminarRemolque(remolque.id);
-      } catch (error) {
-        toast.error('Error al eliminar el remolque');
-      }
-    }
-  };
-
   const handleSuccess = () => {
-    setShowCreateVehiculoDialog(false);
-    setShowEditVehiculoDialog(false);
-    setShowCreateRemolqueDialog(false);
-    setShowEditRemolqueDialog(false);
+    setShowCreateDialog(false);
+    setShowEditDialog(false);
     setSelectedVehiculo(null);
-    setSelectedRemolque(null);
-    recargarVehiculos();
-    recargarRemolques();
+    recargar();
   };
 
   const filteredVehiculos = vehiculos.filter(vehiculo =>
@@ -96,209 +68,155 @@ export default function StableVehiculos() {
     vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredRemolques = remolques.filter(remolque =>
-    remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (vehiculosError || remolquesError) {
+  if (error) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Error cargando datos: {vehiculosError || remolquesError}</p>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              recargarVehiculos();
-              recargarRemolques();
-            }}
-            className="mt-2"
-          >
-            Reintentar
-          </Button>
-        </div>
+      <div className="container mx-auto py-8">
+        <Card className="p-8 border-red-200 bg-red-50">
+          <div className="text-center">
+            <p className="text-red-800 mb-4">Error cargando vehículos: {error}</p>
+            <Button 
+              variant="outline" 
+              onClick={recargar}
+              className="bg-pure-white"
+            >
+              Reintentar
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
 
   return (
     <ProtectedContent requiredFeature="vehiculos">
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-8 space-y-8 max-w-7xl">
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Car className="h-6 w-6 text-blue-600" />
-            <h1 className="text-3xl font-bold">Vehículos y Remolques</h1>
-            {(vehiculosLoading || remolquesLoading) && (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            )}
-          </div>
-          <div className="flex gap-2">
+        {/* Header estilo Apple */}
+        <SectionHeader
+          title="Flota Vehicular"
+          description="Gestiona tu flota de vehículos y remolques"
+          icon={Truck}
+          className="mb-8"
+        >
+          <div className="flex gap-3">
+            <ProtectedActions
+              action="create"
+              resource="vehiculos"
+              onAction={handleNewRemolque}
+            >
+              <Button variant="outline" className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Nuevo Remolque
+              </Button>
+            </ProtectedActions>
             <ProtectedActions
               action="create"
               resource="vehiculos"
               onAction={handleNewVehiculo}
               buttonText="Nuevo Vehículo"
-              variant="default"
-            />
-            <ProtectedActions
-              action="create"
-              resource="vehiculos"
-              onAction={handleNewRemolque}
-              buttonText="Nuevo Remolque"
-              variant="outline"
             />
           </div>
-        </div>
+        </SectionHeader>
 
         {/* Indicador de límites */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
         </div>
 
-        {/* Filtros y búsqueda */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Filtros y búsqueda estilo Apple */}
+        <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
               placeholder="Buscar por placa, marca o modelo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
             />
           </div>
           <Button 
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
           </Button>
           <Button 
             variant="outline"
-            onClick={() => {
-              recargarVehiculos();
-              recargarRemolques();
-            }}
-            disabled={vehiculosLoading || remolquesLoading}
+            onClick={recargar}
+            disabled={loading}
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             Actualizar
           </Button>
         </div>
 
-        {/* Filtros adicionales */}
-        {showFilters && (
-          <VehiculosFilters />
-        )}
-
-        {/* Tabs para vehículos y remolques */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="vehiculos" className="flex items-center gap-2">
-              <Car className="h-4 w-4" />
-              Vehículos ({vehiculos.length})
-            </TabsTrigger>
-            <TabsTrigger value="remolques" className="flex items-center gap-2">
-              <Truck className="h-4 w-4" />
-              Remolques ({remolques.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Stats estilo Apple */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-blue-interconecta">Total Vehículos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-interconecta">{vehiculos.length}</p>
+            </CardContent>
+          </Card>
           
-          <TabsContent value="vehiculos" className="space-y-4">
-            {/* Stats Vehículos */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="text-lg font-semibold">Total Vehículos</h3>
-                <p className="text-2xl text-blue-600">{vehiculos.length}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="text-lg font-semibold">Resultados</h3>
-                <p className="text-2xl text-green-600">{filteredVehiculos.length}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="text-lg font-semibold">Estado</h3>
-                <p className={`text-sm ${vehiculosLoading ? 'text-yellow-600' : vehiculosError ? 'text-red-600' : 'text-green-600'}`}>
-                  {vehiculosLoading ? 'Cargando...' : vehiculosError ? 'Error' : 'Listo'}
-                </p>
-              </div>
-            </div>
-
-            <VehiculosTable 
-              vehiculos={filteredVehiculos}
-              loading={vehiculosLoading}
-              onEdit={handleEditVehiculo}
-              onView={handleViewVehiculo}
-              onDelete={handleDeleteVehiculo}
-            />
-          </TabsContent>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-700">{filteredVehiculos.length}</p>
+            </CardContent>
+          </Card>
           
-          <TabsContent value="remolques" className="space-y-4">
-            {/* Stats Remolques */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="text-lg font-semibold">Total Remolques</h3>
-                <p className="text-2xl text-blue-600">{remolques.length}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="text-lg font-semibold">Resultados</h3>
-                <p className="text-2xl text-green-600">{filteredRemolques.length}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <h3 className="text-lg font-semibold">Estado</h3>
-                <p className={`text-sm ${remolquesLoading ? 'text-yellow-600' : remolquesError ? 'text-red-600' : 'text-green-600'}`}>
-                  {remolquesLoading ? 'Cargando...' : remolquesError ? 'Error' : 'Listo'}
-                </p>
-              </div>
-            </div>
+          <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
+                {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-            <RemolquesTable 
-              remolques={filteredRemolques}
-              loading={remolquesLoading}
-              onEdit={handleEditRemolque}
-              onDelete={handleDeleteRemolque}
-            />
-          </TabsContent>
-        </Tabs>
+        {/* Tabla */}
+        <VehiculosTable 
+          vehiculos={filteredVehiculos}
+          loading={loading}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+        />
 
         {/* Diálogos */}
         <VehiculoFormDialog
-          open={showCreateVehiculoDialog}
-          onOpenChange={setShowCreateVehiculoDialog}
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
           onSuccess={handleSuccess}
         />
 
         <VehiculoFormDialog
-          open={showEditVehiculoDialog}
-          onOpenChange={setShowEditVehiculoDialog}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
           vehiculo={selectedVehiculo}
           onSuccess={handleSuccess}
         />
 
         <VehiculoViewDialog
-          open={showViewVehiculoDialog}
-          onOpenChange={setShowViewVehiculoDialog}
+          open={showViewDialog}
+          onOpenChange={setShowViewDialog}
           vehiculo={selectedVehiculo}
-          onEdit={() => {
-            setShowViewVehiculoDialog(false);
-            handleEditVehiculo(selectedVehiculo);
+          onEdit={(vehiculo) => {
+            setShowViewDialog(false);
+            handleEdit(vehiculo);
           }}
-        />
-
-        <RemolqueFormDialog
-          open={showCreateRemolqueDialog}
-          onOpenChange={setShowCreateRemolqueDialog}
-          onSuccess={handleSuccess}
-        />
-
-        <RemolqueFormDialog
-          open={showEditRemolqueDialog}
-          onOpenChange={setShowEditRemolqueDialog}
-          remolque={selectedRemolque}
-          onSuccess={handleSuccess}
         />
       </div>
     </ProtectedContent>

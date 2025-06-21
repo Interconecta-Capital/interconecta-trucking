@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { HistorialViajes } from '@/components/viajes/HistorialViajes';
-import { ProgramacionViajes } from '@/components/viajes/ProgramacionViajes';
 import { DocumentosVista } from '@/components/viajes/DocumentosVista';
 import { ProgramarViajeModal } from '@/components/viajes/modals/ProgramarViajeModal';
 import { ProtectedContent } from '@/components/ProtectedContent';
@@ -102,12 +101,12 @@ export default function Viajes() {
           </Button>
         </div>
 
-        {/* Tabs de viajes responsivos */}
+        {/* Tabs de viajes responsivos - Sin Programados */}
         <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className={`border-b border-gray-10 bg-gray-05 ${isMobile ? 'p-4' : 'px-6 py-4'}`}>
               <TabsList 
-                className={`grid w-full grid-cols-4 bg-gray-10 rounded-xl p-1 ${isMobile ? 'h-14' : 'h-12 max-w-2xl'}`}
+                className={`grid w-full grid-cols-3 bg-gray-10 rounded-xl p-1 ${isMobile ? 'h-14' : 'h-12 max-w-2xl'}`}
                 data-onboarding="viajes-tabs"
               >
                 <TabsTrigger 
@@ -115,12 +114,6 @@ export default function Viajes() {
                   className={`rounded-lg font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60 ${isMobile ? 'text-xs py-3' : 'text-sm'}`}
                 >
                   {isMobile ? 'Activos' : 'Viajes Activos'}
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="programados"
-                  className={`rounded-lg font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60 ${isMobile ? 'text-xs py-3' : 'text-sm'}`}
-                >
-                  {isMobile ? 'Program.' : 'Programados'}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="historial"
@@ -141,10 +134,6 @@ export default function Viajes() {
             <div className={isMobile ? 'p-4' : 'p-6'}>
               <TabsContent value="activos" className="mt-0">
                 <ViajesActivos />
-              </TabsContent>
-
-              <TabsContent value="programados" className="mt-0">
-                <ProgramacionViajes />
               </TabsContent>
 
               <TabsContent value="historial" className="mt-0">
