@@ -1,32 +1,32 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 export const useViajesDebug = () => {
   const [debugMode, setDebugMode] = useState(false);
 
-  const logDebug = useCallback((component: string, message: string, data?: any) => {
+  const logDebug = (component: string, message: string, data?: any) => {
     if (debugMode) {
-      console.log(`[${component}] ${message}`, data);
+      console.log(`[${component}] DEBUG:`, message, data);
     }
-  }, [debugMode]);
+  };
 
-  const logInfo = useCallback((component: string, message: string, data?: any) => {
-    console.log(`[${component}] ${message}`, data);
-  }, []);
+  const logInfo = (component: string, message: string, data?: any) => {
+    console.log(`[${component}] INFO:`, message, data);
+  };
 
-  const logError = useCallback((component: string, message: string, error?: any) => {
-    console.error(`[${component}] ${message}`, error);
-  }, []);
+  const logError = (component: string, message: string, error?: any) => {
+    console.error(`[${component}] ERROR:`, message, error);
+  };
 
-  const enableDebugMode = useCallback(() => {
+  const enableDebugMode = () => {
     setDebugMode(true);
     console.log('[ViajesDebug] Debug mode enabled');
-  }, []);
+  };
 
-  const disableDebugMode = useCallback(() => {
+  const disableDebugMode = () => {
     setDebugMode(false);
     console.log('[ViajesDebug] Debug mode disabled');
-  }, []);
+  };
 
   return {
     debugMode,

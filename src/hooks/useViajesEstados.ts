@@ -50,6 +50,10 @@ export const useViajesEstados = () => {
     reportarRetraso: actionsHook.reportarRetraso,
     actualizarUbicacion: actionsHook.actualizarUbicacion,
     
+    // Agregar funciones faltantes para el editor
+    actualizarViaje: mutationsHook.actualizarViaje,
+    isUpdatingViaje: mutationsHook.isUpdatingViaje,
+    
     // Manejo de errores y debugging - exportar todas las funciones
     error,
     clearError,

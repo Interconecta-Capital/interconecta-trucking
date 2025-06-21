@@ -1,71 +1,125 @@
 
-import { useViajesMutations } from './useViajesMutations';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useViajeActions = () => {
-  const { cambiarEstadoViaje, registrarEventoViaje } = useViajesMutations();
+  const queryClient = useQueryClient();
 
   // Iniciar viaje
   const iniciarViaje = async (viajeId: string, ubicacionActual?: string) => {
-    cambiarEstadoViaje({
-      viajeId,
-      nuevoEstado: 'en_transito',
-      observaciones: 'Viaje iniciado',
-      ubicacionActual
-    });
+    const { data, error } = await supabase
+      .from('viajes')
+      .update({
+        estado: 'en_transito',
+        fecha_inicio_real: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', viajeId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Registrar evento
+    await supabase
+      .from('eventos_viaje')
+      .insert({
+        viaje_id: viajeId,
+        tipo_evento: 'inicio',
+        descripcion: 'Viaje iniciado',
+        ubicacion: ubicacionActual,
+        automatico: false
+      });
+
+    queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
+    return data;
   };
 
   // Completar viaje
   const completarViaje = async (viajeId: string, observaciones?: string) => {
-    cambiarEstadoViaje({
-      viajeId,
-      nuevoEstado: 'completado',
-      observaciones: observaciones || 'Viaje completado exitosamente'
-    });
+    const { data, error } = await supabase
+      .from('viajes')
+      .update({
+        estado: 'completado',
+        fecha_fin_real: new Date().toISOString(),
+        observaciones: observaciones,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', viajeId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Registrar evento
+    await supabase
+      .from('eventos_viaje')
+      .insert({
+        viaje_id: viajeId,
+        tipo_evento: 'entrega',
+        descripcion: 'Viaje completado',
+        automatico: false
+      });
+
+    queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
+    return data;
   };
 
   // Reportar retraso
-  const reportarRetraso = async (viajeId: string, motivo: string, tiempoEstimado?: number) => {
-    cambiarEstadoViaje({
-      viajeId,
-      nuevoEstado: 'retrasado',
-      observaciones: `Retraso: ${motivo}${tiempoEstimado ? ` (${tiempoEstimado} min estimados)` : ''}`
-    });
+  const reportarRetraso = async (viajeId: string, motivo: string, tiempoRetraso?: number) => {
+    const { data, error } = await supabase
+      .from('viajes')
+      .update({
+        estado: 'retrasado',
+        observaciones: motivo,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', viajeId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Registrar evento
+    await supabase
+      .from('eventos_viaje')
+      .insert({
+        viaje_id: viajeId,
+        tipo_evento: 'retraso',
+        descripcion: `Retraso reportado: ${motivo}`,
+        metadata: { tiempoRetraso },
+        automatico: false
+      });
+
+    queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
+    return data;
   };
 
-  // Actualizar ubicación en tiempo real
-  const actualizarUbicacion = async (viajeId: string, coordenadas: { lat: number; lng: number }, direccion?: string) => {
-    await registrarEventoViaje({
-      viajeId,
-      tipoEvento: 'ubicacion',
-      descripcion: 'Actualización de ubicación',
-      ubicacion: direccion,
-      coordenadas,
-      automatico: true,
-      metadata: { timestamp: new Date().toISOString() }
-    });
+  // Actualizar ubicación
+  const actualizarUbicacion = async (
+    viajeId: string, 
+    coordenadas: { lat: number; lng: number }, 
+    descripcionUbicacion: string
+  ) => {
+    // Registrar evento de ubicación
+    const { data, error } = await supabase
+      .from('eventos_viaje')
+      .insert({
+        viaje_id: viajeId,
+        tipo_evento: 'ubicacion',
+        descripcion: `Ubicación actualizada: ${descripcionUbicacion}`,
+        ubicacion: descripcionUbicacion,
+        coordenadas: coordenadas,
+        automatico: false
+      })
+      .select()
+      .single();
 
-    // Actualizar tracking_data del viaje
-    try {
-      const { error } = await supabase
-        .from('viajes')
-        .update({
-          tracking_data: {
-            ultima_ubicacion: coordenadas,
-            ultima_actualizacion: new Date().toISOString(),
-            direccion: direccion
-          }
-        })
-        .eq('id', viajeId);
+    if (error) throw error;
 
-      if (error) {
-        console.error('Error updating tracking data:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error in actualizarUbicacion:', error);
-      throw error;
-    }
+    queryClient.invalidateQueries({ queryKey: ['eventos-viaje'] });
+    return data;
   };
 
   return {

@@ -1,31 +1,27 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
-export interface ViajesError {
-  type: 'data' | 'mutation' | 'action';
+interface ViajesError {
+  type: string;
   message: string;
-  details?: any;
-  context?: string;
+  source: string;
 }
 
 export const useViajesErrors = () => {
   const [error, setError] = useState<ViajesError | null>(null);
 
-  const handleError = useCallback((type: ViajesError['type'], error: any, context: string) => {
-    const errorMessage = error?.message || 'Error desconocido';
-    console.error(`[ViajesErrors ${type}] ${context}:`, error);
-    
+  const handleError = (type: string, errorObj: any, source: string) => {
+    const errorMessage = errorObj?.message || 'Error desconocido';
     setError({
       type,
       message: errorMessage,
-      details: error,
-      context
+      source
     });
-  }, []);
+  };
 
-  const clearError = useCallback(() => {
+  const clearError = () => {
     setError(null);
-  }, []);
+  };
 
   return {
     error,

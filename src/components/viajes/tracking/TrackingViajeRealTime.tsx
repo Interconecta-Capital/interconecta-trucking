@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Viaje, EventoViaje, useViajesEstados } from '@/hooks/useViajesEstados';
 import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
+import { Ubicacion } from '@/types/ubicaciones';
 
 interface TrackingViajeRealTimeProps {
   viaje: Viaje;
@@ -147,19 +147,36 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
     }
   };
 
-  const ubicacionesParaMapa = [
+  // Fix the ubicaciones type to match Ubicacion interface
+  const ubicacionesParaMapa: Ubicacion[] = [
     {
       id: 'origen',
+      idUbicacion: 'origen-001',
       tipoUbicacion: 'Origen',
       nombreRemitenteDestinatario: 'Origen',
-      domicilio: { calle: viaje.origen },
+      domicilio: { 
+        calle: viaje.origen,
+        pais: 'MEX',
+        codigoPostal: '01000',
+        estado: 'CDMX',
+        municipio: 'Miguel Hidalgo',
+        colonia: 'Centro'
+      },
       coordenadas: { latitud: 19.4326, longitud: -99.1332 }
     },
     {
       id: 'destino',
+      idUbicacion: 'destino-001',
       tipoUbicacion: 'Destino',
       nombreRemitenteDestinatario: 'Destino',
-      domicilio: { calle: viaje.destino },
+      domicilio: { 
+        calle: viaje.destino,
+        pais: 'MEX',
+        codigoPostal: '44100',
+        estado: 'JAL',
+        municipio: 'Guadalajara',
+        colonia: 'Centro'
+      },
       coordenadas: { latitud: 19.6924, longitud: -101.2055 }
     }
   ];
@@ -168,9 +185,17 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
   if (trackingData?.coordenadas) {
     ubicacionesParaMapa.push({
       id: 'actual',
-      tipoUbicacion: 'Ubicación Actual',
+      idUbicacion: 'actual-001',
+      tipoUbicacion: 'Paso Intermedio',
       nombreRemitenteDestinatario: 'Posición actual',
-      domicilio: { calle: trackingData.ubicacionActual || 'En tránsito' },
+      domicilio: { 
+        calle: trackingData.ubicacionActual || 'En tránsito',
+        pais: 'MEX',
+        codigoPostal: '50000',
+        estado: 'MEX',
+        municipio: 'Toluca',
+        colonia: 'Centro'
+      },
       coordenadas: { 
         latitud: trackingData.coordenadas.lat, 
         longitud: trackingData.coordenadas.lng 
@@ -273,7 +298,9 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
                 distance_km: 550,
                 duration_minutes: 420,
                 google_data: {
-                  polyline: 'mocked_polyline_data'
+                  polyline: 'mocked_polyline_data',
+                  bounds: { north: 20, south: 19, east: -98, west: -102 },
+                  legs: []
                 }
               }}
               isVisible={true}
