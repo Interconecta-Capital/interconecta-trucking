@@ -5,31 +5,96 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SectionHeader } from '@/components/ui/section-header';
+import { RemolquesTable } from '@/components/remolques/RemolquesTable';
+import { RemolqueFormDialog } from '@/components/remolques/RemolqueFormDialog';
+import { VinculacionDialog } from '@/components/remolques/VinculacionDialog';
+import { useRemolques } from '@/hooks/useRemolques';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { toast } from 'sonner';
 
 export default function Remolques() {
   const { user } = useStableAuth();
+  const { remolques, loading, error, eliminarRemolque, recargar } = useRemolques(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showVinculacionDialog, setShowVinculacionDialog] = useState(false);
+  const [selectedRemolque, setSelectedRemolque] = useState<any>(null);
 
   const handleNewRemolque = () => {
-    console.log('Crear nuevo remolque');
-    // TODO: Implementar modal para crear remolque
+    setSelectedRemolque(null);
+    setShowCreateDialog(true);
   };
 
-  const handleLinkToVehicle = () => {
-    console.log('Vincular remolque a vehículo');
-    // TODO: Implementar modal para vincular remolque
+  const handleEdit = (remolque: any) => {
+    setSelectedRemolque(remolque);
+    setShowEditDialog(true);
   };
 
-  // Datos temporales hasta implementar el hook
-  const remolques: any[] = [];
-  const loading = false;
-  const error = null;
+  const handleView = (remolque: any) => {
+    // TODO: Implementar vista detallada del remolque
+    console.log('Ver remolque:', remolque);
+  };
+
+  const handleDelete = async (remolque: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el remolque ${remolque.placa}?`)) {
+      try {
+        await eliminarRemolque(remolque.id);
+        toast.success('Remolque eliminado exitosamente');
+      } catch (error) {
+        // Error already handled by hook
+      }
+    }
+  };
+
+  const handleLink = (remolque: any) => {
+    setSelectedRemolque(remolque);
+    setShowVinculacionDialog(true);
+  };
+
+  const handleUnlink = (remolque: any) => {
+    setSelectedRemolque(remolque);
+    setShowVinculacionDialog(true);
+  };
+
+  const handleSuccess = () => {
+    setShowCreateDialog(false);
+    setShowEditDialog(false);
+    setShowVinculacionDialog(false);
+    setSelectedRemolque(null);
+    recargar();
+  };
+
+  const filteredRemolques = remolques.filter(remolque =>
+    remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    remolque.tipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const remolquesVinculados = remolques.filter(r => r.vehiculo_asignado_id).length;
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="p-8 border-red-200 bg-red-50">
+          <div className="text-center">
+            <p className="text-red-800 mb-4">Error cargando remolques: {error}</p>
+            <Button 
+              variant="outline" 
+              onClick={recargar}
+              className="bg-white-force"
+            >
+              Reintentar
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <ProtectedContent requiredFeature="vehiculos">
@@ -45,14 +110,6 @@ export default function Remolques() {
           className="mb-8"
         >
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handleLinkToVehicle}
-              className="flex items-center gap-2 bg-white-force"
-            >
-              <Car className="h-4 w-4" />
-              Vincular a Vehículo
-            </Button>
             <ProtectedActions
               action="create"
               resource="vehiculos"
@@ -76,7 +133,7 @@ export default function Remolques() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
-              placeholder="Buscar por placa, subtipo o vehículo vinculado..."
+              placeholder="Buscar por placa, tipo o estado..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 h-12 border-0 bg-white-force shadow-sm"
@@ -89,6 +146,14 @@ export default function Remolques() {
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={recargar}
+            disabled={loading}
+            className="h-12 px-6 bg-white-force shadow-sm border-0"
+          >
+            Actualizar
           </Button>
         </div>
 
@@ -108,42 +173,51 @@ export default function Remolques() {
               <CardTitle className="text-lg text-green-700">Vinculados</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-700">0</p>
+              <p className="text-3xl font-bold text-green-700">{remolquesVinculados}</p>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
+              <CardTitle className="text-lg text-gray-70">Disponibles</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
-                {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
-              </p>
+              <p className="text-3xl font-bold text-gray-70">{remolques.length - remolquesVinculados}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Contenido principal */}
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Wrench className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Gestión de Remolques
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Aquí podrás gestionar tus remolques y vincularlos con vehículos y conductores.
-            </p>
-            <Button onClick={handleNewRemolque} className="mr-4">
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Primer Remolque
-            </Button>
-            <Button variant="outline" onClick={handleLinkToVehicle}>
-              <Car className="h-4 w-4 mr-2" />
-              Vincular a Vehículo
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Tabla de remolques */}
+        <RemolquesTable 
+          remolques={filteredRemolques}
+          loading={loading}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+          onLink={handleLink}
+          onUnlink={handleUnlink}
+        />
+
+        {/* Diálogos */}
+        <RemolqueFormDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={handleSuccess}
+        />
+
+        <RemolqueFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          remolque={selectedRemolque}
+          onSuccess={handleSuccess}
+        />
+
+        <VinculacionDialog
+          open={showVinculacionDialog}
+          onOpenChange={setShowVinculacionDialog}
+          remolque={selectedRemolque}
+          onSuccess={handleSuccess}
+        />
       </div>
     </ProtectedContent>
   );

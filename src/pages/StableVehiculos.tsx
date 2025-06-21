@@ -14,8 +14,10 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { useNavigate } from 'react-router-dom';
 
 export default function StableVehiculos() {
+  const navigate = useNavigate();
   const { user } = useStableAuth();
   const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,9 +33,9 @@ export default function StableVehiculos() {
     setShowCreateDialog(true);
   };
 
-  // Fixed: No parameters for ProtectedActions compatibility
+  // Fixed: No parameters for ProtectedActions compatibility - Navigate to remolques page
   const handleNewRemolque = () => {
-    console.log('Crear nuevo remolque');
+    navigate('/remolques');
   };
 
   // These handlers need parameters, so they're separate
@@ -54,6 +56,14 @@ export default function StableVehiculos() {
       } catch (error) {
         // Error already handled by hook
       }
+    }
+  };
+
+  // Fixed: Function for VehiculoViewDialog.onEdit (no parameters)
+  const handleEditFromView = () => {
+    if (selectedVehiculo) {
+      setShowViewDialog(false);
+      handleEdit(selectedVehiculo);
     }
   };
 
@@ -219,10 +229,7 @@ export default function StableVehiculos() {
           open={showViewDialog}
           onOpenChange={setShowViewDialog}
           vehiculo={selectedVehiculo}
-          onEdit={(vehiculo) => {
-            setShowViewDialog(false);
-            handleEdit(vehiculo);
-          }}
+          onEdit={handleEditFromView}
         />
       </div>
     </ProtectedContent>

@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Eye, Search, Filter } from 'lucide-react';
+import { FileText, Download, Eye, Search, Filter, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface DocumentoViaje {
@@ -24,6 +25,7 @@ interface DocumentoViaje {
 
 export function DocumentosVista() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [documentos, setDocumentos] = useState<DocumentoViaje[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,6 +115,11 @@ export function DocumentosVista() {
       console.error('Error viendo documento:', error);
       toast.error('Error al abrir documento');
     }
+  };
+
+  const editarViaje = (documento: DocumentoViaje) => {
+    // Navegar al editor de carta porte para editar el viaje
+    navigate(`/carta-porte/editor?id=${documento.carta_porte_id}&mode=edit`);
   };
 
   const documentosFiltrados = documentos.filter(doc => {
@@ -217,7 +224,16 @@ export function DocumentosVista() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => editarViaje(documento)}
+                      title="Editar viaje"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => verDocumento(documento)}
+                      title="Ver documento"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -225,6 +241,7 @@ export function DocumentosVista() {
                       variant="outline"
                       size="sm"
                       onClick={() => descargarDocumento(documento)}
+                      title="Descargar documento"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
