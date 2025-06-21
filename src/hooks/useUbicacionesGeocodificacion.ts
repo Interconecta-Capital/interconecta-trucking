@@ -91,9 +91,46 @@ export const useUbicacionesGeocodificacion = () => {
     }
   }, [geocodificarUbicacion, calcularRuta]);
 
+  const calcularDistanciasAutomaticas = useCallback(async (ubicaciones: Ubicacion[]) => {
+    try {
+      // Calcular distancias automáticamente entre ubicaciones consecutivas
+      const ubicacionesConCoordenadas = await Promise.all(
+        ubicaciones.map(geocodificarUbicacion)
+      );
+
+      const distancias = [];
+      for (let i = 0; i < ubicacionesConCoordenadas.length - 1; i++) {
+        const origen = ubicacionesConCoordenadas[i];
+        const destino = ubicacionesConCoordenadas[i + 1];
+        
+        if (origen.coordenadas && destino.coordenadas) {
+          const resultado = await calcularRuta([
+            { lat: origen.coordenadas.latitud, lng: origen.coordenadas.longitud },
+            { lat: destino.coordenadas.latitud, lng: destino.coordenadas.longitud }
+          ]);
+          
+          if (resultado) {
+            distancias.push({
+              origen: origen.id,
+              destino: destino.id,
+              distancia: resultado.distance,
+              tiempo: resultado.duration
+            });
+          }
+        }
+      }
+
+      return distancias;
+    } catch (error) {
+      console.error('Error calculando distancias automáticas:', error);
+      return [];
+    }
+  }, [geocodificarUbicacion, calcularRuta]);
+
   return {
     geocodificarUbicacion,
     calcularRutaCompleta,
-    calcularDistanciaEntrePuntos
+    calcularDistanciaEntrePuntos,
+    calcularDistanciasAutomaticas
   };
 };
