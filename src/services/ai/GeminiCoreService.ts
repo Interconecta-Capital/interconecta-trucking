@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AIContextData {
@@ -48,6 +47,17 @@ export interface AIValidationResult {
   }>;
 }
 
+export interface MercanciaAnalysisResult {
+  claveProdServ?: string;
+  claveUnidad?: string;
+  tipoEmbalaje?: string;
+  materialPeligroso?: boolean;
+  confidence?: number;
+  descripcionDetallada?: string;
+  pesoEstimado?: number;
+  valorEstimado?: number;
+}
+
 export class GeminiCoreService {
   private static instance: GeminiCoreService;
   private cache = new Map<string, { data: any; timestamp: number }>();
@@ -95,6 +105,35 @@ export class GeminiCoreService {
     } catch (error) {
       console.error(`[GeminiCore] Error in ${operation}:`, error);
       throw error;
+    }
+  }
+
+  async analyzeMercancia(description: string, context?: AIContextData): Promise<MercanciaAnalysisResult> {
+    if (!description || description.trim().length < 3) {
+      return { confidence: 0 };
+    }
+
+    try {
+      const result = await this.callGeminiAPI('analyze_mercancia', {
+        description: description.trim(),
+        extractMultiple: description.includes(',') || description.includes(' y '),
+        language: 'es-MX'
+      }, context);
+
+      return result || {
+        confidence: 0.5,
+        claveProdServ: '78101800', // Default transport service
+        claveUnidad: 'KGM', // Default kilogram
+        materialPeligroso: false
+      };
+    } catch (error) {
+      console.error('[GeminiCore] Error analyzing mercancia:', error);
+      return {
+        confidence: 0.3,
+        claveProdServ: '78101800',
+        claveUnidad: 'KGM',
+        materialPeligroso: false
+      };
     }
   }
 

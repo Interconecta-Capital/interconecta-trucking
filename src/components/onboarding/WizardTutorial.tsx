@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -226,7 +225,7 @@ export function WizardTutorial({ currentWizardStep, onNext, onSkip }: WizardTuto
                 <Checkbox 
                   id="never-show" 
                   checked={neverShowAgain}
-                  onCheckedChange={setNeverShowAgain}
+                  onCheckedChange={(checked) => setNeverShowAgain(checked === true)}
                 />
                 <label htmlFor="never-show" className="text-xs text-gray-500">
                   No mostrar más

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +26,8 @@ interface VehiculoRemolque {
 }
 
 export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps) {
-  const { vehiculos, isLoading: loadingVehiculos } = useVehiculos();
-  const { conductores, isLoading: loadingConductores } = useConductores();
+  const { vehiculos, loading: loadingVehiculos } = useVehiculos();
+  const { conductores, loading: loadingConductores } = useConductores();
   
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(data.vehiculo);
   const [selectedConductor, setSelectedConductor] = useState<any>(data.conductor);
