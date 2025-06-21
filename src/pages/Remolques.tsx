@@ -11,9 +11,22 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { useRemolques } from '@/hooks/useRemolques';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
+import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+
+// Updated interface to match what RemolquesTable expects
+interface Remolque {
+  id: string;
+  placa: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  subtipo_rem?: string;
+  estado: string;
+  vehiculo_asignado_id?: string;
+  activo: boolean;
+}
 
 export default function Remolques() {
   const { user } = useStableAuth();
@@ -82,7 +95,6 @@ export default function Remolques() {
           icon={Wrench}
           className="mb-8"
         >
-          {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
           <ProtectedActionsV2
             resource="remolques"
             onAction={handleNewRemolque}
@@ -162,7 +174,7 @@ export default function Remolques() {
         <RemolquesTable 
           remolques={filteredRemolques}
           loading={loading}
-          onVincular={handleVincular}
+          onLink={handleVincular}
           onDelete={handleDelete}
         />
 
