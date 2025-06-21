@@ -9,7 +9,7 @@ import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { DocumentosVista } from '@/components/viajes/DocumentosVista';
 import { ProgramarViajeModal } from '@/components/viajes/modals/ProgramarViajeModal';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActions } from '@/components/ProtectedActions';
+import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -26,6 +26,7 @@ export default function Viajes() {
   const [activeTab, setActiveTab] = useState('activos');
 
   const handleNuevoViaje = () => {
+    console.log('[Viajes] 🆕 Iniciando programación de nuevo viaje');
     navigate('/viajes/programar');
   };
 
@@ -56,19 +57,14 @@ export default function Viajes() {
               <FileText className="h-4 w-4" />
               Nueva Carta Porte
             </Button>
-            <ProtectedActions
-              action="create"
+            {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
+            <ProtectedActionsV2
               resource="cartas_porte"
               onAction={handleNuevoViaje}
-            >
-              <Button 
-                className={`flex items-center gap-2 ${isMobile ? 'h-12 w-full justify-center' : ''}`}
-                data-onboarding="nuevo-viaje-btn"
-              >
-                <Route className="h-4 w-4" />
-                Programar Nuevo Viaje
-              </Button>
-            </ProtectedActions>
+              buttonText="Programar Nuevo Viaje"
+              variant="default"
+              showReason={true}
+            />
           </div>
         </SectionHeader>
 

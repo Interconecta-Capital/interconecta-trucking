@@ -1,342 +1,218 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Plus, Users, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Users, Search, Filter, AlertTriangle, UserCheck, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConductoresTable } from '@/components/conductores/ConductoresTable';
+import { ConductoresFilters } from '@/components/conductores/ConductoresFilters';
 import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
 import { ConductorViewDialog } from '@/components/conductores/ConductorViewDialog';
-import { ProtectedActions } from '@/components/ProtectedActions';
-import { ProtectedContent } from '@/components/ProtectedContent';
-import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useConductoresOptimized } from '@/hooks/useConductoresOptimized';
-import { Conductor } from '@/types/cartaPorte';
-import { toast } from 'sonner';
+import { useStableAuth } from '@/hooks/useStableAuth';
+import { ProtectedContent } from '@/components/ProtectedContent';
+import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
 
 export default function ConductoresOptimized() {
-  const [showFormDialog, setShowFormDialog] = useState(false);
+  const { user } = useStableAuth();
+  const { conductores, loading, error, eliminarConductor, recargar } = useConductoresOptimized(user?.id);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedConductor, setSelectedConductor] = useState<Conductor | null>(null);
-  const [filters, setFilters] = useState({
-    estado: 'all',
-    searchTerm: '',
-    tipoLicencia: 'all'
-  });
-
-  const { 
-    conductores, 
-    loading, 
-    error,
-    fetchConductores, 
-    deleteConductor,
-    isAuthenticated 
-  } = useConductoresOptimized();
-
-  // Show loading state while auth is initializing
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <RefreshCw className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-            <p className="text-gray-600">Verificando autenticación...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const filteredConductores = conductores.filter(conductor => {
-    const matchesEstado = filters.estado === 'all' || conductor.estado === filters.estado;
-    const matchesSearch = !filters.searchTerm || 
-      conductor.nombre.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-      (conductor.rfc && conductor.rfc.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
-      (conductor.num_licencia && conductor.num_licencia.toLowerCase().includes(filters.searchTerm.toLowerCase()));
-    const matchesTipoLicencia = filters.tipoLicencia === 'all' || conductor.tipo_licencia === filters.tipoLicencia;
-    
-    return matchesEstado && matchesSearch && matchesTipoLicencia;
-  });
-
-  // Estadísticas optimizadas
-  const totalConductores = conductores.length;
-  const conductoresActivos = conductores.filter(c => c.estado === 'disponible').length;
-  const licenciasProximasVencer = conductores.filter(c => {
-    if (!c.vigencia_licencia) return false;
-    const today = new Date();
-    const expiryDate = new Date(c.vigencia_licencia);
-    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
-  }).length;
+  const [selectedConductor, setSelectedConductor] = useState<any>(null);
 
   const handleNewConductor = () => {
+    console.log('[Conductores] 🆕 Iniciando creación de nuevo conductor');
     setSelectedConductor(null);
-    setShowFormDialog(true);
+    setShowCreateDialog(true);
   };
 
-  const handleSuccess = () => {
-    fetchConductores();
-    setShowFormDialog(false);
-    setSelectedConductor(null);
-  };
-
-  const handleEdit = (conductor: Conductor) => {
+  const handleEdit = (conductor: any) => {
     setSelectedConductor(conductor);
-    setShowFormDialog(true);
+    setShowEditDialog(true);
   };
 
-  const handleDelete = async (conductor: Conductor) => {
-    if (window.confirm(`¿Estás seguro de eliminar al conductor ${conductor.nombre}?`)) {
-      try {
-        await deleteConductor(conductor.id);
-      } catch (error) {
-        // Error already handled in hook
-      }
-    }
-  };
-
-  const handleView = (conductor: Conductor) => {
+  const handleView = (conductor: any) => {
     setSelectedConductor(conductor);
     setShowViewDialog(true);
   };
 
-  const clearFilters = () => {
-    setFilters({
-      estado: 'all',
-      searchTerm: '',
-      tipoLicencia: 'all'
-    });
+  const handleDelete = async (conductor: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el conductor ${conductor.nombre}?`)) {
+      try {
+        await eliminarConductor(conductor.id);
+      } catch (error) {
+        // Error already handled by hook
+      }
+    }
   };
 
-  const handleRefresh = () => {
-    fetchConductores();
-    toast.success('Lista actualizada');
-  };
+  const filteredConductores = conductores.filter(conductor =>
+    conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conductor.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conductor.num_licencia?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="p-8 border-red-200 bg-red-50">
+          <div className="text-center">
+            <p className="text-red-800 mb-4">Error cargando conductores: {error}</p>
+            <Button 
+              variant="outline" 
+              onClick={recargar}
+              className="bg-pure-white"
+            >
+              Reintentar
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <ProtectedContent requiredFeature="conductores">
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {/* Notificaciones de plan */}
-          <PlanNotifications />
+      <div className="container mx-auto py-8 space-y-8 max-w-7xl">
+        {/* Notificaciones de plan */}
+        <PlanNotifications />
 
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Conductores</h1>
-                <p className="text-gray-600">Gestión optimizada de conductores del sistema</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Actualizar
-              </Button>
-              <ProtectedActions
-                action="create"
-                resource="conductores"
-                onAction={handleNewConductor}
-                buttonText="Nuevo Conductor"
-                variant="default"
-              />
-            </div>
+        {/* Header estilo Apple */}
+        <SectionHeader
+          title="Conductores"
+          description="Gestiona tu equipo de conductores profesionales"
+          icon={Users}
+          className="mb-8"
+        >
+          {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
+          <ProtectedActionsV2
+            resource="conductores"
+            onAction={handleNewConductor}
+            buttonText="Nuevo Conductor"
+            variant="default"
+            showReason={true}
+          />
+        </SectionHeader>
+
+        {/* Indicador de límites */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <LimitUsageIndicator resourceType="conductores" className="md:col-span-2" />
+        </div>
+
+        {/* Filtros y búsqueda estilo Apple */}
+        <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
+            <Input
+              placeholder="Buscar por nombre, RFC o licencia..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
+            />
           </div>
+          <Button 
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={recargar}
+            disabled={loading}
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
+          >
+            Actualizar
+          </Button>
+        </div>
 
-          {/* Indicador de límites */}
-          <LimitUsageIndicator resourceType="conductores" />
-
-          {/* Error Display */}
-          {error && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-red-700">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span>Error: {error}</span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleRefresh}
-                    className="ml-auto"
-                  >
-                    Reintentar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Estadísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="flex items-center p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Users className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Conductores</p>
-                    <p className="text-2xl font-bold text-gray-900">{totalConductores}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="flex items-center p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <UserCheck className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Disponibles</p>
-                    <p className="text-2xl font-bold text-gray-900">{conductoresActivos}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="flex items-center p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <AlertTriangle className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Licencias por Vencer</p>
-                    <p className="text-2xl font-bold text-gray-900">{licenciasProximasVencer}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Filtros adicionales */}
+        {showFilters && (
+          <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm p-6">
+            <ConductoresFilters />
           </div>
+        )}
 
-          {/* Filtros */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filtros
-              </CardTitle>
+        {/* Stats estilo Apple */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-blue-interconecta">Total Conductores</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="search">Buscar</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="search"
-                      placeholder="Nombre, RFC o licencia..."
-                      value={filters.searchTerm}
-                      onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="estado">Estado</Label>
-                  <Select 
-                    value={filters.estado} 
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, estado: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos los estados" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="disponible">Disponible</SelectItem>
-                      <SelectItem value="en_viaje">En Viaje</SelectItem>
-                      <SelectItem value="descanso">Descanso</SelectItem>
-                      <SelectItem value="inactivo">Inactivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="tipoLicencia">Tipo de Licencia</Label>
-                  <Select 
-                    value={filters.tipoLicencia} 
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, tipoLicencia: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos los tipos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="A">Tipo A</SelectItem>
-                      <SelectItem value="B">Tipo B</SelectItem>
-                      <SelectItem value="C">Tipo C</SelectItem>
-                      <SelectItem value="D">Tipo D</SelectItem>
-                      <SelectItem value="E">Tipo E</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-end">
-                  <Button 
-                    variant="outline" 
-                    onClick={clearFilters}
-                    className="w-full"
-                  >
-                    Limpiar Filtros
-                  </Button>
-                </div>
-              </div>
+              <p className="text-3xl font-bold text-blue-interconecta">{conductores.length}</p>
             </CardContent>
           </Card>
-
-          {/* Loading State */}
-          {loading && (
-            <Card>
-              <CardContent className="flex items-center justify-center p-8">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  <span>Cargando conductores...</span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Tabla de Conductores */}
-          {!loading && (
-            <ConductoresTable
-              conductores={filteredConductores}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onView={handleView}
-            />
-          )}
-
-          {/* Diálogos */}
-          <ConductorFormDialog
-            open={showFormDialog}
-            onOpenChange={setShowFormDialog}
-            conductor={selectedConductor}
-            onSuccess={handleSuccess}
-          />
-
-          <ConductorViewDialog
-            open={showViewDialog}
-            onOpenChange={setShowViewDialog}
-            conductor={selectedConductor}
-            onEdit={(conductor) => {
-              setShowViewDialog(false);
-              handleEdit(conductor);
-            }}
-          />
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-700">{filteredConductores.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
+                {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
+              </p>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Tabla */}
+        <ConductoresTable 
+          conductores={filteredConductores}
+          loading={loading}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+        />
+
+        {/* Diálogos */}
+        <ConductorFormDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={() => {
+            setShowCreateDialog(false);
+            recargar();
+          }}
+        />
+
+        <ConductorFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          conductor={selectedConductor}
+          onSuccess={() => {
+            setShowEditDialog(false);
+            setSelectedConductor(null);
+            recargar();
+          }}
+        />
+
+        <ConductorViewDialog
+          open={showViewDialog}
+          onOpenChange={setShowViewDialog}
+          conductor={selectedConductor}
+          onEdit={() => {
+            setShowViewDialog(false);
+            setSelectedConductor(selectedConductor);
+            setShowEditDialog(true);
+          }}
+        />
       </div>
     </ProtectedContent>
   );

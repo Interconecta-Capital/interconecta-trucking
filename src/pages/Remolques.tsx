@@ -1,20 +1,19 @@
 
 import { useState } from 'react';
-import { Plus, Wrench, Filter, Search, Car } from 'lucide-react';
+import { Plus, Wrench, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SectionHeader } from '@/components/ui/section-header';
 import { RemolquesTable } from '@/components/remolques/RemolquesTable';
 import { RemolqueFormDialog } from '@/components/remolques/RemolqueFormDialog';
 import { VinculacionDialog } from '@/components/remolques/VinculacionDialog';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useRemolques } from '@/hooks/useRemolques';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActions } from '@/components/ProtectedActions';
+import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { toast } from 'sonner';
 
 export default function Remolques() {
   const { user } = useStableAuth();
@@ -22,60 +21,34 @@ export default function Remolques() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showVinculacionDialog, setShowVinculacionDialog] = useState(false);
   const [selectedRemolque, setSelectedRemolque] = useState<any>(null);
 
   const handleNewRemolque = () => {
+    console.log('[Remolques] 🆕 Iniciando creación de nuevo remolque');
     setSelectedRemolque(null);
     setShowCreateDialog(true);
   };
 
-  const handleEdit = (remolque: any) => {
+  const handleVincular = (remolque: any) => {
     setSelectedRemolque(remolque);
-    setShowEditDialog(true);
-  };
-
-  const handleView = (remolque: any) => {
-    // TODO: Implementar vista detallada del remolque
-    console.log('Ver remolque:', remolque);
+    setShowVinculacionDialog(true);
   };
 
   const handleDelete = async (remolque: any) => {
     if (window.confirm(`¿Estás seguro de eliminar el remolque ${remolque.placa}?`)) {
       try {
         await eliminarRemolque(remolque.id);
-        toast.success('Remolque eliminado exitosamente');
       } catch (error) {
         // Error already handled by hook
       }
     }
   };
 
-  const handleLink = (remolque: any) => {
-    setSelectedRemolque(remolque);
-    setShowVinculacionDialog(true);
-  };
-
-  const handleUnlink = (remolque: any) => {
-    setSelectedRemolque(remolque);
-    setShowVinculacionDialog(true);
-  };
-
-  const handleSuccess = () => {
-    setShowCreateDialog(false);
-    setShowEditDialog(false);
-    setShowVinculacionDialog(false);
-    setSelectedRemolque(null);
-    recargar();
-  };
-
   const filteredRemolques = remolques.filter(remolque =>
     remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.tipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase())
+    remolque.subtipo_rem?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const remolquesVinculados = remolques.filter(r => r.vehiculo_asignado_id).length;
 
   if (error) {
     return (
@@ -86,7 +59,7 @@ export default function Remolques() {
             <Button 
               variant="outline" 
               onClick={recargar}
-              className="bg-white-force"
+              className="bg-pure-white"
             >
               Reintentar
             </Button>
@@ -104,23 +77,19 @@ export default function Remolques() {
 
         {/* Header estilo Apple */}
         <SectionHeader
-          title="Remolques"
-          description="Gestiona tu flota de remolques y vinculaciones"
+          title="Remolques y Semirremolques"
+          description="Gestiona tus unidades de carga y remolques"
           icon={Wrench}
           className="mb-8"
         >
-          <div className="flex gap-3">
-            <ProtectedActions
-              action="create"
-              resource="vehiculos"
-              onAction={handleNewRemolque}
-            >
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nuevo Remolque
-              </Button>
-            </ProtectedActions>
-          </div>
+          {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
+          <ProtectedActionsV2
+            resource="remolques"
+            onAction={handleNewRemolque}
+            buttonText="Nuevo Remolque"
+            variant="default"
+            showReason={true}
+          />
         </SectionHeader>
 
         {/* Indicador de límites */}
@@ -133,16 +102,16 @@ export default function Remolques() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
-              placeholder="Buscar por placa, tipo o estado..."
+              placeholder="Buscar por placa o subtipo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 border-0 bg-white-force shadow-sm"
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
             />
           </div>
           <Button 
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="h-12 px-6 bg-white-force shadow-sm border-0"
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
@@ -151,7 +120,7 @@ export default function Remolques() {
             variant="outline"
             onClick={recargar}
             disabled={loading}
-            className="h-12 px-6 bg-white-force shadow-sm border-0"
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             Actualizar
           </Button>
@@ -170,53 +139,52 @@ export default function Remolques() {
           
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-green-700">Vinculados</CardTitle>
+              <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-700">{remolquesVinculados}</p>
+              <p className="text-3xl font-bold text-green-700">{filteredRemolques.length}</p>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-70">Disponibles</CardTitle>
+              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-gray-70">{remolques.length - remolquesVinculados}</p>
+              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
+                {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tabla de remolques */}
+        {/* Tabla */}
         <RemolquesTable 
           remolques={filteredRemolques}
           loading={loading}
-          onEdit={handleEdit}
-          onView={handleView}
+          onVincular={handleVincular}
           onDelete={handleDelete}
-          onLink={handleLink}
-          onUnlink={handleUnlink}
         />
 
         {/* Diálogos */}
         <RemolqueFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
-          onSuccess={handleSuccess}
-        />
-
-        <RemolqueFormDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          remolque={selectedRemolque}
-          onSuccess={handleSuccess}
+          onSuccess={() => {
+            setShowCreateDialog(false);
+            recargar();
+          }}
         />
 
         <VinculacionDialog
           open={showVinculacionDialog}
           onOpenChange={setShowVinculacionDialog}
           remolque={selectedRemolque}
-          onSuccess={handleSuccess}
+          onSuccess={() => {
+            setShowVinculacionDialog(false);
+            setSelectedRemolque(null);
+            recargar();
+          }}
         />
       </div>
     </ProtectedContent>

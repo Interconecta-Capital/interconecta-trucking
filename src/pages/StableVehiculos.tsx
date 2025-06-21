@@ -1,23 +1,23 @@
 
 import { useState } from 'react';
-import { Plus, Truck, Filter, Search, Wrench } from 'lucide-react';
+import { Plus, Car, Filter, Search, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
+import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
 import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
+import { RemolqueFormDialog } from '@/components/vehiculos/RemolqueFormDialog';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActions } from '@/components/ProtectedActions';
+import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { useNavigate } from 'react-router-dom';
 
 export default function StableVehiculos() {
-  const navigate = useNavigate();
   const { user } = useStableAuth();
   const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,20 +25,15 @@ export default function StableVehiculos() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showRemolqueDialog, setShowRemolqueDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
 
-  // Fixed: No parameters for ProtectedActions compatibility
   const handleNewVehiculo = () => {
+    console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');
     setSelectedVehiculo(null);
     setShowCreateDialog(true);
   };
 
-  // Fixed: No parameters for ProtectedActions compatibility - Navigate to remolques page
-  const handleNewRemolque = () => {
-    navigate('/remolques');
-  };
-
-  // These handlers need parameters, so they're separate
   const handleEdit = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
     setShowEditDialog(true);
@@ -50,7 +45,7 @@ export default function StableVehiculos() {
   };
 
   const handleDelete = async (vehiculo: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.placa}?`)) {
+    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.numero_serie}?`)) {
       try {
         await eliminarVehiculo(vehiculo.id);
       } catch (error) {
@@ -59,25 +54,10 @@ export default function StableVehiculos() {
     }
   };
 
-  // Fixed: Function for VehiculoViewDialog.onEdit (no parameters)
-  const handleEditFromView = () => {
-    if (selectedVehiculo) {
-      setShowViewDialog(false);
-      handleEdit(selectedVehiculo);
-    }
-  };
-
-  const handleSuccess = () => {
-    setShowCreateDialog(false);
-    setShowEditDialog(false);
-    setSelectedVehiculo(null);
-    recargar();
-  };
-
   const filteredVehiculos = vehiculos.filter(vehiculo =>
+    vehiculo.numero_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (error) {
@@ -89,7 +69,7 @@ export default function StableVehiculos() {
             <Button 
               variant="outline" 
               onClick={recargar}
-              className="bg-white-force"
+              className="bg-pure-white"
             >
               Reintentar
             </Button>
@@ -107,33 +87,19 @@ export default function StableVehiculos() {
 
         {/* Header estilo Apple */}
         <SectionHeader
-          title="Flota Vehicular"
-          description="Gestiona tu flota de vehículos y remolques"
-          icon={Truck}
+          title="Flota de Vehículos"
+          description="Gestiona tus vehículos y unidades de transporte"
+          icon={Car}
           className="mb-8"
         >
-          <div className="flex gap-3">
-            <ProtectedActions
-              action="create"
-              resource="vehiculos"
-              onAction={handleNewRemolque}
-            >
-              <Button variant="outline" className="flex items-center gap-2 bg-white-force">
-                <Wrench className="h-4 w-4" />
-                Nuevo Remolque
-              </Button>
-            </ProtectedActions>
-            <ProtectedActions
-              action="create"
-              resource="vehiculos"
-              onAction={handleNewVehiculo}
-            >
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nuevo Vehículo
-              </Button>
-            </ProtectedActions>
-          </div>
+          {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
+          <ProtectedActionsV2
+            resource="vehiculos"
+            onAction={handleNewVehiculo}
+            buttonText="Nuevo Vehículo"
+            variant="default"
+            showReason={true}
+          />
         </SectionHeader>
 
         {/* Indicador de límites */}
@@ -146,16 +112,16 @@ export default function StableVehiculos() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
-              placeholder="Buscar por placa, marca o modelo..."
+              placeholder="Buscar por serie, placa o marca..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 border-0 bg-white-force shadow-sm"
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
             />
           </div>
           <Button 
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="h-12 px-6 bg-white-force shadow-sm border-0"
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
@@ -164,11 +130,18 @@ export default function StableVehiculos() {
             variant="outline"
             onClick={recargar}
             disabled={loading}
-            className="h-12 px-6 bg-white-force shadow-sm border-0"
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             Actualizar
           </Button>
         </div>
+
+        {/* Filtros adicionales */}
+        {showFilters && (
+          <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm p-6">
+            <VehiculosFilters />
+          </div>
+        )}
 
         {/* Stats estilo Apple */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -215,21 +188,41 @@ export default function StableVehiculos() {
         <VehiculoFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
-          onSuccess={handleSuccess}
+          onSuccess={() => {
+            setShowCreateDialog(false);
+            recargar();
+          }}
         />
 
         <VehiculoFormDialog
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
           vehiculo={selectedVehiculo}
-          onSuccess={handleSuccess}
+          onSuccess={() => {
+            setShowEditDialog(false);
+            setSelectedVehiculo(null);
+            recargar();
+          }}
         />
 
         <VehiculoViewDialog
           open={showViewDialog}
           onOpenChange={setShowViewDialog}
           vehiculo={selectedVehiculo}
-          onEdit={handleEditFromView}
+          onEdit={() => {
+            setShowViewDialog(false);
+            setSelectedVehiculo(selectedVehiculo);
+            setShowEditDialog(true);
+          }}
+        />
+
+        <RemolqueFormDialog
+          open={showRemolqueDialog}
+          onOpenChange={setShowRemolqueDialog}
+          onSuccess={() => {
+            setShowRemolqueDialog(false);
+            recargar();
+          }}
         />
       </div>
     </ProtectedContent>
