@@ -81,7 +81,9 @@ export function SimplifiedXMLGenerationPanel({
 
   const handleGenerarXML = async () => {
     const resultado = await generarXML(cartaPorteData);
-    if (resultado.success && resultado.xml) {
+    
+    // Type guard para verificar si el resultado tiene la propiedad xml
+    if (resultado.success && 'xml' in resultado && resultado.xml) {
       // Persistir XML inmediatamente
       saveXML(resultado.xml);
       
