@@ -8,7 +8,8 @@ import {
   Users,
   Building2,
   Truck,
-  CreditCard
+  CreditCard,
+  AlertTriangle
 } from "lucide-react";
 
 import Index from "./pages/Index";
@@ -22,6 +23,7 @@ import Viajes from "./pages/Viajes";
 import Administracion from "./pages/Administracion";
 import Planes from "./pages/Planes";
 import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa";
+import DebugPermissionsTest from "./pages/DebugPermissionsTest";
 
 /**
  * Central place for defining the navigation items. Used for navigation components and routing.
@@ -101,5 +103,13 @@ export const navItems = [
     to: "/planes",
     icon: <CreditCard className="h-4 w-4" />,
     page: <Planes />,
+  },
+  {
+    title: "Debug: Permisos V2",
+    to: "/debug/permissions-test",
+    icon: <AlertTriangle className="h-4 w-4" />,
+    page: <DebugPermissionsTest />,
+    hideFromNav: true,
+    description: "Página de validación para el nuevo sistema de permisos"
   },
 ];
