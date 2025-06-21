@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Loader2, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, CheckCircle, AlertTriangle, MapPin } from 'lucide-react';
 
 interface RouteCalculationStatusProps {
   isCalculating: boolean;
@@ -14,16 +15,36 @@ export function RouteCalculationStatus({
   hasUbicaciones, 
   canCalculate 
 }: RouteCalculationStatusProps) {
+  if (isCalculating) {
+    return (
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+            <div>
+              <h4 className="font-medium text-blue-800">Calculando Ruta</h4>
+              <p className="text-sm text-blue-600">
+                Obteniendo la mejor ruta usando múltiples servicios...
+              </p>
+            </div>
+            <Badge variant="outline" className="ml-auto bg-blue-100 text-blue-800">
+              En proceso
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!hasUbicaciones) {
     return (
-      <Card className="border-gray-200 bg-white shadow-sm">
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 text-gray-500">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm">
-              No hay ubicaciones disponibles para calcular la ruta
-            </span>
-          </div>
+      <Card className="border-gray-200">
+        <CardContent className="p-4 text-center">
+          <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+          <h4 className="font-medium text-gray-600 mb-1">Sin Ubicaciones</h4>
+          <p className="text-sm text-gray-500">
+            Agregue ubicaciones de origen y destino para calcular la ruta
+          </p>
         </CardContent>
       </Card>
     );
@@ -31,29 +52,41 @@ export function RouteCalculationStatus({
 
   if (!canCalculate) {
     return (
-      <Card className="border-gray-200 bg-white shadow-sm">
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 text-amber-700">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm">
-              Agrega un origen y destino con direcciones completas para calcular la ruta automáticamente
-            </span>
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            <div>
+              <h4 className="font-medium text-yellow-800">Datos Incompletos</h4>
+              <p className="text-sm text-yellow-600">
+                Se necesitan ubicaciones completas (origen y destino con direcciones válidas)
+              </p>
+            </div>
+            <Badge variant="outline" className="ml-auto bg-yellow-100 text-yellow-800">
+              Pendiente
+            </Badge>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (isCalculating) {
-    return (
-      <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-        <span className="text-sm text-gray-800">
-          Calculando ruta con Mapbox...
-        </span>
-      </div>
+  return (
+    <Card className="border-green-200 bg-green-50">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600" />
+          <div>
+            <h4 className="font-medium text-green-800">Listo para Calcular</h4>
+            <p className="text-sm text-green-600">
+              Ubicaciones válidas detectadas. El cálculo iniciará automáticamente.
+            </p>
+          </div>
+          <Badge variant="outline" className="ml-auto bg-green-100 text-green-800">
+            Listo
+          </Badge>
+        </div>
+      </CardContent>
     );
   }
-
-  return null;
 }

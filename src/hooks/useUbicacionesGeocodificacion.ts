@@ -1,95 +1,98 @@
 
 import { useCallback } from 'react';
-import { Ubicacion, Coordinates } from '@/types/ubicaciones';
+import { useMapas } from './useMapas';
+import { useAccurateGeocodingMexico } from './useAccurateGeocodingMexico';
+import { Ubicacion } from '@/types/ubicaciones';
 
 export const useUbicacionesGeocodificacion = () => {
-  const geocodificarUbicacion = useCallback(async (ubicacion: Ubicacion) => {
+  const { geocodificarDireccion, calcularRuta } = useMapas();
+  const { geocodeByCodigoPostal } = useAccurateGeocodingMexico();
+
+  const geocodificarUbicacion = useCallback(async (ubicacion: Ubicacion): Promise<Ubicacion> => {
     try {
-      // Mock geocoding - in production this would use a real geocoding service
-      const mockCoords: Coordinates = {
-        lat: 19.4326,
-        lng: -99.1332,
-        latitud: 19.4326,
-        longitud: -99.1332
-      };
+      // Intentar con dirección completa primero
+      const direccionCompleta = `${ubicacion.domicilio.calle} ${ubicacion.domicilio.numExterior || ''}, ${ubicacion.domicilio.colonia}, ${ubicacion.domicilio.municipio}, ${ubicacion.domicilio.estado}`.trim();
       
+      let coordenadas = null;
+      
+      // Usar Mapbox para geocodificación precisa
+      const resultado = await geocodificarDireccion(direccionCompleta);
+      if (resultado && resultado.coordinates) {
+        coordenadas = {
+          latitud: resultado.coordinates.lat,
+          longitud: resultado.coordinates.lng
+        };
+      }
+      
+      // Fallback a geocodificación por código postal
+      if (!coordenadas) {
+        const coordsCP = geocodeByCodigoPostal(ubicacion.domicilio.codigoPostal);
+        if (coordsCP) {
+          coordenadas = {
+            latitud: coordsCP.lat,
+            longitud: coordsCP.lng
+          };
+        }
+      }
+
       return {
         ...ubicacion,
-        coordenadas: {
-          latitud: mockCoords.latitud!,
-          longitud: mockCoords.longitud!
-        }
+        coordenadas: coordenadas || undefined
       };
     } catch (error) {
       console.error('Error geocodificando ubicación:', error);
       return ubicacion;
     }
-  }, []);
-
-  const calcularDistanciaEntrePuntos = useCallback((
-    coords1: { latitud: number; longitud: number },
-    coords2: { latitud: number; longitud: number }
-  ): number => {
-    // Haversine formula for distance calculation
-    const R = 6371; // Earth's radius in km
-    const dLat = (coords2.latitud - coords1.latitud) * Math.PI / 180;
-    const dLon = (coords2.longitud - coords1.longitud) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(coords1.latitud * Math.PI / 180) * Math.cos(coords2.latitud * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }, []);
-
-  const calcularDistanciasAutomaticas = useCallback(async (ubicaciones: Ubicacion[]): Promise<Ubicacion[]> => {
-    if (ubicaciones.length < 2) return ubicaciones;
-
-    const ubicacionesConDistancia = [...ubicaciones];
-    
-    for (let i = 1; i < ubicacionesConDistancia.length; i++) {
-      const anterior = ubicacionesConDistancia[i - 1];
-      const actual = ubicacionesConDistancia[i];
-      
-      if (anterior.coordenadas && actual.coordenadas) {
-        const distancia = calcularDistanciaEntrePuntos(
-          { latitud: anterior.coordenadas.latitud, longitud: anterior.coordenadas.longitud },
-          { latitud: actual.coordenadas.latitud, longitud: actual.coordenadas.longitud }
-        );
-        
-        ubicacionesConDistancia[i] = {
-          ...actual,
-          distanciaRecorrida: Math.round(distancia)
-        };
-      }
-    }
-    
-    return ubicacionesConDistancia;
-  }, [calcularDistanciaEntrePuntos]);
+  }, [geocodificarDireccion, geocodeByCodigoPostal]);
 
   const calcularRutaCompleta = useCallback(async (ubicaciones: Ubicacion[]) => {
     try {
-      // Mock route calculation - in production this would use a routing service
-      if (ubicaciones.length < 2) return null;
-      
-      const coordenadasRuta = ubicaciones
+      const ubicacionesConCoordenadas = await Promise.all(
+        ubicaciones.map(geocodificarUbicacion)
+      );
+
+      const coordenadas = ubicacionesConCoordenadas
         .filter(u => u.coordenadas)
-        .map(u => ({ latitud: u.coordenadas!.latitud, longitud: u.coordenadas!.longitud }));
-      
-      return {
-        coordenadas: coordenadasRuta,
-        distanciaTotal: ubicaciones.reduce((total, u) => total + (u.distanciaRecorrida || 0), 0),
-        tiempoEstimado: Math.round(coordenadasRuta.length * 60) // Mock: 60 minutes per location
-      };
+        .map(u => ({
+          lat: u.coordenadas!.latitud,
+          lng: u.coordenadas!.longitud
+        }));
+
+      if (coordenadas.length < 2) {
+        throw new Error('Se necesitan al menos 2 ubicaciones con coordenadas válidas');
+      }
+
+      const resultado = await calcularRuta(coordenadas);
+      return resultado;
     } catch (error) {
       console.error('Error calculando ruta completa:', error);
-      return null;
+      throw error;
     }
-  }, []);
+  }, [geocodificarUbicacion, calcularRuta]);
+
+  const calcularDistanciaEntrePuntos = useCallback(async (origen: Ubicacion, destino: Ubicacion) => {
+    try {
+      const origenGeo = await geocodificarUbicacion(origen);
+      const destinoGeo = await geocodificarUbicacion(destino);
+
+      if (!origenGeo.coordenadas || !destinoGeo.coordenadas) {
+        throw new Error('No se pudieron obtener coordenadas para origen o destino');
+      }
+
+      const resultado = await calcularRuta([
+        { lat: origenGeo.coordenadas.latitud, lng: origenGeo.coordenadas.longitud },
+        { lat: destinoGeo.coordenadas.latitud, lng: destinoGeo.coordenadas.longitud }
+      ]);
+
+      return resultado;
+    } catch (error) {
+      console.error('Error calculando distancia entre puntos:', error);
+      throw error;
+    }
+  }, [geocodificarUbicacion, calcularRuta]);
 
   return {
     geocodificarUbicacion,
-    calcularDistanciasAutomaticas,
     calcularRutaCompleta,
     calcularDistanciaEntrePuntos
   };

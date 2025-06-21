@@ -2,70 +2,68 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-declare global {
-  interface Window {
-    google: any;
-    initGoogleMapsCallback?: () => void;
-  }
-}
-
 export const useGoogleMapsAPI = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadGoogleMaps = async () => {
+    const loadGoogleMapsAPI = async () => {
       try {
-        // Verificar si ya está cargado
+        // Check if Google Maps is already loaded
         if (window.google && window.google.maps) {
+          console.log('✅ Google Maps already loaded');
           setIsLoaded(true);
           return;
         }
 
-        // Obtener API key desde Supabase Secrets
-        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        console.log('🔄 Loading Google Maps API...');
+
+        // Get API key from Edge Function
+        const { data, error: keyError } = await supabase.functions.invoke('get-google-maps-key');
         
-        if (error) {
-          console.warn('⚠️ No se pudo obtener Google Maps API key:', error);
-          setError('Google Maps API key no configurada');
-          return;
+        if (keyError || !data?.apiKey) {
+          throw new Error('No se pudo obtener la API key de Google Maps');
         }
 
-        const key = data?.apiKey || process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-        
-        if (!key) {
-          setError('Google Maps API key no encontrada');
-          return;
-        }
+        setApiKey(data.apiKey);
 
-        setApiKey(key);
-
-        // Crear callback global
-        window.initGoogleMapsCallback = () => {
-          console.log('✅ Google Maps API cargada');
-          setIsLoaded(true);
-        };
-
-        // Cargar script
+        // Load Google Maps script
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry,places&callback=initGoogleMapsCallback`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&libraries=geometry,places`;
         script.async = true;
         script.defer = true;
-        
+
+        script.onload = () => {
+          console.log('✅ Google Maps API loaded successfully');
+          setIsLoaded(true);
+          setError(null);
+        };
+
         script.onerror = () => {
-          setError('Error cargando Google Maps API');
+          const errorMsg = 'Error cargando Google Maps API';
+          console.error('❌', errorMsg);
+          setError(errorMsg);
         };
 
         document.head.appendChild(script);
 
-      } catch (error) {
-        console.error('❌ Error inicializando Google Maps:', error);
-        setError('Error de inicialización');
+        // Cleanup function
+        return () => {
+          const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`);
+          if (existingScript) {
+            document.head.removeChild(existingScript);
+          }
+        };
+
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Error desconocido cargando Google Maps';
+        console.error('❌ Error loading Google Maps:', err);
+        setError(errorMsg);
       }
     };
 
-    loadGoogleMaps();
+    loadGoogleMapsAPI();
   }, []);
 
   return { isLoaded, error, apiKey };
