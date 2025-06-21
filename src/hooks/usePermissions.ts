@@ -1,13 +1,13 @@
 
-import { useUnifiedPermissions } from './useUnifiedPermissions';
+import { useUnifiedPermissionsV2 } from './useUnifiedPermissionsV2';
 
 /**
  * Hook de compatibilidad que mantiene la interfaz existente
- * mientras usa el nuevo sistema unificado por debajo
- * @deprecated Usar useUnifiedPermissions directamente para nuevos desarrollos
+ * mientras usa el nuevo sistema unificado V2 por debajo
+ * @deprecated Usar useUnifiedPermissionsV2 directamente para nuevos desarrollos
  */
 export const usePermissions = () => {
-  const unified = useUnifiedPermissions();
+  const unified = useUnifiedPermissionsV2();
   
   return {
     // Compatibilidad con la interfaz anterior
@@ -24,13 +24,13 @@ export const usePermissions = () => {
     canCreateCartaPorte: unified.canCreateCartaPorte.allowed,
     
     // Funcionalidades
-    canTimbrar: unified.canTimbrar.allowed,
-    canGenerateXML: unified.canGenerateXML.allowed,
-    canCancelCFDI: unified.canCancelCFDI.allowed,
-    canUseTracking: unified.canUseTracking.allowed,
-    canAccessAdmin: unified.canAccessAdmin.allowed,
-    canAccessAdvanced: unified.canAccessAdvanced.allowed,
-    canAccessEnterprise: unified.canAccessEnterprise.allowed,
+    canTimbrar: unified.canCreateCartaPorte.allowed, // Simplificado para esta fase
+    canGenerateXML: unified.canCreateCartaPorte.allowed,
+    canCancelCFDI: unified.canCreateCartaPorte.allowed,
+    canUseTracking: unified.hasFullAccess,
+    canAccessAdmin: unified.accessLevel === 'superuser',
+    canAccessAdvanced: unified.hasFullAccess,
+    canAccessEnterprise: unified.accessLevel === 'superuser',
     
     // Información adicional
     planName: unified.planInfo.name,
