@@ -17,20 +17,20 @@
     --primary: 208 100% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 0 0% 98%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 0 0% 98%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 0 0% 98%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --input: 0 0% 100%;
     --ring: 208 100% 55%;
 
     --radius: 0.75rem;
@@ -44,11 +44,11 @@
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 208 100% 55%;
 
-    /* Apple-Style Design System */
+    /* Apple-Style Design System - Corregidas para evitar grises */
     --pure-white: #FFFFFF;
     --pure-black: #000000;
     
-    /* Apple Gray Scale */
+    /* Apple Gray Scale - Solo para uso específico */
     --gray-05: #FAFAFA;
     --gray-10: #F5F5F5;
     --gray-20: #E8E8E8;
@@ -358,9 +358,10 @@
     border-color: var(--gray-30);
   }
 
-  /* Apple Input Styles */
+  /* Apple Input Styles - Corregidos para evitar fondos grises */
   .input-apple {
-    @apply rounded-xl border-gray-20 bg-gray-05;
+    @apply rounded-xl border-gray-20;
+    background: var(--pure-white) !important;
     @apply focus:bg-pure-white focus:border-blue-interconecta focus:ring-1 focus:ring-blue-interconecta;
     @apply transition-all duration-200;
     transition-timing-function: var(--apple-ease);
@@ -403,7 +404,7 @@
 
 @layer utilities {
   /* Apple Color System */
-  .bg-pure-white { background-color: var(--pure-white); }
+  .bg-pure-white { background-color: var(--pure-white) !important; }
   .bg-pure-black { background-color: var(--pure-black); }
   .bg-gray-05 { background-color: var(--gray-05); }
   .bg-gray-10 { background-color: var(--gray-10); }
@@ -441,6 +442,10 @@
   /* Apple-specific utilities */
   .rounded-apple { border-radius: var(--radius-12); }
   .shadow-apple { box-shadow: var(--shadow-apple); }
+  
+  /* Forzar fondos blancos para inputs y campos */
+  .bg-white-force { background-color: #FFFFFF !important; }
+  .bg-transparent-force { background-color: transparent !important; }
   
   /* Touch Optimizations */
   @media (hover: none) and (pointer: coarse) {

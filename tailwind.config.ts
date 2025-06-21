@@ -67,7 +67,7 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Premium Design System - Exact from Reference
+				// Premium Design System - Corregido para evitar grises automáticos
 				'pure-white': '#FFFFFF',
 				'pure-black': '#000000',
 				'gray-05': '#FAFAFA',
@@ -83,6 +83,9 @@ export default {
 				'blue-interconecta': '#1A69FA',
 				'blue-hover': '#0F47B3',
 				'blue-light': '#F0F8FF',
+				// Colores adicionales para forzar blanco
+				'white-force': '#FFFFFF',
+				'transparent-force': 'transparent',
 			},
 			spacing: {
 				'1': '4px',
