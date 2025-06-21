@@ -3,18 +3,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Package, MapPin, Route, Truck, User, FileText, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Package, MapPin, Route, Truck, User, FileText, AlertTriangle, Loader2 } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
+import { useState } from 'react';
 
 interface ViajeWizardResumenProps {
   data: ViajeWizardData;
   onConfirm: () => void;
 }
 
+function Label({ className, children, ...props }: { className?: string; children: React.ReactNode }) {
+  return <label className={`text-sm font-medium ${className || ''}`} {...props}>{children}</label>;
+}
+
 export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
   const tipoServicioLabel = data.tipoServicio === 'flete_pagado' 
     ? 'Flete Pagado (CFDI Ingreso)' 
     : 'Traslado Propio (CFDI Traslado)';
+
+  const handleConfirmClick = () => {
+    if (isProcessing || hasAttemptedSubmit) {
+      return; // Prevenir múltiples clics
+    }
+
+    setIsProcessing(true);
+    setHasAttemptedSubmit(true);
+    
+    // Llamar a la función original
+    onConfirm();
+  };
 
   return (
     <div className="space-y-6">
@@ -76,7 +96,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
           <div className="flex items-center gap-3 pl-6">
             <div className="w-px h-8 bg-gray-300"></div>
             <div className="text-sm text-muted-foreground">
-              {data.distanciaRecorrida} km • {Math.floor(data.distanciaRecorrida! / 80)} hrs estimadas
+              {data.distanciaRecorrida} km • {Math.floor((data.distanciaRecorrida || 0) / 80)} hrs estimadas
             </div>
           </div>
           
@@ -188,30 +208,45 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         </CardContent>
       </Card>
 
-      {/* Botón de Confirmación */}
-      <Card>
-        <CardContent className="pt-6">
-          <Button 
-            onClick={onConfirm}
-            className="w-full h-12 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold"
-          >
-            <CheckCircle className="h-5 w-5 mr-3" />
-            Confirmar Viaje y Emitir Documentos
-          </Button>
-          <p className="text-center text-sm text-muted-foreground mt-2">
-            Este proceso puede tomar unos segundos
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+      {/* Botón de Confirmación con Estados */}
+      <div className="flex justify-center pt-4">
+        <Button
+          onClick={handleConfirmClick}
+          disabled={isProcessing || hasAttemptedSubmit}
+          className={`${
+            isProcessing 
+              ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+              : 'bg-green-600 hover:bg-green-700'
+          } px-8 py-3 text-lg font-semibold`}
+          data-onboarding="confirm-viaje-btn"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Procesando Viaje...
+            </>
+          ) : hasAttemptedSubmit ? (
+            <>
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Viaje Enviado
+            </>
+          ) : (
+            <>
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Confirmar y Emitir Documentos
+            </>
+          )}
+        </Button>
+      </div>
 
-// Componente auxiliar para labels
-function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`text-sm font-medium text-muted-foreground ${className}`}>
-      {children}
+      {/* Mensaje de Estado */}
+      {isProcessing && (
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
+            Por favor espera mientras procesamos tu viaje y generamos los documentos...
+          </p>
+        </div>
+      )}
     </div>
   );
 }

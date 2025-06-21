@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,6 +74,7 @@ export function ViajeWizard() {
     isValid: false
   });
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
+  const [viajeConfirmado, setViajeConfirmado] = useState(false);
 
   const updateData = (updates: Partial<ViajeWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -112,43 +114,59 @@ export function ViajeWizard() {
   };
 
   const handleConfirmarViaje = async () => {
+    // Prevenir múltiples ejecuciones
+    if (isGeneratingDocuments || isCreatingViaje || viajeConfirmado) {
+      console.log('🚫 Proceso ya en curso, ignorando clic adicional');
+      return;
+    }
+
     try {
       setIsGeneratingDocuments(true);
-      console.log('🚛 Confirmando viaje con datos:', data);
+      console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
       // 1. Crear el viaje primero
+      console.log('📝 Paso 1: Creando viaje en base de datos...');
       const nuevoViaje = await new Promise<any>((resolve, reject) => {
         crearViaje(data, {
-          onSuccess: resolve,
-          onError: reject
+          onSuccess: (viaje) => {
+            console.log('✅ Viaje creado con ID:', viaje.id);
+            resolve(viaje);
+          },
+          onError: (error) => {
+            console.error('❌ Error creando viaje:', error);
+            reject(error);
+          }
         });
       });
 
-      console.log('✅ Viaje creado:', nuevoViaje.id);
-      toast.success('Viaje registrado exitosamente');
+      // Marcar como confirmado para prevenir duplicados
+      setViajeConfirmado(true);
 
       // 2. Generar Carta Porte desde el viaje
-      console.log('📄 Generando Carta Porte...');
+      console.log('📄 Paso 2: Generando Carta Porte...');
       const resultado = await ViajeCartaPorteService.crearCartaPorteDesdeViaje(
         nuevoViaje.id,
         data
       );
 
-      console.log('✅ Carta Porte generada:', resultado.carta_porte.id);
-      toast.success('Carta Porte generada exitosamente');
+      console.log('✅ Documentos generados exitosamente');
+      toast.success('Viaje programado y documentos generados exitosamente');
 
-      // 3. Redirigir a la vista de viajes
-      navigate('/viajes', { 
-        state: { 
-          message: 'Viaje programado y documentos generados exitosamente',
-          viajeId: nuevoViaje.id,
-          cartaPorteId: resultado.carta_porte.id
-        }
-      });
+      // 3. Redirigir después de un breve delay
+      setTimeout(() => {
+        navigate('/viajes', { 
+          state: { 
+            message: 'Viaje programado y documentos generados exitosamente',
+            viajeId: nuevoViaje.id,
+            cartaPorteId: resultado.carta_porte.id
+          }
+        });
+      }, 2000);
 
     } catch (error) {
-      console.error('❌ Error en confirmación de viaje:', error);
+      console.error('❌ Error en proceso de confirmación:', error);
       toast.error('Error al programar el viaje: ' + (error as Error).message);
+      setViajeConfirmado(false); // Permitir retry en caso de error
     } finally {
       setIsGeneratingDocuments(false);
     }
@@ -186,7 +204,11 @@ export function ViajeWizard() {
                 <Route className="h-6 w-6 text-blue-600" />
                 <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
               </div>
-              <Button variant="outline" onClick={handleCancel} disabled={isProcessing}>
+              <Button 
+                variant="outline" 
+                onClick={handleCancel} 
+                disabled={isProcessing || viajeConfirmado}
+              >
                 Cancelar
               </Button>
             </div>
@@ -199,13 +221,27 @@ export function ViajeWizard() {
               </div>
               <Progress value={progress} className="w-full" />
             </div>
+
+            {/* Indicador de Estado */}
+            {(isProcessing || viajeConfirmado) && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-800">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-medium">
+                    {isCreatingViaje && 'Registrando viaje en sistema...'}
+                    {isGeneratingDocuments && !isCreatingViaje && 'Generando documentos fiscales...'}
+                    {viajeConfirmado && !isProcessing && 'Viaje confirmado exitosamente'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Flow Mode Selector - Solo mostrar en el primer paso */}
           {data.currentStep === 1 && <FlowModeSelector />}
 
           {/* Steps Navigation */}
-          <div className="grid grid-cols-4 gap-4 mb-6" data-onboarding="wizard-steps">
+          <div className="grid grid-cols-5 gap-4 mb-6" data-onboarding="wizard-steps">
             {STEPS.map((step) => {
               const isActive = step.id === data.currentStep;
               const isCompleted = step.id < data.currentStep;
@@ -257,46 +293,25 @@ export function ViajeWizard() {
           </Card>
 
           {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
-          {data.currentStep !== 4 && (
+          {data.currentStep !== 4 && data.currentStep !== 5 && (
             <div className="flex justify-between mt-6">
               <Button
                 variant="outline"
                 onClick={handlePrevious}
-                disabled={data.currentStep === 1 || isProcessing}
+                disabled={data.currentStep === 1 || isProcessing || viajeConfirmado}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Anterior
               </Button>
 
-              {data.currentStep < 5 ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={!canAdvance() || isProcessing}
-                  data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
-                >
-                  Siguiente
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleConfirmarViaje}
-                  disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700"
-                  data-onboarding="confirm-viaje-btn"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      {isCreatingViaje ? 'Creando viaje...' : 'Generando documentos...'}
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Confirmar y Emitir Documentos
-                    </>
-                  )}
-                </Button>
-              )}
+              <Button
+                onClick={handleNext}
+                disabled={!canAdvance() || isProcessing || viajeConfirmado}
+                data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
+              >
+                Siguiente
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
             </div>
           )}
         </div>
