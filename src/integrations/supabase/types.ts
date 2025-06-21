@@ -1539,6 +1539,30 @@ export type Database = {
         }
         Relationships: []
       }
+      indices_backup: {
+        Row: {
+          created_at: string | null
+          id: string
+          index_definition: string
+          index_name: string
+          table_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          index_definition: string
+          index_name: string
+          table_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          index_definition?: string
+          index_name?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       mercancias: {
         Row: {
           bienes_transp: string
@@ -2123,6 +2147,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rls_policies_backup: {
+        Row: {
+          backup_phase: string | null
+          created_at: string | null
+          id: string
+          is_permissive: boolean | null
+          policy_command: string
+          policy_name: string
+          policy_using: string | null
+          policy_with_check: string | null
+          table_name: string
+        }
+        Insert: {
+          backup_phase?: string | null
+          created_at?: string | null
+          id?: string
+          is_permissive?: boolean | null
+          policy_command: string
+          policy_name: string
+          policy_using?: string | null
+          policy_with_check?: string | null
+          table_name: string
+        }
+        Update: {
+          backup_phase?: string | null
+          created_at?: string | null
+          id?: string
+          is_permissive?: boolean | null
+          policy_command?: string
+          policy_name?: string
+          policy_using?: string | null
+          policy_with_check?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
+      rls_refactor_audit: {
+        Row: {
+          accion: string
+          detalles: Json | null
+          fase: string
+          id: string
+          tabla_afectada: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accion: string
+          detalles?: Json | null
+          fase: string
+          id?: string
+          tabla_afectada?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accion?: string
+          detalles?: Json | null
+          fase?: string
+          id?: string
+          tabla_afectada?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       security_audit_log: {
         Row: {
@@ -2823,7 +2913,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      rls_analysis_view: {
+        Row: {
+          all_policies: number | null
+          delete_policies: number | null
+          insert_policies: number | null
+          select_policies: number | null
+          table_name: string | null
+          total_policies: number | null
+          update_policies: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assign_missing_trials: {
@@ -2952,6 +3053,10 @@ export type Database = {
       record_rate_limit_attempt: {
         Args: { p_identifier: string; p_action_type: string; p_metadata?: Json }
         Returns: undefined
+      }
+      restore_rls_policies_from_backup: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       run_automated_tasks: {
         Args: Record<PropertyKey, never>
