@@ -1,23 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { X, AlertTriangle, Bell, Shield, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface FloatingNotification {
   id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
+  type: 'success' | 'error' | 'warning' | 'info';
   title: string;
-  message: string;
-  persistent?: boolean;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  autoHide?: boolean;
+  message?: string;
   duration?: number;
+  persistent?: boolean;
 }
 
 interface FloatingNotificationProps {
@@ -25,97 +17,91 @@ interface FloatingNotificationProps {
   onDismiss: (id: string) => void;
 }
 
-const icons = {
-  info: <Bell className="h-5 w-5" />,
-  warning: <AlertTriangle className="h-5 w-5" />,
-  error: <AlertTriangle className="h-5 w-5" />,
-  success: <CheckCircle className="h-5 w-5" />,
-};
-
-const variants = {
-  info: "border-blue-200 bg-blue-50 text-blue-800",
-  warning: "border-yellow-200 bg-yellow-50 text-yellow-800",
-  error: "border-red-200 bg-red-50 text-red-800",
-  success: "border-green-200 bg-green-50 text-green-800",
-};
-
-export function FloatingNotificationComponent({ 
-  notification, 
-  onDismiss 
-}: FloatingNotificationProps) {
+export function FloatingNotificationComponent({ notification, onDismiss }: FloatingNotificationProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
-    
-    if (notification.autoHide !== false && !notification.persistent) {
+    // Entrada con animación
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!notification.persistent && notification.duration !== 0) {
+      const duration = notification.duration || 5000;
       const timer = setTimeout(() => {
         handleDismiss();
-      }, notification.duration || 5000);
-      
+      }, duration);
       return () => clearTimeout(timer);
     }
-  }, [notification]);
+  }, [notification.duration, notification.persistent]);
 
   const handleDismiss = () => {
-    setIsVisible(false);
-    setTimeout(() => {
-      onDismiss(notification.id);
-    }, 300);
+    setIsLeaving(true);
+    setTimeout(() => onDismiss(notification.id), 200);
+  };
+
+  const getIcon = () => {
+    switch (notification.type) {
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-red-600" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-orange-600" />;
+      case 'info':
+        return <Info className="h-5 w-5 text-blue-interconecta" />;
+    }
+  };
+
+  const getColorClasses = () => {
+    switch (notification.type) {
+      case 'success':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'error':
+        return 'bg-red-50 border-red-200 text-red-800';
+      case 'warning':
+        return 'bg-orange-50 border-orange-200 text-orange-800';
+      case 'info':
+        return 'bg-blue-50 border-blue-200 text-blue-800';
+    }
   };
 
   return (
-    <Card 
+    <div
       className={cn(
-        "w-96 shadow-lg transition-all duration-300 transform",
-        variants[notification.type],
-        isVisible 
-          ? "translate-x-0 opacity-100" 
-          : "translate-x-full opacity-0"
+        "w-96 max-w-sm bg-pure-white rounded-2xl shadow-lg border transition-all duration-200 animate-float-notification",
+        getColorClasses(),
+        isVisible && !isLeaving ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
+        isLeaving && "translate-x-full opacity-0"
       )}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start space-x-3">
-          <div className={cn(
-            "flex-shrink-0 mt-0.5",
-            notification.type === 'info' && "text-blue-600",
-            notification.type === 'warning' && "text-yellow-600",
-            notification.type === 'error' && "text-red-600",
-            notification.type === 'success' && "text-green-600"
-          )}>
-            {icons[notification.type]}
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            {getIcon()}
           </div>
           
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">{notification.title}</h4>
-              {!notification.persistent && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleDismiss}
-                  className="h-6 w-6 p-0 hover:bg-white/20"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            <p className="text-sm opacity-90">{notification.message}</p>
-            
-            {notification.action && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={notification.action.onClick}
-                className="mt-2 bg-white/20 border-current hover:bg-white/30"
-              >
-                {notification.action.label}
-              </Button>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-semibold">
+              {notification.title}
+            </h4>
+            {notification.message && (
+              <p className="text-xs mt-1 opacity-90">
+                {notification.message}
+              </p>
             )}
           </div>
+          
+          <button
+            onClick={handleDismiss}
+            className="flex-shrink-0 p-1 hover:bg-black hover:bg-opacity-10 rounded-lg transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
