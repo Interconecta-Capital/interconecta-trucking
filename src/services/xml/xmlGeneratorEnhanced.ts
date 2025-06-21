@@ -1,4 +1,3 @@
-
 import { CartaPorteData } from '@/types/cartaPorte';
 import { XMLValidatorSAT31, ValidationResult31 } from './xmlValidatorSAT31';
 import { XMLNamespaceManager } from './xmlNamespaceManager';
@@ -156,8 +155,7 @@ export class XMLGeneratorEnhanced {
   SubTotal="${fiscal.subtotal}"
   Total="${fiscal.total}"
   Moneda="${fiscal.moneda}"
-  LugarExpedicion="${this.getCodigoPostalExpedicion(data)}"
-  ${data.exportacion ? 'Exportacion="01"' : ''}>
+  LugarExpedicion="${this.getCodigoPostalExpedicion(data)}">
 
   ${this.buildEmisor(data)}
   ${this.buildReceptor(data)}

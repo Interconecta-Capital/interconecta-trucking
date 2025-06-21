@@ -3,106 +3,152 @@ import { CartaPorteData } from '@/types/cartaPorte';
 
 export class XMLComplementoBuilder {
   static construirComplemento(data: CartaPorteData): string {
-    const version = data.cartaPorteVersion || '3.1';
-    const namespaceAlias = version === '3.1' ? 'cartaporte31' : 'cartaporte30';
+    const alias = 'cartaporte31';
     
-    return `
-  <cfdi:Complemento>
-    <${namespaceAlias}:CartaPorte Version="${version}" 
-      ${data.transporteInternacional ? `TranspInternac="${data.transporteInternacional}"` : ''}
+    return `<cfdi:Complemento>
+    <${alias}:CartaPorte 
+      Version="3.1"
+      IdCCP="${data.cartaPorteId}"
+      TranspInternac="${data.transporteInternacional ? 'Sí' : 'No'}"
+      ${data.registroIstmo ? 'RegistroISTMO="Sí"' : ''}
       ${data.entradaSalidaMerc ? `EntradaSalidaMerc="${data.entradaSalidaMerc}"` : ''}
       ${data.pais_origen_destino ? `PaisOrigenDestino="${data.pais_origen_destino}"` : ''}
-      ${data.via_entrada_salida ? `ViaEntradaSalida="${data.via_entrada_salida}"` : ''}>
+      ${data.via_entrada_salida ? `ViaEntradaSalida="${data.via_entrada_salida}"` : ''}
+      TotalDistRec="${this.calcularDistanciaTotal(data)}">
       
-      ${this.construirUbicaciones(data, namespaceAlias)}
-      ${this.construirMercancias(data, namespaceAlias)}
-      ${this.construirFiguraTransporte(data, namespaceAlias)}
-      ${this.construirAutotransporte(data, namespaceAlias)}
+      ${this.construirUbicaciones(data)}
+      ${this.construirMercancias(data)}
+      ${this.construirFiguraTransporte(data)}
+      ${this.construirAutotransporte(data)}
       
-    </${namespaceAlias}:CartaPorte>
+    </${alias}:CartaPorte>
   </cfdi:Complemento>`;
   }
 
-  private static construirUbicaciones(data: CartaPorteData, namespaceAlias: string): string {
-    if (!data.ubicaciones || data.ubicaciones.length === 0) return '';
-    
-    return `
-      <${namespaceAlias}:Ubicaciones>
-        ${data.ubicaciones.map(ubicacion => `
-        <${namespaceAlias}:Ubicacion TipoUbicacion="${ubicacion.tipo_ubicacion}"
-          ${ubicacion.rfc ? `RFCRemitente="${ubicacion.rfc}"` : ''}
-          ${ubicacion.nombre ? `NombreRemitente="${ubicacion.nombre}"` : ''}
-          ${ubicacion.fecha_llegada_salida ? `FechaHoraSalidaLlegada="${ubicacion.fecha_llegada_salida}"` : ''}
-          ${ubicacion.distancia_recorrida ? `DistanciaRecorrida="${ubicacion.distancia_recorrida}"` : ''}>
-          ${ubicacion.domicilio ? this.construirDomicilio(ubicacion.domicilio, namespaceAlias) : ''}
-        </${namespaceAlias}:Ubicacion>`).join('')}
-      </${namespaceAlias}:Ubicaciones>`;
+  private static construirUbicaciones(data: CartaPorteData): string {
+    if (!data.ubicaciones || data.ubicaciones.length === 0) {
+      return '';
+    }
+
+    const alias = 'cartaporte31';
+    const ubicacionesXML = data.ubicaciones.map(ubicacion => {
+      return `<${alias}:Ubicacion
+        TipoUbicacion="${ubicacion.tipo_ubicacion}"
+        IDUbicacion="${ubicacion.id_ubicacion || ubicacion.id}"
+        RFCRemitenteDestinatario="${ubicacion.rfc}"
+        NombreRemitenteDestinatario="${ubicacion.nombre}"
+        FechaHoraSalidaLlegada="${ubicacion.fecha_llegada_salida}"
+        ${ubicacion.distancia_recorrida ? `DistanciaRecorrida="${ubicacion.distancia_recorrida}"` : ''}>
+        
+        ${this.construirDomicilio(ubicacion.domicilio, alias)}
+        
+      </${alias}:Ubicacion>`;
+    }).join('\n      ');
+
+    return `<${alias}:Ubicaciones>
+      ${ubicacionesXML}
+    </${alias}:Ubicaciones>`;
   }
 
-  private static construirMercancias(data: CartaPorteData, namespaceAlias: string): string {
-    if (!data.mercancias || data.mercancias.length === 0) return '';
-    
-    const pesoTotal = data.mercancias.reduce((total, m) => total + (m.peso_kg || 0), 0);
-    
-    return `
-      <${namespaceAlias}:Mercancias PesoBrutoTotal="${pesoTotal}" UnidadPeso="KGM" NumTotalMercancias="${data.mercancias.length}">
-        ${data.mercancias.map(mercancia => `
-        <${namespaceAlias}:Mercancia BienesTransp="${mercancia.bienes_transp}"
-          Descripcion="${mercancia.descripcion}"
-          Cantidad="${mercancia.cantidad}"
-          ClaveUnidad="${mercancia.clave_unidad}"
-          PesoEnKg="${mercancia.peso_kg}"
-          ${mercancia.valor_mercancia ? `ValorMercancia="${mercancia.valor_mercancia}"` : ''}
-          ${mercancia.moneda ? `Moneda="${mercancia.moneda}"` : ''}
-          ${mercancia.fraccion_arancelaria ? `FraccionArancelaria="${mercancia.fraccion_arancelaria}"` : ''}
-          ${mercancia.material_peligroso ? `MaterialPeligroso="Sí"` : ''}
-          ${mercancia.especie_protegida ? `EspecieProtegida="Sí"` : ''} />
-        `).join('')}
-      </${namespaceAlias}:Mercancias>`;
+  private static construirDomicilio(domicilio: any, alias: string): string {
+    if (!domicilio) return '';
+
+    return `<${alias}:Domicilio
+      CodigoPostal="${domicilio.codigo_postal || ''}"
+      ${domicilio.estado ? `Estado="${domicilio.estado}"` : ''}
+      ${domicilio.pais ? `Pais="${domicilio.pais}"` : 'Pais="MEX"'}
+      ${domicilio.municipio ? `Municipio="${domicilio.municipio}"` : ''}
+      ${domicilio.colonia ? `Colonia="${domicilio.colonia}"` : ''}
+      ${domicilio.calle ? `Calle="${domicilio.calle}"` : ''}
+      ${domicilio.numero_exterior ? `NumeroExterior="${domicilio.numero_exterior}"` : ''} />`;
   }
 
-  private static construirFiguraTransporte(data: CartaPorteData, namespaceAlias: string): string {
-    if (!data.figuras || data.figuras.length === 0) return '';
-    
-    return `
-      <${namespaceAlias}:FiguraTransporte>
-        ${data.figuras.map(figura => `
-        <${namespaceAlias}:TiposFigura TipoFigura="${figura.tipo_figura}"
+  private static construirMercancias(data: CartaPorteData): string {
+    if (!data.mercancias || data.mercancias.length === 0) {
+      return '';
+    }
+
+    const alias = 'cartaporte31';
+    const pesoTotal = data.mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0);
+    const numTotal = data.mercancias.reduce((sum, m) => sum + (m.cantidad || 0), 0);
+
+    const mercanciasXML = data.mercancias.map(mercancia => {
+      return `<${alias}:Mercancia
+        BienesTransp="${mercancia.bienes_transp}"
+        Descripcion="${mercancia.descripcion}"
+        Cantidad="${mercancia.cantidad}"
+        ClaveUnidad="${mercancia.clave_unidad}"
+        ${mercancia.peso_kg ? `PesoEnKg="${mercancia.peso_kg}"` : ''}
+        ${mercancia.valor_mercancia ? `ValorMercancia="${mercancia.valor_mercancia}"` : ''}
+        Moneda="${mercancia.moneda || 'MXN'}"
+        ${mercancia.fraccion_arancelaria ? `FraccionArancelaria="${mercancia.fraccion_arancelaria}"` : ''}
+        ${mercancia.material_peligroso ? 'MaterialPeligroso="Sí"' : ''}
+        ${mercancia.cve_material_peligroso ? `CveMaterialPeligroso="${mercancia.cve_material_peligroso}"` : ''} />`;
+    }).join('\n        ');
+
+    return `<${alias}:Mercancias
+      PesoBrutoTotal="${pesoTotal.toFixed(3)}"
+      UnidadPeso="KGM"
+      NumTotalMercancias="${numTotal}">
+      
+        ${mercanciasXML}
+        
+    </${alias}:Mercancias>`;
+  }
+
+  private static construirFiguraTransporte(data: CartaPorteData): string {
+    if (!data.figuras || data.figuras.length === 0) {
+      return '';
+    }
+
+    const alias = 'cartaporte31';
+    const figurasXML = data.figuras.map(figura => {
+      return `<${alias}:TiposFigura>
+        <${alias}:TipoFigura
+          TipoFigura="${figura.tipo_figura}"
           RFCFigura="${figura.rfc_figura}"
           NombreFigura="${figura.nombre_figura}"
           ${figura.num_licencia ? `NumLicencia="${figura.num_licencia}"` : ''}
-          ${figura.residencia_fiscal_figura ? `ResidenciaFiscalFigura="${figura.residencia_fiscal_figura}"` : ''} />
-        `).join('')}
-      </${namespaceAlias}:FiguraTransporte>`;
+          ${figura.tipo_licencia ? `TipoLicencia="${figura.tipo_licencia}"` : ''}
+          ${figura.vigencia_licencia ? `VigenciaLicencia="${figura.vigencia_licencia}"` : ''}
+          ${figura.operador_sct ? 'OperadorSCT="Sí"' : ''} />
+      </${alias}:TiposFigura>`;
+    }).join('\n      ');
+
+    return `<${alias}:FiguraTransporte>
+      ${figurasXML}
+    </${alias}:FiguraTransporte>`;
   }
 
-  private static construirAutotransporte(data: CartaPorteData, namespaceAlias: string): string {
-    if (!data.autotransporte) return '';
-    
-    return `
-      <${namespaceAlias}:Autotransporte PermSCT="${data.autotransporte.perm_sct || ''}"
-        NumPermisoSCT="${data.autotransporte.num_permiso_sct || ''}">
-        <${namespaceAlias}:IdentificacionVehicular ConfigVehicular="${data.autotransporte.config_vehicular || ''}"
-          PlacaVM="${data.autotransporte.placa_vm}"
-          AnioModeloVM="${data.autotransporte.anio_modelo_vm}" />
-        ${data.autotransporte.asegura_resp_civil ? `
-        <${namespaceAlias}:Seguros AseguraRespCivil="${data.autotransporte.asegura_resp_civil}"
-          PolizaRespCivil="${data.autotransporte.poliza_resp_civil || ''}"
-          ${data.autotransporte.asegura_med_ambiente ? `AseguraMedAmbiente="${data.autotransporte.asegura_med_ambiente}"` : ''}
-          ${data.autotransporte.poliza_med_ambiente ? `PolizaMedAmbiente="${data.autotransporte.poliza_med_ambiente}"` : ''} />
-        ` : ''}
-      </${namespaceAlias}:Autotransporte>`;
+  private static construirAutotransporte(data: CartaPorteData): string {
+    if (!data.autotransporte) {
+      return '';
+    }
+
+    const alias = 'cartaporte31';
+    const auto = data.autotransporte;
+
+    return `<${alias}:Autotransporte
+      PermSCT="${auto.perm_sct}"
+      NumPermisoSCT="${auto.num_permiso_sct}">
+      
+      <${alias}:IdentificacionVehicular
+        ConfigVehicular="${auto.config_vehicular}"
+        PlacaVM="${auto.placa_vm}"
+        AnioModeloVM="${auto.anio_modelo_vm}"
+        ${auto.tipo_carroceria ? `TipoCarroceria="${auto.tipo_carroceria}"` : ''} />
+        
+      <${alias}:Seguros
+        AseguraRespCivil="${auto.asegura_resp_civil}"
+        PolizaRespCivil="${auto.poliza_resp_civil}"
+        ${auto.asegura_med_ambiente ? `AseguraMedAmbiente="${auto.asegura_med_ambiente}"` : ''}
+        ${auto.poliza_med_ambiente ? `PolizaMedAmbiente="${auto.poliza_med_ambiente}"` : ''} />
+        
+    </${alias}:Autotransporte>`;
   }
 
-  private static construirDomicilio(domicilio: any, namespaceAlias: string): string {
-    return `
-          <${namespaceAlias}:Domicilio
-            ${domicilio.calle ? `Calle="${domicilio.calle}"` : ''}
-            ${domicilio.numero_exterior ? `NumeroExterior="${domicilio.numero_exterior}"` : ''}
-            ${domicilio.colonia ? `Colonia="${domicilio.colonia}"` : ''}
-            ${domicilio.municipio ? `Municipio="${domicilio.municipio}"` : ''}
-            ${domicilio.estado ? `Estado="${domicilio.estado}"` : ''}
-            ${domicilio.pais ? `Pais="${domicilio.pais}"` : ''}
-            ${domicilio.codigo_postal ? `CodigoPostal="${domicilio.codigo_postal}"` : ''} />`;
+  private static calcularDistanciaTotal(data: CartaPorteData): string {
+    const destino = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Destino');
+    return (destino?.distancia_recorrida || 0).toString();
   }
 }
