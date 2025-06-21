@@ -91,7 +91,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
     
     const isTrialExpiredCalc = trialInfo.isTrialExpired || false;
     const isInGracePeriodCalc = trialInfo.daysRemaining < -14 && trialInfo.daysRemaining > -30;
-    const suscripcionVencidaCalc = suscripcion?.status === 'expired' || suscripcion?.status === 'cancelled';
+    const suscripcionVencidaCalc = suscripcion?.status === 'past_due' || suscripcion?.status === 'canceled';
 
     // REGLA 1: SUPERUSUARIO (Acceso Total e Incondicional)
     if (isSuperuser) {
@@ -478,9 +478,9 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
     suscripcion,
     trialInfo,
     estaBloqueado,
-    conductoresUsed,
-    vehiculosUsed,
-    sociosUsed,
-    cartasPorteUsed
+    conductores,
+    vehiculos,
+    socios,
+    cartasPorte
   ]);
 };
