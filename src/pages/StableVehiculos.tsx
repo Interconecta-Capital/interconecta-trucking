@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus, Car, Filter, Search, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,7 @@ export default function StableVehiculos() {
   };
 
   const handleDelete = async (vehiculo: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.numero_serie}?`)) {
+    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.num_serie}?`)) {
       try {
         await eliminarVehiculo(vehiculo.id);
       } catch (error) {
@@ -55,7 +54,7 @@ export default function StableVehiculos() {
   };
 
   const filteredVehiculos = vehiculos.filter(vehiculo =>
-    vehiculo.numero_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo.num_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase())
   );

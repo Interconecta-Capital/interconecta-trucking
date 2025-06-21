@@ -11,7 +11,7 @@ interface Remolque {
   marca?: string;
   modelo?: string;
   anio?: number;
-  tipo_remolque?: string;
+  subtipo_rem?: string; // Added this property
   estado: string;
   vehiculo_asignado_id?: string;
   activo: boolean;
@@ -20,11 +20,12 @@ interface Remolque {
 interface RemolquesTableProps {
   remolques: Remolque[];
   loading: boolean;
-  onEdit: (remolque: Remolque) => void;
-  onView: (remolque: Remolque) => void;
+  onEdit?: (remolque: Remolque) => void;
+  onView?: (remolque: Remolque) => void;
   onDelete: (remolque: Remolque) => void;
-  onLink: (remolque: Remolque) => void;
-  onUnlink: (remolque: Remolque) => void;
+  onVincular?: (remolque: Remolque) => void; // Added this prop
+  onLink?: (remolque: Remolque) => void;
+  onUnlink?: (remolque: Remolque) => void;
 }
 
 const ESTADOS_CONFIG = {
@@ -40,6 +41,7 @@ export function RemolquesTable({
   onEdit, 
   onView, 
   onDelete, 
+  onVincular,
   onLink, 
   onUnlink 
 }: RemolquesTableProps) {
@@ -81,7 +83,7 @@ export function RemolquesTable({
             return (
               <TableRow key={remolque.id}>
                 <TableCell className="font-medium">{remolque.placa}</TableCell>
-                <TableCell>{remolque.tipo_remolque || 'No especificado'}</TableCell>
+                <TableCell>{remolque.subtipo_rem || 'No especificado'}</TableCell>
                 <TableCell>
                   <Badge className={estadoConfig.color}>
                     {estadoConfig.label}
@@ -96,36 +98,44 @@ export function RemolquesTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onView(remolque)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(remolque)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    {onView && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onView(remolque)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(remolque)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
                     {remolque.vehiculo_asignado_id ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onUnlink(remolque)}
-                      >
-                        <Unlink className="h-4 w-4" />
-                      </Button>
+                      onUnlink && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onUnlink(remolque)}
+                        >
+                          <Unlink className="h-4 w-4" />
+                        </Button>
+                      )
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onLink(remolque)}
-                      >
-                        <Link className="h-4 w-4" />
-                      </Button>
+                      (onLink || onVincular) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onLink ? onLink(remolque) : onVincular?.(remolque)}
+                        >
+                          <Link className="h-4 w-4" />
+                        </Button>
+                      )
                     )}
                     <Button
                       variant="ghost"

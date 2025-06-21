@@ -18,7 +18,7 @@ import { PlanNotifications } from '@/components/common/PlanNotifications';
 
 export default function ConductoresOptimized() {
   const { user } = useStableAuth();
-  const { conductores, loading, error, eliminarConductor, recargar } = useConductoresOptimized(user?.id);
+  const { conductores, loading, error, deleteConductor, fetchConductores } = useConductoresOptimized();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -45,7 +45,7 @@ export default function ConductoresOptimized() {
   const handleDelete = async (conductor: any) => {
     if (window.confirm(`¿Estás seguro de eliminar el conductor ${conductor.nombre}?`)) {
       try {
-        await eliminarConductor(conductor.id);
+        await deleteConductor(conductor.id);
       } catch (error) {
         // Error already handled by hook
       }
@@ -66,7 +66,7 @@ export default function ConductoresOptimized() {
             <p className="text-red-800 mb-4">Error cargando conductores: {error}</p>
             <Button 
               variant="outline" 
-              onClick={recargar}
+              onClick={fetchConductores}
               className="bg-pure-white"
             >
               Reintentar
@@ -126,7 +126,7 @@ export default function ConductoresOptimized() {
           </Button>
           <Button 
             variant="outline"
-            onClick={recargar}
+            onClick={fetchConductores}
             disabled={loading}
             className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
@@ -176,7 +176,6 @@ export default function ConductoresOptimized() {
         {/* Tabla */}
         <ConductoresTable 
           conductores={filteredConductores}
-          loading={loading}
           onEdit={handleEdit}
           onView={handleView}
           onDelete={handleDelete}
@@ -188,7 +187,7 @@ export default function ConductoresOptimized() {
           onOpenChange={setShowCreateDialog}
           onSuccess={() => {
             setShowCreateDialog(false);
-            recargar();
+            fetchConductores();
           }}
         />
 
@@ -199,7 +198,7 @@ export default function ConductoresOptimized() {
           onSuccess={() => {
             setShowEditDialog(false);
             setSelectedConductor(null);
-            recargar();
+            fetchConductores();
           }}
         />
 
