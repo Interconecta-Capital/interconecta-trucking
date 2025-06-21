@@ -1,219 +1,121 @@
-
-import {
-  Building2,
-  Car,
-  CreditCard,
-  FileText,
-  LayoutDashboard,
+import { useState } from 'react';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Building2, 
+  FileText, 
+  Truck, 
+  Users, 
+  Settings, 
+  HelpCircle,
+  Gauge,
   Shield,
-  Truck,
-  Users,
-  Route,
-} from "lucide-react"
-import { Link, useLocation } from "react-router-dom"
+  ChevronRight,
+  Calendar,
+  BarChart3,
+  User,
+  LogOut,
+  CreditCard
+} from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-import { UserMenu } from "@/components/UserMenu"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+interface AppSidebarProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
-export const AppSidebar = () => {
+export function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
   const location = useLocation();
-  const { puedeAccederAdministracion } = usePermisosSubscripcion();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { subscription } = useSubscription();
+  const isMobile = useIsMobile();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isPro = subscription?.status === "active";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const renderSidebarMenu = () => (
+    <SidebarMenu>
+      <SidebarMenuItem
+        title="Panel"
+        icon={Gauge}
+        href="/panel"
+        isActive={location.pathname === '/panel'}
+      />
+      <SidebarMenuItem
+        title="Empresas"
+        icon={Building2}
+        href="/empresas"
+        isActive={location.pathname === '/empresas'}
+      />
+      <SidebarMenuItem
+        title="Viajes"
+        icon={Truck}
+        href="/viajes/nuevo"
+        isActive={location.pathname.startsWith('/viajes')}
+      />
+      <SidebarMenuItem
+        title="Carta Porte"
+        icon={FileText}
+        href="/carta-porte/lista"
+        isActive={location.pathname.startsWith('/carta-porte')}
+      />
+      <SidebarMenuItem
+        title="Usuarios"
+        icon={Users}
+        href="/usuarios"
+        isActive={location.pathname === '/usuarios'}
+      />
+      {isPro && (
+        <SidebarMenuItem
+          title="Reportes"
+          icon={BarChart3}
+          href="/reportes"
+          isActive={location.pathname === '/reportes'}
+        />
+      )}
+      <SidebarMenuItem
+        title="Planes"
+        icon={CreditCard}
+        href="/planes"
+        isActive={location.pathname === '/planes'}
+      />
+    </SidebarMenu>
+  );
+
+  const renderSidebarFooter = () => (
+    <SidebarFooter>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="gap-2 w-full justify-start" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4" />
+          Salir
+        </Button>
+      </div>
+    </SidebarFooter>
+  );
 
   return (
-    <Sidebar variant="inset" collapsible="icon" className="border-r border-gray-20 bg-pure-white/95 backdrop-blur-premium">
-      <SidebarHeader className="border-b border-gray-20 px-6 py-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="font-semibold text-gray-90">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-blue-interconecta text-pure-white">
-                <Truck className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">InterConecta</span>
-                <span className="truncate text-xs text-gray-50">Trucking Platform</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      
-      <SidebarContent className="px-3 py-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2">
-            Principal
-          </SidebarGroupLabel>
-          <SidebarMenu className="space-y-1">
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/dashboard')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/dashboard') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span className="font-medium">Dashboard</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/viajes')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/viajes') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/viajes" className="flex items-center gap-3 px-3 py-2.5">
-                  <Route className="h-4 w-4" />
-                  <span className="font-medium">Viajes</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/cartas-porte')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/cartas-porte') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/cartas-porte" className="flex items-center gap-3 px-3 py-2.5">
-                  <FileText className="h-4 w-4" />
-                  <span className="font-medium">Cartas Porte</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
-            Recursos
-          </SidebarGroupLabel>
-          <SidebarMenu className="space-y-1">
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/vehiculos')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/vehiculos') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/vehiculos" className="flex items-center gap-3 px-3 py-2.5">
-                  <Car className="h-4 w-4" />
-                  <span className="font-medium">Vehículos</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/conductores')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/conductores') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/conductores" className="flex items-center gap-3 px-3 py-2.5">
-                  <Users className="h-4 w-4" />
-                  <span className="font-medium">Conductores</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/socios')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/socios') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/socios" className="flex items-center gap-3 px-3 py-2.5">
-                  <Building2 className="h-4 w-4" />
-                  <span className="font-medium">Socios</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-50 font-medium text-xs uppercase tracking-wide px-3 py-2 mt-6">
-            Sistema
-          </SidebarGroupLabel>
-          <SidebarMenu className="space-y-1">
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
-                isActive={isActive('/planes')}
-                className={`rounded-xl transition-all duration-200 ${
-                  isActive('/planes') 
-                    ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                    : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                }`}
-              >
-                <Link to="/planes" className="flex items-center gap-3 px-3 py-2.5">
-                  <CreditCard className="h-4 w-4" />
-                  <span className="font-medium">Planes</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            {puedeAccederAdministracion && (
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  isActive={isActive('/administracion')}
-                  className={`rounded-xl transition-all duration-200 ${
-                    isActive('/administracion') 
-                      ? 'bg-blue-interconecta text-pure-white shadow-sm' 
-                      : 'text-gray-70 hover:bg-gray-05 hover:text-gray-90'
-                  }`}
-                >
-                  <Link to="/administracion" className="flex items-center gap-3 px-3 py-2.5">
-                    <Shield className="h-4 w-4" />
-                    <span className="font-medium">Administración</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
-        </SidebarGroup>
+    <Sidebar open={open} onOpenChange={onOpenChange}>
+      <SidebarContent>
+        <SidebarHeader>
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo-interconecta.svg" alt="Interconecta Logo" className="h-8" />
+            <span className="font-bold text-xl">Interconecta</span>
+          </Link>
+        </SidebarHeader>
+        {renderSidebarMenu()}
+        {renderSidebarFooter()}
       </SidebarContent>
-      
-      <SidebarFooter className="border-t border-gray-20 p-3">
-        <UserMenu />
-      </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
