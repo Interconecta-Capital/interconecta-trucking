@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText } from 'lucide-react';
+import { FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useCartaPorteXMLManager } from '@/hooks/xml/useCartaPorteXMLManager';
 import { useXMLSigning } from '@/hooks/xml/useXMLSigning';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
@@ -18,7 +17,8 @@ import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection'
 import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
 import { PDFGenerationPanel } from './PDFGenerationPanel';
-import { XMLCartaPorteGenerator } from '@/services/xml/xmlGenerator';
+import { XMLGeneratorEnhanced } from '@/services/xml/xmlGeneratorEnhanced';
+import { PACServiceReal } from '@/services/xml/pacServiceReal';
 import { toast } from 'sonner';
 
 interface XMLGenerationPanelProps {
@@ -45,6 +45,8 @@ export function XMLGenerationPanel({
   const [autoTimbrado, setAutoTimbrado] = useState(true);
   const [generatedXML, setGeneratedXML] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [validationScore, setValidationScore] = useState<number>(0);
+  const [fiscalData, setFiscalData] = useState<any>(null);
   
   const {
     isTimbring,
@@ -57,7 +59,6 @@ export function XMLGenerationPanel({
     validarConexionPAC
   } = useCartaPorteXMLManager();
 
-  // Hook para firmado CSD
   const {
     isSigning,
     xmlFirmado,
@@ -69,7 +70,6 @@ export function XMLGenerationPanel({
     limpiarDatosFirmado
   } = useXMLSigning();
 
-  // Usar XML del prop si existe, sino el del hook
   const xmlActual = xmlGeneradoProp || xmlGeneradoHook || generatedXML;
 
   const {
@@ -85,7 +85,6 @@ export function XMLGenerationPanel({
     agregarEvento
   } = useTrackingCartaPorte(cartaPorteId);
 
-  // Verificar si la carta porte está completa
   const cartaPorteCompleta = !!(
     cartaPorteData.rfcEmisor &&
     cartaPorteData.rfcReceptor &&
@@ -108,20 +107,98 @@ export function XMLGenerationPanel({
     
     setIsGenerating(true);
     try {
-      const result = await XMLCartaPorteGenerator.generarXML(cartaPorteData);
+      console.log('🚀 Generando XML con validaciones mejoradas...');
+      
+      const result = await XMLGeneratorEnhanced.generarXMLCompleto(cartaPorteData);
       
       if (result.success && result.xml) {
         setGeneratedXML(result.xml);
+        setValidationScore(result.validationDetails?.score || 0);
+        setFiscalData(result.fiscalData);
+        
         onXMLGenerated?.(result.xml);
-        toast.success('XML generado correctamente');
+        
+        toast.success(
+          `XML generado exitosamente (Score: ${result.validationDetails?.score || 0}%)`,
+          {
+            description: result.warnings?.length ? 
+              `${result.warnings.length} advertencias encontradas` : 
+              'Todas las validaciones pasaron'
+          }
+        );
+
+        // Mostrar advertencias si las hay
+        if (result.warnings && result.warnings.length > 0) {
+          result.warnings.forEach(warning => {
+            toast.warning('Advertencia', { description: warning });
+          });
+        }
       } else {
-        toast.error('Error al generar XML: ' + (result.errors?.join(', ') || 'Error desconocido'));
+        const errorMsg = result.errors?.join(', ') || 'Error desconocido';
+        toast.error('Error al generar XML', { description: errorMsg });
+        console.error('Errores de validación:', result.errors);
       }
     } catch (error) {
       console.error('Error generando XML:', error);
       toast.error('Error al generar XML');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleTimbrar = async () => {
+    if (!cartaPorteId || !xmlActual) {
+      console.error('ID de carta porte y XML requeridos para timbrado');
+      return;
+    }
+    
+    try {
+      console.log('🔄 Iniciando timbrado real con PAC...');
+      
+      const resultado = await PACServiceReal.timbrarCartaPorte(xmlActual, 'sandbox');
+      
+      if (resultado.success) {
+        onTimbrado?.(resultado);
+        
+        await agregarEvento({
+          evento: 'timbrado',
+          descripcion: `Carta Porte timbrada exitosamente con ${resultado.pac}`,
+          metadata: {
+            uuid: resultado.uuid,
+            pac: resultado.pac,
+            ambiente: 'sandbox'
+          }
+        });
+
+        toast.success('Timbrado exitoso', {
+          description: `UUID: ${resultado.uuid}`
+        });
+      } else {
+        toast.error('Error en timbrado', {
+          description: resultado.error
+        });
+      }
+    } catch (error) {
+      console.error('Error al timbrar:', error);
+      toast.error('Error al timbrar la Carta Porte');
+    }
+  };
+
+  const handleValidarPAC = async () => {
+    try {
+      const resultado = await PACServiceReal.validarConexion('sandbox');
+      
+      if (resultado.success) {
+        toast.success('Conexión PAC válida', {
+          description: resultado.message
+        });
+      } else {
+        toast.error('Error de conexión PAC', {
+          description: resultado.message
+        });
+      }
+    } catch (error) {
+      toast.error('Error validando PAC');
     }
   };
 
@@ -142,35 +219,6 @@ export function XMLGenerationPanel({
           rfc: resultado.certificadoUsado?.rfc
         }
       });
-    }
-  };
-
-  const handleTimbrar = async () => {
-    if (!cartaPorteId) {
-      console.error('ID de carta porte requerido para timbrado');
-      return;
-    }
-    
-    try {
-      const resultado = await timbrarCartaPorte(cartaPorteData);
-      if (resultado && resultado.success) {
-        onTimbrado?.(resultado);
-        
-        // Agregar evento de tracking solo si el resultado incluye uuid
-        if ('uuid' in resultado) {
-          await agregarEvento({
-            evento: 'timbrado',
-            descripcion: 'Carta Porte timbrada exitosamente con FISCAL API',
-            metadata: {
-              uuid: resultado.uuid,
-              ambiente: 'test'
-            }
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error al timbrar:', error);
-      toast.error('Error al timbrar la Carta Porte');
     }
   };
 
@@ -200,7 +248,10 @@ export function XMLGenerationPanel({
       return <Badge className="bg-blue-100 text-blue-800">Firmado CSD</Badge>;
     }
     if (xmlActual) {
-      return <Badge className="bg-gray-100 text-gray-800">XML Generado</Badge>;
+      const color = validationScore >= 90 ? 'bg-green-100 text-green-800' : 
+                   validationScore >= 70 ? 'bg-yellow-100 text-yellow-800' : 
+                   'bg-red-100 text-red-800';
+      return <Badge className={color}>XML Generado ({validationScore}%)</Badge>;
     }
     return <Badge variant="outline">Sin procesar</Badge>;
   };
@@ -213,10 +264,22 @@ export function XMLGenerationPanel({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <FileText className="h-5 w-5" />
-                <span>Generación XML y Firmado Digital</span>
+                <span>Generación XML SAT 3.1 y Timbrado Fiscal</span>
               </CardTitle>
               {getStatusBadge()}
             </div>
+            
+            {/* Score de validación */}
+            {validationScore > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                {validationScore >= 90 ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                )}
+                <span>Score de validación SAT: {validationScore}%</span>
+              </div>
+            )}
           </CardHeader>
           
           <CardContent className="space-y-6">
@@ -229,6 +292,31 @@ export function XMLGenerationPanel({
             />
 
             <XMLPreviewSection xmlGenerado={xmlActual} />
+
+            {/* Mostrar información fiscal */}
+            {fiscalData && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Información Fiscal</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700">Subtotal:</span>
+                    <span className="ml-2 font-medium">${fiscalData.subtotal}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">IVA:</span>
+                    <span className="ml-2 font-medium">${fiscalData.iva}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Total:</span>
+                    <span className="ml-2 font-medium">${fiscalData.total}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Moneda:</span>
+                    <span className="ml-2 font-medium">{fiscalData.moneda}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Separator />
 
@@ -262,7 +350,7 @@ export function XMLGenerationPanel({
               datosTimbre={datosTimbre}
               isTimbring={isTimbring}
               cartaPorteId={cartaPorteId}
-              onValidarConexionPAC={validarConexionPAC}
+              onValidarConexionPAC={handleValidarPAC}
               onTimbrar={handleTimbrar}
               onDescargarTimbrado={() => descargarXML('timbrado')}
             />
