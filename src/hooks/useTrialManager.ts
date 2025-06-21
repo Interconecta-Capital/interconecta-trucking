@@ -5,7 +5,7 @@ import { useSuscripcion } from './useSuscripcion';
 
 export const useTrialManager = () => {
   const { user } = useAuth();
-  const { suscripcion, estaBloqueado } = useSuscripcion();
+  const { suscripcion, estaBloqueado, diasRestantesPrueba, diasRestantesGracia } = useSuscripcion();
 
   const trialStatus = useMemo(() => {
     if (!user || !suscripcion) {
@@ -15,7 +15,10 @@ export const useTrialManager = () => {
         isTrialExpired: true,
         isInGracePeriod: false,
         hasFullAccess: false,
-        gracePeriodDaysLeft: 0
+        gracePeriodDaysLeft: 0,
+        daysRemaining: 0,
+        graceDaysRemaining: 0,
+        dataWillBeDeleted: false
       };
     }
 
@@ -26,17 +29,29 @@ export const useTrialManager = () => {
     const isInActiveTrial = suscripcion.status === 'trial' && trialEndDate && trialEndDate > now;
     const isTrialExpired = suscripcion.status === 'trial' && trialEndDate && trialEndDate <= now;
     const isInGracePeriod = suscripcion.status === 'grace_period' && gracePeriodEnd && gracePeriodEnd > now;
-    const gracePeriodDaysLeft = gracePeriodEnd ? Math.max(0, Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+    const gracePeriodDaysLeft = Math.max(0, Math.ceil((gracePeriodEnd ? gracePeriodEnd.getTime() - now.getTime() : 0) / (1000 * 60 * 60 * 24)));
 
     // Usuario tiene acceso completo si está en trial activo o tiene suscripción activa
     const hasFullAccess = isInActiveTrial || suscripcion.status === 'active';
+
+    // Calcular días restantes del trial
+    const daysRemaining = isInActiveTrial ? diasRestantesPrueba() : 0;
+    
+    // Calcular días restantes del período de gracia
+    const graceDaysRemaining = isInGracePeriod ? diasRestantesGracia() : 0;
+    
+    // Los datos serán eliminados si está en período de gracia y quedan menos de 3 días
+    const dataWillBeDeleted = isInGracePeriod && graceDaysRemaining <= 3;
 
     const status = {
       isInActiveTrial,
       isTrialExpired,
       isInGracePeriod,
       hasFullAccess,
-      gracePeriodDaysLeft
+      gracePeriodDaysLeft,
+      daysRemaining,
+      graceDaysRemaining,
+      dataWillBeDeleted
     };
 
     console.log('useTrialManager status:', {
@@ -48,7 +63,7 @@ export const useTrialManager = () => {
     });
 
     return status;
-  }, [user, suscripcion]);
+  }, [user, suscripcion, diasRestantesPrueba, diasRestantesGracia]);
 
   const canPerformAction = (action: 'create' | 'edit' | 'delete' | 'view' = 'view') => {
     // Durante período de gracia, solo permitir lectura
