@@ -65,14 +65,14 @@ export function DatosFiscalesForm() {
     }
   };
 
-  const handleCodigoPostalSelect = (cp: any) => {
-    if (cp) {
-      form.setValue('codigo_postal', cp.codigo_postal);
-      form.setValue('estado', cp.estado);
-      form.setValue('municipio', cp.municipio);
+  const handleCodigoPostalSelect = (codigoPostal: string, data?: any) => {
+    if (data) {
+      form.setValue('codigo_postal', codigoPostal);
+      form.setValue('estado', data.estado);
+      form.setValue('municipio', data.municipio);
       // Si hay colonias disponibles, tomar la primera como sugerencia
-      if (cp.colonias && cp.colonias.length > 0) {
-        form.setValue('colonia', cp.colonias[0].nombre);
+      if (data.colonias && data.colonias.length > 0) {
+        form.setValue('colonia', data.colonias[0].nombre);
       }
     }
   };
@@ -147,7 +147,7 @@ export function DatosFiscalesForm() {
             <Label>Código Postal *</Label>
             <CodigoPostalSelector
               value={form.watch('codigo_postal')}
-              onSelect={handleCodigoPostalSelect}
+              onValueChange={handleCodigoPostalSelect}
               placeholder="Buscar código postal..."
             />
             {form.formState.errors.codigo_postal && (
