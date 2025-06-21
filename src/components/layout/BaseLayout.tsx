@@ -1,5 +1,5 @@
 
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { GlobalHeader } from '@/components/GlobalHeader';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -14,12 +14,11 @@ interface BaseLayoutProps {
 
 export function BaseLayout({ children, showSidebar = true, className }: BaseLayoutProps) {
   const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (!showSidebar) {
     return (
       <div className="min-h-screen bg-gray-05">
-        <GlobalHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <GlobalHeader />
         <main className={cn(
           "transition-all duration-200",
           // Responsive padding with proper mobile spacing
@@ -39,9 +38,9 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-gray-05 flex w-full">
-        <AppSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
+        <AppSidebar />
         <div className="flex-1 flex flex-col w-full min-w-0">
-          <GlobalHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+          <GlobalHeader />
           <main className={cn(
             "flex-1 overflow-auto transition-all duration-200",
             // Enhanced responsive padding

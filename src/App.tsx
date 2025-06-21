@@ -8,6 +8,7 @@ import { AuthGuard } from "./components/auth/AuthGuard"
 import { BaseLayout } from "./components/layout/BaseLayout"
 import { OnboardingProvider } from '@/contexts/OnboardingProvider';
 import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration';
+import { TrialCounter } from '@/components/TrialCounter';
 
 // Páginas públicas
 import Index from "./pages/Index"
@@ -34,6 +35,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
+        <TrialCounter />
         <AuthProvider>
           <OnboardingProvider>
             <OnboardingIntegration />
