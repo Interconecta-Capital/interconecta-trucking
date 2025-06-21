@@ -23,25 +23,35 @@
       .btn-primary {
         background-color: #0071e3;
         color: white;
-        transition: background-color 0.3s ease;
+        transition: all 0.3s ease;
       }
       .btn-primary:hover {
         background-color: #0077ed;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(0, 113, 227, 0.3);
       }
       .btn-secondary {
         background-color: rgba(255, 255, 255, 0.1);
         color: #F5F5F7;
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
-        transition: background-color 0.3s ease;
+        transition: all 0.3s ease;
       }
       .btn-secondary:hover {
         background-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
       }
       .feature-card {
         background: linear-gradient(145deg, #1c1c1e, #111113);
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+      }
+      .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.2);
       }
       .glass-nav {
         background: rgba(18, 18, 18, 0.7);
@@ -57,34 +67,88 @@
         opacity: 1;
         transform: translateY(0);
       }
+      
+      /* Responsive animations */
+      @media (max-width: 768px) {
+        .scroll-animation {
+          transform: translateY(20px);
+        }
+      }
+      
+      /* Enhanced hover effects */
+      .hover-lift {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .hover-lift:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+      }
+      
+      /* Pulse animation for highlights */
+      .pulse-glow {
+        animation: pulse-glow 2s ease-in-out infinite alternate;
+      }
+      
+      @keyframes pulse-glow {
+        from {
+          box-shadow: 0 0 20px rgba(0, 113, 227, 0.4);
+        }
+        to {
+          box-shadow: 0 0 30px rgba(0, 113, 227, 0.8);
+        }
+      }
+
+      /* Fade in animation */
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
   </head>
   <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Scroll animations
+      // Enhanced scroll animations with Intersection Observer
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
+            // Add staggered animation delay for multiple elements
+            const delay = Array.from(entry.target.parentElement?.children || []).indexOf(entry.target) * 100;
+            entry.target.style.transitionDelay = `${delay}ms`;
           }
         });
-      }, { threshold: 0.1 });
+      }, observerOptions);
 
-      // Esperar a que el DOM se cargue
+      // Wait for DOM content to load
       document.addEventListener('DOMContentLoaded', () => {
-        // Observar elementos con la clase scroll-animation cuando se añadan al DOM
+        // Function to observe scroll animations
         const observeScrollAnimations = () => {
           document.querySelectorAll('.scroll-animation').forEach(el => {
             observer.observe(el);
           });
         };
         
-        // Observar inmediatamente los elementos existentes
+        // Observe existing elements
         observeScrollAnimations();
         
-        // Observar nuevos elementos que se añadan dinámicamente
+        // Observe dynamically added elements
         const mutationObserver = new MutationObserver(() => {
           observeScrollAnimations();
         });
@@ -93,7 +157,26 @@
           childList: true,
           subtree: true
         });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+          anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+              target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }
+          });
+        });
       });
+
+      // Performance optimization: Reduce animation frequency on mobile
+      if (window.innerWidth <= 768) {
+        observerOptions.threshold = 0.05;
+      }
     </script>
   </body>
 </html>
