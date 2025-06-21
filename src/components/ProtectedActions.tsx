@@ -1,7 +1,6 @@
 
 import { ReactNode, useState } from 'react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
-import { useTrialManager } from '@/hooks/useTrialManager';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { Button } from '@/components/ui/button';
 import { Plus, Lock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,19 +25,25 @@ export const ProtectedActions = ({
   variant = 'default',
   fallbackButton = true
 }: ProtectedActionsProps) => {
-  const { puedeCrear, isSuperuser } = useEnhancedPermissions();
-  const { canPerformAction, isInGracePeriod, isTrialExpired } = useTrialManager();
+  const { 
+    puedeCrear, 
+    isSuperuser, 
+    canPerformAction, 
+    isInGracePeriod, 
+    isTrialExpired 
+  } = useUnifiedPermissions();
+  
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   const handleAction = () => {
     try {
-      // Superusers can always create
+      // Superusers pueden hacer todo sin restricciones
       if (isSuperuser) {
         onAction?.();
         return;
       }
 
-      // Verificar si puede realizar la acción
+      // Verificar si puede realizar la acción básica
       if (!canPerformAction('create')) {
         if (isInGracePeriod) {
           toast.error('Durante el período de gracia solo puede consultar datos. Adquiera un plan para crear nuevos registros.');
@@ -48,19 +53,19 @@ export const ProtectedActions = ({
         return;
       }
 
+      // Verificar límites específicos del recurso
       const result = puedeCrear(resource);
-      const puede = result?.puede ?? true; // Default a true si no hay resultado
-      const razon = result?.razon;
       
-      if (!puede && razon) {
-        toast.error(razon);
+      if (!result.puede && result.razon) {
+        toast.error(result.razon);
         return;
       }
       
+      // Ejecutar la acción
       onAction?.();
     } catch (error) {
       console.error('Error in ProtectedActions:', error);
-      // En caso de error, permitir la acción como fallback
+      // En caso de error, usar fallback si está habilitado
       if (fallbackButton) {
         onAction?.();
       }

@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,14 @@ export const ProtectedContent = ({
   fallback,
   showUpgrade = true
 }: ProtectedContentProps) => {
-  const { puedeAcceder, planActual, estaBloqueado, suscripcionVencida, isSuperuser } = useEnhancedPermissions();
+  const { 
+    puedeAcceder, 
+    planActual, 
+    estaBloqueado, 
+    suscripcionVencida, 
+    isSuperuser 
+  } = useUnifiedPermissions();
+  
   const navigate = useNavigate();
   
   // Superusers bypass all restrictions
@@ -92,17 +99,15 @@ export const ProtectedContent = ({
   // Verificar funcionalidad específica
   if (requiredFeature) {
     const result = puedeAcceder(requiredFeature);
-    const puede = result?.puede ?? false;
-    const razon = result?.razon;
     
-    if (!puede) {
+    if (!result.puede) {
       if (fallback) return <>{fallback}</>;
       
       return (
         <Alert className="border-blue-200 bg-blue-50">
           <Lock className="h-4 w-4 text-blue-600" />
           <AlertDescription className="flex items-center justify-between">
-            <span className="text-blue-800">{razon || 'Funcionalidad no disponible'}</span>
+            <span className="text-blue-800">{result.razon || 'Funcionalidad no disponible'}</span>
             {showUpgrade && (
               <Button 
                 size="sm" 

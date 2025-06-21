@@ -3,8 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText, Route, Car, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 
 export function QuickActionsCard() {
+  const { canPerformAction, isSuperuser } = useUnifiedPermissions();
+  
+  // Mostrar acciones disponibles basadas en permisos
+  const canCreate = canPerformAction('create');
+  
   return (
     <Card className="h-fit">
       <CardHeader>
@@ -18,6 +24,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start h-12 gap-3 text-left"
+            disabled={!canCreate && !isSuperuser}
           >
             <Route className="h-4 w-4 text-blue-interconecta" />
             <div className="text-left">
@@ -31,6 +38,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start h-12 gap-3 text-left"
+            disabled={!canCreate && !isSuperuser}
           >
             <FileText className="h-4 w-4 text-apple-green" />
             <div className="text-left">
@@ -44,6 +52,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start h-12 gap-3 text-left"
+            disabled={!canCreate && !isSuperuser}
           >
             <Car className="h-4 w-4 text-apple-orange" />
             <div className="text-left">
@@ -57,6 +66,7 @@ export function QuickActionsCard() {
           <Button 
             variant="outline" 
             className="w-full justify-start h-12 gap-3 text-left"
+            disabled={!canCreate && !isSuperuser}
           >
             <Users className="h-4 w-4 text-apple-purple" />
             <div className="text-left">

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, TrendingUp } from 'lucide-react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -14,7 +14,7 @@ interface LimitUsageIndicatorProps {
 }
 
 export function LimitUsageIndicator({ resourceType, className, showUpgrade = true }: LimitUsageIndicatorProps) {
-  const { obtenerUsoActual, planActual, isSuperuser } = useEnhancedPermissions();
+  const { obtenerUsoActual, planActual, isSuperuser } = useUnifiedPermissions();
   const navigate = useNavigate();
   
   // Superusers no tienen límites
