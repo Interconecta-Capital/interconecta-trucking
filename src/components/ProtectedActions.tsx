@@ -1,7 +1,6 @@
 
 import { ReactNode, useState } from 'react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
-import { useTrialManager } from '@/hooks/useTrialManager';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { Button } from '@/components/ui/button';
 import { Plus, Lock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,20 +25,16 @@ export const ProtectedActions = ({
   variant = 'default',
   fallbackButton = true
 }: ProtectedActionsProps) => {
-  const { puedeCrear, isSuperuser, planActual } = useEnhancedPermissions();
-  const { canPerformAction, isInActiveTrial, isInGracePeriod, isTrialExpired } = useTrialManager();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  
-  // Debug logging
-  console.log('ProtectedActions Debug:', {
-    resource,
+  const {
+    puedeCrear,
     isSuperuser,
     planActual,
-    isInActiveTrial,
+    canPerformAction,
     isInGracePeriod,
-    isTrialExpired,
-    canPerformAction: canPerformAction('create')
-  });
+    isTrialExpired
+  } = useUnifiedPermissions();
+  
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleAction = () => {
     try {
@@ -66,7 +61,7 @@ export const ProtectedActions = ({
       const result = puedeCrear(resource);
       console.log('ProtectedActions: puedeCrear result:', result);
       
-      const puede = result?.puede ?? true; // Default a true si no hay resultado
+      const puede = result?.puede ?? true;
       const razon = result?.razon;
       
       if (!puede && razon) {
@@ -79,7 +74,6 @@ export const ProtectedActions = ({
       onAction?.();
     } catch (error) {
       console.error('Error in ProtectedActions:', error);
-      // En caso de error, permitir la acción como fallback
       if (fallbackButton) {
         console.log('ProtectedActions: Fallback button activated');
         onAction?.();

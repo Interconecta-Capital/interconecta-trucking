@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { useEnhancedPermissions } from '@/hooks/useEnhancedPermissions';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,14 @@ export const ProtectedContent = ({
   fallback,
   showUpgrade = true
 }: ProtectedContentProps) => {
-  const { puedeAcceder, planActual, estaBloqueado, suscripcionVencida, isSuperuser } = useEnhancedPermissions();
+  const { 
+    puedeAcceder, 
+    planActual, 
+    estaBloqueado, 
+    suscripcionVencida, 
+    isSuperuser 
+  } = useUnifiedPermissions();
+  
   const navigate = useNavigate();
   
   // Superusers bypass all restrictions

@@ -15,7 +15,6 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { useDebugPermissions } from '@/hooks/useDebugPermissions';
 
 export default function Vehiculos() {
   const { user } = useStableAuth();
@@ -26,10 +25,6 @@ export default function Vehiculos() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
-
-  // Debug permissions
-  const debugInfo = useDebugPermissions();
-  console.log('Vehiculos page debug info:', debugInfo);
 
   const handleNewVehiculo = () => {
     console.log('Vehiculos: handleNewVehiculo called');
@@ -93,15 +88,6 @@ export default function Vehiculos() {
   return (
     <ProtectedContent requiredFeature="vehiculos">
       <div className="container mx-auto py-8 space-y-8 max-w-7xl">
-        {/* Debug info - temporal */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-4 text-xs">
-          <p><strong>Debug:</strong> Plan: {debugInfo.subscription.planActual}</p>
-          <p>Puede crear vehículos: {debugInfo.permissions.puedeCrearVehiculos?.puede ? 'SÍ' : 'NO'}</p>
-          {debugInfo.permissions.puedeCrearVehiculos?.razon && (
-            <p>Razón: {debugInfo.permissions.puedeCrearVehiculos.razon}</p>
-          )}
-        </div>
-
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
