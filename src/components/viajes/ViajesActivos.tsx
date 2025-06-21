@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { 
   MapPin, 
   Clock, 
@@ -12,7 +13,8 @@ import {
   Navigation,
   Search,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  AlertTriangle
 } from 'lucide-react';
 import { useViajes } from '@/hooks/useViajes';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
@@ -101,8 +103,8 @@ export const ViajesActivos = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Cargando viajes activos...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-interconecta mx-auto"></div>
+          <p className="mt-2 text-gray-60">Cargando viajes activos...</p>
         </div>
       </div>
     );
@@ -110,33 +112,38 @@ export const ViajesActivos = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filtros y búsqueda */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filtros y búsqueda estilo Apple */}
+      <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
           <Input
             placeholder="Buscar por origen, destino o carta porte..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
           />
         </div>
-        <Button variant="outline">
+        <Button 
+          variant="outline"
+          className="h-12 px-6 bg-pure-white shadow-sm border-0"
+        >
           <Filter className="h-4 w-4 mr-2" />
           Filtros
         </Button>
       </div>
 
-      {/* Lista de viajes */}
+      {/* Lista de viajes con diseño Apple */}
       {viajesActivos.length === 0 ? (
-        <Card>
-          <CardContent className="p-12">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-05 to-gray-10">
+          <CardContent className="p-16">
             <div className="text-center">
-              <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+              <div className="w-16 h-16 bg-gray-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Truck className="h-8 w-8 text-gray-50" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-90 mb-3">
                 No hay viajes activos
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-gray-60 max-w-md mx-auto">
                 {searchTerm ? 'No se encontraron viajes con ese criterio de búsqueda' : 'Todos los viajes están completados o no hay viajes programados'}
               </p>
             </div>
@@ -145,120 +152,131 @@ export const ViajesActivos = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {viajesActivos.map((viaje) => (
-            <Card key={viaje.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
+            <Card key={viaje.id} className="group hover:shadow-lg transition-all duration-200 border-gray-20 bg-pure-white">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-lg font-semibold text-gray-90 group-hover:text-blue-interconecta transition-colors">
                     {viaje.carta_porte_id}
                   </CardTitle>
                   {getEstadoBadge(viaje.estado)}
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-4">
-                {/* Ruta */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-green-600" />
-                    <span className="font-medium">Origen:</span>
-                    <span className="text-sm">{viaje.origen}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-red-600" />
-                    <span className="font-medium">Destino:</span>
-                    <span className="text-sm">{viaje.destino}</span>
-                  </div>
-                </div>
-
-                {/* Progreso visual */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progreso</span>
-                    <span>{Math.round(getProgresoViaje(viaje))}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        viaje.estado === 'retrasado' ? 'bg-orange-500' : 'bg-green-500'
-                      }`}
-                      style={{ width: `${getProgresoViaje(viaje)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Información temporal */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      Inicio programado
+              <CardContent className="space-y-6">
+                {/* Ruta con diseño mejorado */}
+                <div className="space-y-3 p-4 bg-gray-05 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mt-1.5"></div>
+                    <div className="flex-1">
+                      <span className="text-xs font-medium text-gray-60 uppercase tracking-wider">Origen</span>
+                      <p className="text-sm font-medium text-gray-90">{viaje.origen}</p>
                     </div>
-                    <div className="font-medium">
+                  </div>
+                  
+                  <div className="ml-1.5 border-l-2 border-dashed border-gray-20 h-4"></div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full mt-1.5"></div>
+                    <div className="flex-1">
+                      <span className="text-xs font-medium text-gray-60 uppercase tracking-wider">Destino</span>
+                      <p className="text-sm font-medium text-gray-90">{viaje.destino}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progreso visual mejorado */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-70">Progreso del viaje</span>
+                    <span className="text-sm font-bold text-gray-90">{Math.round(getProgresoViaje(viaje))}%</span>
+                  </div>
+                  <Progress 
+                    value={getProgresoViaje(viaje)} 
+                    className="h-2 bg-gray-10"
+                  />
+                </div>
+
+                {/* Información temporal reorganizada */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-blue-light rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4 text-blue-interconecta" />
+                      <span className="text-xs font-medium text-blue-interconecta uppercase tracking-wider">Inicio</span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-90">
                       {formatDateTime(viaje.fecha_inicio_programada)}
-                    </div>
+                    </p>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      Tiempo restante
+                  
+                  <div className="p-3 bg-orange-50 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                      <span className="text-xs font-medium text-orange-600 uppercase tracking-wider">Restante</span>
                     </div>
-                    <div className={`font-medium ${
+                    <p className={`text-sm font-bold ${
                       calcularTiempoRestante(viaje.fecha_fin_programada) === 'Vencido' 
-                        ? 'text-red-600' : ''
+                        ? 'text-red-600' : 'text-gray-90'
                     }`}>
                       {calcularTiempoRestante(viaje.fecha_fin_programada)}
-                    </div>
+                    </p>
                   </div>
                 </div>
 
-                {/* Recursos asignados */}
-                <div className="flex justify-between items-center text-sm">
+                {/* Recursos asignados con mejor diseño */}
+                <div className="flex items-center justify-between p-3 bg-gray-05 rounded-xl">
                   <div className="flex items-center gap-4">
                     {viaje.vehiculo_id && (
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-3 w-3 text-muted-foreground" />
-                        <span>V-{viaje.vehiculo_id.slice(-6)}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-interconecta rounded-lg flex items-center justify-center">
+                          <Truck className="h-4 w-4 text-pure-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-70">V-{viaje.vehiculo_id.slice(-6)}</span>
                       </div>
                     )}
                     {viaje.conductor_id && (
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3 text-muted-foreground" />
-                        <span>C-{viaje.conductor_id.slice(-6)}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                          <User className="h-4 w-4 text-pure-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-70">C-{viaje.conductor_id.slice(-6)}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Acciones */}
-                <div className="flex gap-2 pt-2">
+                {/* Acciones mejoradas */}
+                <div className="flex gap-3 pt-2">
                   <Button 
                     onClick={() => handleVerTracking(viaje)}
-                    className="flex-1"
+                    className="flex-1 h-11"
                     size="sm"
                   >
                     <Navigation className="h-4 w-4 mr-2" />
                     Ver Tracking
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="h-11 px-4">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>
 
-                {/* Alertas específicas */}
+                {/* Alertas específicas mejoradas */}
                 {viaje.estado === 'retrasado' && (
-                  <div className="p-2 bg-orange-100 border border-orange-200 rounded text-sm text-orange-800">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Viaje con retraso reportado
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm font-medium text-orange-800">Viaje con retraso reportado</span>
                     </div>
                   </div>
                 )}
 
                 {viaje.fecha_inicio_real && viaje.estado === 'en_transito' && (
-                  <div className="p-2 bg-green-100 border border-green-200 rounded text-sm text-green-800">
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4" />
-                      Iniciado: {formatDateTime(viaje.fecha_inicio_real)}
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-4 w-4 text-green-600" />
+                      <div>
+                        <span className="text-sm font-medium text-green-800">Viaje iniciado</span>
+                        <p className="text-xs text-green-700">{formatDateTime(viaje.fecha_inicio_real)}</p>
+                      </div>
                     </div>
                   </div>
                 )}

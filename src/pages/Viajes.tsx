@@ -13,6 +13,7 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useNavigate } from 'react-router-dom';
 
 export default function Viajes() {
@@ -37,16 +38,13 @@ export default function Viajes() {
         <PlanNotifications />
 
         {/* Header estilo Apple */}
-        <div className="flex items-center justify-between" data-onboarding="viajes-header">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-interconecta rounded-2xl">
-              <Truck className="h-6 w-6 text-pure-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold text-gray-90 tracking-tight">Centro de Operaciones</h1>
-              <p className="text-gray-60 mt-1">Gestiona tus viajes y documentos logísticos</p>
-            </div>
-          </div>
+        <SectionHeader
+          title="Centro de Operaciones"
+          description="Gestiona tus viajes y documentos logísticos"
+          icon={Truck}
+          className="mb-8"
+          data-onboarding="viajes-header"
+        >
           <div className="flex gap-3">
             <Button 
               variant="outline" 
@@ -71,28 +69,28 @@ export default function Viajes() {
               </Button>
             </ProtectedActions>
           </div>
-        </div>
+        </SectionHeader>
 
         {/* Indicador de límites estilo Apple */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <LimitUsageIndicator resourceType="cartas_porte" className="md:col-span-2" />
         </div>
 
         {/* Filtros y búsqueda estilo Apple */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
               placeholder="Buscar viajes por destino, conductor o estado..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-12"
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
             />
           </div>
           <Button 
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="h-12 px-6"
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
@@ -100,56 +98,60 @@ export default function Viajes() {
         </div>
 
         {/* Tabs de viajes estilo Apple */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList 
-            className="grid w-full grid-cols-4 bg-gray-05 rounded-2xl p-1 h-12" 
-            data-onboarding="viajes-tabs"
-          >
-            <TabsTrigger 
-              value="activos"
-              className="rounded-xl text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
-            >
-              Viajes Activos
-            </TabsTrigger>
-            <TabsTrigger 
-              value="programados"
-              className="rounded-xl text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
-            >
-              Programados
-            </TabsTrigger>
-            <TabsTrigger 
-              value="historial"
-              className="rounded-xl text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
-            >
-              Historial
-            </TabsTrigger>
-            <TabsTrigger 
-              value="documentos"
-              data-onboarding="documentos-tab"
-              className="rounded-xl text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
-            >
-              Documentos
-            </TabsTrigger>
-          </TabsList>
+        <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="border-b border-gray-10 bg-gray-05 px-6 py-4">
+              <TabsList 
+                className="grid w-full max-w-2xl grid-cols-4 bg-gray-10 rounded-xl p-1 h-12" 
+                data-onboarding="viajes-tabs"
+              >
+                <TabsTrigger 
+                  value="activos"
+                  className="rounded-lg text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
+                >
+                  Viajes Activos
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="programados"
+                  className="rounded-lg text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
+                >
+                  Programados
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="historial"
+                  className="rounded-lg text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
+                >
+                  Historial
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="documentos"
+                  data-onboarding="documentos-tab"
+                  className="rounded-lg text-sm font-medium data-[state=active]:bg-pure-white data-[state=active]:text-gray-90 data-[state=active]:shadow-sm text-gray-60"
+                >
+                  Documentos
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          <div className="mt-8">
-            <TabsContent value="activos" className="mt-0">
-              <ViajesActivos />
-            </TabsContent>
+            <div className="p-6">
+              <TabsContent value="activos" className="mt-0">
+                <ViajesActivos />
+              </TabsContent>
 
-            <TabsContent value="programados" className="mt-0">
-              <ProgramacionViajes />
-            </TabsContent>
+              <TabsContent value="programados" className="mt-0">
+                <ProgramacionViajes />
+              </TabsContent>
 
-            <TabsContent value="historial" className="mt-0">
-              <HistorialViajes />
-            </TabsContent>
+              <TabsContent value="historial" className="mt-0">
+                <HistorialViajes />
+              </TabsContent>
 
-            <TabsContent value="documentos" className="mt-0">
-              <DocumentosVista />
-            </TabsContent>
-          </div>
-        </Tabs>
+              <TabsContent value="documentos" className="mt-0">
+                <DocumentosVista />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
 
         {/* Modal de programar viaje */}
         <ProgramarViajeModal
