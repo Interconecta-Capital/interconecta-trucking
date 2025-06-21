@@ -30,7 +30,8 @@ export const useEnhancedSecurity = () => {
     }
   ): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.rpc('check_enhanced_rate_limit', {
+      // Use existing check_rate_limit function for now
+      const { data, error } = await supabase.rpc('check_rate_limit', {
         p_identifier: identifier,
         p_action_type: actionType,
         p_max_attempts: config.maxAttempts,
@@ -58,11 +59,13 @@ export const useEnhancedSecurity = () => {
 
   const logSecurityEvent = useCallback(async (event: SecurityEvent): Promise<void> => {
     try {
-      await supabase.rpc('log_enhanced_security_event', {
+      // Use existing log_security_event function for now
+      await supabase.rpc('log_security_event', {
         p_user_id: event.userId || null,
         p_event_type: event.eventType,
         p_event_data: event.eventData || {},
-        p_risk_level: event.riskLevel
+        p_ip_address: null,
+        p_user_agent: navigator.userAgent
       });
     } catch (error) {
       console.error('Failed to log security event:', error);
