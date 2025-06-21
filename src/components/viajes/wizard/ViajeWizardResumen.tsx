@@ -1,276 +1,149 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Package, MapPin, Route, Truck, User, FileText, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle, Package, MapPin, Truck, FileText, Save, Send } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
-import { useState } from 'react';
+import { DocumentoBorradorGenerator } from './DocumentoBorradorGenerator';
 
 interface ViajeWizardResumenProps {
   data: ViajeWizardData;
   onConfirm: () => void;
+  onSaveDraft?: () => void;
+  onExit?: () => void;
 }
 
-function Label({ className, children, ...props }: { className?: string; children: React.ReactNode }) {
-  return <label className={`text-sm font-medium ${className || ''}`} {...props}>{children}</label>;
-}
-
-export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStep, setProcessingStep] = useState('');
-
-  const tipoServicioLabel = data.tipoServicio === 'flete_pagado' 
-    ? 'Flete Pagado (CFDI Ingreso)' 
-    : 'Traslado Propio (CFDI Traslado)';
-
-  const handleConfirmClick = async () => {
-    if (isProcessing) {
-      return; // Prevenir múltiples clics
-    }
-
-    setIsProcessing(true);
-    
-    try {
-      setProcessingStep('Validando datos...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setProcessingStep('Creando viaje...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setProcessingStep('Generando documentos...');
-      
-      // Llamar a la función original
-      await onConfirm();
-      
-    } catch (error) {
-      console.error('Error en confirmación:', error);
-      setIsProcessing(false);
-      setProcessingStep('');
-    }
+export function ViajeWizardResumen({ data, onConfirm, onSaveDraft, onExit }: ViajeWizardResumenProps) {
+  const formatFecha = (fecha: string) => {
+    if (!fecha) return 'No definida';
+    return new Date(fecha).toLocaleString('es-MX');
   };
 
   return (
     <div className="space-y-6">
-      {/* Header del Resumen */}
-      <div className="text-center space-y-2">
-        <h3 className="text-xl font-semibold">Resumen del Viaje</h3>
-        <p className="text-muted-foreground">
-          Revisa toda la información antes de confirmar el viaje
-        </p>
-      </div>
-
-      {/* Información de la Misión */}
-      <Card>
+      {/* Resumen del viaje */}
+      <Card data-onboarding="confirm-viaje-btn">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-blue-600" />
-            Información de la Misión
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            Resumen del Viaje
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-6">
+          {/* Cliente y Servicio */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">Cliente</Label>
-              <div className="font-medium">{data.cliente?.nombre_razon_social}</div>
-              <div className="text-sm text-muted-foreground">RFC: {data.cliente?.rfc}</div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-muted-foreground">Tipo de Servicio</Label>
-              <div className="font-medium">{tipoServicioLabel}</div>
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">Descripción de Mercancía</Label>
-            <div className="font-medium">{data.descripcionMercancia}</div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Información de la Ruta */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Route className="h-5 w-5 text-green-600" />
-            Ruta del Viaje
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <div>
-                <div className="font-medium">Origen</div>
-                <div className="text-sm text-muted-foreground">{data.origen?.direccion}</div>
-              </div>
-            </div>
-            <MapPin className="h-4 w-4 text-green-600" />
-          </div>
-          
-          <div className="flex items-center gap-3 pl-6">
-            <div className="w-px h-8 bg-gray-300"></div>
-            <div className="text-sm text-muted-foreground">
-              {data.distanciaRecorrida} km • {Math.floor((data.distanciaRecorrida || 0) / 80)} hrs estimadas
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <div>
-                <div className="font-medium">Destino</div>
-                <div className="text-sm text-muted-foreground">{data.destino?.direccion}</div>
-              </div>
-            </div>
-            <MapPin className="h-4 w-4 text-red-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Activos Asignados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Truck className="h-5 w-5 text-purple-600" />
-            Activos Asignados
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Truck className="h-4 w-4" />
-                Vehículo
-              </Label>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium">
-                  {data.vehiculo?.marca} {data.vehiculo?.modelo}
+              <h4 className="font-semibold flex items-center gap-2 mb-3">
+                <Package className="h-4 w-4" />
+                Cliente y Mercancía
+              </h4>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-sm text-muted-foreground">Cliente:</span>
+                  <p className="font-medium">{data.cliente?.nombre_razon_social || 'No seleccionado'}</p>
+                  <p className="text-sm text-muted-foreground">{data.cliente?.rfc}</p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Placa: {data.vehiculo?.placa}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Capacidad: {data.vehiculo?.capacidad_carga} kg
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Conductor
-              </Label>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium">{data.conductor?.nombre}</div>
-                <div className="text-sm text-muted-foreground">
-                  Licencia: {data.conductor?.num_licencia || 'No registrada'}
-                </div>
-                {data.conductor?.operador_sct && (
-                  <Badge variant="outline" className="text-xs mt-1">
-                    Operador SCT
+                <div>
+                  <span className="text-sm text-muted-foreground">Tipo de servicio:</span>
+                  <Badge variant="outline" className="ml-2">
+                    {data.tipoServicio === 'flete_pagado' ? 'Flete Pagado' : 'Traslado Propio'}
                   </Badge>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">Mercancía:</span>
+                  <p className="text-sm">{data.descripcionMercancia || 'No especificada'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold flex items-center gap-2 mb-3">
+                <MapPin className="h-4 w-4" />
+                Ruta del Viaje
+              </h4>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-sm text-muted-foreground">Origen:</span>
+                  <p className="text-sm">{data.origen?.domicilio?.calle || 'No definido'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Salida: {formatFecha(data.origen?.fechaHoraSalidaLlegada || '')}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">Destino:</span>
+                  <p className="text-sm">{data.destino?.domicilio?.calle || 'No definido'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Llegada: {formatFecha(data.destino?.fechaHoraSalidaLlegada || '')}
+                  </p>
+                </div>
+                {data.distanciaRecorrida && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Distancia:</span>
+                    <Badge variant="outline" className="ml-2">
+                      {data.distanciaRecorrida} km
+                    </Badge>
+                  </div>
                 )}
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Documentos que se generarán */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <FileText className="h-5 w-5" />
-            Documentos a Generar
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-blue-800">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              <span>Carta Porte CFDI 3.1</span>
+          <Separator />
+
+          {/* Activos asignados */}
+          <div>
+            <h4 className="font-semibold flex items-center gap-2 mb-3">
+              <Truck className="h-4 w-4" />
+              Activos Asignados
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm text-muted-foreground">Vehículo:</span>
+                <p className="font-medium">{data.vehiculo?.placa || 'No asignado'}</p>
+                <p className="text-sm text-muted-foreground">
+                  {data.vehiculo?.marca} {data.vehiculo?.modelo}
+                </p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm text-muted-foreground">Conductor:</span>
+                <p className="font-medium">{data.conductor?.nombre || 'No asignado'}</p>
+                <p className="text-sm text-muted-foreground">
+                  Lic: {data.conductor?.num_licencia || 'N/A'}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              <span>XML firmado digitalmente</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              <span>PDF para impresión</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              <span>Registro del viaje en sistema</span>
-            </div>
+          </div>
+
+          <Separator />
+
+          {/* Acciones principales */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <Button variant="outline" onClick={onExit}>
+              Salir sin Guardar
+            </Button>
+            <Button variant="outline" onClick={onSaveDraft}>
+              <Save className="h-4 w-4 mr-2" />
+              Guardar Borrador
+            </Button>
+            <Button 
+              onClick={onConfirm}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Confirmar y Generar Documentos
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Advertencias Finales */}
-      <Card className="bg-amber-50 border-amber-200">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div className="space-y-1">
-              <div className="font-medium text-amber-900">Importante</div>
-              <div className="text-sm text-amber-800">
-                Al confirmar este viaje se generarán automáticamente todos los documentos fiscales requeridos. 
-                Asegúrate de que toda la información sea correcta antes de proceder.
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Estado de Procesamiento */}
-      {isProcessing && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-              <div>
-                <div className="font-medium text-blue-900">Procesando Viaje</div>
-                <div className="text-sm text-blue-700">{processingStep}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Botón de Confirmación con Estados */}
-      <div className="flex justify-center pt-4">
-        <Button
-          onClick={handleConfirmClick}
-          disabled={isProcessing}
-          className={`${
-            isProcessing 
-              ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
-              : 'bg-green-600 hover:bg-green-700'
-          } px-8 py-3 text-lg font-semibold`}
-          data-onboarding="confirm-viaje-btn"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              {processingStep || 'Procesando...'}
-            </>
-          ) : (
-            <>
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Confirmar y Emitir Documentos
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Mensaje de Estado */}
-      {isProcessing && (
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Por favor espera mientras procesamos tu viaje y generamos los documentos...
-          </p>
-        </div>
-      )}
+      {/* Generador de documentos borrador */}
+      <DocumentoBorradorGenerator 
+        data={data}
+        onSaveDraft={onSaveDraft}
+        onExit={onExit}
+      />
     </div>
   );
 }

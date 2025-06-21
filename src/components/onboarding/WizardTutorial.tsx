@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,32 +32,86 @@ export function WizardTutorial({ currentWizardStep, onNext, onSkip }: WizardTuto
   
   const [showTooltip, setShowTooltip] = useState(false);
   const [targetElement, setTargetElement] = useState<HTMLElement | null>(null);
+  const [highlightStyle, setHighlightStyle] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const currentTutorialStep = wizardStep ? WIZARD_TUTORIAL_STEPS[wizardStep as keyof typeof WIZARD_TUTORIAL_STEPS] : null;
 
-  // Find target element when step changes
-  useEffect(() => {
+  const updateTargetElement = useCallback(() => {
     if (currentTutorialStep?.targetElement) {
-      const element = document.querySelector(currentTutorialStep.targetElement) as HTMLElement;
-      setTargetElement(element);
+      console.log('🎯 Buscando elemento:', currentTutorialStep.targetElement);
       
-      if (element) {
-        setShowTooltip(true);
-        // Scroll element into view smoothly
-        element.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'nearest'
-        });
-      }
+      // Esperar un poco para asegurar que el DOM esté actualizado
+      setTimeout(() => {
+        const element = document.querySelector(currentTutorialStep.targetElement!) as HTMLElement;
+        
+        if (element) {
+          console.log('✅ Elemento encontrado:', element);
+          setTargetElement(element);
+          
+          // Calcular posición del elemento para el highlight
+          const rect = element.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+          
+          setHighlightStyle({
+            top: rect.top + scrollTop - 8,
+            left: rect.left + scrollLeft - 8,
+            width: rect.width + 16,
+            height: rect.height + 16
+          });
+          
+          setShowTooltip(true);
+          
+          // Scroll suave al elemento
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+          
+          // Agregar clase temporal para mejor visibilidad
+          element.classList.add('tutorial-highlight');
+          setTimeout(() => {
+            element.classList.remove('tutorial-highlight');
+          }, 3000);
+          
+        } else {
+          console.warn('❌ Elemento no encontrado:', currentTutorialStep.targetElement);
+          setTargetElement(null);
+          setHighlightStyle(null);
+          setShowTooltip(false);
+        }
+      }, 500);
     } else {
       setTargetElement(null);
+      setHighlightStyle(null);
       setShowTooltip(false);
     }
   }, [currentTutorialStep]);
 
+  // Actualizar elemento objetivo cuando cambia el paso
+  useEffect(() => {
+    updateTargetElement();
+  }, [updateTargetElement]);
+
+  // Re-calcular posición en resize
+  useEffect(() => {
+    const handleResize = () => {
+      updateTargetElement();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [updateTargetElement]);
+
   const handleNext = () => {
     setShowTooltip(false);
+    setHighlightStyle(null);
     setTimeout(() => {
       nextWizardStep();
       if (onNext) onNext();
@@ -66,6 +120,7 @@ export function WizardTutorial({ currentWizardStep, onNext, onSkip }: WizardTuto
 
   const handleSkip = () => {
     setShowTooltip(false);
+    setHighlightStyle(null);
     skipWizardTutorial();
     if (onSkip) onSkip();
   };
@@ -76,6 +131,60 @@ export function WizardTutorial({ currentWizardStep, onNext, onSkip }: WizardTuto
 
   return (
     <>
+      {/* CSS para el highlight */}
+      <style jsx global>{`
+        .tutorial-highlight {
+          position: relative;
+          z-index: 45;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 0 20px rgba(59, 130, 246, 0.3) !important;
+          border-radius: 8px !important;
+          animation: tutorialPulse 2s infinite;
+        }
+        
+        @keyframes tutorialPulse {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 0 20px rgba(59, 130, 246, 0.3); }
+          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.5); }
+        }
+      `}</style>
+
+      {/* Overlay de fondo */}
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 pointer-events-none"
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)'
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Highlight del elemento objetivo */}
+      <AnimatePresence>
+        {showTooltip && highlightStyle && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed z-41 pointer-events-none"
+            style={{
+              top: highlightStyle.top,
+              left: highlightStyle.left,
+              width: highlightStyle.width,
+              height: highlightStyle.height,
+              border: '4px solid #3b82f6',
+              borderRadius: '12px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)',
+              animation: 'tutorialPulse 2s infinite'
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Main Tutorial Card */}
       <AnimatePresence>
         <motion.div
@@ -177,33 +286,6 @@ export function WizardTutorial({ currentWizardStep, onNext, onSkip }: WizardTuto
             </CardContent>
           </Card>
         </motion.div>
-      </AnimatePresence>
-
-      {/* Target Element Highlight */}
-      <AnimatePresence>
-        {showTooltip && targetElement && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 pointer-events-none"
-            style={{
-              background: 'rgba(0, 0, 0, 0.4)'
-            }}
-          >
-            <div
-              className="absolute border-4 border-blue-400 rounded-lg shadow-lg pointer-events-none"
-              style={{
-                top: targetElement.offsetTop - 8,
-                left: targetElement.offsetLeft - 8,
-                width: targetElement.offsetWidth + 16,
-                height: targetElement.offsetHeight + 16,
-                background: 'rgba(59, 130, 246, 0.1)',
-                boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)'
-              }}
-            />
-          </motion.div>
-        )}
       </AnimatePresence>
     </>
   );
