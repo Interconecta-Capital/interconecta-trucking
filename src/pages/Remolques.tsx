@@ -15,14 +15,14 @@ import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 
-// Updated interface to match what RemolquesTable expects
+// Interface that matches what useRemolques hook returns
 interface Remolque {
   id: string;
   placa: string;
   marca?: string;
   modelo?: string;
   anio?: number;
-  subtipo_rem?: string;
+  tipo_remolque?: string; // This is what the hook returns (mapped from subtipo_rem)
   estado: string;
   vehiculo_asignado_id?: string;
   activo: boolean;
@@ -60,7 +60,7 @@ export default function Remolques() {
 
   const filteredRemolques = remolques.filter(remolque =>
     remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.subtipo_rem?.toLowerCase().includes(searchTerm.toLowerCase())
+    remolque.tipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase()) // Use tipo_remolque instead of subtipo_rem
   );
 
   if (error) {
