@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useSuscripcion } from './useSuscripcion';
@@ -8,6 +7,7 @@ import { useConductores } from './useConductores';
 import { useVehiculos } from './useVehiculos';
 import { useSocios } from './useSocios';
 import { useCartasPorte } from './useCartasPorte';
+import { useStorageUsage } from './useStorageUsage';
 import { differenceInDays } from 'date-fns';
 
 // Tipos para el sistema unificado de permisos
@@ -29,6 +29,7 @@ export interface UnifiedPermissions {
   canCreateVehiculo: PermissionResult;
   canCreateSocio: PermissionResult;
   canCreateCartaPorte: PermissionResult;
+  canUploadFile: PermissionResult;
   
   // Permisos de funcionalidades
   canTimbrar: PermissionResult;
@@ -45,6 +46,7 @@ export interface UnifiedPermissions {
     vehiculos: { used: number; limit: number | null };
     socios: { used: number; limit: number | null };
     cartas_porte: { used: number; limit: number | null };
+    almacenamiento: { used: number; limit: number | null; usedGB: number };
   };
   
   // Información del plan
@@ -75,6 +77,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
   const { isSuperuser } = useOptimizedSuperuser();
   const { suscripcion, verificarLimite, estaBloqueado } = useSuscripcion();
   const { trialInfo } = useOptimizedTrialTracking();
+  const { gbUtilizados, archivosCount } = useStorageUsage();
   
   // Hooks para conteo de recursos
   const { conductores } = useConductores();
@@ -88,6 +91,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
     const vehiculosUsed = vehiculos?.length || 0;
     const sociosUsed = socios?.length || 0;
     const cartasPorteUsed = cartasPorte?.length || 0;
+    const almacenamientoUsedGB = gbUtilizados || 0;
     
     const isTrialExpiredCalc = trialInfo.isTrialExpired || false;
     const isInGracePeriodCalc = trialInfo.daysRemaining < -14 && trialInfo.daysRemaining > -30;
@@ -104,6 +108,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: true, reason: 'Superusuario' },
         canCreateSocio: { allowed: true, reason: 'Superusuario' },
         canCreateCartaPorte: { allowed: true, reason: 'Superusuario' },
+        canUploadFile: { allowed: true, reason: 'Superusuario' },
         
         canTimbrar: { allowed: true, reason: 'Superusuario' },
         canGenerateXML: { allowed: true, reason: 'Superusuario' },
@@ -118,6 +123,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           vehiculos: { used: vehiculosUsed, limit: null },
           socios: { used: sociosUsed, limit: null },
           cartas_porte: { used: cartasPorteUsed, limit: null },
+          almacenamiento: { used: archivosCount, limit: null, usedGB: almacenamientoUsedGB },
         },
         
         planInfo: {
@@ -154,6 +160,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: true, reason: 'Período de prueba activo' },
         canCreateSocio: { allowed: true, reason: 'Período de prueba activo' },
         canCreateCartaPorte: { allowed: true, reason: 'Período de prueba activo' },
+        canUploadFile: { allowed: true, reason: 'Período de prueba activo' },
         
         canTimbrar: { allowed: true, reason: 'Período de prueba activo' },
         canGenerateXML: { allowed: true, reason: 'Período de prueba activo' },
@@ -168,6 +175,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           vehiculos: { used: vehiculosUsed, limit: null },
           socios: { used: sociosUsed, limit: null },
           cartas_porte: { used: cartasPorteUsed, limit: null },
+          almacenamiento: { used: archivosCount, limit: null, usedGB: almacenamientoUsedGB },
         },
         
         planInfo: {
@@ -206,6 +214,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: false, reason: 'Cuenta bloqueada' },
         canCreateSocio: { allowed: false, reason: 'Cuenta bloqueada' },
         canCreateCartaPorte: { allowed: false, reason: 'Cuenta bloqueada' },
+        canUploadFile: { allowed: false, reason: 'Cuenta bloqueada' },
         
         canTimbrar: { allowed: false, reason: 'Cuenta bloqueada' },
         canGenerateXML: { allowed: false, reason: 'Cuenta bloqueada' },
@@ -220,6 +229,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           vehiculos: { used: vehiculosUsed, limit: 0 },
           socios: { used: sociosUsed, limit: 0 },
           cartas_porte: { used: cartasPorteUsed, limit: 0 },
+          almacenamiento: { used: archivosCount, limit: 0, usedGB: almacenamientoUsedGB },
         },
         
         planInfo: {
@@ -245,9 +255,13 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
       };
     }
 
-    // REGLA 4: SUSCRIPCIÓN ACTIVA Y LÍMITES
+    // REGLA 4: SUSCRIPCIÓN ACTIVA Y LÍMITES (incluyendo almacenamiento)
     if (suscripcion?.status === 'active' && suscripcion.plan) {
       const plan = suscripcion.plan;
+      
+      // Verificar límite de almacenamiento
+      const almacenamientoExcedido = plan.limite_almacenamiento_gb && 
+        almacenamientoUsedGB >= plan.limite_almacenamiento_gb;
       
       const basePermissions = {
         hasFullAccess: false,
@@ -290,6 +304,15 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           used: cartasPorteUsed
         },
         
+        canUploadFile: {
+          allowed: !almacenamientoExcedido,
+          reason: plan.limite_almacenamiento_gb ? 
+            `${almacenamientoUsedGB.toFixed(2)}/${plan.limite_almacenamiento_gb} GB utilizados` : 
+            'Sin límite de almacenamiento',
+          limit: plan.limite_almacenamiento_gb || undefined,
+          used: Math.round(almacenamientoUsedGB * 100) / 100 // Redondear a 2 decimales
+        },
+        
         canTimbrar: { 
           allowed: !!plan.puede_timbrar, 
           reason: plan.puede_timbrar ? 'Incluido en su plan' : 'No incluido en su plan actual' 
@@ -324,6 +347,11 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           vehiculos: { used: vehiculosUsed, limit: plan.limite_vehiculos },
           socios: { used: sociosUsed, limit: plan.limite_socios },
           cartas_porte: { used: cartasPorteUsed, limit: plan.limite_cartas_porte },
+          almacenamiento: { 
+            used: archivosCount, 
+            limit: plan.limite_almacenamiento_gb,
+            usedGB: almacenamientoUsedGB 
+          },
         },
         
         planInfo: {
@@ -349,6 +377,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
             vehiculos: basePermissions.canCreateVehiculo,
             socios: basePermissions.canCreateSocio,
             cartas_porte: basePermissions.canCreateCartaPorte,
+            archivos: basePermissions.canUploadFile,
           };
           const permission = resourceMap[resource as keyof typeof resourceMap];
           return permission ? { puede: permission.allowed, razon: permission.reason } : { puede: false, razon: 'Recurso no encontrado' };
@@ -368,6 +397,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         },
         canPerformAction: (action: string) => {
           if (action === 'create') return true; // Plan activo permite crear
+          if (action === 'upload') return !almacenamientoExcedido;
           return false;
         },
         obtenerUsoActual: () => basePermissions.usage
@@ -387,6 +417,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: false, reason: 'Período de prueba finalizado' },
         canCreateSocio: { allowed: false, reason: 'Período de prueba finalizado' },
         canCreateCartaPorte: { allowed: false, reason: 'Período de prueba finalizado' },
+        canUploadFile: { allowed: false, reason: 'Período de prueba finalizado' },
         
         canTimbrar: { allowed: false, reason: 'Período de prueba finalizado' },
         canGenerateXML: { allowed: false, reason: 'Período de prueba finalizado' },
@@ -401,6 +432,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           vehiculos: { used: vehiculosUsed, limit: 0 },
           socios: { used: sociosUsed, limit: 0 },
           cartas_porte: { used: cartasPorteUsed, limit: 0 },
+          almacenamiento: { used: archivosCount, limit: 0, usedGB: almacenamientoUsedGB },
         },
         
         planInfo: {
@@ -436,6 +468,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
       canCreateVehiculo: { allowed: false, reason: 'No tiene plan activo' },
       canCreateSocio: { allowed: false, reason: 'No tiene plan activo' },
       canCreateCartaPorte: { allowed: false, reason: 'No tiene plan activo' },
+      canUploadFile: { allowed: false, reason: 'No tiene plan activo' },
       
       canTimbrar: { allowed: false, reason: 'No tiene plan activo' },
       canGenerateXML: { allowed: false, reason: 'No tiene plan activo' },
@@ -450,6 +483,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         vehiculos: { used: vehiculosUsed, limit: 0 },
         socios: { used: sociosUsed, limit: 0 },
         cartas_porte: { used: cartasPorteUsed, limit: 0 },
+        almacenamiento: { used: archivosCount, limit: 0, usedGB: almacenamientoUsedGB },
       },
       
       planInfo: {
@@ -481,6 +515,8 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
     conductores,
     vehiculos,
     socios,
-    cartasPorte
+    cartasPorte,
+    gbUtilizados,
+    archivosCount
   ]);
 };

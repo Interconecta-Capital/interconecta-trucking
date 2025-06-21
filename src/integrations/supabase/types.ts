@@ -1807,6 +1807,7 @@ export type Database = {
           descripcion: string | null
           dias_prueba: number | null
           id: string
+          limite_almacenamiento_gb: number | null
           limite_cartas_porte: number | null
           limite_conductores: number | null
           limite_socios: number | null
@@ -1829,6 +1830,7 @@ export type Database = {
           descripcion?: string | null
           dias_prueba?: number | null
           id?: string
+          limite_almacenamiento_gb?: number | null
           limite_cartas_porte?: number | null
           limite_conductores?: number | null
           limite_socios?: number | null
@@ -1851,6 +1853,7 @@ export type Database = {
           descripcion?: string | null
           dias_prueba?: number | null
           id?: string
+          limite_almacenamiento_gb?: number | null
           limite_cartas_porte?: number | null
           limite_conductores?: number | null
           limite_socios?: number | null
@@ -2603,6 +2606,33 @@ export type Database = {
         }
         Relationships: []
       }
+      usuario_almacenamiento: {
+        Row: {
+          archivos_count: number
+          bytes_utilizados: number
+          created_at: string | null
+          id: string
+          ultima_actualizacion: string | null
+          user_id: string
+        }
+        Insert: {
+          archivos_count?: number
+          bytes_utilizados?: number
+          created_at?: string | null
+          id?: string
+          ultima_actualizacion?: string | null
+          user_id: string
+        }
+        Update: {
+          archivos_count?: number
+          bytes_utilizados?: number
+          created_at?: string | null
+          id?: string
+          ultima_actualizacion?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           activo: boolean | null
@@ -3052,6 +3082,14 @@ export type Database = {
           created_at: string
         }[]
       }
+      get_user_storage_usage: {
+        Args: { user_uuid: string }
+        Returns: {
+          bytes_utilizados: number
+          gb_utilizados: number
+          archivos_count: number
+        }[]
+      }
       get_user_tenant_id: {
         Args: { user_uuid: string }
         Returns: string
@@ -3104,6 +3142,10 @@ export type Database = {
           codigo_postal: string
           ubicacion: string
         }[]
+      }
+      update_user_storage_usage: {
+        Args: { user_uuid: string; bytes_delta: number; files_delta?: number }
+        Returns: undefined
       }
       validate_carta_porte_v31: {
         Args: { carta_porte_data: Json }
