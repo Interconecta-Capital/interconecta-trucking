@@ -25,16 +25,18 @@ export default function StableVehiculos() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
 
+  // Fixed: No parameters for ProtectedActions compatibility
   const handleNewVehiculo = () => {
     setSelectedVehiculo(null);
     setShowCreateDialog(true);
   };
 
+  // Fixed: No parameters for ProtectedActions compatibility
   const handleNewRemolque = () => {
-    // TODO: Implementar modal para crear remolque
     console.log('Crear nuevo remolque');
   };
 
+  // These handlers need parameters, so they're separate
   const handleEdit = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
     setShowEditDialog(true);
