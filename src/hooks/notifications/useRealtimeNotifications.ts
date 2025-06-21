@@ -73,8 +73,20 @@ export const useRealtimeNotifications = () => {
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.leida).length || 0);
+      // Type cast the data to ensure proper types
+      const typedData: NotificationData[] = (data || []).map(item => ({
+        id: item.id,
+        tipo: item.tipo as 'success' | 'warning' | 'error' | 'info',
+        titulo: item.titulo,
+        mensaje: item.mensaje,
+        urgente: item.urgente,
+        metadata: item.metadata,
+        created_at: item.created_at,
+        leida: item.leida
+      }));
+
+      setNotifications(typedData);
+      setUnreadCount(typedData.filter(n => !n.leida).length);
     } catch (error) {
       console.error('Error cargando notificaciones:', error);
     }

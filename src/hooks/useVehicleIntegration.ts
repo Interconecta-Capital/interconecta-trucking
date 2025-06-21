@@ -95,8 +95,8 @@ export const useVehicleIntegration = () => {
             id: vehiculo.id,
             placa: vehiculo.placa,
             modelo: vehiculo.modelo,
-            año: vehiculo.año,
-            estado: vehiculo.estado || 'disponible',
+            año: vehiculo.anio, // Use 'anio' from database
+            estado: (vehiculo.estado || 'disponible') as 'disponible' | 'en_viaje' | 'mantenimiento' | 'fuera_servicio',
             ubicacionActual: {
               lat: 19.4326 + (Math.random() - 0.5) * 0.1,
               lng: -99.1332 + (Math.random() - 0.5) * 0.1,
@@ -160,7 +160,7 @@ export const useVehicleIntegration = () => {
         id: conductor.id,
         nombre: conductor.nombre,
         licencia: conductor.num_licencia || 'N/A',
-        estado: conductor.estado || 'disponible',
+        estado: (conductor.estado || 'disponible') as 'disponible' | 'en_viaje' | 'descanso' | 'fuera_servicio',
         ubicacionActual: {
           lat: 19.4326 + (Math.random() - 0.5) * 0.1,
           lng: -99.1332 + (Math.random() - 0.5) * 0.1,
