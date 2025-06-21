@@ -38,7 +38,7 @@ interface OnboardingContextType {
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
-const WIZARD_TUTORIAL_STEPS = {
+const WIZARD_TUTORIAL_STEPS: Record<string, OnboardingStepData> = {
   welcome: {
     id: 'welcome',
     title: '¡Bienvenido al Asistente de Viajes!',
