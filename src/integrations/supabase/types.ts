@@ -3036,6 +3036,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_superuser_simple: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       log_security_event: {
         Args: {
           p_user_id: string
