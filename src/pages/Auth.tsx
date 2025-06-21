@@ -176,20 +176,20 @@ export default function Auth() {
             </p>
           </div>
 
-          <Card className="feature-card border border-gray-800 bg-system-surface">
+          <Card className="feature-card border border-gray-800">
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold text-system-text-primary">Accede a tu cuenta</CardTitle>
-              <CardDescription className="text-system-text-secondary">
+              <CardTitle className="text-2xl font-bold text-white">Accede a tu cuenta</CardTitle>
+              <CardDescription className="text-gray-400">
                 Ingresa tus credenciales para continuar
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue={defaultTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-system-gray-2 border-system-border">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-system-surface data-[state=active]:text-system-text-primary">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
+                  <TabsTrigger value="login" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
                     Iniciar Sesión
                   </TabsTrigger>
-                  <TabsTrigger value="register" className="data-[state=active]:bg-system-surface data-[state=active]:text-system-text-primary">
+                  <TabsTrigger value="register" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">
                     Registrarse
                   </TabsTrigger>
                 </TabsList>
@@ -207,7 +207,7 @@ export default function Auth() {
 
           {/* Enlace a prueba gratuita */}
           <div className="text-center mt-6">
-            <p className="text-sm text-system-text-secondary mb-3">
+            <p className="text-sm text-gray-400 mb-3">
               ¿Nuevo en Interconecta Trucking?
             </p>
             <Link to="/auth?tab=register">
@@ -269,10 +269,10 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-system-border" />
+            <span className="w-full border-t border-gray-700" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-system-surface px-2 text-system-text-tertiary">
+            <span className="bg-black px-2 text-gray-400">
               O accede con
             </span>
           </div>
@@ -281,8 +281,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         <div className="space-y-3">
           <Button
             onClick={onShowMagicLink}
-            variant="secondary"
-            className="w-full rounded-full font-semibold"
+            className="btn-secondary w-full rounded-full font-semibold"
           >
             Link Mágico (Sin contraseña)
           </Button>
@@ -290,7 +289,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="login-email" className="text-system-text-primary">
+            <Label htmlFor="login-email" className="text-gray-300">
               Correo Electrónico
             </Label>
             <Input
@@ -300,11 +299,11 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="force-white-bg"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="login-password" className="text-system-text-primary">
+            <Label htmlFor="login-password" className="text-gray-300">
               Contraseña
             </Label>
             <div className="relative">
@@ -314,7 +313,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="force-white-bg pr-10"
+                className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
               />
               <Button
                 type="button"
@@ -324,9 +323,9 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-system-text-tertiary" />
+                  <EyeOff className="h-4 w-4 text-gray-400" />
                 ) : (
-                  <Eye className="h-4 w-4 text-system-text-tertiary" />
+                  <Eye className="h-4 w-4 text-gray-400" />
                 )}
               </Button>
             </div>
@@ -336,7 +335,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
             <button
               type="button"
               onClick={onShowForgotPassword}
-              className="text-sm text-system-text-secondary hover:text-system-primary underline"
+              className="text-sm text-gray-400 hover:text-white underline"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -344,7 +343,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
           
           <Button 
             type="submit" 
-            className="w-full rounded-full font-semibold" 
+            className="btn-primary w-full rounded-full font-semibold" 
             disabled={loading}
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
@@ -352,7 +351,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         </form>
         
         <div className="text-center">
-          <p className="text-xs text-system-text-tertiary">
+          <p className="text-xs text-gray-400">
             ¿Te registraste pero no verificaste tu correo?{' '}
             <button
               type="button"
@@ -363,7 +362,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
                   toast.error('Por favor ingresa tu correo electrónico primero');
                 }
               }}
-              className="text-system-text-secondary hover:text-system-primary underline"
+              className="text-gray-400 hover:text-white underline"
             >
               Reenviar verificación
             </button>
@@ -455,10 +454,10 @@ function RegisterForm() {
       
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-system-border" />
+          <span className="w-full border-t border-gray-700" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-system-surface px-2 text-system-text-tertiary">
+          <span className="bg-black px-2 text-gray-400">
             O regístrate con email
           </span>
         </div>
@@ -467,63 +466,63 @@ function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="nombre" className="text-system-text-primary">Nombre</Label>
+            <Label htmlFor="nombre" className="text-gray-300">Nombre</Label>
             <Input
               id="nombre"
               value={formData.nombre}
               onChange={(e) => handleChange('nombre', e.target.value)}
               required
-              className="force-white-bg"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="telefono" className="text-system-text-primary">Teléfono</Label>
+            <Label htmlFor="telefono" className="text-gray-300">Teléfono</Label>
             <Input
               id="telefono"
               value={formData.telefono}
               onChange={(e) => handleChange('telefono', e.target.value)}
-              className="force-white-bg"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
             />
           </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="empresa" className="text-system-text-primary">Empresa</Label>
+          <Label htmlFor="empresa" className="text-gray-300">Empresa</Label>
           <Input
             id="empresa"
             value={formData.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             required
-            className="force-white-bg"
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="rfc" className="text-system-text-primary">RFC de la Empresa</Label>
+          <Label htmlFor="rfc" className="text-gray-300">RFC de la Empresa</Label>
           <Input
             id="rfc"
             value={formData.rfc}
             onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
             required
             maxLength={13}
-            className="force-white-bg"
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-email" className="text-system-text-primary">Correo Electrónico</Label>
+          <Label htmlFor="register-email" className="text-gray-300">Correo Electrónico</Label>
           <Input
             id="register-email"
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             required
-            className="force-white-bg"
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-password" className="text-system-text-primary">Contraseña</Label>
+          <Label htmlFor="register-password" className="text-gray-300">Contraseña</Label>
           <div className="relative">
             <Input
               id="register-password"
@@ -532,7 +531,7 @@ function RegisterForm() {
               onChange={(e) => handleChange('password', e.target.value)}
               required
               minLength={6}
-              className="force-white-bg pr-10"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
             />
             <Button
               type="button"
@@ -542,16 +541,16 @@ function RegisterForm() {
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4 text-system-text-tertiary" />
+                <EyeOff className="h-4 w-4 text-gray-400" />
               ) : (
-                <Eye className="h-4 w-4 text-system-text-tertiary" />
+                <Eye className="h-4 w-4 text-gray-400" />
               )}
             </Button>
           </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirm-password" className="text-system-text-primary">Confirmar Contraseña</Label>
+          <Label htmlFor="confirm-password" className="text-gray-300">Confirmar Contraseña</Label>
           <div className="relative">
             <Input
               id="confirm-password"
@@ -559,7 +558,7 @@ function RegisterForm() {
               value={formData.confirmPassword}
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
               required
-              className="force-white-bg pr-10"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
             />
             <Button
               type="button"
@@ -569,9 +568,9 @@ function RegisterForm() {
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4 text-system-text-tertiary" />
+                <EyeOff className="h-4 w-4 text-gray-400" />
               ) : (
-                <Eye className="h-4 w-4 text-system-text-tertiary" />
+                <Eye className="h-4 w-4 text-gray-400" />
               )}
             </Button>
           </div>
@@ -579,7 +578,7 @@ function RegisterForm() {
         
         <Button 
           type="submit" 
-          className="w-full rounded-full font-semibold" 
+          className="btn-primary w-full rounded-full font-semibold" 
           disabled={loading}
         >
           {loading ? 'Creando cuenta...' : 'Crear Cuenta'}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,8 +73,9 @@ export function ViajeWizard() {
   const navigate = useNavigate();
   const { crearViaje, isCreatingViaje } = useViajes();
   const { 
+    userRole, 
+    startWizardTutorial, 
     isWizardTutorialActive,
-    startWizardTutorial,
     wizardStep 
   } = useOnboarding();
   
@@ -87,24 +87,18 @@ export function ViajeWizard() {
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
 
-  // Solo iniciar tutorial si es la primera vez que se abre el wizard
+  // Auto-start tutorial for new users
   useEffect(() => {
-    const wizardTutorialCompleted = localStorage.getItem('wizard_tutorial_completed');
-    const wizardOpenedBefore = sessionStorage.getItem('wizard_opened_this_session');
+    const shouldStartTutorial = userRole === 'nuevo' || userRole === 'transportista';
+    const tutorialCompleted = localStorage.getItem(`wizard_tutorial_completed`);
     
-    // Solo mostrar tutorial si:
-    // 1. Nunca se ha completado el tutorial
-    // 2. No se ha abierto el wizard en esta sesión
-    if (!wizardTutorialCompleted && !wizardOpenedBefore && !isWizardTutorialActive) {
-      console.log('🎓 Primera vez abriendo el wizard - iniciando tutorial');
+    if (shouldStartTutorial && !tutorialCompleted && !isWizardTutorialActive) {
       setTimeout(() => {
+        console.log('🎓 Auto-starting wizard tutorial for new user');
         startWizardTutorial();
       }, 1000);
     }
-    
-    // Marcar que se abrió el wizard en esta sesión
-    sessionStorage.setItem('wizard_opened_this_session', 'true');
-  }, [startWizardTutorial, isWizardTutorialActive]);
+  }, [userRole, startWizardTutorial, isWizardTutorialActive]);
 
   const updateData = (updates: Partial<ViajeWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -113,15 +107,18 @@ export function ViajeWizard() {
   const canAdvance = () => {
     switch (data.currentStep) {
       case 1:
+        // Validación estricta: todos los campos requeridos Y RFC válido
         const hasBasicData = data.cliente && data.tipoServicio && data.descripcionMercancia;
         const hasValidRfc = data.clienteRfcValido === true;
+        
+        // Solo permitir avanzar si tiene datos básicos Y RFC válido
         return hasBasicData && hasValidRfc;
       case 2:
         return data.origen && data.destino;
       case 3:
         return data.vehiculo && data.conductor;
       case 4:
-        return true;
+        return true; // Las validaciones se manejan internamente
       case 5:
         return true;
       default:
@@ -146,6 +143,7 @@ export function ViajeWizard() {
   };
 
   const handleConfirmarViaje = async () => {
+    // Prevenir múltiples ejecuciones
     if (isGeneratingDocuments || isCreatingViaje || viajeConfirmado) {
       console.log('🚫 Proceso ya en curso, ignorando clic adicional');
       return;
@@ -155,6 +153,7 @@ export function ViajeWizard() {
       setIsGeneratingDocuments(true);
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
+      // 1. Crear el viaje primero
       console.log('📝 Paso 1: Creando viaje en base de datos...');
       const nuevoViaje = await new Promise<any>((resolve, reject) => {
         crearViaje(data, {
@@ -169,8 +168,10 @@ export function ViajeWizard() {
         });
       });
 
+      // Marcar como confirmado para prevenir duplicados
       setViajeConfirmado(true);
 
+      // 2. Generar Carta Porte desde el viaje
       console.log('📄 Paso 2: Generando Carta Porte...');
       const resultado = await ViajeCartaPorteService.crearCartaPorteDesdeViaje(
         nuevoViaje.id,
@@ -180,6 +181,7 @@ export function ViajeWizard() {
       console.log('✅ Documentos generados exitosamente');
       toast.success('Viaje programado y documentos generados exitosamente');
 
+      // 3. Redirigir después de un breve delay
       setTimeout(() => {
         navigate('/viajes', { 
           state: { 
@@ -193,7 +195,7 @@ export function ViajeWizard() {
     } catch (error) {
       console.error('❌ Error en proceso de confirmación:', error);
       toast.error('Error al programar el viaje: ' + (error as Error).message);
-      setViajeConfirmado(false);
+      setViajeConfirmado(false); // Permitir retry en caso de error
     } finally {
       setIsGeneratingDocuments(false);
     }
@@ -232,6 +234,7 @@ export function ViajeWizard() {
   const progress = (data.currentStep / STEPS.length) * 100;
   const isProcessing = isCreatingViaje || isGeneratingDocuments;
 
+  // Obtener mensaje de validación específico para el paso 1
   const getStep1ValidationMessage = () => {
     if (data.currentStep !== 1) return null;
     
@@ -257,155 +260,152 @@ export function ViajeWizard() {
   return (
     <AdaptiveFlowProvider>
       <ValidationProvider>
-        <div className="min-h-screen bg-system-background">
-          <div className="container mx-auto py-6 max-w-4xl">
-            {/* Tutorial Component - Solo se muestra si está activo */}
-            {isWizardTutorialActive && (
-              <WizardTutorial 
-                currentWizardStep={data.currentStep}
-                onNext={() => {
-                  console.log('Tutorial next step');
-                }}
-                onSkip={() => {
-                  console.log('Tutorial skipped by user');
-                }}
-              />
-            )}
+        <div className="container mx-auto py-6 max-w-4xl">
+          {/* Tutorial Component */}
+          <WizardTutorial 
+            currentWizardStep={data.currentStep}
+            onNext={() => {
+              // Tutorial navigation logic if needed
+            }}
+            onSkip={() => {
+              console.log('Tutorial skipped by user');
+            }}
+          />
 
-            {/* Header del Wizard */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Route className="h-6 w-6 text-system-primary" />
-                  <div>
-                    <h1 className="text-2xl font-bold text-system-text-primary">Programar Nuevo Viaje</h1>
-                    {isWizardTutorialActive && (
-                      <p className="text-sm text-system-primary mt-1">
-                        🎓 Tutorial activo - Te guiaremos paso a paso
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={handleCancel} 
-                  disabled={isProcessing || viajeConfirmado}
-                >
-                  Cancelar
-                </Button>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-system-text-secondary">
-                  <span>Paso {data.currentStep} de {STEPS.length}</span>
-                  <span>{Math.round(progress)}% completado</span>
-                </div>
-                <Progress value={progress} className="w-full" />
-              </div>
-
-              {/* Indicador de Estado */}
-              {(isProcessing || viajeConfirmado) && (
-                <div className="mt-4 p-3 bg-system-accent-bg border border-system-accent rounded-lg">
-                  <div className="flex items-center gap-2 text-system-accent">
-                    <div className="w-4 h-4 border-2 border-system-accent border-t-transparent rounded-full animate-spin"></div>
-                    <span className="font-medium">
-                      {isCreatingViaje && 'Registrando viaje en sistema...'}
-                      {isGeneratingDocuments && !isCreatingViaje && 'Generando documentos fiscales...'}
-                      {viajeConfirmado && !isProcessing && 'Viaje confirmado exitosamente'}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Flow Mode Selector */}
-            {data.currentStep === 1 && <FlowModeSelector />}
-
-            {/* Steps Navigation */}
-            <div className="grid grid-cols-5 gap-4 mb-6" data-onboarding="wizard-steps">
-              {STEPS.map((step) => {
-                const isActive = step.id === data.currentStep;
-                const isCompleted = step.id < data.currentStep;
-                const Icon = step.icon;
-
-                return (
-                  <div
-                    key={step.id}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      isActive
-                        ? 'border-system-primary bg-system-accent-bg'
-                        : isCompleted
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-system-border bg-system-surface'
-                    }`}
-                    data-onboarding={step.id === 4 ? "validaciones-step" : undefined}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Icon className={`h-4 w-4 ${
-                        isActive ? 'text-system-primary' : isCompleted ? 'text-green-600' : 'text-system-text-tertiary'
-                      }`} />
-                      <span className={`text-sm font-medium ${
-                        isActive ? 'text-system-primary' : isCompleted ? 'text-green-900' : 'text-system-text-secondary'
-                      }`}>
-                        {step.title}
-                      </span>
-                    </div>
-                    <p className={`text-xs ${
-                      isActive ? 'text-system-primary' : isCompleted ? 'text-green-600' : 'text-system-text-tertiary'
-                    }`}>
-                      {step.subtitle}
+          {/* Header del Wizard */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Route className="h-6 w-6 text-blue-600" />
+                <div>
+                  <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
+                  {isWizardTutorialActive && (
+                    <p className="text-sm text-blue-600 mt-1">
+                      🎓 Tutorial activo - Te guiaremos paso a paso
                     </p>
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={handleCancel} 
+                disabled={isProcessing || viajeConfirmado}
+              >
+                Cancelar
+              </Button>
             </div>
 
-            {/* Main Content */}
-            <Card className="system-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-system-text-primary">
-                  {currentStepInfo && <currentStepInfo.icon className="h-5 w-5" />}
-                  {currentStepInfo?.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {renderStepContent()}
-              </CardContent>
-            </Card>
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Paso {data.currentStep} de {STEPS.length}</span>
+                <span>{Math.round(progress)}% completado</span>
+              </div>
+              <Progress value={progress} className="w-full" />
+            </div>
 
-            {/* Navigation Buttons */}
-            {data.currentStep !== 4 && data.currentStep !== 5 && (
-              <div className="flex justify-between mt-6">
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={data.currentStep === 1 || isProcessing || viajeConfirmado}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Anterior
-                </Button>
-
-                <div className="flex flex-col items-end gap-2">
-                  {getStep1ValidationMessage() && (
-                    <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md border border-red-200">
-                      {getStep1ValidationMessage()}
-                    </div>
-                  )}
-                  
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canAdvance() || isProcessing || viajeConfirmado}
-                    data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
-                    className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
-                  >
-                    Siguiente
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+            {/* Indicador de Estado */}
+            {(isProcessing || viajeConfirmado) && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-800">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-medium">
+                    {isCreatingViaje && 'Registrando viaje en sistema...'}
+                    {isGeneratingDocuments && !isCreatingViaje && 'Generando documentos fiscales...'}
+                    {viajeConfirmado && !isProcessing && 'Viaje confirmado exitosamente'}
+                  </span>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Flow Mode Selector - Solo mostrar en el primer paso */}
+          {data.currentStep === 1 && <FlowModeSelector />}
+
+          {/* Steps Navigation */}
+          <div className="grid grid-cols-5 gap-4 mb-6" data-onboarding="wizard-steps">
+            {STEPS.map((step) => {
+              const isActive = step.id === data.currentStep;
+              const isCompleted = step.id < data.currentStep;
+              const Icon = step.icon;
+
+              return (
+                <div
+                  key={step.id}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    isActive
+                      ? 'border-blue-500 bg-blue-50'
+                      : isCompleted
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
+                  data-onboarding={step.id === 4 ? "validaciones-step" : undefined}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon className={`h-4 w-4 ${
+                      isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                    }`} />
+                    <span className={`text-sm font-medium ${
+                      isActive ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-500'
+                    }`}>
+                      {step.title}
+                    </span>
+                  </div>
+                  <p className={`text-xs ${
+                    isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  }`}>
+                    {step.subtitle}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Main Content */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                {currentStepInfo && <currentStepInfo.icon className="h-5 w-5" />}
+                {currentStepInfo?.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+
+          {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
+          {data.currentStep !== 4 && data.currentStep !== 5 && (
+            <div className="flex justify-between mt-6">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={data.currentStep === 1 || isProcessing || viajeConfirmado}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+
+              <div className="flex flex-col items-end gap-2">
+                {/* Mensaje de validación específico */}
+                {getStep1ValidationMessage() && (
+                  <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md border border-red-200">
+                    {getStep1ValidationMessage()}
+                  </div>
+                )}
+                
+                <Button
+                  onClick={handleNext}
+                  disabled={!canAdvance() || isProcessing || viajeConfirmado}
+                  data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
+                  className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </ValidationProvider>
     </AdaptiveFlowProvider>
