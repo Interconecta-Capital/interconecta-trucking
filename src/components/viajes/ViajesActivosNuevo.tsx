@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Package,
   CheckCircle2,
-  XCircle2
+  XCircle
 } from 'lucide-react';
 import { useViajesCompletos, ViajeCompleto } from '@/hooks/useViajesCompletos';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
@@ -51,6 +51,14 @@ export const ViajesActivosNuevo = () => {
   const handleVerTracking = (viaje: ViajeCompleto) => {
     setSelectedViaje(viaje);
     setShowTrackingModal(true);
+  };
+
+  const handleCambiarEstado = (viajeId: string, nuevoEstado: string, observaciones?: string) => {
+    actualizarEstadoViaje({ id: viajeId, nuevoEstado, observaciones });
+  };
+
+  const handleAsignarRecursos = (viajeId: string, conductorId?: string, vehiculoId?: string) => {
+    asignarRecursos({ viajeId, conductorId, vehiculoId });
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -182,8 +190,8 @@ export const ViajesActivosNuevo = () => {
                     {getEstadoBadge(viaje.estado)}
                     <ViajeActionsMenu
                       viaje={viaje}
-                      onCambiarEstado={actualizarEstadoViaje}
-                      onAsignarRecursos={asignarRecursos}
+                      onCambiarEstado={handleCambiarEstado}
+                      onAsignarRecursos={handleAsignarRecursos}
                       onEliminarViaje={eliminarViaje}
                       onVerTracking={handleVerTracking}
                     />

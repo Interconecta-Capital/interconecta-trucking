@@ -102,16 +102,6 @@ export const useViajesCompletos = () => {
             capacidad_carga,
             anio,
             peso_bruto_vehicular
-          ),
-          carta_porte:cartas_porte(
-            id,
-            folio,
-            uuid_fiscal,
-            status,
-            xml_generado,
-            fecha_timbrado,
-            rfc_receptor,
-            nombre_receptor
           )
         `)
         .order('created_at', { ascending: false });
@@ -156,17 +146,21 @@ export const useViajesCompletos = () => {
         // Extraer cliente
         if (trackingData.cliente) {
           cliente = {
-            nombre: trackingData.cliente.nombre || viaje.carta_porte?.nombre_receptor || 'Cliente no especificado',
-            rfc: trackingData.cliente.rfc || viaje.carta_porte?.rfc_receptor || '',
+            nombre: trackingData.cliente.nombre || 'Cliente no especificado',
+            rfc: trackingData.cliente.rfc || '',
             direccion: trackingData.cliente.direccion || ''
           };
-        } else if (viaje.carta_porte) {
-          cliente = {
-            nombre: viaje.carta_porte.nombre_receptor || 'Cliente no especificado',
-            rfc: viaje.carta_porte.rfc_receptor || '',
-            direccion: ''
-          };
         }
+
+        // Crear carta_porte básica
+        const carta_porte = {
+          id: viaje.carta_porte_id || '',
+          folio: trackingData.folio || '',
+          uuid_fiscal: trackingData.uuid_fiscal || '',
+          status: trackingData.status || 'borrador',
+          xml_generado: trackingData.xml_generado || '',
+          fecha_timbrado: trackingData.fecha_timbrado || ''
+        };
         
         return {
           ...viaje,
@@ -174,7 +168,7 @@ export const useViajesCompletos = () => {
           cliente,
           conductor: viaje.conductor,
           vehiculo: viaje.vehiculo,
-          carta_porte: viaje.carta_porte
+          carta_porte
         };
       }) || [];
 
