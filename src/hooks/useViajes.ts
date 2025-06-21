@@ -91,11 +91,12 @@ export const useViajes = () => {
           console.warn('⚠️ Error consultando viajes existentes:', errorConsulta);
         }
 
-        // Verificar duplicados en tracking_data
+        // Verificar duplicados en tracking_data con type assertion
         if (viajesExistentes && viajesExistentes.length > 0) {
           for (const viajeExistente of viajesExistentes) {
-            const trackingExistente = viajeExistente.tracking_data;
+            const trackingExistente = viajeExistente.tracking_data as any;
             if (trackingExistente && 
+                typeof trackingExistente === 'object' &&
                 trackingExistente.cliente?.rfc === wizardData.cliente?.rfc &&
                 trackingExistente.origen?.direccion === wizardData.origen?.direccion &&
                 trackingExistente.destino?.direccion === wizardData.destino?.direccion) {
