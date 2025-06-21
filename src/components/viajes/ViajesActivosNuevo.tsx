@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   MapPin, 
   Clock, 
@@ -15,23 +14,26 @@ import {
   Navigation,
   Search,
   Filter,
-  MoreHorizontal,
   AlertTriangle,
   Package,
-  Edit,
-  UserCheck,
-  TruckIcon,
-  CheckCircle,
-  XCircle,
-  PlayCircle
+  CheckCircle2,
+  XCircle2
 } from 'lucide-react';
 import { useViajesCompletos, ViajeCompleto } from '@/hooks/useViajesCompletos';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
+import { ViajeActionsMenu } from './ViajeActionsMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const ViajesActivosNuevo = () => {
   const isMobile = useIsMobile();
-  const { viajesActivos, isLoading, actualizarEstadoViaje } = useViajesCompletos();
+  const { 
+    viajesActivos, 
+    isLoading, 
+    actualizarEstadoViaje, 
+    asignarRecursos, 
+    eliminarViaje 
+  } = useViajesCompletos();
+  
   const [selectedViaje, setSelectedViaje] = useState<ViajeCompleto | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,16 +44,13 @@ export const ViajesActivosNuevo = () => {
     viaje.destino.toLowerCase().includes(searchTerm.toLowerCase()) ||
     viaje.carta_porte_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     viaje.conductor?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    viaje.vehiculo?.placa.toLowerCase().includes(searchTerm.toLowerCase())
+    viaje.vehiculo?.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    viaje.cliente?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleVerTracking = (viaje: ViajeCompleto) => {
     setSelectedViaje(viaje);
     setShowTrackingModal(true);
-  };
-
-  const handleCambiarEstado = (viajeId: string, nuevoEstado: string) => {
-    actualizarEstadoViaje({ id: viajeId, nuevoEstado });
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -135,7 +134,7 @@ export const ViajesActivosNuevo = () => {
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
           <Input
-            placeholder="Buscar por origen, destino, carta porte, conductor o placa..."
+            placeholder="Buscar por origen, destino, carta porte, conductor, placa o cliente..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={`pl-12 border-0 bg-pure-white shadow-sm ${isMobile ? 'h-12 text-base' : 'h-12'}`}
@@ -181,46 +180,13 @@ export const ViajesActivosNuevo = () => {
                   </ResponsiveCardTitle>
                   <div className="flex items-center gap-2">
                     {getEstadoBadge(viaje.estado)}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => handleVerTracking(viaje)}>
-                          <Navigation className="h-4 w-4 mr-2" />
-                          Ver Tracking
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {}}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar Viaje
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {}}>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          Asignar Recursos
-                        </DropdownMenuItem>
-                        {viaje.estado === 'programado' && (
-                          <DropdownMenuItem onClick={() => handleCambiarEstado(viaje.id, 'en_transito')}>
-                            <PlayCircle className="h-4 w-4 mr-2" />
-                            Iniciar Viaje
-                          </DropdownMenuItem>
-                        )}
-                        {viaje.estado === 'en_transito' && (
-                          <DropdownMenuItem onClick={() => handleCambiarEstado(viaje.id, 'completado')}>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Completar Viaje
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem 
-                          onClick={() => handleCambiarEstado(viaje.id, 'cancelado')}
-                          className="text-red-600"
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Cancelar Viaje
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <ViajeActionsMenu
+                      viaje={viaje}
+                      onCambiarEstado={actualizarEstadoViaje}
+                      onAsignarRecursos={asignarRecursos}
+                      onEliminarViaje={eliminarViaje}
+                      onVerTracking={handleVerTracking}
+                    />
                   </div>
                 </div>
               </ResponsiveCardHeader>
@@ -306,36 +272,60 @@ export const ViajesActivosNuevo = () => {
                   </div>
                 </div>
 
-                {/* Recursos asignados - CON NOMBRES REALES */}
-                <div className="flex items-center justify-between p-3 bg-gray-05 rounded-xl">
-                  <div className={`flex items-center gap-4 ${isMobile ? 'flex-wrap' : ''}`}>
-                    {viaje.vehiculo ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-interconecta rounded-lg flex items-center justify-center">
-                          <Truck className="h-4 w-4 text-pure-white" />
-                        </div>
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-90">{viaje.vehiculo.placa}</p>
-                          <p className="text-xs text-gray-60">{viaje.vehiculo.marca} {viaje.vehiculo.modelo}</p>
-                        </div>
+                {/* Recursos asignados - NOMBRES REALES */}
+                <div className="p-3 bg-gray-05 rounded-xl">
+                  <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    {/* Vehículo */}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        viaje.vehiculo ? 'bg-blue-interconecta' : 'bg-gray-300'
+                      }`}>
+                        <Truck className="h-4 w-4 text-pure-white" />
                       </div>
-                    ) : (
-                      <div className="text-sm text-gray-50">Sin vehículo asignado</div>
-                    )}
+                      <div className="flex-1 min-w-0">
+                        {viaje.vehiculo ? (
+                          <>
+                            <p className="font-medium text-gray-90 text-sm truncate">
+                              {viaje.vehiculo.placa}
+                            </p>
+                            <p className="text-xs text-gray-60 truncate">
+                              {viaje.vehiculo.marca} {viaje.vehiculo.modelo} {viaje.vehiculo.anio}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-50">Sin vehículo asignado</p>
+                        )}
+                      </div>
+                      {viaje.vehiculo && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </div>
                     
-                    {viaje.conductor ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                          <User className="h-4 w-4 text-pure-white" />
-                        </div>
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-90">{viaje.conductor.nombre}</p>
-                          <p className="text-xs text-gray-60">Lic. {viaje.conductor.tipo_licencia || 'N/A'}</p>
-                        </div>
+                    {/* Conductor */}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        viaje.conductor ? 'bg-green-600' : 'bg-gray-300'
+                      }`}>
+                        <User className="h-4 w-4 text-pure-white" />
                       </div>
-                    ) : (
-                      <div className="text-sm text-gray-50">Sin conductor asignado</div>
-                    )}
+                      <div className="flex-1 min-w-0">
+                        {viaje.conductor ? (
+                          <>
+                            <p className="font-medium text-gray-90 text-sm truncate">
+                              {viaje.conductor.nombre}
+                            </p>
+                            <p className="text-xs text-gray-60">
+                              Lic. {viaje.conductor.tipo_licencia || 'N/A'}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-50">Sin conductor asignado</p>
+                        )}
+                      </div>
+                      {viaje.conductor && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -358,6 +348,9 @@ export const ViajesActivosNuevo = () => {
                       <AlertTriangle className="h-4 w-4 text-orange-600" />
                       <span className="text-sm font-medium text-orange-800">Viaje con retraso reportado</span>
                     </div>
+                    {viaje.observaciones && (
+                      <p className="text-xs text-orange-700 mt-1">{viaje.observaciones}</p>
+                    )}
                   </div>
                 )}
 
@@ -369,6 +362,22 @@ export const ViajesActivosNuevo = () => {
                         <span className="text-sm font-medium text-green-800">Viaje iniciado</span>
                         <p className="text-xs text-green-700">{formatDateTime(viaje.fecha_inicio_real)}</p>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Carta Porte Status */}
+                {viaje.carta_porte && (
+                  <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-60">Carta Porte:</span>
+                      <span className={`text-xs font-medium ${
+                        viaje.carta_porte.status === 'timbrado' ? 'text-green-600' : 
+                        viaje.carta_porte.status === 'borrador' ? 'text-orange-600' : 'text-gray-600'
+                      }`}>
+                        {viaje.carta_porte.status === 'timbrado' ? 'Timbrado' : 
+                         viaje.carta_porte.status === 'borrador' ? 'Borrador' : 'Pendiente'}
+                      </span>
                     </div>
                   </div>
                 )}

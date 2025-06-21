@@ -2,12 +2,10 @@
 import { useState } from 'react';
 import { Plus, Route, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ViajesActivosNuevo } from '@/components/viajes/ViajesActivosNuevo';
 import { HistorialViajes } from '@/components/viajes/HistorialViajes';
 import { DocumentosVista } from '@/components/viajes/DocumentosVista';
-import { ProgramarViajeModal } from '@/components/viajes/modals/ProgramarViajeModal';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
@@ -20,7 +18,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export default function ViajesNuevo() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [showProgramarModal, setShowProgramarModal] = useState(false);
   const [activeTab, setActiveTab] = useState('activos');
 
   const handleNuevoViaje = () => {
@@ -40,7 +37,7 @@ export default function ViajesNuevo() {
         {/* Header estilo Apple responsivo */}
         <SectionHeader
           title="Centro de Operaciones"
-          description="Gestiona tus viajes y documentos logísticos"
+          description="Gestiona tus viajes y documentos logísticos con información en tiempo real"
           icon={Route}
           className="mb-6 sm:mb-8"
           data-onboarding="viajes-header"
@@ -78,7 +75,7 @@ export default function ViajesNuevo() {
           </div>
         </ResponsiveGrid>
 
-        {/* Tabs de viajes SIMPLIFICADOS */}
+        {/* Tabs de viajes SIMPLIFICADOS - SIN TAB PROGRAMADOS */}
         <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className={`border-b border-gray-10 bg-gray-05 ${isMobile ? 'p-4' : 'px-6 py-4'}`}>
@@ -123,12 +120,6 @@ export default function ViajesNuevo() {
             </div>
           </Tabs>
         </div>
-
-        {/* Modal de programar viaje */}
-        <ProgramarViajeModal
-          open={showProgramarModal}
-          onOpenChange={setShowProgramarModal}
-        />
       </div>
     </ProtectedContent>
   );

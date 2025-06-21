@@ -1,99 +1,46 @@
 
-import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { 
-  Truck, 
   MapPin, 
-  Edit, 
-  Settings, 
-  Maximize2, 
-  Minimize2, 
-  FileText, 
-  Calendar,
-  User,
+  Navigation, 
+  Clock, 
+  Truck, 
+  User, 
   Package,
+  FileText,
+  Phone,
+  Calendar,
+  Weight,
+  DollarSign,
   Route,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Navigation
+  AlertTriangle
 } from 'lucide-react';
-import { useViajesEstados, Viaje } from '@/hooks/useViajesEstados';
-import { EstadosViajeManager } from '@/components/viajes/estados/EstadosViajeManager';
-import { TrackingViajeRealTime } from '@/components/viajes/tracking/TrackingViajeRealTime';
-import { ViajeEditor } from '@/components/viajes/editor/ViajeEditor';
+import { ViajeCompleto } from '@/hooks/useViajesCompletos';
 
 interface ViajeTrackingModalProps {
-  viaje: Viaje | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  viaje: ViajeCompleto | null;
 }
 
-export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingModalProps) => {
-  const [activeTab, setActiveTab] = useState('resumen');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [viajeData, setViajeData] = useState<Viaje | null>(viaje);
+export function ViajeTrackingModal({ open, onOpenChange, viaje }: ViajeTrackingModalProps) {
+  if (!viaje) return null;
 
-  useEffect(() => {
-    setViajeData(viaje);
-    if (viaje) {
-      setActiveTab('resumen');
-    }
-  }, [viaje]);
-
-  const handleViajeUpdate = () => {
-    console.log('Viaje updated, should refetch data');
+  // Mock data para el tracking - en el futuro se conectará con un servicio real de GPS
+  const trackingData = {
+    ubicacionActual: "Carretera México-Guadalajara, Km 125",
+    coordenadas: { lat: 19.4326, lng: -99.1332 },
+    velocidad: "85 km/h",
+    ultimaActualizacion: new Date().toLocaleTimeString(),
+    tiempoEstimadoLlegada: "2024-06-12T16:30:00Z",
+    distanciaRecorrida: 125,
+    distanciaTotal: 350
   };
 
-  const handleToggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const getEstadoBadge = (estado: string) => {
-    const configs = {
-      programado: { 
-        label: 'Programado', 
-        className: 'bg-blue-100 text-blue-800',
-        icon: Calendar
-      },
-      en_transito: { 
-        label: 'En Tránsito', 
-        className: 'bg-green-100 text-green-800',
-        icon: Navigation
-      },
-      completado: { 
-        label: 'Completado', 
-        className: 'bg-gray-100 text-gray-800',
-        icon: CheckCircle2
-      },
-      retrasado: { 
-        label: 'Retrasado', 
-        className: 'bg-orange-100 text-orange-800',
-        icon: AlertCircle
-      },
-      cancelado: { 
-        label: 'Cancelado', 
-        className: 'bg-red-100 text-red-800',
-        icon: AlertCircle
-      }
-    };
-    
-    const config = configs[estado as keyof typeof configs] || 
-                  { label: estado, className: 'bg-gray-100 text-gray-800', icon: Clock };
-    
-    const IconComponent = config.icon;
-    
-    return (
-      <Badge className={config.className}>
-        <IconComponent className="h-3 w-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
-  };
+  const progreso = (trackingData.distanciaRecorrida / trackingData.distanciaTotal) * 100;
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('es-MX', {
@@ -105,312 +52,327 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
     });
   };
 
-  if (!viajeData) return null;
+  const getEstadoBadge = (estado: string) => {
+    const configs = {
+      programado: { label: 'Programado', className: 'bg-blue-100 text-blue-800' },
+      en_transito: { label: 'En Tránsito', className: 'bg-green-100 text-green-800' },
+      completado: { label: 'Completado', className: 'bg-green-100 text-green-800' },
+      cancelado: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
+      retrasado: { label: 'Retrasado', className: 'bg-orange-100 text-orange-800' }
+    };
+    
+    const config = configs[estado as keyof typeof configs] || 
+                  { label: estado, className: 'bg-gray-100 text-gray-800' };
+    
+    return (
+      <Badge className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const calcularPesoTotal = () => {
+    return viaje.mercancias?.reduce((total, m) => total + (m.peso_kg * m.cantidad), 0) || 0;
+  };
+
+  const calcularValorTotal = () => {
+    return viaje.mercancias?.reduce((total, m) => total + (m.valor_total || 0), 0) || 0;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className={`${isFullscreen ? 'fixed inset-4 max-w-none w-auto h-auto' : 'max-w-6xl max-h-[90vh]'} overflow-hidden`}
-      >
-        <DialogHeader className="pb-4">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
           <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Navigation className="h-5 w-5" />
+              Tracking en Tiempo Real - {viaje.carta_porte_id}
+            </DialogTitle>
+            {getEstadoBadge(viaje.estado)}
+          </div>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Estado y última actualización */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <Truck className="h-5 w-5 text-blue-600" />
-              <div>
-                <DialogTitle className="text-xl">
-                  {viajeData.carta_porte_id}
-                </DialogTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  {getEstadoBadge(viajeData.estado)}
-                  <span className="text-sm text-gray-500">
-                    Creado: {formatDateTime(viajeData.created_at)}
-                  </span>
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="font-medium">Estado del viaje:</span>
+              {getEstadoBadge(viaje.estado)}
+            </div>
+            <div className="text-sm text-gray-600 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Última actualización: {trackingData.ultimaActualizacion}
+            </div>
+          </div>
+
+          {/* Progreso del viaje */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Progreso del viaje</span>
+              <span className="text-sm text-gray-600">
+                {trackingData.distanciaRecorrida} / {trackingData.distanciaTotal} km
+              </span>
+            </div>
+            <Progress value={progreso} className="h-3" />
+            <div className="text-center text-sm text-gray-600">
+              {Math.round(progreso)}% completado
+            </div>
+          </div>
+
+          {/* Grid principal con información */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Columna izquierda - Ruta y ubicación */}
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <Route className="h-4 w-4" />
+                  Ruta del Viaje
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                    <MapPin className="h-5 w-5 text-green-600 mt-1" />
+                    <div>
+                      <span className="font-medium text-green-800">Origen</span>
+                      <p className="text-sm text-green-700">{viaje.origen}</p>
+                      <p className="text-xs text-green-600">
+                        Salida programada: {formatDateTime(viaje.fecha_inicio_programada)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                    <Navigation className="h-5 w-5 text-blue-600 mt-1" />
+                    <div>
+                      <span className="font-medium text-blue-800">Ubicación Actual</span>
+                      <p className="text-sm text-blue-700">{trackingData.ubicacionActual}</p>
+                      <p className="text-xs text-blue-600">
+                        Velocidad: {trackingData.velocidad}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                    <MapPin className="h-5 w-5 text-red-600 mt-1" />
+                    <div>
+                      <span className="font-medium text-red-800">Destino</span>
+                      <p className="text-sm text-red-700">{viaje.destino}</p>
+                      <p className="text-xs text-red-600">
+                        ETA: {new Date(trackingData.tiempoEstimadoLlegada).toLocaleString('es-MX')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recursos asignados */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-base">Recursos Asignados</h4>
+                <div className="space-y-3">
+                  {/* Vehículo */}
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <Truck className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      {viaje.vehiculo ? (
+                        <>
+                          <p className="font-medium">{viaje.vehiculo.placa}</p>
+                          <p className="text-sm text-gray-600">
+                            {viaje.vehiculo.marca} {viaje.vehiculo.modelo} {viaje.vehiculo.anio}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Capacidad: {viaje.vehiculo.capacidad_carga} kg
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-gray-500">Sin vehículo asignado</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Conductor */}
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      {viaje.conductor ? (
+                        <>
+                          <p className="font-medium">{viaje.conductor.nombre}</p>
+                          <p className="text-sm text-gray-600">
+                            Licencia: {viaje.conductor.tipo_licencia}
+                          </p>
+                          {viaje.conductor.telefono && (
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {viaje.conductor.telefono}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-gray-500">Sin conductor asignado</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleToggleFullscreen}
-            >
-              {isFullscreen ? 
-                <Minimize2 className="h-4 w-4" /> : 
-                <Maximize2 className="h-4 w-4" />
-              }
-            </Button>
-          </div>
-        </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="resumen" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Resumen
-            </TabsTrigger>
-            <TabsTrigger value="tracking" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Tracking
-            </TabsTrigger>
-            <TabsTrigger value="documentos" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Documentos
-            </TabsTrigger>
-            <TabsTrigger value="estados" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Estados
-            </TabsTrigger>
-            <TabsTrigger value="editar" className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Editar
-            </TabsTrigger>
-          </TabsList>
-
-          <div className={`mt-6 ${isFullscreen ? 'h-[calc(100vh-200px)]' : 'max-h-[70vh]'} overflow-y-auto`}>
-            
-            {/* Tab Resumen - Nueva vista principal */}
-            <TabsContent value="resumen" className="mt-0 space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* Información del Viaje */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Route className="h-4 w-4" />
-                      Información del Viaje
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-green-600" />
-                        <div>
-                          <span className="font-medium">Origen:</span>
-                          <p className="text-sm text-gray-600">{viajeData.origen}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-red-600" />
-                        <div>
-                          <span className="font-medium">Destino:</span>
-                          <p className="text-sm text-gray-600">{viajeData.destino}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Cronología */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Cronología
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-600">Inicio programado:</span>
-                        <p>{formatDateTime(viajeData.fecha_inicio_programada)}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-600">Fin programado:</span>
-                        <p>{formatDateTime(viajeData.fecha_fin_programada)}</p>
-                      </div>
-                      {viajeData.fecha_inicio_real && (
-                        <div>
-                          <span className="font-medium text-gray-600">Inicio real:</span>
-                          <p>{formatDateTime(viajeData.fecha_inicio_real)}</p>
-                        </div>
-                      )}
-                      {viajeData.fecha_fin_real && (
-                        <div>
-                          <span className="font-medium text-gray-600">Fin real:</span>
-                          <p>{formatDateTime(viajeData.fecha_fin_real)}</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Recursos Asignados */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Recursos Asignados
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {viajeData.vehiculo_id && (
-                      <div className="flex items-center gap-2">
-                        <Truck className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium">Vehículo:</span>
-                        <span className="text-sm">ID: {viajeData.vehiculo_id.slice(-8)}</span>
-                      </div>
+            {/* Columna derecha - Carga y cliente */}
+            <div className="space-y-6">
+              
+              {/* Información del cliente */}
+              {viaje.cliente && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-base">Cliente</h4>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <p className="font-medium text-purple-900">{viaje.cliente.nombre}</p>
+                    <p className="text-sm text-purple-700">RFC: {viaje.cliente.rfc}</p>
+                    {viaje.cliente.direccion && (
+                      <p className="text-xs text-purple-600 mt-1">{viaje.cliente.direccion}</p>
                     )}
-                    {viajeData.conductor_id && (
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-green-600" />
-                        <span className="font-medium">Conductor:</span>
-                        <span className="text-sm">ID: {viajeData.conductor_id.slice(-8)}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Documentos Generados */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Documentos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">Carta Porte XML</span>
-                        <Button size="sm" variant="outline">Descargar</Button>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">Carta Porte PDF</span>
-                        <Button size="sm" variant="outline">Ver/Descargar</Button>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">Hoja de Ruta</span>
-                        <Button size="sm" variant="outline">Imprimir</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Acciones Rápidas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Acciones Rápidas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button 
-                      onClick={() => setActiveTab('tracking')}
-                      className="flex-1 min-w-[200px]"
-                    >
-                      <Navigation className="h-4 w-4 mr-2" />
-                      Ver Tracking en Tiempo Real
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => setActiveTab('documentos')}
-                      className="flex-1 min-w-[200px]"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Gestionar Documentos
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => setActiveTab('estados')}
-                      className="flex-1 min-w-[200px]"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Cambiar Estado
-                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </div>
+              )}
 
-            <TabsContent value="tracking" className="mt-0">
-              <TrackingViajeRealTime 
-                viaje={viajeData}
-                isFullscreen={isFullscreen}
-                onToggleFullscreen={handleToggleFullscreen}
-              />
-            </TabsContent>
+              {/* Información de la carga */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Carga Transportada
+                </h4>
+                
+                {/* Resumen de la carga */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-orange-50 rounded-lg text-center">
+                    <Weight className="h-6 w-6 text-orange-600 mx-auto mb-1" />
+                    <p className="text-sm font-medium text-orange-800">
+                      {calcularPesoTotal().toFixed(0)} kg
+                    </p>
+                    <p className="text-xs text-orange-600">Peso Total</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg text-center">
+                    <DollarSign className="h-6 w-6 text-green-600 mx-auto mb-1" />
+                    <p className="text-sm font-medium text-green-800">
+                      ${calcularValorTotal().toLocaleString()}
+                    </p>
+                    <p className="text-xs text-green-600">Valor Total</p>
+                  </div>
+                </div>
 
-            <TabsContent value="documentos" className="mt-0">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Documentos del Viaje</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Documentos Fiscales</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Carta Porte XML</p>
-                              <p className="text-sm text-gray-500">CFDI 4.0 - Carta Porte 3.1</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Descargar</Button>
-                            </div>
+                {/* Lista de mercancías */}
+                {viaje.mercancias && viaje.mercancias.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Detalle de Mercancías:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {viaje.mercancias.map((mercancia, index) => (
+                        <div key={mercancia.id} className="p-2 bg-gray-50 rounded text-sm">
+                          <p className="font-medium">{mercancia.descripcion}</p>
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>Cantidad: {mercancia.cantidad}</span>
+                            <span>Peso: {mercancia.peso_kg} kg</span>
                           </div>
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Carta Porte PDF</p>
-                              <p className="text-sm text-gray-500">Representación impresa</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Descargar</Button>
-                            </div>
-                          </div>
+                          {mercancia.tipo_embalaje && (
+                            <p className="text-xs text-gray-500">Embalaje: {mercancia.tipo_embalaje}</p>
+                          )}
                         </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Documentos Operativos</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Hoja de Ruta</p>
-                              <p className="text-sm text-gray-500">Instrucciones del viaje</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Imprimir</Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Lista de Verificación</p>
-                              <p className="text-sm text-gray-500">Checklist pre-viaje</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Generar</Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                )}
               </div>
-            </TabsContent>
 
-            <TabsContent value="estados" className="mt-0">
-              <EstadosViajeManager 
-                viaje={viajeData}
-                onViajeUpdate={handleViajeUpdate}
-              />
-            </TabsContent>
-
-            <TabsContent value="editar" className="mt-0">
-              <ViajeEditor 
-                viaje={viajeData}
-                onViajeUpdate={handleViajeUpdate}
-                onClose={() => onOpenChange(false)}
-              />
-            </TabsContent>
+              {/* Información de la carta porte */}
+              {viaje.carta_porte && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Carta Porte
+                  </h4>
+                  <div className="p-4 bg-blue-50 rounded-lg space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-blue-700">Estado:</span>
+                      <Badge className={
+                        viaje.carta_porte.status === 'timbrado' ? 'bg-green-100 text-green-800' :
+                        viaje.carta_porte.status === 'borrador' ? 'bg-orange-100 text-orange-800' :
+                        'bg-gray-100 text-gray-800'
+                      }>
+                        {viaje.carta_porte.status === 'timbrado' ? 'Timbrado' : 
+                         viaje.carta_porte.status === 'borrador' ? 'Borrador' : 'Pendiente'}
+                      </Badge>
+                    </div>
+                    {viaje.carta_porte.folio && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-700">Folio:</span>
+                        <span className="text-sm font-mono">{viaje.carta_porte.folio}</span>
+                      </div>
+                    )}
+                    {viaje.carta_porte.uuid_fiscal && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-700">UUID:</span>
+                        <span className="text-xs font-mono">{viaje.carta_porte.uuid_fiscal.slice(0, 8)}...</span>
+                      </div>
+                    )}
+                    {viaje.carta_porte.fecha_timbrado && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-700">Timbrado:</span>
+                        <span className="text-sm">{formatDateTime(viaje.carta_porte.fecha_timbrado)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </Tabs>
+
+          {/* Área del mapa (placeholder mejorado) */}
+          <div className="space-y-2">
+            <h4 className="font-semibold text-base">Mapa de Seguimiento</h4>
+            <div className="w-full h-64 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center border-2 border-dashed border-blue-300">
+              <div className="text-center text-blue-600">
+                <MapPin className="h-12 w-12 mx-auto mb-4" />
+                <p className="font-medium">Mapa de tracking en tiempo real</p>
+                <p className="text-sm mt-1">Integración pendiente con Google Maps API</p>
+                <p className="text-xs mt-2 text-blue-500">
+                  Coordenadas actuales: {trackingData.coordenadas.lat}, {trackingData.coordenadas.lng}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Observaciones */}
+          {viaje.observaciones && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-800">Observaciones</p>
+                  <p className="text-sm text-yellow-700">{viaje.observaciones}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Botones de acción */}
+          <div className="flex justify-between pt-4 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
+                Descargar PDF
+              </Button>
+              <Button>
+                <Navigation className="h-4 w-4 mr-2" />
+                Abrir en Mapa
+              </Button>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
-};
+}
