@@ -37,7 +37,7 @@ export function SmartMercanciaInputMejorado({
     isFieldValid
   } = useAIValidation({
     enabled: showValidation,
-    autoValidate: false, // Desactivar auto-validación para evitar bucles
+    autoValidate: false,
     debounceMs: 1000
   });
 
@@ -95,16 +95,16 @@ export function SmartMercanciaInputMejorado({
     }
   };
 
-  // Debounce effect para las sugerencias
+  // Debounce effect para las sugerencias - solo procesar cuando el valor cambie realmente
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    if (value && value.length >= 10) {
+    if (value && value.length >= 10 && value !== lastProcessedValue) {
       debounceRef.current = setTimeout(() => {
         generateSuggestions(value);
-      }, 1500); // Aumentar debounce para evitar llamadas múltiples
+      }, 1500);
     }
 
     return () => {
@@ -112,7 +112,7 @@ export function SmartMercanciaInputMejorado({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [value]);
+  }, [value, lastProcessedValue]);
 
   const validation = showValidation ? getFieldValidation(field) : null;
   const isValid = showValidation ? isFieldValid(field) : true;
@@ -166,7 +166,7 @@ export function SmartMercanciaInputMejorado({
       {/* Validación */}
       {showValidation && validation && !isValid && (
         <div className="text-sm text-red-600 bg-red-50 p-2 rounded-md border border-red-200">
-          {validation.error}
+          {validation.warnings.length > 0 ? validation.warnings[0].message : 'Error de validación'}
         </div>
       )}
 
