@@ -24,22 +24,52 @@ export interface Viaje {
   updated_at: string;
 }
 
-// Estado global para prevenir duplicaciones
-const viajesEnProceso = new Set<string>();
+// Cache global con TTL para prevenir duplicaciones
+const viajesCache = new Map<string, { timestamp: number; processing: boolean }>();
+const CACHE_TTL = 30000; // 30 segundos
 
 function generarViajeSignature(wizardData: ViajeWizardData): string {
   return [
     wizardData.cliente?.rfc || '',
-    wizardData.origen?.direccion || '',
-    wizardData.destino?.direccion || '',
+    wizardData.origen?.domicilio?.calle || '',
+    wizardData.destino?.domicilio?.calle || '',
     wizardData.vehiculo?.id || '',
     wizardData.conductor?.id || '',
-    Date.now().toString().slice(0, -4) // Agrupa por minutos para evitar duplicados rápidos
+    // Usar fecha redondeada para evitar duplicados por clicks rápidos
+    Math.floor(Date.now() / 60000).toString() // Agrupa por minutos
   ].join('|');
+}
+
+function isViajeInProgress(signature: string): boolean {
+  const cached = viajesCache.get(signature);
+  if (!cached) return false;
+  
+  // Verificar si expiró el cache
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    viajesCache.delete(signature);
+    return false;
+  }
+  
+  return cached.processing;
+}
+
+function markViajeAsProcessing(signature: string) {
+  viajesCache.set(signature, {
+    timestamp: Date.now(),
+    processing: true
+  });
+}
+
+function markViajeAsCompleted(signature: string) {
+  const cached = viajesCache.get(signature);
+  if (cached) {
+    cached.processing = false;
+  }
 }
 
 export const useViajes = () => {
   const queryClient = useQueryClient();
+  const [isCreatingViaje, setIsCreatingViaje] = useState(false);
 
   // Obtener todos los viajes
   const { data: viajes = [], isLoading } = useQuery({
@@ -55,70 +85,81 @@ export const useViajes = () => {
     }
   });
 
-  // Crear viaje desde wizard - VERSIÓN IDEMPOTENTE
+  // Crear viaje desde wizard - VERSIÓN ANTI-DUPLICACIÓN MEJORADA
   const crearViaje = useMutation({
     mutationFn: async (wizardData: ViajeWizardData) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
+
+      // Validaciones básicas
+      if (!wizardData.cliente) {
+        throw new Error('Cliente es requerido');
+      }
+      if (!wizardData.origen || !wizardData.destino) {
+        throw new Error('Origen y destino son requeridos');
+      }
 
       // Generar signature única para este viaje
       const viajeSignature = generarViajeSignature(wizardData);
       
       console.log('🔒 Verificando duplicados para signature:', viajeSignature);
       
-      // Verificar si ya está en proceso
-      if (viajesEnProceso.has(viajeSignature)) {
-        console.log('⚠️ Viaje ya en proceso, evitando duplicado');
-        throw new Error('Este viaje ya está siendo procesado. Por favor espera.');
+      // Verificar cache local
+      if (isViajeInProgress(viajeSignature)) {
+        throw new Error('Este viaje ya está siendo procesado. Por favor espera unos segundos.');
       }
 
       // Marcar como en proceso
-      viajesEnProceso.add(viajeSignature);
+      markViajeAsProcessing(viajeSignature);
+      setIsCreatingViaje(true);
 
       try {
-        // Verificar si ya existe un viaje similar en la base de datos (último minuto)
-        const ahoraMinusUnMinuto = new Date(Date.now() - 60000).toISOString();
+        // Verificar duplicados en base de datos (últimos 2 minutos)
+        const dosMinutosAtras = new Date(Date.now() - 120000).toISOString();
         
-        const { data: viajesExistentes, error: errorConsulta } = await supabase
+        const { data: viajesRecientes, error: errorConsulta } = await supabase
           .from('viajes')
-          .select('id, tracking_data')
+          .select('id, tracking_data, created_at')
           .eq('user_id', user.id)
-          .gte('created_at', ahoraMinusUnMinuto)
+          .gte('created_at', dosMinutosAtras)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (errorConsulta) {
           console.warn('⚠️ Error consultando viajes existentes:', errorConsulta);
         }
 
-        // Verificar duplicados en tracking_data con type assertion
-        if (viajesExistentes && viajesExistentes.length > 0) {
-          for (const viajeExistente of viajesExistentes) {
+        // Verificar duplicados exactos en tracking_data
+        if (viajesRecientes && viajesRecientes.length > 0) {
+          for (const viajeExistente of viajesRecientes) {
             const trackingExistente = viajeExistente.tracking_data as any;
             if (trackingExistente && 
                 typeof trackingExistente === 'object' &&
                 trackingExistente.cliente?.rfc === wizardData.cliente?.rfc &&
-                trackingExistente.origen?.direccion === wizardData.origen?.direccion &&
-                trackingExistente.destino?.direccion === wizardData.destino?.direccion) {
+                trackingExistente.origen?.domicilio?.calle === wizardData.origen?.domicilio?.calle &&
+                trackingExistente.destino?.domicilio?.calle === wizardData.destino?.domicilio?.calle) {
               
               console.log('🔍 Viaje duplicado detectado:', viajeExistente.id);
-              throw new Error('Ya existe un viaje similar creado recientemente. Revisa la lista de viajes.');
+              throw new Error(`Ya existe un viaje similar creado hace ${Math.round((Date.now() - new Date(viajeExistente.created_at).getTime()) / 1000)} segundos. Revisa la lista de viajes.`);
             }
           }
         }
 
-        // Mapear datos del wizard a la estructura de la tabla viajes
+        // Crear nuevo viaje con ID único
+        const viajeId = `viaje-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
         const viajeData = {
-          carta_porte_id: `CP-${Date.now()}`, // Temporal hasta que se genere la carta porte
-          origen: wizardData.origen?.direccion || '',
-          destino: wizardData.destino?.direccion || '',
+          id: viajeId,
+          carta_porte_id: `CP-${Date.now()}`,
+          origen: wizardData.origen?.domicilio?.calle || '',
+          destino: wizardData.destino?.domicilio?.calle || '',
           conductor_id: wizardData.conductor?.id,
           vehiculo_id: wizardData.vehiculo?.id,
           estado: 'programado' as const,
-          fecha_inicio_programada: new Date().toISOString(),
-          fecha_fin_programada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'}`,
-          tracking_data: JSON.parse(JSON.stringify(wizardData)), // Convert to proper JSON
+          fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
+          fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'} - Distancia: ${wizardData.distanciaRecorrida || 0} km`,
+          tracking_data: JSON.parse(JSON.stringify(wizardData)),
           user_id: user.id
         };
 
@@ -139,11 +180,13 @@ export const useViajes = () => {
         return data as Viaje;
 
       } finally {
-        // Limpiar el estado de procesamiento después de 30 segundos
+        // Marcar como completado y limpiar después de un tiempo
+        markViajeAsCompleted(viajeSignature);
+        setIsCreatingViaje(false);
+        
         setTimeout(() => {
-          viajesEnProceso.delete(viajeSignature);
-          console.log('🧹 Limpieza de signature:', viajeSignature);
-        }, 30000);
+          viajesCache.delete(viajeSignature);
+        }, CACHE_TTL);
       }
     },
     onSuccess: (viaje) => {
@@ -153,6 +196,7 @@ export const useViajes = () => {
     onError: (error) => {
       console.error('❌ Error creando viaje:', error);
       toast.error(error.message || 'Error al crear el viaje');
+      setIsCreatingViaje(false);
     }
   });
 
@@ -178,7 +222,7 @@ export const useViajes = () => {
     viajes,
     isLoading,
     crearViaje: crearViaje.mutate,
-    isCreatingViaje: crearViaje.isPending,
+    isCreatingViaje: isCreatingViaje || crearViaje.isPending,
     actualizarViaje: actualizarViaje.mutate,
     isUpdatingViaje: actualizarViaje.isPending
   };

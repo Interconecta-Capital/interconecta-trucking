@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Route, Clock, Calendar, Calculator, Navigation } from 'lucide-react';
+import { MapPin, Route, Clock, Calendar, Calculator, Navigation, AlertTriangle } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { useUbicacionesGeocodificacion } from '@/hooks/useUbicacionesGeocodificacion';
+import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
+import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
 
 interface ViajeWizardRutaEnhancedProps {
   data: ViajeWizardData;
@@ -26,9 +27,12 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     distancia: number;
     tiempoEstimado: number;
     ruta: string;
+    routeData?: any;
   } | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const { calcularRutaCompleta, geocodificarUbicacion, calcularDistanciaEntrePuntos } = useUbicacionesGeocodificacion();
+  const { isLoaded: isGoogleMapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
 
   // Inicializar fechas por defecto
   useEffect(() => {
@@ -88,26 +92,68 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
         fechaHoraSalidaLlegada: fechaLlegada
       });
 
-      // Calcular distancia (simulada)
-      const distancia = calcularDistanciaEntrePuntos(
-        { latitud: 19.4326, longitud: -99.1332 },
-        { latitud: 20.6597, longitud: -103.3496 }
-      );
+      // Calcular ruta usando Google Maps si está disponible
+      let routeData = null;
+      let distancia = 550; // Fallback default
+      let tiempoEstimado = 420; // 7 horas
 
-      const tiempoEstimado = Math.round(distancia / 80 * 60); // Estimación: 80 km/h promedio
+      if (isGoogleMapsLoaded && window.google) {
+        try {
+          const directionsService = new window.google.maps.DirectionsService();
+          
+          const result = await new Promise((resolve, reject) => {
+            directionsService.route({
+              origin: origenDireccion,
+              destination: destinoDireccion,
+              travelMode: window.google.maps.TravelMode.DRIVING,
+              unitSystem: window.google.maps.UnitSystem.METRIC
+            }, (result: any, status: any) => {
+              if (status === 'OK') {
+                resolve(result);
+              } else {
+                reject(new Error(`Error en Google Directions: ${status}`));
+              }
+            });
+          });
+
+          if (result && (result as any).routes[0]) {
+            const route = (result as any).routes[0];
+            distancia = Math.round(route.legs[0].distance.value / 1000); // metros a km
+            tiempoEstimado = Math.round(route.legs[0].duration.value / 60); // segundos a minutos
+            
+            routeData = {
+              distance_km: distancia,
+              duration_minutes: tiempoEstimado,
+              google_data: {
+                polyline: route.overview_polyline.points,
+                bounds: route.bounds,
+                legs: route.legs
+              }
+            };
+          }
+        } catch (error) {
+          console.warn('⚠️ Error con Google Directions, usando estimación:', error);
+        }
+      }
 
       setRutaCalculada({
-        distancia: Math.round(distancia),
+        distancia,
         tiempoEstimado,
-        ruta: `${origenDireccion} → ${destinoDireccion}`
+        ruta: `${origenDireccion} → ${destinoDireccion}`,
+        routeData
       });
 
       // Actualizar datos del wizard
       updateData({
         origen: origenGeo,
         destino: destinoGeo,
-        distanciaRecorrida: Math.round(distancia)
+        distanciaRecorrida: distancia
       });
+
+      // Mostrar mapa si tenemos datos de ruta
+      if (routeData) {
+        setShowMap(true);
+      }
 
       console.log('✅ Ruta calculada:', { distancia, tiempoEstimado });
 
@@ -126,6 +172,16 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
 
   return (
     <div className="space-y-6" data-onboarding="ruta-section">
+      {/* Google Maps Error Alert */}
+      {googleMapsError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Error con Google Maps: {googleMapsError}. Las rutas se calcularán con estimaciones.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Origen */}
       <Card>
         <CardHeader>
@@ -215,63 +271,79 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
 
       {/* Resultado del cálculo */}
       {rutaCalculada && (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg text-green-800">
-              <Route className="h-5 w-5" />
-              Ruta Calculada
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-2">
-                <Navigation className="h-4 w-4 text-blue-600" />
-                <div>
-                  <div className="font-medium">Distancia</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {rutaCalculada.distancia} km
+        <>
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg text-green-800">
+                <Route className="h-5 w-5" />
+                Ruta Calculada
+                {rutaCalculada.routeData && (
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                    Google Maps
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2">
+                  <Navigation className="h-4 w-4 text-blue-600" />
+                  <div>
+                    <div className="font-medium">Distancia</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {rutaCalculada.distancia} km
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  <div>
+                    <div className="font-medium">Tiempo estimado</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {formatearTiempo(rutaCalculada.tiempoEstimado)}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <div className="font-medium">Duración del viaje</div>
+                    <div className="text-sm text-purple-600">
+                      {new Date(fechaSalida).toLocaleDateString()} - {new Date(fechaLlegada).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-orange-600" />
-                <div>
-                  <div className="font-medium">Tiempo estimado</div>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {formatearTiempo(rutaCalculada.tiempoEstimado)}
-                  </div>
+              
+              <Separator />
+              
+              <div className="p-3 bg-white rounded-lg border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Route className="h-4 w-4 text-gray-600" />
+                  <span className="font-medium text-gray-800">Resumen de la ruta:</span>
+                </div>
+                <p className="text-sm text-gray-600">{rutaCalculada.ruta}</p>
+                <div className="mt-2 flex gap-2">
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                    Vía terrestre
+                  </Badge>
+                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                    Distancia verificada
+                  </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-purple-600" />
-                <div>
-                  <div className="font-medium">Duración del viaje</div>
-                  <div className="text-sm text-purple-600">
-                    {new Date(fechaSalida).toLocaleDateString()} - {new Date(fechaLlegada).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="p-3 bg-white rounded-lg border">
-              <div className="flex items-center gap-2 mb-2">
-                <Route className="h-4 w-4 text-gray-600" />
-                <span className="font-medium text-gray-800">Resumen de la ruta:</span>
-              </div>
-              <p className="text-sm text-gray-600">{rutaCalculada.ruta}</p>
-              <div className="mt-2 flex gap-2">
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                  Vía terrestre
-                </Badge>
-                <Badge variant="outline" className="bg-green-100 text-green-800">
-                  Distancia verificada
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Google Map Visualization */}
+          {showMap && rutaCalculada.routeData && (
+            <GoogleMapVisualization
+              ubicaciones={[data.origen, data.destino].filter(Boolean)}
+              routeData={rutaCalculada.routeData}
+              isVisible={showMap}
+            />
+          )}
+        </>
       )}
 
       {/* Validación de fechas */}

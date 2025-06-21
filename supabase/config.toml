@@ -15,3 +15,6 @@ additional_redirect_urls = ["https://lovable.dev"]
 
 [functions.google-directions]
 verify_jwt = true
+
+[functions.get-google-maps-key]
+verify_jwt = true
