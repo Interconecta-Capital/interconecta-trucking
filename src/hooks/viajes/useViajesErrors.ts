@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 
-interface ViajesError {
+export interface ViajesError {
   type: string;
   message: string;
   source: string;
