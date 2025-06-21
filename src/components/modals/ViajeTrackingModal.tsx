@@ -195,11 +195,6 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                           <p className="text-sm text-gray-600">{viajeData.destino}</p>
                         </div>
                       </div>
-                      {viajeData.distancia_km && (
-                        <div className="text-sm">
-                          <span className="font-medium">Distancia:</span> {viajeData.distancia_km} km
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
