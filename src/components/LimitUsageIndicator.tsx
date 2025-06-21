@@ -10,6 +10,9 @@ interface LimitUsageIndicatorProps {
   showDetails?: boolean;
 }
 
+/**
+ * @deprecated - Usar LimitUsageIndicator desde common/LimitUsageIndicator.tsx que usa useUnifiedPermissions
+ */
 export const LimitUsageIndicator = ({ 
   resourceType, 
   className, 

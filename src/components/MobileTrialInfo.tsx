@@ -7,6 +7,10 @@ import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { Calendar, Clock, AlertCircle, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+/**
+ * @deprecated - La información de trial ahora se maneja a través de useUnifiedPermissions
+ * y se muestra en UnifiedPlanNotifications
+ */
 export function MobileTrialInfo() {
   const { trialInfo, loading } = useTrialTracking();
   const { suscripcion, enPeriodoPrueba } = useSuscripcion();

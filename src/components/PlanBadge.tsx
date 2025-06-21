@@ -4,6 +4,9 @@ import { useTrialTracking } from '@/hooks/useTrialTracking';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { Calendar, Clock } from 'lucide-react';
 
+/**
+ * @deprecated - Usar PlanBadge desde common/PlanBadge.tsx que usa useUnifiedPermissions
+ */
 export function PlanBadge() {
   const { trialInfo, loading } = useTrialTracking();
   const { suscripcion, enPeriodoPrueba } = useSuscripcion();

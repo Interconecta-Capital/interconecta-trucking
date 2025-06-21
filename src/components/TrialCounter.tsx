@@ -6,6 +6,10 @@ import { Calendar, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
+/**
+ * @deprecated - La información de trial ahora se maneja a través de useUnifiedPermissions
+ * y se muestra en UnifiedPlanNotifications
+ */
 export function TrialCounter() {
   const { trialInfo, loading } = useTrialTracking();
 

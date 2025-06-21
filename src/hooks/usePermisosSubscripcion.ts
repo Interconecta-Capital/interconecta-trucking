@@ -5,6 +5,10 @@ import { useAccessPermissions } from './permissions/useAccessPermissions';
 import { useResourceLimits } from './permissions/useResourceLimits';
 import { usePlanStatus } from './permissions/usePlanStatus';
 
+/**
+ * @deprecated - Usar useUnifiedPermissions en su lugar
+ * Hook mantenido por compatibilidad durante la migración
+ */
 export const usePermisosSubscripcion = () => {
   const { 
     estaBloqueado,

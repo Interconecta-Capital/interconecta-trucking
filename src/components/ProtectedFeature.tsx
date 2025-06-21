@@ -14,6 +14,9 @@ interface ProtectedFeatureProps {
   showUpgrade?: boolean;
 }
 
+/**
+ * @deprecated - Usar ProtectedContent con useUnifiedPermissions en su lugar
+ */
 export const ProtectedFeature = ({ 
   children, 
   feature, 
