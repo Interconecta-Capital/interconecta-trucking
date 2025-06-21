@@ -21,6 +21,7 @@ import Vehiculos from "./pages/Vehiculos"
 import Conductores from "./pages/Conductores"
 import Socios from "./pages/Socios"
 import Viajes from "./pages/Viajes"
+import Remolques from "./pages/Remolques"
 import Administracion from "./pages/Administracion"
 import Planes from "./pages/Planes"
 
@@ -65,6 +66,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <Vehiculos />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/remolques" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Remolques />
                   </BaseLayout>
                 </AuthGuard>
               } />

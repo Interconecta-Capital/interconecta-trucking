@@ -26,7 +26,10 @@ export function useRemolques(userId?: string) {
   const [error, setError] = useState<string | null>(null);
 
   const cargarRemolques = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -38,7 +41,10 @@ export function useRemolques(userId?: string) {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error cargando remolques:', error);
+        throw error;
+      }
       
       // Mapear los datos de remolques_ccp al formato esperado
       const remolquesFormateados = (data || []).map(item => ({
@@ -50,7 +56,7 @@ export function useRemolques(userId?: string) {
         num_serie: '',
         tipo_remolque: item.subtipo_rem || '',
         capacidad_carga: null,
-        estado: 'disponible',
+        estado: item.autotransporte_id ? 'vinculado' : 'disponible',
         vehiculo_asignado_id: item.autotransporte_id || null,
         activo: true,
         user_id: userId,
@@ -61,8 +67,9 @@ export function useRemolques(userId?: string) {
       setRemolques(remolquesFormateados);
     } catch (error: any) {
       console.error('Error cargando remolques:', error);
-      setError(error.message);
-      toast.error('Error al cargar remolques');
+      setError(error.message || 'Error al cargar remolques');
+      // En caso de error, mostrar array vacío en lugar de fallar completamente
+      setRemolques([]);
     } finally {
       setLoading(false);
     }
@@ -73,7 +80,7 @@ export function useRemolques(userId?: string) {
       // Mapear al formato de la tabla remolques_ccp
       const dataParaInsertar = {
         placa: remolqueData.placa || '',
-        subtipo_rem: remolqueData.tipo_remolque || '',
+        subtipo_rem: remolqueData.tipo_remolque || 'CTR001',
         autotransporte_id: remolqueData.vehiculo_asignado_id || null
       };
 
@@ -95,7 +102,7 @@ export function useRemolques(userId?: string) {
         num_serie: '',
         tipo_remolque: data.subtipo_rem || '',
         capacidad_carga: null,
-        estado: 'disponible',
+        estado: data.autotransporte_id ? 'vinculado' : 'disponible',
         vehiculo_asignado_id: data.autotransporte_id,
         activo: true,
         user_id: userId || '',
@@ -107,6 +114,7 @@ export function useRemolques(userId?: string) {
       return remolqueFormateado;
     } catch (error: any) {
       console.error('Error creando remolque:', error);
+      toast.error(error.message || 'Error al crear remolque');
       throw error;
     }
   };
@@ -139,7 +147,7 @@ export function useRemolques(userId?: string) {
         num_serie: '',
         tipo_remolque: data.subtipo_rem || '',
         capacidad_carga: null,
-        estado: 'disponible',
+        estado: data.autotransporte_id ? 'vinculado' : 'disponible',
         vehiculo_asignado_id: data.autotransporte_id,
         activo: true,
         user_id: userId || '',
@@ -151,6 +159,7 @@ export function useRemolques(userId?: string) {
       return remolqueActualizado;
     } catch (error: any) {
       console.error('Error actualizando remolque:', error);
+      toast.error(error.message || 'Error al actualizar remolque');
       throw error;
     }
   };
@@ -168,6 +177,7 @@ export function useRemolques(userId?: string) {
       toast.success('Remolque eliminado exitosamente');
     } catch (error: any) {
       console.error('Error eliminando remolque:', error);
+      toast.error(error.message || 'Error al eliminar remolque');
       throw error;
     }
   };

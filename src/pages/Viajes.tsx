@@ -100,7 +100,7 @@ export default function Viajes() {
           </Button>
         </div>
 
-        {/* Tabs de viajes responsivos - Sin Programados */}
+        {/* Tabs de viajes responsivos */}
         <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className={`border-b border-gray-10 bg-gray-05 ${isMobile ? 'p-4' : 'px-6 py-4'}`}>
