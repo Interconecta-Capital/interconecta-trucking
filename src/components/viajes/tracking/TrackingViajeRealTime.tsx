@@ -1,401 +1,305 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+
+import { ResponsiveCard, ResponsiveCardContent, ResponsiveCardHeader, ResponsiveCardTitle } from '@/components/ui/responsive-card';
+import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   MapPin, 
   Navigation, 
   Clock, 
-  Route, 
-  Truck,
-  User,
+  Truck, 
   Package,
-  AlertTriangle,
-  CheckCircle,
-  Maximize2
+  User,
+  Gauge,
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
-import { Viaje, EventoViaje, useViajesEstados } from '@/hooks/useViajesEstados';
-import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
-import { Ubicacion } from '@/types/ubicaciones';
+import { ViajeCompleto } from '@/hooks/useViajesCompletos';
 
 interface TrackingViajeRealTimeProps {
-  viaje: Viaje;
+  viaje: ViajeCompleto;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
 }
 
-export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
-  viaje,
-  isFullscreen = false,
-  onToggleFullscreen
-}) => {
-  const [eventos, setEventos] = useState<EventoViaje[]>([]);
-  const [trackingData, setTrackingData] = useState<any>(null);
-  const [progreso, setProgreso] = useState(0);
-
-  const { obtenerEventosViaje } = useViajesEstados();
-
-  useEffect(() => {
-    cargarEventosViaje();
-    calcularProgreso();
-    
-    // Simular actualización cada 30 segundos
-    const interval = setInterval(() => {
-      cargarEventosViaje();
-      actualizarTrackingSimulado();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [viaje.id]);
-
-  const cargarEventosViaje = async () => {
-    try {
-      const eventosData = await obtenerEventosViaje(viaje.id);
-      setEventos(eventosData);
-    } catch (error) {
-      console.error('Error cargando eventos:', error);
-    }
+export const TrackingViajeRealTime = ({ 
+  viaje, 
+  isFullscreen = false, 
+  onToggleFullscreen 
+}: TrackingViajeRealTimeProps) => {
+  
+  // Mock data para tracking en tiempo real
+  const trackingData = {
+    ubicacionActual: "Carretera México-Guadalajara, Km 47",
+    coordenadas: { lat: 19.4326, lng: -99.1332 },
+    velocidad: "78 km/h",
+    ultimaActualizacion: new Date().toLocaleTimeString(),
+    progreso: 42,
+    tiempoEstimadoLlegada: "2024-06-21T18:30:00Z",
+    distanciaRestante: "284 km"
   };
 
-  const calcularProgreso = () => {
-    switch (viaje.estado) {
-      case 'programado':
-        setProgreso(10);
-        break;
-      case 'en_transito':
-        // Calcular progreso basado en tiempo transcurrido
-        if (viaje.fecha_inicio_real && viaje.fecha_fin_programada) {
-          const inicio = new Date(viaje.fecha_inicio_real).getTime();
-          const fin = new Date(viaje.fecha_fin_programada).getTime();
-          const ahora = new Date().getTime();
-          const tiempoTotal = fin - inicio;
-          const tiempoTranscurrido = ahora - inicio;
-          const progresoCalculado = Math.min(Math.max((tiempoTranscurrido / tiempoTotal) * 100, 20), 95);
-          setProgreso(progresoCalculado);
-        } else {
-          setProgreso(50);
-        }
-        break;
-      case 'completado':
-        setProgreso(100);
-        break;
-      case 'cancelado':
-        setProgreso(0);
-        break;
-      case 'retrasado':
-        setProgreso(35);
-        break;
-      default:
-        setProgreso(0);
-    }
+  const calcularPesoTotal = (mercancias: any[]) => {
+    return mercancias?.reduce((total, m) => total + (m.peso_kg * m.cantidad || 0), 0) || 0;
   };
 
-  const actualizarTrackingSimulado = () => {
-    // Simular datos de tracking en tiempo real
-    const datosSimulados = {
-      ubicacionActual: generateRandomLocation(),
-      velocidad: Math.floor(Math.random() * 40) + 60, // 60-100 km/h
-      ultimaActualizacion: new Date().toLocaleTimeString(),
-      coordenadas: {
-        lat: 19.4326 + (Math.random() - 0.5) * 0.1,
-        lng: -99.1332 + (Math.random() - 0.5) * 0.1
-      },
-      tiempoEstimadoLlegada: calcularETA()
-    };
-    
-    setTrackingData(datosSimulados);
-  };
-
-  const generateRandomLocation = () => {
-    const ubicaciones = [
-      "Carretera México-Guadalajara, Km 125",
-      "Autopista Siglo XXI, Km 89",
-      "Carretera Federal 15, Km 234",
-      "Libramiento Sur, Morelia",
-      "Caseta de peaje Irapuato"
-    ];
-    return ubicaciones[Math.floor(Math.random() * ubicaciones.length)];
-  };
-
-  const calcularETA = () => {
-    if (viaje.fecha_fin_programada) {
-      const eta = new Date(viaje.fecha_fin_programada);
-      // Agregar variación aleatoria de ±2 horas
-      eta.setHours(eta.getHours() + (Math.random() - 0.5) * 4);
-      return eta.toLocaleString();
-    }
-    return 'No calculado';
-  };
-
-  const getStatusColor = () => {
-    switch (viaje.estado) {
-      case 'en_transito': return 'bg-green-500';
-      case 'retrasado': return 'bg-orange-500';
-      case 'completado': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (viaje.estado) {
-      case 'en_transito': return <Truck className="h-5 w-5" />;
-      case 'retrasado': return <AlertTriangle className="h-5 w-5" />;
-      case 'completado': return <CheckCircle className="h-5 w-5" />;
-      default: return <Clock className="h-5 w-5" />;
-    }
-  };
-
-  // Fix the ubicaciones type to match Ubicacion interface
-  const ubicacionesParaMapa: Ubicacion[] = [
-    {
-      id: 'origen',
-      idUbicacion: 'origen-001',
-      tipoUbicacion: 'Origen',
-      nombreRemitenteDestinatario: 'Origen',
-      domicilio: { 
-        calle: viaje.origen,
-        pais: 'MEX',
-        codigoPostal: '01000',
-        estado: 'CDMX',
-        municipio: 'Miguel Hidalgo',
-        colonia: 'Centro'
-      },
-      coordenadas: { latitud: 19.4326, longitud: -99.1332 }
-    },
-    {
-      id: 'destino',
-      idUbicacion: 'destino-001',
-      tipoUbicacion: 'Destino',
-      nombreRemitenteDestinatario: 'Destino',
-      domicilio: { 
-        calle: viaje.destino,
-        pais: 'MEX',
-        codigoPostal: '44100',
-        estado: 'JAL',
-        municipio: 'Guadalajara',
-        colonia: 'Centro'
-      },
-      coordenadas: { latitud: 19.6924, longitud: -101.2055 }
-    }
-  ];
-
-  // Si hay tracking data, agregar ubicación actual
-  if (trackingData?.coordenadas) {
-    ubicacionesParaMapa.push({
-      id: 'actual',
-      idUbicacion: 'actual-001',
-      tipoUbicacion: 'Paso Intermedio',
-      nombreRemitenteDestinatario: 'Posición actual',
-      domicilio: { 
-        calle: trackingData.ubicacionActual || 'En tránsito',
-        pais: 'MEX',
-        codigoPostal: '50000',
-        estado: 'MEX',
-        municipio: 'Toluca',
-        colonia: 'Centro'
-      },
-      coordenadas: { 
-        latitud: trackingData.coordenadas.lat, 
-        longitud: trackingData.coordenadas.lng 
-      }
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
-  }
+  };
 
   return (
-    <div className={`space-y-6 ${isFullscreen ? 'fixed inset-4 z-50 bg-white p-6 overflow-y-auto' : ''}`}>
-      {/* Header con estado */}
-      <Card>
-        <CardHeader className="pb-3">
+    <div className="space-y-6">
+      {/* Estado del tracking */}
+      <ResponsiveCard className="border-green-200 bg-green-50">
+        <ResponsiveCardContent className="p-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
-              {getStatusIcon()}
-              Tracking - {viaje.carta_porte_id}
-              <Badge className={`${getStatusColor()} text-white`}>
-                {viaje.estado.replace('_', ' ').toUpperCase()}
-              </Badge>
-            </CardTitle>
-            {onToggleFullscreen && (
-              <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Barra de progreso */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Progreso del viaje</span>
-                <span className="text-sm text-muted-foreground">{Math.round(progreso)}%</span>
-              </div>
-              <Progress value={progreso} className="w-full" />
-            </div>
-
-            {/* Información de ruta */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Origen:</span>
-                  <span className="text-sm">{viaje.origen}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-red-600" />
-                  <span className="font-medium">Destino:</span>
-                  <span className="text-sm">{viaje.destino}</span>
-                </div>
-                {trackingData && (
-                  <div className="flex items-center gap-2">
-                    <Navigation className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">Ubicación actual:</span>
-                    <span className="text-sm">{trackingData.ubicacionActual}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                {trackingData && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <Route className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">Velocidad:</span>
-                      <span className="text-sm">{trackingData.velocidad} km/h</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-orange-600" />
-                      <span className="font-medium">ETA:</span>
-                      <span className="text-sm">{trackingData.tiempoEstimadoLlegada}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium">Última actualización:</span>
-                      <span className="text-sm">{trackingData.ultimaActualizacion}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mapa en tiempo real */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Visualización en Tiempo Real
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={isFullscreen ? 'h-96' : 'h-80'}>
-            <GoogleMapVisualization
-              ubicaciones={ubicacionesParaMapa}
-              routeData={{
-                distance_km: 550,
-                duration_minutes: 420,
-                google_data: {
-                  polyline: 'mocked_polyline_data',
-                  bounds: { north: 20, south: 19, east: -98, west: -102 },
-                  legs: []
-                }
-              }}
-              isVisible={true}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Detalles del viaje */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Información del transporte */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
-              Información del Transporte
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {viaje.vehiculo_id && (
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <div>
-                <span className="font-medium">Vehículo:</span>
-                <p className="text-sm text-muted-foreground">ID: {viaje.vehiculo_id}</p>
-              </div>
-            )}
-            {viaje.conductor_id && (
-              <div>
-                <span className="font-medium">Conductor:</span>
-                <p className="text-sm text-muted-foreground">ID: {viaje.conductor_id}</p>
-              </div>
-            )}
-            <div>
-              <span className="font-medium">Fecha inicio programada:</span>
-              <p className="text-sm text-muted-foreground">
-                {new Date(viaje.fecha_inicio_programada).toLocaleString()}
-              </p>
-            </div>
-            {viaje.fecha_inicio_real && (
-              <div>
-                <span className="font-medium">Fecha inicio real:</span>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(viaje.fecha_inicio_real).toLocaleString()}
+                <h3 className="font-semibold text-green-800">Tracking Activo</h3>
+                <p className="text-sm text-green-700">
+                  Última actualización: {trackingData.ultimaActualizacion}
                 </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+            <Badge className="bg-green-100 text-green-800">
+              <Navigation className="h-3 w-3 mr-1" />
+              En Tiempo Real
+            </Badge>
+          </div>
+        </ResponsiveCardContent>
+      </ResponsiveCard>
 
-        {/* Eventos recientes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Eventos Recientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-              {eventos.slice(0, 5).map((evento) => (
-                <div key={evento.id} className="flex items-start gap-3 p-2 border rounded">
-                  <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{evento.descripcion}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(evento.timestamp).toLocaleString()}
+      {/* Información principal del viaje */}
+      <ResponsiveGrid cols={{ default: 1, md: 2 }} gap={{ default: 4, md: 6 }}>
+        <ResponsiveCard>
+          <ResponsiveCardHeader>
+            <ResponsiveCardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-blue-600" />
+              Ubicación y Ruta
+            </ResponsiveCardTitle>
+          </ResponsiveCardHeader>
+          <ResponsiveCardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <div>
+                  <p className="text-xs font-medium text-gray-60 uppercase">Origen</p>
+                  <p className="font-medium text-gray-90">{viaje.origen}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <div>
+                  <p className="text-xs font-medium text-gray-60 uppercase">Ubicación Actual</p>
+                  <p className="font-medium text-gray-90">{trackingData.ubicacionActual}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div>
+                  <p className="text-xs font-medium text-gray-60 uppercase">Destino</p>
+                  <p className="font-medium text-gray-90">{viaje.destino}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Progreso visual */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-70">Progreso del viaje</span>
+                <span className="text-sm font-bold text-gray-90">{trackingData.progreso}%</span>
+              </div>
+              <Progress value={trackingData.progreso} className="h-3" />
+            </div>
+          </ResponsiveCardContent>
+        </ResponsiveCard>
+
+        <ResponsiveCard>
+          <ResponsiveCardHeader>
+            <ResponsiveCardTitle className="flex items-center gap-2">
+              <Gauge className="h-5 w-5 text-green-600" />
+              Datos de Viaje
+            </ResponsiveCardTitle>
+          </ResponsiveCardHeader>
+          <ResponsiveCardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-blue-50 rounded-xl">
+                <div className="flex items-center gap-2 mb-1">
+                  <Gauge className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-600 uppercase">Velocidad</span>
+                </div>
+                <p className="text-lg font-bold text-gray-90">{trackingData.velocidad}</p>
+              </div>
+              
+              <div className="p-3 bg-orange-50 rounded-xl">
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="h-4 w-4 text-orange-600" />
+                  <span className="text-xs font-medium text-orange-600 uppercase">Restante</span>
+                </div>
+                <p className="text-lg font-bold text-gray-90">{trackingData.distanciaRestante}</p>
+              </div>
+              
+              <div className="p-3 bg-green-50 rounded-xl col-span-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="h-4 w-4 text-green-600" />
+                  <span className="text-xs font-medium text-green-600 uppercase">ETA</span>
+                </div>
+                <p className="text-sm font-bold text-gray-90">
+                  {formatDateTime(trackingData.tiempoEstimadoLlegada)}
+                </p>
+              </div>
+            </div>
+          </ResponsiveCardContent>
+        </ResponsiveCard>
+      </ResponsiveGrid>
+
+      {/* Información de carga transportada */}
+      {viaje.mercancias && viaje.mercancias.length > 0 && (
+        <ResponsiveCard>
+          <ResponsiveCardHeader>
+            <ResponsiveCardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-purple-600" />
+              Carga Transportada
+            </ResponsiveCardTitle>
+          </ResponsiveCardHeader>
+          <ResponsiveCardContent>
+            <ResponsiveGrid cols={{ default: 1, md: 2, lg: 3 }} gap={{ default: 3, md: 4 }}>
+              <div className="p-4 bg-purple-50 rounded-xl">
+                <div className="text-center">
+                  <Package className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                  <p className="text-2xl font-bold text-gray-90">{viaje.mercancias.length}</p>
+                  <p className="text-sm text-gray-60">Tipos de Mercancía</p>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-blue-50 rounded-xl">
+                <div className="text-center">
+                  <Gauge className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                  <p className="text-2xl font-bold text-gray-90">
+                    {calcularPesoTotal(viaje.mercancias).toFixed(0)}
+                  </p>
+                  <p className="text-sm text-gray-60">kg Total</p>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-green-50 rounded-xl">
+                <div className="text-center">
+                  <User className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                  <p className="text-lg font-bold text-gray-90">
+                    {viaje.cliente?.nombre || 'Sin cliente'}
+                  </p>
+                  <p className="text-sm text-gray-60">Cliente</p>
+                </div>
+              </div>
+            </ResponsiveGrid>
+
+            {/* Detalle de mercancías */}
+            <div className="mt-6 space-y-3">
+              <h4 className="font-medium text-gray-90">Detalle de Mercancías:</h4>
+              {viaje.mercancias.slice(0, 3).map((mercancia, index) => (
+                <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-90">
+                        {mercancia.descripcion || `Mercancía ${index + 1}`}
+                      </p>
+                      <p className="text-sm text-gray-60">
+                        Cantidad: {mercancia.cantidad} unidades
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-gray-90">
+                        {(mercancia.peso_kg * mercancia.cantidad).toFixed(1)} kg
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {viaje.mercancias.length > 3 && (
+                <p className="text-sm text-gray-60 text-center">
+                  ... y {viaje.mercancias.length - 3} más
+                </p>
+              )}
+            </div>
+          </ResponsiveCardContent>
+        </ResponsiveCard>
+      )}
+
+      {/* Recursos asignados */}
+      <ResponsiveCard>
+        <ResponsiveCardHeader>
+          <ResponsiveCardTitle className="flex items-center gap-2">
+            <Truck className="h-5 w-5 text-blue-600" />
+            Recursos Asignados
+          </ResponsiveCardTitle>
+        </ResponsiveCardHeader>
+        <ResponsiveCardContent>
+          <ResponsiveGrid cols={{ default: 1, md: 2 }} gap={{ default: 4, md: 6 }}>
+            {viaje.vehiculo ? (
+              <div className="p-4 bg-blue-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                    <Truck className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-90">Vehículo Asignado</h4>
+                    <p className="text-lg font-bold text-blue-600">{viaje.vehiculo.placa}</p>
+                    <p className="text-sm text-gray-60">
+                      {viaje.vehiculo.marca} {viaje.vehiculo.modelo}
                     </p>
-                    {evento.ubicacion && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {evento.ubicacion}
+                    {viaje.vehiculo.capacidad_carga && (
+                      <p className="text-sm text-gray-60">
+                        Capacidad: {viaje.vehiculo.capacidad_carga.toLocaleString()} kg
                       </p>
                     )}
                   </div>
                 </div>
-              ))}
-              
-              {eventos.length === 0 && (
-                <p className="text-center text-muted-foreground py-4">
-                  No hay eventos registrados
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 rounded-xl text-center">
+                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-gray-500">Sin vehículo asignado</p>
+              </div>
+            )}
 
-      {/* Alertas del viaje */}
-      {viaje.estado === 'retrasado' && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Este viaje presenta retrasos. Contacta al conductor para más información.
-          </AlertDescription>
-        </Alert>
-      )}
+            {viaje.conductor ? (
+              <div className="p-4 bg-green-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+                    <User className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-90">Conductor Asignado</h4>
+                    <p className="text-lg font-bold text-green-600">{viaje.conductor.nombre}</p>
+                    <p className="text-sm text-gray-60">
+                      Licencia: {viaje.conductor.tipo_licencia || 'No especificada'}
+                    </p>
+                    {viaje.conductor.telefono && (
+                      <p className="text-sm text-gray-60">
+                        Tel: {viaje.conductor.telefono}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 rounded-xl text-center">
+                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-gray-500">Sin conductor asignado</p>
+              </div>
+            )}
+          </ResponsiveGrid>
+        </ResponsiveCardContent>
+      </ResponsiveCard>
     </div>
   );
 };
