@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from './FileUpload';
 import { toast } from 'sonner';
-import { User, FileText, MapPin, Upload } from 'lucide-react';
+import { User, FileText, MapPin } from 'lucide-react';
 
 interface SocioFormAdvancedProps {
   socio?: any;
@@ -19,7 +18,7 @@ interface SocioFormAdvancedProps {
 
 export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvancedProps) {
   const [loading, setLoading] = useState(false);
-  const [constanciaFiscal, setConstanciaFiscal] = useState<File | null>(null);
+  const [constanciaFiles, setConstanciaFiles] = useState<File[]>([]);
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {
@@ -54,14 +53,14 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
     try {
       const socioData = {
         ...data,
-        constancia_fiscal_path: constanciaFiscal ? 'pending_upload' : null
+        constancia_fiscal_path: constanciaFiles.length > 0 ? 'pending_upload' : null
       };
       
       await onSubmit(socioData);
       
       // Si hay archivo, aquí se subiría
-      if (constanciaFiscal) {
-        console.log('Archivo a subir:', constanciaFiscal);
+      if (constanciaFiles.length > 0) {
+        console.log('Archivo a subir:', constanciaFiles[0]);
         // TODO: Implementar subida de archivo
       }
       
@@ -293,19 +292,14 @@ export function SocioFormAdvanced({ socio, onSubmit, onCancel }: SocioFormAdvanc
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Constancia de Situación Fiscal</Label>
-            <FileUpload
-              onFileSelect={setConstanciaFiscal}
-              acceptedTypes=".pdf"
-              maxSize={5 * 1024 * 1024} // 5MB
-              placeholder="Seleccionar constancia fiscal (PDF)"
-              icon={<Upload className="h-4 w-4" />}
-            />
-            <p className="text-xs text-gray-500">
-              Archivo PDF de máximo 5MB con la constancia actualizada del SAT
-            </p>
-          </div>
+          <FileUpload
+            label="Constancia de Situación Fiscal"
+            accept=".pdf"
+            multiple={false}
+            onFilesChange={setConstanciaFiles}
+            maxSize={5}
+            description="Archivo PDF de máximo 5MB con la constancia actualizada del SAT"
+          />
         </CardContent>
       </Card>
 

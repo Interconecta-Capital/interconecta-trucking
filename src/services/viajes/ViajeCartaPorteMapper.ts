@@ -1,4 +1,3 @@
-
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteData, MercanciaCompleta } from '@/types/cartaPorte';
 
@@ -128,7 +127,7 @@ export class ViajeCartaPorteMapper {
       descripcionMercancia: this.extraerDescripcionMercancias(cartaPorteData),
       
       // Tipo de servicio inferido
-      tipoServicio: 'carga_general',
+      tipoServicio: 'flete_pagado',
       
       // Vehículo desde autotransporte
       vehiculo: cartaPorteData.autotransporte ? {
