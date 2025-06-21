@@ -87,6 +87,6 @@ export function RouteCalculationStatus({
           </Badge>
         </div>
       </CardContent>
-    );
-  }
+    </Card>
+  );
 }
