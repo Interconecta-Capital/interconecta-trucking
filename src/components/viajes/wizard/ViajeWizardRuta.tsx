@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Route, Navigation, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MapPin, Route, Navigation, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { useGoogleRouteCalculation } from '@/hooks/useGoogleRouteCalculation';
 
@@ -60,7 +61,7 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
 
   const calcularRutaGoogle = async () => {
     if (data.origen && data.destino) {
-      console.log('🗺️ Calculando ruta con Google Maps...');
+      console.log('🗺️ Calculando ruta con Google Maps API v2...');
       
       const resultado = await calculateRoute(
         data.origen.coordenadas,
@@ -71,13 +72,53 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
         updateData({ 
           distanciaRecorrida: resultado.distance_km 
         });
-        console.log('✅ Ruta calculada:', resultado.distance_km, 'km');
+        console.log('✅ Ruta calculada exitosamente:', resultado.distance_km, 'km');
+        
+        if (resultado.fallback) {
+          console.log('⚠️ Usando cálculo de respaldo:', resultado.fallback_reason);
+        }
+      } else {
+        console.warn('⚠️ No se pudo calcular la ruta con Google Maps');
       }
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* API Status Check */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-blue-800">
+            <Navigation className="h-5 w-5" />
+            Estado de Google Maps API
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {routeData && !routeData.fallback ? (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                ✅ Google Maps API funcionando correctamente
+              </AlertDescription>
+            </Alert>
+          ) : routeData && routeData.fallback ? (
+            <Alert className="border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                ⚠️ Usando cálculo estimado: {routeData.fallback_reason}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Listo para calcular ruta con Google Maps
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Sección Origen */}
       <Card>
         <CardHeader>
@@ -164,20 +205,30 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
         </CardContent>
       </Card>
 
-      {/* Sección Cálculo de Ruta */}
+      {/* Sección Cálculo de Ruta Mejorada */}
       {data.origen && data.destino && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Route className="h-5 w-5" />
               Información de la Ruta
+              {routeData && !routeData.fallback && (
+                <Badge variant="outline" className="bg-green-100 text-green-800">
+                  Google Maps
+                </Badge>
+              )}
+              {routeData && routeData.fallback && (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                  Estimado
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isCalculating ? (
               <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-blue-800">Calculando ruta con Google Maps...</span>
+                <span className="text-blue-800">Calculando ruta con Google Maps API v2...</span>
               </div>
             ) : data.distanciaRecorrida ? (
               <div className="space-y-3">
@@ -194,11 +245,20 @@ export function ViajeWizardRuta({ data, updateData }: ViajeWizardRutaProps) {
                   </div>
                 </div>
                 
-                {/* Información adicional de Google Maps */}
+                {/* Información del estado de la API */}
                 {routeData && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="text-sm text-green-800">
-                      ✅ Ruta calculada con Google Maps API
+                  <div className={`p-3 rounded-lg border ${
+                    routeData.fallback 
+                      ? 'bg-amber-50 border-amber-200' 
+                      : 'bg-green-50 border-green-200'
+                  }`}>
+                    <div className={`text-sm ${
+                      routeData.fallback ? 'text-amber-800' : 'text-green-800'
+                    }`}>
+                      {routeData.fallback 
+                        ? `⚠️ Ruta estimada: ${routeData.fallback_reason}`
+                        : '✅ Ruta calculada con Google Routes API v2'
+                      }
                     </div>
                   </div>
                 )}
