@@ -42,7 +42,7 @@ serve(async (req) => {
 
   const { origin, destination, waypoints = [] } = requestBody;
     
-  console.log('🚀 Calculating route with Google Directions API');
+  console.log('🚀 Calculating route with Google Routes API v2');
   console.log('📍 Origin:', origin);
   console.log('📍 Destination:', destination);
   console.log('🛤️ Waypoints:', waypoints);
@@ -79,24 +79,9 @@ serve(async (req) => {
       success: true,
       distance_km: adjustedDistance,
       duration_minutes: fallbackDuration,
-      route_geometry: {
-        type: 'LineString',
-        coordinates: generateStraightLinePolyline(origin, destination)
-      },
       fallback: true,
       fallback_reason: reason,
       google_data: {
-        polyline: generateStraightLinePolyline(origin, destination),
-        bounds: {
-          northeast: {
-            lat: Math.max(origin.lat, destination.lat),
-            lng: Math.max(origin.lng, destination.lng)
-          },
-          southwest: {
-            lat: Math.min(origin.lat, destination.lat),
-            lng: Math.min(origin.lng, destination.lng)
-          }
-        },
         legs: [{
           distance: { text: `${adjustedDistance} km`, value: adjustedDistance * 1000 },
           duration: { text: `${Math.floor(fallbackDuration/60)}h ${fallbackDuration%60}m`, value: fallbackDuration * 60 },
@@ -107,18 +92,11 @@ serve(async (req) => {
     };
   };
 
-  // Try to get API key from multiple possible environment variable names
-  const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY') || 
-                           Deno.env.get('Publicaciones_interconecta') ||
-                           Deno.env.get('GOOGLE_API_KEY') ||
-                           Deno.env.get('MAPS_API_KEY');
+  // Get API key from environment
+  const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
   
   if (!googleMapsApiKey) {
     console.error('❌ Google Maps API key not found');
-    console.log('Available env vars:', Object.keys(Deno.env.toObject()).filter(key => 
-      key.toLowerCase().includes('google') || key.toLowerCase().includes('map')
-    ));
-    
     const fallbackResponse = createFallbackResponse('API key not configured');
     
     return new Response(
@@ -132,43 +110,77 @@ serve(async (req) => {
     );
   }
 
-  console.log('✅ API Key found and configured');
+  console.log('✅ API Key found, using Google Routes API v2');
 
-  // Build waypoints string for Google API
-  let waypointsParam = '';
-  if (waypoints.length > 0) {
-    const validWaypoints = waypoints.filter(wp => 
-      wp.lat && wp.lng && Math.abs(wp.lat) <= 90 && Math.abs(wp.lng) <= 180
-    );
-    if (validWaypoints.length > 0) {
-      const waypointStrings = validWaypoints.map(wp => `${wp.lat},${wp.lng}`);
-      waypointsParam = `&waypoints=${waypointStrings.join('|')}`;
+  // Prepare intermediates for waypoints
+  const intermediates = waypoints.length > 0 ? waypoints.map(wp => ({
+    location: {
+      latLng: {
+        latitude: wp.lat,
+        longitude: wp.lng
+      }
     }
-  }
+  })) : [];
 
-  // Enhanced Google Directions API call
-  const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypointsParam}&key=${googleMapsApiKey}&language=es&region=mx`;
+  // Build request body for Google Routes API v2
+  const routesRequestBody = {
+    origin: {
+      location: {
+        latLng: {
+          latitude: origin.lat,
+          longitude: origin.lng
+        }
+      }
+    },
+    destination: {
+      location: {
+        latLng: {
+          latitude: destination.lat,
+          longitude: destination.lng
+        }
+      }
+    },
+    ...(intermediates.length > 0 && { intermediates }),
+    travelMode: "DRIVE",
+    routingPreference: "TRAFFIC_AWARE",
+    computeAlternativeRoutes: false,
+    routeModifiers: {
+      avoidTolls: false,
+      avoidHighways: false,
+      avoidFerries: false
+    },
+    languageCode: "es-MX",
+    regionCode: "MX"
+  };
+
+  // Use Google Routes API v2
+  const routesUrl = `https://routes.googleapis.com/directions/v2:computeRoutes`;
   
-  console.log('🌐 Calling Google Directions API');
+  console.log('🌐 Calling Google Routes API v2');
   
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     
-    const response = await fetch(directionsUrl, {
+    const response = await fetch(routesUrl, {
+      method: 'POST',
       signal: controller.signal,
       headers: {
-        'User-Agent': 'CartaPorte-App/1.0',
-        'Accept': 'application/json',
-        'Referer': 'https://qulhweffinppyjpfkknh.supabase.co'
-      }
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': googleMapsApiKey,
+        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.legs'
+      },
+      body: JSON.stringify(routesRequestBody)
     });
     
     clearTimeout(timeoutId);
     
     if (!response.ok) {
       console.error('❌ HTTP error:', response.status, response.statusText);
-      const fallbackResponse = createFallbackResponse(`HTTP error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
+      
+      const fallbackResponse = createFallbackResponse(`HTTP error: ${response.status} - ${errorText}`);
       
       return new Response(
         JSON.stringify(fallbackResponse),
@@ -182,29 +194,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('📦 Google API Response status:', data.status);
-
-    // Handle different Google API response statuses
-    if (data.status !== 'OK') {
-      console.error('❌ Google Directions API error:', data.status, data.error_message);
-      
-      let fallbackReason = `Google API error: ${data.status}`;
-      if (data.error_message) {
-        fallbackReason += ` - ${data.error_message}`;
-      }
-      
-      const fallbackResponse = createFallbackResponse(fallbackReason);
-      
-      return new Response(
-        JSON.stringify(fallbackResponse),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
-        }
-      );
-    }
+    console.log('📦 Google Routes API Response:', JSON.stringify(data, null, 2));
 
     if (!data.routes || data.routes.length === 0) {
       console.error('❌ No routes found in Google response');
@@ -223,23 +213,12 @@ serve(async (req) => {
 
     const route = data.routes[0];
 
-    // Calculate total distance and duration with validation
-    let totalDistance = 0;
-    let totalDuration = 0;
-
-    if (route.legs && route.legs.length > 0) {
-      route.legs.forEach((leg: any) => {
-        if (leg.distance && leg.distance.value) {
-          totalDistance += leg.distance.value; // meters
-        }
-        if (leg.duration && leg.duration.value) {
-          totalDuration += leg.duration.value; // seconds
-        }
-      });
-    }
+    // Extract distance and duration from the new API format
+    const distanceMeters = route.distanceMeters || 0;
+    const durationSeconds = route.duration ? parseInt(route.duration.replace('s', '')) : 0;
 
     // Validate calculated values
-    if (totalDistance === 0 || totalDuration === 0) {
+    if (distanceMeters === 0 || durationSeconds === 0) {
       console.warn('⚠️ Invalid distance or duration from Google, using fallback');
       const fallbackResponse = createFallbackResponse('Invalid Google response data');
       
@@ -255,31 +234,25 @@ serve(async (req) => {
     }
 
     // Convert to km and minutes
-    const distanceKm = Math.round(totalDistance / 1000 * 100) / 100;
-    const durationMinutes = Math.round(totalDuration / 60);
+    const distanceKm = Math.round(distanceMeters / 1000 * 100) / 100;
+    const durationMinutes = Math.round(durationSeconds / 60);
 
     const result = {
       success: true,
       distance_km: distanceKm,
       duration_minutes: durationMinutes,
-      route_geometry: {
-        type: 'LineString',
-        coordinates: route.overview_polyline?.points || ''
-      },
       fallback: false,
       google_data: {
-        polyline: route.overview_polyline?.points || '',
-        bounds: route.bounds,
-        legs: route.legs.map((leg: any) => ({
-          distance: leg.distance,
-          duration: leg.duration,
-          start_location: leg.start_location,
-          end_location: leg.end_location
-        }))
+        legs: route.legs || [{
+          distance: { text: `${distanceKm} km`, value: distanceMeters },
+          duration: { text: `${Math.floor(durationMinutes/60)}h ${durationMinutes%60}m`, value: durationSeconds },
+          start_location: origin,
+          end_location: destination
+        }]
       }
     };
 
-    console.log('✅ Route calculated successfully:', {
+    console.log('✅ Route calculated successfully with Routes API v2:', {
       distance: result.distance_km,
       duration: result.duration_minutes,
       legs: result.google_data.legs.length
@@ -296,7 +269,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ Error calling Google Directions API:', error);
+    console.error('❌ Error calling Google Routes API:', error);
     
     const fallbackResponse = createFallbackResponse(`Network error: ${error.message || 'Unknown error'}`);
     
@@ -323,9 +296,4 @@ function calculateDirectDistance(origin: { lat: number; lng: number }, destinati
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
-}
-
-// Generate a simple straight line polyline for fallback visualization
-function generateStraightLinePolyline(origin: { lat: number; lng: number }, destination: { lat: number; lng: number }): string {
-  return `${origin.lat},${origin.lng};${destination.lat},${destination.lng}`;
 }

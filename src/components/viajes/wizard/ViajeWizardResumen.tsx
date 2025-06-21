@@ -18,22 +18,36 @@ function Label({ className, children, ...props }: { className?: string; children
 
 export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [processingStep, setProcessingStep] = useState('');
 
   const tipoServicioLabel = data.tipoServicio === 'flete_pagado' 
     ? 'Flete Pagado (CFDI Ingreso)' 
     : 'Traslado Propio (CFDI Traslado)';
 
-  const handleConfirmClick = () => {
-    if (isProcessing || hasAttemptedSubmit) {
+  const handleConfirmClick = async () => {
+    if (isProcessing) {
       return; // Prevenir múltiples clics
     }
 
     setIsProcessing(true);
-    setHasAttemptedSubmit(true);
     
-    // Llamar a la función original
-    onConfirm();
+    try {
+      setProcessingStep('Validando datos...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setProcessingStep('Creando viaje...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setProcessingStep('Generando documentos...');
+      
+      // Llamar a la función original
+      await onConfirm();
+      
+    } catch (error) {
+      console.error('Error en confirmación:', error);
+      setIsProcessing(false);
+      setProcessingStep('');
+    }
   };
 
   return (
@@ -208,11 +222,26 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         </CardContent>
       </Card>
 
+      {/* Estado de Procesamiento */}
+      {isProcessing && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <div>
+                <div className="font-medium text-blue-900">Procesando Viaje</div>
+                <div className="text-sm text-blue-700">{processingStep}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Botón de Confirmación con Estados */}
       <div className="flex justify-center pt-4">
         <Button
           onClick={handleConfirmClick}
-          disabled={isProcessing || hasAttemptedSubmit}
+          disabled={isProcessing}
           className={`${
             isProcessing 
               ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
@@ -223,12 +252,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
           {isProcessing ? (
             <>
               <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Procesando Viaje...
-            </>
-          ) : hasAttemptedSubmit ? (
-            <>
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Viaje Enviado
+              {processingStep || 'Procesando...'}
             </>
           ) : (
             <>
