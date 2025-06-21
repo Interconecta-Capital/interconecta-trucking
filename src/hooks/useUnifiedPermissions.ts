@@ -259,9 +259,10 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
     if (suscripcion?.status === 'active' && suscripcion.plan) {
       const plan = suscripcion.plan;
       
-      // Verificar límite de almacenamiento
-      const almacenamientoExcedido = plan.limite_almacenamiento_gb && 
-        almacenamientoUsedGB >= plan.limite_almacenamiento_gb;
+      // Verificar límite de almacenamiento - usar el campo correcto
+      const limiteAlmacenamiento = (plan as any).limite_almacenamiento_gb;
+      const almacenamientoExcedido = limiteAlmacenamiento && 
+        almacenamientoUsedGB >= limiteAlmacenamiento;
       
       const basePermissions = {
         hasFullAccess: false,
@@ -306,11 +307,11 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         
         canUploadFile: {
           allowed: !almacenamientoExcedido,
-          reason: plan.limite_almacenamiento_gb ? 
-            `${almacenamientoUsedGB.toFixed(2)}/${plan.limite_almacenamiento_gb} GB utilizados` : 
+          reason: limiteAlmacenamiento ? 
+            `${almacenamientoUsedGB.toFixed(2)}/${limiteAlmacenamiento} GB utilizados` : 
             'Sin límite de almacenamiento',
-          limit: plan.limite_almacenamiento_gb || undefined,
-          used: Math.round(almacenamientoUsedGB * 100) / 100 // Redondear a 2 decimales
+          limit: limiteAlmacenamiento || undefined,
+          used: Math.round(almacenamientoUsedGB * 100) / 100
         },
         
         canTimbrar: { 
@@ -349,7 +350,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           cartas_porte: { used: cartasPorteUsed, limit: plan.limite_cartas_porte },
           almacenamiento: { 
             used: archivosCount, 
-            limit: plan.limite_almacenamiento_gb,
+            limit: limiteAlmacenamiento,
             usedGB: almacenamientoUsedGB 
           },
         },
@@ -396,7 +397,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
           return permission ? { puede: permission.allowed, razon: permission.reason } : { puede: false, razon: 'Funcionalidad no encontrada' };
         },
         canPerformAction: (action: string) => {
-          if (action === 'create') return true; // Plan activo permite crear
+          if (action === 'create') return true;
           if (action === 'upload') return !almacenamientoExcedido;
           return false;
         },

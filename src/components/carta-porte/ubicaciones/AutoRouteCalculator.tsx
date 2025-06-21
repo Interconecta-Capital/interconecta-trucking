@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Route, CheckCircle, AlertTriangle, MapPin, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import { useHybridRouteCalculation } from '@/hooks/useHybridRouteCalculation';
 import { useAccurateGeocodingMexico } from '@/hooks/useAccurateGeocodingMexico';
+import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
 import { Ubicacion } from '@/types/ubicaciones';
 import { RouteCalculationStatus } from './RouteCalculationStatus';
 import { RouteControls } from './RouteControls';
@@ -17,12 +18,6 @@ interface AutoRouteCalculatorProps {
   tiempoEstimado?: number;
 }
 
-declare global {
-  interface Window {
-    google: any;
-  }
-}
-
 export function AutoRouteCalculator({
   ubicaciones,
   onDistanceCalculated,
@@ -31,12 +26,12 @@ export function AutoRouteCalculator({
 }: AutoRouteCalculatorProps) {
   const { calculateRoute, isCalculating, routeData, error } = useHybridRouteCalculation();
   const { geocodeByCodigoPostal } = useAccurateGeocodingMexico();
+  const { isLoaded: isGoogleMapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
+  
   const [autoCalculationDone, setAutoCalculationDone] = useState(false);
   const [lastCalculationHash, setLastCalculationHash] = useState<string>('');
   const [showMap, setShowMap] = useState(false);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState<string>('');
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
 
@@ -60,7 +55,7 @@ export function AutoRouteCalculator({
       .join('|');
   };
 
-  // Improved geocoding function with better error handling
+  // Improved geocoding function
   const geocodeLocation = async (ubicacion: Ubicacion | undefined) => {
     if (!ubicacion || !ubicacion.domicilio) {
       console.warn('⚠️ Ubicación o domicilio no válido para geocodificación');
@@ -95,71 +90,29 @@ export function AutoRouteCalculator({
     return null;
   };
 
-  // Load Google Maps API with better error handling
+  // Initialize map when Google Maps is ready
   useEffect(() => {
-    if (window.google) {
-      setIsMapLoaded(true);
-      return;
-    }
-
-    // Only load Google Maps if we have route data to display
-    if (!routeData) return;
-
-    const script = document.createElement('script');
-    // Use a valid API key placeholder - user needs to configure this
-    script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      console.log('✅ Google Maps API cargada exitosamente');
-      setIsMapLoaded(true);
-      setMapError('');
-    };
-
-    script.onerror = () => {
-      console.error('❌ Error cargando Google Maps API - Verifique la API key');
-      setMapError('Error cargando Google Maps. Verifique la configuración de la API key.');
-      setIsMapLoaded(false);
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [routeData]);
-
-  // Initialize map only when everything is ready
-  useEffect(() => {
-    if (!isMapLoaded || !window.google || !mapRef.current || !showMap || !routeData || mapError) return;
+    if (!isGoogleMapsLoaded || !window.google || !mapRef.current || !showMap || !routeData || googleMapsError) return;
 
     console.log('🗺️ Inicializando mapa de Google con datos de ruta');
 
     try {
-      // Default center (Mexico City)
       const defaultCenter = { lat: 19.4326, lng: -99.1332 };
 
-      // Initialize map
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         zoom: 6,
         center: defaultCenter,
         mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ]
+        gestureHandling: 'greedy',
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: false,
+        zoomControl: true
       });
 
       // Add markers and route
       const bounds = new window.google.maps.LatLngBounds();
 
-      // Add markers for each ubicacion
       safeUbicaciones.forEach((ubicacion, index) => {
         const coords = getCoordinatesForUbicacion(ubicacion);
         
@@ -176,10 +129,10 @@ export function AutoRouteCalculator({
 
           const infoWindow = new window.google.maps.InfoWindow({
             content: `
-              <div class="p-2">
-                <h3 class="font-bold">${ubicacion.tipoUbicacion}</h3>
-                <p class="text-sm">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
-                <p class="text-xs text-gray-600">${ubicacion.domicilio.calle}, ${ubicacion.domicilio.municipio}</p>
+              <div style="padding: 8px; max-width: 200px;">
+                <h3 style="margin: 0 0 4px 0; font-weight: bold; font-size: 14px;">${ubicacion.tipoUbicacion}</h3>
+                <p style="margin: 0 0 4px 0; font-size: 12px;">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
+                <p style="margin: 0; font-size: 11px; color: #666;">${ubicacion.domicilio.calle}, ${ubicacion.domicilio.municipio}</p>
               </div>
             `
           });
@@ -193,7 +146,7 @@ export function AutoRouteCalculator({
       });
 
       // Add route if available
-      if (routeData.google_data?.polyline) {
+      if (routeData.google_data?.polyline && window.google.maps.geometry?.encoding) {
         try {
           const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.google_data.polyline);
           
@@ -223,10 +176,9 @@ export function AutoRouteCalculator({
 
     } catch (error) {
       console.error('❌ Error inicializando Google Maps:', error);
-      setMapError('Error inicializando el mapa.');
     }
 
-  }, [isMapLoaded, showMap, routeData, safeUbicaciones, mapError]);
+  }, [isGoogleMapsLoaded, showMap, routeData, safeUbicaciones, googleMapsError]);
 
   const getCoordinatesForUbicacion = (ubicacion: Ubicacion) => {
     if (ubicacion.coordenadas) {
@@ -249,42 +201,31 @@ export function AutoRouteCalculator({
     return iconMap[tipo as keyof typeof iconMap] || 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
   };
 
-  // Optimized auto-calculation with better error handling
+  // Auto-calculation logic
   useEffect(() => {
     const performAutoCalculation = async () => {
       if (!canCalculate || isCalculating || !safeUbicaciones.length) return;
       
       const currentHash = createLocationHash();
       
-      // Solo calcular si las ubicaciones han cambiado y no tenemos distancia calculada
       if (currentHash !== lastCalculationHash && (!distanciaTotal || distanciaTotal === 0)) {
         console.log('🔄 Iniciando cálculo automático de ruta');
         
         try {
-          // Geocodificar ubicaciones con manejo de errores mejorado
           const origenCoords = await geocodeLocation(origen);
           const destinoCoords = await geocodeLocation(destino);
           
           if (!origenCoords || !destinoCoords) {
             console.warn('⚠️ No se pudieron obtener coordenadas para origen/destino');
-            console.log('Origen coords:', origenCoords);
-            console.log('Destino coords:', destinoCoords);
             return;
           }
 
-          console.log('📍 Coordenadas origen:', origenCoords);
-          console.log('📍 Coordenadas destino:', destinoCoords);
-
-          // Geocodificar intermedios si existen
           const waypoints = [];
           for (const intermedio of intermedios) {
             const coords = await geocodeLocation(intermedio);
             if (coords) waypoints.push(coords);
           }
 
-          console.log('🚀 Iniciando cálculo híbrido de ruta');
-
-          // Calcular ruta híbrida
           const result = await calculateRoute(origenCoords, destinoCoords, waypoints);
           
           if (result && result.success) {
@@ -301,8 +242,6 @@ export function AutoRouteCalculator({
             setAutoCalculationDone(true);
             setLastCalculationHash(currentHash);
             setShowMap(true);
-          } else {
-            console.warn('⚠️ Cálculo de ruta falló - usando Mapbox únicamente');
           }
         } catch (error) {
           console.error('❌ Error en cálculo automático:', error);
@@ -310,12 +249,11 @@ export function AutoRouteCalculator({
       }
     };
 
-    // Delay para evitar cálculos excesivos
     const timeoutId = setTimeout(performAutoCalculation, 2000);
     return () => clearTimeout(timeoutId);
   }, [safeUbicaciones, canCalculate, distanciaTotal, lastCalculationHash, isCalculating]);
 
-  // Manual recalculation with improved error handling
+  // Manual recalculation
   const handleManualRecalculation = async () => {
     if (!canCalculate) return;
     
@@ -359,7 +297,7 @@ export function AutoRouteCalculator({
     return `${hours}h ${mins}m`;
   };
 
-  // Check if we should show the status component instead of the main calculator
+  // Check if we should show the status component
   if (!safeUbicaciones.length || !canCalculate) {
     return (
       <RouteCalculationStatus
@@ -382,7 +320,7 @@ export function AutoRouteCalculator({
               Calculada
             </Badge>
           )}
-          {error && (
+          {(error || googleMapsError) && (
             <Badge variant="destructive" className="ml-auto">
               <AlertTriangle className="h-3 w-3 mr-1" />
               Error
@@ -390,7 +328,7 @@ export function AutoRouteCalculator({
           )}
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Cálculos: Mapbox • Visualización: Google Maps (requiere configuración)
+          Cálculos: Mapbox • Visualización: Google Maps {!isGoogleMapsLoaded && !googleMapsError && '(Cargando...)'}
         </p>
       </CardHeader>
       
@@ -402,15 +340,15 @@ export function AutoRouteCalculator({
         />
 
         {/* Error handling */}
-        {(error || mapError) && (
+        {(error || googleMapsError) && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800">
               <AlertTriangle className="h-4 w-4 inline mr-2" />
-              {error || mapError}
+              {error || googleMapsError}
             </p>
-            {mapError && (
+            {googleMapsError && (
               <p className="text-xs text-red-600 mt-1">
-                Para usar el mapa visual, configure una API key válida de Google Maps
+                Configure GOOGLE_MAPS_API_KEY en los secretos de Edge Functions
               </p>
             )}
           </div>
@@ -447,8 +385,8 @@ export function AutoRouteCalculator({
           </div>
         )}
 
-        {/* Integrated Google Map */}
-        {showMap && routeData && (
+        {/* Google Map Integration */}
+        {showMap && routeData && isGoogleMapsLoaded && !googleMapsError && (
           <div className={`border border-blue-200 rounded-lg overflow-hidden ${isMapFullscreen ? 'fixed inset-4 z-50 bg-white' : ''}`}>
             <div className="flex items-center justify-between p-3 bg-blue-50 border-b border-blue-200">
               <div className="flex items-center gap-2">
@@ -461,27 +399,7 @@ export function AutoRouteCalculator({
             </div>
             
             <div className={`bg-gray-100 overflow-hidden ${isMapFullscreen ? 'h-[calc(100vh-120px)]' : 'h-96'}`}>
-              {mapError ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center p-4">
-                    <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Mapa no disponible</p>
-                    <p className="text-xs text-gray-500">Configure la API key de Google Maps</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div ref={mapRef} className="w-full h-full" />
-                  {!isMapLoaded && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-sm text-gray-600">Cargando Google Maps...</p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+              <div ref={mapRef} className="w-full h-full" />
             </div>
           </div>
         )}

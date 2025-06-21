@@ -4,20 +4,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Maximize2, Minimize2, AlertTriangle, MapPin, Loader2, Settings, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
 
 interface StableGoogleMapProps {
   ubicaciones: any[];
   routeData: any;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
-}
-
-declare global {
-  interface Window {
-    google: any;
-    initGoogleMapsCallback?: () => void;
-  }
 }
 
 export function StableGoogleMap({ 
@@ -28,14 +21,13 @@ export function StableGoogleMap({
 }: StableGoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const scriptLoadedRef = useRef(false);
+  const { isLoaded, error: apiError } = useGoogleMapsAPI();
+  
   const [mapState, setMapState] = useState({
-    isLoaded: false,
     isInitialized: false,
     error: '',
     retryCount: 0,
     containerReady: false,
-    apiKeyValid: false,
     loadingMessage: 'Iniciando Google Maps...'
   });
 
@@ -60,7 +52,7 @@ export function StableGoogleMap({
         console.warn('⚠️ Container taking too long to be ready');
         setMapState(prev => ({ 
           ...prev, 
-          containerReady: true, // Force ready state
+          containerReady: true,
           loadingMessage: 'Preparando contenedor...'
         }));
       }
@@ -86,144 +78,14 @@ export function StableGoogleMap({
     return () => clearTimeout(timeout);
   }, []);
 
-  // Load Google Maps API with robust error handling
+  // Initialize map when ready
   useEffect(() => {
-    if (scriptLoadedRef.current || window.google || mapState.isLoaded) return;
-
-    const loadGoogleMaps = async () => {
-      try {
-        console.log('🗺️ Loading Google Maps API...');
-        setMapState(prev => ({ ...prev, loadingMessage: 'Obteniendo clave API...' }));
-        
-        // Get API key from Supabase secrets with retry logic
-        let apiKey: string | null = null;
-        let attempts = 0;
-        const maxAttempts = 3;
-
-        while (!apiKey && attempts < maxAttempts) {
-          attempts++;
-          try {
-            const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            });
-            
-            if (error) {
-              console.warn(`⚠️ Intento ${attempts} falló:`, error);
-              if (attempts === maxAttempts) {
-                throw new Error(`Failed to get API key after ${maxAttempts} attempts: ${error.message}`);
-              }
-              await new Promise(resolve => setTimeout(resolve, 1000 * attempts)); // Exponential backoff
-              continue;
-            }
-            
-            if (data?.apiKey) {
-              apiKey = data.apiKey;
-              console.log('✅ API Key obtenida exitosamente');
-            } else {
-              throw new Error('No API key in response');
-            }
-          } catch (error) {
-            console.warn(`⚠️ Error en intento ${attempts}:`, error);
-            if (attempts === maxAttempts) {
-              throw error;
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-          }
-        }
-
-        if (!apiKey) {
-          throw new Error('No se pudo obtener la clave API después de múltiples intentos');
-        }
-
-        setMapState(prev => ({ 
-          ...prev, 
-          apiKeyValid: true,
-          loadingMessage: 'Cargando biblioteca de Google Maps...'
-        }));
-
-        // Check if script already exists and remove it
-        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-        if (existingScript) {
-          existingScript.remove();
-          window.google = undefined;
-        }
-
-        // Create global callback with error handling
-        window.initGoogleMapsCallback = () => {
-          console.log('✅ Google Maps API loaded successfully');
-          scriptLoadedRef.current = true;
-          setMapState(prev => ({ 
-            ...prev, 
-            isLoaded: true, 
-            error: '',
-            retryCount: 0,
-            loadingMessage: 'API cargada exitosamente'
-          }));
-        };
-
-        // Load script with enhanced error handling
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&loading=async&callback=initGoogleMapsCallback`;
-        script.async = true;
-        script.defer = true;
-        
-        let scriptTimeout: NodeJS.Timeout;
-        
-        script.onload = () => {
-          console.log('📦 Google Maps script loaded');
-          clearTimeout(scriptTimeout);
-        };
-        
-        script.onerror = (event) => {
-          console.error('❌ Error loading Google Maps script:', event);
-          clearTimeout(scriptTimeout);
-          setMapState(prev => ({ 
-            ...prev, 
-            error: 'Error cargando Google Maps. Verifica la conexión a internet.',
-            retryCount: prev.retryCount + 1,
-            apiKeyValid: false,
-            loadingMessage: 'Error de carga'
-          }));
-        };
-
-        // Set timeout for script loading
-        scriptTimeout = setTimeout(() => {
-          console.error('⏰ Google Maps script load timeout');
-          setMapState(prev => ({ 
-            ...prev, 
-            error: 'Tiempo de espera agotado cargando Google Maps',
-            retryCount: prev.retryCount + 1,
-            loadingMessage: 'Tiempo agotado'
-          }));
-        }, 10000);
-
-        document.head.appendChild(script);
-
-      } catch (error) {
-        console.error('❌ Error inicializando Google Maps:', error);
-        setMapState(prev => ({ 
-          ...prev, 
-          error: error instanceof Error ? error.message : 'Error de inicialización',
-          apiKeyValid: false,
-          loadingMessage: 'Error de inicialización'
-        }));
-      }
-    };
-
-    loadGoogleMaps();
-  }, [mapState.retryCount]);
-
-  // Initialize map when ready with enhanced error handling
-  useEffect(() => {
-    if (!mapState.isLoaded || 
+    if (!isLoaded || 
         !mapState.containerReady ||
         !window.google || 
         !mapRef.current || 
         mapState.isInitialized ||
-        mapState.error ||
-        !mapState.apiKeyValid) {
+        apiError) {
       return;
     }
 
@@ -288,7 +150,6 @@ export function StableGoogleMap({
           }
         });
 
-        // Additional event listeners for better error detection
         window.google.maps.event.addListener(mapInstanceRef.current, 'bounds_changed', () => {
           if (!mapState.isInitialized) {
             console.log('🗺️ Map bounds changed - assuming ready');
@@ -311,10 +172,9 @@ export function StableGoogleMap({
       }
     };
 
-    // Delay initialization slightly to ensure DOM is ready
     const initTimeout = setTimeout(initializeMap, 100);
     return () => clearTimeout(initTimeout);
-  }, [mapState.isLoaded, mapState.containerReady, mapState.apiKeyValid]);
+  }, [isLoaded, mapState.containerReady, apiError]);
 
   const addMarkersAndRoute = () => {
     if (!mapInstanceRef.current || !window.google || !window.google.maps) {
@@ -325,9 +185,7 @@ export function StableGoogleMap({
     try {
       console.log('📍 Adding markers and route to map');
       const bounds = new window.google.maps.LatLngBounds();
-      const markers: any[] = [];
 
-      // Add markers for each location
       ubicaciones.forEach((ubicacion, index) => {
         const coords = getCoordinatesForUbicacion(ubicacion);
         
@@ -357,7 +215,6 @@ export function StableGoogleMap({
             infoWindow.open(mapInstanceRef.current, marker);
           });
 
-          markers.push(marker);
           bounds.extend(coords);
         }
       });
@@ -378,17 +235,16 @@ export function StableGoogleMap({
           routePath.setMap(mapInstanceRef.current);
           console.log('✅ Route displayed on map');
         } catch (error) {
-          console.warn('⚠️ Error displaying route on map:', error);
+          console.error('❌ Error displaying route:', error);
         }
       }
 
-      // Fit map to bounds with padding
-      if (markers.length > 0) {
-        if (markers.length === 1) {
-          mapInstanceRef.current.setCenter(bounds.getCenter());
+      // Fit map to bounds
+      if (ubicaciones.length > 0) {
+        mapInstanceRef.current.fitBounds(bounds);
+        
+        if (ubicaciones.length === 1) {
           mapInstanceRef.current.setZoom(15);
-        } else {
-          mapInstanceRef.current.fitBounds(bounds, { padding: 50 });
         }
       }
 
@@ -405,23 +261,17 @@ export function StableGoogleMap({
       };
     }
 
-    // Enhanced fallback coordinates for common postal codes
+    // Fallback coordinates by postal code
     const cpMap: { [key: string]: { lat: number; lng: number } } = {
-      '01000': { lat: 19.4326, lng: -99.1332 }, // CDMX Centro
-      '62577': { lat: 18.8711, lng: -99.2211 }, // Jiutepec, Morelos
-      '22000': { lat: 32.5149, lng: -117.0382 }, // Tijuana, BC
-      '22010': { lat: 32.52, lng: -117.03 }, // Tijuana Centro
-      '03100': { lat: 19.3927, lng: -99.1588 }, // CDMX Sur
-      '06700': { lat: 19.4284, lng: -99.1676 }, // CDMX Roma
-      '11000': { lat: 19.4069, lng: -99.1716 }, // CDMX Centro
-      '44100': { lat: 20.6597, lng: -103.3496 }, // Guadalajara Centro
-      '64000': { lat: 25.6866, lng: -100.3161 }, // Monterrey Centro
-      '20000': { lat: 20.9674, lng: -89.5926 }, // Mérida Centro
-      '80000': { lat: 25.7903, lng: -108.9850 }, // Culiacán Centro
+      '01000': { lat: 19.4326, lng: -99.1332 },
+      '03100': { lat: 19.3927, lng: -99.1588 },
+      '06700': { lat: 19.4284, lng: -99.1676 },
+      '11000': { lat: 19.4069, lng: -99.1716 },
+      '62577': { lat: 18.8711, lng: -99.2211 },
+      '22000': { lat: 32.5149, lng: -117.0382 },
     };
 
-    const cp = ubicacion.domicilio?.codigoPostal;
-    return cpMap[cp] || { lat: 19.4326, lng: -99.1332 };
+    return cpMap[ubicacion.domicilio?.codigoPostal] || { lat: 19.4326, lng: -99.1332 };
   };
 
   const getMarkerIcon = (tipo: string) => {
@@ -434,121 +284,86 @@ export function StableGoogleMap({
   };
 
   const handleRetry = () => {
-    console.log('🔄 Retrying map initialization');
+    console.log('🔄 Retrying Google Maps initialization');
     setMapState(prev => ({ 
       ...prev, 
       error: '', 
-      isLoaded: false, 
+      retryCount: prev.retryCount + 1,
       isInitialized: false,
-      containerReady: false,
-      retryCount: 0,
-      apiKeyValid: false,
       loadingMessage: 'Reintentando...'
     }));
-    scriptLoadedRef.current = false;
-    
-    // Remove existing script
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existingScript) {
-      existingScript.remove();
-    }
-    window.google = undefined;
   };
 
-  // Configuration needed state
-  if (!mapState.apiKeyValid && mapState.error && mapState.retryCount >= 3) {
+  if (apiError) {
     return (
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <Settings className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-              <p className="text-sm text-yellow-800 mb-2">Google Maps requiere configuración</p>
-              <p className="text-xs text-yellow-700 mb-4">
-                Configure su Google Maps API key en Supabase Edge Function Secrets
-              </p>
-              <Button variant="outline" size="sm" onClick={handleRetry}>
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Verificar configuración
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Error with retry
-  if (mapState.error && mapState.retryCount < 3) {
-    return (
-      <Card className="border-red-200">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <p className="text-sm text-red-600 mb-2">Mapa temporalmente no disponible</p>
-              <p className="text-xs text-gray-500 mb-4">{mapState.error}</p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" size="sm" onClick={handleRetry}>
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Reintentar ({3 - mapState.retryCount} intentos restantes)
-                </Button>
-              </div>
-            </div>
-          </div>
+      <Card className={`border-red-200 ${isFullscreen ? 'fixed inset-4 z-50 bg-white' : ''}`}>
+        <CardContent className="p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Error de configuración</h3>
+          <p className="text-red-600 mb-4">{apiError}</p>
+          <p className="text-sm text-gray-600">
+            Configure GOOGLE_MAPS_API_KEY en los secretos de Edge Functions para usar el mapa.
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className={`border border-blue-200 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-4 z-50 bg-white' : ''}`}>
-      <div className="flex items-center justify-between p-3 bg-blue-50 border-b border-blue-200">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-blue-600" />
-          <span className="text-sm font-medium text-blue-800">Visualización de Ruta</span>
-          {!mapState.isInitialized && mapState.isLoaded && (
-            <Badge variant="outline" className="ml-2">
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              {mapState.loadingMessage}
-            </Badge>
-          )}
-          {mapState.isInitialized && (
-            <Badge variant="outline" className="ml-2 bg-green-100 text-green-800">
-              ✓ Listo
-            </Badge>
+    <Card className={`border-blue-200 ${isFullscreen ? 'fixed inset-4 z-50 bg-white' : ''}`}>
+      <CardContent className="p-0">
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 bg-blue-50 border-b border-blue-200">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">Mapa de Google</span>
+            {mapState.isInitialized && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                Listo
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {mapState.error && (
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Reintentar
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Map Container */}
+        <div className={`bg-gray-100 overflow-hidden ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-96'}`}>
+          {mapState.error ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center p-4">
+                <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                <p className="text-sm text-red-600 mb-2">{mapState.error}</p>
+                <Button variant="outline" size="sm" onClick={handleRetry}>
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Reintentar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div ref={mapRef} className="w-full h-full" />
+              {!mapState.isInitialized && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <div className="text-center">
+                    <Loader2 className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
+                    <p className="text-sm text-gray-600">{mapState.loadingMessage}</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onToggleFullscreen}
-        >
-          {isFullscreen ? 
-            <Minimize2 className="h-4 w-4" /> : 
-            <Maximize2 className="h-4 w-4" />
-          }
-        </Button>
-      </div>
-      
-      <div className={`bg-gray-100 overflow-hidden relative ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'h-96'}`}>
-        <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px' }} />
-        {(!mapState.isInitialized) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
-              <p className="text-sm text-gray-600">
-                {mapState.loadingMessage}
-              </p>
-              {mapState.retryCount > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Intento {mapState.retryCount + 1} de 3
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
