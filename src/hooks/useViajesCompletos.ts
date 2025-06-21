@@ -42,7 +42,7 @@ export interface ViajeCompleto {
   mercancias?: {
     descripcion: string;
     cantidad: number;
-    peso_total: number;
+    peso_kg: number;
     valor_total?: number;
   }[];
   // Cliente/receptor
@@ -73,11 +73,23 @@ export const useViajesCompletos = () => {
 
       // Enriquecer con datos de tracking_data
       const viajesEnriquecidos = data.map(viaje => {
-        const trackingData = viaje.tracking_data || {};
+        let trackingData: any = {};
+        
+        // Safely parse tracking_data if it's a string
+        if (typeof viaje.tracking_data === 'string') {
+          try {
+            trackingData = JSON.parse(viaje.tracking_data);
+          } catch (e) {
+            console.warn('Error parsing tracking_data:', e);
+            trackingData = {};
+          }
+        } else if (viaje.tracking_data && typeof viaje.tracking_data === 'object') {
+          trackingData = viaje.tracking_data;
+        }
         
         return {
           ...viaje,
-          mercancias: trackingData.mercancias || [],
+          mercancias: Array.isArray(trackingData.mercancias) ? trackingData.mercancias : [],
           cliente: trackingData.cliente || null,
           conductor: viaje.conductor,
           vehiculo: viaje.vehiculo
