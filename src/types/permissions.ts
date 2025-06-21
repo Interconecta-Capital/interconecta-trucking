@@ -37,4 +37,11 @@ export type FunctionalityType =
   | 'vehiculos'
   | 'socios'
   | 'dashboard'
-  | 'viajes';
+  | 'viajes'
+  | 'invoicing'
+  | 'notifications'
+  | 'profile'
+  | 'reports'
+  | 'security'
+  | 'users'
+  | 'trips';
