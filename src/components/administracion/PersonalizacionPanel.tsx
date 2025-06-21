@@ -1,151 +1,130 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Palette, Upload, Eye, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Palette, 
+  Building2, 
+  ExternalLink,
+  Settings,
+  CheckCircle,
+  AlertTriangle
+} from 'lucide-react';
+import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { useNavigate } from 'react-router-dom';
 
 export function PersonalizacionPanel() {
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [colorPrimario, setColorPrimario] = useState('#3B82F6');
-  const [colorSecundario, setColorSecundario] = useState('#1E40AF');
+  const navigate = useNavigate();
+  const { 
+    configuracion, 
+    validarConfiguracionCompleta, 
+    tieneCertificadoValido 
+  } = useConfiguracionEmpresarial();
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-    }
-  };
+  const configuracionCompleta = validarConfiguracionCompleta();
+  const certificadoValido = tieneCertificadoValido();
 
   return (
     <div className="space-y-6">
+      {/* Configuración Empresarial */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Logo de la Empresa
+            <Building2 className="h-5 w-5" />
+            Configuración Empresarial
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="logo-upload">Subir Logo</Label>
-            <Input
-              id="logo-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              className="mt-1"
-            />
-          </div>
-          {logoFile && (
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                Archivo seleccionado: {logoFile.name}
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-medium">Mi Empresa</h4>
+              <p className="text-sm text-gray-600">
+                Gestione los datos fiscales, certificados digitales y configuración operativa de su empresa
               </p>
             </div>
+            <div className="flex items-center gap-2">
+              {configuracionCompleta && certificadoValido ? (
+                <Badge variant="default" className="bg-green-600">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Configurado
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-yellow-600 text-yellow-800">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Pendiente
+                </Badge>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => navigate('/configuracion/empresa')}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Configurar
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
+          {(!configuracionCompleta || !certificadoValido) && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-800">Configuración Incompleta</span>
+                </div>
+                <ul className="text-xs text-yellow-700 space-y-1 ml-6">
+                  {!configuracionCompleta && (
+                    <li>• Complete los datos fiscales de su empresa</li>
+                  )}
+                  {!certificadoValido && (
+                    <li>• Configure al menos un certificado de sello digital válido</li>
+                  )}
+                </ul>
+              </div>
+            </div>
           )}
-          <Button>
-            <Save className="h-4 w-4 mr-2" />
-            Guardar Logo
-          </Button>
+
+          <Separator />
+
+          {configuracionCompleta && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Razón Social:</span>
+                <div className="text-gray-600">{configuracion?.razon_social}</div>
+              </div>
+              <div>
+                <span className="font-medium">RFC:</span>
+                <div className="text-gray-600">{configuracion?.rfc_emisor}</div>
+              </div>
+              <div>
+                <span className="font-medium">Régimen Fiscal:</span>
+                <div className="text-gray-600">{configuracion?.regimen_fiscal}</div>
+              </div>
+              <div>
+                <span className="font-medium">Serie Carta Porte:</span>
+                <div className="text-gray-600">{configuracion?.serie_carta_porte}</div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
+      {/* Personalización de Interfaz */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            Personalización de Colores
+            Personalización de Interfaz
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="color-primario">Color Primario</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="color-primario"
-                  type="color"
-                  value={colorPrimario}
-                  onChange={(e) => setColorPrimario(e.target.value)}
-                  className="w-16 h-10"
-                />
-                <Input
-                  type="text"
-                  value={colorPrimario}
-                  onChange={(e) => setColorPrimario(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="color-secundario">Color Secundario</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="color-secundario"
-                  type="color"
-                  value={colorSecundario}
-                  onChange={(e) => setColorSecundario(e.target.value)}
-                  className="w-16 h-10"
-                />
-                <Input
-                  type="text"
-                  value={colorSecundario}
-                  onChange={(e) => setColorSecundario(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              Vista Previa
-            </Button>
-            <Button>
-              <Save className="h-4 w-4 mr-2" />
-              Aplicar Cambios
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Panel Personalizado</CardTitle>
-        </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Configure widgets y elementos personalizados para el dashboard principal.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Widgets Disponibles</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li>• Estadísticas de cartas porte</li>
-                  <li>• Gráficos de rendimiento</li>
-                  <li>• Calendario de eventos</li>
-                  <li>• Estado de vehículos</li>
-                </ul>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Configuración</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full">
-                  Personalizar Dashboard
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="text-center py-8 text-gray-500">
+            <Palette className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p>Las opciones de personalización de interfaz están en desarrollo</p>
+            <p className="text-sm">Próximamente podrá personalizar temas, colores y logotipos</p>
           </div>
         </CardContent>
       </Card>
