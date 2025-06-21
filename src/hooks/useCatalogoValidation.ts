@@ -15,34 +15,44 @@ export const useCatalogoValidation = () => {
     claveUnidad?: { valid: boolean; item?: CatalogoItem };
   }>({});
 
-  // Cargar catálogo de productos SAT
+  // Cargar catálogo de productos SAT usando la tabla correcta
   const { data: catalogoProductos } = useQuery({
     queryKey: ['catalogo-productos-sat'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('catalogo_claves_productos_servicios')
-        .select('clave, descripcion, vigente_desde, vigente_hasta')
-        .eq('vigente', true)
-        .order('clave');
+        .from('cat_clave_prod_serv_cp')
+        .select('clave_prod_serv, descripcion, fecha_inicio_vigencia, fecha_fin_vigencia')
+        .order('clave_prod_serv');
       
       if (error) throw error;
-      return data;
+      
+      // Transformar los datos para que coincidan con la interfaz esperada
+      return data?.map(item => ({
+        clave: item.clave_prod_serv,
+        descripcion: item.descripcion,
+        vigente: true // Simplificamos por ahora
+      })) || [];
     },
     staleTime: 1000 * 60 * 30, // 30 minutos
   });
 
-  // Cargar catálogo de unidades SAT
+  // Cargar catálogo de unidades SAT usando la tabla correcta
   const { data: catalogoUnidades } = useQuery({
     queryKey: ['catalogo-unidades-sat'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('catalogo_unidades_medida')
-        .select('clave, nombre, descripcion, vigente')
-        .eq('vigente', true)
-        .order('clave');
+        .from('cat_clave_unidad')
+        .select('clave_unidad, nombre, descripcion')
+        .order('clave_unidad');
       
       if (error) throw error;
-      return data;
+      
+      // Transformar los datos para que coincidan con la interfaz esperada
+      return data?.map(item => ({
+        clave: item.clave_unidad,
+        descripcion: item.nombre || item.descripcion,
+        vigente: true
+      })) || [];
     },
     staleTime: 1000 * 60 * 30, // 30 minutos
   });
@@ -76,8 +86,8 @@ export const useCatalogoValidation = () => {
       valid: !!item, 
       item: item ? {
         clave: item.clave,
-        descripcion: item.nombre || item.descripcion,
-        vigente: item.vigente
+        descripcion: item.descripcion,
+        vigente: true
       } : undefined
     };
 
@@ -108,8 +118,7 @@ export const useCatalogoValidation = () => {
     return catalogoUnidades
       .filter(u => 
         u.clave.toLowerCase().includes(term) ||
-        (u.nombre && u.nombre.toLowerCase().includes(term)) ||
-        (u.descripcion && u.descripcion.toLowerCase().includes(term))
+        u.descripcion.toLowerCase().includes(term)
       )
       .slice(0, limit);
   }, [catalogoUnidades]);
