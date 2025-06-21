@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,15 +10,12 @@ import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
 import { toast } from 'sonner';
 import { Truck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { SecureInput } from '@/components/security/SecureInput';
-import { useCSRF } from '@/components/security/CSRFProtection';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { secureLogin, isLoading } = useSecureAuth();
-  const { csrfToken, validateToken } = useCSRF();
   
   const {
     unconfirmedEmail,
@@ -29,12 +27,6 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // CSRF protection
-    if (!validateToken(csrfToken)) {
-      toast.error('Token de seguridad inválido. Recarga la página.');
-      return;
-    }
     
     const success = await secureLogin(email, password);
     if (!success) {
@@ -62,36 +54,32 @@ export function LoginForm() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="hidden" value={csrfToken} />
-              
               <div className="space-y-2">
                 <Label htmlFor="email" className="font-inter text-interconecta-text-body">
                   Correo Electrónico
                 </Label>
-                <SecureInput
+                <Input
                   id="email"
                   type="email"
                   placeholder="tu@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  validationType="email"
                   required
+                  className="border-interconecta-border-subtle focus:ring-interconecta-primary"
                 />
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="password" className="font-inter text-interconecta-text-body">
                   Contraseña
                 </Label>
                 <div className="relative">
-                  <SecureInput
+                  <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    showValidation={false}
-                    className="pr-10"
+                    className="border-interconecta-border-subtle focus:ring-interconecta-primary pr-10"
                   />
                   <Button
                     type="button"
@@ -108,7 +96,6 @@ export function LoginForm() {
                   </Button>
                 </div>
               </div>
-              
               <Button 
                 type="submit" 
                 className="w-full bg-interconecta-primary hover:bg-interconecta-accent font-sora font-medium" 

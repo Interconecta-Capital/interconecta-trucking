@@ -79,41 +79,13 @@ export const useAccessPermissions = () => {
           razon: !tienePermiso('puede_acceder_enterprise') ? 'Funciones enterprise disponibles solo en Plan Enterprise Sin Límites' : undefined
         };
 
-      // New functionality types - map to existing permissions or default behavior
-      case 'invoicing':
-        return { 
-          puede: tienePermiso('puede_timbrar'),
-          razon: !tienePermiso('puede_timbrar') ? 'Facturación no disponible en su plan actual' : undefined
-        };
-      
-      case 'reports':
-        return { 
-          puede: tienePermiso('puede_acceder_administracion'),
-          razon: !tienePermiso('puede_acceder_administracion') ? 'Reportes disponibles desde Plan Gestión IA' : undefined
-        };
-      
-      case 'users':
-        return { 
-          puede: tienePermiso('puede_acceder_administracion'),
-          razon: !tienePermiso('puede_acceder_administracion') ? 'Gestión de usuarios disponible desde Plan Gestión IA' : undefined
-        };
-      
-      case 'security':
-        return { 
-          puede: tienePermiso('puede_acceder_funciones_avanzadas'),
-          razon: !tienePermiso('puede_acceder_funciones_avanzadas') ? 'Configuración de seguridad disponible desde Plan Automatización Total' : undefined
-        };
-
-      // Basic modules - generally available
+      // Módulos básicos - generalmente disponibles en todos los planes
       case 'cartas_porte':
       case 'conductores':
       case 'vehiculos':
       case 'socios':
       case 'dashboard':
       case 'viajes':
-      case 'trips':
-      case 'notifications':
-      case 'profile':
         return { puede: true };
       
       default:
