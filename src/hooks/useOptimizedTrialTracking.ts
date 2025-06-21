@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { useUnifiedAuth } from './useUnifiedAuth';
+import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, parseISO } from 'date-fns';
 
@@ -15,7 +15,7 @@ interface TrialInfo {
 }
 
 export const useOptimizedTrialTracking = () => {
-  const { user } = useUnifiedAuth();
+  const { user } = useAuth();
   const [trialInfo, setTrialInfo] = useState<TrialInfo>({
     daysUsed: 0,
     daysRemaining: 14,

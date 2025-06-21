@@ -1,11 +1,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useUnifiedAuth } from './useUnifiedAuth';
+import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
 export const useOptimizedSuperuser = () => {
-  const { user } = useUnifiedAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: isSuperuser = false, isLoading } = useQuery({
