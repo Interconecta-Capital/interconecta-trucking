@@ -81,13 +81,20 @@ export function PersonalizedWelcome() {
         };
       default:
         return {
-          title: '¡Bienvenido a InterConecta!',
+          title: '¡Bienvenido a Interconecta!',
           subtitle: 'La plataforma más inteligente para gestión de transporte',
           icon: Star,
           color: 'orange',
           estimatedTime: '6 minutos'
         };
     }
+  };
+
+  const handleSkipWithOption = (neverShow: boolean = false) => {
+    if (neverShow) {
+      localStorage.setItem('never_show_welcome', 'true');
+    }
+    skipOnboarding();
   };
 
   const roleInfo = getRoleInfo();
@@ -178,21 +185,35 @@ export function PersonalizedWelcome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="flex gap-3 pt-4"
+            className="space-y-3"
           >
-            <Button
-              variant="outline"
-              onClick={skipOnboarding}
-              className="flex-1"
-            >
-              Explorar por mi cuenta
-            </Button>
-            <Button
-              onClick={() => startOnboarding(userRole)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-            >
-              ¡Comenzar Tutorial!
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => handleSkipWithOption(false)}
+                className="flex-1"
+              >
+                Explorar por mi cuenta
+              </Button>
+              <Button
+                onClick={() => startOnboarding(userRole)}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                ¡Comenzar Tutorial!
+              </Button>
+            </div>
+            
+            {/* Opción de no volver a mostrar */}
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSkipWithOption(true)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                No volver a mostrar esta bienvenida
+              </Button>
+            </div>
           </motion.div>
         </CardContent>
       </Card>

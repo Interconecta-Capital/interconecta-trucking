@@ -13,15 +13,23 @@ export function OnboardingIntegration() {
     isWizardTutorialActive 
   } = useOnboarding();
 
+  // Verificar si se debe mostrar la bienvenida
+  const neverShowWelcome = localStorage.getItem('never_show_welcome');
+  const shouldShowWelcome = isOnboardingActive && 
+    currentStep?.id === 'welcome' && 
+    neverShowWelcome !== 'true';
+
   return (
     <>
-      {/* Bienvenida personalizada - solo al inicio */}
-      {isOnboardingActive && currentStep?.id === 'welcome' && (
+      {/* Bienvenida personalizada - solo al inicio y si no se ha marcado como "no mostrar" */}
+      {shouldShowWelcome && (
         <PersonalizedWelcome />
       )}
 
-      {/* Overlay principal del onboarding */}
-      <OnboardingOverlay />
+      {/* Overlay principal del onboarding - solo aparece si el usuario eligió "explorar" */}
+      {isOnboardingActive && currentStep?.id !== 'welcome' && (
+        <OnboardingOverlay />
+      )}
 
       {/* Tutorial del wizard - solo en el wizard de viajes */}
       {isWizardTutorialActive && (

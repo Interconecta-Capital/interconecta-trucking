@@ -154,7 +154,7 @@ const WIZARD_TUTORIAL_STEPS: Record<string, OnboardingStepData> = {
 const ONBOARDING_STEPS: Record<string, OnboardingStepData> = {
   welcome: {
     id: 'welcome',
-    title: '¡Bienvenido a InterConecta!',
+    title: '¡Bienvenido a Interconecta!',
     description: 'Te guiaremos paso a paso para que domines la plataforma en minutos.',
     completed: false
   },
@@ -217,17 +217,21 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   // Cargar progreso de onboarding desde localStorage
   useEffect(() => {
+    // Verificar si el usuario optó por no mostrar la bienvenida
+    const neverShowWelcome = localStorage.getItem('never_show_welcome');
+    if (neverShowWelcome === 'true') return;
+
     const savedProgress = localStorage.getItem(`onboarding_${user?.id}`);
     if (savedProgress) {
       const progress = JSON.parse(savedProgress);
       setCompletedSteps(progress.completedSteps || []);
       
-      // Auto-iniciar onboarding para usuarios nuevos
-      if (progress.completedSteps?.length === 0 && userRole === 'nuevo') {
+      // Solo auto-iniciar si no se ha marcado como "nunca mostrar"
+      if (progress.completedSteps?.length === 0 && userRole === 'nuevo' && !neverShowWelcome) {
         setIsOnboardingActive(true);
         setCurrentStep(ONBOARDING_STEPS.welcome);
       }
-    } else if (userRole === 'nuevo') {
+    } else if (userRole === 'nuevo' && !neverShowWelcome) {
       // Primera vez - iniciar onboarding automáticamente
       setTimeout(() => {
         setIsOnboardingActive(true);
