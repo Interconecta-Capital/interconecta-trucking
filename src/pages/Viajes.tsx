@@ -62,7 +62,6 @@ export default function Viajes() {
               onAction={handleNuevoViaje}
             >
               <Button 
-                onClick={handleNuevoViaje}
                 className={`flex items-center gap-2 ${isMobile ? 'h-12 w-full justify-center' : ''}`}
                 data-onboarding="nuevo-viaje-btn"
               >

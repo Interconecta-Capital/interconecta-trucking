@@ -115,8 +115,12 @@ export default function StableVehiculos() {
               action="create"
               resource="vehiculos"
               onAction={handleNewVehiculo}
-              buttonText="Nuevo Vehículo"
-            />
+            >
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nuevo Vehículo
+              </Button>
+            </ProtectedActions>
           </div>
         </SectionHeader>
 

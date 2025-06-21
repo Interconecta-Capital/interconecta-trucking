@@ -10,6 +10,7 @@ import {
   Users,
   Route,
   Plus,
+  Wrench,
 } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
@@ -174,6 +175,26 @@ export const AppSidebar = () => {
                   <Car className="h-4 w-4 flex-shrink-0" />
                   {!isCollapsed && (
                     <span className="font-medium truncate">Vehículos</span>
+                  )}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                asChild 
+                isActive={isActive('/remolques')}
+                className={`rounded-lg transition-all duration-200 ${
+                  isActive('/remolques') 
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+                tooltip={isCollapsed ? "Remolques" : undefined}
+              >
+                <Link to="/remolques" className="flex items-center gap-3 px-3 py-2.5 min-w-0">
+                  <Wrench className="h-4 w-4 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <span className="font-medium truncate">Remolques</span>
                   )}
                 </Link>
               </SidebarMenuButton>
