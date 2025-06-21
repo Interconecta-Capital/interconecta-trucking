@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -28,6 +27,22 @@ export function useConductores() {
       toast.error('Error cargando conductores');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getConductorById = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('conductores')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching conductor by ID:', error);
+      throw error;
     }
   };
 
@@ -148,6 +163,7 @@ export function useConductores() {
     loading,
     error,
     fetchConductores,
+    getConductorById,
     createConductor,
     updateConductor,
     deleteConductor,

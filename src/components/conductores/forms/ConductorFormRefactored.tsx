@@ -23,23 +23,18 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<any>({});
   
-  const { createConductor, updateConductor, getConductorById } = useConductores();
+  const { conductores, createConductor, updateConductor } = useConductores();
   const { handleSubmit, formState: { errors } } = useForm();
 
   // Load existing conductor data if editing
   React.useEffect(() => {
-    if (conductorId) {
-      const loadConductor = async () => {
-        try {
-          const conductor = await getConductorById(conductorId);
-          setFormData(conductor);
-        } catch (error) {
-          toast.error('Error al cargar datos del conductor');
-        }
-      };
-      loadConductor();
+    if (conductorId && conductores.length > 0) {
+      const conductor = conductores.find(c => c.id === conductorId);
+      if (conductor) {
+        setFormData(conductor);
+      }
     }
-  }, [conductorId, getConductorById]);
+  }, [conductorId, conductores]);
 
   const steps = [
     {
@@ -116,14 +111,28 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
     }
   };
 
+  // Convert react-hook-form errors to simple string format
+  const getFieldErrors = () => {
+    const fieldErrors: Record<string, string> = {};
+    Object.keys(errors).forEach(key => {
+      const error = errors[key];
+      if (error && typeof error.message === 'string') {
+        fieldErrors[key] = error.message;
+      }
+    });
+    return fieldErrors;
+  };
+
   const renderStepContent = () => {
+    const fieldErrors = getFieldErrors();
+    
     switch (currentStep) {
       case 0:
         return (
           <ConductorBasicFields
             formData={formData}
             onFieldChange={handleFieldChange}
-            errors={errors}
+            errors={fieldErrors}
           />
         );
       case 1:
@@ -131,7 +140,7 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
           <ConductorLicenciaFields
             formData={formData}
             onFieldChange={handleFieldChange}
-            errors={errors}
+            errors={fieldErrors}
           />
         );
       case 2:
