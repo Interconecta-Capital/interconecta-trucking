@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AppSidebarProps {
@@ -33,11 +34,11 @@ export function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { subscription } = useSubscription();
+  const { suscripcion } = useSuscripcion();
   const isMobile = useIsMobile();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const isPro = subscription?.status === "active";
+  const isPro = suscripcion?.status === "active";
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,50 +47,64 @@ export function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
 
   const renderSidebarMenu = () => (
     <SidebarMenu>
-      <SidebarMenuItem
-        title="Panel"
-        icon={Gauge}
-        href="/panel"
-        isActive={location.pathname === '/panel'}
-      />
-      <SidebarMenuItem
-        title="Empresas"
-        icon={Building2}
-        href="/empresas"
-        isActive={location.pathname === '/empresas'}
-      />
-      <SidebarMenuItem
-        title="Viajes"
-        icon={Truck}
-        href="/viajes/nuevo"
-        isActive={location.pathname.startsWith('/viajes')}
-      />
-      <SidebarMenuItem
-        title="Carta Porte"
-        icon={FileText}
-        href="/carta-porte/lista"
-        isActive={location.pathname.startsWith('/carta-porte')}
-      />
-      <SidebarMenuItem
-        title="Usuarios"
-        icon={Users}
-        href="/usuarios"
-        isActive={location.pathname === '/usuarios'}
-      />
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={location.pathname === '/panel'}>
+          <Link to="/panel" className="flex items-center gap-3">
+            <Gauge className="h-4 w-4" />
+            <span>Panel</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={location.pathname === '/empresas'}>
+          <Link to="/empresas" className="flex items-center gap-3">
+            <Building2 className="h-4 w-4" />
+            <span>Empresas</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={location.pathname.startsWith('/viajes')}>
+          <Link to="/viajes/nuevo" className="flex items-center gap-3">
+            <Truck className="h-4 w-4" />
+            <span>Viajes</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={location.pathname.startsWith('/carta-porte')}>
+          <Link to="/carta-porte/lista" className="flex items-center gap-3">
+            <FileText className="h-4 w-4" />
+            <span>Carta Porte</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={location.pathname === '/usuarios'}>
+          <Link to="/usuarios" className="flex items-center gap-3">
+            <Users className="h-4 w-4" />
+            <span>Usuarios</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
       {isPro && (
-        <SidebarMenuItem
-          title="Reportes"
-          icon={BarChart3}
-          href="/reportes"
-          isActive={location.pathname === '/reportes'}
-        />
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild isActive={location.pathname === '/reportes'}>
+            <Link to="/reportes" className="flex items-center gap-3">
+              <BarChart3 className="h-4 w-4" />
+              <span>Reportes</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
       )}
-      <SidebarMenuItem
-        title="Planes"
-        icon={CreditCard}
-        href="/planes"
-        isActive={location.pathname === '/planes'}
-      />
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={location.pathname === '/planes'}>
+          <Link to="/planes" className="flex items-center gap-3">
+            <CreditCard className="h-4 w-4" />
+            <span>Planes</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     </SidebarMenu>
   );
 
@@ -105,7 +120,7 @@ export function AppSidebar({ open, onOpenChange }: AppSidebarProps) {
   );
 
   return (
-    <Sidebar open={open} onOpenChange={onOpenChange}>
+    <Sidebar>
       <SidebarContent>
         <SidebarHeader>
           <Link to="/" className="flex items-center gap-3">

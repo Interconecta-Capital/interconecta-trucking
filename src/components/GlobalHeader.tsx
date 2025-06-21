@@ -1,10 +1,10 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Settings, User, Menu } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/UserMenu';
-import { useNotifications } from '@/hooks/useNotifications';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PlanBadge } from '@/components/PlanBadge';
 import { MobileTrialInfo } from '@/components/MobileTrialInfo';
@@ -15,8 +15,8 @@ interface GlobalHeaderProps {
 }
 
 export const GlobalHeader: React.FC<GlobalHeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
-  const { notifications } = useNotifications();
   const isMobile = useIsMobile();
+  const [notifications] = useState([]); // Mock notifications array
 
   return (
     <header className="bg-pure-white border-b border-gray-20 sticky top-0 z-40">
@@ -38,7 +38,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({ sidebarOpen, setSide
             <Bell className="h-4 w-4" />
             {notifications.length > 0 && (
               <Badge
-                variant="primary"
+                variant="destructive"
                 className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0"
               >
                 {notifications.length}
