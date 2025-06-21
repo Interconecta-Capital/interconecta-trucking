@@ -1,5 +1,6 @@
 
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
+import { CartaPorteData, MercanciaCompleta } from '@/types/cartaPorte';
 
 export class ViajeToCartaPorteMapper {
   static mapToCartaPorteData(wizardData: ViajeWizardData) {
@@ -45,17 +46,19 @@ export class ViajeToCartaPorteMapper {
       });
     }
 
-    // Mapear mercancías básicas
-    const mercancias = [{
+    // Mapear mercancías con el tipo correcto MercanciaCompleta
+    const mercancias: MercanciaCompleta[] = [{
+      id: `mercancia-${Date.now()}`,
+      bienes_transp: '99999999',
       descripcion: wizardData.descripcionMercancia || 'Mercancía general',
       cantidad: 1,
-      claveUnidad: 'H87', // Pieza
-      unidad: 'Pieza',
-      pesoKg: 100, // Peso por defecto
-      valorMercancia: 1000, // Valor por defecto
+      clave_unidad: 'H87', // Pieza
+      peso_kg: 100, // Peso por defecto
+      valor_mercancia: 1000, // Valor por defecto
       moneda: 'MXN',
-      fraccionArancelaria: '99999999', // Por defecto para v3.1
-      bienesTransp: '99999999'
+      material_peligroso: false,
+      especie_protegida: false,
+      fraccion_arancelaria: '99999999'
     }];
 
     // Mapear autotransporte
@@ -90,22 +93,75 @@ export class ViajeToCartaPorteMapper {
     };
   }
 
-  static mapToValidCartaPorteFormat(wizardData: ViajeWizardData) {
-    const cartaPorteData = this.mapToCartaPorteData(wizardData);
+  static mapToValidCartaPorteFormat(wizardData: ViajeWizardData): CartaPorteData {
+    const baseData = this.mapToCartaPorteData(wizardData);
     
     // Validar datos requeridos
-    if (!cartaPorteData.configuracion.receptor.rfc) {
+    if (!baseData.configuracion.receptor.rfc) {
       throw new Error('RFC del cliente es requerido');
     }
 
-    if (cartaPorteData.ubicaciones.length < 2) {
+    if (baseData.ubicaciones.length < 2) {
       throw new Error('Se requieren al menos origen y destino');
     }
 
-    if (cartaPorteData.mercancias.length === 0) {
+    if (baseData.mercancias.length === 0) {
       throw new Error('Se requiere al menos una mercancía');
     }
 
-    return cartaPorteData;
+    // Retornar en formato CartaPorteData
+    return {
+      cartaPorteVersion: '3.1',
+      rfcEmisor: baseData.configuracion.emisor.rfc,
+      nombreEmisor: baseData.configuracion.emisor.nombre,
+      regimenFiscalEmisor: baseData.configuracion.emisor.regimenFiscal,
+      rfcReceptor: baseData.configuracion.receptor.rfc,
+      nombreReceptor: baseData.configuracion.receptor.nombre,
+      usoCfdi: baseData.configuracion.receptor.usoCfdi,
+      tipoCfdi: 'T', // Traslado
+      transporteInternacional: false,
+      registroIstmo: false,
+      viaTransporte: '01', // Autotransporte
+      mercancias: baseData.mercancias,
+      ubicaciones: baseData.ubicaciones.map(ub => ({
+        id: ub.idUbicacion,
+        tipo_ubicacion: ub.tipoUbicacion,
+        rfc: baseData.configuracion.receptor.rfc,
+        nombre: baseData.configuracion.receptor.nombre,
+        fecha_llegada_salida: ub.fechaHoraSalidaLlegada,
+        fecha_hora_salida_llegada: ub.fechaHoraSalidaLlegada,
+        distancia_recorrida: ub.distanciaRecorrida || 0,
+        coordenadas: ub.coordenadas,
+        domicilio: {
+          pais: 'MEX',
+          codigo_postal: ub.codigoPostal || '06600',
+          estado: 'Ciudad de México',
+          municipio: 'Ciudad de México',
+          colonia: 'Centro',
+          calle: ub.direccion || 'Calle sin número'
+        }
+      })),
+      autotransporte: {
+        placa_vm: baseData.autotransporte.placa,
+        anio_modelo_vm: baseData.autotransporte.anioModeloVm,
+        config_vehicular: baseData.autotransporte.configVehicular,
+        perm_sct: 'TPAF03',
+        num_permiso_sct: 'SCT-123456',
+        asegura_resp_civil: 'SEGUROS SA',
+        poliza_resp_civil: 'POL123456',
+        asegura_med_ambiente: 'SEGUROS SA',
+        poliza_med_ambiente: 'POL123456',
+        peso_bruto_vehicular: baseData.autotransporte.pesoBrutoVehicular,
+        tipo_carroceria: '01'
+      },
+      figuras: baseData.figuras.map(fig => ({
+        id: `figura-${Date.now()}`,
+        tipo_figura: fig.tipoFigura,
+        rfc_figura: fig.rfcFigura,
+        nombre_figura: fig.nombreFigura,
+        num_licencia: fig.numLicencia,
+        tipo_licencia: fig.tipoLicencia
+      }))
+    };
   }
 }

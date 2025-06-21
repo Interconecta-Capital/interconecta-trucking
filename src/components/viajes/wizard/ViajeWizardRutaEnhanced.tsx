@@ -62,7 +62,8 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           municipio: 'Ciudad de México',
           estado: 'Ciudad de México',
           pais: 'MEX',
-          codigoPostal: '06600'
+          codigoPostal: '06600',
+          colonia: 'Centro' // Agregada propiedad faltante
         },
         fechaHoraSalidaLlegada: fechaSalida
       });
@@ -77,7 +78,8 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           municipio: 'Guadalajara',
           estado: 'Jalisco',
           pais: 'MEX',
-          codigoPostal: '44100'
+          codigoPostal: '44100',
+          colonia: 'Centro Histórico' // Agregada propiedad faltante
         },
         fechaHoraSalidaLlegada: fechaLlegada
       });

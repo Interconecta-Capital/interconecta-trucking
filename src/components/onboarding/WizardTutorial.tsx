@@ -132,7 +132,7 @@ export function WizardTutorial({ currentWizardStep, onNext, onSkip }: WizardTuto
   return (
     <>
       {/* CSS para el highlight */}
-      <style jsx global>{`
+      <style>{`
         .tutorial-highlight {
           position: relative;
           z-index: 45;
