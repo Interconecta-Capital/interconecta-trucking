@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,7 +21,7 @@ import { useAdvancedValidation } from '@/hooks/useAdvancedValidation';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
 import { toast } from 'sonner';
-import { Building, FileText, MapPin, CreditCard } from 'lucide-react';
+import { Building, FileText, MapPin, CreditCard, Upload } from 'lucide-react';
 
 const socioSchema = z.object({
   // Información básica
@@ -119,6 +118,7 @@ export function SocioFormAdvanced({
 }: SocioFormAdvancedProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [socioId, setSocioId] = useState<string | null>(null);
+  const [constanciaFile, setConstanciaFile] = useState<File | null>(null);
   
   const { validateRFC, validationStates } = useAdvancedValidation();
   const { documentos, cargarDocumentos } = useDocumentosEntidades();
@@ -177,6 +177,14 @@ export function SocioFormAdvanced({
       cargarDocumentos('socio', socio.id);
     }
   }, [socio, cargarDocumentos]);
+
+  const handleConstanciaUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setConstanciaFile(file);
+      toast.success('Constancia de situación fiscal cargada');
+    }
+  };
 
   const handleNext = async () => {
     let isValid = true;
@@ -325,7 +333,7 @@ export function SocioFormAdvanced({
               </div>
             </div>
 
-            {/* Dirección Fiscal */}
+            {/* Dirección Fiscal con campo de colonia */}
             <div className="space-y-4 p-4 border rounded-lg">
               <h4 className="font-medium flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -390,6 +398,43 @@ export function SocioFormAdvanced({
                     defaultValue="México"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Constancia de Situación Fiscal */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h4 className="font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Constancia de Situación Fiscal
+              </h4>
+              
+              <div className="space-y-2">
+                <Label>Subir Constancia</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleConstanciaUpload}
+                    className="hidden"
+                    id="constancia-upload"
+                  />
+                  <label htmlFor="constancia-upload">
+                    <Button type="button" variant="outline" className="cursor-pointer" asChild>
+                      <span className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        {constanciaFile ? 'Cambiar archivo' : 'Subir archivo'}
+                      </span>
+                    </Button>
+                  </label>
+                  {constanciaFile && (
+                    <span className="text-sm text-green-600">
+                      ✓ {constanciaFile.name}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  PDF, JPG, PNG hasta 5MB
+                </p>
               </div>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { ConductorBasicFields } from './ConductorBasicFields';
 import { ConductorLicenciaFields } from './ConductorLicenciaFields';
 import { ConductorSCTFields } from './ConductorSCTFields';
 import { ConductorDireccionFields } from './ConductorDireccionFields';
+import { ConductorVehiculoAsignacionFields } from './ConductorVehiculoAsignacionFields';
 import { FormStepper } from './FormStepper';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -57,6 +58,11 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       id: 'sct',
       title: 'Datos SCT',
       description: 'Información del Sistema de Transporte'
+    },
+    {
+      id: 'vehiculo',
+      title: 'Asignación',
+      description: 'Vehículo y remolque asignado'
     }
   ];
 
@@ -83,6 +89,9 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
         break;
       case 3: // SCT info
         // Optional validation for SCT
+        break;
+      case 4: // Vehicle assignment
+        // Optional validation for vehicle assignment
         break;
     }
     return true;
@@ -168,6 +177,13 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       case 3:
         return (
           <ConductorSCTFields
+            formData={formData}
+            onFieldChange={handleFieldChange}
+          />
+        );
+      case 4:
+        return (
+          <ConductorVehiculoAsignacionFields
             formData={formData}
             onFieldChange={handleFieldChange}
           />
