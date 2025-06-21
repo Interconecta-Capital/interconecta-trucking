@@ -2967,18 +2967,7 @@ export type Database = {
       }
     }
     Views: {
-      rls_analysis_view: {
-        Row: {
-          all_policies: number | null
-          delete_policies: number | null
-          insert_policies: number | null
-          select_policies: number | null
-          table_name: string | null
-          total_policies: number | null
-          update_policies: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       assign_missing_trials: {
@@ -3030,6 +3019,10 @@ export type Database = {
       check_subscription_expiry: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      check_superuser_safe_v2: {
+        Args: { user_uuid: string }
+        Returns: boolean
       }
       check_user_access: {
         Args: { user_uuid: string }

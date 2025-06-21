@@ -10,10 +10,10 @@ import {
   Lock,
   TrendingUp 
 } from 'lucide-react';
-import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
 export function UnifiedPlanNotifications() {
-  const permissions = useUnifiedPermissions();
+  const permissions = useUnifiedPermissionsV2();
 
   // No mostrar nada para superusuarios
   if (permissions.accessLevel === 'superuser') {
