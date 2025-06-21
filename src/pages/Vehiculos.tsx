@@ -27,7 +27,6 @@ export default function Vehiculos() {
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
 
   const handleNewVehiculo = () => {
-    console.log('Vehiculos: handleNewVehiculo called');
     setSelectedVehiculo(null);
     setShowCreateDialog(true);
   };
@@ -101,7 +100,7 @@ export default function Vehiculos() {
           <ProtectedActions
             action="create"
             resource="vehiculos"
-            onAction={handleNewVehiculo}
+            onAction={() => setShowCreateDialog(true)}
             buttonText="Nuevo Vehículo"
           />
         </SectionHeader>
@@ -163,11 +162,7 @@ export default function Vehiculos() {
               <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-700">{vehiculos.filter(vehiculo =>
-                vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
-              ).length}</p>
+              <p className="text-3xl font-bold text-green-700">{filteredVehiculos.length}</p>
             </CardContent>
           </Card>
           
@@ -185,11 +180,7 @@ export default function Vehiculos() {
 
         {/* Tabla */}
         <VehiculosTable 
-          vehiculos={vehiculos.filter(vehiculo =>
-            vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
-          )}
+          vehiculos={filteredVehiculos}
           loading={loading}
           onEdit={(vehiculo) => {
             setSelectedVehiculo(vehiculo);

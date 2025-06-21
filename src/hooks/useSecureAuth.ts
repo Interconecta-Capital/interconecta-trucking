@@ -1,144 +1,240 @@
 
-import { useEffect, useCallback } from 'react';
-import { useAuth } from './useAuth';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEnhancedSecurity } from './useEnhancedSecurity';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export const useSecureAuth = () => {
-  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { checkRateLimit, logSecurityEvent, validateEmail } = useEnhancedSecurity();
+  const navigate = useNavigate();
 
-  // Log security events
-  const logSecurityEvent = useCallback(async (eventType: string, eventData: any = {}) => {
-    if (!user) return;
-
+  const secureLogin = useCallback(async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    
     try {
-      await supabase.rpc('log_security_event', {
-        p_user_id: user.id,
-        p_event_type: eventType,
-        p_event_data: eventData,
-        p_ip_address: null, // Client can't reliably get IP
-        p_user_agent: navigator.userAgent
-      });
-    } catch (error) {
-      console.error('Failed to log security event:', error);
-    }
-  }, [user]);
-
-  // Monitor suspicious activity
-  useEffect(() => {
-    if (!user) return;
-
-    // Log successful login
-    logSecurityEvent('USER_LOGIN', {
-      timestamp: new Date().toISOString(),
-      user_agent: navigator.userAgent
-    });
-
-    // Monitor for rapid requests (basic client-side detection)
-    let requestCount = 0;
-    const resetTime = 60000; // 1 minute
-
-    const monitorRequests = () => {
-      requestCount++;
-      if (requestCount > 100) { // More than 100 requests per minute
-        logSecurityEvent('SUSPICIOUS_ACTIVITY', {
-          type: 'HIGH_REQUEST_RATE',
-          count: requestCount,
-          timestamp: new Date().toISOString()
-        });
-        toast.warning('Actividad inusual detectada');
+      // Validate email format
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        toast.error(emailValidation.errors[0]);
+        return false;
       }
-    };
 
-    // Reset counter every minute
-    const interval = setInterval(() => {
-      requestCount = 0;
-    }, resetTime);
-
-    // Add event listener for monitoring
-    const originalFetch = window.fetch;
-    window.fetch = (...args) => {
-      monitorRequests();
-      return originalFetch(...args);
-    };
-
-    return () => {
-      clearInterval(interval);
-      window.fetch = originalFetch;
-      
-      // Log logout
-      logSecurityEvent('USER_LOGOUT', {
-        timestamp: new Date().toISOString()
+      // Check rate limiting
+      const canProceed = await checkRateLimit(email.toLowerCase(), 'login_attempt', {
+        maxAttempts: 5,
+        windowMinutes: 15,
+        enableIpTracking: true
       });
-    };
-  }, [user, logSecurityEvent]);
 
-  // Session validation
-  const validateSession = useCallback(async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
+      if (!canProceed) {
+        await logSecurityEvent({
+          eventType: 'login_rate_limit_exceeded',
+          eventData: { email: email.toLowerCase() },
+          riskLevel: 'high'
+        });
+        return false;
+      }
+
+      // Clean up any existing auth state
+      const existingKeys = Object.keys(localStorage).filter(
+        key => key.startsWith('supabase.auth.') || key.includes('sb-')
+      );
+      existingKeys.forEach(key => localStorage.removeItem(key));
+
+      // Attempt sign in
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase(),
+        password
+      });
+
       if (error) {
-        logSecurityEvent('SESSION_ERROR', { error: error.message });
-        return false;
-      }
-      
-      if (!session) {
-        logSecurityEvent('SESSION_EXPIRED');
-        return false;
-      }
-      
-      // Check if session is close to expiring (within 5 minutes)
-      const expiresAt = session.expires_at;
-      const now = Math.floor(Date.now() / 1000);
-      const timeUntilExpiry = expiresAt - now;
-      
-      if (timeUntilExpiry < 300) { // 5 minutes
-        logSecurityEvent('SESSION_NEAR_EXPIRY', { 
-          expires_in: timeUntilExpiry 
+        await logSecurityEvent({
+          eventType: 'login_failed',
+          eventData: { 
+            email: email.toLowerCase(), 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          },
+          riskLevel: 'medium'
         });
-        
-        // Attempt to refresh the session
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          logSecurityEvent('SESSION_REFRESH_FAILED', { 
-            error: refreshError.message 
-          });
-          return false;
-        }
-      }
-      
-      return true;
-    } catch (error) {
-      logSecurityEvent('SESSION_VALIDATION_ERROR', { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-      return false;
-    }
-  }, [logSecurityEvent]);
 
-  // Secure logout
-  const secureLogout = useCallback(async () => {
+        // Check for specific error types
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Credenciales inválidas. Verifica tu correo y contraseña.');
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('Por favor confirma tu correo electrónico antes de iniciar sesión.');
+        } else {
+          toast.error('Error al iniciar sesión. Intenta nuevamente.');
+        }
+        return false;
+      }
+
+      if (data.user) {
+        await logSecurityEvent({
+          userId: data.user.id,
+          eventType: 'login_successful',
+          eventData: { 
+            email: email.toLowerCase(),
+            timestamp: new Date().toISOString()
+          },
+          riskLevel: 'low'
+        });
+
+        toast.success('Inicio de sesión exitoso');
+        
+        // Force page refresh for clean state
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
+        
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Secure login error:', error);
+      toast.error('Error inesperado durante el inicio de sesión');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [checkRateLimit, logSecurityEvent, validateEmail]);
+
+  const secureLogout = useCallback(async (): Promise<void> => {
     try {
-      await logSecurityEvent('USER_LOGOUT_INITIATED');
+      // Log logout event
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await logSecurityEvent({
+          userId: user.id,
+          eventType: 'user_logout',
+          eventData: { timestamp: new Date().toISOString() },
+          riskLevel: 'low'
+        });
+      }
+
+      // Clean up auth state
+      const authKeys = Object.keys(localStorage).filter(
+        key => key.startsWith('supabase.auth.') || key.includes('sb-')
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
+
+      // Sign out globally
+      await supabase.auth.signOut({ scope: 'global' });
+
+      // Force navigation to auth page
+      navigate('/auth', { replace: true });
       
-      // Clear local storage
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      toast.success('Sesión cerrada de forma segura');
     } catch (error) {
       console.error('Secure logout error:', error);
-      toast.error('Error al cerrar sesión');
+      // Force cleanup and redirect even on error
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      navigate('/auth', { replace: true });
     }
-  }, [logSecurityEvent]);
+  }, [logSecurityEvent, navigate]);
+
+  const secureSignUp = useCallback(async (
+    email: string, 
+    password: string, 
+    metadata?: Record<string, any>
+  ): Promise<boolean> => {
+    setIsLoading(true);
+    
+    try {
+      // Validate inputs
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        toast.error(emailValidation.errors[0]);
+        return false;
+      }
+
+      // Check rate limiting
+      const canProceed = await checkRateLimit(email.toLowerCase(), 'signup_attempt', {
+        maxAttempts: 3,
+        windowMinutes: 60,
+        enableIpTracking: true
+      });
+
+      if (!canProceed) {
+        await logSecurityEvent({
+          eventType: 'signup_rate_limit_exceeded',
+          eventData: { email: email.toLowerCase() },
+          riskLevel: 'medium'
+        });
+        return false;
+      }
+
+      // Validate password strength
+      if (password.length < 8) {
+        toast.error('La contraseña debe tener al menos 8 caracteres');
+        return false;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.toLowerCase(),
+        password,
+        options: {
+          data: metadata || {}
+        }
+      });
+
+      if (error) {
+        await logSecurityEvent({
+          eventType: 'signup_failed',
+          eventData: { 
+            email: email.toLowerCase(), 
+            error: error.message 
+          },
+          riskLevel: 'medium'
+        });
+
+        if (error.message.includes('User already registered')) {
+          toast.error('Este correo ya está registrado. Intenta iniciar sesión.');
+        } else {
+          toast.error('Error al crear cuenta. Intenta nuevamente.');
+        }
+        return false;
+      }
+
+      if (data.user) {
+        await logSecurityEvent({
+          userId: data.user.id,
+          eventType: 'signup_successful',
+          eventData: { 
+            email: email.toLowerCase(),
+            confirmed: !!data.user.email_confirmed_at
+          },
+          riskLevel: 'low'
+        });
+
+        if (!data.user.email_confirmed_at) {
+          toast.success('Cuenta creada. Revisa tu correo para confirmar tu cuenta.');
+        } else {
+          toast.success('Cuenta creada exitosamente');
+        }
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Secure signup error:', error);
+      toast.error('Error inesperado durante el registro');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [checkRateLimit, logSecurityEvent, validateEmail]);
 
   return {
-    logSecurityEvent,
-    validateSession,
-    secureLogout
+    secureLogin,
+    secureLogout,
+    secureSignUp,
+    isLoading
   };
 };

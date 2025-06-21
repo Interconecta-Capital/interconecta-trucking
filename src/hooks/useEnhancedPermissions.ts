@@ -7,16 +7,9 @@ export const useEnhancedPermissions = () => {
   const { isSuperuser } = useSuperuser();
   const subscriptionPermissions = usePermisosSubscripcion();
 
-  console.log('useEnhancedPermissions Debug:', {
-    isSuperuser,
-    hasSubscriptionPermissions: !!subscriptionPermissions,
-    planActual: subscriptionPermissions?.planActual
-  });
-
   // Override all permissions for superusers
   const enhancedPermissions = useMemo(() => {
     if (isSuperuser) {
-      console.log('useEnhancedPermissions: Superuser permissions applied');
       return {
         ...subscriptionPermissions,
         puedeAcceder: () => ({ puede: true, razon: undefined }),
@@ -42,7 +35,6 @@ export const useEnhancedPermissions = () => {
       };
     }
 
-    console.log('useEnhancedPermissions: Using subscription permissions');
     return subscriptionPermissions;
   }, [isSuperuser, subscriptionPermissions]);
 
