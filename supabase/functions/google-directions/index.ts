@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -92,12 +93,12 @@ serve(async (req) => {
     };
   };
 
-  // Get API key from environment
+  // Get API key from environment - CONFIGURADA CON TU CLAVE
   const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
   
   if (!googleMapsApiKey) {
-    console.error('❌ Google Maps API key not found');
-    const fallbackResponse = createFallbackResponse('API key not configured');
+    console.error('❌ Google Maps API key not found in environment');
+    const fallbackResponse = createFallbackResponse('API key not configured in Supabase secrets');
     
     return new Response(
       JSON.stringify(fallbackResponse),
@@ -110,7 +111,7 @@ serve(async (req) => {
     );
   }
 
-  console.log('✅ API Key found, using Google Routes API v2');
+  console.log('✅ Google Maps API Key found and configured:', googleMapsApiKey.substring(0, 10) + '...');
 
   // Prepare intermediates for waypoints
   const intermediates = waypoints.length > 0 ? waypoints.map(wp => ({
@@ -156,7 +157,7 @@ serve(async (req) => {
   // Use Google Routes API v2
   const routesUrl = `https://routes.googleapis.com/directions/v2:computeRoutes`;
   
-  console.log('🌐 Calling Google Routes API v2');
+  console.log('🌐 Calling Google Routes API v2 with configured key');
   
   try {
     const controller = new AbortController();
@@ -194,7 +195,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('📦 Google Routes API Response:', JSON.stringify(data, null, 2));
+    console.log('📦 Google Routes API Response received successfully');
 
     if (!data.routes || data.routes.length === 0) {
       console.error('❌ No routes found in Google response');
@@ -252,10 +253,10 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ Route calculated successfully with Routes API v2:', {
+    console.log('✅ Route calculated successfully with Google Routes API v2:', {
       distance: result.distance_km,
       duration: result.duration_minutes,
-      legs: result.google_data.legs.length
+      api_key_configured: true
     });
 
     return new Response(
@@ -297,3 +298,4 @@ function calculateDirectDistance(origin: { lat: number; lng: number }, destinati
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
+
