@@ -1,6 +1,5 @@
 
 import { AlertTriangle, TrendingUp, Clock, Gift, Trash2 } from 'lucide-react';
-import { AlertStyles } from '@/types/alerts';
 
 export const getAlertStyle = (type: string): string => {
   switch (type) {
