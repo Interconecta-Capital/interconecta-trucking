@@ -30,45 +30,28 @@ export function AppSidebar() {
   const permissions = useUnifiedPermissionsV2();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // DEBUGGING CRÍTICO - Logs detallados para auditoría del sidebar
-  console.group('[AppSidebar] 🔍 AUDITORÍA COMPLETA DE NAVEGACIÓN');
-  console.log('📊 Estado completo de permisos en sidebar:', {
-    userId: permissions.userId,
-    isAuthenticated: permissions.isAuthenticated,
-    accessLevel: permissions.accessLevel,
-    accessReason: permissions.accessReason,
-    hasFullAccess: permissions.hasFullAccess
-  });
-
   const canAccessItem = (item: SidebarItem): boolean => {
-    console.log(`[AppSidebar] 🔍 Evaluando acceso para "${item.title}":`);
-    
     // Superusuarios pueden acceder a todo
     if (permissions.accessLevel === 'superuser') {
-      console.log(`[AppSidebar] ✅ SUPERUSUARIO - Acceso total a "${item.title}"`);
       return true;
     }
 
     // Si no requiere permisos específicos, permitir acceso
     if (!item.requiresPermission) {
-      console.log(`[AppSidebar] ✅ Sin permisos requeridos - Acceso permitido a "${item.title}"`);
       return true;
     }
 
     // Durante trial activo, acceso total
     if (permissions.accessLevel === 'trial') {
-      console.log(`[AppSidebar] ✅ TRIAL ACTIVO - Acceso total a "${item.title}"`);
       return true;
     }
 
     // Con plan activo, verificar acceso completo
     if (permissions.accessLevel === 'paid') {
-      console.log(`[AppSidebar] 🔍 PLAN PAGADO - Verificando hasFullAccess (${permissions.hasFullAccess}) para "${item.title}"`);
       return permissions.hasFullAccess;
     }
 
     // Sin acceso en otros casos
-    console.log(`[AppSidebar] ❌ SIN ACCESO a "${item.title}" - AccessLevel: ${permissions.accessLevel}`);
     return false;
   };
 
@@ -87,15 +70,6 @@ export function AppSidebar() {
 
     return undefined;
   };
-
-  // Log de elementos del sidebar y su acceso
-  console.log('📋 Evaluación de acceso por elemento:');
-  sidebarItems.forEach(item => {
-    const access = canAccessItem(item);
-    const badge = getItemBadge(item);
-    console.log(`  - ${item.title}: ${access ? '✅ ACCESO' : '❌ BLOQUEADO'} ${badge ? `[${badge}]` : ''}`);
-  });
-  console.groupEnd();
 
   return (
     <div className={cn(
@@ -132,9 +106,6 @@ export function AppSidebar() {
           const canAccess = canAccessItem(item);
           const badge = getItemBadge(item);
           const Icon = item.icon;
-
-          // Log individual de renderizado
-          console.log(`[AppSidebar] 🎨 Renderizando "${item.title}": ${canAccess ? 'VISIBLE' : 'OCULTO/DESHABILITADO'}`);
 
           return (
             <Link

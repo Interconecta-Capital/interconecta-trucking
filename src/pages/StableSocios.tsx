@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Plus, Users, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -96,6 +97,7 @@ export default function StableSocios() {
             )}
           </div>
           <ProtectedActions
+            action="create"
             resource="socios"
             onAction={handleNewSocio}
             buttonText="Nuevo Socio"
