@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus, FileText, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -76,7 +75,6 @@ export default function CartasPorte() {
             <h1 className="text-3xl font-bold">Cartas Porte</h1>
           </div>
           <ProtectedActions
-            action="create"
             resource="cartas_porte"
             onAction={handleNewCartaPorte}
             buttonText="Nueva Carta Porte"
