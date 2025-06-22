@@ -24,6 +24,7 @@ import Viajes from "./pages/Viajes"
 import Remolques from "./pages/Remolques"
 import Administracion from "./pages/Administracion"
 import Planes from "./pages/Planes"
+import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -118,7 +119,15 @@ const App = () => (
                   </BaseLayout>
                 </AuthGuard>
               } />
-              
+
+              <Route path="/configuracion/empresa" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ConfiguracionEmpresa />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
               <Route path="/planes" element={
                 <AuthGuard>
                   <BaseLayout>
