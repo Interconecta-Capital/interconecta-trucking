@@ -29,7 +29,26 @@ export function ProtectedActions({
 }: ProtectedActionsProps) {
   const permissions = useUnifiedPermissionsV2();
   
-  console.log('[ProtectedActions] 🔍 Evaluando permisos para recurso:', resource);
+  // DEBUGGING CRÍTICO - Logs detallados para auditoría
+  console.group(`[ProtectedActions] 🔍 AUDITORÍA COMPLETA - Recurso: ${resource}`);
+  console.log('📊 Estado completo de permisos:', {
+    userId: permissions.userId,
+    isAuthenticated: permissions.isAuthenticated,
+    accessLevel: permissions.accessLevel,
+    accessReason: permissions.accessReason,
+    hasFullAccess: permissions.hasFullAccess
+  });
+  
+  console.log('🎯 Permisos específicos:', {
+    canCreateConductor: permissions.canCreateConductor,
+    canCreateVehiculo: permissions.canCreateVehiculo,
+    canCreateSocio: permissions.canCreateSocio,
+    canCreateCartaPorte: permissions.canCreateCartaPorte,
+    canCreateRemolque: permissions.canCreateRemolque
+  });
+  
+  console.log('📋 Información del plan:', permissions.planInfo);
+  console.log('📈 Información de uso:', permissions.usage);
   
   // Mapear recursos a permisos específicos
   const getPermissionForResource = () => {
@@ -55,15 +74,17 @@ export function ProtectedActions({
   const permission = getPermissionForResource();
   const defaultButtonText = buttonText || `Nuevo ${resource === 'viajes' ? 'Viaje' : resource.slice(0, -1)}`;
 
-  console.log('[ProtectedActions] 📊 Permiso evaluado:', {
+  console.log('✅ Permiso final evaluado:', {
     resource,
-    allowed: permission.allowed,
-    reason: permission.reason,
-    accessLevel: permissions.accessLevel
+    permission,
+    buttonText: defaultButtonText,
+    willShowButton: permission.allowed
   });
+  console.groupEnd();
 
   // Si tiene permiso, mostrar botón activo
   if (permission.allowed) {
+    console.log(`[ProtectedActions] ✅ MOSTRANDO BOTÓN para ${resource}:`, defaultButtonText);
     return (
       <div className="space-y-2">
         <Button
@@ -86,6 +107,11 @@ export function ProtectedActions({
   }
 
   // Si no tiene permiso, mostrar estado bloqueado
+  console.log(`[ProtectedActions] ❌ BOTÓN BLOQUEADO para ${resource}:`, {
+    reason: permission.reason,
+    accessLevel: permissions.accessLevel
+  });
+
   const getBlockedIcon = () => {
     switch (permissions.accessLevel) {
       case 'blocked': return Lock;
