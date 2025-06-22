@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
-import { LimitUsageIndicator } from '@/components/LimitUsageIndicator';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { Crown, Zap, Clock, Settings, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -19,11 +19,9 @@ export const PlanSummaryCard = () => {
     isOpeningPortal
   } = useSuscripcion();
   
-  const { obtenerUsoActual } = usePermisosSubscripcion();
+  const permissions = useUnifiedPermissionsV2();
 
   if (!suscripcion) return null;
-
-  const usoActual = obtenerUsoActual();
 
   const getPlanIcon = () => {
     if (enPeriodoPrueba()) return <Clock className="h-4 w-4" />;
@@ -90,7 +88,7 @@ export const PlanSummaryCard = () => {
       <CardContent className="space-y-4">
         {/* Resumen de uso */}
         <div className="grid grid-cols-2 gap-3">
-          {Object.entries(usoActual).map(([key, data]) => (
+          {Object.entries(permissions.usage).map(([key, data]) => (
             <div key={key} className="space-y-1">
               <div className="text-xs font-medium text-muted-foreground capitalize">
                 {key.replace('_', ' ')}
@@ -130,9 +128,9 @@ export const PlanSummaryCard = () => {
         </div>
 
         {/* Mensaje de alerta si está cerca de límites */}
-        {Object.entries(usoActual).some(([_, data]) => {
-          if (data.limite === null) return false;
-          return (data.usado / data.limite) >= 0.8;
+        {Object.entries(permissions.usage).some(([_, data]) => {
+          if (data.limit === null) return false;
+          return (data.used / data.limit) >= 0.8;
         }) && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
             <div className="flex items-start gap-2">

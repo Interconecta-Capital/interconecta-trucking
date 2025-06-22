@@ -7,12 +7,20 @@ import { Settings, User, Shield, CreditCard, Bell } from 'lucide-react';
 import { PlanBadge } from '@/components/common/PlanBadge';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
-export function SettingsDialog() {
-  const [open, setOpen] = useState(false);
+interface SettingsDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const permissions = useUnifiedPermissionsV2();
 
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
           <Settings className="h-4 w-4" />

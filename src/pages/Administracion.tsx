@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Users, Palette, FileText, Shield } from 'lucide-react';
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { PanelUsuarios } from '@/components/administracion/PanelUsuarios';
 import { PersonalizacionPanel } from '@/components/administracion/PersonalizacionPanel';
@@ -14,7 +14,35 @@ import { FuncionesEnterprise } from '@/components/administracion/FuncionesEnterp
 
 export default function Administracion() {
   const [activeTab, setActiveTab] = useState('usuarios');
-  const { puedeAccederFuncionesAvanzadas, puedeAccederEnterprise } = usePermisosSubscripcion();
+  const permissions = useUnifiedPermissionsV2();
+
+  const canAccessAdvanced = () => {
+    // Superusuarios pueden acceder a funciones avanzadas
+    if (permissions.accessLevel === 'superuser') return true;
+    
+    // Durante trial activo, acceso total
+    if (permissions.accessLevel === 'trial') return true;
+    
+    // Con plan activo, verificar si es plan empresarial/profesional
+    if (permissions.accessLevel === 'paid') {
+      return permissions.planInfo.name.includes('Empresarial') || 
+             permissions.planInfo.name.includes('Profesional');
+    }
+    
+    return false;
+  };
+
+  const canAccessEnterprise = () => {
+    // Solo superusuarios y planes Enterprise
+    if (permissions.accessLevel === 'superuser') return true;
+    
+    if (permissions.accessLevel === 'paid') {
+      return permissions.planInfo.name.includes('Enterprise') || 
+             permissions.planInfo.name.includes('Empresarial');
+    }
+    
+    return false;
+  };
 
   return (
     <ProtectedContent requiredFeature="administracion">
@@ -42,13 +70,13 @@ export default function Administracion() {
               <FileText className="h-4 w-4" />
               Logs
             </TabsTrigger>
-            {puedeAccederFuncionesAvanzadas().puede && (
+            {canAccessAdvanced() && (
               <TabsTrigger value="avanzadas" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Avanzadas
               </TabsTrigger>
             )}
-            {puedeAccederEnterprise().puede && (
+            {canAccessEnterprise() && (
               <TabsTrigger value="enterprise" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
                 Enterprise
@@ -72,7 +100,7 @@ export default function Administracion() {
             <LogsPanel />
           </TabsContent>
 
-          {puedeAccederFuncionesAvanzadas().puede && (
+          {canAccessAdvanced() && (
             <TabsContent value="avanzadas">
               <ProtectedContent requiredFeature="funciones_avanzadas">
                 <FuncionesAvanzadas />
@@ -80,7 +108,7 @@ export default function Administracion() {
             </TabsContent>
           )}
 
-          {puedeAccederEnterprise().puede && (
+          {canAccessEnterprise() && (
             <TabsContent value="enterprise">
               <ProtectedContent requiredFeature="enterprise">
                 <FuncionesEnterprise />

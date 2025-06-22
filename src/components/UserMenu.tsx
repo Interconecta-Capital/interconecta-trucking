@@ -110,10 +110,7 @@ export function UserMenu() {
         onOpenChange={setShowProfile} 
       />
 
-      <SettingsDialog
-        open={showSettings}
-        onOpenChange={setShowSettings}
-      />
+      <SettingsDialog />
     </>
   );
 }

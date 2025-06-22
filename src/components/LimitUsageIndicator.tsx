@@ -1,5 +1,5 @@
 
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Infinity } from 'lucide-react';
@@ -11,19 +11,18 @@ interface LimitUsageIndicatorProps {
 }
 
 /**
- * @deprecated - Usar LimitUsageIndicator desde common/LimitUsageIndicator.tsx que usa useUnifiedPermissions
+ * @deprecated - Usar LimitUsageIndicator desde common/LimitUsageIndicator.tsx que usa useUnifiedPermissionsV2
  */
 export const LimitUsageIndicator = ({ 
   resourceType, 
   className, 
   showDetails = true 
 }: LimitUsageIndicatorProps) => {
-  const { obtenerUsoActual } = usePermisosSubscripcion();
-  const uso = obtenerUsoActual();
+  const permissions = useUnifiedPermissionsV2();
   
-  const resourceData = uso[resourceType];
-  const isUnlimited = resourceData.limite === null;
-  const percentage = isUnlimited ? 0 : (resourceData.usado / resourceData.limite) * 100;
+  const resourceData = permissions.usage[resourceType];
+  const isUnlimited = resourceData.limit === null;
+  const percentage = isUnlimited ? 0 : (resourceData.used / resourceData.limit) * 100;
   const isNearLimit = percentage >= 80;
   const isAtLimit = percentage >= 100;
 
@@ -39,12 +38,6 @@ export const LimitUsageIndicator = ({
     if (isAtLimit) return <AlertTriangle className="h-3 w-3" />;
     if (isNearLimit) return <AlertTriangle className="h-3 w-3" />;
     return <CheckCircle className="h-3 w-3" />;
-  };
-
-  const getProgressColor = () => {
-    if (isAtLimit) return 'bg-red-500';
-    if (isNearLimit) return 'bg-orange-500';
-    return 'bg-green-500';
   };
 
   const resourceNames = {
@@ -68,7 +61,7 @@ export const LimitUsageIndicator = ({
       <div className="flex items-center justify-between">
         <Badge variant={getVariant()} className="flex items-center gap-1">
           {getIcon()}
-          {resourceData.usado} {isUnlimited ? '' : `/ ${resourceData.limite}`}
+          {resourceData.used} {isUnlimited ? '' : `/ ${resourceData.limit}`}
           {isUnlimited && <span className="text-xs">ilimitado</span>}
         </Badge>
         {!isUnlimited && (
@@ -97,7 +90,7 @@ export const LimitUsageIndicator = ({
             )}
             {!isNearLimit && (
               <p className="text-xs text-green-600">
-                Tienes {resourceData.limite - resourceData.usado} {resourceNames[resourceType]} disponibles
+                Tienes {resourceData.limit - resourceData.used} {resourceNames[resourceType]} disponibles
               </p>
             )}
           </div>
