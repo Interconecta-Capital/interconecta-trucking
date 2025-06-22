@@ -2,6 +2,7 @@
 import { ReactNode } from 'react';
 import { GlobalHeader } from '@/components/GlobalHeader';
 import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -35,23 +36,25 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
   }
 
   return (
-    <div className="min-h-screen bg-gray-05 flex w-full">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col w-full min-w-0">
-        <GlobalHeader />
-        <main className={cn(
-          "flex-1 overflow-auto transition-all duration-200",
-          // Enhanced responsive padding
-          "p-3 sm:p-4 md:p-6 lg:p-8",
-          // Better mobile spacing
-          "space-y-4 sm:space-y-6",
-          className
-        )}>
-          <div className="mx-auto max-w-7xl w-full space-y-4 sm:space-y-6">
-            {children}
-          </div>
-        </main>
+    <SidebarProvider>
+      <div className="min-h-screen bg-gray-05 flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col w-full min-w-0">
+          <GlobalHeader />
+          <main className={cn(
+            "flex-1 overflow-auto transition-all duration-200",
+            // Enhanced responsive padding
+            "p-3 sm:p-4 md:p-6 lg:p-8",
+            // Better mobile spacing
+            "space-y-4 sm:space-y-6",
+            className
+          )}>
+            <div className="mx-auto max-w-7xl w-full space-y-4 sm:space-y-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

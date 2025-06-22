@@ -1,11 +1,9 @@
 
-import { Building2, Car, FileText, Route, Settings, TrendingUp, Users, Wrench, Minus, Menu } from 'lucide-react';
+import { Building2, Car, FileText, Route, Settings, TrendingUp, Users, Wrench } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 interface SidebarItem {
   title: string;
@@ -28,7 +26,6 @@ const sidebarItems: SidebarItem[] = [
 export function AppSidebar() {
   const location = useLocation();
   const permissions = useUnifiedPermissionsV2();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const canAccessItem = (item: SidebarItem): boolean => {
     // Superusuarios pueden acceder a todo
@@ -72,35 +69,17 @@ export function AppSidebar() {
   };
 
   return (
-    <div className={cn(
-      "bg-white border-r border-gray-200 h-full flex flex-col transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
-      {/* Header with collapse button */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          {!isCollapsed && (
-            <h2 className="text-xl font-bold text-gray-900">Interconecta</h2>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="ml-auto"
-          >
-            {isCollapsed ? <Menu className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-          </Button>
-        </div>
-        
-        {!isCollapsed && permissions.accessLevel === 'superuser' && (
+    <div className="w-64 bg-white border-r border-gray-200 h-full flex flex-col">
+      <div className="p-6">
+        <h2 className="text-xl font-bold text-gray-900">Interconecta</h2>
+        {permissions.accessLevel === 'superuser' && (
           <Badge variant="default" className="mt-2 bg-yellow-100 text-yellow-800">
             Superusuario
           </Badge>
         )}
       </div>
 
-      {/* Navigation Menu */}
-      <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-2">
         {sidebarItems.map((item) => {
           const isActive = location.pathname.startsWith(item.href);
           const canAccess = canAccessItem(item);
@@ -111,73 +90,60 @@ export function AppSidebar() {
             <Link
               key={item.href}
               to={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                "hover:bg-gray-50 hover:scale-[1.02]",
-                isActive && "bg-blue-50 text-blue-700 shadow-sm",
-                !isActive && canAccess && "text-gray-700 hover:text-gray-900",
-                !canAccess && "text-gray-400 cursor-not-allowed",
-                isCollapsed && "justify-center"
-              )}
-              title={isCollapsed ? item.title : undefined}
+              className={`
+                flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                ${isActive 
+                  ? 'bg-blue-50 text-blue-700' 
+                  : canAccess 
+                    ? 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    : 'text-gray-400 cursor-not-allowed'
+                }
+              `}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {!isCollapsed && (
-                <>
-                  <span className="flex-1">{item.title}</span>
-                  {badge && (
-                    <Badge variant="outline" className="text-xs">
-                      {badge}
-                    </Badge>
-                  )}
-                </>
+              <div className="flex items-center space-x-3">
+                <Icon className="h-5 w-5" />
+                <span>{item.title}</span>
+              </div>
+              {badge && (
+                <Badge variant="outline" className="text-xs">
+                  {badge}
+                </Badge>
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Plan Status Footer */}
-      {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200">
-          {permissions.accessLevel === 'trial' && (
-            <div className="bg-orange-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-orange-800">Período de Prueba</p>
-              <p className="text-xs text-orange-600">
-                {permissions.planInfo.daysRemaining || 0} días restantes
-              </p>
-            </div>
-          )}
-          
-          {(permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') && (
-            <div className="bg-red-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-red-800">
-                {permissions.accessLevel === 'blocked' ? 'Cuenta Bloqueada' : 'Plan Expirado'}
-              </p>
-              <Link to="/planes">
-                <Button size="sm" className="mt-2 w-full">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  Renovar Plan
-                </Button>
-              </Link>
-            </div>
-          )}
+      {/* Plan Status */}
+      <div className="p-4 border-t border-gray-200">
+        {permissions.accessLevel === 'trial' && (
+          <div className="bg-orange-50 p-3 rounded-lg">
+            <p className="text-sm font-medium text-orange-800">Período de Prueba</p>
+            <p className="text-xs text-orange-600">
+              {permissions.planInfo.daysRemaining || 0} días restantes
+            </p>
+          </div>
+        )}
+        
+        {(permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') && (
+          <div className="bg-red-50 p-3 rounded-lg">
+            <p className="text-sm font-medium text-red-800">
+              {permissions.accessLevel === 'blocked' ? 'Cuenta Bloqueada' : 'Plan Expirado'}
+            </p>
+            <Button size="sm" className="mt-2 w-full">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Renovar Plan
+            </Button>
+          </div>
+        )}
 
-          {permissions.accessLevel === 'paid' && (
-            <div className="bg-green-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-green-800">Plan Activo</p>
-              <p className="text-xs text-green-600">{permissions.planInfo.name}</p>
-            </div>
-          )}
-
-          {permissions.accessLevel === 'superuser' && (
-            <div className="bg-yellow-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-yellow-800">Superusuario</p>
-              <p className="text-xs text-yellow-600">Acceso total al sistema</p>
-            </div>
-          )}
-        </div>
-      )}
+        {permissions.accessLevel === 'paid' && (
+          <div className="bg-green-50 p-3 rounded-lg">
+            <p className="text-sm font-medium text-green-800">Plan Activo</p>
+            <p className="text-xs text-green-600">{permissions.planInfo.name}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
