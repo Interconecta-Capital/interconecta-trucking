@@ -1,14 +1,7 @@
 
 import { useUnifiedPermissionsV2 } from '../useUnifiedPermissionsV2';
 import { useState, useCallback } from 'react';
-
-interface Alert {
-  id: string;
-  type: 'info' | 'warning' | 'critical';
-  title: string;
-  message: string;
-  dismissible?: boolean;
-}
+import { AlertConfig } from '@/types/alerts';
 
 /**
  * Hook para manejo de alertas - Migrado a useUnifiedPermissionsV2
@@ -17,8 +10,8 @@ export const useAlertManager = () => {
   const permissions = useUnifiedPermissionsV2();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  const generateAlerts = useCallback((): Alert[] => {
-    const alerts: Alert[] = [];
+  const generateAlerts = useCallback((): AlertConfig[] => {
+    const alerts: AlertConfig[] = [];
 
     // No generar alertas para superusuarios
     if (permissions.accessLevel === 'superuser') {
@@ -32,7 +25,8 @@ export const useAlertManager = () => {
         type: 'critical',
         title: 'Cuenta Bloqueada',
         message: permissions.accessReason,
-        dismissible: false
+        action: 'Renovar Plan',
+        priority: 1
       });
     }
 
@@ -43,7 +37,8 @@ export const useAlertManager = () => {
         type: 'critical',
         title: 'Plan Expirado',
         message: permissions.accessReason,
-        dismissible: false
+        action: 'Renovar Plan',
+        priority: 1
       });
     }
 
@@ -56,14 +51,15 @@ export const useAlertManager = () => {
           type: 'warning',
           title: 'Trial Finalizando',
           message: `Tu período de prueba termina en ${daysRemaining} día${daysRemaining !== 1 ? 's' : ''}`,
-          dismissible: true
+          action: 'Actualizar Plan',
+          priority: 2
         });
       }
     }
 
-    // Filtrar alertas ya desestimadas
+    // Filtrar alertas ya desestimadas (solo las que no son críticas)
     return alerts.filter(alert => 
-      !alert.dismissible || !dismissedAlerts.includes(alert.id)
+      alert.type === 'critical' || !dismissedAlerts.includes(alert.id)
     );
   }, [permissions, dismissedAlerts]);
 
