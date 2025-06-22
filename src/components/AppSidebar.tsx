@@ -19,8 +19,8 @@ const sidebarItems: SidebarItem[] = [
   { title: 'Conductores', href: '/conductores', icon: Users, requiresPermission: 'conductores' },
   { title: 'Socios', href: '/socios', icon: Building2, requiresPermission: 'socios' },
   { title: 'Remolques', href: '/remolques', icon: Wrench, requiresPermission: 'vehiculos' },
-  { title: 'Carta Porte', href: '/carta-porte', icon: FileText, requiresPermission: 'cartas_porte' },
-  { title: 'Configuración', href: '/configuracion', icon: Settings }
+  { title: 'Carta Porte', href: '/cartas-porte', icon: FileText, requiresPermission: 'cartas_porte' },
+  { title: 'Configuración', href: '/configuracion/empresa', icon: Settings }
 ];
 
 export function AppSidebar() {
