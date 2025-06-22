@@ -1,5 +1,5 @@
 
-import { Building2, Car, FileText, Route, Settings, TrendingUp, Users, Wrench } from 'lucide-react';
+import { Building2, Car, FileText, Route, Settings, TrendingUp, Users, Wrench, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ interface SidebarItem {
 }
 
 const sidebarItems: SidebarItem[] = [
+  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Viajes', href: '/viajes', icon: Route, requiresPermission: 'viajes' },
   { title: 'Vehículos', href: '/vehiculos', icon: Car, requiresPermission: 'vehiculos' },
   { title: 'Conductores', href: '/conductores', icon: Users, requiresPermission: 'conductores' },
