@@ -1,283 +1,134 @@
+
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import {
-  CreditCard,
-  Calendar,
-  Shield,
-  FileText,
-  Settings,
-  Users,
-  Phone
-} from 'lucide-react';
-import { CSDManagementPanel } from './csd/CSDManagementPanel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Settings, User, Shield, CreditCard, Bell } from 'lucide-react';
+import { PlanBadge } from '@/components/common/PlanBadge';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
-interface SettingsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
-  const { user } = useAuth();
+export function SettingsDialog() {
+  const [open, setOpen] = useState(false);
   const permissions = useUnifiedPermissionsV2();
-  const [activeTab, setActiveTab] = useState('account');
-
-  const usoActual = permissions.usage;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Configuración de Cuenta
+            Configuración
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Sidebar */}
-          <div className="space-y-2">
-            <Button
-              variant={activeTab === 'account' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('account')}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Estado de Cuenta
-            </Button>
-            <Button
-              variant={activeTab === 'billing' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('billing')}
-            >
+        <Tabs defaultValue="account" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="account">
+              <User className="h-4 w-4 mr-2" />
+              Cuenta
+            </TabsTrigger>
+            <TabsTrigger value="plan">
               <CreditCard className="h-4 w-4 mr-2" />
-              Facturación
-            </Button>
-            <Button
-              variant={activeTab === 'invoices' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('invoices')}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Facturas
-            </Button>
-            <Button
-              variant={activeTab === 'support' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('support')}
-            >
-              <Phone className="h-4 w-4 mr-2" />
-              Soporte
-            </Button>
-          </div>
+              Plan
+            </TabsTrigger>
+            <TabsTrigger value="permissions">
+              <Shield className="h-4 w-4 mr-2" />
+              Permisos
+            </TabsTrigger>
+            <TabsTrigger value="notifications">
+              <Bell className="h-4 w-4 mr-2" />
+              Notificaciones
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Content */}
-          <div className="md:col-span-2">
-            {activeTab === 'account' && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Estado de la Cuenta</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Plan Actual:</span>
-                      <Badge variant={permissions.accessLevel === 'trial' ? 'secondary' : 'default'}>
-                        {permissions.planInfo.name}
-                      </Badge>
-                    </div>
-                    
-                    {permissions.accessLevel === 'trial' && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Días Restantes:</span>
-                        <span className="text-sm font-bold text-orange-600">
-                          {permissions.planInfo.daysRemaining || 0} días
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">RFC:</span>
-                      <span className="text-sm font-mono">
-                        {user?.profile?.rfc || 'No especificado'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Empresa:</span>
-                      <span className="text-sm">
-                        {user?.profile?.empresa || 'No especificada'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Estado:</span>
-                      <span className="text-sm">
-                        {permissions.accessReason}
-                      </span>
-                    </div>
-
-                    <Separator />
-
-                    <div className="text-xs text-gray-500">
-                      <p>* El RFC no puede ser modificado una vez registrado.</p>
-                      <p>Para cambios contacta al soporte técnico.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Límites de Cuenta</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {usoActual.cartas_porte.used}
-                        </div>
-                        <div className="text-xs text-gray-600">Cartas Porte</div>
-                        <div className="text-xs text-gray-500">
-                          de {usoActual.cartas_porte.limit || '∞'} permitidas
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          {usoActual.vehiculos.used}
-                        </div>
-                        <div className="text-xs text-gray-600">Vehículos</div>
-                        <div className="text-xs text-gray-500">
-                          de {usoActual.vehiculos.limit || '∞'} permitidos
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">
-                          {usoActual.conductores.used}
-                        </div>
-                        <div className="text-xs text-gray-600">Conductores</div>
-                        <div className="text-xs text-gray-500">
-                          de {usoActual.conductores.limit || '∞'} permitidos
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-orange-600">
-                          {usoActual.socios.used}
-                        </div>
-                        <div className="text-xs text-gray-600">Socios</div>
-                        <div className="text-xs text-gray-500">
-                          de {usoActual.socios.limit || '∞'} permitidos
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+          <TabsContent value="account" className="space-y-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Información de la Cuenta</h3>
+              <div className="grid gap-4">
+                <div>
+                  <label className="text-sm font-medium">Estado de la Cuenta</label>
+                  <p className="text-sm text-gray-600">{permissions.accessReason}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Plan Actual</label>
+                  <div className="mt-1">
+                    <PlanBadge size="md" />
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+          </TabsContent>
 
-            {activeTab === 'billing' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Información de Facturación</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Próxima Facturación:</span>
-                    <span className="text-sm">
-                      {/*suscripcion?.proximo_pago ? new Date(suscripcion.proximo_pago).toLocaleDateString() : 'N/A'*/}
-                      N/A
-                    </span>
+          <TabsContent value="plan" className="space-y-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Información del Plan</h3>
+              <div className="grid gap-4">
+                <div>
+                  <label className="text-sm font-medium">Plan Activo</label>
+                  <p className="text-sm text-gray-600">{permissions.planInfo.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Tipo de Acceso</label>
+                  <p className="text-sm text-gray-600">
+                    {permissions.accessLevel === 'superuser' && 'Superusuario - Acceso Total'}
+                    {permissions.accessLevel === 'trial' && `Período de Prueba - ${permissions.planInfo.daysRemaining || 0} días restantes`}
+                    {permissions.accessLevel === 'paid' && 'Plan Pagado Activo'}
+                    {permissions.accessLevel === 'blocked' && 'Cuenta Bloqueada'}
+                    {permissions.accessLevel === 'expired' && 'Plan Expirado'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Límites de Uso</label>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>Conductores: {permissions.usage.conductores.limit === null ? 'Ilimitado' : `${permissions.usage.conductores.used}/${permissions.usage.conductores.limit}`}</p>
+                    <p>Vehículos: {permissions.usage.vehiculos.limit === null ? 'Ilimitado' : `${permissions.usage.vehiculos.used}/${permissions.usage.vehiculos.limit}`}</p>
+                    <p>Socios: {permissions.usage.socios.limit === null ? 'Ilimitado' : `${permissions.usage.socios.used}/${permissions.usage.socios.limit}`}</p>
+                    <p>Cartas Porte: {permissions.usage.cartas_porte.limit === null ? 'Ilimitado' : `${permissions.usage.cartas_porte.used}/${permissions.usage.cartas_porte.limit}`}</p>
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Método de Pago:</span>
-                    <Badge variant="outline">
-                      {/*suscripcion?.stripe_customer_id ? 'Configurado' : 'No configurado'*/}
-                      No configurado
-                    </Badge>
-                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
-                  <Separator />
-
-                  {/*suscripcion?.status === 'active' ? (
-                    <Button 
-                      onClick={() => abrirPortalCliente()}
-                      disabled={isOpeningPortal}
-                      className="w-full"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      {isOpeningPortal ? 'Abriendo...' : 'Gestionar Suscripción'}
-                    </Button>
-                  ) : (*/}
-                    <Button className="w-full">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Agregar Método de Pago
-                    </Button>
-                  {/*)*/}
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === 'invoices' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Historial de Facturas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-gray-500">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No hay facturas disponibles</p>
-                    <p className="text-sm">Las facturas aparecerán aquí una vez que actualices tu plan.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === 'support' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contactar Soporte</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-sm">¿Necesitas ayuda o tienes preguntas?</p>
-                    <p className="text-sm text-gray-600">
-                      Nuestro equipo de soporte está disponible para ayudarte.
+          <TabsContent value="permissions" className="space-y-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Estado de Permisos</h3>
+              <div className="grid gap-4">
+                <div>
+                  <label className="text-sm font-medium">Permisos de Creación</label>
+                  <div className="space-y-2 text-sm">
+                    <p className={permissions.canCreateConductor.allowed ? 'text-green-600' : 'text-red-600'}>
+                      Conductores: {permissions.canCreateConductor.allowed ? '✓ Permitido' : '✗ Bloqueado'} - {permissions.canCreateConductor.reason}
+                    </p>
+                    <p className={permissions.canCreateVehiculo.allowed ? 'text-green-600' : 'text-red-600'}>
+                      Vehículos: {permissions.canCreateVehiculo.allowed ? '✓ Permitido' : '✗ Bloqueado'} - {permissions.canCreateVehiculo.reason}
+                    </p>
+                    <p className={permissions.canCreateSocio.allowed ? 'text-green-600' : 'text-red-600'}>
+                      Socios: {permissions.canCreateSocio.allowed ? '✓ Permitido' : '✗ Bloqueado'} - {permissions.canCreateSocio.reason}
+                    </p>
+                    <p className={permissions.canCreateCartaPorte.allowed ? 'text-green-600' : 'text-red-600'}>
+                      Cartas Porte: {permissions.canCreateCartaPorte.allowed ? '✓ Permitido' : '✗ Bloqueado'} - {permissions.canCreateCartaPorte.reason}
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button variant="outline" className="flex items-center justify-center">
-                      <Phone className="h-4 w-4 mr-2" />
-                      Llamar Soporte
-                    </Button>
-                    <Button variant="outline" className="flex items-center justify-center">
-                      <Users className="h-4 w-4 mr-2" />
-                      Chat en Vivo
-                    </Button>
-                  </div>
-
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>• Horario: Lunes a Viernes 9:00 AM - 6:00 PM</p>
-                    <p>• Tiempo de respuesta: Menos de 2 horas</p>
-                    <p>• Soporte en español disponible</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+          <TabsContent value="notifications" className="space-y-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Configuración de Notificaciones</h3>
+              <p className="text-sm text-gray-600">
+                Las notificaciones se gestionan automáticamente según tu plan actual.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

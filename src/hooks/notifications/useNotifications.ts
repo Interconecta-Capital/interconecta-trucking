@@ -1,17 +1,25 @@
 
 import { useUnifiedPermissionsV2 } from '../useUnifiedPermissionsV2';
 import { useState, useCallback } from 'react';
-import { AlertConfig } from '@/types/alerts';
+
+export interface NotificationAlert {
+  id: string;
+  type: 'info' | 'warning' | 'critical';
+  title: string;
+  message: string;
+  action?: string;
+  priority: number;
+}
 
 /**
- * Hook para manejo de alertas - Migrado a useUnifiedPermissionsV2
+ * Hook para manejo de notificaciones - Usa useUnifiedPermissionsV2 como única fuente de verdad
  */
-export const useAlertManager = () => {
+export const useNotifications = () => {
   const permissions = useUnifiedPermissionsV2();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  const generateAlerts = useCallback((): AlertConfig[] => {
-    const alerts: AlertConfig[] = [];
+  const generateAlerts = useCallback((): NotificationAlert[] => {
+    const alerts: NotificationAlert[] = [];
 
     // No generar alertas para superusuarios
     if (permissions.accessLevel === 'superuser') {

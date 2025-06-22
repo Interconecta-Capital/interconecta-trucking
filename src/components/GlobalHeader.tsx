@@ -1,120 +1,102 @@
 
-import { Bell, Plus, Search, Settings } from 'lucide-react';
+import { Bell, User, LogOut, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { UserMenu } from './UserMenu';
-import { SettingsDialog } from './SettingsDialog';
-import { PlanBadge } from './common/PlanBadge';
-import { ScheduleDropdown } from './ScheduleDropdown';
-import { NotificationsPopover } from './dashboard/NotificationsPopover';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { LimitUsageIndicator } from './common/LimitUsageIndicator';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { PlanBadge } from '@/components/common/PlanBadge';
+import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
 export function GlobalHeader() {
-  const navigate = useNavigate();
-  const [showSettings, setShowSettings] = useState(false);
-  const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
   const permissions = useUnifiedPermissionsV2();
 
-  // En móvil, ocultar PlanBadge si está en período de prueba activo
-  const shouldShowPlanBadge = !isMobile || permissions.accessLevel !== 'trial';
-  
-  // Solo superusuarios ven funciones administrativas
-  const isAdmin = permissions.accessLevel === 'superuser';
-
-  const handleNuevoViaje = () => {
-    navigate('/viajes/programar');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
+  const getAlertCount = () => {
+    let count = 0;
+    
+    // Cuenta bloqueada
+    if (permissions.accessLevel === 'blocked') count++;
+    
+    // Plan expirado
+    if (permissions.accessLevel === 'expired') count++;
+    
+    // Trial próximo a expirar
+    if (permissions.accessLevel === 'trial') {
+      const daysRemaining = permissions.planInfo.daysRemaining || 0;
+      if (daysRemaining <= 5) count++;
+    }
+    
+    return count;
+  };
+
+  const alertCount = getAlertCount();
+
   return (
-    <>
-      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-gray-20 bg-pure-white/95 backdrop-blur-premium px-6">
-        <SidebarTrigger className="text-gray-60 hover:text-gray-90 transition-colors duration-200" />
-        
-        <div className="flex flex-1 items-center gap-4">
-          {/* Barra de búsqueda estilo Apple */}
-          <form className="flex-1 max-w-lg">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-50" />
-              <Input
-                type="search"
-                placeholder={isMobile ? "Buscar..." : "Buscar cartas porte, viajes, vehículos..."}
-                className="w-full bg-gray-05 border-gray-20 rounded-xl pl-10 pr-4 py-3 text-sm placeholder:text-gray-50 focus:bg-pure-white focus:border-blue-interconecta focus:ring-1 focus:ring-blue-interconecta transition-all duration-200"
-              />
-            </div>
-          </form>
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-semibold text-gray-900">
+            Sistema de Gestión Logística
+          </h1>
+          <PlanBadge size="sm" />
         </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Plan Badge con indicador de límites - Condicional para móvil */}
-          {shouldShowPlanBadge && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <div className="cursor-pointer">
-                  <PlanBadge />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 bg-pure-white border-gray-20 rounded-2xl shadow-lg p-6" align="end">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-90 text-lg">Uso Actual</h4>
-                  <div className="space-y-3">
-                    <LimitUsageIndicator resourceType="cartas_porte" />
-                    <LimitUsageIndicator resourceType="conductores" />
-                    <LimitUsageIndicator resourceType="vehiculos" />
-                    <LimitUsageIndicator resourceType="socios" />
-                  </div>
-                  <div className="pt-3 border-t border-gray-20">
-                    <Link to="/planes">
-                      <Button className="w-full bg-blue-interconecta hover:bg-blue-hover text-pure-white rounded-xl py-3 font-medium transition-all duration-200">
-                        Ver Planes
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-          
-          <Button 
-            onClick={handleNuevoViaje}
-            className="bg-blue-interconecta hover:bg-blue-hover text-pure-white rounded-xl px-4 py-2.5 font-medium flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuevo Viaje</span>
+
+        <div className="flex items-center space-x-4">
+          {/* Notificaciones */}
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell className="h-4 w-4" />
+            {alertCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              >
+                {alertCount}
+              </Badge>
+            )}
           </Button>
-          
-          {/* ScheduleDropdown - Solo visible para superusuarios */}
-          {isAdmin && <ScheduleDropdown />}
-          
-          {/* Notificaciones - Solo visible para superusuarios */}
-          {isAdmin && <NotificationsPopover />}
-          
-          {!isMobile && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-10 w-10 rounded-xl text-gray-60 hover:text-gray-90 hover:bg-gray-05 transition-all duration-200"
-              onClick={() => setShowSettings(true)}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="sr-only">Configuración</span>
-            </Button>
-          )}
-          
-          <UserMenu />
+
+          {/* Menú de usuario */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <User className="h-4 w-4" />
+                <span className="hidden md:inline-block">
+                  {user?.email?.split('@')[0] || 'Usuario'}
+                </span>
+                {permissions.accessLevel === 'superuser' && (
+                  <Shield className="h-3 w-3 text-yellow-600" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{user?.email}</p>
+                <p className="text-xs text-gray-500">
+                  {permissions.accessLevel === 'superuser' ? 'Superusuario' : permissions.planInfo.name}
+                </p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        
-        <SettingsDialog
-          open={showSettings}
-          onOpenChange={setShowSettings}
-        />
-      </header>
-    </>
+      </div>
+    </header>
   );
 }

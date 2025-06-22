@@ -14,9 +14,7 @@ interface ProtectedFeatureProps {
 }
 
 /**
- * Componente de Funcionalidad Protegida - Migrado a useUnifiedPermissionsV2
- * 
- * @deprecated - Usar ProtectedContent con useUnifiedPermissionsV2 en su lugar para nuevos desarrollos
+ * Componente de Funcionalidad Protegida - Usa useUnifiedPermissionsV2 como única fuente de verdad
  */
 export const ProtectedFeature = ({ 
   children, 

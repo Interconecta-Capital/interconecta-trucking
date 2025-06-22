@@ -1,6 +1,6 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Crown, Shield, Star, Zap, Gift, AlertTriangle, Clock, Trash2 } from 'lucide-react';
+import { Crown, Shield, Star, Zap, Gift, AlertTriangle, Clock } from 'lucide-react';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
 interface PlanBadgeProps {
