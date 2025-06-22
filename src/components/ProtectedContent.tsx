@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,11 +22,11 @@ export const ProtectedContent = ({
   fallback,
   showUpgrade = true
 }: ProtectedContentProps) => {
-  const permissions = useUnifiedPermissions();
+  const permissions = useUnifiedPermissionsV2();
   const navigate = useNavigate();
   
-  // Superusers bypass all restrictions
-  if (permissions.isSuperuser) {
+  // Superusuarios bypasean todas las restricciones
+  if (permissions.accessLevel === 'superuser') {
     return (
       <div className="space-y-4">
         <Alert className="border-yellow-200 bg-yellow-50">
@@ -46,12 +46,12 @@ export const ProtectedContent = ({
   }
 
   // Verificar bloqueos primero
-  if (permissions.estaBloqueado) {
+  if (permissions.accessLevel === 'blocked') {
     return (
       <Alert className="border-red-200 bg-red-50">
         <Lock className="h-4 w-4 text-red-600" />
         <AlertDescription className="flex items-center justify-between">
-          <span className="text-red-800">Su cuenta está bloqueada por falta de pago</span>
+          <span className="text-red-800">{permissions.accessReason}</span>
           {showUpgrade && (
             <Button 
               size="sm" 
@@ -59,7 +59,7 @@ export const ProtectedContent = ({
               className="ml-4 bg-red-600 hover:bg-red-700"
             >
               <TrendingUp className="w-3 h-3 mr-1" />
-              Renovar Suscripción
+              Reactivar Cuenta
             </Button>
           )}
         </AlertDescription>
@@ -67,12 +67,13 @@ export const ProtectedContent = ({
     );
   }
 
-  if (permissions.suscripcionVencida) {
+  // Plan expirado
+  if (permissions.accessLevel === 'expired') {
     return (
       <Alert className="border-orange-200 bg-orange-50">
         <Lock className="h-4 w-4 text-orange-600" />
         <AlertDescription className="flex items-center justify-between">
-          <span className="text-orange-800">Su suscripción ha vencido</span>
+          <span className="text-orange-800">{permissions.accessReason}</span>
           {showUpgrade && (
             <Button 
               size="sm" 
@@ -80,7 +81,7 @@ export const ProtectedContent = ({
               className="ml-4 bg-orange-600 hover:bg-orange-700"
             >
               <TrendingUp className="w-3 h-3 mr-1" />
-              Renovar Plan
+              Activar Plan
             </Button>
           )}
         </AlertDescription>
@@ -90,16 +91,20 @@ export const ProtectedContent = ({
 
   // Verificar funcionalidad específica
   if (requiredFeature) {
-    const result = permissions.puedeAcceder(requiredFeature);
+    // Durante trial, acceso total
+    if (permissions.accessLevel === 'trial') {
+      return <>{children}</>;
+    }
     
-    if (!result.puede) {
+    // Con plan pagado, verificar si tiene acceso
+    if (permissions.accessLevel === 'paid' && !permissions.hasFullAccess) {
       if (fallback) return <>{fallback}</>;
       
       return (
         <Alert className="border-blue-200 bg-blue-50">
           <Lock className="h-4 w-4 text-blue-600" />
           <AlertDescription className="flex items-center justify-between">
-            <span className="text-blue-800">{result.razon || 'Funcionalidad no disponible'}</span>
+            <span className="text-blue-800">Funcionalidad no disponible en tu plan actual</span>
             {showUpgrade && (
               <Button 
                 size="sm" 
@@ -117,7 +122,7 @@ export const ProtectedContent = ({
   }
 
   // Verificar plan específico
-  if (requiredPlan && permissions.planActual !== requiredPlan) {
+  if (requiredPlan && permissions.planInfo.name !== requiredPlan) {
     if (fallback) return <>{fallback}</>;
     
     return (
@@ -125,7 +130,7 @@ export const ProtectedContent = ({
         <Lock className="h-4 w-4 text-purple-600" />
         <AlertDescription className="flex items-center justify-between">
           <span className="text-purple-800">
-            Esta funcionalidad requiere el plan {requiredPlan}. Plan actual: {permissions.planActual}
+            Esta funcionalidad requiere el plan {requiredPlan}. Plan actual: {permissions.planInfo.name}
           </span>
           {showUpgrade && (
             <Button 

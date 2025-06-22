@@ -1,151 +1,56 @@
 
-import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { useConductores } from '@/hooks/useConductores';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useSocios } from '@/hooks/useSocios';
-import { useCartasPorte } from '@/hooks/useCartasPorte';
-import { useTrialManager } from '@/hooks/useTrialManager';
-import { ResourceType, PermissionResult, Limits, UsageData } from '@/types/permissions';
+import { useUnifiedPermissionsV2 } from '../useUnifiedPermissionsV2';
 
+/**
+ * Hook wrapper para compatibilidad - Usa useUnifiedPermissionsV2 internamente
+ * @deprecated Usar useUnifiedPermissionsV2 directamente para nuevos desarrollos
+ */
 export const useResourceLimits = () => {
-  const { suscripcion, verificarLimite, estaBloqueado } = useSuscripcion();
-  const { conductores } = useConductores();
-  const { vehiculos } = useVehiculos();
-  const { socios } = useSocios();
-  const { cartasPorte } = useCartasPorte();
-  const { isInActiveTrial, isTrialExpired, isInGracePeriod } = useTrialManager();
+  const permissions = useUnifiedPermissionsV2();
 
-  const puedeCrear = (tipo: ResourceType): PermissionResult => {
-    try {
-      // Durante trial activo, sin límites
-      if (isInActiveTrial) {
-        return { puede: true, razon: undefined };
-      }
-
-      // Durante período de gracia, solo lectura
-      if (isInGracePeriod) {
-        return { 
-          puede: false, 
-          razon: 'Durante el período de gracia no puede crear nuevos registros. Adquiera un plan para recuperar todas las funciones.' 
-        };
-      }
-
-      if (estaBloqueado) {
-        return { 
-          puede: false, 
-          razon: 'Su cuenta está bloqueada por falta de pago' 
-        };
-      }
-
-      if (isTrialExpired && !suscripcion?.plan) {
-        return {
-          puede: false,
-          razon: 'Su período de prueba ha vencido. Actualice su plan para continuar creando registros.'
-        };
-      }
-
-      // Lógica existente para usuarios con plan pagado
-      let cantidad = 0;
-      switch (tipo) {
-        case 'conductores':
-          cantidad = conductores?.length || 0;
-          break;
-        case 'vehiculos':
-          cantidad = vehiculos?.length || 0;
-          break;
-        case 'socios':
-          cantidad = socios?.length || 0;
-          break;
-        case 'cartas_porte':
-          cantidad = cartasPorte?.length || 0;
-          break;
-      }
-
-      const puedeCrearPorLimite = verificarLimite(tipo, cantidad);
-      
-      if (!puedeCrearPorLimite) {
-        const limite = suscripcion?.plan?.[`limite_${tipo}`];
-        return {
-          puede: false,
-          razon: `Ha alcanzado el límite de ${limite} ${tipo.replace('_', ' ')} para su plan actual`
-        };
-      }
-
-      return { puede: true };
-    } catch (error) {
-      console.error('Error en puedeCrear:', error);
-      // En caso de error, devolver true como fallback
-      return { puede: true };
+  const puedeCrear = (recurso: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte') => {
+    // Superusuarios pueden crear sin límites
+    if (permissions.accessLevel === 'superuser') {
+      return { puede: true, razon: 'Acceso de Superusuario' };
     }
+
+    // Obtener permiso específico del recurso
+    const resourcePermission = permissions.getPermissionForResource(recurso);
+    
+    return {
+      puede: resourcePermission.allowed,
+      razon: resourcePermission.reason
+    };
   };
 
-  const obtenerLimites = (): Limits => {
-    try {
-      // Durante trial activo, sin límites
-      if (isInActiveTrial) {
-        return {
-          cartas_porte: null,
-          conductores: null,
-          vehiculos: null,
-          socios: null,
-        };
-      }
-
-      if (!suscripcion?.plan) return {
-        cartas_porte: null,
-        conductores: null,
-        vehiculos: null,
-        socios: null,
-      };
-
-      return {
-        cartas_porte: suscripcion.plan.limite_cartas_porte,
-        conductores: suscripcion.plan.limite_conductores,
-        vehiculos: suscripcion.plan.limite_vehiculos,
-        socios: suscripcion.plan.limite_socios,
-      };
-    } catch (error) {
-      console.error('Error en obtenerLimites:', error);
-      return {
-        cartas_porte: null,
-        conductores: null,
-        vehiculos: null,
-        socios: null,
-      };
-    }
+  const obtenerLimites = () => {
+    return {
+      conductores: permissions.usage.conductores.limit,
+      vehiculos: permissions.usage.vehiculos.limit,
+      socios: permissions.usage.socios.limit,
+      cartas_porte: permissions.usage.cartas_porte.limit
+    };
   };
 
-  const obtenerUsoActual = (): UsageData => {
-    try {
-      const limites = obtenerLimites();
-      
-      return {
-        cartas_porte: {
-          usado: cartasPorte?.length || 0,
-          limite: limites.cartas_porte || null
-        },
-        conductores: {
-          usado: conductores?.length || 0,
-          limite: limites.conductores || null
-        },
-        vehiculos: {
-          usado: vehiculos?.length || 0,
-          limite: limites.vehiculos || null
-        },
-        socios: {
-          usado: socios?.length || 0,
-          limite: limites.socios || null
-        },
-      };
-    } catch (error) {
-      console.error('Error en obtenerUsoActual:', error);
-      return {
-        cartas_porte: { usado: 0, limite: null },
-        conductores: { usado: 0, limite: null },
-        vehiculos: { usado: 0, limite: null },
-        socios: { usado: 0, limite: null },
-      };
-    }
+  const obtenerUsoActual = () => {
+    return {
+      conductores: {
+        usado: permissions.usage.conductores.used,
+        limite: permissions.usage.conductores.limit
+      },
+      vehiculos: {
+        usado: permissions.usage.vehiculos.used,
+        limite: permissions.usage.vehiculos.limit
+      },
+      socios: {
+        usado: permissions.usage.socios.used,
+        limite: permissions.usage.socios.limit
+      },
+      cartas_porte: {
+        usado: permissions.usage.cartas_porte.used,
+        limite: permissions.usage.cartas_porte.limit
+      }
+    };
   };
 
   return {

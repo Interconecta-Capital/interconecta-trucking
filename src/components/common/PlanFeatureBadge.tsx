@@ -1,7 +1,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Crown, Star, Zap, Gift } from 'lucide-react';
-import { useTrialManager } from '@/hooks/useTrialManager';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
 interface PlanFeatureBadgeProps {
   requiredPlan: 'basico' | 'profesional' | 'empresarial';
@@ -36,12 +36,17 @@ export const PlanFeatureBadge = ({
   showIcon = true,
   className = '' 
 }: PlanFeatureBadgeProps) => {
-  const { isInActiveTrial, isTrialExpired, hasFullAccess } = useTrialManager();
+  const permissions = useUnifiedPermissionsV2();
   const config = planConfig[requiredPlan];
   const Icon = config.icon;
 
+  // Superusuarios no ven badges (tienen acceso total)
+  if (permissions.accessLevel === 'superuser') {
+    return null;
+  }
+
   // Durante trial activo, mostrar que está desbloqueado
-  if (isInActiveTrial) {
+  if (permissions.accessLevel === 'trial') {
     return (
       <Badge 
         variant="outline" 
@@ -54,7 +59,7 @@ export const PlanFeatureBadge = ({
   }
 
   // Post-trial o sin acceso, mostrar plan requerido
-  if (isTrialExpired || !hasFullAccess) {
+  if (permissions.accessLevel === 'expired' || !permissions.hasFullAccess) {
     return (
       <Badge 
         variant="outline" 

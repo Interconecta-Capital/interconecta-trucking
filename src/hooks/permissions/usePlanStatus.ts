@@ -1,28 +1,33 @@
 
-import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { useTrialManager } from '@/hooks/useTrialManager';
+import { useUnifiedPermissionsV2 } from '../useUnifiedPermissionsV2';
 
+/**
+ * Hook wrapper para compatibilidad - Usa useUnifiedPermissionsV2 internamente
+ * @deprecated Usar useUnifiedPermissionsV2 directamente para nuevos desarrollos
+ */
 export const usePlanStatus = () => {
-  const { suscripcion } = useSuscripcion();
-  const { isInActiveTrial, isInGracePeriod, isTrialExpired } = useTrialManager();
+  const permissions = useUnifiedPermissionsV2();
 
-  const getPlanActual = (): string => {
-    if (isInActiveTrial) {
-      return 'Trial Completo (14 días)';
-    }
-    
-    if (isInGracePeriod) {
-      return 'Período de Gracia (Solo Lectura)';
-    }
-    
-    if (isTrialExpired && !suscripcion?.plan) {
-      return 'Sin Plan';
-    }
-    
-    return suscripcion?.plan?.nombre || 'Sin plan';
+  const getPlanActual = () => {
+    return permissions.planInfo.name;
+  };
+
+  const getTipoPlan = () => {
+    return permissions.planInfo.type;
+  };
+
+  const getPlanInfo = () => {
+    return permissions.planInfo;
+  };
+
+  const isActivePlan = () => {
+    return permissions.planInfo.isActive;
   };
 
   return {
-    getPlanActual
+    getPlanActual,
+    getTipoPlan,
+    getPlanInfo,
+    isActivePlan
   };
 };

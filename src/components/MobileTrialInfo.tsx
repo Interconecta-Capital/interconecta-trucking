@@ -2,33 +2,36 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useTrialTracking } from '@/hooks/useTrialTracking';
-import { useSuscripcion } from '@/hooks/useSuscripcion';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { Calendar, Clock, AlertCircle, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-/**
- * @deprecated - La información de trial ahora se maneja a través de useUnifiedPermissions
- * y se muestra en UnifiedPlanNotifications
- */
 export function MobileTrialInfo() {
-  const { trialInfo, loading } = useTrialTracking();
-  const { suscripcion, enPeriodoPrueba } = useSuscripcion();
+  const permissions = useUnifiedPermissionsV2();
 
-  if (loading) {
+  // No mostrar información para superusuarios
+  if (permissions.accessLevel === 'superuser') {
     return (
-      <div className="px-3 py-2 border-t">
-        <div className="animate-pulse">
-          <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
-          <div className="h-2 bg-gray-200 rounded w-full"></div>
+      <div className="px-3 py-3 border-t bg-yellow-50/50">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Crown className="h-4 w-4 text-yellow-600" />
+            <span className="text-sm font-medium text-yellow-800">Modo Superuser</span>
+          </div>
+          <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
+            Acceso Total
+          </Badge>
         </div>
       </div>
     );
   }
 
-  // Si está en período de prueba, mostrar información de trial
-  if (trialInfo.isTrialActive || enPeriodoPrueba() || suscripcion?.status === 'trial') {
-    const progressPercentage = (trialInfo.daysUsed / trialInfo.totalTrialDays) * 100;
+  // Trial activo
+  if (permissions.accessLevel === 'trial') {
+    const daysRemaining = permissions.planInfo.daysRemaining || 0;
+    const totalDays = 30; // Asumiendo 30 días de trial
+    const daysUsed = totalDays - daysRemaining;
+    const progressPercentage = (daysUsed / totalDays) * 100;
     
     return (
       <div className="px-3 py-3 border-t bg-orange-50/50">
@@ -41,7 +44,7 @@ export function MobileTrialInfo() {
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-orange-700">
               <span>Días utilizados</span>
-              <span className="font-medium">{trialInfo.daysUsed} / {trialInfo.totalTrialDays}</span>
+              <span className="font-medium">{daysUsed} / {totalDays}</span>
             </div>
             <Progress value={progressPercentage} className="h-1.5" />
           </div>
@@ -49,14 +52,14 @@ export function MobileTrialInfo() {
           <div className="flex items-center gap-2 text-xs text-orange-700">
             <Clock className="h-3 w-3" />
             <span>
-              {trialInfo.daysRemaining === 0 
+              {daysRemaining === 0 
                 ? 'Último día de prueba'
-                : `${trialInfo.daysRemaining} días restantes`
+                : `${daysRemaining} días restantes`
               }
             </span>
           </div>
 
-          {trialInfo.daysRemaining <= 3 && (
+          {daysRemaining <= 3 && (
             <Link to="/planes" className="block">
               <Button size="sm" className="w-full text-xs">
                 Actualizar Plan
@@ -68,21 +71,23 @@ export function MobileTrialInfo() {
     );
   }
 
-  // Si el trial expiró
-  if (trialInfo.isTrialExpired) {
+  // Plan expirado o bloqueado
+  if (permissions.accessLevel === 'expired' || permissions.accessLevel === 'blocked') {
     return (
       <div className="px-3 py-3 border-t bg-red-50/50">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <span className="text-sm font-medium text-red-800">Trial Expirado</span>
+            <span className="text-sm font-medium text-red-800">
+              {permissions.accessLevel === 'blocked' ? 'Cuenta Bloqueada' : 'Plan Expirado'}
+            </span>
           </div>
           <p className="text-xs text-red-700">
-            Tu período de prueba ha expirado. Actualiza tu plan para continuar.
+            {permissions.accessReason}
           </p>
           <Link to="/planes" className="block">
             <Button size="sm" className="w-full text-xs">
-              Ver Planes
+              {permissions.accessLevel === 'blocked' ? 'Reactivar Cuenta' : 'Ver Planes'}
             </Button>
           </Link>
         </div>
@@ -90,8 +95,8 @@ export function MobileTrialInfo() {
     );
   }
 
-  // Si tiene suscripción activa, mostrar el plan actual
-  if (suscripcion?.status === 'active' && suscripcion.plan) {
+  // Plan activo
+  if (permissions.accessLevel === 'paid') {
     return (
       <div className="px-3 py-3 border-t bg-green-50/50">
         <div className="space-y-2">
@@ -100,7 +105,7 @@ export function MobileTrialInfo() {
             <span className="text-sm font-medium text-green-800">Plan Actual</span>
           </div>
           <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
-            {suscripcion.plan.nombre}
+            {permissions.planInfo.name}
           </Badge>
           <Link to="/planes" className="block">
             <Button size="sm" variant="outline" className="w-full text-xs">

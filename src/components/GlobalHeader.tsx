@@ -4,31 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserMenu } from './UserMenu';
 import { SettingsDialog } from './SettingsDialog';
-import { PlanBadge } from './PlanBadge';
+import { PlanBadge } from './common/PlanBadge';
 import { ScheduleDropdown } from './ScheduleDropdown';
 import { NotificationsPopover } from './dashboard/NotificationsPopover';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LimitUsageIndicator } from './LimitUsageIndicator';
+import { LimitUsageIndicator } from './common/LimitUsageIndicator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useTrialTracking } from '@/hooks/useTrialTracking';
-import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useNavigate } from 'react-router-dom';
-import { useSuperuser } from '@/hooks/useSuperuser';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
 export function GlobalHeader() {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const isMobile = useIsMobile();
-  const { trialInfo } = useTrialTracking();
-  const { suscripcion, enPeriodoPrueba } = useSuscripcion();
-  const { isSuperuser } = useSuperuser();
+  const permissions = useUnifiedPermissionsV2();
 
-  // En móvil, ocultar PlanBadge si está en período de prueba
-  const shouldShowPlanBadge = !isMobile || 
-    (!trialInfo.isTrialActive && !enPeriodoPrueba() && suscripcion?.status !== 'trial');
+  // En móvil, ocultar PlanBadge si está en período de prueba activo
+  const shouldShowPlanBadge = !isMobile || permissions.accessLevel !== 'trial';
+  
+  // Solo superusuarios ven funciones administrativas
+  const isAdmin = permissions.accessLevel === 'superuser';
 
   const handleNuevoViaje = () => {
     navigate('/viajes/programar');
@@ -92,10 +90,10 @@ export function GlobalHeader() {
           </Button>
           
           {/* ScheduleDropdown - Solo visible para superusuarios */}
-          {isSuperuser && <ScheduleDropdown />}
+          {isAdmin && <ScheduleDropdown />}
           
           {/* Notificaciones - Solo visible para superusuarios */}
-          {isSuperuser && <NotificationsPopover />}
+          {isAdmin && <NotificationsPopover />}
           
           {!isMobile && (
             <Button 

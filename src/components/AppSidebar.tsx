@@ -27,14 +27,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { usePermisosSubscripcion } from '@/hooks/usePermisosSubscripcion';
-import { useSuperuser } from '@/hooks/useSuperuser';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
 export const AppSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { puedeAccederAdministracion } = usePermisosSubscripcion();
-  const { isSuperuser } = useSuperuser();
+  const permissions = useUnifiedPermissionsV2();
   const { state } = useSidebar();
 
   const isActive = (path: string) => location.pathname === path;
@@ -43,6 +41,9 @@ export const AppSidebar = () => {
   const handleNuevoViaje = () => {
     navigate('/viajes/programar');
   };
+
+  // Solo superusuarios pueden acceder a administración
+  const canAccessAdmin = permissions.accessLevel === 'superuser';
 
   return (
     <Sidebar 
@@ -267,8 +268,7 @@ export const AppSidebar = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {/* Solo mostrar administración para superusuarios */}
-            {isSuperuser && (
+            {canAccessAdmin && (
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
