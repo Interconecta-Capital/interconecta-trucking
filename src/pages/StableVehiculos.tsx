@@ -34,7 +34,7 @@ export default function StableVehiculos() {
     console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');
     
     // Verificar permisos antes de abrir el diálogo
-    const permissionCheck = permissions.canCreateVehiculo();
+    const permissionCheck = permissions.canCreateVehiculo;
     if (!permissionCheck.allowed) {
       toast.error(permissionCheck.reason || 'No tienes permisos para crear vehículos');
       return;
@@ -90,7 +90,7 @@ export default function StableVehiculos() {
   }
 
   // Verificar si se puede crear vehículo
-  const canCreateVehiculo = permissions.canCreateVehiculo();
+  const canCreateVehiculo = permissions.canCreateVehiculo;
 
   return (
     <ProtectedContent requiredFeature="vehiculos">
