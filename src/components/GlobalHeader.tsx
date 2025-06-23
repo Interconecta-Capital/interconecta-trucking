@@ -1,5 +1,5 @@
 
-import { Bell, User, LogOut, Shield } from 'lucide-react';
+import { Bell, User, LogOut, Shield, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -7,9 +7,16 @@ import { PlanBadge } from '@/components/common/PlanBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 
-export function GlobalHeader() {
+import { useIsMobile } from '@/hooks/use-mobile';
+
+interface GlobalHeaderProps {
+  onOpenSidebar?: () => void;
+}
+
+export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const { user, signOut } = useAuth();
   const permissions = useUnifiedPermissionsV2();
+  const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
     try {
@@ -43,6 +50,16 @@ export function GlobalHeader() {
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          {isMobile && onOpenSidebar && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onOpenSidebar}
+              className="md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
           <h1 className="text-xl font-semibold text-gray-900">
             Sistema de Gestión Logística
           </h1>
