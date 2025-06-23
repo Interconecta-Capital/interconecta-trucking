@@ -13,13 +13,15 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
 import { useStableAuth } from '@/hooks/useStableAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { ProtectedActionsV2 } from '@/components/ProtectedActionsV2'; // ✅ FASE 2: Usando nuevo sistema
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { toast } from 'sonner';
 
 export default function StableVehiculos() {
   const { user } = useStableAuth();
   const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
+  const permissions = useUnifiedPermissionsV2();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -30,6 +32,14 @@ export default function StableVehiculos() {
 
   const handleNewVehiculo = () => {
     console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');
+    
+    // Verificar permisos antes de abrir el diálogo
+    const permissionCheck = permissions.canCreateVehiculo();
+    if (!permissionCheck.allowed) {
+      toast.error(permissionCheck.reason || 'No tienes permisos para crear vehículos');
+      return;
+    }
+    
     setSelectedVehiculo(null);
     setShowCreateDialog(true);
   };
@@ -79,6 +89,9 @@ export default function StableVehiculos() {
     );
   }
 
+  // Verificar si se puede crear vehículo
+  const canCreateVehiculo = permissions.canCreateVehiculo();
+
   return (
     <ProtectedContent requiredFeature="vehiculos">
       <div className="container mx-auto py-8 space-y-8 max-w-7xl">
@@ -92,14 +105,18 @@ export default function StableVehiculos() {
           icon={Car}
           className="mb-8"
         >
-          {/* ✅ FASE 2: Reemplazando ProtectedActions con ProtectedActionsV2 */}
-          <ProtectedActionsV2
-            resource="vehiculos"
-            onAction={handleNewVehiculo}
-            buttonText="Nuevo Vehículo"
-            variant="default"
-            showReason={true}
-          />
+          <Button 
+            onClick={handleNewVehiculo} 
+            variant="default" 
+            className="flex items-center gap-2"
+            disabled={!canCreateVehiculo.allowed}
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo Vehículo
+          </Button>
+          {!canCreateVehiculo.allowed && (
+            <p className="text-sm text-red-600 mt-1">{canCreateVehiculo.reason}</p>
+          )}
         </SectionHeader>
 
         {/* Indicador de límites */}

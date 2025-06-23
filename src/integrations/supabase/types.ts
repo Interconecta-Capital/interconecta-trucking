@@ -2770,7 +2770,9 @@ export type Database = {
           poliza_med_ambiente: string | null
           poliza_resp_civil: string | null
           poliza_seguro: string | null
+          rendimiento: number | null
           tipo_carroceria: string | null
+          tipo_combustible: string | null
           updated_at: string | null
           user_id: string
           verificacion_vigencia: string | null
@@ -2805,7 +2807,9 @@ export type Database = {
           poliza_med_ambiente?: string | null
           poliza_resp_civil?: string | null
           poliza_seguro?: string | null
+          rendimiento?: number | null
           tipo_carroceria?: string | null
+          tipo_combustible?: string | null
           updated_at?: string | null
           user_id: string
           verificacion_vigencia?: string | null
@@ -2840,7 +2844,9 @@ export type Database = {
           poliza_med_ambiente?: string | null
           poliza_resp_civil?: string | null
           poliza_seguro?: string | null
+          rendimiento?: number | null
           tipo_carroceria?: string | null
+          tipo_combustible?: string | null
           updated_at?: string | null
           user_id?: string
           verificacion_vigencia?: string | null

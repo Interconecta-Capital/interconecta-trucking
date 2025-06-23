@@ -21,6 +21,13 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
     { value: 'C4', label: 'C4 - Camión Unitario (4 ejes)' }
   ];
 
+  const tiposCombustible = [
+    { value: 'Gasolina', label: 'Gasolina' },
+    { value: 'Diésel', label: 'Diésel' },
+    { value: 'Eléctrico', label: 'Eléctrico' },
+    { value: 'Híbrido', label: 'Híbrido' }
+  ];
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Información Básica</h3>
@@ -59,7 +66,7 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label htmlFor="anio">Año</Label>
           <Input
@@ -81,25 +88,59 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
             placeholder="VIN del vehículo"
           />
         </div>
+
+        <div>
+          <Label htmlFor="tipo_combustible">Tipo de Combustible</Label>
+          <Select 
+            value={formData.tipo_combustible || ''} 
+            onValueChange={(value) => onFieldChange('tipo_combustible', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar combustible..." />
+            </SelectTrigger>
+            <SelectContent>
+              {tiposCombustible.map((tipo) => (
+                <SelectItem key={tipo.value} value={tipo.value}>
+                  {tipo.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div>
-        <Label htmlFor="config_vehicular">Configuración Vehicular</Label>
-        <Select 
-          value={formData.config_vehicular || ''} 
-          onValueChange={(value) => onFieldChange('config_vehicular', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccionar configuración..." />
-          </SelectTrigger>
-          <SelectContent>
-            {configuracionesVehiculares.map((config) => (
-              <SelectItem key={config.value} value={config.value}>
-                {config.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="config_vehicular">Configuración Vehicular</Label>
+          <Select 
+            value={formData.config_vehicular || ''} 
+            onValueChange={(value) => onFieldChange('config_vehicular', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar configuración..." />
+            </SelectTrigger>
+            <SelectContent>
+              {configuracionesVehiculares.map((config) => (
+                <SelectItem key={config.value} value={config.value}>
+                  {config.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="rendimiento">Rendimiento (km/l)</Label>
+          <Input
+            id="rendimiento"
+            type="number"
+            step="0.1"
+            min="0"
+            value={formData.rendimiento || ''}
+            onChange={(e) => onFieldChange('rendimiento', parseFloat(e.target.value) || '')}
+            placeholder="15.5"
+          />
+        </div>
       </div>
     </div>
   );

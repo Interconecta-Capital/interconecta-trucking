@@ -1,5 +1,5 @@
 
-import { Building2, Car, FileText, Route, Settings, TrendingUp, Users, Wrench, LayoutDashboard } from 'lucide-react';
+import { Building2, Car, FileText, Route, Settings, TrendingUp, Users, Wrench, LayoutDashboard, CreditCard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,17 +10,18 @@ interface SidebarItem {
   href: string;
   icon: any;
   badge?: string;
-  requiresPermission?: string;
+  requiresPermission?: boolean;
 }
 
 const sidebarItems: SidebarItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { title: 'Viajes', href: '/viajes', icon: Route, requiresPermission: 'viajes' },
-  { title: 'Vehículos', href: '/vehiculos', icon: Car, requiresPermission: 'vehiculos' },
-  { title: 'Conductores', href: '/conductores', icon: Users, requiresPermission: 'conductores' },
-  { title: 'Socios', href: '/socios', icon: Building2, requiresPermission: 'socios' },
-  { title: 'Remolques', href: '/remolques', icon: Wrench, requiresPermission: 'vehiculos' },
-  { title: 'Carta Porte', href: '/cartas-porte', icon: FileText, requiresPermission: 'cartas_porte' },
+  { title: 'Viajes', href: '/viajes', icon: Route, requiresPermission: true },
+  { title: 'Vehículos', href: '/vehiculos', icon: Car, requiresPermission: true },
+  { title: 'Conductores', href: '/conductores', icon: Users, requiresPermission: true },
+  { title: 'Socios', href: '/socios', icon: Building2, requiresPermission: true },
+  { title: 'Remolques', href: '/remolques', icon: Wrench, requiresPermission: true },
+  { title: 'Carta Porte', href: '/cartas-porte', icon: FileText, requiresPermission: true },
+  { title: 'Planes', href: '/planes', icon: CreditCard },
   { title: 'Configuración', href: '/configuracion/empresa', icon: Settings }
 ];
 
@@ -39,13 +40,8 @@ export function AppSidebar() {
       return true;
     }
 
-    // Durante trial activo, acceso total
-    if (permissions.accessLevel === 'trial') {
-      return true;
-    }
-
-    // Con plan activo, verificar acceso completo
-    if (permissions.accessLevel === 'paid') {
+    // Con plan activo (trial o paid), acceso completo
+    if (permissions.accessLevel === 'trial' || permissions.accessLevel === 'paid') {
       return permissions.hasFullAccess;
     }
 

@@ -36,7 +36,9 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     tipo_carroceria: '',
     peso_bruto_vehicular: '',
     verificacion_vigencia: '',
-    estado: 'disponible'
+    estado: 'disponible',
+    tipo_combustible: '',
+    rendimiento: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,7 +67,9 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         tipo_carroceria: vehiculoActual.tipo_carroceria || '',
         peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
-        estado: vehiculoActual.estado || 'disponible'
+        estado: vehiculoActual.estado || 'disponible',
+        tipo_combustible: vehiculoActual.tipo_combustible || '',
+        rendimiento: vehiculoActual.rendimiento?.toString() || ''
       });
     }
   }, [vehiculoActual]);
@@ -102,6 +106,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         anio: formData.anio ? parseInt(formData.anio) : undefined,
         capacidad_carga: formData.capacidad_carga ? parseFloat(formData.capacidad_carga) : undefined,
         peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
+        rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
         activo: true
       };
 
