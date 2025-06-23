@@ -29,6 +29,7 @@ export interface UnifiedPermissions {
   canCreateVehiculo: PermissionResult;
   canCreateSocio: PermissionResult;
   canCreateCartaPorte: PermissionResult;
+  canCreateViaje: PermissionResult;
   canUploadFile: PermissionResult;
   
   // Permisos de funcionalidades
@@ -108,6 +109,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: true, reason: 'Superusuario' },
         canCreateSocio: { allowed: true, reason: 'Superusuario' },
         canCreateCartaPorte: { allowed: true, reason: 'Superusuario' },
+        canCreateViaje: { allowed: true, reason: 'Superusuario' },
         canUploadFile: { allowed: true, reason: 'Superusuario' },
         
         canTimbrar: { allowed: true, reason: 'Superusuario' },
@@ -160,6 +162,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: true, reason: 'Período de prueba activo' },
         canCreateSocio: { allowed: true, reason: 'Período de prueba activo' },
         canCreateCartaPorte: { allowed: true, reason: 'Período de prueba activo' },
+        canCreateViaje: { allowed: true, reason: 'Período de prueba activo' },
         canUploadFile: { allowed: true, reason: 'Período de prueba activo' },
         
         canTimbrar: { allowed: true, reason: 'Período de prueba activo' },
@@ -214,6 +217,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: false, reason: 'Cuenta bloqueada' },
         canCreateSocio: { allowed: false, reason: 'Cuenta bloqueada' },
         canCreateCartaPorte: { allowed: false, reason: 'Cuenta bloqueada' },
+        canCreateViaje: { allowed: false, reason: 'Cuenta bloqueada' },
         canUploadFile: { allowed: false, reason: 'Cuenta bloqueada' },
         
         canTimbrar: { allowed: false, reason: 'Cuenta bloqueada' },
@@ -298,8 +302,16 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         
         canCreateCartaPorte: {
           allowed: plan.limite_cartas_porte ? cartasPorteUsed < plan.limite_cartas_porte : true,
-          reason: plan.limite_cartas_porte ? 
-            `${cartasPorteUsed}/${plan.limite_cartas_porte} cartas de porte usadas` : 
+          reason: plan.limite_cartas_porte ?
+            `${cartasPorteUsed}/${plan.limite_cartas_porte} cartas de porte usadas` :
+            'Sin límite de cartas de porte',
+          limit: plan.limite_cartas_porte || undefined,
+          used: cartasPorteUsed
+        },
+        canCreateViaje: {
+          allowed: plan.limite_cartas_porte ? cartasPorteUsed < plan.limite_cartas_porte : true,
+          reason: plan.limite_cartas_porte ?
+            `${cartasPorteUsed}/${plan.limite_cartas_porte} cartas de porte usadas` :
             'Sin límite de cartas de porte',
           limit: plan.limite_cartas_porte || undefined,
           used: cartasPorteUsed
@@ -378,6 +390,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
             vehiculos: basePermissions.canCreateVehiculo,
             socios: basePermissions.canCreateSocio,
             cartas_porte: basePermissions.canCreateCartaPorte,
+            viajes: basePermissions.canCreateViaje,
             archivos: basePermissions.canUploadFile,
           };
           const permission = resourceMap[resource as keyof typeof resourceMap];
@@ -418,6 +431,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
         canCreateVehiculo: { allowed: false, reason: 'Período de prueba finalizado' },
         canCreateSocio: { allowed: false, reason: 'Período de prueba finalizado' },
         canCreateCartaPorte: { allowed: false, reason: 'Período de prueba finalizado' },
+        canCreateViaje: { allowed: false, reason: 'Período de prueba finalizado' },
         canUploadFile: { allowed: false, reason: 'Período de prueba finalizado' },
         
         canTimbrar: { allowed: false, reason: 'Período de prueba finalizado' },
@@ -469,6 +483,7 @@ export const useUnifiedPermissions = (): UnifiedPermissions => {
       canCreateVehiculo: { allowed: false, reason: 'No tiene plan activo' },
       canCreateSocio: { allowed: false, reason: 'No tiene plan activo' },
       canCreateCartaPorte: { allowed: false, reason: 'No tiene plan activo' },
+      canCreateViaje: { allowed: false, reason: 'No tiene plan activo' },
       canUploadFile: { allowed: false, reason: 'No tiene plan activo' },
       
       canTimbrar: { allowed: false, reason: 'No tiene plan activo' },

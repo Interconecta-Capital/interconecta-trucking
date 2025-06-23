@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ProtectedActionsUnifiedProps {
   action: 'create';
-  resource: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte';
+  resource: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte' | 'viajes';
   onAction: () => void;
   buttonText?: string;
   variant?: 'default' | 'outline' | 'secondary';
@@ -37,6 +37,8 @@ export function ProtectedActionsUnified({
         return permissions.canCreateSocio;
       case 'cartas_porte':
         return permissions.canCreateCartaPorte;
+      case 'viajes':
+        return permissions.canCreateViaje;
       default:
         return { allowed: false, reason: 'Recurso no reconocido' };
     }
