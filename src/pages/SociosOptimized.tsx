@@ -1,74 +1,74 @@
 
 import { useState } from 'react';
-import { Plus, Users, Filter, Search } from 'lucide-react';
+import { Plus, Building2, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ConductoresTable } from '@/components/conductores/ConductoresTable';
-import { ConductoresFilters } from '@/components/conductores/ConductoresFilters';
-import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
-import { ConductorViewDialog } from '@/components/conductores/ConductorViewDialog';
-import { useConductores } from '@/hooks/useConductores';
+import { SociosTable } from '@/components/socios/SociosTable';
+import { SociosFilters } from '@/components/socios/SociosFilters';
+import { SocioFormDialog } from '@/components/socios/SocioFormDialog';
+import { SocioViewDialog } from '@/components/socios/SocioViewDialog';
+import { useSocios } from '@/hooks/useSocios';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
-export default function ConductoresOptimized() {
-  const { conductores, loading, eliminarConductor, recargar } = useConductores();
+export default function SociosOptimized() {
+  const { socios, loading, eliminarSocio, isLoading } = useSocios();
   const permissions = useUnifiedPermissionsV2();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedConductor, setSelectedConductor] = useState<any>(null);
+  const [selectedSocio, setSelectedSocio] = useState<any>(null);
 
-  const handleNewConductor = () => {
-    console.log('[Conductores] 🆕 Iniciando creación de nuevo conductor');
+  const handleNewSocio = () => {
+    console.log('[Socios] 🆕 Iniciando creación de nuevo socio');
     
     // Verificar permisos antes de abrir el diálogo
-    const permissionCheck = permissions.canCreateConductor;
+    const permissionCheck = permissions.canCreateSocio;
     if (!permissionCheck.allowed) {
-      toast.error(permissionCheck.reason || 'No tienes permisos para crear conductores');
+      toast.error(permissionCheck.reason || 'No tienes permisos para crear socios');
       return;
     }
     
-    setSelectedConductor(null);
+    setSelectedSocio(null);
     setShowCreateDialog(true);
   };
 
-  const handleEdit = (conductor: any) => {
-    setSelectedConductor(conductor);
+  const handleEdit = (socio: any) => {
+    setSelectedSocio(socio);
     setShowEditDialog(true);
   };
 
-  const handleView = (conductor: any) => {
-    setSelectedConductor(conductor);
+  const handleView = (socio: any) => {
+    setSelectedSocio(socio);
     setShowViewDialog(true);
   };
 
-  const handleDelete = async (conductor: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar al conductor ${conductor.nombre}?`)) {
+  const handleDelete = async (socio: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar al socio ${socio.nombre_razon_social}?`)) {
       try {
-        await eliminarConductor(conductor.id);
+        await eliminarSocio(socio.id);
       } catch (error) {
         // Error already handled by hook
       }
     }
   };
 
-  const filteredConductores = conductores.filter(conductor =>
-    conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conductor.licencia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conductor.telefono?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSocios = socios.filter(socio =>
+    socio.nombre_razon_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    socio.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    socio.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canCreateConductor = permissions.canCreateConductor;
+  const canCreateSocio = permissions.canCreateSocio;
 
   return (
-    <ProtectedContent requiredFeature="conductores">
+    <ProtectedContent requiredFeature="socios">
       <div className="container mx-auto py-8 space-y-8 max-w-7xl">
         {/* Notificaciones de plan */}
         <PlanNotifications />
@@ -77,34 +77,34 @@ export default function ConductoresOptimized() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-blue-light">
-              <Users className="h-6 w-6 text-blue-interconecta" />
+              <Building2 className="h-6 w-6 text-blue-interconecta" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Conductores</h1>
-              <p className="text-sm text-gray-600 mt-1">Gestiona tu equipo de conductores</p>
+              <h1 className="text-2xl font-bold text-gray-900">Socios</h1>
+              <p className="text-sm text-gray-600 mt-1">Gestiona tus socios comerciales</p>
             </div>
           </div>
           
           <Button 
-            onClick={handleNewConductor} 
+            onClick={handleNewSocio} 
             size="lg"
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-            disabled={!canCreateConductor.allowed}
+            disabled={!canCreateSocio.allowed}
           >
             <Plus className="h-5 w-5" />
-            Nuevo Conductor
+            Nuevo Socio
           </Button>
         </div>
 
-        {!canCreateConductor.allowed && (
+        {!canCreateSocio.allowed && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">{canCreateConductor.reason}</p>
+            <p className="text-sm text-yellow-800">{canCreateSocio.reason}</p>
           </div>
         )}
 
         {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <LimitUsageIndicator resourceType="conductores" className="md:col-span-2" />
+          <LimitUsageIndicator resourceType="socios" className="md:col-span-2" />
         </div>
 
         {/* Filtros y búsqueda */}
@@ -112,7 +112,7 @@ export default function ConductoresOptimized() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
-              placeholder="Buscar por nombre, licencia o teléfono..."
+              placeholder="Buscar por nombre, RFC o email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
@@ -126,20 +126,12 @@ export default function ConductoresOptimized() {
             <Filter className="h-4 w-4 mr-2" />
             Filtros
           </Button>
-          <Button 
-            variant="outline"
-            onClick={recargar}
-            disabled={loading}
-            className="h-12 px-6 bg-pure-white shadow-sm border-0"
-          >
-            Actualizar
-          </Button>
         </div>
 
         {/* Filtros adicionales */}
         {showFilters && (
           <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm p-6">
-            <ConductoresFilters />
+            <SociosFilters />
           </div>
         )}
 
@@ -147,10 +139,10 @@ export default function ConductoresOptimized() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-blue-interconecta">Total Conductores</CardTitle>
+              <CardTitle className="text-lg text-blue-interconecta">Total Socios</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-blue-interconecta">{conductores.length}</p>
+              <p className="text-3xl font-bold text-blue-interconecta">{socios.length}</p>
             </CardContent>
           </Card>
           
@@ -159,7 +151,7 @@ export default function ConductoresOptimized() {
               <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-700">{filteredConductores.length}</p>
+              <p className="text-3xl font-bold text-green-700">{filteredSocios.length}</p>
             </CardContent>
           </Card>
           
@@ -176,8 +168,8 @@ export default function ConductoresOptimized() {
         </div>
 
         {/* Tabla */}
-        <ConductoresTable 
-          conductores={filteredConductores}
+        <SociosTable 
+          socios={filteredSocios}
           loading={loading}
           onEdit={handleEdit}
           onView={handleView}
@@ -185,33 +177,31 @@ export default function ConductoresOptimized() {
         />
 
         {/* Diálogos */}
-        <ConductorFormDialog
+        <SocioFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
           onSuccess={() => {
             setShowCreateDialog(false);
-            recargar();
           }}
         />
 
-        <ConductorFormDialog
+        <SocioFormDialog
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
-          conductor={selectedConductor}
+          socio={selectedSocio}
           onSuccess={() => {
             setShowEditDialog(false);
-            setSelectedConductor(null);
-            recargar();
+            setSelectedSocio(null);
           }}
         />
 
-        <ConductorViewDialog
+        <SocioViewDialog
           open={showViewDialog}
           onOpenChange={setShowViewDialog}
-          conductor={selectedConductor}
+          socio={selectedSocio}
           onEdit={() => {
             setShowViewDialog(false);
-            setSelectedConductor(selectedConductor);
+            setSelectedSocio(selectedSocio);
             setShowEditDialog(true);
           }}
         />

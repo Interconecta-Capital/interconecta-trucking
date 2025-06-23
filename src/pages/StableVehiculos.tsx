@@ -98,26 +98,34 @@ export default function StableVehiculos() {
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
-        {/* Header estilo Apple */}
-        <SectionHeader
-          title="Flota de Vehículos"
-          description="Gestiona tus vehículos y unidades de transporte"
-          icon={Car}
-          className="mb-8"
-        >
+        {/* Header con botón de Nueva Carta Porte estilo */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-light">
+              <Car className="h-6 w-6 text-blue-interconecta" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Vehículos</h1>
+              <p className="text-sm text-gray-600 mt-1">Gestiona tu flota de vehículos</p>
+            </div>
+          </div>
+          
           <Button 
             onClick={handleNewVehiculo} 
-            variant="default" 
-            className="flex items-center gap-2"
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
             disabled={!canCreateVehiculo.allowed}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Nuevo Vehículo
           </Button>
-          {!canCreateVehiculo.allowed && (
-            <p className="text-sm text-red-600 mt-1">{canCreateVehiculo.reason}</p>
-          )}
-        </SectionHeader>
+        </div>
+
+        {!canCreateVehiculo.allowed && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">{canCreateVehiculo.reason}</p>
+          </div>
+        )}
 
         {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
