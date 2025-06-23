@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -158,6 +160,68 @@ export function EnhancedCalendarView() {
         <CardContent>
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isMobile) {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    const eventosHoy = getEventsForDate(today);
+    const eventosManana = getEventsForDate(tomorrow);
+
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5" />
+            Próximos Eventos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-sm font-medium mb-1">Hoy</h3>
+            {eventosHoy.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin eventos</p>
+            ) : (
+              <div className="space-y-2">
+                {eventosHoy.map((ev, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 border rounded-md"
+                  >
+                    <span className="text-sm">{ev.titulo}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(ev.fecha, 'HH:mm', { locale: es })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <h3 className="text-sm font-medium mb-1">Mañana</h3>
+            {eventosManana.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin eventos</p>
+            ) : (
+              <div className="space-y-2">
+                {eventosManana.map((ev, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 border rounded-md"
+                  >
+                    <span className="text-sm">{ev.titulo}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(ev.fecha, 'HH:mm', { locale: es })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
