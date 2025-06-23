@@ -7,6 +7,8 @@ import { navItems } from "./nav-items"
 import { GlobalHeader } from "./components/GlobalHeader"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./components/AppSidebar"
+import { AuthProvider } from "./hooks/useAuth"
+import { AuthGuard } from "./components/auth/AuthGuard"
 
 const queryClient = new QueryClient()
 
@@ -15,26 +17,30 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full">
-            <AppSidebar />
-            <SidebarInset>
-              <div className="flex flex-col min-h-screen">
-                <GlobalHeader />
-                <main className="flex-1">
-                  <div className="p-4">
-                    <SidebarTrigger className="mb-4" />
-                    <Routes>
-                      {navItems.map(({ to, page }) => (
-                        <Route key={to} path={to} element={page} />
-                      ))}
-                    </Routes>
+        <AuthProvider>
+          <AuthGuard>
+            <SidebarProvider>
+              <div className="min-h-screen flex w-full">
+                <AppSidebar />
+                <SidebarInset>
+                  <div className="flex flex-col min-h-screen">
+                    <GlobalHeader />
+                    <main className="flex-1">
+                      <div className="p-4">
+                        <SidebarTrigger className="mb-4" />
+                        <Routes>
+                          {navItems.map(({ to, page }) => (
+                            <Route key={to} path={to} element={page} />
+                          ))}
+                        </Routes>
+                      </div>
+                    </main>
                   </div>
-                </main>
+                </SidebarInset>
               </div>
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
+            </SidebarProvider>
+          </AuthGuard>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
