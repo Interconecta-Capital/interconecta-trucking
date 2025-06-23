@@ -9,7 +9,7 @@ import { UpgradeModal } from '@/components/common/UpgradeModal';
 interface ProtectedActionsProps {
   children?: ReactNode;
   action: 'create';
-  resource: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte';
+  resource: 'conductores' | 'vehiculos' | 'socios' | 'cartas_porte' | 'viajes';
   onAction?: () => void;
   buttonText?: string;
   variant?: 'default' | 'outline' | 'ghost';

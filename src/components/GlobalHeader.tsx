@@ -1,11 +1,14 @@
 
-import { Bell, User, LogOut, Shield, Menu } from 'lucide-react';
+import { Bell, User, LogOut, Shield, Menu, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlanBadge } from '@/components/common/PlanBadge';
 import { useAuth } from '@/hooks/useAuth';
-import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
+import { useNavigate } from 'react-router-dom';
+import { ProtectedActions } from '@/components/ProtectedActions';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -15,8 +18,13 @@ interface GlobalHeaderProps {
 
 export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const { user, signOut } = useAuth();
-  const permissions = useUnifiedPermissionsV2();
+  const permissions = useUnifiedPermissions();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  const handleNewViaje = () => {
+    navigate('/viajes/programar');
+  };
 
   const handleSignOut = async () => {
     try {
@@ -71,14 +79,26 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-4 w-4" />
             {alertCount > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
               >
                 {alertCount}
               </Badge>
             )}
           </Button>
+
+          <ProtectedActions action="create" resource="viajes" onAction={handleNewViaje}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="default" size="sm" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden md:inline">Nuevo Viaje</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Nuevo Viaje</TooltipContent>
+            </Tooltip>
+          </ProtectedActions>
 
           {/* Menú de usuario */}
           <DropdownMenu>
