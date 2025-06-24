@@ -24,11 +24,20 @@ export const ConductorSelector = ({ value, onValueChange, onConductorSelect, fig
   const handleConductorChange = (conductorId: string) => {
     const conductor = conductores.find(c => c.id === conductorId);
     if (conductor) {
-      // Ensure direccion is properly formatted
-      let direccionFormatted = {};
+      // Ensure direccion is properly formatted with proper type
+      let direccionFormatted: {
+        codigo_postal?: string;
+        estado?: string;
+        municipio?: string;
+        colonia?: string;
+        calle?: string;
+        numero_exterior?: string;
+        [key: string]: any;
+      } = {};
+      
       if (conductor.direccion) {
         if (typeof conductor.direccion === 'object' && conductor.direccion !== null) {
-          direccionFormatted = conductor.direccion as { [key: string]: any };
+          direccionFormatted = conductor.direccion as any;
         } else if (typeof conductor.direccion === 'string') {
           // If it's a string, create a basic address object
           direccionFormatted = { calle: conductor.direccion };

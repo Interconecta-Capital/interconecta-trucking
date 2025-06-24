@@ -88,7 +88,12 @@ export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: Figura
       <CardContent className="space-y-6">
         {/* Solo mostrar selector si es la primera figura (operador) */}
         {index === 0 && (
-          <ConductorSelector figura={figura} onUpdate={onUpdate} />
+          <ConductorSelector 
+            figura={figura} 
+            onUpdate={onUpdate}
+            value=""
+            onValueChange={() => {}}
+          />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

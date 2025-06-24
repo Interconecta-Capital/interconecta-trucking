@@ -16,7 +16,7 @@ interface ViajeFormDialogProps {
 
 export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDialogProps) {
   const [loading, setLoading] = useState(false);
-  const { createViaje } = useViajes();
+  const { crearViaje } = useViajes();
   const [formData, setFormData] = useState({
     origen: '',
     destino: '',
@@ -28,12 +28,28 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
     setLoading(true);
     
     try {
-      await createViaje({
-        origen: formData.origen,
-        destino: formData.destino,
-        fecha_programada: formData.fecha_programada,
-        estado: 'programado'
-      });
+      // Create a basic wizard data structure for the viaje
+      const wizardData = {
+        origen: {
+          domicilio: {
+            calle: formData.origen
+          },
+          fechaHoraSalidaLlegada: formData.fecha_programada || new Date().toISOString()
+        },
+        destino: {
+          domicilio: {
+            calle: formData.destino
+          },
+          fechaHoraSalidaLlegada: formData.fecha_programada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        },
+        cliente: {
+          nombre_razon_social: 'Cliente Básico',
+          rfc: 'XAXX010101000'
+        },
+        distanciaRecorrida: 0
+      };
+
+      await crearViaje(wizardData);
       
       toast.success('Viaje programado exitosamente');
       setFormData({ origen: '', destino: '', fecha_programada: '' });
