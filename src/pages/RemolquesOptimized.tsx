@@ -51,8 +51,7 @@ export default function RemolquesOptimized() {
 
   const filteredRemolques = remolques.filter(remolque =>
     remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.tipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.subtipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase())
+    remolque.subtipo_rem?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const canCreateRemolque = permissions.canCreateRemolque;

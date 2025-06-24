@@ -11,9 +11,11 @@ interface ConductorSelectorProps {
   value?: string;
   onValueChange: (value: string) => void;
   onConductorSelect?: (conductor: any) => void;
+  figura?: any;
+  onUpdate?: (figura: any) => void;
 }
 
-export const ConductorSelector = ({ value, onValueChange, onConductorSelect }: ConductorSelectorProps) => {
+export const ConductorSelector = ({ value, onValueChange, onConductorSelect, figura, onUpdate }: ConductorSelectorProps) => {
   const { conductores, loading } = useConductores();
   const [showCreateModal, setShowCreateModal] = useState(false);
   
@@ -38,6 +40,26 @@ export const ConductorSelector = ({ value, onValueChange, onConductorSelect }: C
         ...conductor,
         direccion: direccionFormatted
       });
+
+      // Update figura if provided
+      if (figura && onUpdate) {
+        onUpdate({
+          ...figura,
+          nombre_figura: conductor.nombre,
+          rfc_figura: conductor.rfc || '',
+          num_licencia: conductor.num_licencia || '',
+          tipo_figura: '01', // Operador
+          domicilio: {
+            pais: 'México',
+            codigo_postal: direccionFormatted.codigo_postal || '',
+            estado: direccionFormatted.estado || '',
+            municipio: direccionFormatted.municipio || '',
+            colonia: direccionFormatted.colonia || '',
+            calle: direccionFormatted.calle || '',
+            numero_exterior: direccionFormatted.numero_exterior || ''
+          }
+        });
+      }
     }
   };
 

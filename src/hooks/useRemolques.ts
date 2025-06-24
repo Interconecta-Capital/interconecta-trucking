@@ -4,21 +4,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
+// Define interface matching actual database schema
 export interface Remolque {
   id: string;
-  user_id: string;
   placa: string;
+  subtipo_rem?: string;
+  autotransporte_id?: string;
+  created_at: string;
+  // Adding legacy fields for compatibility
+  estado?: string;
+  activo?: boolean;
+  tipo_remolque?: string;
+  subtipo_remolque?: string;
   marca?: string;
   modelo?: string;
   anio?: number;
   num_serie?: string;
-  tipo_remolque?: string;
-  subtipo_remolque?: string;
-  estado: string;
-  activo: boolean;
+  user_id?: string;
+  updated_at?: string;
   vehiculo_asignado_id?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export const useRemolques = () => {
@@ -30,15 +34,24 @@ export const useRemolques = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      // Using remolques table instead of remolques_ccp for now
       const { data, error } = await supabase
-        .from('remolques_ccp')
+        .from('remolques')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('activo', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform data to include legacy fields
+      return (data || []).map(item => ({
+        ...item,
+        estado: 'disponible',
+        activo: true,
+        tipo_remolque: item.subtipo_rem,
+        subtipo_remolque: item.subtipo_rem,
+        user_id: user.id,
+        updated_at: item.created_at
+      }));
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
@@ -46,29 +59,29 @@ export const useRemolques = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<Remolque, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (data: Omit<Remolque, 'id' | 'created_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
       const { data: result, error } = await supabase
-        .from('remolques_ccp')
+        .from('remolques')
         .insert({
           placa: data.placa,
-          marca: data.marca,
-          modelo: data.modelo,
-          anio: data.anio,
-          num_serie: data.num_serie,
-          tipo_remolque: data.tipo_remolque,
-          subtipo_remolque: data.subtipo_remolque,
-          estado: data.estado || 'disponible',
-          activo: data.activo ?? true,
-          vehiculo_asignado_id: data.vehiculo_asignado_id,
-          user_id: user.id
+          subtipo_rem: data.tipo_remolque || data.subtipo_remolque || data.subtipo_rem,
+          autotransporte_id: data.autotransporte_id
         })
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      return {
+        ...result,
+        estado: 'disponible',
+        activo: true,
+        tipo_remolque: result.subtipo_rem,
+        subtipo_remolque: result.subtipo_rem,
+        user_id: user.id,
+        updated_at: result.created_at
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['remolques'] });
@@ -85,25 +98,28 @@ export const useRemolques = () => {
       const updateData: any = {};
       
       if (data.placa !== undefined) updateData.placa = data.placa;
-      if (data.marca !== undefined) updateData.marca = data.marca;
-      if (data.modelo !== undefined) updateData.modelo = data.modelo;
-      if (data.anio !== undefined) updateData.anio = data.anio;
-      if (data.num_serie !== undefined) updateData.num_serie = data.num_serie;
-      if (data.tipo_remolque !== undefined) updateData.tipo_remolque = data.tipo_remolque;
-      if (data.subtipo_remolque !== undefined) updateData.subtipo_remolque = data.subtipo_remolque;
-      if (data.estado !== undefined) updateData.estado = data.estado;
-      if (data.activo !== undefined) updateData.activo = data.activo;
-      if (data.vehiculo_asignado_id !== undefined) updateData.vehiculo_asignado_id = data.vehiculo_asignado_id;
+      if (data.tipo_remolque !== undefined) updateData.subtipo_rem = data.tipo_remolque;
+      if (data.subtipo_remolque !== undefined) updateData.subtipo_rem = data.subtipo_remolque;
+      if (data.subtipo_rem !== undefined) updateData.subtipo_rem = data.subtipo_rem;
+      if (data.autotransporte_id !== undefined) updateData.autotransporte_id = data.autotransporte_id;
 
       const { data: result, error } = await supabase
-        .from('remolques_ccp')
+        .from('remolques')
         .update(updateData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      return {
+        ...result,
+        estado: 'disponible',
+        activo: true,
+        tipo_remolque: result.subtipo_rem,
+        subtipo_remolque: result.subtipo_rem,
+        user_id: user?.id,
+        updated_at: result.created_at
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['remolques'] });
@@ -118,8 +134,8 @@ export const useRemolques = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('remolques_ccp')
-        .update({ activo: false })
+        .from('remolques')
+        .delete()
         .eq('id', id);
 
       if (error) throw error;

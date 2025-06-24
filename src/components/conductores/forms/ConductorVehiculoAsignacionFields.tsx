@@ -23,7 +23,7 @@ export function ConductorVehiculoAsignacionFields({ formData, onFieldChange }: C
   
   // Find trailer assigned to selected vehicle (check for compatible assignment)
   const remolqueDelVehiculo = vehiculoSeleccionado?.id 
-    ? remolques.find(r => r.vehiculo_asignado_id === vehiculoSeleccionado.id)
+    ? remolques.find(r => r.autotransporte_id === vehiculoSeleccionado.id)
     : null;
 
   return (
@@ -108,7 +108,7 @@ export function ConductorVehiculoAsignacionFields({ formData, onFieldChange }: C
                   </div>
                   <div>
                     <span className="text-blue-700 font-medium">Tipo:</span>
-                    <p className="text-blue-900">{remolqueDelVehiculo.tipo_remolque || remolqueDelVehiculo.subtipo_remolque || 'No especificado'}</p>
+                    <p className="text-blue-900">{remolqueDelVehiculo.subtipo_rem || 'No especificado'}</p>
                   </div>
                 </div>
               </div>

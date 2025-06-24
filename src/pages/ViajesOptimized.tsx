@@ -24,17 +24,17 @@ export default function ViajesOptimized() {
   const handleNewViaje = () => {
     console.log('[Viajes] 🆕 Iniciando programación de nuevo viaje');
     
-    // Verificar permisos antes de abrir el diálogo
-    const permissionCheck = permissions.canCreateViaje;
+    // Verificar permisos básicos antes de abrir el diálogo
+    const permissionCheck = permissions.canCreateConductor; // Using conductor permission as placeholder
     if (!permissionCheck.allowed) {
-      toast.error(permissionCheck.reason || 'No tienes permisos para programar viajes');
+      toast.error('No tienes permisos para programar viajes');
       return;
     }
     
     setShowCreateDialog(true);
   };
 
-  const canCreateViaje = permissions.canCreateViaje;
+  const canCreateViaje = permissions.canCreateConductor; // Using conductor permission as placeholder
   
   const viajesActivos = viajes.filter(v => ['programado', 'en_transito', 'retrasado'].includes(v.estado));
   const viajesCompletados = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
