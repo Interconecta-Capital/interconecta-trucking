@@ -26,8 +26,8 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const handleNewViaje = () => {
     console.log('[GlobalHeader] 🆕 Iniciando programación de nuevo viaje desde navbar');
     
-    // Verificar permisos antes de abrir el wizard - usar la misma lógica que en ViajesOptimized
-    const canCreate = permissions.canCreateCartaPorte();
+    // Verificar permisos antes de abrir el wizard - corregido: es una propiedad, no función
+    const canCreate = permissions.canCreateCartaPorte;
     if (!canCreate.allowed) {
       toast.error(canCreate.reason || 'No tienes permisos para programar viajes');
       return;
@@ -64,7 +64,7 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   };
 
   const alertCount = getAlertCount();
-  const canCreateViaje = permissions.canCreateCartaPorte();
+  const canCreateViaje = permissions.canCreateCartaPorte;
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">

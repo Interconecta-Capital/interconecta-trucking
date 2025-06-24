@@ -16,6 +16,38 @@ export default function Planes() {
   const permissions = useUnifiedPermissionsV2();
   const { planes, cambiarPlan, isChangingPlan } = useSuscripcion();
 
+  // Crear planDetails basado en la información disponible en permissions
+  const planDetails = [
+    {
+      feature: permissions.usage.cartas_porte.limit ? 
+        `${permissions.usage.cartas_porte.limit} cartas porte` : 
+        'Cartas porte ilimitadas',
+      included: true
+    },
+    {
+      feature: permissions.usage.conductores.limit ? 
+        `${permissions.usage.conductores.limit} conductores` : 
+        'Conductores ilimitados',
+      included: true
+    },
+    {
+      feature: permissions.usage.vehiculos.limit ? 
+        `${permissions.usage.vehiculos.limit} vehículos` : 
+        'Vehículos ilimitados',
+      included: true
+    },
+    {
+      feature: permissions.usage.socios.limit ? 
+        `${permissions.usage.socios.limit} socios` : 
+        'Socios ilimitados',
+      included: true
+    },
+    { feature: 'Generación de XML', included: permissions.hasFullAccess },
+    { feature: 'Timbrado automático', included: permissions.hasFullAccess },
+    { feature: 'Cancelación de CFDI', included: permissions.hasFullAccess },
+    { feature: 'Tracking en tiempo real', included: permissions.hasFullAccess }
+  ];
+
   return (
     <ProtectedContent requiredFeature="cartas_porte">
       <div className="container mx-auto py-6 space-y-6">
@@ -47,7 +79,7 @@ export default function Planes() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {permissions.planDetails.filter(d => d.included).map((item, i) => (
+                  {planDetails.filter(d => d.included).map((item, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-green-600" />
                       <span className="text-sm">{item.feature}</span>
