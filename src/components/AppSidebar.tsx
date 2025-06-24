@@ -207,7 +207,8 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
               const Icon = item.icon;
 
               const linkClasses = `
-                flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                flex items-center rounded-lg text-sm font-medium transition-all
+                ${isCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2'}
                 ${isActive
                   ? 'bg-blue-50 text-blue-700'
                   : canAccess
@@ -219,7 +220,11 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>
                     <Link to={item.href} className={linkClasses}>
-                      <div className="flex items-center space-x-3">
+                      <div
+                        className={`flex items-center ${
+                          isCollapsed ? 'justify-center' : 'space-x-3'
+                        } w-full`}
+                      >
                         <Icon className="h-5 w-5" />
                         {!isCollapsed && <span>{item.title}</span>}
                       </div>
