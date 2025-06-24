@@ -18,7 +18,11 @@ import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { Viaje } from '@/hooks/useViajes';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export const ViajesActivos = ({ searchTerm }: { searchTerm: string }) => {
+interface ViajesActivosProps {
+  searchTerm: string;
+}
+
+export const ViajesActivos = ({ searchTerm }: ViajesActivosProps) => {
   const isMobile = useIsMobile();
   const { viajes, isLoading } = useViajes();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);

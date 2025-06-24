@@ -51,8 +51,8 @@ export default function RemolquesOptimized() {
 
   const filteredRemolques = remolques.filter(remolque =>
     remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    remolque.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+    remolque.tipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    remolque.subtipo_remolque?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const canCreateRemolque = permissions.canCreateRemolque;
@@ -97,7 +97,7 @@ export default function RemolquesOptimized() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
-              placeholder="Buscar por placa, marca o modelo..."
+              placeholder="Buscar por placa o tipo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
@@ -139,7 +139,7 @@ export default function RemolquesOptimized() {
 
         {/* Tabla */}
         <RemolquesTable 
-          remolques={filteredRemolques}
+          remolques={filteredRemolques as any}
           loading={loading}
           onEdit={handleEdit}
           onDelete={handleDelete}

@@ -61,7 +61,7 @@ export default function ConductoresOptimized() {
 
   const filteredConductores = conductores.filter(conductor =>
     conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conductor.licencia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conductor.num_licencia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conductor.telefono?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -178,7 +178,6 @@ export default function ConductoresOptimized() {
         {/* Tabla */}
         <ConductoresTable 
           conductores={filteredConductores}
-          loading={loading}
           onEdit={handleEdit}
           onView={handleView}
           onDelete={handleDelete}

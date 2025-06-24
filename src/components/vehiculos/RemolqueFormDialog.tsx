@@ -22,7 +22,7 @@ interface RemolqueFormDialogProps {
 export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: RemolqueFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useStableAuth();
-  const { crearRemolque, actualizarRemolque } = useRemolques(user?.id);
+  const { crearRemolque, actualizarRemolque } = useRemolques();
   const { vehiculos } = useStableVehiculos(user?.id);
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
@@ -42,11 +42,13 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
       const remolqueData = {
         placa: data.placa,
         tipo_remolque: data.tipo_remolque || '',
-        vehiculo_asignado_id: data.vehiculo_asignado_id || null
+        estado: 'disponible',
+        activo: true,
+        vehiculo_asignado_id: data.vehiculo_asignado_id || undefined
       };
 
       if (remolque?.id) {
-        await actualizarRemolque(remolque.id, remolqueData);
+        await actualizarRemolque({ id: remolque.id, data: remolqueData });
         toast.success('Remolque actualizado exitosamente');
       } else {
         await crearRemolque(remolqueData);

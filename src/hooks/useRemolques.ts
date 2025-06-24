@@ -52,10 +52,17 @@ export const useRemolques = () => {
       const { data: result, error } = await supabase
         .from('remolques_ccp')
         .insert({
-          ...data,
-          user_id: user.id,
-          activo: true,
-          estado: data.estado || 'disponible'
+          placa: data.placa,
+          marca: data.marca,
+          modelo: data.modelo,
+          anio: data.anio,
+          num_serie: data.num_serie,
+          tipo_remolque: data.tipo_remolque,
+          subtipo_remolque: data.subtipo_remolque,
+          estado: data.estado || 'disponible',
+          activo: data.activo ?? true,
+          vehiculo_asignado_id: data.vehiculo_asignado_id,
+          user_id: user.id
         })
         .select()
         .single();
@@ -75,9 +82,22 @@ export const useRemolques = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Remolque> }) => {
+      const updateData: any = {};
+      
+      if (data.placa !== undefined) updateData.placa = data.placa;
+      if (data.marca !== undefined) updateData.marca = data.marca;
+      if (data.modelo !== undefined) updateData.modelo = data.modelo;
+      if (data.anio !== undefined) updateData.anio = data.anio;
+      if (data.num_serie !== undefined) updateData.num_serie = data.num_serie;
+      if (data.tipo_remolque !== undefined) updateData.tipo_remolque = data.tipo_remolque;
+      if (data.subtipo_remolque !== undefined) updateData.subtipo_remolque = data.subtipo_remolque;
+      if (data.estado !== undefined) updateData.estado = data.estado;
+      if (data.activo !== undefined) updateData.activo = data.activo;
+      if (data.vehiculo_asignado_id !== undefined) updateData.vehiculo_asignado_id = data.vehiculo_asignado_id;
+
       const { data: result, error } = await supabase
         .from('remolques_ccp')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

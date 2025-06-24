@@ -58,6 +58,8 @@ export const useConductores = () => {
         .insert({
           ...data,
           user_id: user.id,
+          activo: data.activo ?? true,
+          estado: data.estado || 'disponible'
         })
         .select()
         .single();
@@ -116,12 +118,18 @@ export const useConductores = () => {
     }
   });
 
+  const recargar = () => {
+    queryClient.invalidateQueries({ queryKey: ['conductores'] });
+  };
+
   return { 
     conductores, 
     loading,
     createConductor: createMutation.mutateAsync,
     updateConductor: updateMutation.mutateAsync,
+    eliminarConductor: deleteMutation.mutateAsync,
     deleteConductor: deleteMutation.mutateAsync,
+    recargar,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,

@@ -1,38 +1,43 @@
 
 import { useState } from 'react';
-import { Plus, Route, Filter, Search, Calendar } from 'lucide-react';
+import { Plus, Navigation, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { ViajesActivos } from '@/components/viajes/ViajesActivos';
+import { ViajesHistorial } from '@/components/viajes/ViajesHistorial';
+import { ViajeFormDialog } from '@/components/viajes/ViajeFormDialog';
+import { useViajes } from '@/hooks/useViajes';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { ViajesActivos } from '@/components/viajes/ViajesActivos';
-import { HistorialViajes } from '@/components/viajes/HistorialViajes';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 export default function ViajesOptimized() {
-  const navigate = useNavigate();
+  const { viajes, isLoading } = useViajes();
   const permissions = useUnifiedPermissionsV2();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('activos');
 
   const handleNewViaje = () => {
-    console.log('[Viajes] 🆕 Iniciando creación de nuevo viaje');
+    console.log('[Viajes] 🆕 Iniciando programación de nuevo viaje');
     
-    // Verificar permisos antes de navegar
-    const permissionCheck = permissions.canCreateCartaPorte; // Los viajes requieren crear carta porte
+    // Verificar permisos antes de abrir el diálogo
+    const permissionCheck = permissions.canCreateViaje;
     if (!permissionCheck.allowed) {
-      toast.error(permissionCheck.reason || 'No tienes permisos para crear viajes');
+      toast.error(permissionCheck.reason || 'No tienes permisos para programar viajes');
       return;
     }
     
-    navigate('/viajes/programar');
+    setShowCreateDialog(true);
   };
 
-  const canCreateViaje = permissions.canCreateCartaPorte; // Los viajes requieren crear carta porte
+  const canCreateViaje = permissions.canCreateViaje;
+  
+  const viajesActivos = viajes.filter(v => ['programado', 'en_transito', 'retrasado'].includes(v.estado));
+  const viajesCompletados = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
 
   return (
     <ProtectedContent requiredFeature="viajes">
@@ -44,11 +49,11 @@ export default function ViajesOptimized() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-blue-light">
-              <Route className="h-6 w-6 text-blue-interconecta" />
+              <Navigation className="h-6 w-6 text-blue-interconecta" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Viajes</h1>
-              <p className="text-sm text-gray-600 mt-1">Gestiona y programa tus viajes</p>
+              <p className="text-sm text-gray-600 mt-1">Gestiona y monitorea tus viajes</p>
             </div>
           </div>
           
@@ -74,43 +79,80 @@ export default function ViajesOptimized() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
             <Input
-              placeholder="Buscar viajes por destino, conductor o vehículo..."
+              placeholder="Buscar por origen, destino o carta porte..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
             />
           </div>
-          <Button 
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="h-12 px-6 bg-pure-white shadow-sm border-0"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtros
-          </Button>
         </div>
 
-        {/* Tabs de contenido */}
-        <Tabs defaultValue="activos" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="activos" className="flex items-center gap-2">
-              <Route className="h-4 w-4" />
-              Viajes Activos
-            </TabsTrigger>
-            <TabsTrigger value="historial" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Historial
-            </TabsTrigger>
-          </TabsList>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-blue-interconecta">Total Viajes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-interconecta">{viajes.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-green-700">Activos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-700">{viajesActivos.length}</p>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="activos" className="space-y-6">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-purple-700">Completados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-purple-700">{viajesCompletados.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-lg font-semibold ${isLoading ? 'text-yellow-600' : 'text-green-600'}`}>
+                {isLoading ? 'Cargando...' : 'Listo'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs de viajes */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="activos">Viajes Activos ({viajesActivos.length})</TabsTrigger>
+            <TabsTrigger value="historial">Historial ({viajesCompletados.length})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="activos" className="space-y-4">
             <ViajesActivos searchTerm={searchTerm} />
           </TabsContent>
-
-          <TabsContent value="historial" className="space-y-6">
-            <HistorialViajes searchTerm={searchTerm} />
+          
+          <TabsContent value="historial" className="space-y-4">
+            <ViajesHistorial searchTerm={searchTerm} />
           </TabsContent>
         </Tabs>
+
+        {/* Diálogos */}
+        <ViajeFormDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={() => {
+            setShowCreateDialog(false);
+            setActiveTab('activos');
+          }}
+        />
       </div>
     </ProtectedContent>
   );

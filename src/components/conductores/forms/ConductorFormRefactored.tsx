@@ -120,7 +120,7 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       delete submitData.foto_file;
 
       if (conductorId) {
-        await updateConductor(conductorId, submitData);
+        await updateConductor({ id: conductorId, data: submitData });
         toast.success('Conductor actualizado exitosamente');
       } else {
         await createConductor(submitData);

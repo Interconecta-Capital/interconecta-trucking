@@ -1,28 +1,23 @@
 
 import { useState } from 'react';
-import { Plus, Building2, Filter, Search } from 'lucide-react';
+import { Plus, Users, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SociosTable } from '@/components/socios/SociosTable';
-import { SociosFilters } from '@/components/socios/SociosFilters';
 import { SocioFormDialog } from '@/components/socios/SocioFormDialog';
-import { SocioViewDialog } from '@/components/socios/SocioViewDialog';
 import { useSocios } from '@/hooks/useSocios';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
 export default function SociosOptimized() {
-  const { socios, loading, eliminarSocio, isLoading } = useSocios();
+  const { socios, loading: isLoading, eliminarSocio } = useSocios();
   const permissions = useUnifiedPermissionsV2();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedSocio, setSelectedSocio] = useState<any>(null);
 
   const handleNewSocio = () => {
@@ -42,11 +37,6 @@ export default function SociosOptimized() {
   const handleEdit = (socio: any) => {
     setSelectedSocio(socio);
     setShowEditDialog(true);
-  };
-
-  const handleView = (socio: any) => {
-    setSelectedSocio(socio);
-    setShowViewDialog(true);
   };
 
   const handleDelete = async (socio: any) => {
@@ -77,11 +67,11 @@ export default function SociosOptimized() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-blue-light">
-              <Building2 className="h-6 w-6 text-blue-interconecta" />
+              <Users className="h-6 w-6 text-blue-interconecta" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Socios</h1>
-              <p className="text-sm text-gray-600 mt-1">Gestiona tus socios comerciales</p>
+              <p className="text-sm text-gray-600 mt-1">Gestiona tu red de socios comerciales</p>
             </div>
           </div>
           
@@ -102,11 +92,6 @@ export default function SociosOptimized() {
           </div>
         )}
 
-        {/* Indicador de límites */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <LimitUsageIndicator resourceType="socios" className="md:col-span-2" />
-        </div>
-
         {/* Filtros y búsqueda */}
         <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
           <div className="relative flex-1">
@@ -118,22 +103,7 @@ export default function SociosOptimized() {
               className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
             />
           </div>
-          <Button 
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="h-12 px-6 bg-pure-white shadow-sm border-0"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtros
-          </Button>
         </div>
-
-        {/* Filtros adicionales */}
-        {showFilters && (
-          <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm p-6">
-            <SociosFilters />
-          </div>
-        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -160,8 +130,8 @@ export default function SociosOptimized() {
               <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : 'text-green-600'}`}>
-                {loading ? 'Cargando...' : 'Listo'}
+              <p className={`text-lg font-semibold ${isLoading ? 'text-yellow-600' : 'text-green-600'}`}>
+                {isLoading ? 'Cargando...' : 'Listo'}
               </p>
             </CardContent>
           </Card>
@@ -170,9 +140,8 @@ export default function SociosOptimized() {
         {/* Tabla */}
         <SociosTable 
           socios={filteredSocios}
-          loading={loading}
+          loading={isLoading}
           onEdit={handleEdit}
-          onView={handleView}
           onDelete={handleDelete}
         />
 
@@ -192,17 +161,6 @@ export default function SociosOptimized() {
           onSuccess={() => {
             setShowEditDialog(false);
             setSelectedSocio(null);
-          }}
-        />
-
-        <SocioViewDialog
-          open={showViewDialog}
-          onOpenChange={setShowViewDialog}
-          socio={selectedSocio}
-          onEdit={() => {
-            setShowViewDialog(false);
-            setSelectedSocio(selectedSocio);
-            setShowEditDialog(true);
           }}
         />
       </div>

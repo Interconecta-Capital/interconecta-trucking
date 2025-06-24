@@ -26,7 +26,7 @@ interface VinculacionDialogProps {
 export function VinculacionDialog({ open, onOpenChange, remolque, onSuccess }: VinculacionDialogProps) {
   const { user } = useStableAuth();
   const { vehiculos } = useStableVehiculos(user?.id);
-  const { actualizarRemolque } = useRemolques(user?.id);
+  const { actualizarRemolque } = useRemolques();
   const [loading, setLoading] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState('');
 
@@ -45,9 +45,12 @@ export function VinculacionDialog({ open, onOpenChange, remolque, onSuccess }: V
     try {
       setLoading(true);
       
-      await actualizarRemolque(remolque.id, {
-        vehiculo_asignado_id: selectedVehiculo || undefined,
-        estado: selectedVehiculo ? 'vinculado' : 'disponible'
+      await actualizarRemolque({ 
+        id: remolque.id, 
+        data: {
+          vehiculo_asignado_id: selectedVehiculo || undefined,
+          estado: selectedVehiculo ? 'vinculado' : 'disponible'
+        }
       });
       
       toast.success(selectedVehiculo ? 'Remolque vinculado exitosamente' : 'Remolque desvinculado exitosamente');
