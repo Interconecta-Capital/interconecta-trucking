@@ -2,8 +2,8 @@
 import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useSuscripcion } from './useSuscripcion';
-import { useOptimizedTrialTracking } from './useOptimizedTrialTracking';
 import { useOptimizedSuperuser } from './useOptimizedSuperuser';
+import { differenceInDays, parseISO } from 'date-fns';
 
 // Tipos para el nuevo sistema unificado
 export interface PermissionResultV2 {
@@ -35,6 +35,10 @@ export interface UnifiedPermissionsV2 {
     name: string;
     type: 'superuser' | 'trial' | 'paid' | 'none';
     daysRemaining?: number;
+    daysUsed?: number;
+    totalTrialDays?: number;
+    trialStartDate?: Date;
+    trialEndDate?: Date;
     isActive: boolean;
   };
   
@@ -52,7 +56,7 @@ export interface UnifiedPermissionsV2 {
 }
 
 /**
- * Hook Unificado de Permisos V2 - Construido desde cero para estabilidad
+ * Hook Unificado de Permisos V2 - FUENTE ÚNICA DE VERDAD
  * 
  * Implementa las 4 reglas de negocio fundamentales:
  * 1. Superusuario → Acceso total
@@ -63,8 +67,7 @@ export interface UnifiedPermissionsV2 {
 export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
   const { user } = useAuth();
   const { isSuperuser } = useOptimizedSuperuser();
-  const { suscripcion, estaBloqueado } = useSuscripcion();
-  const { trialInfo } = useOptimizedTrialTracking();
+  const { suscripcion, estaBloqueado } = useSuscripción();
 
   return useMemo(() => {
     console.log('[UnifiedPermissionsV2] 🔄 Evaluando permisos...');
@@ -82,6 +85,10 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
       console.log('[UnifiedPermissionsV2] 👑 SUPERUSUARIO detectado - Acceso total');
       return createSuperuserPermissions(user.id);
     }
+
+    // CALCULAR INFORMACIÓN DEL TRIAL - FUENTE ÚNICA DE VERDAD
+    const trialInfo = calculateTrialInfo(user);
+    console.log('[UnifiedPermissionsV2] 📊 Info del trial calculada:', trialInfo);
 
     // REGLA 2: TRIAL ACTIVO - Acceso total durante período de prueba
     if (trialInfo.isTrialActive && !trialInfo.isTrialExpired) {
@@ -105,8 +112,46 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
     console.log('[UnifiedPermissionsV2] ⏰ TRIAL EXPIRADO o SIN PLAN');
     return createExpiredPermissions(user.id, trialInfo);
 
-  }, [user, isSuperuser, suscripcion, estaBloqueado, trialInfo]);
+  }, [user, isSuperuser, suscripcion, estaBloqueado]);
 };
+
+// FUNCIÓN CENTRALIZADA PARA CALCULAR INFO DEL TRIAL - FUENTE ÚNICA DE VERDAD
+function calculateTrialInfo(user: any) {
+  const now = new Date();
+  const TOTAL_TRIAL_DAYS = 14;
+  
+  // Usar created_at como fecha de inicio del trial
+  const createdAt = user.created_at ? parseISO(user.created_at) : new Date();
+  
+  // Calcular fecha de finalización del trial
+  const trialEndDate = new Date(createdAt);
+  trialEndDate.setDate(trialEndDate.getDate() + TOTAL_TRIAL_DAYS);
+  
+  // Calcular días usados y restantes
+  const daysUsed = Math.max(0, differenceInDays(now, createdAt));
+  const daysRemaining = Math.max(0, differenceInDays(trialEndDate, now));
+  const isTrialExpired = now > trialEndDate;
+  const isTrialActive = !isTrialExpired;
+
+  console.log('[TrialCalculation] 📅 Fechas:', {
+    created: createdAt.toISOString(),
+    now: now.toISOString(),
+    trialEnd: trialEndDate.toISOString(),
+    daysUsed,
+    daysRemaining,
+    isExpired: isTrialExpired
+  });
+
+  return {
+    daysUsed,
+    daysRemaining,
+    totalTrialDays: TOTAL_TRIAL_DAYS,
+    trialStartDate: createdAt,
+    trialEndDate,
+    isTrialExpired,
+    isTrialActive
+  };
+}
 
 // Funciones auxiliares para crear objetos de permisos
 
@@ -172,6 +217,10 @@ function createTrialPermissions(userId: string, trialInfo: any): UnifiedPermissi
       name: 'Período de Prueba Gratuita', 
       type: 'trial', 
       daysRemaining: trialInfo.daysRemaining,
+      daysUsed: trialInfo.daysUsed,
+      totalTrialDays: trialInfo.totalTrialDays,
+      trialStartDate: trialInfo.trialStartDate,
+      trialEndDate: trialInfo.trialEndDate,
       isActive: true 
     },
     usage: { conductores: { used: 0, limit: null }, vehiculos: { used: 0, limit: null }, socios: { used: 0, limit: null }, cartas_porte: { used: 0, limit: null } },
@@ -279,7 +328,14 @@ function createExpiredPermissions(userId: string, trialInfo: any): UnifiedPermis
     canCreateSocio: expiredAccess,
     canCreateCartaPorte: expiredAccess,
     canCreateRemolque: expiredAccess,
-    planInfo: { name: 'Trial Expirado', type: 'none', isActive: false },
+    planInfo: { 
+      name: 'Trial Expirado', 
+      type: 'none', 
+      daysRemaining: trialInfo.daysRemaining,
+      daysUsed: trialInfo.daysUsed,
+      totalTrialDays: trialInfo.totalTrialDays,
+      isActive: false 
+    },
     usage: { conductores: { used: 0, limit: 0 }, vehiculos: { used: 0, limit: 0 }, socios: { used: 0, limit: 0 }, cartas_porte: { used: 0, limit: 0 } },
     canPerformAction: () => false,
     getPermissionForResource

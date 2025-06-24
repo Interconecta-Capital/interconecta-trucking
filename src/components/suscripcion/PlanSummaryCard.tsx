@@ -10,23 +10,18 @@ import { Link } from 'react-router-dom';
 
 export const PlanSummaryCard = () => {
   const { 
-    suscripcion, 
-    enPeriodoPrueba, 
-    diasRestantesPrueba,
-    suscripcionVencida,
-    estaBloqueado,
     abrirPortalCliente,
     isOpeningPortal
   } = useSuscripcion();
   
   const permissions = useUnifiedPermissionsV2();
 
-  if (!suscripcion) return null;
+  if (!permissions.isAuthenticated) return null;
 
   const getPlanIcon = () => {
-    if (enPeriodoPrueba()) return <Clock className="h-4 w-4" />;
+    if (permissions.accessLevel === 'trial') return <Clock className="h-4 w-4" />;
     
-    switch (suscripcion.plan?.nombre) {
+    switch (permissions.planInfo.name) {
       case 'Básico':
         return <Zap className="h-4 w-4" />;
       case 'Profesional':
@@ -38,14 +33,14 @@ export const PlanSummaryCard = () => {
   };
 
   const getPlanColor = () => {
-    if (estaBloqueado || suscripcionVencida()) return 'destructive';
-    if (enPeriodoPrueba()) return 'secondary';
+    if (permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') return 'destructive';
+    if (permissions.accessLevel === 'trial') return 'secondary';
+    if (permissions.accessLevel === 'superuser') return 'default';
     
-    switch (suscripcion.plan?.nombre) {
+    switch (permissions.planInfo.name) {
       case 'Básico':
         return 'outline';
       case 'Profesional':
-        return 'default';
       case 'Empresarial':
         return 'default';
       default:
@@ -54,17 +49,19 @@ export const PlanSummaryCard = () => {
   };
 
   const getStatusMessage = () => {
-    if (estaBloqueado) return '¡Cuenta bloqueada por falta de pago!';
-    if (suscripcionVencida()) return '¡Suscripción vencida!';
-    if (enPeriodoPrueba()) {
-      const dias = diasRestantesPrueba();
+    if (permissions.accessLevel === 'blocked') return '¡Cuenta bloqueada por falta de pago!';
+    if (permissions.accessLevel === 'expired') return '¡Período de prueba finalizado!';
+    if (permissions.accessLevel === 'trial') {
+      const dias = permissions.planInfo.daysRemaining || 0;
       return `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''} de prueba`;
     }
-    return 'Suscripción activa';
+    if (permissions.accessLevel === 'superuser') return 'Acceso total';
+    if (permissions.accessLevel === 'paid') return 'Suscripción activa';
+    return 'Sin plan activo';
   };
 
   const showUpgradePrompt = () => {
-    return enPeriodoPrueba() || suscripcion.plan?.nombre === 'Básico';
+    return permissions.accessLevel === 'trial' || permissions.planInfo.name === 'Básico';
   };
 
   const handlePortalClick = () => {
@@ -77,10 +74,12 @@ export const PlanSummaryCard = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             {getPlanIcon()}
-            Plan {suscripcion.plan?.nombre || 'Desconocido'}
+            {permissions.planInfo.name}
           </CardTitle>
           <Badge variant={getPlanColor()} className="flex items-center gap-1">
-            {estaBloqueado && <AlertTriangle className="h-3 w-3" />}
+            {(permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') && 
+              <AlertTriangle className="h-3 w-3" />
+            }
             {getStatusMessage()}
           </Badge>
         </div>
@@ -113,7 +112,7 @@ export const PlanSummaryCard = () => {
             </Link>
           )}
           
-          {suscripcion.status === 'active' && (
+          {permissions.accessLevel === 'paid' && (
             <Button
               onClick={handlePortalClick}
               disabled={isOpeningPortal}

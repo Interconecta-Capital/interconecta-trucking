@@ -47,6 +47,7 @@ interface AppSidebarProps {
   isMobileOpen?: boolean;
   setIsMobileOpen?: (open: boolean) => void;
 }
+
 export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebarProps) {
   const location = useLocation();
   const permissions = useUnifiedPermissionsV2();
@@ -163,6 +164,7 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
             Superusuario
           </Badge>
         )}
+        
         {permissions.accessLevel === 'trial' && (
           <div className="bg-orange-50 p-3 rounded-lg">
             <p className="text-sm font-medium text-orange-800">Período de Prueba</p>

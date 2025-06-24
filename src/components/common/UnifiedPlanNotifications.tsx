@@ -22,6 +22,10 @@ export function UnifiedPlanNotifications() {
 
   // Trial activo
   if (permissions.accessLevel === 'trial') {
+    const daysRemaining = permissions.planInfo.daysRemaining || 0;
+    const daysUsed = permissions.planInfo.daysUsed || 0;
+    const totalDays = permissions.planInfo.totalTrialDays || 14;
+    
     return (
       <Alert className="border-blue-200 bg-blue-50">
         <Clock className="h-4 w-4 text-blue-600" />
@@ -29,7 +33,7 @@ export function UnifiedPlanNotifications() {
           <div>
             <strong className="text-blue-900">Período de prueba activo</strong>
             <div className="text-blue-700 text-sm mt-1">
-              {permissions.accessReason} • Acceso completo a todas las funciones
+              Día {daysUsed} de {totalDays} • Te quedan {daysRemaining} días restantes
             </div>
           </div>
           <Button size="sm" variant="outline" asChild>
@@ -86,12 +90,7 @@ export function UnifiedPlanNotifications() {
         <AlertTriangle className="h-4 w-4 text-orange-600" />
         <AlertDescription className="flex items-center justify-between">
           <div>
-            <strong className="text-orange-900">
-              {permissions.planInfo.name === 'Período de Gracia' ? 
-                'Período de gracia activo' : 
-                'Período de prueba finalizado'
-              }
-            </strong>
+            <strong className="text-orange-900">Período de prueba finalizado</strong>
             <div className="text-orange-700 text-sm mt-1">
               {permissions.accessReason} • Funciones limitadas a solo lectura
             </div>

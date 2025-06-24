@@ -29,8 +29,8 @@ export function MobileTrialInfo() {
   // Trial activo
   if (permissions.accessLevel === 'trial') {
     const daysRemaining = permissions.planInfo.daysRemaining || 0;
-    const totalDays = 30; // Asumiendo 30 días de trial
-    const daysUsed = totalDays - daysRemaining;
+    const daysUsed = permissions.planInfo.daysUsed || 0;
+    const totalDays = permissions.planInfo.totalTrialDays || 14;
     const progressPercentage = (daysUsed / totalDays) * 100;
     
     return (

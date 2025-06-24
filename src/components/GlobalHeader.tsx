@@ -5,12 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlanBadge } from '@/components/common/PlanBadge';
 import { useAuth } from '@/hooks/useAuth';
-import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useNavigate } from 'react-router-dom';
 import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GlobalHeaderProps {
@@ -19,7 +18,7 @@ interface GlobalHeaderProps {
 
 export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const { user, signOut } = useAuth();
-  const permissions = useUnifiedPermissions();
+  const permissions = useUnifiedPermissionsV2();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { openViajeWizard } = useViajeWizardModal();

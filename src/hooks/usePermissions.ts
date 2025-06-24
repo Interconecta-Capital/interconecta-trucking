@@ -36,6 +36,11 @@ export const usePermissions = () => {
     planName: unified.planInfo.name,
     accessReason: unified.accessReason,
     
+    // Información específica del trial (FUENTE ÚNICA DE VERDAD)
+    trialDaysRemaining: unified.planInfo.daysRemaining,
+    trialDaysUsed: unified.planInfo.daysUsed,
+    trialTotalDays: unified.planInfo.totalTrialDays,
+    
     // Acceso al objeto completo para casos avanzados
     unified
   };
