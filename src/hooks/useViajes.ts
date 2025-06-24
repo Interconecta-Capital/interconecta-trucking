@@ -218,6 +218,47 @@ export const useViajes = () => {
     }
   });
 
+  // Cancelar viaje
+  const cancelarViaje = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('viajes')
+        .update({ estado: 'cancelado' })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Viaje;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viajes'] });
+      toast.success('Viaje cancelado');
+    },
+    onError: () => {
+      toast.error('Error al cancelar el viaje');
+    }
+  });
+
+  // Eliminar viaje
+  const eliminarViaje = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('viajes')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viajes'] });
+      toast.success('Viaje eliminado');
+    },
+    onError: () => {
+      toast.error('Error al eliminar el viaje');
+    }
+  });
+
   // Guardar borrador de viaje
   const guardarBorradorViaje = useMutation({
     mutationFn: async ({ wizardData, borradorId }: { wizardData: ViajeWizardData; borradorId?: string }) => {
@@ -278,6 +319,8 @@ export const useViajes = () => {
     isCreatingViaje: isCreatingViaje || crearViaje.isPending,
     actualizarViaje: actualizarViaje.mutate,
     isUpdatingViaje: actualizarViaje.isPending,
+    cancelarViaje: cancelarViaje.mutate,
+    eliminarViaje: eliminarViaje.mutate,
     guardarBorradorViaje: guardarBorradorViaje.mutateAsync,
     isSavingDraft: guardarBorradorViaje.isPending
   };
