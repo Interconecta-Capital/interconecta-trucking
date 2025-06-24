@@ -32,7 +32,12 @@ serve(async (req) => {
 
     const { data: viajes, error: viajesError } = await supabase
       .from('viajes')
-      .select('id, origen, destino, estado, fecha_inicio_programada, fecha_fin_programada')
+      .select(
+        `id, origen, destino, estado, carta_porte_id,
+         fecha_inicio_programada, fecha_fin_programada,
+         vehiculo:vehiculos(id, placa),
+         conductor:conductores(id, nombre)`
+      )
       .eq('user_id', user.id);
 
     if (viajesError) throw viajesError;
@@ -50,10 +55,15 @@ serve(async (req) => {
       events.push({
         id: `viaje-${v.id}`,
         tipo: 'viaje',
-        titulo: `Viaje ${v.origen} - ${v.destino}`,
+        titulo: `${v.carta_porte_id} ${v.origen}→${v.destino}`,
         fecha_inicio: v.fecha_inicio_programada,
         fecha_fin: v.fecha_fin_programada,
-        metadata: { estado: v.estado },
+        metadata: {
+          estado: v.estado,
+          carta_porte_id: v.carta_porte_id,
+          vehiculo: v.vehiculo?.placa ?? null,
+          conductor: v.conductor?.nombre ?? null,
+        },
       });
     }
 
@@ -64,7 +74,11 @@ serve(async (req) => {
         titulo: p.descripcion,
         fecha_inicio: p.fecha_inicio,
         fecha_fin: p.fecha_fin,
-        metadata: { entidad: p.entidad_tipo, estado: p.estado },
+        metadata: {
+          entidad: p.entidad_tipo,
+          estado: p.estado,
+          todo_dia: true,
+        },
       });
     }
 

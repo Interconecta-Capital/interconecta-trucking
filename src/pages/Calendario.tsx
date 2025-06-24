@@ -28,7 +28,10 @@ export default function Calendario() {
             <div className="flex justify-end mb-4">
               <GoogleConnectButton />
             </div>
-            <OperationsCalendar />
+            <OperationsCalendar
+              showViajes={showViajes}
+              showMantenimientos={showMantenimientos}
+            />
           </div>
         </div>
       </div>

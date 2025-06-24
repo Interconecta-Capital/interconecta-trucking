@@ -84,6 +84,28 @@ export function TripDetailModal({ event, open, onOpenChange }: TripDetailModalPr
             </Badge>
           </div>
 
+          {(event.resource.metadata?.estado || event.resource.metadata?.vehiculo || event.resource.metadata?.conductor) && (
+            <Card>
+              <CardContent className="pt-4 space-y-2">
+                {event.resource.metadata?.estado && (
+                  <Badge variant="outline" className="capitalize">
+                    {event.resource.metadata.estado}
+                  </Badge>
+                )}
+                {(event.resource.metadata?.vehiculo || event.resource.metadata?.conductor) && (
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    {event.resource.metadata?.vehiculo && (
+                      <p>Vehículo: {event.resource.metadata.vehiculo}</p>
+                    )}
+                    {event.resource.metadata?.conductor && (
+                      <p>Conductor: {event.resource.metadata.conductor}</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Fechas y horarios */}
           <Card>
             <CardContent className="pt-4">
@@ -189,6 +211,15 @@ export function TripDetailModal({ event, open, onOpenChange }: TripDetailModalPr
               </div>
             </CardContent>
           </Card>
+
+          <div className="flex justify-end">
+            <a
+              href="/viajes"
+              className="mt-2 inline-flex items-center px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded"
+            >
+              Ver Detalles del Viaje
+            </a>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
