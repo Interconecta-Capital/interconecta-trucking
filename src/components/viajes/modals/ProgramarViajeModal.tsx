@@ -1,6 +1,7 @@
 
 /**
  * @deprecated Este componente ha sido reemplazado por el flujo completo de ViajeWizard.tsx. No utilizar.
+ * Use ViajeWizardModal and ViajeWizard components instead for the complete trip planning experience.
  */
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

@@ -9,14 +9,14 @@ import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { ViajesHistorial } from '@/components/viajes/ViajesHistorial';
 import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { useViajes } from '@/hooks/useViajes';
-import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 
 export default function ViajesOptimized() {
   const { viajes, isLoading } = useViajes();
-  const permissions = useUnifiedPermissionsV2();
+  const permissions = useUnifiedPermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('activos');
   const { openViajeWizard } = useViajeWizardModal();
@@ -24,17 +24,18 @@ export default function ViajesOptimized() {
   const handleNewViaje = () => {
     console.log('[Viajes] 🆕 Iniciando programación de nuevo viaje');
     
-    // Verificar permisos básicos antes de abrir el diálogo
-    const permissionCheck = permissions.canCreateConductor; // Using conductor permission as placeholder
+    // Verificar permisos antes de abrir el wizard
+    const permissionCheck = permissions.canCreateViaje;
     if (!permissionCheck.allowed) {
-      toast.error('No tienes permisos para programar viajes');
+      toast.error(permissionCheck.reason || 'No tienes permisos para programar viajes');
       return;
     }
     
+    // Abrir el ViajeWizard en modal
     openViajeWizard();
   };
 
-  const canCreateViaje = permissions.canCreateConductor; // Using conductor permission as placeholder
+  const canCreateViaje = permissions.canCreateViaje;
   
   const viajesActivos = viajes.filter(v => ['programado', 'en_transito', 'retrasado'].includes(v.estado));
   const viajesCompletados = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
