@@ -159,10 +159,11 @@ export function TimbradoSection({
                   <strong>Código QR Fiscal:</strong>
                 </div>
                 <div className="flex justify-center">
-                  <img 
-                    src={datosTimbre.qrCode} 
-                    alt="Código QR Fiscal" 
-                    className="w-32 h-32 border border-gray-300 rounded" 
+                  <img
+                    src={datosTimbre.qrCode}
+                    alt="Código QR Fiscal"
+                    className="w-32 h-32 border border-gray-300 rounded"
+                    loading="lazy"
                   />
                 </div>
               </div>
