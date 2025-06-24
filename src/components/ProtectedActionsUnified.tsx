@@ -30,13 +30,13 @@ export function ProtectedActionsUnified({
   const getPermission = (): PermissionResult => {
     switch (resource) {
       case 'conductores':
-        return permissions.canCreateConductor;
+        return permissions.canCreateConductorResult;
       case 'vehiculos':
-        return permissions.canCreateVehiculo;
+        return permissions.canCreateVehiculoResult;
       case 'socios':
-        return permissions.canCreateSocio;
+        return permissions.canCreateSocioResult;
       case 'cartas_porte':
-        return permissions.canCreateCartaPorte;
+        return permissions.canCreateCartaPorteResult;
       case 'viajes':
         return permissions.canCreateViaje;
       default:

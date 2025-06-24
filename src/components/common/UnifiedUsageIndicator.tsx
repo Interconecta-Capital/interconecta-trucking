@@ -105,7 +105,7 @@ export function UnifiedUsageIndicator({
   };
 
   if (showAll) {
-    // Get usage data with proper fallbacks
+    // Get usage data with proper fallbacks from unified permissions
     const usageData = {
       conductores: permissions.unified?.usage?.conductores || { used: 0, limit: null },
       vehiculos: permissions.unified?.usage?.vehiculos || { used: 0, limit: null },
