@@ -10,7 +10,8 @@ import {
   Truck,
   CreditCard,
   AlertTriangle,
-  Wrench
+  Wrench,
+  Calendar as CalendarIcon
 } from "lucide-react";
 
 import Index from "./pages/Index";
@@ -26,6 +27,7 @@ import Administracion from "./pages/Administracion";
 import Planes from "./pages/Planes";
 import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa";
 import DebugPermissionsTest from "./pages/DebugPermissionsTest";
+import Calendario from "./pages/Calendario";
 
 /**
  * Central place for defining the navigation items. Used for navigation components and routing.
@@ -116,6 +118,13 @@ export const navItems: NavItem[] = [
     to: "/viajes",
     icon: <Truck className="h-4 w-4" />,
     page: <Viajes />,
+    category: "OPERACIÓN",
+  },
+  {
+    title: "Calendario",
+    to: "/calendario",
+    icon: <CalendarIcon className="h-4 w-4" />,
+    page: <Calendario />,
     category: "OPERACIÓN",
   },
   {
