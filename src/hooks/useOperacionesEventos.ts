@@ -8,7 +8,15 @@ export interface OperacionEvento {
   titulo: string;
   fecha_inicio: string;
   fecha_fin?: string;
-  metadata?: any;
+  metadata?: {
+    estado?: string;
+    carta_porte_id?: string;
+    vehiculo?: string | null;
+    conductor?: string | null;
+    entidad?: string;
+    todo_dia?: boolean;
+    [key: string]: any;
+  };
 }
 
 export function useOperacionesEventos() {

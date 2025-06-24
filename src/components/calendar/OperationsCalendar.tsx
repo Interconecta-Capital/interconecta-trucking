@@ -9,12 +9,23 @@ import { CalendarEvent } from '@/hooks/useCalendarEvents';
 moment.locale('es');
 const localizer = momentLocalizer(moment);
 
-export function OperationsCalendar() {
+interface OperationsCalendarProps {
+  showViajes: boolean;
+  showMantenimientos: boolean;
+}
+
+export function OperationsCalendar({ showViajes, showMantenimientos }: OperationsCalendarProps) {
   const { eventos, isLoading } = useOperacionesEventos();
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const [open, setOpen] = useState(false);
 
-  const calendarEvents: CalendarEvent[] = eventos.map(ev => ({
+  const filtered = eventos.filter((ev) => {
+    if (ev.tipo === 'viaje' && !showViajes) return false;
+    if (ev.tipo === 'mantenimiento' && !showMantenimientos) return false;
+    return true;
+  });
+
+  const calendarEvents: CalendarEvent[] = filtered.map((ev) => ({
     id: ev.id,
     titulo: ev.titulo,
     tipo_evento: ev.tipo,
@@ -24,11 +35,12 @@ export function OperationsCalendar() {
     metadata: ev.metadata,
   }));
 
-  const rbcEvents = calendarEvents.map(ev => ({
+  const rbcEvents = calendarEvents.map((ev) => ({
     id: ev.id,
     title: ev.titulo,
     start: ev.fecha_inicio,
     end: ev.fecha_fin!,
+    allDay: ev.metadata?.todo_dia ?? false,
     resource: {
       tipo_evento: ev.tipo_evento,
       descripcion: ev.descripcion,
