@@ -27,7 +27,7 @@ export const ConductorQuickView = ({ conductor, open, onOpenChange, onEdit, onPr
   if (!conductor) return null;
 
   // Use the estado from conductor or default to 'disponible'
-  const conductorEstado = (conductor as any).estado || 'disponible';
+  const conductorEstado = conductor.estado || 'disponible';
   const estadoConfig = ESTADOS_CONFIG[conductorEstado as keyof typeof ESTADOS_CONFIG] || 
                       { label: conductorEstado || 'Sin estado', color: 'bg-gray-500 text-white' };
 

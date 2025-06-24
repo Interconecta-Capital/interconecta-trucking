@@ -10,8 +10,14 @@ export interface Conductor {
   nombre: string;
   telefono?: string;
   email?: string;
-  licencia?: string;
+  rfc?: string;
+  curp?: string;
+  num_licencia?: string;
+  tipo_licencia?: string;
   vigencia_licencia?: string;
+  num_reg_id_trib?: string;
+  residencia_fiscal?: string;
+  operador_sct?: boolean;
   direccion?: any;
   estado: string;
   activo: boolean;
@@ -110,17 +116,12 @@ export const useConductores = () => {
     }
   });
 
-  const recargar = () => {
-    queryClient.invalidateQueries({ queryKey: ['conductores'] });
-  };
-
   return { 
     conductores, 
     loading,
-    crearConductor: createMutation.mutateAsync,
-    actualizarConductor: updateMutation.mutateAsync,
-    eliminarConductor: deleteMutation.mutateAsync,
-    recargar,
+    createConductor: createMutation.mutateAsync,
+    updateConductor: updateMutation.mutateAsync,
+    deleteConductor: deleteMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,

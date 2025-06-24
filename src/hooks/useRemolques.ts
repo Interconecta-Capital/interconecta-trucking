@@ -16,6 +16,7 @@ export interface Remolque {
   subtipo_remolque?: string;
   estado: string;
   activo: boolean;
+  vehiculo_asignado_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -30,7 +31,7 @@ export const useRemolques = () => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
-        .from('remolques')
+        .from('remolques_ccp')
         .select('*')
         .eq('user_id', user.id)
         .eq('activo', true)
@@ -49,10 +50,12 @@ export const useRemolques = () => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
       const { data: result, error } = await supabase
-        .from('remolques')
+        .from('remolques_ccp')
         .insert({
           ...data,
           user_id: user.id,
+          activo: true,
+          estado: data.estado || 'disponible'
         })
         .select()
         .single();
@@ -73,7 +76,7 @@ export const useRemolques = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Remolque> }) => {
       const { data: result, error } = await supabase
-        .from('remolques')
+        .from('remolques_ccp')
         .update(data)
         .eq('id', id)
         .select()
@@ -95,7 +98,7 @@ export const useRemolques = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('remolques')
+        .from('remolques_ccp')
         .update({ activo: false })
         .eq('id', id);
 

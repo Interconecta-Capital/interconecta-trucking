@@ -16,7 +16,7 @@ interface ConductorVehiculoAsignacionFieldsProps {
 export function ConductorVehiculoAsignacionFields({ formData, onFieldChange }: ConductorVehiculoAsignacionFieldsProps) {
   const { user } = useStableAuth();
   const { vehiculos, loading: vehiculosLoading } = useStableVehiculos(user?.id);
-  const { remolques, loading: remolquesLoading } = useRemolques(user?.id);
+  const { remolques, loading: remolquesLoading } = useRemolques();
 
   const vehiculosDisponibles = vehiculos.filter(v => v.estado === 'disponible' || v.id === formData.vehiculo_asignado_id);
   const vehiculoSeleccionado = vehiculos.find(v => v.id === formData.vehiculo_asignado_id);
