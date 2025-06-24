@@ -1,16 +1,20 @@
 
 import { useState } from 'react';
-import { CreditCard, Check, Star, Zap } from 'lucide-react';
+import { CreditCard, Check, Star } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EstadoSuscripcion } from '@/components/suscripcion/EstadoSuscripcion';
 import { PlanSummaryCard } from '@/components/suscripcion/PlanSummaryCard';
 import { ProtectedContent } from '@/components/ProtectedContent';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
+import { PlanesCard } from '@/components/suscripcion/PlanesCard';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { useSuscripcion } from '@/hooks/useSuscripcion';
 
 export default function Planes() {
-  const [activeTab, setActiveTab] = useState('actual');
+  const [activeTab, setActiveTab] = useState('plan');
+  const permissions = useUnifiedPermissionsV2();
+  const { planes, cambiarPlan, isChangingPlan } = useSuscripcion();
 
   return (
     <ProtectedContent requiredFeature="cartas_porte">
@@ -21,21 +25,19 @@ export default function Planes() {
           <h1 className="text-3xl font-bold">Planes y Suscripción</h1>
         </div>
 
-        {/* Estado actual de la suscripción */}
-        <EstadoSuscripcion />
+        {/* Tarjeta principal del plan */}
+        <PlanSummaryCard />
 
-        {/* Tabs principales */}
+        {/* Detalles y gestión */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="actual">Plan Actual</TabsTrigger>
-            <TabsTrigger value="planes">Cambiar Plan</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="plan">Plan Actual</TabsTrigger>
+            <TabsTrigger value="uso">Uso de Recursos</TabsTrigger>
+            <TabsTrigger value="cambiar">Cambiar Plan</TabsTrigger>
             <TabsTrigger value="facturacion">Facturación</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="actual" className="space-y-6">
-            <PlanSummaryCard />
-            
-            {/* Características del plan actual */}
+          <TabsContent value="plan" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Características de tu Plan</CardTitle>
@@ -45,53 +47,43 @@ export default function Planes() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Cartas Porte ilimitadas</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Gestión de vehículos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Gestión de conductores</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Soporte técnico</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Reportes avanzados</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">API integración</span>
-                  </div>
+                  {permissions.planDetails.filter(d => d.included).map((item, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="text-sm">{item.feature}</span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="planes" className="space-y-6">
+          <TabsContent value="uso" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Planes Disponibles</CardTitle>
-                <CardDescription>
-                  Selecciona el plan que mejor se adapte a tus necesidades
-                </CardDescription>
+                <CardTitle>Uso Detallado por Recurso</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Próximamente</h3>
-                  <p className="text-muted-foreground">
-                    Los planes adicionales estarán disponibles pronto
-                  </p>
-                </div>
+              <CardContent className="space-y-4">
+                <LimitUsageIndicator resourceType="conductores" />
+                <LimitUsageIndicator resourceType="vehiculos" />
+                <LimitUsageIndicator resourceType="socios" />
+                <LimitUsageIndicator resourceType="cartas_porte" />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="cambiar" className="space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {planes.map((plan) => (
+                <PlanesCard
+                  key={plan.id}
+                  plan={plan}
+                  isCurrentPlan={plan.nombre === permissions.planInfo.name}
+                  onSelectPlan={cambiarPlan}
+                  isChanging={isChangingPlan}
+                />
+              ))}
+            </div>
           </TabsContent>
 
           <TabsContent value="facturacion" className="space-y-6">
