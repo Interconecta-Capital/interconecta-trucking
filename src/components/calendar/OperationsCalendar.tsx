@@ -1,13 +1,18 @@
 import { useState } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
-import 'moment/locale/es';
+import FullCalendar, {
+  type EventClickArg,
+  type EventInput,
+} from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
+import esLocale from '@fullcalendar/core/locales/es';
 import { useOperacionesEventos } from '@/hooks/useOperacionesEventos';
 import { TripDetailModal } from '@/components/dashboard/TripDetailModal';
 import { CalendarEvent } from '@/hooks/useCalendarEvents';
 
-moment.locale('es');
-const localizer = momentLocalizer(moment);
+
 
 interface OperationsCalendarProps {
   showViajes: boolean;
@@ -25,85 +30,52 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     return true;
   });
 
-  const calendarEvents: CalendarEvent[] = filtered.map((ev) => ({
-    id: ev.id,
-    titulo: ev.titulo,
-    tipo_evento: ev.tipo,
-    descripcion: '',
-    fecha_inicio: new Date(ev.fecha_inicio),
-    fecha_fin: ev.fecha_fin ? new Date(ev.fecha_fin) : new Date(ev.fecha_inicio),
-    metadata: ev.metadata,
-  }));
-
-  const rbcEvents = calendarEvents.map((ev) => ({
-    id: ev.id,
-    title: ev.titulo,
-    start: ev.fecha_inicio,
-    end: ev.fecha_fin!,
-    allDay: ev.metadata?.todo_dia ?? false,
-    resource: {
-      tipo_evento: ev.tipo_evento,
-      descripcion: ev.descripcion,
-      metadata: ev.metadata,
-    },
-  }));
-
-  const handleSelectEvent = (event: any) => {
-    setSelected(event);
-    setOpen(true);
+  const getColor = (tipo: string, estado?: string) => {
+    if (tipo === 'mantenimiento') return '#ef4444';
+    switch (estado) {
+      case 'programado':
+        return '#3b82f6';
+      case 'en_transito':
+      case 'en_curso':
+        return '#10b981';
+      case 'retrasado':
+        return '#f59e0b';
+      case 'cancelado':
+        return '#ef4444';
+      case 'completado':
+        return '#6b7280';
+      default:
+        return '#6366f1';
+    }
   };
 
-  const eventStyleGetter = (event: any) => {
-    let backgroundColor = '#6366f1';
-    const estado = event.resource.metadata?.estado;
-    if (event.resource.tipo_evento === 'mantenimiento') {
-      backgroundColor = '#ef4444';
-    } else {
-      switch (estado) {
-        case 'programado':
-          backgroundColor = '#3b82f6';
-          break;
-        case 'en_transito':
-        case 'en_curso':
-          backgroundColor = '#10b981';
-          break;
-        case 'retrasado':
-          backgroundColor = '#f59e0b';
-          break;
-        case 'cancelado':
-          backgroundColor = '#ef4444';
-          break;
-        case 'completado':
-          backgroundColor = '#6b7280';
-          break;
-      }
-    }
+  const fcEvents: EventInput[] = filtered.map((ev) => {
+    const color = getColor(ev.tipo, ev.metadata?.estado);
     return {
-      style: {
-        backgroundColor,
-        borderRadius: '4px',
-        opacity: 0.9,
-        color: 'white',
-        border: '0px',
-        display: 'block',
+      id: ev.id,
+      title: ev.titulo,
+      start: ev.fecha_inicio,
+      end: ev.fecha_fin ?? ev.fecha_inicio,
+      allDay: ev.metadata?.todo_dia ?? false,
+      backgroundColor: color,
+      borderColor: color,
+      extendedProps: {
+        tipo_evento: ev.tipo,
+        metadata: ev.metadata,
       },
     };
-  };
+  });
 
-  const messages = {
-    allDay: 'Todo el día',
-    previous: 'Anterior',
-    next: 'Siguiente',
-    today: 'Hoy',
-    month: 'Mes',
-    week: 'Semana',
-    day: 'Día',
-    agenda: 'Agenda',
-    date: 'Fecha',
-    time: 'Hora',
-    event: 'Evento',
-    noEventsInRange: 'No hay eventos en este rango.',
-    showMore: (total: number) => `+ Ver más (${total})`,
+  const handleEventClick = (info: EventClickArg) => {
+    const event: CalendarEvent = {
+      id: String(info.event.id),
+      title: info.event.title,
+      start: info.event.start ?? new Date(),
+      end: info.event.end ?? info.event.start ?? new Date(),
+      resource: info.event.extendedProps as any,
+    };
+    setSelected(event);
+    setOpen(true);
   };
 
   if (isLoading) {
@@ -117,18 +89,14 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
   return (
     <>
       <div style={{ height: '80vh' }}>
-        <Calendar
-          localizer={localizer}
-          events={rbcEvents}
-          startAccessor="start"
-          endAccessor="end"
-          messages={messages}
-          popup
-          views={['month', 'week', 'day', 'agenda']}
-          defaultView="month"
-          culture="es"
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={eventStyleGetter}
+        <FullCalendar
+          height="100%"
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+          initialView="dayGridMonth"
+          locale={esLocale}
+          headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }}
+          events={fcEvents}
+          eventClick={handleEventClick}
         />
       </div>
       {selected && (
