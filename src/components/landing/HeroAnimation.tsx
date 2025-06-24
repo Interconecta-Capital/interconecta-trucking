@@ -401,9 +401,14 @@ const HeroAnimation = () => {
     };
 
     setup();
-    window.addEventListener("resize", setup);
+
+    const handleResize = () => {
+      resize();
+    };
+
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("resize", setup);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
