@@ -6,8 +6,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./hooks/useAuth"
 import { AuthGuard } from "./components/auth/AuthGuard"
 import { BaseLayout } from "./components/layout/BaseLayout"
-import { OnboardingProvider } from '@/contexts/OnboardingProvider';
-import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration';
+import { OnboardingProvider } from '@/contexts/OnboardingProvider'
+import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration'
+import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
+import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
 
 // Páginas públicas
 import Index from "./pages/Index"
@@ -37,9 +39,11 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <AuthProvider>
-          <OnboardingProvider>
-            <OnboardingIntegration />
-            <Routes>
+          <ViajeWizardModalProvider>
+            <OnboardingProvider>
+              <OnboardingIntegration />
+              <ViajeWizardModal />
+              <Routes>
               {/* Página principal - Landing page para usuarios no autenticados */}
               <Route path="/" element={<Index />} />
               
@@ -156,6 +160,7 @@ const App = () => (
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </OnboardingProvider>
+        </ViajeWizardModalProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
