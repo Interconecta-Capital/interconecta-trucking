@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -124,22 +125,30 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
           const badge = getItemBadge(item);
           const Icon = item.icon;
 
-          const linkClasses = `
-            flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
-            ${isActive
+          const linkClasses = cn(
+            'flex items-center justify-between py-2 rounded-lg text-sm font-medium transition-colors overflow-hidden',
+            isCollapsed ? 'px-2 justify-center' : 'px-3',
+            isActive
               ? 'bg-blue-50 text-blue-700'
               : canAccess
                 ? 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                : 'text-gray-400 cursor-not-allowed'}
-          `;
+                : 'text-gray-400 cursor-not-allowed'
+          );
 
           return (
             <Tooltip key={item.href}>
               <TooltipTrigger asChild>
                 <Link to={item.href} className={linkClasses}>
-                  <div className="flex items-center space-x-3">
-                    <Icon className="h-5 w-5" />
-                    {!isCollapsed && <span>{item.title}</span>}
+                  <div className="flex items-center">
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span
+                      className={cn(
+                        'ml-3 whitespace-nowrap transition-all duration-200',
+                        isCollapsed && 'ml-0 opacity-0 w-0'
+                      )}
+                    >
+                      {item.title}
+                    </span>
                   </div>
                   {badge && !isCollapsed && (
                     <Badge variant="outline" className="text-xs">
@@ -158,7 +167,7 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 space-y-3">
+      <div className={cn('p-4 border-t border-gray-200 space-y-3', isCollapsed && 'hidden')}>
         {permissions.accessLevel === 'superuser' && isMobile && (
           <Badge variant="default" className="bg-yellow-100 text-yellow-800">
             Superusuario
