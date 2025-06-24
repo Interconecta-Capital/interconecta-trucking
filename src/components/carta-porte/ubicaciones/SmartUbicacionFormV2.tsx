@@ -494,8 +494,8 @@ export function SmartUbicacionFormV2({
                     id="pais"
                     value={formData.domicilio.pais}
                     onChange={(e) => handleFieldChange('domicilio.pais', e.target.value)}
-                    disabled={isFieldLocked('pais')}
-                    className={isFieldLocked('pais') ? 'bg-gray-100' : 'bg-white'}
+                    readOnly={isFieldLocked('pais')}
+                    className="bg-white"
                   />
                 </div>
 
@@ -505,8 +505,9 @@ export function SmartUbicacionFormV2({
                     id="codigoPostal"
                     value={formData.domicilio.codigoPostal}
                     onChange={(e) => handleFieldChange('domicilio.codigoPostal', e.target.value)}
-                    disabled={isFieldLocked('codigoPostal')}
-                    className={`${isFieldLocked('codigoPostal') ? 'bg-gray-100' : 'bg-white'} ${errors.codigoPostal ? 'border-red-500' : ''}`}
+                    readOnly={isFieldLocked('codigoPostal')}
+                    placeholder={isFieldLocked('codigoPostal') && !formData.domicilio.codigoPostal ? 'Se autocompleta con el C.P.' : ''}
+                    className={`${errors.codigoPostal ? 'border-red-500' : ''} bg-white`}
                   />
                   {errors.codigoPostal && <p className="text-sm text-red-500 mt-1">{errors.codigoPostal}</p>}
                 </div>
@@ -517,8 +518,9 @@ export function SmartUbicacionFormV2({
                     id="estado"
                     value={formData.domicilio.estado}
                     onChange={(e) => handleFieldChange('domicilio.estado', e.target.value)}
-                    disabled={isFieldLocked('estado')}
-                    className={`${isFieldLocked('estado') ? 'bg-gray-100' : 'bg-white'} ${errors.estado ? 'border-red-500' : ''}`}
+                    readOnly={isFieldLocked('estado')}
+                    placeholder={isFieldLocked('estado') && !formData.domicilio.estado ? 'Se autocompleta con el C.P.' : 'Estado'}
+                    className={`${errors.estado ? 'border-red-500' : ''} bg-white`}
                   />
                   {errors.estado && <p className="text-sm text-red-500 mt-1">{errors.estado}</p>}
                 </div>
@@ -531,8 +533,9 @@ export function SmartUbicacionFormV2({
                     id="municipio"
                     value={formData.domicilio.municipio}
                     onChange={(e) => handleFieldChange('domicilio.municipio', e.target.value)}
-                    disabled={isFieldLocked('municipio')}
-                    className={`${isFieldLocked('municipio') ? 'bg-gray-100' : 'bg-white'} ${errors.municipio ? 'border-red-500' : ''}`}
+                    readOnly={isFieldLocked('municipio')}
+                    placeholder={isFieldLocked('municipio') && !formData.domicilio.municipio ? 'Se autocompleta con el C.P.' : 'Municipio'}
+                    className={`${errors.municipio ? 'border-red-500' : ''} bg-white`}
                   />
                   {errors.municipio && <p className="text-sm text-red-500 mt-1">{errors.municipio}</p>}
                 </div>
@@ -544,8 +547,9 @@ export function SmartUbicacionFormV2({
                     value={formData.domicilio.colonia}
                     onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
                     placeholder="Colonia"
-                    disabled={isFieldLocked('colonia')}
-                    className={isFieldLocked('colonia') ? 'bg-gray-100' : 'bg-white'}
+                    readOnly={isFieldLocked('colonia')}
+                    placeholder={isFieldLocked('colonia') && !formData.domicilio.colonia ? 'Se autocompleta con el C.P.' : 'Colonia'}
+                    className="bg-white"
                   />
                 </div>
               </div>
@@ -557,8 +561,8 @@ export function SmartUbicacionFormV2({
                     id="calle"
                     value={formData.domicilio.calle}
                     onChange={(e) => handleFieldChange('domicilio.calle', e.target.value)}
-                    disabled={isFieldLocked('calle')}
-                    className={`${isFieldLocked('calle') ? 'bg-gray-100' : 'bg-white'} ${errors.calle ? 'border-red-500' : ''}`}
+                    readOnly={isFieldLocked('calle')}
+                    className={`${errors.calle ? 'border-red-500' : ''} bg-white`}
                   />
                   {errors.calle && <p className="text-sm text-red-500 mt-1">{errors.calle}</p>}
                 </div>
@@ -569,8 +573,8 @@ export function SmartUbicacionFormV2({
                     id="numExterior"
                     value={formData.domicilio.numExterior}
                     onChange={(e) => handleFieldChange('domicilio.numExterior', e.target.value)}
-                    disabled={isFieldLocked('numExterior')}
-                    className={isFieldLocked('numExterior') ? 'bg-gray-100' : 'bg-white'}
+                    readOnly={isFieldLocked('numExterior')}
+                    className="bg-white"
                   />
                 </div>
 
@@ -581,8 +585,8 @@ export function SmartUbicacionFormV2({
                     value={formData.domicilio.numInterior}
                     onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
                     placeholder="Ej: 1A, Local 2"
-                    disabled={isFieldLocked('numInterior')}
-                    className={isFieldLocked('numInterior') ? 'bg-gray-100' : 'bg-white'}
+                    readOnly={isFieldLocked('numInterior')}
+                    className="bg-white"
                   />
                 </div>
               </div>
@@ -595,8 +599,9 @@ export function SmartUbicacionFormV2({
                     value={formData.domicilio.localidad}
                     onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
                     placeholder="Localidad o población"
-                    disabled={isFieldLocked('localidad')}
-                    className={isFieldLocked('localidad') ? 'bg-gray-100' : 'bg-white'}
+                    readOnly={isFieldLocked('localidad')}
+                    placeholder={isFieldLocked('localidad') && !formData.domicilio.localidad ? 'Se autocompleta con el C.P.' : 'Localidad'}
+                    className="bg-white"
                   />
                 </div>
 
@@ -607,8 +612,8 @@ export function SmartUbicacionFormV2({
                     value={formData.domicilio.referencia}
                     onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
                     placeholder="Ej: Entre calles, color de fachada"
-                    disabled={isFieldLocked('referencia')}
-                    className={isFieldLocked('referencia') ? 'bg-gray-100' : 'bg-white'}
+                    readOnly={isFieldLocked('referencia')}
+                    className="bg-white"
                   />
                 </div>
               </div>
