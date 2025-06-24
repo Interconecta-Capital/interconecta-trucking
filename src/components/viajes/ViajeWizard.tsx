@@ -1,7 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel
+} from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, ArrowRight, CheckCircle, Route, Package, MapPin, Users, Truck } from 'lucide-react';
 import { ViajeWizardMision } from './wizard/ViajeWizardMision';
@@ -74,9 +84,13 @@ interface ViajeWizardProps {
   onComplete?: () => void
 }
 
-export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
+export interface ViajeWizardHandle {
+  requestClose: () => void
+}
+
+export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps, ref) {
   const navigate = useNavigate();
-  const { crearViaje, isCreatingViaje } = useViajes();
+  const { crearViaje, isCreatingViaje, guardarBorradorViaje, isSavingDraft } = useViajes();
   const { 
     startWizardTutorial, 
     isWizardTutorialActive,
@@ -91,6 +105,10 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
   const [tutorialStarted, setTutorialStarted] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [initialSnapshot, setInitialSnapshot] = useState(JSON.stringify({ currentStep: 1 }));
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
 
   // Iniciar tutorial solo la primera vez que se abre el wizard
   useEffect(() => {
@@ -108,6 +126,14 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
   const updateData = (updates: Partial<ViajeWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
   };
+
+  useEffect(() => {
+    setHasUnsavedChanges(JSON.stringify(data) !== initialSnapshot);
+  }, [data, initialSnapshot]);
+
+  useEffect(() => {
+    setInitialSnapshot(JSON.stringify(data));
+  }, []);
 
   const canAdvance = () => {
     switch (data.currentStep) {
@@ -143,13 +169,45 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
     }
   };
 
-  const handleCancel = () => {
+  const handleSaveDraft = async () => {
+    try {
+      const result = await guardarBorradorViaje({ wizardData: data, borradorId: draftId || undefined });
+      setDraftId(result.id);
+      setInitialSnapshot(JSON.stringify(data));
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    try {
+      await handleSaveDraft();
+      forceClose();
+    } catch (error) {
+      console.error('Error saving and exiting:', error);
+    }
+  };
+
+  const forceClose = () => {
     if (onCancel) {
       onCancel();
     } else {
       navigate('/viajes');
     }
   };
+
+  const handleRequestClose = () => {
+    if (hasUnsavedChanges) {
+      setExitDialogOpen(true);
+    } else {
+      forceClose();
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    requestClose: handleRequestClose
+  }));
 
   const handleConfirmarViaje = async () => {
     // Prevenir múltiples ejecuciones
@@ -189,6 +247,8 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
 
       console.log('✅ Documentos generados exitosamente');
       toast.success('Viaje programado y documentos generados exitosamente');
+      setInitialSnapshot(JSON.stringify(data));
+      setHasUnsavedChanges(false);
 
       // 3. Redirigir después de un breve delay
       setTimeout(() => {
@@ -301,9 +361,9 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
                   )}
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                onClick={handleCancel} 
+              <Button
+                variant="outline"
+                onClick={handleRequestClose}
                 disabled={isProcessing || viajeConfirmado}
               >
                 Cancelar
@@ -408,21 +468,48 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
                     {getStep1ValidationMessage()}
                   </div>
                 )}
-                
-                <Button
-                  onClick={handleNext}
-                  disabled={!canAdvance() || isProcessing || viajeConfirmado}
-                  data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
-                  className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
-                >
-                  Siguiente
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveDraft} disabled={isSavingDraft || isProcessing}>
+                    Guardar Borrador
+                  </Button>
+                  <Button variant="outline" onClick={handleSaveAndExit} disabled={isSavingDraft || isProcessing}>
+                    Guardar y Salir
+                  </Button>
+                  <Button
+                    onClick={handleNext}
+                    disabled={!canAdvance() || isProcessing || viajeConfirmado}
+                    data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
+                    className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
+                  >
+                    Siguiente
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
         </div>
+
+        <AlertDialog open={exitDialogOpen} onOpenChange={setExitDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Deseas salir sin guardar?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Hemos detectado cambios que no se han guardado. ¿Estás seguro de que quieres salir?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continuar Editando</AlertDialogCancel>
+              <AlertDialogAction className="bg-red-600 text-white" onClick={forceClose}>
+                Salir sin Guardar
+              </AlertDialogAction>
+              <AlertDialogAction onClick={handleSaveAndExit}>Guardar y Salir</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </ValidationProvider>
     </AdaptiveFlowProvider>
   );
-}
+});
