@@ -8,9 +8,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useNavigate } from 'react-router-dom';
 import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
-import { ProtectedActions } from '@/components/ProtectedActions';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 interface GlobalHeaderProps {
   onOpenSidebar?: () => void;
@@ -24,6 +24,16 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const { openViajeWizard } = useViajeWizardModal();
 
   const handleNewViaje = () => {
+    console.log('[GlobalHeader] 🆕 Iniciando programación de nuevo viaje desde navbar');
+    
+    // Verificar permisos antes de abrir el wizard - usar la misma lógica que en ViajesOptimized
+    const canCreate = permissions.canCreateCartaPorte();
+    if (!canCreate.allowed) {
+      toast.error(canCreate.reason || 'No tienes permisos para programar viajes');
+      return;
+    }
+    
+    // Abrir el ViajeWizard usando el mismo hook que la página de viajes
     openViajeWizard();
   };
 
@@ -54,6 +64,7 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   };
 
   const alertCount = getAlertCount();
+  const canCreateViaje = permissions.canCreateCartaPorte();
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -89,17 +100,24 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
             )}
           </Button>
 
-          <ProtectedActions action="create" resource="viajes" onAction={handleNewViaje}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="default" size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden md:inline">Nuevo Viaje</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Nuevo Viaje</TooltipContent>
-            </Tooltip>
-          </ProtectedActions>
+          {/* Botón Nuevo Viaje - Ahora usa el mismo hook que la página de viajes */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="flex items-center gap-2"
+                onClick={handleNewViaje}
+                disabled={!canCreateViaje.allowed}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden md:inline">Nuevo Viaje</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {canCreateViaje.allowed ? 'Nuevo Viaje' : canCreateViaje.reason}
+            </TooltipContent>
+          </Tooltip>
 
           {/* Menú de usuario */}
           <DropdownMenu>

@@ -9,14 +9,16 @@ export function ViajeWizardModal() {
 
   return (
     <ResponsiveDialog open={isViajeWizardOpen} onOpenChange={(open) => { if(!open) closeViajeWizard() }}>
-      <ResponsiveDialogContent className="md:max-w-5xl inset-0 h-screen md:h-auto md:inset-auto">
+      <ResponsiveDialogContent className="focus:outline-none">
         <DialogHeader className="sr-only">
           <DialogTitle>Programar Nuevo Viaje</DialogTitle>
           <DialogDescription>
             Wizard completo para programar un nuevo viaje con todos los detalles necesarios
           </DialogDescription>
         </DialogHeader>
-        <ViajeWizard onCancel={closeViajeWizard} onComplete={closeViajeWizard} />
+        <div className="w-full h-full">
+          <ViajeWizard onCancel={closeViajeWizard} onComplete={closeViajeWizard} />
+        </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   )

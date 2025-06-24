@@ -41,21 +41,21 @@ const ResponsiveDialogContent = React.forwardRef<
         ref={ref}
         className={cn(
           "fixed z-50 bg-pure-white shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-          // Mobile: Full screen with safe areas
+          // Mobile: Full screen optimizado
           isMobile ? [
-            "inset-x-0 bottom-0 top-[10%]",
-            "rounded-t-3xl border-t border-gray-20",
+            "inset-0", // Pantalla completa en móvil
+            "rounded-none border-0",
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-            "max-h-[90vh] overflow-y-auto",
-            "p-4 pb-6"
+            "max-h-screen overflow-y-auto",
+            "p-4 pb-safe-area-inset-bottom" // Respeta el área segura
           ] : [
-            // Desktop: Centered modal
+            // Desktop: Modal centrado y grande
             "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]",
             "rounded-2xl border border-gray-20",
             "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
             "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
             "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
-            "max-w-4xl w-[90vw] max-h-[85vh] overflow-y-auto",
+            "max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto", // Más grande en desktop
             "p-6"
           ],
           className
@@ -64,10 +64,10 @@ const ResponsiveDialogContent = React.forwardRef<
       >
         {children}
         <DialogPrimitive.Close className={cn(
-          "absolute rounded-lg opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none",
-          isMobile ? "right-4 top-4 h-8 w-8" : "right-6 top-6 h-6 w-6"
+          "absolute rounded-lg opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none z-10",
+          isMobile ? "right-3 top-3 h-10 w-10 bg-white/80 backdrop-blur-sm" : "right-6 top-6 h-8 w-8"
         )}>
-          <X className="h-4 w-4" />
+          <X className={cn("text-gray-600", isMobile ? "h-5 w-5" : "h-4 w-4")} />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -87,7 +87,7 @@ const ResponsiveDialogHeader = React.forwardRef<
       ref={ref}
       className={cn(
         "flex flex-col space-y-2 text-left",
-        isMobile ? "mb-6" : "mb-4",
+        isMobile ? "mb-6 pt-2" : "mb-4", // Más espacio superior en móvil
         className
       )}
       {...props}
@@ -108,7 +108,7 @@ const ResponsiveDialogFooter = React.forwardRef<
       className={cn(
         "flex gap-3",
         isMobile ? [
-          "flex-col-reverse pt-6 mt-6 border-t border-gray-10",
+          "flex-col-reverse pt-6 mt-6 border-t border-gray-10 pb-safe-area-inset-bottom",
           "[&>button]:w-full [&>button]:h-12 [&>button]:text-base"
         ] : [
           "flex-row justify-end pt-4 mt-4",
@@ -133,7 +133,7 @@ const ResponsiveDialogTitle = React.forwardRef<
       ref={ref}
       className={cn(
         "font-bold leading-none tracking-tight text-gray-90",
-        isMobile ? "text-xl" : "text-lg",
+        isMobile ? "text-xl pr-12" : "text-lg pr-10", // Más espacio para el botón cerrar
         className
       )}
       {...props}
