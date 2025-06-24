@@ -2,6 +2,15 @@ import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
+interface OperacionEvento {
+  id: string;
+  tipo: string;
+  titulo: string;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  metadata: Record<string, unknown>;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -44,12 +53,14 @@ serve(async (req) => {
 
     const { data: programaciones, error: progError } = await supabase
       .from('programaciones')
-      .select('*')
+      .select(
+        'id, tipo_programacion, descripcion, fecha_inicio, fecha_fin, entidad_tipo, estado'
+      )
       .eq('user_id', user.id);
 
     if (progError) throw progError;
 
-    const events: any[] = [];
+    const events: OperacionEvento[] = [];
 
     for (const v of viajes ?? []) {
       events.push({
