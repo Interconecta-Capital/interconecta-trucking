@@ -12,7 +12,7 @@ export interface Viaje {
   destino: string;
   conductor_id?: string;
   vehiculo_id?: string;
-  estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado';
+  estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado' | 'borrador';
   fecha_inicio_programada: string;
   fecha_inicio_real?: string;
   fecha_fin_programada: string;
@@ -218,12 +218,67 @@ export const useViajes = () => {
     }
   });
 
+  // Guardar borrador de viaje
+  const guardarBorradorViaje = useMutation({
+    mutationFn: async ({ wizardData, borradorId }: { wizardData: ViajeWizardData; borradorId?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      const viajeId = borradorId || `viaje-draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      const viajeData = {
+        id: viajeId,
+        carta_porte_id: `DRAFT-${Date.now()}`,
+        origen: wizardData.origen?.domicilio?.calle || '',
+        destino: wizardData.destino?.domicilio?.calle || '',
+        conductor_id: wizardData.conductor?.id,
+        vehiculo_id: wizardData.vehiculo?.id,
+        estado: 'borrador' as const,
+        fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
+        fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        observaciones: `Borrador - ${wizardData.cliente?.nombre_razon_social || 'Viaje'}`,
+        tracking_data: JSON.parse(JSON.stringify(wizardData)),
+        user_id: user.id
+      };
+
+      if (borradorId) {
+        const { data, error } = await supabase
+          .from('viajes')
+          .update(viajeData)
+          .eq('id', borradorId)
+          .select()
+          .single();
+        if (error) throw error;
+        return data as Viaje;
+      }
+
+      const { data, error } = await supabase
+        .from('viajes')
+        .insert(viajeData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Viaje;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viajes'] });
+      toast.success('Borrador guardado exitosamente');
+    },
+    onError: (error) => {
+      console.error('Error guardando borrador:', error);
+      toast.error('Error al guardar borrador');
+    }
+  });
+
   return {
     viajes,
     isLoading,
     crearViaje: crearViaje.mutate,
     isCreatingViaje: isCreatingViaje || crearViaje.isPending,
     actualizarViaje: actualizarViaje.mutate,
-    isUpdatingViaje: actualizarViaje.isPending
+    isUpdatingViaje: actualizarViaje.isPending,
+    guardarBorradorViaje: guardarBorradorViaje.mutateAsync,
+    isSavingDraft: guardarBorradorViaje.isPending
   };
 };
