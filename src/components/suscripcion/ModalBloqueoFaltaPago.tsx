@@ -1,14 +1,24 @@
-
-import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { AlertTriangle, CreditCard, Clock } from 'lucide-react';
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSuscripcion } from "@/hooks/useSuscripcion";
+import { AlertTriangle, CreditCard, Clock } from "lucide-react";
 
 export const ModalBloqueoFaltaPago = () => {
-  const { bloqueo, suscripcion, diasRestantesPrueba, suscripcionVencida } = useSuscripcion();
+  const { bloqueo, suscripcion, suscripcionVencida } = useSuscripcion();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -22,12 +32,12 @@ export const ModalBloqueoFaltaPago = () => {
 
   const handlePayment = () => {
     // Redirigir a la página de pagos o abrir Stripe
-    window.location.href = '/pagos';
+    window.location.href = "/pagos";
   };
 
   const handleUpgradePlan = () => {
     // Redirigir a la página de planes
-    window.location.href = '/planes';
+    window.location.href = "/planes";
   };
 
   if (!isOpen) return null;
@@ -38,7 +48,7 @@ export const ModalBloqueoFaltaPago = () => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
-            {bloqueo?.activo ? 'Cuenta Bloqueada' : 'Suscripción Vencida'}
+            {bloqueo?.activo ? "Cuenta Bloqueada" : "Suscripción Vencida"}
           </DialogTitle>
         </DialogHeader>
 
@@ -47,7 +57,8 @@ export const ModalBloqueoFaltaPago = () => {
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                {bloqueo.mensaje_bloqueo || 'Su cuenta ha sido bloqueada por falta de pago.'}
+                {bloqueo.mensaje_bloqueo ||
+                  "Su cuenta ha sido bloqueada por falta de pago."}
               </AlertDescription>
             </Alert>
           )}
@@ -56,7 +67,8 @@ export const ModalBloqueoFaltaPago = () => {
             <Alert variant="destructive">
               <Clock className="h-4 w-4" />
               <AlertDescription>
-                Su período de prueba ha expirado. Para continuar usando la plataforma, seleccione un plan de pago.
+                Su período de prueba ha expirado. Para continuar usando la
+                plataforma, seleccione un plan de pago.
               </AlertDescription>
             </Alert>
           )}
@@ -69,20 +81,18 @@ export const ModalBloqueoFaltaPago = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {suscripcion?.status === 'past_due' && (
-                <Button 
-                  onClick={handlePayment}
-                  className="w-full"
-                  size="lg"
-                >
+              {suscripcion?.status === "past_due" && (
+                <Button onClick={handlePayment} className="w-full" size="lg">
                   <CreditCard className="mr-2 h-4 w-4" />
                   Realizar Pago Pendiente
                 </Button>
               )}
 
-              <Button 
+              <Button
                 onClick={handleUpgradePlan}
-                variant={suscripcion?.status === 'past_due' ? 'outline' : 'default'}
+                variant={
+                  suscripcion?.status === "past_due" ? "outline" : "default"
+                }
                 className="w-full"
                 size="lg"
               >
