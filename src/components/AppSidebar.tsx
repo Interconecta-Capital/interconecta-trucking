@@ -11,6 +11,7 @@ import {
   Wrench,
   LayoutDashboard,
   CreditCard,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   X,
@@ -50,6 +51,12 @@ const sidebarItems: SidebarItem[] = [
     href: '/viajes',
     icon: Route,
     requiresPermission: true,
+    category: 'OPERACIÓN',
+  },
+  {
+    title: 'Calendario',
+    href: '/calendario',
+    icon: Calendar,
     category: 'OPERACIÓN',
   },
   {
@@ -117,6 +124,8 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', String(isCollapsed));
   }, [isCollapsed]);
+
+  console.log('Items a renderizar en Sidebar:', sidebarItems);
 
   const canAccessItem = (item: SidebarItem): boolean => {
     // Superusuarios pueden acceder a todo
