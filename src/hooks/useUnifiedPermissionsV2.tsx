@@ -20,6 +20,13 @@ export interface UnifiedPermissionsV2 {
   accessLevel: 'superuser' | 'trial' | 'paid' | 'blocked' | 'expired';
   hasFullAccess: boolean;
   planInfo: PlanInfo;
+  planDetails: { feature: string; included: boolean }[];
+  usage: {
+    vehiculos: { used: number; limit: number | null };
+    conductores: { used: number; limit: number | null };
+    socios: { used: number; limit: number | null };
+    cartas_porte: { used: number; limit: number | null };
+  };
   canCreateVehiculo: () => { allowed: boolean; reason?: string };
   canCreateConductor: () => { allowed: boolean; reason?: string };
   canCreateSocio: () => { allowed: boolean; reason?: string };
@@ -84,6 +91,13 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
           trialActive: false,
           limites: {}
         },
+        planDetails: [],
+        usage: {
+          vehiculos: { used: 0, limit: null },
+          conductores: { used: 0, limit: null },
+          socios: { used: 0, limit: null },
+          cartas_porte: { used: 0, limit: null }
+        },
         canCreateVehiculo: () => ({ allowed: true }),
         canCreateConductor: () => ({ allowed: true }),
         canCreateSocio: () => ({ allowed: true }),
@@ -99,6 +113,13 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
           name: 'Sin Plan',
           trialActive: false,
           limites: {}
+        },
+        planDetails: [],
+        usage: {
+          vehiculos: { used: 0, limit: 0 },
+          conductores: { used: 0, limit: 0 },
+          socios: { used: 0, limit: 0 },
+          cartas_porte: { used: 0, limit: 0 }
         },
         canCreateVehiculo: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
         canCreateConductor: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
@@ -140,6 +161,36 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
       };
     };
 
+    const planDetails = [
+      {
+        feature: plan.limite_cartas_porte ? `${plan.limite_cartas_porte} cartas porte` : 'Cartas porte ilimitadas',
+        included: true
+      },
+      {
+        feature: plan.limite_conductores ? `${plan.limite_conductores} conductores` : 'Conductores ilimitados',
+        included: true
+      },
+      {
+        feature: plan.limite_vehiculos ? `${plan.limite_vehiculos} vehículos` : 'Vehículos ilimitados',
+        included: true
+      },
+      {
+        feature: plan.limite_socios ? `${plan.limite_socios} socios` : 'Socios ilimitados',
+        included: true
+      },
+      { feature: 'Generación de XML', included: !!plan.puede_generar_xml },
+      { feature: 'Timbrado automático', included: !!plan.puede_timbrar },
+      { feature: 'Cancelación de CFDI', included: !!plan.puede_cancelar_cfdi },
+      { feature: 'Tracking en tiempo real', included: !!plan.puede_tracking }
+    ];
+
+    const usage = {
+      vehiculos: { used: counts.vehiculos, limit: plan?.limite_vehiculos ?? null },
+      conductores: { used: counts.conductores, limit: plan?.limite_conductores ?? null },
+      socios: { used: counts.socios, limit: plan?.limite_socios ?? null },
+      cartas_porte: { used: counts.cartas_porte, limit: plan?.limite_cartas_porte ?? null }
+    };
+
     return {
       accessLevel,
       hasFullAccess: true,
@@ -154,6 +205,8 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
           cartas_porte: plan?.limite_cartas_porte
         }
       },
+      planDetails,
+      usage,
       canCreateVehiculo: () => checkLimit('vehiculos', 'limite_vehiculos'),
       canCreateConductor: () => checkLimit('conductores', 'limite_conductores'),
       canCreateSocio: () => checkLimit('socios', 'limite_socios'),
