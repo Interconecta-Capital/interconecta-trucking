@@ -40,7 +40,12 @@ export function ProtectedActionsUnified({
       case 'viajes':
         return permissions.canCreateViaje;
       default:
-        return { allowed: false, reason: 'Recurso no reconocido' };
+        return {
+          allowed: false,
+          reason: 'Recurso no reconocido',
+          puede: false,
+          razon: 'Recurso no reconocido'
+        };
     }
   };
 
