@@ -99,7 +99,19 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
   const sidebarBody = (
     <div className="flex flex-col h-full">
       <div className="p-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Interconecta</h2>
+        <div className="flex items-center">
+          <h2 className={`text-xl font-bold text-gray-900 transition-all duration-200 ${
+            isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+          }`}>
+            Interconecta
+          </h2>
+          {!isCollapsed && !isMobile && permissions.accessLevel === 'superuser' && (
+            <Badge variant="default" className="ml-2 bg-yellow-100 text-yellow-800">
+              Superusuario
+            </Badge>
+          )}
+        </div>
+        
         {isMobile && (
           <Button
             variant="ghost"
@@ -109,11 +121,6 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
           >
             <X className="w-5 h-5" />
           </Button>
-        )}
-        {!isMobile && permissions.accessLevel === 'superuser' && (
-          <Badge variant="default" className="ml-2 bg-yellow-100 text-yellow-800">
-            Superusuario
-          </Badge>
         )}
       </div>
 
@@ -125,7 +132,8 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
           const Icon = item.icon;
 
           const linkClasses = `
-            flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
+            flex items-center justify-between rounded-lg text-sm font-medium transition-all duration-200
+            ${isCollapsed ? 'px-2 py-2' : 'px-3 py-2'}
             ${isActive
               ? 'bg-blue-50 text-blue-700'
               : canAccess
@@ -138,11 +146,20 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
               <TooltipTrigger asChild>
                 <Link to={item.href} className={linkClasses}>
                   <div className="flex items-center space-x-3">
-                    <Icon className="h-5 w-5" />
-                    {!isCollapsed && <span>{item.title}</span>}
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span className={`transition-all duration-200 ${
+                      isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                    }`}>
+                      {item.title}
+                    </span>
                   </div>
-                  {badge && !isCollapsed && (
-                    <Badge variant="outline" className="text-xs">
+                  {badge && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs transition-all duration-200 ${
+                        isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                      }`}
+                    >
                       {badge}
                     </Badge>
                   )}
@@ -151,6 +168,9 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
               {isCollapsed && (
                 <TooltipContent side="right" className="capitalize">
                   {item.title}
+                  {badge && (
+                    <span className="ml-2 text-xs opacity-75">({badge})</span>
+                  )}
                 </TooltipContent>
               )}
             </Tooltip>
@@ -159,40 +179,47 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
       </nav>
 
       <div className="p-4 border-t border-gray-200 space-y-3">
-        {permissions.accessLevel === 'superuser' && isMobile && (
+        {/* Superusuario badge para móvil - solo mostrar si no está colapsado */}
+        {permissions.accessLevel === 'superuser' && isMobile && !isCollapsed && (
           <Badge variant="default" className="bg-yellow-100 text-yellow-800">
             Superusuario
           </Badge>
         )}
         
-        {permissions.accessLevel === 'trial' && (
-          <div className="bg-orange-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-orange-800">Período de Prueba</p>
-            <p className="text-xs text-orange-600">
-              {permissions.planInfo.daysRemaining || 0} días restantes
-            </p>
-          </div>
-        )}
+        {/* Widgets de estado del plan - ocultar completamente cuando está colapsado */}
+        <div className={`space-y-3 transition-all duration-200 ${
+          isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+        }`}>
+          {permissions.accessLevel === 'trial' && (
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <p className="text-sm font-medium text-orange-800">Período de Prueba</p>
+              <p className="text-xs text-orange-600">
+                {permissions.planInfo.daysRemaining || 0} días restantes
+              </p>
+            </div>
+          )}
 
-        {(permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') && (
-          <div className="bg-red-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-red-800">
-              {permissions.accessLevel === 'blocked' ? 'Cuenta Bloqueada' : 'Plan Expirado'}
-            </p>
-            <Button size="sm" className="mt-2 w-full">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Renovar Plan
-            </Button>
-          </div>
-        )}
+          {(permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') && (
+            <div className="bg-red-50 p-3 rounded-lg">
+              <p className="text-sm font-medium text-red-800">
+                {permissions.accessLevel === 'blocked' ? 'Cuenta Bloqueada' : 'Plan Expirado'}
+              </p>
+              <Button size="sm" className="mt-2 w-full">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                Renovar Plan
+              </Button>
+            </div>
+          )}
 
-        {permissions.accessLevel === 'paid' && (
-          <div className="bg-green-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-green-800">Plan Activo</p>
-            <p className="text-xs text-green-600">{permissions.planInfo.name}</p>
-          </div>
-        )}
+          {permissions.accessLevel === 'paid' && (
+            <div className="bg-green-50 p-3 rounded-lg">
+              <p className="text-sm font-medium text-green-800">Plan Activo</p>
+              <p className="text-xs text-green-600">{permissions.planInfo.name}</p>
+            </div>
+          )}
+        </div>
 
+        {/* Botón de colapso - solo en desktop */}
         {!isMobile && (
           <Button
             variant="ghost"

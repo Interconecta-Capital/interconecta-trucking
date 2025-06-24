@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { ViajeWizardMision } from './wizard/ViajeWizardMision';
 import { ViajeWizardRuta } from './wizard/ViajeWizardRuta';
 import { ViajeWizardActivos } from './wizard/ViajeWizardActivos';
 import { ViajeWizardResumen } from './wizard/ViajeWizardResumen';
+import { WizardFlowControls } from './wizard/WizardFlowControls';
 import { WizardTutorial } from '@/components/onboarding/WizardTutorial';
 import { toast } from 'sonner';
 import { useViajes } from '@/hooks/useViajes';
@@ -16,12 +18,14 @@ import { ViajeWizardValidacionesEnhanced } from './wizard/ViajeWizardValidacione
 import { AdaptiveFlowProvider, FlowModeSelector } from './wizard/AdaptiveFlowManager';
 import { ValidationProvider } from '@/contexts/ValidationProvider';
 import { useOnboarding } from '@/contexts/OnboardingProvider';
+import { Mercancia } from '@/types/mercancias';
 
 export interface ViajeWizardData {
   // Paso A: Misión
   cliente?: any;
   tipoServicio?: 'flete_pagado' | 'traslado_propio';
   descripcionMercancia?: string;
+  mercancias?: Mercancia[];
   // Paso B: Ruta
   origen?: any;
   destino?: any;
@@ -34,6 +38,9 @@ export interface ViajeWizardData {
   isValid: boolean;
   // Validaciones específicas
   clienteRfcValido?: boolean;
+  // Estado de guardado
+  status?: 'borrador' | 'programado' | 'en_transito';
+  id?: string;
 }
 
 const STEPS = [
@@ -72,11 +79,12 @@ const STEPS = [
 interface ViajeWizardProps {
   onCancel?: () => void
   onComplete?: () => void
+  initialData?: Partial<ViajeWizardData>
 }
 
-export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
+export function ViajeWizard({ onCancel, onComplete, initialData }: ViajeWizardProps) {
   const navigate = useNavigate();
-  const { crearViaje, isCreatingViaje } = useViajes();
+  const { crearViaje, actualizarViaje, isCreatingViaje } = useViajes();
   const { 
     startWizardTutorial, 
     isWizardTutorialActive,
@@ -86,9 +94,23 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
   const [data, setData] = useState<ViajeWizardData>({
     currentStep: 1,
     isValid: false,
-    clienteRfcValido: false
+    clienteRfcValido: false,
+    status: 'borrador',
+    mercancias: [{
+      id: 'mercancia-initial',
+      descripcion: '',
+      claveProdServ: '',
+      claveUnidad: '',
+      cantidad: 1,
+      pesoKg: 0,
+      valorMercancia: 0,
+      unidad: 'KGM',
+      aiGenerated: false
+    }],
+    ...initialData
   });
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
   const [tutorialStarted, setTutorialStarted] = useState(false);
 
@@ -113,17 +135,18 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
     switch (data.currentStep) {
       case 1:
         // Validación estricta: todos los campos requeridos Y RFC válido
-        const hasBasicData = data.cliente && data.tipoServicio && data.descripcionMercancia;
+        const hasBasicData = data.cliente && data.tipoServicio;
+        const hasMercancias = data.mercancias && data.mercancias.length > 0 && 
+          data.mercancias.some(m => m.descripcion && m.descripcion.trim());
         const hasValidRfc = data.clienteRfcValido === true;
         
-        // Solo permitir avanzar si tiene datos básicos Y RFC válido
-        return hasBasicData && hasValidRfc;
+        return hasBasicData && hasMercancias && hasValidRfc;
       case 2:
         return data.origen && data.destino;
       case 3:
         return data.vehiculo && data.conductor;
       case 4:
-        return true; // Las validaciones se manejan internamente
+        return true;
       case 5:
         return true;
       default:
@@ -151,8 +174,59 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
     }
   };
 
+  const handleSaveDraft = async () => {
+    try {
+      setIsSavingDraft(true);
+      console.log('💾 Guardando borrador...');
+
+      const draftData = {
+        ...data,
+        status: 'borrador' as const
+      };
+
+      if (data.id) {
+        // Actualizar borrador existente
+        await actualizarViaje(data.id, draftData);
+        toast.success('Borrador actualizado correctamente');
+      } else {
+        // Crear nuevo borrador
+        const result = await new Promise<any>((resolve, reject) => {
+          crearViaje(draftData, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+        updateData({ id: result.id });
+        toast.success('Borrador guardado correctamente');
+      }
+    } catch (error) {
+      console.error('Error guardando borrador:', error);
+      toast.error('Error al guardar el borrador');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    await handleSaveDraft();
+    setTimeout(() => {
+      if (onComplete) {
+        onComplete();
+      } else {
+        navigate('/viajes');
+      }
+    }, 1000);
+  };
+
+  const handleFinalize = () => {
+    if (data.currentStep < 5) {
+      handleNext();
+    } else {
+      handleConfirmarViaje();
+    }
+  };
+
   const handleConfirmarViaje = async () => {
-    // Prevenir múltiples ejecuciones
     if (isGeneratingDocuments || isCreatingViaje || viajeConfirmado) {
       console.log('🚫 Proceso ya en curso, ignorando clic adicional');
       return;
@@ -162,29 +236,37 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
       setIsGeneratingDocuments(true);
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
-      // 1. Crear el viaje primero
-      console.log('📝 Paso 1: Creando viaje en base de datos...');
-      const nuevoViaje = await new Promise<any>((resolve, reject) => {
-        crearViaje(data, {
-          onSuccess: (viaje) => {
-            console.log('✅ Viaje creado con ID:', viaje.id);
-            resolve(viaje);
-          },
-          onError: (error) => {
-            console.error('❌ Error creando viaje:', error);
-            reject(error);
-          }
-        });
-      });
+      // 1. Crear o actualizar el viaje
+      console.log('📝 Paso 1: Guardando viaje en base de datos...');
+      const finalData = {
+        ...data,
+        status: 'programado' as const
+      };
 
-      // Marcar como confirmado para prevenir duplicados
+      let viajeId = data.id;
+      if (viajeId) {
+        // Actualizar viaje existente
+        await actualizarViaje(viajeId, finalData);
+        console.log('✅ Viaje actualizado con ID:', viajeId);
+      } else {
+        // Crear nuevo viaje
+        const nuevoViaje = await new Promise<any>((resolve, reject) => {
+          crearViaje(finalData, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+        viajeId = nuevoViaje.id;
+        console.log('✅ Viaje creado con ID:', viajeId);
+      }
+
       setViajeConfirmado(true);
 
       // 2. Generar Carta Porte desde el viaje
       console.log('📄 Paso 2: Generando Carta Porte...');
       const resultado = await ViajeCartaPorteService.crearCartaPorteDesdeViaje(
-        nuevoViaje.id,
-        data
+        viajeId,
+        finalData
       );
 
       console.log('✅ Documentos generados exitosamente');
@@ -198,7 +280,7 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
           navigate('/viajes', {
             state: {
               message: 'Viaje programado y documentos generados exitosamente',
-              viajeId: nuevoViaje.id,
+              viajeId: viajeId,
               cartaPorteId: resultado.carta_porte.id
             }
           });
@@ -208,7 +290,7 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
     } catch (error) {
       console.error('❌ Error en proceso de confirmación:', error);
       toast.error('Error al programar el viaje: ' + (error as Error).message);
-      setViajeConfirmado(false); // Permitir retry en caso de error
+      setViajeConfirmado(false);
     } finally {
       setIsGeneratingDocuments(false);
     }
@@ -259,8 +341,8 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
       return "Selecciona el tipo de servicio";
     }
     
-    if (!data.descripcionMercancia) {
-      return "Describe la mercancía a transportar";
+    if (!data.mercancias || !data.mercancias.some(m => m.descripcion && m.descripcion.trim())) {
+      return "Describe al menos una mercancía a transportar";
     }
     
     if (data.clienteRfcValido === false) {
@@ -274,13 +356,11 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
     <AdaptiveFlowProvider>
       <ValidationProvider>
         <div className="container mx-auto py-6 max-w-4xl">
-          {/* Tutorial Component - Solo aparece si está activo */}
+          {/* Tutorial Component */}
           {isWizardTutorialActive && (
             <WizardTutorial 
               currentWizardStep={data.currentStep}
-              onNext={() => {
-                // Tutorial navigation logic if needed
-              }}
+              onNext={() => {}}
               onSkip={() => {
                 console.log('Tutorial skipped by user');
               }}
@@ -293,7 +373,9 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
               <div className="flex items-center gap-3">
                 <Route className="h-6 w-6 text-blue-600" />
                 <div>
-                  <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
+                  <h1 className="text-2xl font-bold">
+                    {data.status === 'borrador' ? 'Editar Borrador de Viaje' : 'Programar Nuevo Viaje'}
+                  </h1>
                   {isWizardTutorialActive && (
                     <p className="text-sm text-blue-600 mt-1">
                       🎓 Tutorial activo - Te guiaremos paso a paso
@@ -402,7 +484,6 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
               </Button>
 
               <div className="flex flex-col items-end gap-2">
-                {/* Mensaje de validación específico */}
                 {getStep1ValidationMessage() && (
                   <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md border border-red-200">
                     {getStep1ValidationMessage()}
@@ -421,6 +502,18 @@ export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
               </div>
             </div>
           )}
+
+          {/* Controles de Flujo - Mostrar en todos los pasos */}
+          <WizardFlowControls
+            onSaveDraft={handleSaveDraft}
+            onSaveAndExit={handleSaveAndExit}
+            onFinalize={handleFinalize}
+            canFinalize={canAdvance()}
+            isSaving={isSavingDraft}
+            isProcessing={isProcessing || viajeConfirmado}
+            currentStep={data.currentStep}
+            totalSteps={STEPS.length}
+          />
         </div>
       </ValidationProvider>
     </AdaptiveFlowProvider>
