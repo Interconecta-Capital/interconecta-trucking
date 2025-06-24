@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { ViajesHistorial } from '@/components/viajes/ViajesHistorial';
+import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
 import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { useViajes } from '@/hooks/useViajes';
 import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
@@ -145,6 +146,8 @@ export default function ViajesOptimized() {
           </TabsContent>
         </Tabs>
 
+        {/* Modal del Wizard */}
+        <ViajeWizardModal />
       </div>
     </ProtectedContent>
   );
