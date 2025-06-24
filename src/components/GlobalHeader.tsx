@@ -7,6 +7,7 @@ import { PlanBadge } from '@/components/common/PlanBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { useNavigate } from 'react-router-dom';
+import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { ProtectedActions } from '@/components/ProtectedActions';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
@@ -21,9 +22,10 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const permissions = useUnifiedPermissions();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { openViajeWizard } = useViajeWizardModal();
 
   const handleNewViaje = () => {
-    navigate('/viajes/programar');
+    openViajeWizard();
   };
 
   const handleSignOut = async () => {

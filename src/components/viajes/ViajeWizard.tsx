@@ -69,7 +69,12 @@ const STEPS = [
   }
 ];
 
-export function ViajeWizard() {
+interface ViajeWizardProps {
+  onCancel?: () => void
+  onComplete?: () => void
+}
+
+export function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps) {
   const navigate = useNavigate();
   const { crearViaje, isCreatingViaje } = useViajes();
   const { 
@@ -139,7 +144,11 @@ export function ViajeWizard() {
   };
 
   const handleCancel = () => {
-    navigate('/viajes');
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate('/viajes');
+    }
   };
 
   const handleConfirmarViaje = async () => {
@@ -183,13 +192,17 @@ export function ViajeWizard() {
 
       // 3. Redirigir después de un breve delay
       setTimeout(() => {
-        navigate('/viajes', { 
-          state: { 
-            message: 'Viaje programado y documentos generados exitosamente',
-            viajeId: nuevoViaje.id,
-            cartaPorteId: resultado.carta_porte.id
-          }
-        });
+        if (onComplete) {
+          onComplete();
+        } else {
+          navigate('/viajes', {
+            state: {
+              message: 'Viaje programado y documentos generados exitosamente',
+              viajeId: nuevoViaje.id,
+              cartaPorteId: resultado.carta_porte.id
+            }
+          });
+        }
       }, 2000);
 
     } catch (error) {
