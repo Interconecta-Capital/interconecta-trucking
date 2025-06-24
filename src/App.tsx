@@ -27,6 +27,7 @@ import Remolques from "./pages/Remolques"
 import Administracion from "./pages/Administracion"
 import Planes from "./pages/Planes"
 import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa"
+import Calendario from "./pages/Calendario"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -103,6 +104,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <Viajes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/calendario" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Calendario />
                   </BaseLayout>
                 </AuthGuard>
               } />
