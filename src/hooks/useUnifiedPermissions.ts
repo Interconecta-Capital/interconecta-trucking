@@ -6,6 +6,9 @@ export interface PermissionResult {
   reason: string;
   limit?: number;
   used?: number;
+  // Spanish compatibility properties
+  puede: boolean;
+  razon: string;
 }
 
 /**
@@ -19,34 +22,51 @@ export const useUnifiedPermissions = () => {
   const getPermissionForResource = (resource: string): PermissionResult => {
     switch (resource) {
       case 'conductores':
-        return {
+        const conductorResult = {
           allowed: permissions.canCreateConductor,
-          reason: permissions.canCreateConductor ? 'Permitido' : permissions.accessReason
+          reason: permissions.canCreateConductor ? 'Permitido' : permissions.accessReason,
+          puede: permissions.canCreateConductor,
+          razon: permissions.canCreateConductor ? 'Permitido' : permissions.accessReason
         };
+        return conductorResult;
       case 'vehiculos':
-        return {
+        const vehiculoResult = {
           allowed: permissions.canCreateVehiculo,
-          reason: permissions.canCreateVehiculo ? 'Permitido' : permissions.accessReason
+          reason: permissions.canCreateVehiculo ? 'Permitido' : permissions.accessReason,
+          puede: permissions.canCreateVehiculo,
+          razon: permissions.canCreateVehiculo ? 'Permitido' : permissions.accessReason
         };
+        return vehiculoResult;
       case 'socios':
-        return {
+        const socioResult = {
           allowed: permissions.canCreateSocio,
-          reason: permissions.canCreateSocio ? 'Permitido' : permissions.accessReason
+          reason: permissions.canCreateSocio ? 'Permitido' : permissions.accessReason,
+          puede: permissions.canCreateSocio,
+          razon: permissions.canCreateSocio ? 'Permitido' : permissions.accessReason
         };
+        return socioResult;
       case 'cartas_porte':
-        return {
+        const cartaResult = {
           allowed: permissions.canCreateCartaPorte,
-          reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
+          reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason,
+          puede: permissions.canCreateCartaPorte,
+          razon: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
         };
+        return cartaResult;
       case 'viajes':
-        return {
+        const viajeResult = {
           allowed: permissions.canCreateCartaPorte, // Viajes depend on carta porte creation
-          reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
+          reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason,
+          puede: permissions.canCreateCartaPorte,
+          razon: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
         };
+        return viajeResult;
       default:
         return {
           allowed: false,
-          reason: 'Recurso no reconocido'
+          reason: 'Recurso no reconocido',
+          puede: false,
+          razon: 'Recurso no reconocido'
         };
     }
   };
@@ -74,28 +94,38 @@ export const useUnifiedPermissions = () => {
     
     canCreateViaje: {
       allowed: permissions.canCreateCartaPorte,
-      reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
+      reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason,
+      puede: permissions.canCreateCartaPorte,
+      razon: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
     },
     
     // Resource-specific permission results (not just booleans)
     canCreateConductorResult: {
       allowed: permissions.canCreateConductor,
-      reason: permissions.canCreateConductor ? 'Permitido' : permissions.accessReason
+      reason: permissions.canCreateConductor ? 'Permitido' : permissions.accessReason,
+      puede: permissions.canCreateConductor,
+      razon: permissions.canCreateConductor ? 'Permitido' : permissions.accessReason
     },
     
     canCreateVehiculoResult: {
       allowed: permissions.canCreateVehiculo,
-      reason: permissions.canCreateVehiculo ? 'Permitido' : permissions.accessReason
+      reason: permissions.canCreateVehiculo ? 'Permitido' : permissions.accessReason,
+      puede: permissions.canCreateVehiculo,
+      razon: permissions.canCreateVehiculo ? 'Permitido' : permissions.accessReason
     },
     
     canCreateSocioResult: {
       allowed: permissions.canCreateSocio,
-      reason: permissions.canCreateSocio ? 'Permitido' : permissions.accessReason
+      reason: permissions.canCreateSocio ? 'Permitido' : permissions.accessReason,
+      puede: permissions.canCreateSocio,
+      razon: permissions.canCreateSocio ? 'Permitido' : permissions.accessReason
     },
     
     canCreateCartaPorteResult: {
       allowed: permissions.canCreateCartaPorte,
-      reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
+      reason: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason,
+      puede: permissions.canCreateCartaPorte,
+      razon: permissions.canCreateCartaPorte ? 'Permitido' : permissions.accessReason
     },
     
     // Utility method
@@ -105,4 +135,3 @@ export const useUnifiedPermissions = () => {
 
 // Re-export for backward compatibility
 export { usePermissions };
-export type { PermissionResult };
