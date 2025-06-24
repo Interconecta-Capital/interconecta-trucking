@@ -1,47 +1,16 @@
 
-import { useUnifiedPermissionsV2 } from './useUnifiedPermissionsV2';
+import { usePermissions } from './usePermissions';
 
-/**
- * Hook de compatibilidad que mantiene la interfaz existente
- * mientras usa el nuevo sistema unificado V2 por debajo
- * @deprecated Usar useUnifiedPermissionsV2 directamente para nuevos desarrollos
- */
-export const usePermissions = () => {
-  const unified = useUnifiedPermissionsV2();
-  
-  return {
-    // Compatibilidad con la interfaz anterior
-    hasFullAccess: unified.hasFullAccess,
-    isSuperuser: unified.accessLevel === 'superuser',
-    isTrialActive: unified.accessLevel === 'trial',
-    isBlocked: unified.accessLevel === 'blocked',
-    isExpired: unified.accessLevel === 'expired',
-    
-    // Permisos específicos
-    canCreateConductor: unified.canCreateConductor.allowed,
-    canCreateVehiculo: unified.canCreateVehiculo.allowed,
-    canCreateSocio: unified.canCreateSocio.allowed,
-    canCreateCartaPorte: unified.canCreateCartaPorte.allowed,
-    
-    // Funcionalidades
-    canTimbrar: unified.canCreateCartaPorte.allowed, // Simplificado para esta fase
-    canGenerateXML: unified.canCreateCartaPorte.allowed,
-    canCancelCFDI: unified.canCreateCartaPorte.allowed,
-    canUseTracking: unified.hasFullAccess,
-    canAccessAdmin: unified.accessLevel === 'superuser',
-    canAccessAdvanced: unified.hasFullAccess,
-    canAccessEnterprise: unified.accessLevel === 'superuser',
-    
-    // Información adicional
-    planName: unified.planInfo.name,
-    accessReason: unified.accessReason,
-    
-    // Información específica del trial (FUENTE ÚNICA DE VERDAD)
-    trialDaysRemaining: unified.planInfo.daysRemaining,
-    trialDaysUsed: unified.planInfo.daysUsed,
-    trialTotalDays: unified.planInfo.totalTrialDays,
-    
-    // Acceso al objeto completo para casos avanzados
-    unified
-  };
-};
+// Re-export for compatibility
+export const useUnifiedPermissions = usePermissions;
+
+// Export the permission result type
+export interface PermissionResult {
+  allowed: boolean;
+  reason: string;
+  limit?: number;
+  used?: number;
+}
+
+// Re-export everything from usePermissions for compatibility
+export * from './usePermissions';

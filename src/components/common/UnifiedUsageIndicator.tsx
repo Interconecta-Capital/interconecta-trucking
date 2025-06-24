@@ -105,17 +105,25 @@ export function UnifiedUsageIndicator({
   };
 
   if (showAll) {
+    // Get usage data with proper fallbacks
+    const usageData = {
+      conductores: permissions.unified?.usage?.conductores || { used: 0, limit: null },
+      vehiculos: permissions.unified?.usage?.vehiculos || { used: 0, limit: null },
+      socios: permissions.unified?.usage?.socios || { used: 0, limit: null },
+      cartas_porte: permissions.unified?.usage?.cartas_porte || { used: 0, limit: null }
+    };
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Object.entries(permissions.usage).map(([type, usage]) => 
+        {Object.entries(usageData).map(([type, usage]) => 
           renderUsageCard(type as keyof typeof resourceConfig, usage)
         )}
       </div>
     );
   }
 
-  if (resourceType && permissions.usage[resourceType]) {
-    return renderUsageCard(resourceType, permissions.usage[resourceType]);
+  if (resourceType && permissions.unified?.usage?.[resourceType]) {
+    return renderUsageCard(resourceType, permissions.unified.usage[resourceType]);
   }
 
   return null;
