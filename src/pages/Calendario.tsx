@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ProtectedContent } from '@/components/ProtectedContent';
-import { EnhancedCalendarView } from '@/components/dashboard/EnhancedCalendarView';
+import { OperationsCalendar } from '@/components/calendar/OperationsCalendar';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function Calendario() {
@@ -28,7 +28,7 @@ export default function Calendario() {
             <div className="flex justify-end mb-4">
               <GoogleConnectButton />
             </div>
-            <EnhancedCalendarView />
+            <OperationsCalendar />
           </div>
         </div>
       </div>
