@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ResponsiveCard, ResponsiveCardContent, ResponsiveCardHeader, ResponsiveCardTitle } from '@/components/ui/responsive-card';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Button } from '@/components/ui/button';
@@ -11,8 +12,27 @@ import {
   User,
   Navigation,
   MoreHorizontal,
+  Pencil,
+  Ban,
+  Trash2,
   AlertTriangle
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { useViajes } from '@/hooks/useViajes';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { Viaje } from '@/hooks/useViajes';
@@ -23,10 +43,14 @@ interface ViajesActivosProps {
 }
 
 export const ViajesActivos = ({ searchTerm }: ViajesActivosProps) => {
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { viajes, isLoading } = useViajes();
+  const { viajes, isLoading, cancelarViaje, eliminarViaje } = useViajes();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [viajeAccion, setViajeAccion] = useState<Viaje | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Filtrar viajes activos (en_transito, programado, retrasado)
   const viajesActivos = viajes.filter(viaje => 
@@ -39,6 +63,30 @@ export const ViajesActivos = ({ searchTerm }: ViajesActivosProps) => {
   const handleVerTracking = (viaje: Viaje) => {
     setSelectedViaje(viaje);
     setShowTrackingModal(true);
+  };
+
+  const handleEdit = (viaje: Viaje) => {
+    navigate(`/viajes/editar/${viaje.id}`);
+  };
+
+  const openCancelDialog = (viaje: Viaje) => {
+    setViajeAccion(viaje);
+    setCancelDialogOpen(true);
+  };
+
+  const openDeleteDialog = (viaje: Viaje) => {
+    setViajeAccion(viaje);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmCancel = () => {
+    if (viajeAccion) cancelarViaje(viajeAccion.id);
+    setCancelDialogOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (viajeAccion) eliminarViaje(viajeAccion.id);
+    setDeleteDialogOpen(false);
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -232,7 +280,7 @@ export const ViajesActivos = ({ searchTerm }: ViajesActivosProps) => {
 
                 {/* Acciones responsivas */}
                 <div className={`flex gap-3 pt-2 ${isMobile ? 'flex-col' : 'flex-row'}`}>
-                  <Button 
+                  <Button
                     onClick={() => handleVerTracking(viaje)}
                     className={`h-11 ${isMobile ? 'w-full' : 'flex-1'}`}
                     size="sm"
@@ -241,9 +289,40 @@ export const ViajesActivos = ({ searchTerm }: ViajesActivosProps) => {
                     Ver Tracking
                   </Button>
                   {!isMobile && (
-                    <Button variant="outline" size="sm" className="h-11 px-4">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-11 px-4">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onSelect={() => handleEdit(viaje)}
+                          disabled={['completado', 'cancelado'].includes(viaje.estado)}
+                          className="cursor-pointer"
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Editar Viaje
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => openCancelDialog(viaje)}
+                          disabled={['completado', 'cancelado'].includes(viaje.estado)}
+                          className="cursor-pointer"
+                        >
+                          <Ban className="h-4 w-4 mr-2" />
+                          Cancelar Viaje
+                        </DropdownMenuItem>
+                        {viaje.estado === 'borrador' && (
+                          <DropdownMenuItem
+                            onSelect={() => openDeleteDialog(viaje)}
+                            className="cursor-pointer text-red-600 focus:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar Viaje
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
 
@@ -280,6 +359,40 @@ export const ViajesActivos = ({ searchTerm }: ViajesActivosProps) => {
         open={showTrackingModal}
         onOpenChange={setShowTrackingModal}
       />
+
+      {/* Dialogo cancelar viaje */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de que deseas cancelar este viaje?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción marcará el viaje como cancelado. Si ya se ha timbrado una Carta Porte para este viaje, deberás realizar el proceso de cancelación correspondiente ante el SAT. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Volver</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel}>Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialogo eliminar viaje */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este borrador de viaje?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de eliminar este borrador permanentemente. Esta acción es irreversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 text-white hover:bg-red-700" onClick={confirmDelete}>
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
