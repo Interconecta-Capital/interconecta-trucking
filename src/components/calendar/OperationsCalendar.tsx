@@ -2,6 +2,7 @@ import { useState } from 'react';
 import FullCalendar, {
   type EventClickArg,
   type EventInput,
+  type DateClickArg,
 } from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -10,7 +11,7 @@ import listPlugin from '@fullcalendar/list';
 import esLocale from '@fullcalendar/core/locales/es';
 import { useOperacionesEventos } from '@/hooks/useOperacionesEventos';
 import { TripDetailModal } from '@/components/dashboard/TripDetailModal';
-import { CalendarEvent } from '@/hooks/useCalendarEvents';
+import { CalendarEvent, useCalendarEvents } from '@/hooks/useCalendarEvents';
 
 
 
@@ -23,6 +24,8 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
   const { eventos, isLoading } = useOperacionesEventos();
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const [open, setOpen] = useState(false);
+  const { createEvent } = useCalendarEvents();
+  const [extraEvents, setExtraEvents] = useState<EventInput[]>([]);
 
   const filtered = eventos.filter((ev) => {
     if (ev.tipo === 'viaje' && !showViajes) return false;
@@ -66,6 +69,8 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     };
   });
 
+  const allEvents = [...fcEvents, ...extraEvents];
+
   const handleEventClick = (info: EventClickArg) => {
     const event: CalendarEvent = {
       id: String(info.event.id),
@@ -76,6 +81,33 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     };
     setSelected(event);
     setOpen(true);
+  };
+
+  const handleDateClick = async (info: DateClickArg) => {
+    const title = window.prompt('Título del evento');
+    if (!title) return;
+    try {
+      await createEvent({
+        tipo_evento: 'personal',
+        titulo: title,
+        fecha_inicio: info.date,
+        fecha_fin: info.date,
+      });
+      const color = '#6366f1';
+      setExtraEvents((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}`,
+          title,
+          start: info.date,
+          end: info.date,
+          backgroundColor: color,
+          borderColor: color,
+        },
+      ]);
+    } catch (err) {
+      console.error('Error creating event', err);
+    }
   };
 
   if (isLoading) {
@@ -95,9 +127,10 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
           initialView="dayGridMonth"
           locale={esLocale}
           headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }}
-          events={fcEvents}
+          events={allEvents}
           eventClick={handleEventClick}
-        />
+          dateClick={handleDateClick}
+          />
       </div>
       {selected && (
         <TripDetailModal event={selected} open={open} onOpenChange={setOpen} />
