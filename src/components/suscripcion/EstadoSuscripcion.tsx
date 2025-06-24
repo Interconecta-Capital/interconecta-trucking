@@ -1,74 +1,50 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useSuscripcion } from "@/hooks/useSuscripcion";
-import { useUnifiedPermissions } from "@/hooks/useUnifiedPermissions";
-import { LimitUsageIndicator } from "@/components/LimitUsageIndicator";
-import { PlanSummaryCard } from "./PlanSummaryCard";
-import {
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  Settings,
-} from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useSuscripcion } from '@/hooks/useSuscripcion';
+import { LimitUsageIndicator } from '@/components/LimitUsageIndicator';
+import { PlanSummaryCard } from './PlanSummaryCard';
+import { Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Settings } from 'lucide-react';
 
 export const EstadoSuscripcion = () => {
-  const {
-    suscripcion,
+  const { 
+    suscripcion, 
+    enPeriodoPrueba, 
+    diasRestantesPrueba, 
+    suscripcionVencida,
+    estaBloqueado,
     verificarSuscripcion,
     isVerifyingSubscription,
     abrirPortalCliente,
-    isOpeningPortal,
+    isOpeningPortal
   } = useSuscripcion();
-  const permissions = useUnifiedPermissions();
 
   if (!suscripcion) return null;
 
   const getStatusBadge = () => {
-    if (permissions.accessLevel === "blocked") {
-      return (
-        <Badge variant="destructive">
-          <XCircle className="w-3 h-3 mr-1" />
-          Bloqueado
-        </Badge>
-      );
+    if (estaBloqueado) {
+      return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Bloqueado</Badge>;
     }
-
-    if (permissions.accessLevel === "expired") {
-      return (
-        <Badge variant="destructive">
-          <AlertTriangle className="w-3 h-3 mr-1" />
-          Vencido
-        </Badge>
-      );
+    
+    if (suscripcionVencida()) {
+      return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" />Vencido</Badge>;
     }
-
-    if (permissions.accessLevel === "trial") {
-      return (
-        <Badge variant="secondary">
-          <Clock className="w-3 h-3 mr-1" />
-          Período de Prueba
-        </Badge>
-      );
+    
+    if (enPeriodoPrueba()) {
+      return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Período de Prueba</Badge>;
     }
-
-    if (suscripcion.status === "active") {
-      return (
-        <Badge variant="default">
-          <CheckCircle className="w-3 h-3 mr-1" />
-          Activo
-        </Badge>
-      );
+    
+    if (suscripcion.status === 'active') {
+      return <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" />Activo</Badge>;
     }
-
+    
     return <Badge variant="outline">{suscripcion.status}</Badge>;
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "No definida";
-    return new Date(dateString).toLocaleDateString("es-MX");
+    if (!dateString) return 'No definida';
+    return new Date(dateString).toLocaleDateString('es-MX');
   };
 
   const handleVerificarSuscripcion = () => {
@@ -96,7 +72,7 @@ export const EstadoSuscripcion = () => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Plan actual:</span>
-              <p>{suscripcion.plan?.nombre || "Sin plan"}</p>
+              <p>{suscripcion.plan?.nombre || 'Sin plan'}</p>
             </div>
             <div>
               <span className="font-medium">Fecha de vencimiento:</span>
@@ -104,25 +80,20 @@ export const EstadoSuscripcion = () => {
             </div>
           </div>
 
-          {permissions.accessLevel === "trial" && (
+          {enPeriodoPrueba() && (
             <div className="bg-blue-50 p-3 rounded-lg">
               <p className="text-sm text-blue-800">
                 <Clock className="inline w-4 h-4 mr-1" />
-                Te quedan{" "}
-                <strong>
-                  {permissions.planInfo.daysRemaining || 0} días
-                </strong>{" "}
-                de período de prueba
+                Te quedan <strong>{diasRestantesPrueba()} días</strong> de período de prueba
               </p>
             </div>
           )}
 
-          {permissions.accessLevel === "expired" && (
+          {suscripcionVencida() && (
             <div className="bg-red-50 p-3 rounded-lg">
               <p className="text-sm text-red-800">
                 <AlertTriangle className="inline w-4 h-4 mr-1" />
-                Su suscripción ha vencido. Renueve para continuar usando la
-                plataforma.
+                Su suscripción ha vencido. Renueve para continuar usando la plataforma.
               </p>
             </div>
           )}
@@ -135,13 +106,11 @@ export const EstadoSuscripcion = () => {
               size="sm"
               className="flex-1"
             >
-              <RefreshCw
-                className={`w-4 h-4 mr-2 ${isVerifyingSubscription ? "animate-spin" : ""}`}
-              />
-              {isVerifyingSubscription ? "Verificando..." : "Verificar Estado"}
+              <RefreshCw className={`w-4 h-4 mr-2 ${isVerifyingSubscription ? 'animate-spin' : ''}`} />
+              {isVerifyingSubscription ? 'Verificando...' : 'Verificar Estado'}
             </Button>
 
-            {suscripcion.status === "active" && (
+            {suscripcion.status === 'active' && (
               <Button
                 onClick={handleAbrirPortal}
                 disabled={isOpeningPortal}
@@ -150,7 +119,7 @@ export const EstadoSuscripcion = () => {
                 className="flex-1"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                {isOpeningPortal ? "Abriendo..." : "Gestionar"}
+                {isOpeningPortal ? 'Abriendo...' : 'Gestionar'}
               </Button>
             )}
           </div>
