@@ -13,7 +13,7 @@ import { Link } from 'lucide-react';
 interface Remolque {
   id: string;
   placa: string;
-  vehiculo_asignado_id?: string;
+  autotransporte_id?: string;
 }
 
 interface VinculacionDialogProps {
@@ -31,10 +31,10 @@ export function VinculacionDialog({ open, onOpenChange, remolque, onSuccess }: V
   const [selectedVehiculo, setSelectedVehiculo] = useState('');
 
   useEffect(() => {
-    if (remolque?.vehiculo_asignado_id) {
-      setSelectedVehiculo(remolque.vehiculo_asignado_id);
+    if (remolque?.autotransporte_id) {
+      setSelectedVehiculo(remolque.autotransporte_id);
     } else {
-      setSelectedVehiculo('');
+      setSelectedVehiculo('sin_vincular');
     }
   }, [remolque]);
 
@@ -45,15 +45,17 @@ export function VinculacionDialog({ open, onOpenChange, remolque, onSuccess }: V
     try {
       setLoading(true);
       
+      const updateData = {
+        autotransporte_id: selectedVehiculo === 'sin_vincular' ? undefined : selectedVehiculo,
+        estado: selectedVehiculo === 'sin_vincular' ? 'disponible' : 'vinculado'
+      };
+      
       await actualizarRemolque({ 
         id: remolque.id, 
-        data: {
-          vehiculo_asignado_id: selectedVehiculo || undefined,
-          estado: selectedVehiculo ? 'vinculado' : 'disponible'
-        }
+        data: updateData
       });
       
-      toast.success(selectedVehiculo ? 'Remolque vinculado exitosamente' : 'Remolque desvinculado exitosamente');
+      toast.success(selectedVehiculo === 'sin_vincular' ? 'Remolque desvinculado exitosamente' : 'Remolque vinculado exitosamente');
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
@@ -86,7 +88,7 @@ export function VinculacionDialog({ open, onOpenChange, remolque, onSuccess }: V
                 <SelectValue placeholder="Selecciona un vehículo o deja vacío para desvincular" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin vincular</SelectItem>
+                <SelectItem value="sin_vincular">Sin vincular</SelectItem>
                 {vehiculosDisponibles.map((vehiculo) => (
                   <SelectItem key={vehiculo.id} value={vehiculo.id}>
                     {vehiculo.placa} - {vehiculo.marca} {vehiculo.modelo}

@@ -35,7 +35,7 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
       setValue('num_serie', remolque.num_serie || '');
       setValue('tipo_remolque', remolque.tipo_remolque || '');
       setValue('subtipo_remolque', remolque.subtipo_remolque || '');
-      setValue('vehiculo_asignado_id', remolque.vehiculo_asignado_id || '');
+      setValue('autotransporte_id', remolque.autotransporte_id || '');
     } else {
       reset();
     }
@@ -54,7 +54,7 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
         subtipo_remolque: data.subtipo_remolque || '',
         estado: 'disponible',
         activo: true,
-        vehiculo_asignado_id: data.vehiculo_asignado_id || undefined
+        autotransporte_id: data.autotransporte_id || undefined
       };
 
       if (remolque?.id) {
@@ -159,13 +159,13 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="vehiculo_asignado_id">Vehículo Asignado</Label>
-            <Select onValueChange={(value) => setValue('vehiculo_asignado_id', value || '')}>
+            <Label htmlFor="autotransporte_id">Vehículo Asignado</Label>
+            <Select onValueChange={(value) => setValue('autotransporte_id', value || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Sin asignar" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin asignar</SelectItem>
+                <SelectItem value="sin_asignar">Sin asignar</SelectItem>
                 {vehiculos.map((vehiculo) => (
                   <SelectItem key={vehiculo.id} value={vehiculo.id}>
                     {vehiculo.placa} - {vehiculo.marca} {vehiculo.modelo}

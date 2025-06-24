@@ -30,6 +30,8 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
     try {
       // Create a basic wizard data structure for the viaje
       const wizardData = {
+        currentStep: 0,
+        isValid: true,
         origen: {
           domicilio: {
             calle: formData.origen
