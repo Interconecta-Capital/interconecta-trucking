@@ -67,7 +67,7 @@ export interface UnifiedPermissionsV2 {
 export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
   const { user } = useAuth();
   const { isSuperuser } = useOptimizedSuperuser();
-  const { suscripcion, estaBloqueado } = useSuscripción();
+  const { suscripcion, estaBloqueado } = useSuscripcion();
 
   return useMemo(() => {
     console.log('[UnifiedPermissionsV2] 🔄 Evaluando permisos...');

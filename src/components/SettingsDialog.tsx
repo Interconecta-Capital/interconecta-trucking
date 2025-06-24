@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -65,7 +64,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <div>
                   <label className="text-sm font-medium">Plan Actual</label>
                   <div className="mt-1">
-                    <PlanBadge size="md" />
+                    <PlanBadge size="default" />
                   </div>
                 </div>
               </div>

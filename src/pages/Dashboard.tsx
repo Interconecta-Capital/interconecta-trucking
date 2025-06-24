@@ -53,7 +53,7 @@ export default function Dashboard() {
         {/* Header con badge de plan */}
         <div className="flex items-center justify-between">
           <PersonalizedGreeting />
-          <PlanBadge size="md" />
+          <PlanBadge size="default" />
         </div>
 
         {/* Solo Vista Operacional */}
