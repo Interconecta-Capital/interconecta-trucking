@@ -128,10 +128,17 @@ export function FormularioDomicilioUnificado({
     usarSugerencia(cp);
   }, [onDomicilioChange, usarSugerencia]);
 
-  const isValid = useMemo(() => 
+  const isValid = useMemo(() =>
     domicilio.codigoPostal.length === 5 && !isLoading && !error && direccionInfo,
     [domicilio.codigoPostal, isLoading, error, direccionInfo]
   );
+
+  const status = useMemo(() => {
+    if (isLoading) return 'loading';
+    if (error) return 'error';
+    if (direccionInfo) return 'success';
+    return 'initial';
+  }, [isLoading, error, direccionInfo]);
 
   const esOpcional = useCallback((campo: keyof DomicilioUnificado) => 
     camposOpcionales.includes(campo), [camposOpcionales]);
@@ -235,26 +242,32 @@ export function FormularioDomicilioUnificado({
 
       {/* Estado y Municipio */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Label>Estado *</Label>
           <Input
             value={domicilio.estado}
             onChange={(e) => onDomicilioChange('estado', e.target.value)}
-            placeholder="Estado"
-            className="bg-white border-gray-100 text-gray-900 shadow-sm"
+            placeholder={status === 'initial' ? 'Se autocompleta con el C.P.' : 'Estado'}
+            className="bg-white border-gray-100 text-gray-900 shadow-sm pr-10"
             readOnly
           />
+          {status === 'loading' && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-blue-600" />
+          )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Label>Municipio *</Label>
           <Input
             value={domicilio.municipio}
             onChange={(e) => onDomicilioChange('municipio', e.target.value)}
-            placeholder="Municipio"
-            className="bg-white border-gray-100 text-gray-900 shadow-sm"
+            placeholder={status === 'initial' ? 'Se autocompleta con el C.P.' : 'Municipio'}
+            className="bg-white border-gray-100 text-gray-900 shadow-sm pr-10"
             readOnly
           />
+          {status === 'loading' && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-blue-600" />
+          )}
         </div>
       </div>
 
@@ -266,31 +279,37 @@ export function FormularioDomicilioUnificado({
             <Input
               value={domicilio.localidad || ''}
               onChange={(e) => onDomicilioChange('localidad', e.target.value)}
-              placeholder="Localidad"
+              placeholder={status === 'initial' ? 'Se autocompleta con el C.P.' : 'Localidad'}
               className="bg-white border-gray-100 text-gray-900 shadow-sm"
               readOnly={readonly}
             />
           </div>
         )}
 
-        {direccionInfo && direccionInfo.colonias.length > 0 && (
-          <div className="space-y-2">
-            <Label>
-              Colonia *
+        <div className="space-y-2">
+          <Label>
+            Colonia *
+            {direccionInfo && (
               <span className="text-sm text-muted-foreground ml-2">
                 ({direccionInfo.colonias.length} disponibles)
               </span>
-            </Label>
-            
-            <Select value={coloniaSeleccionada} onValueChange={handleColoniaChange} disabled={readonly}>
-              <SelectTrigger className="bg-white border-gray-100 text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm">
-                <SelectValue placeholder="Selecciona una colonia" />
-              </SelectTrigger>
+            )}
+          </Label>
+
+          <Select
+            value={coloniaSeleccionada}
+            onValueChange={handleColoniaChange}
+            disabled={readonly || !direccionInfo}
+          >
+            <SelectTrigger className="bg-white border-gray-100 text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm">
+              <SelectValue placeholder={direccionInfo ? 'Selecciona una colonia' : 'Se autocompleta con el C.P.'} />
+            </SelectTrigger>
+            {direccionInfo && (
               <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
                 {direccionInfo.colonias.map((coloniaObj, index) => (
-                  <SelectItem 
-                    key={`${coloniaObj.nombre}-${index}`} 
-                    value={coloniaObj.nombre} 
+                  <SelectItem
+                    key={`${coloniaObj.nombre}-${index}`}
+                    value={coloniaObj.nombre}
                     className="cursor-pointer hover:bg-accent"
                   >
                     <div className="flex flex-col">
@@ -304,9 +323,9 @@ export function FormularioDomicilioUnificado({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
-          </div>
-        )}
+            )}
+          </Select>
+        </div>
       </div>
 
       {/* Calle y Números */}

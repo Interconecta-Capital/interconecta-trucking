@@ -161,9 +161,8 @@ export function DatosFiscalesForm() {
               <Input
                 id="estado"
                 {...form.register('estado')}
-                placeholder="Jalisco"
+                placeholder="Se autocompleta con el C.P."
                 readOnly
-                className="bg-gray-50"
               />
             </div>
 
@@ -172,9 +171,8 @@ export function DatosFiscalesForm() {
               <Input
                 id="municipio"
                 {...form.register('municipio')}
-                placeholder="Guadalajara"
+                placeholder="Se autocompleta con el C.P."
                 readOnly
-                className="bg-gray-50"
               />
             </div>
           </div>
