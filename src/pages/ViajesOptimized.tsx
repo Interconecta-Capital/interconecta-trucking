@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ViajesActivos } from '@/components/viajes/ViajesActivos';
 import { ViajesHistorial } from '@/components/viajes/ViajesHistorial';
-import { ViajeFormDialog } from '@/components/viajes/ViajeFormDialog';
+import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { useViajes } from '@/hooks/useViajes';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
@@ -18,8 +18,8 @@ export default function ViajesOptimized() {
   const { viajes, isLoading } = useViajes();
   const permissions = useUnifiedPermissionsV2();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('activos');
+  const { openViajeWizard } = useViajeWizardModal();
 
   const handleNewViaje = () => {
     console.log('[Viajes] 🆕 Iniciando programación de nuevo viaje');
@@ -31,7 +31,7 @@ export default function ViajesOptimized() {
       return;
     }
     
-    setShowCreateDialog(true);
+    openViajeWizard();
   };
 
   const canCreateViaje = permissions.canCreateConductor; // Using conductor permission as placeholder
@@ -144,15 +144,6 @@ export default function ViajesOptimized() {
           </TabsContent>
         </Tabs>
 
-        {/* Diálogos */}
-        <ViajeFormDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-          onSuccess={() => {
-            setShowCreateDialog(false);
-            setActiveTab('activos');
-          }}
-        />
       </div>
     </ProtectedContent>
   );

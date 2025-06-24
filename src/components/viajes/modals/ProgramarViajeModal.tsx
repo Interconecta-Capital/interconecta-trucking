@@ -1,4 +1,7 @@
 
+/**
+ * @deprecated Este componente ha sido reemplazado por el flujo completo de ViajeWizard.tsx. No utilizar.
+ */
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
