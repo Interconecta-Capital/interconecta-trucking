@@ -4,16 +4,12 @@ import { ResponsiveCard, ResponsiveCardContent, ResponsiveCardHeader, Responsive
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { 
-  MapPin, 
-  Clock, 
-  Truck, 
-  User, 
+import {
+  Clock,
+  Truck,
+  User,
   Navigation,
-  Search,
-  Filter,
   MoreHorizontal,
   AlertTriangle
 } from 'lucide-react';
@@ -22,12 +18,11 @@ import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { Viaje } from '@/hooks/useViajes';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export const ViajesActivos = () => {
+export const ViajesActivos = ({ searchTerm }: { searchTerm: string }) => {
   const isMobile = useIsMobile();
   const { viajes, isLoading } = useViajes();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
   // Filtrar viajes activos (en_transito, programado, retrasado)
   const viajesActivos = viajes.filter(viaje => 
@@ -115,25 +110,6 @@ export const ViajesActivos = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Filtros y búsqueda responsivos */}
-      <div className={`flex gap-4 bg-gray-05 p-4 rounded-2xl ${isMobile ? 'flex-col' : 'flex-row'}`}>
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
-          <Input
-            placeholder="Buscar por origen, destino o carta porte..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`pl-12 border-0 bg-pure-white shadow-sm ${isMobile ? 'h-12 text-base' : 'h-12'}`}
-          />
-        </div>
-        <Button 
-          variant="outline"
-          className={`bg-pure-white shadow-sm border-0 ${isMobile ? 'h-12 w-full justify-center' : 'h-12 px-6'}`}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Filtros
-        </Button>
-      </div>
 
       {/* Lista de viajes responsiva */}
       {viajesActivos.length === 0 ? (
