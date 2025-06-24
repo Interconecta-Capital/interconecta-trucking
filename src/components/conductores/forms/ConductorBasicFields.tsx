@@ -43,10 +43,11 @@ export function ConductorBasicFields({ formData, onFieldChange, errors }: Conduc
           <div className="flex items-center gap-4">
             {formData.foto_preview ? (
               <div className="relative">
-                <img 
-                  src={formData.foto_preview} 
-                  alt="Foto del conductor" 
+                <img
+                  src={formData.foto_preview}
+                  alt="Foto del conductor"
                   className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                  loading="lazy"
                 />
                 <Button
                   type="button"
