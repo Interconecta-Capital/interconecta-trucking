@@ -1,3 +1,4 @@
+
 import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreeting';
 import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { DashboardMetricsGrid } from '@/components/dashboard/DashboardMetricsGrid';
@@ -6,8 +7,6 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanBadge } from '@/components/common/PlanBadge';
-import { BaseLayout } from '@/components/layout/BaseLayout';
-import { FreemiumTestButtons } from '@/components/dashboard/FreemiumTestButtons';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
@@ -46,8 +45,8 @@ export default function Dashboard() {
     totalSocios === 0;
 
   return (
-    <BaseLayout>
-      <ProtectedContent requiredFeature="dashboard">
+    <ProtectedContent requiredFeature="dashboard">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
@@ -56,9 +55,6 @@ export default function Dashboard() {
           <PersonalizedGreeting />
           <PlanBadge size="default" />
         </div>
-
-        {/* Botones de prueba del plan freemium */}
-        <FreemiumTestButtons />
 
         {/* Solo Vista Operacional */}
         <DashboardLayout>
@@ -90,7 +86,7 @@ export default function Dashboard() {
             <LimitUsageIndicator resourceType="socios" />
           </div>
         </DashboardLayout>
-      </ProtectedContent>
-    </BaseLayout>
+      </div>
+    </ProtectedContent>
   );
 }

@@ -17,12 +17,6 @@ export const usePermissions = () => {
     isBlocked: unified.accessLevel === 'blocked',
     isExpired: unified.accessLevel === 'expired',
     
-    // NUEVA PROPIEDAD: Detectar plan freemium
-    isFreemium: unified.accessLevel === 'freemium',
-    
-    // NUEVA PROPIEDAD CRÍTICA: Detectar trial expirado específicamente
-    isTrialExpired: unified.accessLevel === 'freemium' && unified.accessReason.includes('TRIAL_EXPIRED'),
-    
     // Permisos específicos
     canCreateConductor: unified.canCreateConductor.allowed,
     canCreateVehiculo: unified.canCreateVehiculo.allowed,
@@ -30,7 +24,7 @@ export const usePermissions = () => {
     canCreateCartaPorte: unified.canCreateCartaPorte.allowed,
     
     // Funcionalidades
-    canTimbrar: unified.canCreateCartaPorte.allowed,
+    canTimbrar: unified.canCreateCartaPorte.allowed, // Simplificado para esta fase
     canGenerateXML: unified.canCreateCartaPorte.allowed,
     canCancelCFDI: unified.canCreateCartaPorte.allowed,
     canUseTracking: unified.hasFullAccess,

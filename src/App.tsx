@@ -1,83 +1,179 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import Dashboard from './pages/Dashboard';
-import Conductores from './pages/Conductores';
-import Vehiculos from './pages/Vehiculos';
-import Socios from './pages/Socios';
-import ViajesOptimized from './pages/ViajesOptimized';
-import Mantenimiento from './pages/Mantenimiento';
-import Planes from './pages/Planes';
-import Profile from './pages/Profile';
-import Auth from './pages/Auth';
-import ResetPassword from './pages/ResetPassword';
-import UpdatePassword from './pages/UpdatePassword';
-import CartaPorte from './pages/CartaPorte';
-import CreateCartaPorte from './pages/CreateCartaPorte';
-import EditCartaPorte from './pages/EditCartaPorte';
-import Calendario from './pages/Calendario';
-import { AuthProvider } from './hooks/useAuth';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminRoute } from './components/AdminRoute';
-import Admin from './pages/Admin';
-import { TrialExpiredGuard } from '@/components/auth/TrialExpiredGuard';
-import { GlobalUpgradeModalProvider } from '@/components/common/GlobalUpgradeModalProvider';
-import { useAxiosInterceptor } from '@/hooks/useAxiosInterceptor';
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { AuthProvider } from "./hooks/useAuth"
+import { AuthGuard } from "./components/auth/AuthGuard"
+import { BaseLayout } from "./components/layout/BaseLayout"
+import { OnboardingProvider } from '@/contexts/OnboardingProvider'
+import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration'
+import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
+import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
 
-const queryClient = new QueryClient();
+// Páginas públicas
+import Index from "./pages/Index"
+import Auth from "./pages/Auth"
 
-function AppContent() {
-  // Configurar el interceptor de axios
-  useAxiosInterceptor();
+// Páginas protegidas
+import Dashboard from "./pages/Dashboard"
+import CartasPorteUnified from "./pages/CartasPorteUnified"
+import CartaPorteEditor from "./pages/CartaPorteEditor"
+import Vehiculos from "./pages/Vehiculos"
+import Conductores from "./pages/Conductores"
+import Socios from "./pages/Socios"
+import Viajes from "./pages/Viajes"
+import Remolques from "./pages/Remolques"
+import Administracion from "./pages/Administracion"
+import Planes from "./pages/Planes"
+import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa"
+import Calendario from "./pages/Calendario"
 
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <GlobalUpgradeModalProvider>
-          <TrialExpiredGuard>
-            <Routes>
+// Nuevos componentes
+import { ViajeWizard } from "./components/viajes/ViajeWizard"
+
+const queryClient = new QueryClient()
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <BrowserRouter>
+        <AuthProvider>
+          <ViajeWizardModalProvider>
+            <OnboardingProvider>
+              <OnboardingIntegration />
+              <ViajeWizardModal />
+              <Routes>
+              {/* Página principal - Landing page para usuarios no autenticados */}
+              <Route path="/" element={<Index />} />
+              
+              {/* Página de autenticación */}
               <Route path="/auth" element={<Auth />} />
-              <Route path="/login" element={<Auth />} />
-              <Route path="/register" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/update-password" element={<UpdatePassword />} />
               
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/conductores" element={<ProtectedRoute><Conductores /></ProtectedRoute>} />
-              <Route path="/vehiculos" element={<ProtectedRoute><Vehiculos /></ProtectedRoute>} />
-              <Route path="/socios" element={<ProtectedRoute><Socios /></ProtectedRoute>} />
-              <Route path="/viajes" element={<ProtectedRoute><ViajesOptimized /></ProtectedRoute>} />
-              <Route path="/mantenimiento" element={<ProtectedRoute><Mantenimiento /></ProtectedRoute>} />
-              <Route path="/planes" element={<ProtectedRoute><Planes /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
+              {/* Rutas protegidas - requieren autenticación */}
+              <Route path="/dashboard" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Dashboard />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
               
-              {/* Rutas de Carta Porte */}
-              <Route path="/cartas-porte" element={<ProtectedRoute><CartaPorte /></ProtectedRoute>} />
-              <Route path="/cartas-porte/crear" element={<ProtectedRoute><CreateCartaPorte /></ProtectedRoute>} />
-              <Route path="/cartas-porte/editar/:id" element={<ProtectedRoute><EditCartaPorte /></ProtectedRoute>} />
+              <Route path="/cartas-porte" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <CartasPorteUnified />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/vehiculos" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Vehiculos />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/remolques" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Remolques />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/conductores" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Conductores />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/socios" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Socios />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/viajes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Viajes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
 
-              {/* Rutas de Admin */}
-              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/calendario" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Calendario />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              {/* Nueva ruta del Wizard de Viajes */}
+              <Route path="/viajes/programar" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ViajeWizard />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/administracion" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Administracion />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/configuracion/empresa" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ConfiguracionEmpresa />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/planes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Planes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              {/* Editor de Carta Porte - PANTALLA COMPLETA protegida */}
+              <Route path="/carta-porte/editor/:id" element={
+                <AuthGuard>
+                  <CartaPorteEditor />
+                </AuthGuard>
+              } />
+              <Route path="/carta-porte/editor" element={
+                <AuthGuard>
+                  <CartaPorteEditor />
+                </AuthGuard>
+              } />
+              
+              {/* Redirección de rutas antiguas */}
+              <Route path="/carta-porte/nuevo" element={<Navigate to="/carta-porte/editor" replace />} />
+              <Route path="/carta-porte/:id" element={<Navigate to="/carta-porte/editor/:id" replace />} />
+              
+              {/* Redirección por defecto - a la landing page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </TrialExpiredGuard>
-        </GlobalUpgradeModalProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  );
-}
+          </OnboardingProvider>
+        </ViajeWizardModalProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+)
 
-function App() {
-  return (
-    <div className="min-h-screen bg-background">
-      <QueryClientProvider client={queryClient}>
-        <AppContent />
-        <Toaster />
-      </QueryClientProvider>
-    </div>
-  );
-}
-
-export default App;
+export default App
