@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export class ViajeCartaPorteService {
   static async crearCartaPorteDesdeViaje(
-    viajeId: string, 
+    viajeId: string,
     wizardData: ViajeWizardData
   ) {
     try {
@@ -57,6 +57,44 @@ export class ViajeCartaPorteService {
 
     } catch (error) {
       console.error('❌ Error creando Carta Porte desde viaje:', error);
+      throw error;
+    }
+  }
+
+  static async crearBorradorDesdeViaje(
+    viajeId: string,
+    wizardData: ViajeWizardData
+  ) {
+    try {
+      console.log('🚛 Iniciando creación de borrador de Carta Porte:', viajeId);
+
+      const cartaPorteData = ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(
+        wizardData
+      );
+
+      const borrador = await CartaPorteLifecycleManager.crearBorrador({
+        nombre_borrador: `Viaje - ${
+          wizardData.cliente?.nombre_razon_social || 'Sin cliente'
+        }`,
+        datos_formulario: cartaPorteData,
+        version_formulario: '3.1'
+      });
+
+      console.log('📄 Borrador creado:', borrador.id);
+
+      const { error } = await supabase
+        .from('viajes')
+        .update({ carta_porte_id: borrador.id })
+        .eq('id', viajeId);
+
+      if (error) {
+        console.error('Error actualizando viaje con borrador:', error);
+        throw error;
+      }
+
+      return { viaje_id: viajeId, borrador_id: borrador.id };
+    } catch (error) {
+      console.error('❌ Error creando borrador desde viaje:', error);
       throw error;
     }
   }
