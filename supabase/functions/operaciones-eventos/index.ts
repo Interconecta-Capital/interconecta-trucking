@@ -39,7 +39,17 @@ serve(async (req) => {
       });
     }
 
-    const { data: viajes, error: viajesError } = await supabase
+    let startDate: string | null = null;
+    let endDate: string | null = null;
+    try {
+      const body = await req.json();
+      startDate = body.start_date ?? null;
+      endDate = body.end_date ?? null;
+    } catch (_) {
+      // ignore empty body
+    }
+
+    const viajesQuery = supabase
       .from('viajes')
       .select(
         `id, origen, destino, estado, carta_porte_id,
@@ -48,15 +58,21 @@ serve(async (req) => {
          conductor:conductores(id, nombre)`
       )
       .eq('user_id', user.id);
+    if (startDate) viajesQuery.gte('fecha_inicio_programada', startDate);
+    if (endDate) viajesQuery.lte('fecha_inicio_programada', endDate);
+    const { data: viajes, error: viajesError } = await viajesQuery;
 
     if (viajesError) throw viajesError;
 
-    const { data: programaciones, error: progError } = await supabase
+    const programacionesQuery = supabase
       .from('programaciones')
       .select(
         'id, tipo_programacion, descripcion, fecha_inicio, fecha_fin, entidad_tipo, estado'
       )
       .eq('user_id', user.id);
+    if (startDate) programacionesQuery.gte('fecha_inicio', startDate);
+    if (endDate) programacionesQuery.lte('fecha_inicio', endDate);
+    const { data: programaciones, error: progError } = await programacionesQuery;
 
     if (progError) throw progError;
 

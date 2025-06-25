@@ -11,6 +11,10 @@ import esLocale from '@fullcalendar/core/locales/es';
 import { useOperacionesEventos } from '@/hooks/useOperacionesEventos';
 import { TripDetailModal } from '@/components/dashboard/TripDetailModal';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { useUserEvents } from '@/hooks/useUserEvents';
+import { EventFormModal } from './EventFormModal';
+import { startOfMonth, endOfMonth } from 'date-fns';
+import { DatesSetArg } from '@fullcalendar/core';
 
 interface OperationsCalendarProps {
   showViajes: boolean;
@@ -26,11 +30,18 @@ interface CalendarEventData {
 }
 
 export function OperationsCalendar({ showViajes, showMantenimientos }: OperationsCalendarProps) {
-  const { eventos, isLoading } = useOperacionesEventos();
+  const [range, setRange] = useState({
+    start: startOfMonth(new Date()),
+    end: endOfMonth(new Date()),
+  });
+  const { eventos, isLoading } = useOperacionesEventos(range.start, range.end);
+  const { data: personalEvents = [] } = useUserEvents(range.start, range.end);
   const [selected, setSelected] = useState<CalendarEventData | null>(null);
   const [open, setOpen] = useState(false);
   const { createEvent } = useCalendarEvents();
   const [extraEvents, setExtraEvents] = useState<EventInput[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const filtered = eventos.filter((ev) => {
     if (ev.tipo === 'viaje' && !showViajes) return false;
@@ -74,7 +85,18 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     };
   });
 
-  const allEvents = [...fcEvents, ...extraEvents];
+  const personalFcEvents: EventInput[] = (personalEvents as any[]).map((ev) => ({
+    id: ev.id,
+    title: ev.titulo,
+    start: ev.fecha_inicio,
+    end: ev.fecha_fin ?? ev.fecha_inicio,
+    allDay: ev.metadata?.todo_dia ?? false,
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
+    extendedProps: { tipo_evento: ev.tipo_evento, metadata: ev.metadata },
+  }));
+
+  const allEvents = [...fcEvents, ...personalFcEvents, ...extraEvents];
 
   const handleEventClick = (info: EventClickArg) => {
     const event: CalendarEventData = {
@@ -88,28 +110,21 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     setOpen(true);
   };
 
-  const handleDateClick = async (info: DateClickArg) => {
-    const title = window.prompt('Título del evento');
-    if (!title) return;
+  const handleDateClick = (info: DateClickArg) => {
+    setSelectedDate(info.date);
+    setShowForm(true);
+  };
+
+  const submitEvent = async (data: { titulo: string; descripcion?: string; fecha_inicio: Date; fecha_fin: Date }) => {
     try {
       await createEvent({
         tipo_evento: 'personal',
-        titulo: title,
-        fecha_inicio: info.date,
-        fecha_fin: info.date,
+        titulo: data.titulo,
+        descripcion: data.descripcion,
+        fecha_inicio: data.fecha_inicio,
+        fecha_fin: data.fecha_fin,
       });
-      const color = '#6366f1';
-      setExtraEvents((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}`,
-          title,
-          start: info.date,
-          end: info.date,
-          backgroundColor: color,
-          borderColor: color,
-        },
-      ]);
+      setShowForm(false);
     } catch (err) {
       console.error('Error creating event', err);
     }
@@ -131,12 +146,19 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
           initialView="dayGridMonth"
           locale={esLocale}
-          headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }}
+      headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }}
+          datesSet={(arg: DatesSetArg) => setRange({ start: arg.start, end: arg.end })}
           events={allEvents}
           eventClick={handleEventClick}
           dateClick={handleDateClick}
           />
       </div>
+      <EventFormModal
+        open={showForm}
+        onOpenChange={setShowForm}
+        date={selectedDate}
+        onSubmit={submitEvent}
+      />
       {selected && (
         <TripDetailModal event={selected} open={open} onOpenChange={setOpen} />
       )}
