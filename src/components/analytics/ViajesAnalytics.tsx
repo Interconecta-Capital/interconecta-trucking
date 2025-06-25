@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   BarChart, 
   Bar, 
@@ -69,6 +70,8 @@ export const ViajesAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -219,10 +222,10 @@ export const ViajesAnalytics = () => {
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="costo-total-card">
               <div>
                 <p className="text-sm text-muted-foreground">Costo Total</p>
-                <p className="text-2xl font-bold">{formatCurrency(analyticsData.costos.total)}</p>
+                <p className="costo-total-valor font-bold">{formatCurrency(analyticsData.costos.total)}</p>
                 <p className="text-xs text-red-600 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +5% vs mes anterior
@@ -256,7 +259,7 @@ export const ViajesAnalytics = () => {
 
       {/* Gráficos principales */}
       <Tabs defaultValue="tendencias" className="w-full">
-        <TabsList>
+        <TabsList className="tabs-container">
           <TabsTrigger value="tendencias">Tendencias</TabsTrigger>
           <TabsTrigger value="estados">Estados de Viajes</TabsTrigger>
           <TabsTrigger value="costos">Análisis de Costos</TabsTrigger>
@@ -314,10 +317,13 @@ export const ViajesAnalytics = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={isMobile ? undefined : ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
+                      activeIndex={activeIndex}
+                      onClick={(_, index) => setActiveIndex(index)}
+                      activeShape={{ outerRadius: 90, stroke: '#000', strokeWidth: 2 }}
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -326,6 +332,18 @@ export const ViajesAnalytics = () => {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                <ul className="pie-legend mt-4 flex flex-wrap justify-center gap-2">
+                  {pieData.map((entry, index) => (
+                    <li
+                      key={entry.name}
+                      onClick={() => setActiveIndex(index)}
+                      className={`flex items-center gap-1 cursor-pointer ${activeIndex === index ? 'font-medium' : ''}`}
+                    >
+                      <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }}></span>
+                      {entry.name}
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
 

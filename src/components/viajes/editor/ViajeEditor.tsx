@@ -121,7 +121,7 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 viaje-editor-form">
       {/* Header */}
       <Card>
         <CardHeader>
@@ -183,7 +183,7 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
             <div>
               <Label htmlFor="origen">Origen</Label>
               <Input
@@ -217,7 +217,7 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
             <div>
               <Label htmlFor="fecha-inicio">Fecha y Hora de Inicio</Label>
               <Input
@@ -246,7 +246,7 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
           {(viaje.fecha_inicio_real || viaje.fecha_fin_real) && (
             <>
               <Separator />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
                 {viaje.fecha_inicio_real && (
                   <div>
                     <Label>Fecha Real de Inicio</Label>
@@ -282,7 +282,7 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
             <div>
               <Label htmlFor="vehiculo">Vehículo</Label>
               <Input
