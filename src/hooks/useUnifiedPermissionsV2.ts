@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useSuscripcion } from './useSuscripcion';
@@ -58,11 +57,12 @@ export interface UnifiedPermissionsV2 {
 /**
  * Hook Unificado de Permisos V2 - FUENTE ÚNICA DE VERDAD
  * 
- * Implementa las 4 reglas de negocio fundamentales:
+ * Implementa las 5 reglas de negocio fundamentales:
  * 1. Superusuario → Acceso total
  * 2. Trial activo → Acceso total
  * 3. Plan activo → Aplicar límites
- * 4. Sin plan → Sin acceso
+ * 4. Trial expirado SIN plan → BLOQUEADO TOTAL
+ * 5. Sin plan → Sin acceso
  */
 export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
   const { user } = useAuth();
@@ -90,8 +90,12 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
     const trialInfo = calculateTrialInfo(user);
     console.log('[UnifiedPermissionsV2] 📊 Info del trial calculada:', trialInfo);
 
-    // REGLA 2: TRIAL ACTIVO - Acceso total durante período de prueba
-    if (trialInfo.isTrialActive && !trialInfo.isTrialExpired) {
+    // NUEVA LÓGICA CRÍTICA: Verificar si hay plan activo ANTES de evaluar trial
+    const hasActivePlan = suscripcion?.status === 'active' && suscripcion.plan;
+    console.log('[UnifiedPermissionsV2] 💳 Plan activo:', hasActivePlan);
+
+    // REGLA 2: TRIAL ACTIVO (solo si NO hay plan activo) - Acceso total durante período de prueba
+    if (!hasActivePlan && trialInfo.isTrialActive && !trialInfo.isTrialExpired) {
       console.log('[UnifiedPermissionsV2] 🎯 TRIAL ACTIVO - Día', trialInfo.daysUsed, 'de', trialInfo.totalTrialDays);
       return createTrialPermissions(user.id, trialInfo);
     }
@@ -103,13 +107,20 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
     }
 
     // REGLA 4: PLAN ACTIVO - Aplicar límites
-    if (suscripcion?.status === 'active' && suscripcion.plan) {
+    if (hasActivePlan) {
       console.log('[UnifiedPermissionsV2] 💳 PLAN ACTIVO:', suscripcion.plan.nombre);
       return createPaidPlanPermissions(user.id, suscripcion);
     }
 
-    // REGLA 5: TRIAL EXPIRADO O SIN PLAN - Sin acceso
-    console.log('[UnifiedPermissionsV2] ⏰ TRIAL EXPIRADO o SIN PLAN');
+    // REGLA 5 CRÍTICA: TRIAL EXPIRADO Y SIN PLAN - BLOQUEADO TOTAL
+    if (trialInfo.isTrialExpired && !hasActivePlan) {
+      console.log('[UnifiedPermissionsV2] ⚠️ TRIAL EXPIRADO SIN PLAN - BLOQUEANDO USUARIO');
+      console.log('[UnifiedPermissionsV2] 📅 Días restantes:', trialInfo.daysRemaining);
+      return createTrialExpiredPermissions(user.id, trialInfo);
+    }
+
+    // FALLBACK: Sin acceso por defecto
+    console.log('[UnifiedPermissionsV2] ❌ FALLBACK - Sin acceso');
     return createExpiredPermissions(user.id, trialInfo);
 
   }, [user, isSuperuser, suscripcion, estaBloqueado]);
@@ -130,16 +141,19 @@ function calculateTrialInfo(user: any) {
   // Calcular días usados y restantes
   const daysUsed = Math.max(0, differenceInDays(now, createdAt));
   const daysRemaining = Math.max(0, differenceInDays(trialEndDate, now));
-  const isTrialExpired = now > trialEndDate;
+  
+  // LÓGICA CRÍTICA CORREGIDA: Trial expira cuando daysRemaining <= 0
+  const isTrialExpired = daysRemaining <= 0;
   const isTrialActive = !isTrialExpired;
 
-  console.log('[TrialCalculation] 📅 Fechas:', {
+  console.log('[TrialCalculation] 📅 Fechas críticas:', {
     created: createdAt.toISOString(),
     now: now.toISOString(),
     trialEnd: trialEndDate.toISOString(),
     daysUsed,
     daysRemaining,
-    isExpired: isTrialExpired
+    isExpired: isTrialExpired,
+    isActive: isTrialActive
   });
 
   return {
@@ -313,15 +327,20 @@ function createPaidPlanPermissions(userId: string, suscripcion: any): UnifiedPer
   };
 }
 
-function createExpiredPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
-  const expiredAccess = { allowed: false, reason: 'Período de prueba finalizado' };
+// NUEVA FUNCIÓN: Permisos para trial expirado sin plan
+function createTrialExpiredPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
+  const expiredAccess = { 
+    allowed: false, 
+    reason: 'Tu período de prueba ha finalizado. Por favor, elige un plan para continuar.' 
+  };
+  
   const getPermissionForResource = () => expiredAccess;
   
   return {
     userId,
     isAuthenticated: true,
     accessLevel: 'expired',
-    accessReason: 'Período de prueba finalizado',
+    accessReason: 'TRIAL_EXPIRED: Período de prueba finalizado sin plan activo',
     hasFullAccess: false,
     canCreateConductor: expiredAccess,
     canCreateVehiculo: expiredAccess,
@@ -336,7 +355,46 @@ function createExpiredPermissions(userId: string, trialInfo: any): UnifiedPermis
       totalTrialDays: trialInfo.totalTrialDays,
       isActive: false 
     },
-    usage: { conductores: { used: 0, limit: 0 }, vehiculos: { used: 0, limit: 0 }, socios: { used: 0, limit: 0 }, cartas_porte: { used: 0, limit: 0 } },
+    usage: { 
+      conductores: { used: 0, limit: 0 }, 
+      vehiculos: { used: 0, limit: 0 }, 
+      socios: { used: 0, limit: 0 }, 
+      cartas_porte: { used: 0, limit: 0 } 
+    },
+    canPerformAction: () => false,
+    getPermissionForResource
+  };
+}
+
+function createExpiredPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
+  const expiredAccess = { allowed: false, reason: 'Acceso denegado' };
+  const getPermissionForResource = () => expiredAccess;
+  
+  return {
+    userId,
+    isAuthenticated: true,
+    accessLevel: 'expired',
+    accessReason: 'Sin acceso válido',
+    hasFullAccess: false,
+    canCreateConductor: expiredAccess,
+    canCreateVehiculo: expiredAccess,
+    canCreateSocio: expiredAccess,
+    canCreateCartaPorte: expiredAccess,
+    canCreateRemolque: expiredAccess,
+    planInfo: { 
+      name: 'Sin Acceso', 
+      type: 'none', 
+      daysRemaining: trialInfo?.daysRemaining || 0,
+      daysUsed: trialInfo?.daysUsed || 0,
+      totalTrialDays: trialInfo?.totalTrialDays || 14,
+      isActive: false 
+    },
+    usage: { 
+      conductores: { used: 0, limit: 0 }, 
+      vehiculos: { used: 0, limit: 0 }, 
+      socios: { used: 0, limit: 0 }, 
+      cartas_porte: { used: 0, limit: 0 } 
+    },
     canPerformAction: () => false,
     getPermissionForResource
   };
