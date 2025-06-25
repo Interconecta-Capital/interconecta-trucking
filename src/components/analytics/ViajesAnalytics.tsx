@@ -180,7 +180,7 @@ export const ViajesAnalytics = () => {
       </div>
 
       {/* KPIs principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="summary-cards-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -269,8 +269,9 @@ export const ViajesAnalytics = () => {
               <CardTitle>Tendencia de Viajes y Costos</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <AreaChart data={analyticsData.tendencias}>
+              <div className="chart-scroll-wrapper">
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={analyticsData.tendencias}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="mes" />
                   <YAxis yAxisId="left" />
@@ -293,7 +294,8 @@ export const ViajesAnalytics = () => {
                     strokeWidth={3}
                   />
                 </AreaChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -359,7 +361,8 @@ export const ViajesAnalytics = () => {
               <CardTitle>Desglose de Costos</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
+              <div className="chart-scroll-wrapper">
+                <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={costosData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
@@ -367,7 +370,8 @@ export const ViajesAnalytics = () => {
                   <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   <Bar dataKey="value" fill="#3B82F6" />
                 </BarChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
 
@@ -408,7 +412,8 @@ export const ViajesAnalytics = () => {
               <CardTitle>Índices de Eficiencia</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
+              <div className="chart-scroll-wrapper">
+                <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={analyticsData.tendencias}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="mes" />
@@ -422,7 +427,8 @@ export const ViajesAnalytics = () => {
                     dot={{ r: 6 }}
                   />
                 </LineChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
 
