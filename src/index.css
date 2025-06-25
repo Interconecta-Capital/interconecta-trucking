@@ -476,5 +476,57 @@
       overflow-x: auto;
       padding-bottom: 10px;
     }
+    .tabs-container {
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs-container::-webkit-scrollbar {
+      display: none;
+    }
+    .tabs-container > * {
+      white-space: nowrap;
+    }
+    .costo-total-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .costo-total-valor {
+      font-size: clamp(1.5rem, 5vw, 2rem);
+    }
+    .desktop-programar-button {
+      display: none;
+    }
+    .fab-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1050;
+    }
+    .fab-button {
+      width: 56px;
+      height: 56px;
+      background-color: #4A69FF;
+      color: white;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .fab-button:hover {
+      transform: scale(1.05);
+    }
+    .fab-icon {
+      font-size: 24px;
+    }
+    .viaje-editor-grid {
+      grid-template-columns: 1fr !important;
+    }
   }
 }

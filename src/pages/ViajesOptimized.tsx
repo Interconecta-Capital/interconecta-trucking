@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 
 // Lazy load components - fix for named export
 const ViajesAnalytics = lazy(() => 
@@ -42,6 +44,7 @@ function ViajesContent() {
   const navigate = useNavigate();
   const { viajes, isLoading, eliminarViaje } = useViajes();
   const { openViajeWizard } = useViajeWizardModal();
+  const isMobile = useIsMobile();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
 
@@ -110,7 +113,7 @@ function ViajesContent() {
             Administra y da seguimiento a todos tus viajes de transporte
           </p>
         </div>
-        <Button onClick={openViajeWizard} className="flex items-center gap-2">
+        <Button onClick={openViajeWizard} className="flex items-center gap-2 desktop-programar-button">
           <Plus className="h-4 w-4" />
           Programar Viaje
         </Button>
@@ -245,6 +248,9 @@ function ViajesContent() {
         open={showTrackingModal}
         onOpenChange={setShowTrackingModal}
       />
+      {isMobile && (
+        <FloatingActionButton onClick={openViajeWizard} />
+      )}
     </div>
   );
 }
