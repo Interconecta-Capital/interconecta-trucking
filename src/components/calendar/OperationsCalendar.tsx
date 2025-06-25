@@ -11,7 +11,18 @@ import listPlugin from '@fullcalendar/list';
 import esLocale from '@fullcalendar/core/locales/es';
 import { useOperacionesEventos } from '@/hooks/useOperacionesEventos';
 import { TripDetailModal } from '@/components/dashboard/TripDetailModal';
-import { CalendarEvent, useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { CalendarEvent } from '@/hooks/useCalendarEvents';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Plus, Truck, Wrench, CheckCircle, MapPin } from 'lucide-react';
+import { CartaPorteFormModal } from '@/components/dashboard/CartaPorteFormModal';
+import { MantenimientoFormModal } from '@/components/dashboard/MantenimientoFormModal';
+import { VerificacionFormModal } from '@/components/dashboard/VerificacionFormModal';
+import { RevisionGPSFormModal } from '@/components/dashboard/RevisionGPSFormModal';
 
 
 
@@ -24,8 +35,12 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
   const { eventos, isLoading } = useOperacionesEventos();
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const [open, setOpen] = useState(false);
-  const { createEvent } = useCalendarEvents();
-  const [extraEvents, setExtraEvents] = useState<EventInput[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [showEventMenu, setShowEventMenu] = useState(false);
+  const [showCartaPorteForm, setShowCartaPorteForm] = useState(false);
+  const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
+  const [showVerificacionForm, setShowVerificacionForm] = useState(false);
+  const [showRevisionGPSForm, setShowRevisionGPSForm] = useState(false);
 
   const filtered = eventos.filter((ev) => {
     if (ev.tipo === 'viaje' && !showViajes) return false;
@@ -69,7 +84,6 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     };
   });
 
-  const allEvents = [...fcEvents, ...extraEvents];
 
   const handleEventClick = (info: EventClickArg) => {
     const event: CalendarEvent = {
@@ -83,31 +97,29 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
     setOpen(true);
   };
 
-  const handleDateClick = async (info: DateClickArg) => {
-    const title = window.prompt('Título del evento');
-    if (!title) return;
-    try {
-      await createEvent({
-        tipo_evento: 'personal',
-        titulo: title,
-        fecha_inicio: info.date,
-        fecha_fin: info.date,
-      });
-      const color = '#6366f1';
-      setExtraEvents((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}`,
-          title,
-          start: info.date,
-          end: info.date,
-          backgroundColor: color,
-          borderColor: color,
-        },
-      ]);
-    } catch (err) {
-      console.error('Error creating event', err);
-    }
+  const handleDateClick = (info: DateClickArg) => {
+    setSelectedDate(info.date);
+    setShowEventMenu(true);
+  };
+
+  const handleCreateViaje = () => {
+    setShowCartaPorteForm(true);
+    setShowEventMenu(false);
+  };
+
+  const handleCreateMantenimiento = () => {
+    setShowMantenimientoForm(true);
+    setShowEventMenu(false);
+  };
+
+  const handleCreateVerificacion = () => {
+    setShowVerificacionForm(true);
+    setShowEventMenu(false);
+  };
+
+  const handleCreateRevisionGPS = () => {
+    setShowRevisionGPSForm(true);
+    setShowEventMenu(false);
   };
 
   if (isLoading) {
@@ -127,14 +139,85 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
           initialView="dayGridMonth"
           locale={esLocale}
           headerToolbar={{ start: 'prev,next today', center: 'title', end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }}
-          events={allEvents}
+          events={fcEvents}
           eventClick={handleEventClick}
           dateClick={handleDateClick}
           />
       </div>
+      <Popover open={showEventMenu} onOpenChange={setShowEventMenu}>
+        <PopoverTrigger asChild>
+          <div></div>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 z-50" align="center" side="top">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              <h4 className="font-medium">Crear Evento</h4>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {selectedDate?.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                variant="outline"
+                className="w-full justify-start h-9"
+                onClick={handleCreateViaje}
+              >
+                <Truck className="h-4 w-4 mr-2 text-green-600" />
+                Programar Viaje
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start h-9"
+                onClick={handleCreateMantenimiento}
+              >
+                <Wrench className="h-4 w-4 mr-2 text-red-600" />
+                Mantenimiento
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start h-9"
+                onClick={handleCreateVerificacion}
+              >
+                <CheckCircle className="h-4 w-4 mr-2 text-orange-600" />
+                Verificación
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start h-9"
+                onClick={handleCreateRevisionGPS}
+              >
+                <MapPin className="h-4 w-4 mr-2 text-purple-600" />
+                Revisión GPS
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
       {selected && (
         <TripDetailModal event={selected} open={open} onOpenChange={setOpen} />
       )}
+      <CartaPorteFormModal
+        open={showCartaPorteForm}
+        onOpenChange={setShowCartaPorteForm}
+      />
+      <MantenimientoFormModal
+        open={showMantenimientoForm}
+        onOpenChange={setShowMantenimientoForm}
+      />
+      <VerificacionFormModal
+        open={showVerificacionForm}
+        onOpenChange={setShowVerificacionForm}
+      />
+      <RevisionGPSFormModal
+        open={showRevisionGPSForm}
+        onOpenChange={setShowRevisionGPSForm}
+      />
     </>
   );
 }
