@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -486,7 +487,6 @@ export function SmartUbicacionFormV2({
                 Domicilio
               </Label>
 
-              {/* ... keep existing domicilio fields the same ... */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="pais">País *</Label>
@@ -546,7 +546,6 @@ export function SmartUbicacionFormV2({
                     id="colonia"
                     value={formData.domicilio.colonia}
                     onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
-                    placeholder="Colonia"
                     readOnly={isFieldLocked('colonia')}
                     placeholder={isFieldLocked('colonia') && !formData.domicilio.colonia ? 'Se autocompleta con el C.P.' : 'Colonia'}
                     className="bg-white"
@@ -598,7 +597,6 @@ export function SmartUbicacionFormV2({
                     id="localidad"
                     value={formData.domicilio.localidad}
                     onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
-                    placeholder="Localidad o población"
                     readOnly={isFieldLocked('localidad')}
                     placeholder={isFieldLocked('localidad') && !formData.domicilio.localidad ? 'Se autocompleta con el C.P.' : 'Localidad'}
                     className="bg-white"
@@ -633,3 +631,4 @@ export function SmartUbicacionFormV2({
     </Card>
   );
 }
+

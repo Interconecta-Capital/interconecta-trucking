@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,7 +172,10 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
 
   const handleSaveDraft = async () => {
     try {
-      const result = await guardarBorradorViaje({ wizardData: data, borradorId: draftId || undefined });
+      const result = await guardarBorradorViaje({ 
+        id: draftId || undefined, 
+        updates: { wizardData: data } 
+      });
       setDraftId(result.id);
       setInitialSnapshot(JSON.stringify(data));
       setHasUnsavedChanges(false);
@@ -513,3 +517,4 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     </AdaptiveFlowProvider>
   );
 });
+
