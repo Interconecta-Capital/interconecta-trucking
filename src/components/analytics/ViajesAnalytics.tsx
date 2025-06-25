@@ -77,41 +77,12 @@ export const ViajesAnalytics = () => {
   const loadAnalyticsData = async () => {
     setLoading(true);
     try {
-      // Simular datos de analytics
-      const mockData: AnalyticsData = {
-        viajes: {
-          total: 156,
-          completados: 142,
-          enTransito: 8,
-          programados: 4,
-          cancelados: 2,
-          promedioDuracion: 6.5,
-          promedioDistancia: 485
-        },
-        costos: {
-          combustible: 85600,
-          casetas: 12400,
-          mantenimiento: 8500,
-          operadores: 45000,
-          total: 151500
-        },
-        eficiencia: {
-          puntualidad: 94.2,
-          utilizacionFlota: 78.5,
-          kmPorLitro: 3.2,
-          costoPorKm: 2.15
-        },
-        tendencias: [
-          { mes: 'Ene', viajes: 45, costos: 48000, eficiencia: 92 },
-          { mes: 'Feb', viajes: 52, costos: 52000, eficiencia: 94 },
-          { mes: 'Mar', viajes: 48, costos: 49500, eficiencia: 93 },
-          { mes: 'Abr', viajes: 56, costos: 58000, eficiencia: 95 },
-          { mes: 'May', viajes: 61, costos: 61200, eficiencia: 96 },
-          { mes: 'Jun', viajes: 58, costos: 59800, eficiencia: 94 }
-        ]
-      };
-
-      setAnalyticsData(mockData);
+      const response = await fetch(`/api/analytics/trips-summary?period=${selectedPeriod}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data: AnalyticsData = await response.json();
+      setAnalyticsData(data);
     } catch (error) {
       console.error('Error cargando analytics:', error);
     } finally {
