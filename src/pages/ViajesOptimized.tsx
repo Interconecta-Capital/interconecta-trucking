@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +11,10 @@ import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
 import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
 
-// Lazy load components - fix default export issue
+// Lazy load components - fix for named export
 const ViajesAnalytics = lazy(() => 
   import('@/components/analytics/ViajesAnalytics').then(module => ({
-    default: module.default || module.ViajesAnalytics || module
+    default: module.ViajesAnalytics
   }))
 );
 
