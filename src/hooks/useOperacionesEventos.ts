@@ -19,21 +19,18 @@ export interface OperacionEvento {
   };
 }
 
-export function useOperacionesEventos(start: Date, end: Date) {
+export function useOperacionesEventos() {
   const { user } = useAuth();
 
   const { data: eventos = [], isLoading } = useQuery({
-    queryKey: ['operaciones-eventos', user?.id, start.toISOString(), end.toISOString()],
+    queryKey: ['operaciones-eventos', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.functions.invoke('operaciones-eventos', {
-        body: { start_date: start.toISOString(), end_date: end.toISOString() },
-      });
+      const { data, error } = await supabase.functions.invoke('operaciones-eventos');
       if (error) throw error;
       return (data?.events || []) as OperacionEvento[];
     },
-    enabled: !!user?.id && !!start && !!end,
-    refetchOnWindowFocus: false,
+    enabled: !!user?.id,
   });
 
   return { eventos, isLoading };

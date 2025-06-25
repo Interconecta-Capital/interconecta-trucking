@@ -1,10 +1,10 @@
 
-import React, { useState, Suspense } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Calendar, CheckSquare } from 'lucide-react';
-const OperationsCalendar = React.lazy(() => import('@/components/calendar/OperationsCalendar'));
+import { OperationsCalendar } from '@/components/calendar/OperationsCalendar';
 
 export default function Calendario() {
   const [showViajes, setShowViajes] = useState(true);
@@ -61,12 +61,10 @@ export default function Calendario() {
 
       <Card>
         <CardContent className="p-0">
-          <Suspense fallback={<div className="p-4">Cargando calendario...</div>}>
-            <OperationsCalendar
-              showViajes={showViajes}
-              showMantenimientos={showMantenimientos}
-            />
-          </Suspense>
+          <OperationsCalendar 
+            showViajes={showViajes} 
+            showMantenimientos={showMantenimientos} 
+          />
         </CardContent>
       </Card>
     </div>
