@@ -23,6 +23,7 @@ import Vehiculos from "./pages/Vehiculos"
 import Conductores from "./pages/Conductores"
 import Socios from "./pages/Socios"
 import Viajes from "./pages/Viajes"
+import ViajeEdit from "./pages/ViajeEdit"
 import Remolques from "./pages/Remolques"
 import Administracion from "./pages/Administracion"
 import Planes from "./pages/Planes"
@@ -104,6 +105,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <Viajes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/viajes/editar/:id" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ViajeEdit />
                   </BaseLayout>
                 </AuthGuard>
               } />

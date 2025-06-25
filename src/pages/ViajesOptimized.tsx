@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,9 @@ import { useViajes } from '@/hooks/useViajes';
 import { BorradoresSection } from '@/components/viajes/BorradoresSection';
 import { ViajeWizardModalProvider, useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
-import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
+import { useNavigate } from 'react-router-dom';
+import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 
 // Lazy load components - fix for named export
 const ViajesAnalytics = lazy(() => 
@@ -39,11 +40,28 @@ const estadoLabels = {
 function ViajesContent() {
   const { viajes, isLoading, eliminarViaje } = useViajes();
   const { openViajeWizard } = useViajeWizardModal();
+  const navigate = useNavigate();
+
+  const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    setSelectedViaje((prev) => (prev ? viajes.find(v => v.id === prev.id) || prev : null));
+  }, [viajes]);
 
   const handleEliminarViaje = (viaje: Viaje) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {
       eliminarViaje(viaje.id);
     }
+  };
+
+  const handleView = (viaje: Viaje) => {
+    setSelectedViaje(viaje);
+    setShowModal(true);
+  };
+
+  const handleEdit = (viaje: Viaje) => {
+    navigate(`/viajes/editar/${viaje.id}`);
   };
 
   if (isLoading) {
@@ -192,10 +210,10 @@ function ViajesContent() {
                       </div>
 
                       <div className="flex items-center gap-2 ml-4">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleView(viaje)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(viaje)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -215,6 +233,7 @@ function ViajesContent() {
           )}
         </CardContent>
       </Card>
+      <ViajeTrackingModal viaje={selectedViaje} open={showModal} onOpenChange={setShowModal} />
     </div>
   );
 }

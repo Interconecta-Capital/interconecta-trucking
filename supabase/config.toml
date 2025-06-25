@@ -18,3 +18,6 @@ verify_jwt = true
 
 [functions.get-google-maps-key]
 verify_jwt = true
+
+[functions.trips-summary]
+verify_jwt = true
