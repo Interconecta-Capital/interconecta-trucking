@@ -9,8 +9,8 @@ interface TrialExpiredGuardProps {
 }
 
 /**
- * Interceptor global que redirige usuarios con trial expirado a la página de planes
- * Solo permite acceso a rutas de facturación/planes para usuarios con trial expirado
+ * Interceptor global actualizado para el sistema Freemium
+ * Ya no bloquea a usuarios con trial expirado, sino que los deja usar la app con límites
  */
 export function TrialExpiredGuard({ children }: TrialExpiredGuardProps) {
   const navigate = useNavigate();
@@ -32,8 +32,8 @@ export function TrialExpiredGuard({ children }: TrialExpiredGuardProps) {
     // Solo interceptar si el usuario está autenticado
     if (!permissions.isAuthenticated) return;
 
-    // Solo interceptar si el trial ha expirado
-    if (permissions.accessLevel !== 'expired' || !permissions.accessReason.includes('TRIAL_EXPIRED')) {
+    // NUEVO: Solo interceptar si el usuario está completamente bloqueado (no freemium)
+    if (permissions.accessLevel !== 'blocked') {
       return;
     }
 
@@ -45,10 +45,9 @@ export function TrialExpiredGuard({ children }: TrialExpiredGuardProps) {
 
     if (!isAllowedRoute) {
       console.log('[TrialExpiredGuard] 🚫 Bloqueando acceso a:', currentPath);
-      console.log('[TrialExpiredGuard] 📅 Días restantes:', permissions.planInfo.daysRemaining);
       
       // Mostrar mensaje de error específico
-      toast.error('Tu período de prueba ha finalizado. Por favor, elige un plan para continuar.', {
+      toast.error('Tu cuenta está bloqueada. Por favor, actualiza tu plan para continuar.', {
         duration: 5000,
         action: {
           label: 'Ver Planes',
@@ -61,6 +60,6 @@ export function TrialExpiredGuard({ children }: TrialExpiredGuardProps) {
     }
   }, [permissions, location.pathname, navigate]);
 
-  // Si el trial no ha expirado o estamos en una ruta permitida, mostrar contenido normal
+  // Mostrar contenido normal (ahora incluye usuarios freemium)
   return <>{children}</>;
 }

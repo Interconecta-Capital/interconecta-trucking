@@ -40,6 +40,11 @@ export const ProtectedContent = ({
       return permissions.hasFullAccess;
     }
     
+    // Plan freemium tiene acceso limitado pero sí puede acceder
+    if (permissions.accessLevel === 'freemium') {
+      return true;
+    }
+    
     // Sin acceso en otros casos
     return false;
   };

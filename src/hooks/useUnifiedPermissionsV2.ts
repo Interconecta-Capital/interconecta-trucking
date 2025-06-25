@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useSuscripcion } from './useSuscripcion';
@@ -10,6 +11,7 @@ export interface PermissionResultV2 {
   reason: string;
   limit?: number;
   used?: number;
+  limitType?: string;
 }
 
 export interface UnifiedPermissionsV2 {
@@ -18,7 +20,7 @@ export interface UnifiedPermissionsV2 {
   isAuthenticated: boolean;
   
   // Nivel de acceso principal
-  accessLevel: 'superuser' | 'trial' | 'paid' | 'blocked' | 'expired' | 'none';
+  accessLevel: 'superuser' | 'trial' | 'freemium' | 'paid' | 'blocked' | 'expired' | 'none';
   accessReason: string;
   hasFullAccess: boolean;
   
@@ -28,25 +30,36 @@ export interface UnifiedPermissionsV2 {
   canCreateSocio: PermissionResultV2;
   canCreateCartaPorte: PermissionResultV2;
   canCreateRemolque: PermissionResultV2;
+  canCreateViaje: PermissionResultV2;
   
   // Información del plan actual
   planInfo: {
     name: string;
-    type: 'superuser' | 'trial' | 'paid' | 'none';
+    type: 'superuser' | 'trial' | 'freemium' | 'paid' | 'none';
     daysRemaining?: number;
     daysUsed?: number;
     totalTrialDays?: number;
     trialStartDate?: Date;
     trialEndDate?: Date;
     isActive: boolean;
+    limits?: {
+      vehiculos: number;
+      remolques: number;
+      socios: number;
+      viajes_mensual: number;
+      cartas_porte_mensual: number;
+    };
   };
   
-  // Datos de uso (simplificados para debug)
+  // Datos de uso actuales
   usage: {
     conductores: { used: number; limit: number | null };
     vehiculos: { used: number; limit: number | null };
     socios: { used: number; limit: number | null };
     cartas_porte: { used: number; limit: number | null };
+    remolques: { used: number; limit: number | null };
+    viajes_mensual: { used: number; limit: number | null };
+    cartas_porte_mensual: { used: number; limit: number | null };
   };
   
   // Métodos de compatibilidad
@@ -54,14 +67,23 @@ export interface UnifiedPermissionsV2 {
   getPermissionForResource: (resource: string) => PermissionResultV2;
 }
 
+// Límites del plan Freemium
+const FREEMIUM_LIMITS = {
+  vehiculos: 3,
+  remolques: 2,
+  socios: 5,
+  viajes_mensual: 5,
+  cartas_porte_mensual: 5
+};
+
 /**
  * Hook Unificado de Permisos V2 - FUENTE ÚNICA DE VERDAD
  * 
- * Implementa las 5 reglas de negocio fundamentales:
+ * Implementa las reglas de negocio fundamentales:
  * 1. Superusuario → Acceso total
  * 2. Trial activo → Acceso total
- * 3. Plan activo → Aplicar límites
- * 4. Trial expirado SIN plan → BLOQUEADO TOTAL
+ * 3. Trial expirado SIN plan → Plan Freemium con límites
+ * 4. Plan activo → Aplicar límites del plan
  * 5. Sin plan → Sin acceso
  */
 export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
@@ -90,7 +112,7 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
     const trialInfo = calculateTrialInfo(user);
     console.log('[UnifiedPermissionsV2] 📊 Info del trial calculada:', trialInfo);
 
-    // NUEVA LÓGICA CRÍTICA: Verificar si hay plan activo ANTES de evaluar trial
+    // Verificar si hay plan activo
     const hasActivePlan = suscripcion?.status === 'active' && suscripcion.plan;
     console.log('[UnifiedPermissionsV2] 💳 Plan activo:', hasActivePlan);
 
@@ -106,17 +128,16 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
       return createBlockedPermissions(user.id);
     }
 
-    // REGLA 4: PLAN ACTIVO - Aplicar límites
+    // REGLA 4: PLAN ACTIVO - Aplicar límites del plan
     if (hasActivePlan) {
       console.log('[UnifiedPermissionsV2] 💳 PLAN ACTIVO:', suscripcion.plan.nombre);
       return createPaidPlanPermissions(user.id, suscripcion);
     }
 
-    // REGLA 5 CRÍTICA: TRIAL EXPIRADO Y SIN PLAN - BLOQUEADO TOTAL
+    // REGLA 5 NUEVA: TRIAL EXPIRADO SIN PLAN → PLAN FREEMIUM
     if (trialInfo.isTrialExpired && !hasActivePlan) {
-      console.log('[UnifiedPermissionsV2] ⚠️ TRIAL EXPIRADO SIN PLAN - BLOQUEANDO USUARIO');
-      console.log('[UnifiedPermissionsV2] 📅 Días restantes:', trialInfo.daysRemaining);
-      return createTrialExpiredPermissions(user.id, trialInfo);
+      console.log('[UnifiedPermissionsV2] 🆓 TRIAL EXPIRADO → PLAN FREEMIUM');
+      return createFreemiumPermissions(user.id, trialInfo);
     }
 
     // FALLBACK: Sin acceso por defecto
@@ -126,35 +147,20 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
   }, [user, isSuperuser, suscripcion, estaBloqueado]);
 };
 
-// FUNCIÓN CENTRALIZADA PARA CALCULAR INFO DEL TRIAL - FUENTE ÚNICA DE VERDAD
+// FUNCIÓN CENTRALIZADA PARA CALCULAR INFO DEL TRIAL
 function calculateTrialInfo(user: any) {
   const now = new Date();
   const TOTAL_TRIAL_DAYS = 14;
   
-  // Usar created_at como fecha de inicio del trial
   const createdAt = user.created_at ? parseISO(user.created_at) : new Date();
-  
-  // Calcular fecha de finalización del trial
   const trialEndDate = new Date(createdAt);
   trialEndDate.setDate(trialEndDate.getDate() + TOTAL_TRIAL_DAYS);
   
-  // Calcular días usados y restantes
   const daysUsed = Math.max(0, differenceInDays(now, createdAt));
   const daysRemaining = Math.max(0, differenceInDays(trialEndDate, now));
   
-  // LÓGICA CRÍTICA CORREGIDA: Trial expira cuando daysRemaining <= 0
   const isTrialExpired = daysRemaining <= 0;
   const isTrialActive = !isTrialExpired;
-
-  console.log('[TrialCalculation] 📅 Fechas críticas:', {
-    created: createdAt.toISOString(),
-    now: now.toISOString(),
-    trialEnd: trialEndDate.toISOString(),
-    daysUsed,
-    daysRemaining,
-    isExpired: isTrialExpired,
-    isActive: isTrialActive
-  });
 
   return {
     daysUsed,
@@ -183,8 +189,17 @@ function createNoAccessPermissions(reason: string): UnifiedPermissionsV2 {
     canCreateSocio: { allowed: false, reason },
     canCreateCartaPorte: { allowed: false, reason },
     canCreateRemolque: { allowed: false, reason },
+    canCreateViaje: { allowed: false, reason },
     planInfo: { name: 'Sin autenticación', type: 'none', isActive: false },
-    usage: { conductores: { used: 0, limit: 0 }, vehiculos: { used: 0, limit: 0 }, socios: { used: 0, limit: 0 }, cartas_porte: { used: 0, limit: 0 } },
+    usage: { 
+      conductores: { used: 0, limit: 0 }, 
+      vehiculos: { used: 0, limit: 0 }, 
+      socios: { used: 0, limit: 0 }, 
+      cartas_porte: { used: 0, limit: 0 },
+      remolques: { used: 0, limit: 0 },
+      viajes_mensual: { used: 0, limit: 0 },
+      cartas_porte_mensual: { used: 0, limit: 0 }
+    },
     canPerformAction: () => false,
     getPermissionForResource
   };
@@ -205,8 +220,17 @@ function createSuperuserPermissions(userId: string): UnifiedPermissionsV2 {
     canCreateSocio: fullAccess,
     canCreateCartaPorte: fullAccess,
     canCreateRemolque: fullAccess,
+    canCreateViaje: fullAccess,
     planInfo: { name: 'Superusuario', type: 'superuser', isActive: true },
-    usage: { conductores: { used: 0, limit: null }, vehiculos: { used: 0, limit: null }, socios: { used: 0, limit: null }, cartas_porte: { used: 0, limit: null } },
+    usage: { 
+      conductores: { used: 0, limit: null }, 
+      vehiculos: { used: 0, limit: null }, 
+      socios: { used: 0, limit: null }, 
+      cartas_porte: { used: 0, limit: null },
+      remolques: { used: 0, limit: null },
+      viajes_mensual: { used: 0, limit: null },
+      cartas_porte_mensual: { used: 0, limit: null }
+    },
     canPerformAction: () => true,
     getPermissionForResource
   };
@@ -227,6 +251,7 @@ function createTrialPermissions(userId: string, trialInfo: any): UnifiedPermissi
     canCreateSocio: trialAccess,
     canCreateCartaPorte: trialAccess,
     canCreateRemolque: trialAccess,
+    canCreateViaje: trialAccess,
     planInfo: { 
       name: 'Período de Prueba Gratuita', 
       type: 'trial', 
@@ -237,7 +262,15 @@ function createTrialPermissions(userId: string, trialInfo: any): UnifiedPermissi
       trialEndDate: trialInfo.trialEndDate,
       isActive: true 
     },
-    usage: { conductores: { used: 0, limit: null }, vehiculos: { used: 0, limit: null }, socios: { used: 0, limit: null }, cartas_porte: { used: 0, limit: null } },
+    usage: { 
+      conductores: { used: 0, limit: null }, 
+      vehiculos: { used: 0, limit: null }, 
+      socios: { used: 0, limit: null }, 
+      cartas_porte: { used: 0, limit: null },
+      remolques: { used: 0, limit: null },
+      viajes_mensual: { used: 0, limit: null },
+      cartas_porte_mensual: { used: 0, limit: null }
+    },
     canPerformAction: () => true,
     getPermissionForResource
   };
@@ -258,8 +291,17 @@ function createBlockedPermissions(userId: string): UnifiedPermissionsV2 {
     canCreateSocio: blockedAccess,
     canCreateCartaPorte: blockedAccess,
     canCreateRemolque: blockedAccess,
+    canCreateViaje: blockedAccess,
     planInfo: { name: 'Cuenta Bloqueada', type: 'none', isActive: false },
-    usage: { conductores: { used: 0, limit: 0 }, vehiculos: { used: 0, limit: 0 }, socios: { used: 0, limit: 0 }, cartas_porte: { used: 0, limit: 0 } },
+    usage: { 
+      conductores: { used: 0, limit: 0 }, 
+      vehiculos: { used: 0, limit: 0 }, 
+      socios: { used: 0, limit: 0 }, 
+      cartas_porte: { used: 0, limit: 0 },
+      remolques: { used: 0, limit: 0 },
+      viajes_mensual: { used: 0, limit: 0 },
+      cartas_porte_mensual: { used: 0, limit: 0 }
+    },
     canPerformAction: () => false,
     getPermissionForResource
   };
@@ -272,31 +314,36 @@ function createPaidPlanPermissions(userId: string, suscripcion: any): UnifiedPer
     switch (resource) {
       case 'conductores': 
         return {
-          allowed: plan.limite_conductores ? false : true, // Simplificado para debug
+          allowed: plan.limite_conductores ? false : true,
           reason: plan.limite_conductores ? `Límite: ${plan.limite_conductores} conductores` : 'Sin límite',
           limit: plan.limite_conductores
         };
       case 'vehiculos': 
         return {
-          allowed: plan.limite_vehiculos ? false : true, // Simplificado para debug
+          allowed: plan.limite_vehiculos ? false : true,
           reason: plan.limite_vehiculos ? `Límite: ${plan.limite_vehiculos} vehículos` : 'Sin límite',
           limit: plan.limite_vehiculos
         };
       case 'socios': 
         return {
-          allowed: plan.limite_socios ? false : true, // Simplificado para debug
+          allowed: plan.limite_socios ? false : true,
           reason: plan.limite_socios ? `Límite: ${plan.limite_socios} socios` : 'Sin límite',
           limit: plan.limite_socios
         };
       case 'cartas_porte': 
         return {
-          allowed: plan.limite_cartas_porte ? false : true, // Simplificado para debug
+          allowed: plan.limite_cartas_porte ? false : true,
           reason: plan.limite_cartas_porte ? `Límite: ${plan.limite_cartas_porte} cartas` : 'Sin límite',
           limit: plan.limite_cartas_porte
         };
       case 'remolques': 
         return {
-          allowed: true, // Los remolques generalmente no tienen límite específico
+          allowed: true,
+          reason: 'Incluido en su plan'
+        };
+      case 'viajes':
+        return {
+          allowed: true,
           reason: 'Incluido en su plan'
         };
       default: 
@@ -315,53 +362,126 @@ function createPaidPlanPermissions(userId: string, suscripcion: any): UnifiedPer
     canCreateSocio: getPermissionForResource('socios'),
     canCreateCartaPorte: getPermissionForResource('cartas_porte'),
     canCreateRemolque: getPermissionForResource('remolques'),
+    canCreateViaje: getPermissionForResource('viajes'),
     planInfo: { name: plan.nombre, type: 'paid', isActive: true },
     usage: { 
       conductores: { used: 0, limit: plan.limite_conductores }, 
       vehiculos: { used: 0, limit: plan.limite_vehiculos }, 
       socios: { used: 0, limit: plan.limite_socios }, 
-      cartas_porte: { used: 0, limit: plan.limite_cartas_porte } 
+      cartas_porte: { used: 0, limit: plan.limite_cartas_porte },
+      remolques: { used: 0, limit: null },
+      viajes_mensual: { used: 0, limit: null },
+      cartas_porte_mensual: { used: 0, limit: null }
     },
     canPerformAction: (action: string) => action === 'create',
     getPermissionForResource
   };
 }
 
-// NUEVA FUNCIÓN: Permisos para trial expirado sin plan
-function createTrialExpiredPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
-  const expiredAccess = { 
-    allowed: false, 
-    reason: 'Tu período de prueba ha finalizado. Por favor, elige un plan para continuar.' 
-  };
+// NUEVA FUNCIÓN: Permisos para plan Freemium
+function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
   
-  const getPermissionForResource = () => expiredAccess;
+  // Función para verificar límites específicos del freemium
+  const checkFreemiumLimit = (resource: string, currentUsage: number = 0) => {
+    const limits = FREEMIUM_LIMITS;
+    
+    switch (resource) {
+      case 'vehiculos':
+        return {
+          allowed: currentUsage < limits.vehiculos,
+          reason: currentUsage >= limits.vehiculos 
+            ? `Has alcanzado el límite de ${limits.vehiculos} vehículos del plan gratuito`
+            : `${currentUsage}/${limits.vehiculos} vehículos utilizados`,
+          limit: limits.vehiculos,
+          used: currentUsage,
+          limitType: 'vehicles'
+        };
+      case 'remolques':
+        return {
+          allowed: currentUsage < limits.remolques,
+          reason: currentUsage >= limits.remolques 
+            ? `Has alcanzado el límite de ${limits.remolques} remolques del plan gratuito`
+            : `${currentUsage}/${limits.remolques} remolques utilizados`,
+          limit: limits.remolques,
+          used: currentUsage,
+          limitType: 'trailers'
+        };
+      case 'socios':
+        return {
+          allowed: currentUsage < limits.socios,
+          reason: currentUsage >= limits.socios 
+            ? `Has alcanzado el límite de ${limits.socios} socios del plan gratuito`
+            : `${currentUsage}/${limits.socios} socios utilizados`,
+          limit: limits.socios,
+          used: currentUsage,
+          limitType: 'partners'
+        };
+      case 'viajes':
+        return {
+          allowed: currentUsage < limits.viajes_mensual,
+          reason: currentUsage >= limits.viajes_mensual 
+            ? `Has alcanzado el límite de ${limits.viajes_mensual} viajes mensuales del plan gratuito`
+            : `${currentUsage}/${limits.viajes_mensual} viajes este mes`,
+          limit: limits.viajes_mensual,
+          used: currentUsage,
+          limitType: 'trips'
+        };
+      case 'cartas_porte':
+        return {
+          allowed: currentUsage < limits.cartas_porte_mensual,
+          reason: currentUsage >= limits.cartas_porte_mensual 
+            ? `Has alcanzado el límite de ${limits.cartas_porte_mensual} cartas porte mensuales del plan gratuito`
+            : `${currentUsage}/${limits.cartas_porte_mensual} cartas porte este mes`,
+          limit: limits.cartas_porte_mensual,
+          used: currentUsage,
+          limitType: 'documents'
+        };
+      case 'conductores':
+        return {
+          allowed: true,
+          reason: 'Conductores ilimitados en plan gratuito'
+        };
+      default:
+        return {
+          allowed: false,
+          reason: 'Recurso no reconocido'
+        };
+    }
+  };
+
+  const getPermissionForResource = (resource: string) => checkFreemiumLimit(resource, 0);
   
   return {
     userId,
     isAuthenticated: true,
-    accessLevel: 'expired',
-    accessReason: 'TRIAL_EXPIRED: Período de prueba finalizado sin plan activo',
+    accessLevel: 'freemium',
+    accessReason: 'Plan Gratuito con límites - Mejora tu plan para acceso ilimitado',
     hasFullAccess: false,
-    canCreateConductor: expiredAccess,
-    canCreateVehiculo: expiredAccess,
-    canCreateSocio: expiredAccess,
-    canCreateCartaPorte: expiredAccess,
-    canCreateRemolque: expiredAccess,
+    canCreateConductor: { allowed: true, reason: 'Conductores ilimitados' },
+    canCreateVehiculo: checkFreemiumLimit('vehiculos', 0),
+    canCreateSocio: checkFreemiumLimit('socios', 0),
+    canCreateCartaPorte: checkFreemiumLimit('cartas_porte', 0),
+    canCreateRemolque: checkFreemiumLimit('remolques', 0),
+    canCreateViaje: checkFreemiumLimit('viajes', 0),
     planInfo: { 
-      name: 'Trial Expirado', 
-      type: 'none', 
+      name: 'Plan Gratuito', 
+      type: 'freemium', 
       daysRemaining: trialInfo.daysRemaining,
       daysUsed: trialInfo.daysUsed,
       totalTrialDays: trialInfo.totalTrialDays,
-      isActive: false 
+      isActive: true,
+      limits: FREEMIUM_LIMITS
     },
     usage: { 
-      conductores: { used: 0, limit: 0 }, 
-      vehiculos: { used: 0, limit: 0 }, 
-      socios: { used: 0, limit: 0 }, 
-      cartas_porte: { used: 0, limit: 0 } 
+      conductores: { used: 0, limit: null }, 
+      vehiculos: { used: 0, limit: FREEMIUM_LIMITS.vehiculos }, 
+      socios: { used: 0, limit: FREEMIUM_LIMITS.socios }, 
+      cartas_porte: { used: 0, limit: null },
+      remolques: { used: 0, limit: FREEMIUM_LIMITS.remolques },
+      viajes_mensual: { used: 0, limit: FREEMIUM_LIMITS.viajes_mensual },
+      cartas_porte_mensual: { used: 0, limit: FREEMIUM_LIMITS.cartas_porte_mensual }
     },
-    canPerformAction: () => false,
+    canPerformAction: () => true,
     getPermissionForResource
   };
 }
@@ -381,6 +501,7 @@ function createExpiredPermissions(userId: string, trialInfo: any): UnifiedPermis
     canCreateSocio: expiredAccess,
     canCreateCartaPorte: expiredAccess,
     canCreateRemolque: expiredAccess,
+    canCreateViaje: expiredAccess,
     planInfo: { 
       name: 'Sin Acceso', 
       type: 'none', 
@@ -393,7 +514,10 @@ function createExpiredPermissions(userId: string, trialInfo: any): UnifiedPermis
       conductores: { used: 0, limit: 0 }, 
       vehiculos: { used: 0, limit: 0 }, 
       socios: { used: 0, limit: 0 }, 
-      cartas_porte: { used: 0, limit: 0 } 
+      cartas_porte: { used: 0, limit: 0 },
+      remolques: { used: 0, limit: 0 },
+      viajes_mensual: { used: 0, limit: 0 },
+      cartas_porte_mensual: { used: 0, limit: 0 }
     },
     canPerformAction: () => false,
     getPermissionForResource

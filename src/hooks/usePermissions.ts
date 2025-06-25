@@ -17,8 +17,11 @@ export const usePermissions = () => {
     isBlocked: unified.accessLevel === 'blocked',
     isExpired: unified.accessLevel === 'expired',
     
+    // NUEVA PROPIEDAD: Detectar plan freemium
+    isFreemium: unified.accessLevel === 'freemium',
+    
     // NUEVA PROPIEDAD CRÍTICA: Detectar trial expirado específicamente
-    isTrialExpired: unified.accessLevel === 'expired' && unified.accessReason.includes('TRIAL_EXPIRED'),
+    isTrialExpired: unified.accessLevel === 'freemium' && unified.accessReason.includes('TRIAL_EXPIRED'),
     
     // Permisos específicos
     canCreateConductor: unified.canCreateConductor.allowed,
