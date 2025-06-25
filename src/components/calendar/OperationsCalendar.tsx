@@ -1,9 +1,7 @@
+
 import { useState } from 'react';
-import FullCalendar, {
-  type EventClickArg,
-  type EventInput,
-  type DateClickArg,
-} from '@fullcalendar/react';
+import FullCalendar from '@fullcalendar/react';
+import { EventClickArg, EventInput, DateClickArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -12,8 +10,6 @@ import esLocale from '@fullcalendar/core/locales/es';
 import { useOperacionesEventos } from '@/hooks/useOperacionesEventos';
 import { TripDetailModal } from '@/components/dashboard/TripDetailModal';
 import { CalendarEvent, useCalendarEvents } from '@/hooks/useCalendarEvents';
-
-
 
 interface OperationsCalendarProps {
   showViajes: boolean;

@@ -300,8 +300,6 @@ export function SmartUbicacionFormV2({
     return camposAutoCompletados.has(field);
   };
 
-  const isRFCRequired = formData.tipoUbicacion !== 'Paso Intermedio';
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -486,7 +484,6 @@ export function SmartUbicacionFormV2({
                 Domicilio
               </Label>
 
-              {/* ... keep existing domicilio fields the same ... */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="pais">País *</Label>
@@ -546,7 +543,6 @@ export function SmartUbicacionFormV2({
                     id="colonia"
                     value={formData.domicilio.colonia}
                     onChange={(e) => handleFieldChange('domicilio.colonia', e.target.value)}
-                    placeholder="Colonia"
                     readOnly={isFieldLocked('colonia')}
                     placeholder={isFieldLocked('colonia') && !formData.domicilio.colonia ? 'Se autocompleta con el C.P.' : 'Colonia'}
                     className="bg-white"
@@ -584,8 +580,6 @@ export function SmartUbicacionFormV2({
                     id="numInterior"
                     value={formData.domicilio.numInterior}
                     onChange={(e) => handleFieldChange('domicilio.numInterior', e.target.value)}
-                    placeholder="Ej: 1A, Local 2"
-                    readOnly={isFieldLocked('numInterior')}
                     className="bg-white"
                   />
                 </div>
@@ -598,9 +592,6 @@ export function SmartUbicacionFormV2({
                     id="localidad"
                     value={formData.domicilio.localidad}
                     onChange={(e) => handleFieldChange('domicilio.localidad', e.target.value)}
-                    placeholder="Localidad o población"
-                    readOnly={isFieldLocked('localidad')}
-                    placeholder={isFieldLocked('localidad') && !formData.domicilio.localidad ? 'Se autocompleta con el C.P.' : 'Localidad'}
                     className="bg-white"
                   />
                 </div>
@@ -611,8 +602,7 @@ export function SmartUbicacionFormV2({
                     id="referencia"
                     value={formData.domicilio.referencia}
                     onChange={(e) => handleFieldChange('domicilio.referencia', e.target.value)}
-                    placeholder="Ej: Entre calles, color de fachada"
-                    readOnly={isFieldLocked('referencia')}
+                    placeholder="Punto de referencia"
                     className="bg-white"
                   />
                 </div>
@@ -620,12 +610,12 @@ export function SmartUbicacionFormV2({
             </div>
           )}
 
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-end gap-4 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!isFormValid()} className="bg-blue-600 hover:bg-blue-700">
-              {ubicacion ? 'Actualizar Ubicación' : 'Agregar Ubicación'}
+            <Button type="submit">
+              Guardar Ubicación
             </Button>
           </div>
         </form>

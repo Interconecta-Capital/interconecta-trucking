@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -627,7 +626,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
               <AlertDialogCancel onClick={handleEliminarBorrador} className="bg-red-50 text-red-700 hover:bg-red-100">
                 Eliminar Borrador
               </AlertDialogCancel>
-              <AlertDialogAction onClick={handleCrearNuevoViaje} variant="outline">
+              <AlertDialogAction onClick={handleCrearNuevoViaje} className="bg-gray-100 text-gray-700 hover:bg-gray-200">
                 Crear Nuevo Viaje
               </AlertDialogAction>
               <AlertDialogAction onClick={handleCargarBorradorActivo}>
@@ -648,7 +647,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Continuar Editando</AlertDialogCancel>
-              <AlertDialogAction className="bg-red-600 text-white" onClick={forceClose}>
+              <AlertDialogAction onClick={forceClose} className="bg-red-600 text-white hover:bg-red-700">
                 Salir sin Guardar
               </AlertDialogAction>
               <AlertDialogAction onClick={handleSaveAndExit}>Guardar y Salir</AlertDialogAction>

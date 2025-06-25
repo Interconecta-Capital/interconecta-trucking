@@ -250,6 +250,16 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
                   </AlertDescription>
                 </Alert>
               )}
+
+              {/* Show validation errors from AI */}
+              {clienteValidation && !isClienteRfcValid && clienteValidation.errors && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Validación IA:</strong> {clienteValidation.errors[0] || 'Error de validación'}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
         </CardContent>

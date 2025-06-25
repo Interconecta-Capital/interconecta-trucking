@@ -9,31 +9,22 @@ import { BorradoresSection } from '@/components/viajes/BorradoresSection';
 import { ViajeWizardModalProvider, useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
 import { toast } from 'sonner';
+import { Viaje } from '@/types/viaje';
 
-// Lazy load components
-const ViajesAnalytics = lazy(() => import('@/components/analytics/ViajesAnalytics'));
-
-interface Viaje {
-  id: string;
-  origen: string;
-  destino: string;
-  estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado';
-  fecha_inicio_programada: string;
-  fecha_fin_programada: string;
-  conductor_id?: string;
-  vehiculo_id?: string;
-  observaciones?: string;
-  tracking_data?: any;
-  created_at: string;
-  updated_at: string;
-}
+// Lazy load components with proper default export handling
+const ViajesAnalytics = lazy(() => 
+  import('@/components/analytics/ViajesAnalytics').then(module => ({
+    default: module.default || module
+  }))
+);
 
 const estadoColors = {
   programado: 'bg-blue-100 text-blue-800',
   en_transito: 'bg-yellow-100 text-yellow-800',
   completado: 'bg-green-100 text-green-800',
   cancelado: 'bg-red-100 text-red-800',
-  retrasado: 'bg-orange-100 text-orange-800'
+  retrasado: 'bg-orange-100 text-orange-800',
+  borrador: 'bg-gray-100 text-gray-800'
 };
 
 const estadoLabels = {
@@ -41,7 +32,8 @@ const estadoLabels = {
   en_transito: 'En Tránsito',
   completado: 'Completado',
   cancelado: 'Cancelado',
-  retrasado: 'Retrasado'
+  retrasado: 'Retrasado',
+  borrador: 'Borrador'
 };
 
 function ViajesContent() {
