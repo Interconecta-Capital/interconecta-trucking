@@ -338,15 +338,15 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       // Marcar como confirmado para prevenir duplicados
       setViajeConfirmado(true);
 
-      // 2. Generar Carta Porte desde el viaje
-      console.log('📄 Generando Carta Porte...');
-      const resultado = await ViajeCartaPorteService.crearCartaPorteDesdeViaje(
+      // 2. Generar borrador de Carta Porte desde el viaje
+      console.log('📄 Generando borrador de Carta Porte...');
+      const resultado = await ViajeCartaPorteService.crearBorradorDesdeViaje(
         nuevoViaje.id,
         data
       );
 
-      console.log('✅ Documentos generados exitosamente');
-      toast.success('Viaje programado y documentos generados exitosamente');
+      console.log('✅ Borrador creado exitosamente');
+      toast.success('Viaje programado correctamente');
       setInitialSnapshot(JSON.stringify(data));
       setHasUnsavedChanges(false);
 
@@ -355,13 +355,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
         if (onComplete) {
           onComplete();
         } else {
-          navigate('/viajes', {
-            state: {
-              message: 'Viaje programado y documentos generados exitosamente',
-              viajeId: nuevoViaje.id,
-              cartaPorteId: resultado.carta_porte.id
-            }
-          });
+          navigate(`/carta-porte/editor/${resultado.borrador_id}`);
         }
       }, 2000);
 
