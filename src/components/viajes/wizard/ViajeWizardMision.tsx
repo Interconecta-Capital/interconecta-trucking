@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -251,19 +250,6 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
                   </AlertDescription>
                 </Alert>
               )}
-
-              {/* Show client validation feedback from AI if available */}
-              {clienteValidation && (
-                <div className={`p-3 rounded-lg border ${
-                  clienteValidation.isValid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                }`}>
-                  <p className={`text-sm ${
-                    clienteValidation.isValid ? 'text-green-800' : 'text-red-800'
-                  }`}>
-                    {clienteValidation.errors?.[0] || (clienteValidation.isValid ? 'Cliente validado correctamente' : 'Error en validación')}
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
@@ -465,4 +451,3 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
     </div>
   );
 }
-
