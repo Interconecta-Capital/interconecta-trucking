@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
-import { EventClickArg, EventInput, DateClickArg } from '@fullcalendar/core';
+import { EventClickArg, EventInput } from '@fullcalendar/core';
+import { DateClickArg } from '@fullcalendar/interaction';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -9,16 +10,24 @@ import listPlugin from '@fullcalendar/list';
 import esLocale from '@fullcalendar/core/locales/es';
 import { useOperacionesEventos } from '@/hooks/useOperacionesEventos';
 import { TripDetailModal } from '@/components/dashboard/TripDetailModal';
-import { CalendarEvent, useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 
 interface OperationsCalendarProps {
   showViajes: boolean;
   showMantenimientos: boolean;
 }
 
+interface CalendarEventData {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  resource: any;
+}
+
 export function OperationsCalendar({ showViajes, showMantenimientos }: OperationsCalendarProps) {
   const { eventos, isLoading } = useOperacionesEventos();
-  const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  const [selected, setSelected] = useState<CalendarEventData | null>(null);
   const [open, setOpen] = useState(false);
   const { createEvent } = useCalendarEvents();
   const [extraEvents, setExtraEvents] = useState<EventInput[]>([]);
@@ -68,7 +77,7 @@ export function OperationsCalendar({ showViajes, showMantenimientos }: Operation
   const allEvents = [...fcEvents, ...extraEvents];
 
   const handleEventClick = (info: EventClickArg) => {
-    const event: CalendarEvent = {
+    const event: CalendarEventData = {
       id: String(info.event.id),
       title: info.event.title,
       start: info.event.start ?? new Date(),

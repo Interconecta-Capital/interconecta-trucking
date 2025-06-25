@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -269,7 +270,7 @@ export const useViajes = () => {
       // Safe type conversion with proper error handling
       const trackingData = data.tracking_data;
       if (trackingData && typeof trackingData === 'object' && !Array.isArray(trackingData)) {
-        return trackingData as ViajeWizardData;
+        return trackingData as unknown as ViajeWizardData;
       }
       
       console.warn('Invalid tracking_data format:', trackingData);
@@ -420,3 +421,6 @@ export const useViajes = () => {
     setCurrentDraftId
   };
 };
+
+// Export the Viaje type
+export type { Viaje };

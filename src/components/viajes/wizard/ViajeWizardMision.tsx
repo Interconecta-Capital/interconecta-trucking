@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Package, Search, AlertTriangle, Users, Sparkles, CheckCircle2, CheckCircle, Globe } from 'lucide-react';
 import { useSocios } from '@/hooks/useSocios';
 import { useAuth } from '@/hooks/useAuth';
-import { useAIValidation } from '@/hooks/ai/useAIValidation';
+import { useAIValidation } from '@/hooks/useAIValidation';
 import { ViajeWizardData } from '../ViajeWizard';
 import { SmartMercanciaInputMejorado } from '@/components/ai/SmartMercanciaInputMejorado';
 import { RFCValidator } from '@/utils/rfcValidation';
@@ -252,11 +252,11 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
               )}
 
               {/* Show validation errors from AI */}
-              {clienteValidation && !isClienteRfcValid && clienteValidation.errors && (
+              {clienteValidation && !isClienteRfcValid && clienteValidation.message && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Validación IA:</strong> {clienteValidation.errors[0] || 'Error de validación'}
+                    <strong>Validación IA:</strong> {clienteValidation.message || 'Error de validación'}
                   </AlertDescription>
                 </Alert>
               )}

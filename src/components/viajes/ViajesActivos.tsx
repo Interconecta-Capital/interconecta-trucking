@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ResponsiveCard, ResponsiveCardContent, ResponsiveCardHeader, ResponsiveCardTitle } from '@/components/ui/responsive-card';
@@ -33,9 +32,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { useViajes } from '@/hooks/useViajes';
+import { useViajes, type Viaje } from '@/hooks/useViajes';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
-import { Viaje } from '@/hooks/useViajes';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ViajesActivosProps {

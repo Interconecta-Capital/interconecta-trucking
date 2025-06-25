@@ -12,11 +12,10 @@ import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
 
 // Lazy load components with proper default export handling
-const ViajesAnalytics = lazy(() => 
-  import('@/components/analytics/ViajesAnalytics').then(module => ({
-    default: module.default || module
-  }))
-);
+const ViajesAnalytics = lazy(async () => {
+  const module = await import('@/components/analytics/ViajesAnalytics');
+  return { default: module.default };
+});
 
 const estadoColors = {
   programado: 'bg-blue-100 text-blue-800',
