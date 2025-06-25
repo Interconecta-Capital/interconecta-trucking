@@ -32,7 +32,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { useViajes, type Viaje } from '@/hooks/useViajes';
+import { useViajes } from '@/hooks/useViajes';
+import { type Viaje } from '@/hooks/viajes/types';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 

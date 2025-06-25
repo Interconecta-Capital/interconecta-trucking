@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,11 +10,12 @@ import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
 import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
 
-// Lazy load components with proper default export handling
-const ViajesAnalytics = lazy(async () => {
-  const module = await import('@/components/analytics/ViajesAnalytics');
-  return { default: module.default };
-});
+// Lazy load components - fix default export issue
+const ViajesAnalytics = lazy(() => 
+  import('@/components/analytics/ViajesAnalytics').then(module => ({
+    default: module.default || module.ViajesAnalytics || module
+  }))
+);
 
 const estadoColors = {
   programado: 'bg-blue-100 text-blue-800',

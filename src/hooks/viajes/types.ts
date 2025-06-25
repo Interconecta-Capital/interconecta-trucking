@@ -6,7 +6,7 @@ export interface Viaje {
   destino: string;
   conductor_id?: string;
   vehiculo_id?: string;
-  estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado';
+  estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado' | 'borrador';
   fecha_inicio_programada: string;
   fecha_inicio_real?: string;
   fecha_fin_programada: string;
