@@ -166,14 +166,14 @@ function ViajesContent() {
               {viajes.map((viaje) => (
                 <Card key={viaje.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between viaje-card">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
                           <span className="font-medium text-lg truncate">
                             {viaje.origen} → {viaje.destino}
                           </span>
-                          <Badge className={estadoColors[viaje.estado]}>
+                          <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
                             {estadoLabels[viaje.estado]}
                           </Badge>
                         </div>
@@ -218,7 +218,7 @@ function ViajesContent() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 ml-4">
+                      <div className="flex items-center gap-2 ml-4 viaje-card-actions">
                         <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
                           <Eye className="h-4 w-4" />
                         </Button>
