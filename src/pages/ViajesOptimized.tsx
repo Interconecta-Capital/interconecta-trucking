@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,8 @@ import { ViajeWizardModalProvider, useViajeWizardModal } from '@/contexts/ViajeW
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
 import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
+import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
+import { useNavigate } from 'react-router-dom';
 
 // Lazy load components - fix for named export
 const ViajesAnalytics = lazy(() => 
@@ -37,13 +39,35 @@ const estadoLabels = {
 };
 
 function ViajesContent() {
+  const navigate = useNavigate();
   const { viajes, isLoading, eliminarViaje } = useViajes();
   const { openViajeWizard } = useViajeWizardModal();
+  const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
 
-  const handleEliminarViaje = (viaje: Viaje) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {
-      eliminarViaje(viaje.id);
+  const handleEliminarViaje = async (viaje: Viaje) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {
+      return;
     }
+
+    try {
+      const res = await fetch(`/api/trips/${viaje.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Network response was not ok');
+      eliminarViaje(viaje.id);
+      toast.success('Viaje eliminado');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al eliminar el viaje');
+    }
+  };
+
+  const handleVerViaje = (viaje: Viaje) => {
+    setSelectedViaje(viaje);
+    setShowTrackingModal(true);
+  };
+
+  const handleEditarViaje = (viaje: Viaje) => {
+    navigate(`/viajes/editar/${viaje.id}`);
   };
 
   if (isLoading) {
@@ -192,15 +216,15 @@ function ViajesContent() {
                       </div>
 
                       <div className="flex items-center gap-2 ml-4">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleEliminarViaje(viaje)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
@@ -215,6 +239,12 @@ function ViajesContent() {
           )}
         </CardContent>
       </Card>
+
+      <ViajeTrackingModal
+        viaje={selectedViaje}
+        open={showTrackingModal}
+        onOpenChange={setShowTrackingModal}
+      />
     </div>
   );
 }
