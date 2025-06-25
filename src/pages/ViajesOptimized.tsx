@@ -1,154 +1,239 @@
 
-import { useState } from 'react';
-import { Plus, Navigation, Filter, Search } from 'lucide-react';
+import React, { Suspense, lazy } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ViajesActivos } from '@/components/viajes/ViajesActivos';
-import { ViajesHistorial } from '@/components/viajes/ViajesHistorial';
-import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
-import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
+import { Badge } from '@/components/ui/badge';
+import { Plus, MapPin, User, Calendar, Clock, Eye, Edit, Trash2, Route } from 'lucide-react';
 import { useViajes } from '@/hooks/useViajes';
-import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
-import { ProtectedContent } from '@/components/ProtectedContent';
-import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { BorradoresSection } from '@/components/viajes/BorradoresSection';
+import { ViajeWizardModalProvider, useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
+import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
 import { toast } from 'sonner';
 
-export default function ViajesOptimized() {
-  const { viajes, isLoading } = useViajes();
-  const permissions = useUnifiedPermissions();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('activos');
+// Lazy load components
+const ViajesAnalytics = lazy(() => import('@/components/analytics/ViajesAnalytics'));
+
+interface Viaje {
+  id: string;
+  origen: string;
+  destino: string;
+  estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado';
+  fecha_inicio_programada: string;
+  fecha_fin_programada: string;
+  conductor_id?: string;
+  vehiculo_id?: string;
+  observaciones?: string;
+  tracking_data?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+const estadoColors = {
+  programado: 'bg-blue-100 text-blue-800',
+  en_transito: 'bg-yellow-100 text-yellow-800',
+  completado: 'bg-green-100 text-green-800',
+  cancelado: 'bg-red-100 text-red-800',
+  retrasado: 'bg-orange-100 text-orange-800'
+};
+
+const estadoLabels = {
+  programado: 'Programado',
+  en_transito: 'En Tránsito',
+  completado: 'Completado',
+  cancelado: 'Cancelado',
+  retrasado: 'Retrasado'
+};
+
+function ViajesContent() {
+  const { viajes, isLoading, eliminarViaje } = useViajes();
   const { openViajeWizard } = useViajeWizardModal();
 
-  const handleNewViaje = () => {
-    console.log('[Viajes] 🆕 Iniciando programación de nuevo viaje');
-    
-    // Verificar permisos antes de abrir el wizard
-    const permissionCheck = permissions.canCreateViaje;
-    if (!permissionCheck.allowed) {
-      toast.error(permissionCheck.reason || 'No tienes permisos para programar viajes');
-      return;
+  const handleEliminarViaje = (viaje: Viaje) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {
+      eliminarViaje(viaje.id);
     }
-    
-    // Abrir el ViajeWizard en modal
-    openViajeWizard();
   };
 
-  const canCreateViaje = permissions.canCreateViaje;
-  
-  const viajesActivos = viajes.filter(v => ['programado', 'en_transito', 'retrasado'].includes(v.estado));
-  const viajesCompletados = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-64"></div>
+          </div>
+          <div className="h-10 bg-gray-200 rounded w-32"></div>
+        </div>
+
+        {/* Cards skeleton */}
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <ProtectedContent requiredFeature="viajes">
-      <div className="container mx-auto py-8 space-y-8 max-w-7xl">
-        {/* Notificaciones de plan */}
-        <PlanNotifications />
-
-        {/* Header con botón de creación */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-light">
-              <Navigation className="h-6 w-6 text-blue-interconecta" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Viajes</h1>
-              <p className="text-sm text-gray-600 mt-1">Gestiona y monitorea tus viajes</p>
-            </div>
-          </div>
-          
-          <Button 
-            onClick={handleNewViaje} 
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-            disabled={!canCreateViaje.allowed}
-          >
-            <Plus className="h-5 w-5" />
-            Programar Viaje
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de Viajes</h1>
+          <p className="text-muted-foreground mt-2">
+            Administra y da seguimiento a todos tus viajes de transporte
+          </p>
         </div>
+        <Button onClick={openViajeWizard} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Programar Viaje
+        </Button>
+      </div>
 
-        {!canCreateViaje.allowed && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">{canCreateViaje.reason}</p>
+      {/* Sección de Borradores */}
+      <BorradoresSection />
+
+      {/* Analytics */}
+      <Suspense fallback={
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="grid grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      }>
+        <ViajesAnalytics />
+      </Suspense>
+
+      {/* Lista de Viajes */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Route className="h-5 w-5 text-blue-600" />
+            <h2 className="text-xl font-semibold">Viajes Activos</h2>
+            <Badge variant="secondary">{viajes.length}</Badge>
           </div>
-        )}
 
-        {/* Filtros y búsqueda */}
-        <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
-            <Input
-              placeholder="Buscar por origen, destino o carta porte..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
-            />
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-blue-interconecta">Total Viajes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-blue-interconecta">{viajes.length}</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-green-700">Activos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-green-700">{viajesActivos.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-purple-700">Completados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-purple-700">{viajesCompletados.length}</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={`text-lg font-semibold ${isLoading ? 'text-yellow-600' : 'text-green-600'}`}>
-                {isLoading ? 'Cargando...' : 'Listo'}
+          {viajes.length === 0 ? (
+            <div className="text-center py-12">
+              <Route className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-lg font-medium text-gray-900 mb-2">No hay viajes programados</p>
+              <p className="text-gray-600 mb-4">
+                Comienza creando tu primer viaje para gestionar tus operaciones de transporte
               </p>
-            </CardContent>
-          </Card>
-        </div>
+              <Button onClick={openViajeWizard} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Programar Primer Viaje
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {viajes.map((viaje) => (
+                <Card key={viaje.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium text-lg truncate">
+                            {viaje.origen} → {viaje.destino}
+                          </span>
+                          <Badge className={estadoColors[viaje.estado]}>
+                            {estadoLabels[viaje.estado]}
+                          </Badge>
+                        </div>
 
-        {/* Tabs de viajes */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="activos">Viajes Activos ({viajesActivos.length})</TabsTrigger>
-            <TabsTrigger value="historial">Historial ({viajesCompletados.length})</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="activos" className="space-y-4">
-            <ViajesActivos searchTerm={searchTerm} />
-          </TabsContent>
-          
-          <TabsContent value="historial" className="space-y-4">
-            <ViajesHistorial searchTerm={searchTerm} />
-          </TabsContent>
-        </Tabs>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              Inicio: {new Date(viaje.fecha_inicio_programada).toLocaleDateString('es-MX', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
 
-        {/* Modal del Wizard */}
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              Fin: {new Date(viaje.fecha_fin_programada).toLocaleDateString('es-MX', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+
+                          {viaje.tracking_data?.cliente && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span className="truncate">
+                                {viaje.tracking_data.cliente.nombre_razon_social}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {viaje.observaciones && (
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                            {viaje.observaciones}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEliminarViaje(viaje)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function ViajesOptimized() {
+  return (
+    <ViajeWizardModalProvider>
+      <div className="container mx-auto py-6">
+        <ViajesContent />
         <ViajeWizardModal />
       </div>
-    </ProtectedContent>
+    </ViajeWizardModalProvider>
   );
 }

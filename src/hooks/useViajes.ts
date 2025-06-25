@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,18 +69,37 @@ function markViajeAsCompleted(signature: string) {
 export const useViajes = () => {
   const queryClient = useQueryClient();
   const [isCreatingViaje, setIsCreatingViaje] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
-  // Obtener todos los viajes
+  // Obtener todos los viajes (excluyendo borradores)
   const { data: viajes = [], isLoading } = useQuery({
     queryKey: ['viajes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('viajes')
         .select('*')
+        .neq('estado', 'borrador') // Excluir borradores de la lista principal
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Viaje[];
+    }
+  });
+
+  // Obtener borrador activo del usuario
+  const { data: borradorActivo, isLoading: loadingBorrador } = useQuery({
+    queryKey: ['borrador-activo'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('viajes')
+        .select('*')
+        .eq('estado', 'borrador')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as Viaje | null;
     }
   });
 
@@ -200,6 +218,131 @@ export const useViajes = () => {
     }
   });
 
+  // Guardar borrador de viaje - MEJORADO
+  const guardarBorradorViaje = useMutation({
+    mutationFn: async ({ wizardData, borradorId }: { wizardData: ViajeWizardData; borradorId?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      const viajeId = borradorId || `viaje-draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      const viajeData = {
+        id: viajeId,
+        carta_porte_id: `DRAFT-${Date.now()}`,
+        origen: wizardData.origen?.domicilio?.calle || 'Origen por definir',
+        destino: wizardData.destino?.domicilio?.calle || 'Destino por definir',
+        conductor_id: wizardData.conductor?.id,
+        vehiculo_id: wizardData.vehiculo?.id,
+        estado: 'borrador' as const,
+        fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
+        fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        observaciones: `Borrador - ${wizardData.cliente?.nombre_razon_social || 'Viaje en progreso'}`,
+        tracking_data: JSON.parse(JSON.stringify(wizardData)),
+        user_id: user.id
+      };
+
+      if (borradorId) {
+        const { data, error } = await supabase
+          .from('viajes')
+          .update(viajeData)
+          .eq('id', borradorId)
+          .select()
+          .single();
+        if (error) throw error;
+        return data as Viaje;
+      }
+
+      const { data, error } = await supabase
+        .from('viajes')
+        .insert(viajeData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Viaje;
+    },
+    onSuccess: (viaje) => {
+      queryClient.invalidateQueries({ queryKey: ['borrador-activo'] });
+      setCurrentDraftId(viaje.id);
+      toast.success('Borrador guardado exitosamente');
+    },
+    onError: (error) => {
+      console.error('Error guardando borrador:', error);
+      toast.error('Error al guardar borrador');
+    }
+  });
+
+  // Cargar borrador - NUEVO
+  const cargarBorrador = async (borradorId: string): Promise<ViajeWizardData | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('viajes')
+        .select('tracking_data')
+        .eq('id', borradorId)
+        .eq('estado', 'borrador')
+        .single();
+
+      if (error) throw error;
+      return data.tracking_data as ViajeWizardData;
+    } catch (error) {
+      console.error('Error cargando borrador:', error);
+      return null;
+    }
+  };
+
+  // Eliminar borrador - NUEVO
+  const eliminarBorrador = useMutation({
+    mutationFn: async (borradorId: string) => {
+      const { error } = await supabase
+        .from('viajes')
+        .delete()
+        .eq('id', borradorId)
+        .eq('estado', 'borrador');
+      
+      if (error) throw error;
+      return borradorId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['borrador-activo'] });
+      setCurrentDraftId(null);
+      toast.success('Borrador eliminado');
+    },
+    onError: (error) => {
+      console.error('Error eliminando borrador:', error);
+      toast.error('Error al eliminar borrador');
+    }
+  });
+
+  // Convertir borrador a viaje - NUEVO
+  const convertirBorradorAViaje = useMutation({
+    mutationFn: async (borradorId: string) => {
+      const { data, error } = await supabase
+        .from('viajes')
+        .update({ 
+          estado: 'programado',
+          carta_porte_id: `CP-${Date.now()}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', borradorId)
+        .eq('estado', 'borrador')
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Viaje;
+    },
+    onSuccess: (viaje) => {
+      queryClient.invalidateQueries({ queryKey: ['viajes'] });
+      queryClient.invalidateQueries({ queryKey: ['borrador-activo'] });
+      setCurrentDraftId(null);
+      toast.success(`Viaje programado exitosamente: ${viaje.origen} → ${viaje.destino}`);
+    },
+    onError: (error) => {
+      console.error('Error convirtiendo borrador:', error);
+      toast.error('Error al programar el viaje');
+    }
+  });
+
   // Actualizar estado del viaje
   const actualizarViaje = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Viaje> }) => {
@@ -259,69 +402,31 @@ export const useViajes = () => {
     }
   });
 
-  // Guardar borrador de viaje
-  const guardarBorradorViaje = useMutation({
-    mutationFn: async ({ wizardData, borradorId }: { wizardData: ViajeWizardData; borradorId?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
-
-      const viajeId = borradorId || `viaje-draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-      const viajeData = {
-        id: viajeId,
-        carta_porte_id: `DRAFT-${Date.now()}`,
-        origen: wizardData.origen?.domicilio?.calle || '',
-        destino: wizardData.destino?.domicilio?.calle || '',
-        conductor_id: wizardData.conductor?.id,
-        vehiculo_id: wizardData.vehiculo?.id,
-        estado: 'borrador' as const,
-        fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
-        fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        observaciones: `Borrador - ${wizardData.cliente?.nombre_razon_social || 'Viaje'}`,
-        tracking_data: JSON.parse(JSON.stringify(wizardData)),
-        user_id: user.id
-      };
-
-      if (borradorId) {
-        const { data, error } = await supabase
-          .from('viajes')
-          .update(viajeData)
-          .eq('id', borradorId)
-          .select()
-          .single();
-        if (error) throw error;
-        return data as Viaje;
-      }
-
-      const { data, error } = await supabase
-        .from('viajes')
-        .insert(viajeData)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Viaje;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['viajes'] });
-      toast.success('Borrador guardado exitosamente');
-    },
-    onError: (error) => {
-      console.error('Error guardando borrador:', error);
-      toast.error('Error al guardar borrador');
-    }
-  });
-
   return {
+    // Datos
     viajes,
     isLoading,
+    borradorActivo,
+    loadingBorrador,
+    currentDraftId,
+    
+    // Funciones principales
     crearViaje: crearViaje.mutate,
     isCreatingViaje: isCreatingViaje || crearViaje.isPending,
     actualizarViaje: actualizarViaje.mutate,
     isUpdatingViaje: actualizarViaje.isPending,
     cancelarViaje: cancelarViaje.mutate,
     eliminarViaje: eliminarViaje.mutate,
+    
+    // Funciones de borrador - NUEVAS
     guardarBorradorViaje: guardarBorradorViaje.mutateAsync,
-    isSavingDraft: guardarBorradorViaje.isPending
+    isSavingDraft: guardarBorradorViaje.isPending,
+    cargarBorrador,
+    eliminarBorrador: eliminarBorrador.mutate,
+    convertirBorradorAViaje: convertirBorradorAViaje.mutate,
+    isConvertingDraft: convertirBorradorAViaje.isPending,
+    
+    // Control de estado
+    setCurrentDraftId
   };
 };

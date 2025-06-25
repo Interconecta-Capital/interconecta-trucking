@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import {
   AlertDialogCancel
 } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, CheckCircle, Route, Package, MapPin, Users, Truck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Route, Package, MapPin, Users, Truck, Save, FileText } from 'lucide-react';
 import { ViajeWizardMision } from './wizard/ViajeWizardMision';
 import { ViajeWizardRuta } from './wizard/ViajeWizardRuta';
 import { ViajeWizardActivos } from './wizard/ViajeWizardActivos';
@@ -82,15 +83,28 @@ const STEPS = [
 interface ViajeWizardProps {
   onCancel?: () => void
   onComplete?: () => void
+  borradorId?: string // NUEVO: Para cargar un borrador existente
 }
 
 export interface ViajeWizardHandle {
   requestClose: () => void
 }
 
-export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(function ViajeWizard({ onCancel, onComplete }: ViajeWizardProps, ref) {
+export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(function ViajeWizard({ onCancel, onComplete, borradorId }: ViajeWizardProps, ref) {
   const navigate = useNavigate();
-  const { crearViaje, isCreatingViaje, guardarBorradorViaje, isSavingDraft } = useViajes();
+  const { 
+    crearViaje, 
+    isCreatingViaje, 
+    guardarBorradorViaje, 
+    isSavingDraft,
+    cargarBorrador,
+    borradorActivo,
+    loadingBorrador,
+    eliminarBorrador,
+    convertirBorradorAViaje,
+    isConvertingDraft
+  } = useViajes();
+  
   const { 
     startWizardTutorial, 
     isWizardTutorialActive,
@@ -102,13 +116,39 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     isValid: false,
     clienteRfcValido: false
   });
+  
   const [isGeneratingDocuments, setIsGeneratingDocuments] = useState(false);
   const [viajeConfirmado, setViajeConfirmado] = useState(false);
   const [tutorialStarted, setTutorialStarted] = useState(false);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(borradorId || null);
   const [initialSnapshot, setInitialSnapshot] = useState(JSON.stringify({ currentStep: 1 }));
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  const [showBorradorOptions, setShowBorradorOptions] = useState(false);
+
+  // Cargar borrador existente al inicializar
+  useEffect(() => {
+    const loadExistingDraft = async () => {
+      // Si se pasó un borradorId específico, cargarlo
+      if (borradorId) {
+        console.log('🔄 Cargando borrador específico:', borradorId);
+        const borradorData = await cargarBorrador(borradorId);
+        if (borradorData) {
+          setData(borradorData);
+          setCurrentDraftId(borradorId);
+          setInitialSnapshot(JSON.stringify(borradorData));
+          toast.success('Borrador cargado exitosamente');
+        }
+      }
+      // Si no hay borradorId pero existe un borrador activo, preguntar si cargarlo
+      else if (borradorActivo && !loadingBorrador) {
+        console.log('🔍 Borrador activo encontrado:', borradorActivo.id);
+        setShowBorradorOptions(true);
+      }
+    };
+
+    loadExistingDraft();
+  }, [borradorId, borradorActivo, loadingBorrador, cargarBorrador]);
 
   // Iniciar tutorial solo la primera vez que se abre el wizard
   useEffect(() => {
@@ -131,9 +171,33 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     setHasUnsavedChanges(JSON.stringify(data) !== initialSnapshot);
   }, [data, initialSnapshot]);
 
-  useEffect(() => {
-    setInitialSnapshot(JSON.stringify(data));
-  }, []);
+  // Cargar borrador activo
+  const handleCargarBorradorActivo = async () => {
+    if (borradorActivo) {
+      const borradorData = await cargarBorrador(borradorActivo.id);
+      if (borradorData) {
+        setData(borradorData);
+        setCurrentDraftId(borradorActivo.id);
+        setInitialSnapshot(JSON.stringify(borradorData));
+        setShowBorradorOptions(false);
+        toast.success('Borrador cargado exitosamente');
+      }
+    }
+  };
+
+  // Crear nuevo viaje (ignorar borrador)
+  const handleCrearNuevoViaje = () => {
+    setShowBorradorOptions(false);
+    // El wizard ya está limpio, solo cerramos el diálogo
+  };
+
+  // Eliminar borrador activo
+  const handleEliminarBorrador = () => {
+    if (borradorActivo) {
+      eliminarBorrador(borradorActivo.id);
+      setShowBorradorOptions(false);
+    }
+  };
 
   const canAdvance = () => {
     switch (data.currentStep) {
@@ -169,20 +233,37 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     }
   };
 
+  // Guardar borrador - MEJORADO
   const handleSaveDraft = async () => {
     try {
-      const result = await guardarBorradorViaje({ wizardData: data, borradorId: draftId || undefined });
-      setDraftId(result.id);
+      const result = await guardarBorradorViaje({ 
+        wizardData: data, 
+        borradorId: currentDraftId || undefined 
+      });
+      
+      setCurrentDraftId(result.id);
       setInitialSnapshot(JSON.stringify(data));
       setHasUnsavedChanges(false);
+      
+      console.log('💾 Borrador guardado con ID:', result.id);
     } catch (error) {
       console.error('Error saving draft:', error);
     }
   };
 
+  // Guardar y salir - MEJORADO
   const handleSaveAndExit = async () => {
     try {
       await handleSaveDraft();
+      toast.success('Borrador guardado. Puedes continuar editándolo más tarde.', {
+        duration: 4000,
+        action: {
+          label: 'Continuar editando',
+          onClick: () => {
+            // El modal ya está abierto, no hacer nada
+          }
+        }
+      });
       forceClose();
     } catch (error) {
       console.error('Error saving and exiting:', error);
@@ -209,9 +290,10 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     requestClose: handleRequestClose
   }));
 
+  // Finalizar viaje (convertir borrador o crear nuevo)
   const handleConfirmarViaje = async () => {
     // Prevenir múltiples ejecuciones
-    if (isGeneratingDocuments || isCreatingViaje || viajeConfirmado) {
+    if (isGeneratingDocuments || isCreatingViaje || viajeConfirmado || isConvertingDraft) {
       console.log('🚫 Proceso ya en curso, ignorando clic adicional');
       return;
     }
@@ -220,26 +302,45 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       setIsGeneratingDocuments(true);
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
-      // 1. Crear el viaje primero
-      console.log('📝 Paso 1: Creando viaje en base de datos...');
-      const nuevoViaje = await new Promise<any>((resolve, reject) => {
-        crearViaje(data, {
-          onSuccess: (viaje) => {
-            console.log('✅ Viaje creado con ID:', viaje.id);
-            resolve(viaje);
-          },
-          onError: (error) => {
-            console.error('❌ Error creando viaje:', error);
-            reject(error);
-          }
+      let nuevoViaje;
+
+      // Si es un borrador existente, convertirlo a viaje
+      if (currentDraftId) {
+        console.log('📝 Convirtiendo borrador a viaje programado...');
+        nuevoViaje = await new Promise<any>((resolve, reject) => {
+          convertirBorradorAViaje(currentDraftId, {
+            onSuccess: (viaje) => {
+              console.log('✅ Borrador convertido con ID:', viaje.id);
+              resolve(viaje);
+            },
+            onError: (error) => {
+              console.error('❌ Error convirtiendo borrador:', error);
+              reject(error);
+            }
+          });
         });
-      });
+      } else {
+        // Crear nuevo viaje
+        console.log('📝 Creando nuevo viaje...');
+        nuevoViaje = await new Promise<any>((resolve, reject) => {
+          crearViaje(data, {
+            onSuccess: (viaje) => {
+              console.log('✅ Viaje creado con ID:', viaje.id);
+              resolve(viaje);
+            },
+            onError: (error) => {
+              console.error('❌ Error creando viaje:', error);
+              reject(error);
+            }
+          });
+        });
+      }
 
       // Marcar como confirmado para prevenir duplicados
       setViajeConfirmado(true);
 
       // 2. Generar Carta Porte desde el viaje
-      console.log('📄 Paso 2: Generando Carta Porte...');
+      console.log('📄 Generando Carta Porte...');
       const resultado = await ViajeCartaPorteService.crearCartaPorteDesdeViaje(
         nuevoViaje.id,
         data
@@ -305,7 +406,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
 
   const currentStepInfo = STEPS.find(step => step.id === data.currentStep);
   const progress = (data.currentStep / STEPS.length) * 100;
-  const isProcessing = isCreatingViaje || isGeneratingDocuments;
+  const isProcessing = isCreatingViaje || isGeneratingDocuments || isConvertingDraft;
 
   // Obtener mensaje de validación específico para el paso 1
   const getStep1ValidationMessage = () => {
@@ -353,7 +454,14 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
               <div className="flex items-center gap-3">
                 <Route className="h-6 w-6 text-blue-600" />
                 <div>
-                  <h1 className="text-2xl font-bold">Programar Nuevo Viaje</h1>
+                  <h1 className="text-2xl font-bold">
+                    {currentDraftId ? 'Continuar Viaje' : 'Programar Nuevo Viaje'}
+                  </h1>
+                  {currentDraftId && (
+                    <p className="text-sm text-blue-600 mt-1">
+                      📝 Editando borrador guardado
+                    </p>
+                  )}
                   {isWizardTutorialActive && (
                     <p className="text-sm text-blue-600 mt-1">
                       🎓 Tutorial activo - Te guiaremos paso a paso
@@ -386,7 +494,8 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
                   <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                   <span className="font-medium">
                     {isCreatingViaje && 'Registrando viaje en sistema...'}
-                    {isGeneratingDocuments && !isCreatingViaje && 'Generando documentos fiscales...'}
+                    {isConvertingDraft && 'Convirtiendo borrador a viaje...'}
+                    {isGeneratingDocuments && !isCreatingViaje && !isConvertingDraft && 'Generando documentos fiscales...'}
                     {viajeConfirmado && !isProcessing && 'Viaje confirmado exitosamente'}
                   </span>
                 </div>
@@ -470,12 +579,26 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
                 )}
 
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleSaveDraft} disabled={isSavingDraft || isProcessing}>
-                    Guardar Borrador
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSaveDraft} 
+                    disabled={isSavingDraft || isProcessing}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSavingDraft ? 'Guardando...' : 'Guardar Borrador'}
                   </Button>
-                  <Button variant="outline" onClick={handleSaveAndExit} disabled={isSavingDraft || isProcessing}>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSaveAndExit} 
+                    disabled={isSavingDraft || isProcessing}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
                     Guardar y Salir
                   </Button>
+                  
                   <Button
                     onClick={handleNext}
                     disabled={!canAdvance() || isProcessing || viajeConfirmado}
@@ -491,6 +614,30 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
           )}
         </div>
 
+        {/* Diálogo de opciones de borrador */}
+        <AlertDialog open={showBorradorOptions} onOpenChange={setShowBorradorOptions}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Continuar con borrador anterior?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tienes un borrador guardado de un viaje anterior. ¿Quieres continuar editándolo o crear un nuevo viaje?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleEliminarBorrador} className="bg-red-50 text-red-700 hover:bg-red-100">
+                Eliminar Borrador
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleCrearNuevoViaje} variant="outline">
+                Crear Nuevo Viaje
+              </AlertDialogAction>
+              <AlertDialogAction onClick={handleCargarBorradorActivo}>
+                Continuar Borrador
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Diálogo de salir sin guardar */}
         <AlertDialog open={exitDialogOpen} onOpenChange={setExitDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
