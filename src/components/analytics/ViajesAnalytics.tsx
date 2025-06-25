@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +72,8 @@ export const ViajesAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [showTabsShadow, setShowTabsShadow] = useState(false);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -135,6 +137,12 @@ export const ViajesAnalytics = () => {
     { name: 'Programados', value: analyticsData.viajes.programados, color: '#F59E0B' },
     { name: 'Cancelados', value: analyticsData.viajes.cancelados, color: '#EF4444' }
   ] : [];
+  const totalEstados = analyticsData
+    ? analyticsData.viajes.completados +
+      analyticsData.viajes.enTransito +
+      analyticsData.viajes.programados +
+      analyticsData.viajes.cancelados
+    : 0;
 
   const costosData = analyticsData ? [
     { name: 'Combustible', value: analyticsData.costos.combustible },
@@ -142,6 +150,24 @@ export const ViajesAnalytics = () => {
     { name: 'Mantenimiento', value: analyticsData.costos.mantenimiento },
     { name: 'Operadores', value: analyticsData.costos.operadores }
   ] : [];
+
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const updateShadow = () => {
+      setShowTabsShadow(
+        el.scrollWidth > el.clientWidth &&
+          el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+      );
+    };
+    updateShadow();
+    el.addEventListener('scroll', updateShadow);
+    window.addEventListener('resize', updateShadow);
+    return () => {
+      el.removeEventListener('scroll', updateShadow);
+      window.removeEventListener('resize', updateShadow);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -231,7 +257,7 @@ export const ViajesAnalytics = () => {
                   +5% vs mes anterior
                 </p>
               </div>
-              <div className="p-3 bg-red-100 rounded-full">
+              <div className="costo-total-icon">
                 <DollarSign className="h-6 w-6 text-red-600" />
               </div>
             </div>
@@ -259,7 +285,10 @@ export const ViajesAnalytics = () => {
 
       {/* Gráficos principales */}
       <Tabs defaultValue="tendencias" className="w-full">
-        <TabsList className="tabs-container">
+        <TabsList
+          ref={tabsRef}
+          className={`tabs-container ${showTabsShadow ? 'scroll-gradient' : ''}`}
+        >
           <TabsTrigger value="tendencias">Tendencias</TabsTrigger>
           <TabsTrigger value="estados">Estados de Viajes</TabsTrigger>
           <TabsTrigger value="costos">Análisis de Costos</TabsTrigger>
@@ -344,6 +373,13 @@ export const ViajesAnalytics = () => {
                     </li>
                   ))}
                 </ul>
+                {typeof activeIndex === 'number' && totalEstados > 0 && (
+                  <div className="text-center text-sm mt-2">
+                    {pieData[activeIndex].name}: {(
+                      (pieData[activeIndex].value / totalEstados) * 100
+                    ).toFixed(0)}%
+                  </div>
+                )}
               </CardContent>
             </Card>
 
