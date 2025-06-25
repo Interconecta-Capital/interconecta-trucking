@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BaseLayout } from '@/components/layout/BaseLayout';
 
 export default function Admin() {
   return (
-    <div className="container mx-auto py-6">
+    <BaseLayout>
       <Card>
         <CardHeader>
           <CardTitle>Panel de Administración</CardTitle>
@@ -13,6 +14,6 @@ export default function Admin() {
           <p>Panel de administración en desarrollo.</p>
         </CardContent>
       </Card>
-    </div>
+    </BaseLayout>
   );
 }

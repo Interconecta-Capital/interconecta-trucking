@@ -7,6 +7,7 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanBadge } from '@/components/common/PlanBadge';
+import { BaseLayout } from '@/components/layout/BaseLayout';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
@@ -45,8 +46,8 @@ export default function Dashboard() {
     totalSocios === 0;
 
   return (
-    <ProtectedContent requiredFeature="dashboard">
-      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+    <BaseLayout>
+      <ProtectedContent requiredFeature="dashboard">
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
@@ -86,7 +87,7 @@ export default function Dashboard() {
             <LimitUsageIndicator resourceType="socios" />
           </div>
         </DashboardLayout>
-      </div>
-    </ProtectedContent>
+      </ProtectedContent>
+    </BaseLayout>
   );
 }
