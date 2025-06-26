@@ -639,3 +639,120 @@
     }
   }
 }
+  /* Mobile tweaks for Viajes page */
+  @media (max-width: 768px) {
+    .viajes-dashboard {
+      width: 100%;
+      max-width: 100vw;
+      padding: 12px;
+      margin: 0;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+    .viajes-dashboard .summary-cards-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .viajes-dashboard .stat-card,
+    .viajes-dashboard .widget-card,
+    .viajes-dashboard .metric-widget {
+      min-height: 110px;
+      max-height: 130px;
+      padding: 12px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .viajes-dashboard .widget-title,
+    .viajes-dashboard .metric-title,
+    .viajes-dashboard .stat-card .text-content .widget-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: #6B7280;
+      margin-bottom: 6px;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .viajes-dashboard .widget-value,
+    .viajes-dashboard .metric-value,
+    .viajes-dashboard .stat-card .main-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.1;
+      margin: 4px 0;
+    }
+    .viajes-dashboard .widget-change,
+    .viajes-dashboard .metric-change {
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+    .viajes-dashboard .cost-widget .widget-value,
+    .viajes-dashboard .costo-total .metric-value,
+    .viajes-dashboard .costo-total-card .main-value {
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+    .viajes-dashboard .currency-value {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .viajes-dashboard .bottom-tabs,
+    .viajes-dashboard .navigation-tabs {
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px;
+      background: white;
+      border-top: 1px solid #E5E7EB;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .viajes-dashboard .tab-item {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      font-size: 10px;
+      color: #6B7280;
+    }
+    .viajes-dashboard .tab-item.active {
+      color: #3B82F6;
+    }
+    .viajes-dashboard .dashboard-content {
+      padding-bottom: 80px;
+    }
+    .viajes-dashboard .dashboard-header {
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .viajes-dashboard .dashboard-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .viajes-dashboard .update-button {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      background: #3B82F6;
+      color: white;
+      border: none;
+    }
+  }
