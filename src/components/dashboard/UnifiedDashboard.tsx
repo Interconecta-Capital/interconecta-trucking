@@ -36,22 +36,36 @@ export default function UnifiedDashboard() {
       const startOfCurrentMonth = startOfMonth(now);
       const endOfCurrentMonth = endOfMonth(now);
 
-      const [vehiculosRes, sociosRes, conductoresRes, remolquesRes, cartasRes, viajesRes] = await Promise.all([
-        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id),
-        // Cartas porte del mes actual
-        supabase.from('cartas_porte').select('id', { count: 'exact' })
-          .eq('usuario_id', user.id)
-          .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString()),
-        // Viajes del mes actual
-        supabase.from('viajes').select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString())
-      ]);
+      interface CountResult { count: number | null }
+
+      const vehiculosRes = await (supabase
+        .from('vehiculos') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const sociosRes = await (supabase
+        .from('socios') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const conductoresRes = await (supabase
+        .from('conductores') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const remolquesRes = await (supabase
+        .from('remolques_ccp') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const cartasRes = await (supabase
+        .from('cartas_porte') as any)
+        .select('id', { count: 'exact' })
+        .eq('usuario_id', user.id)
+        .gte('created_at', startOfCurrentMonth.toISOString())
+        .lte('created_at', endOfCurrentMonth.toISOString()) as any;
+      const viajesRes = await (supabase
+        .from('viajes') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfCurrentMonth.toISOString())
+        .lte('created_at', endOfCurrentMonth.toISOString()) as any;
 
       return {
         vehiculos: vehiculosRes.count || 0,
