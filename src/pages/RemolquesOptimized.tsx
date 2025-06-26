@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Truck, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
 
 export default function RemolquesOptimized() {
   const { remolques, loading, eliminarRemolque } = useRemolques();
@@ -19,6 +20,7 @@ export default function RemolquesOptimized() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRemolque, setSelectedRemolque] = useState<any>(null);
+  const { setFABConfig } = useFAB();
 
   const handleNewRemolque = () => {
     console.log('[Remolques] 🆕 Iniciando creación de nuevo remolque');
@@ -33,6 +35,16 @@ export default function RemolquesOptimized() {
     setSelectedRemolque(null);
     setShowCreateDialog(true);
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <Truck className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewRemolque,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleEdit = (remolque: any) => {
     setSelectedRemolque(remolque);
@@ -74,10 +86,10 @@ export default function RemolquesOptimized() {
             </div>
           </div>
           
-          <Button 
-            onClick={handleNewRemolque} 
+          <Button
+            onClick={handleNewRemolque}
             size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 desktop-new-button"
             disabled={!canCreateRemolque.allowed}
           >
             <Plus className="h-5 w-5" />

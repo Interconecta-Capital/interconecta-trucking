@@ -15,6 +15,7 @@ import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 import { UUIDService } from '@/services/uuid/UUIDService';
+import { useFAB } from '@/contexts/FABContext';
 
 type DocumentStatus = 'draft' | 'active' | 'timbrado' | 'cancelado';
 
@@ -35,6 +36,7 @@ interface UnifiedDocument {
 
 export default function CartasPorteUnified() {
   const navigate = useNavigate();
+  const { setFABConfig } = useFAB();
   const {
     borradores,
     cartasPorte,
@@ -135,6 +137,16 @@ export default function CartasPorteUnified() {
       toast.error('Error al crear nuevo documento');
     }
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <FileText className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewDocument,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleEditDocument = (doc: UnifiedDocument) => {
     navigate(`/carta-porte/editor/${doc.id}`);
@@ -240,12 +252,14 @@ export default function CartasPorteUnified() {
             <FileText className="h-6 w-6 text-blue-600" />
             <h1 className="text-3xl font-bold">Cartas Porte</h1>
           </div>
-          <ProtectedActions
-            action="create"
-            resource="cartas_porte"
-            onAction={handleNewDocument}
-            buttonText="Nueva Carta Porte"
-          />
+          <div className="desktop-new-button">
+            <ProtectedActions
+              action="create"
+              resource="cartas_porte"
+              onAction={handleNewDocument}
+              buttonText="Nueva Carta Porte"
+            />
+          </div>
         </div>
 
         {/* Indicador de límites */}

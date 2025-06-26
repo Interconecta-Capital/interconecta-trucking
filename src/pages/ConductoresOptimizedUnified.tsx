@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { useConductoresOptimized } from '@/hooks/useConductoresOptimized';
 import { useUnifiedPermissions } from '@/hooks/useUnifiedPermissions';
 import { Conductor } from '@/types/cartaPorte';
 import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
 
 export default function ConductoresOptimizedUnified() {
   const [showFormDialog, setShowFormDialog] = useState(false);
@@ -25,6 +26,7 @@ export default function ConductoresOptimizedUnified() {
     searchTerm: '',
     tipoLicencia: 'all'
   });
+  const { setFABConfig } = useFAB();
 
   const { 
     conductores, 
@@ -77,6 +79,16 @@ export default function ConductoresOptimizedUnified() {
     setSelectedConductor(null);
     setShowFormDialog(true);
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <Users className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewConductor,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleSuccess = () => {
     fetchConductores();
@@ -145,13 +157,15 @@ export default function ConductoresOptimizedUnified() {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Actualizar
             </Button>
-            <ProtectedActionsUnified
-              action="create"
-              resource="conductores"
-              onAction={handleNewConductor}
-              buttonText="Nuevo Conductor"
-              variant="default"
-            />
+            <div className="desktop-new-button">
+              <ProtectedActionsUnified
+                action="create"
+                resource="conductores"
+                onAction={handleNewConductor}
+                buttonText="Nuevo Conductor"
+                variant="default"
+              />
+            </div>
           </div>
         </div>
 

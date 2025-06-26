@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +12,7 @@ import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { useFAB } from '@/contexts/FABContext';
 
 // Lazy load components - fix for named export
 const ViajesAnalytics = lazy(() => 
@@ -44,7 +43,7 @@ function ViajesContent() {
   const navigate = useNavigate();
   const { viajes, isLoading, eliminarViaje } = useViajes();
   const { openViajeWizard } = useViajeWizardModal();
-  const isMobile = useIsMobile();
+  const { setFABConfig } = useFAB();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
 
@@ -68,6 +67,16 @@ function ViajesContent() {
     setSelectedViaje(viaje);
     setShowTrackingModal(true);
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <Route className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: openViajeWizard,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleEditarViaje = (viaje: Viaje) => {
     navigate(`/viajes/editar/${viaje.id}`);
@@ -248,9 +257,6 @@ function ViajesContent() {
         open={showTrackingModal}
         onOpenChange={setShowTrackingModal}
       />
-      {isMobile && (
-        <FloatingActionButton onClick={openViajeWizard} />
-      )}
     </div>
   );
 }

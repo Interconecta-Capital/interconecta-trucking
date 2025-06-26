@@ -530,6 +530,9 @@
     .desktop-programar-button {
       display: none;
     }
+    .desktop-new-button {
+      display: none;
+    }
     .fab-container {
       position: fixed;
       bottom: 2rem;

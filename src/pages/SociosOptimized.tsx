@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Users, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
 
 export default function SociosOptimized() {
   const { socios, loading: isLoading, eliminarSocio } = useSocios();
@@ -19,6 +20,7 @@ export default function SociosOptimized() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedSocio, setSelectedSocio] = useState<any>(null);
+  const { setFABConfig } = useFAB();
 
   const handleNewSocio = () => {
     console.log('[Socios] 🆕 Iniciando creación de nuevo socio');
@@ -33,6 +35,16 @@ export default function SociosOptimized() {
     setSelectedSocio(null);
     setShowCreateDialog(true);
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <Users className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewSocio,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleEdit = (socio: any) => {
     setSelectedSocio(socio);
@@ -75,10 +87,10 @@ export default function SociosOptimized() {
             </div>
           </div>
           
-          <Button 
-            onClick={handleNewSocio} 
+          <Button
+            onClick={handleNewSocio}
             size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 desktop-new-button"
             disabled={!canCreateSocio.allowed}
           >
             <Plus className="h-5 w-5" />

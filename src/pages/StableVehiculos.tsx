@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Car, Filter, Search, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
 
 export default function StableVehiculos() {
   const { user } = useStableAuth();
@@ -29,6 +30,7 @@ export default function StableVehiculos() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showRemolqueDialog, setShowRemolqueDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
+  const { setFABConfig } = useFAB()
 
   const handleNewVehiculo = () => {
     console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');
@@ -43,6 +45,16 @@ export default function StableVehiculos() {
     setSelectedVehiculo(null);
     setShowCreateDialog(true);
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <Car className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewVehiculo,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleEdit = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
@@ -110,10 +122,10 @@ export default function StableVehiculos() {
             </div>
           </div>
           
-          <Button 
-            onClick={handleNewVehiculo} 
+          <Button
+            onClick={handleNewVehiculo}
             size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 desktop-new-button"
             disabled={!canCreateVehiculo.allowed}
           >
             <Plus className="h-5 w-5" />
