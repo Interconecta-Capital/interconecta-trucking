@@ -264,7 +264,7 @@ function ViajesContent() {
 export default function ViajesOptimized() {
   return (
     <ViajeWizardModalProvider>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 viajes-dashboard">
         <ViajesContent />
         <ViajeWizardModal />
       </div>
