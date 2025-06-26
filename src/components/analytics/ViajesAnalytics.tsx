@@ -279,15 +279,14 @@ export const ViajesAnalytics = () => {
 
       {/* Gráficos principales */}
       <Tabs defaultValue="tendencias" className="w-full">
-        <TabsList
-          ref={tabsRef}
-          className={`tabs-container ${showTabsShadow ? 'scroll-gradient' : ''}`}
-        >
-          <TabsTrigger value="tendencias">Tendencias</TabsTrigger>
-          <TabsTrigger value="estados">Estados de Viajes</TabsTrigger>
-          <TabsTrigger value="costos">Análisis de Costos</TabsTrigger>
-          <TabsTrigger value="eficiencia">Eficiencia</TabsTrigger>
-        </TabsList>
+        <div className={`tabs-wrapper ${showTabsShadow ? 'scroll-gradient' : ''}`}>
+          <TabsList ref={tabsRef} className="tabs-container">
+            <TabsTrigger value="tendencias">Tendencias</TabsTrigger>
+            <TabsTrigger value="estados">Estados de Viajes</TabsTrigger>
+            <TabsTrigger value="costos">Análisis de Costos</TabsTrigger>
+            <TabsTrigger value="eficiencia">Eficiencia</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="tendencias" className="space-y-6">
           <Card>
