@@ -31,7 +31,7 @@ export interface UnifiedPermissionsV2 {
   accessReason: string;
   hasFullAccess: boolean;
   
-  // Permisos específicos de creación
+  // Permisos específicos de creación (ahora todos permitidos, solo verifican límites)
   canCreateConductor: PermissionResultV2;
   canCreateVehiculo: PermissionResultV2;
   canCreateSocio: PermissionResultV2;
@@ -67,7 +67,7 @@ export interface UnifiedPermissionsV2 {
   getPermissionForResource: (resource: string) => PermissionResultV2;
 }
 
-// Límites del plan Freemium
+// Límites del plan Gratis (anteriormente Freemium)
 const FREEMIUM_LIMITS: FreemiumLimits = {
   vehiculos: 3,
   remolques: 2,
@@ -82,8 +82,8 @@ const FREEMIUM_LIMITS: FreemiumLimits = {
  * Implementa las reglas de negocio fundamentales:
  * 1. Superusuario → Acceso total
  * 2. Trial activo → Acceso total
- * 3. Plan activo → Aplicar límites del plan
- * 4. Sin plan o trial expirado → Plan Freemium con límites
+ * 3. Plan activo → Acceso total (sin límites de plan pagado)
+ * 4. Sin plan o trial expirado → Plan Gratis con límites de cantidad únicamente
  * 5. Cuenta bloqueada → Sin acceso
  */
 export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
@@ -124,14 +124,14 @@ export const useUnifiedPermissionsV2 = (): UnifiedPermissionsV2 => {
       return createTrialPermissions(user.id, trialInfo);
     }
 
-    // REGLA 4: PLAN ACTIVO - Aplicar límites del plan
+    // REGLA 4: PLAN ACTIVO - Acceso total sin límites
     if (suscripcion?.status === 'active' && suscripcion.plan) {
       console.log('[UnifiedPermissionsV2] 💳 PLAN ACTIVO:', suscripcion.plan.nombre);
       return createPaidPlanPermissions(user.id, suscripcion);
     }
 
-    // REGLA 5: TRIAL EXPIRADO O SIN PLAN - Plan Freemium con límites
-    console.log('[UnifiedPermissionsV2] 🆓 TRANSICIÓN A PLAN FREEMIUM');
+    // REGLA 5: TRIAL EXPIRADO O SIN PLAN - Plan Gratis con límites de cantidad únicamente
+    console.log('[UnifiedPermissionsV2] 🆓 TRANSICIÓN A PLAN GRATIS');
     return createFreemiumPermissions(user.id, trialInfo);
 
   }, [user, isSuperuser, suscripcion, estaBloqueado]);
@@ -207,14 +207,14 @@ function createNoAccessPermissions(reason: string): UnifiedPermissionsV2 {
 }
 
 function createSuperuserPermissions(userId: string): UnifiedPermissionsV2 {
-  const fullAccess = { allowed: true, reason: 'Acceso de Superusuario' };
+  const fullAccess = { allowed: true, reason: 'Acceso total como Superusuario' };
   const getPermissionForResource = () => fullAccess;
   
   return {
     userId,
     isAuthenticated: true,
     accessLevel: 'superuser',
-    accessReason: 'Acceso de Superusuario - Sin restricciones',
+    accessReason: 'Acceso total como Superusuario - Sin restricciones',
     hasFullAccess: true,
     canCreateConductor: fullAccess,
     canCreateVehiculo: fullAccess,
@@ -237,7 +237,7 @@ function createSuperuserPermissions(userId: string): UnifiedPermissionsV2 {
 }
 
 function createTrialPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
-  const trialAccess = { allowed: true, reason: `Período de prueba activo (día ${trialInfo.daysUsed} de ${trialInfo.totalTrialDays})` };
+  const trialAccess = { allowed: true, reason: `Acceso total durante período de prueba (día ${trialInfo.daysUsed} de ${trialInfo.totalTrialDays})` };
   const getPermissionForResource = () => trialAccess;
   
   return {
@@ -307,122 +307,84 @@ function createBlockedPermissions(userId: string): UnifiedPermissionsV2 {
 
 function createPaidPlanPermissions(userId: string, suscripcion: any): UnifiedPermissionsV2 {
   const plan = suscripcion.plan;
+  const fullAccess = { allowed: true, reason: `Acceso total con plan ${plan.nombre}` };
   
-  const getPermissionForResource = (resource: string) => {
-    switch (resource) {
-      case 'conductores': 
-        return {
-          allowed: plan.limite_conductores ? false : true, // Simplificado para debug
-          reason: plan.limite_conductores ? `Límite: ${plan.limite_conductores} conductores` : 'Sin límite',
-          limit: plan.limite_conductores
-        };
-      case 'vehiculos': 
-        return {
-          allowed: plan.limite_vehiculos ? false : true, // Simplificado para debug
-          reason: plan.limite_vehiculos ? `Límite: ${plan.limite_vehiculos} vehículos` : 'Sin límite',
-          limit: plan.limite_vehiculos
-        };
-      case 'socios': 
-        return {
-          allowed: plan.limite_socios ? false : true, // Simplificado para debug
-          reason: plan.limite_socios ? `Límite: ${plan.limite_socios} socios` : 'Sin límite',
-          limit: plan.limite_socios
-        };
-      case 'cartas_porte': 
-        return {
-          allowed: plan.limite_cartas_porte ? false : true, // Simplificado para debug
-          reason: plan.limite_cartas_porte ? `Límite: ${plan.limite_cartas_porte} cartas` : 'Sin límite',
-          limit: plan.limite_cartas_porte
-        };
-      case 'remolques': 
-        return {
-          allowed: true, // Los remolques generalmente no tienen límite específico
-          reason: 'Incluido en su plan'
-        };
-      case 'viajes': 
-        return {
-          allowed: true, // Los viajes generalmente no tienen límite específico en planes pagados
-          reason: 'Incluido en su plan'
-        };
-      default: 
-        return { allowed: false, reason: 'Recurso no reconocido' };
-    }
-  };
+  const getPermissionForResource = () => fullAccess; // Planes pagados = acceso total sin límites
   
   return {
     userId,
     isAuthenticated: true,
     accessLevel: 'paid',
-    accessReason: `Plan '${plan.nombre}' activo`,
-    hasFullAccess: false,
-    canCreateConductor: getPermissionForResource('conductores'),
-    canCreateVehiculo: getPermissionForResource('vehiculos'),
-    canCreateSocio: getPermissionForResource('socios'),
-    canCreateCartaPorte: getPermissionForResource('cartas_porte'),
-    canCreateRemolque: getPermissionForResource('remolques'),
-    canCreateViaje: getPermissionForResource('viajes'),
+    accessReason: `Plan '${plan.nombre}' activo - Acceso total`,
+    hasFullAccess: true,
+    canCreateConductor: fullAccess,
+    canCreateVehiculo: fullAccess,
+    canCreateSocio: fullAccess,
+    canCreateCartaPorte: fullAccess,
+    canCreateRemolque: fullAccess,
+    canCreateViaje: fullAccess,
     planInfo: { name: plan.nombre, type: 'paid', isActive: true },
     usage: { 
-      conductores: { used: 0, limit: plan.limite_conductores }, 
-      vehiculos: { used: 0, limit: plan.limite_vehiculos }, 
-      socios: { used: 0, limit: plan.limite_socios }, 
-      cartas_porte: { used: 0, limit: plan.limite_cartas_porte },
+      conductores: { used: 0, limit: null }, 
+      vehiculos: { used: 0, limit: null }, 
+      socios: { used: 0, limit: null }, 
+      cartas_porte: { used: 0, limit: null },
       remolques: { used: 0, limit: null },
       viajes: { used: 0, limit: null }
     },
-    canPerformAction: (action: string) => action === 'create',
+    canPerformAction: () => true,
     getPermissionForResource
   };
 }
 
-// NUEVA FUNCIÓN: Permisos para Plan Freemium con límites específicos
+// NUEVA FUNCIÓN: Permisos para Plan Gratis con límites específicos
 function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
   const getPermissionForResource = (resource: string) => {
     switch (resource) {
       case 'vehiculos': 
         return {
-          allowed: true, // Por ahora permitir, la validación real será en el interceptor
-          reason: `Plan Freemium - Máximo ${FREEMIUM_LIMITS.vehiculos} vehículos`,
+          allowed: true, // Permitir siempre, la validación será en el interceptor
+          reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.vehiculos} vehículos`,
           limit: FREEMIUM_LIMITS.vehiculos,
           used: 0 // Se actualizará con datos reales
         };
       case 'remolques': 
         return {
           allowed: true,
-          reason: `Plan Freemium - Máximo ${FREEMIUM_LIMITS.remolques} remolques`,
+          reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.remolques} remolques`,
           limit: FREEMIUM_LIMITS.remolques,
           used: 0
         };
       case 'socios': 
         return {
           allowed: true,
-          reason: `Plan Freemium - Máximo ${FREEMIUM_LIMITS.socios} socios`,
+          reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.socios} socios`,
           limit: FREEMIUM_LIMITS.socios,
           used: 0
         };
       case 'viajes': 
         return {
           allowed: true,
-          reason: `Plan Freemium - Máximo ${FREEMIUM_LIMITS.viajes_mensual} viajes por mes`,
+          reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.viajes_mensual} viajes por mes`,
           limit: FREEMIUM_LIMITS.viajes_mensual,
           used: 0
         };
       case 'cartas_porte': 
         return {
           allowed: true,
-          reason: `Plan Freemium - Máximo ${FREEMIUM_LIMITS.cartas_porte_mensual} cartas por mes`,
+          reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.cartas_porte_mensual} cartas por mes`,
           limit: FREEMIUM_LIMITS.cartas_porte_mensual,
           used: 0
         };
       case 'conductores': 
         return {
           allowed: true,
-          reason: 'Plan Freemium - Conductores ilimitados',
+          reason: 'Plan Gratis - Conductores sin límite',
         };
       default: 
         return { 
-          allowed: false, 
-          reason: 'Recurso no disponible en plan Freemium' 
+          allowed: true, // Cambio: ahora todo está permitido, solo con límites de cantidad
+          reason: 'Acceso permitido en plan Gratis' 
         };
     }
   };
@@ -431,8 +393,8 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
     userId,
     isAuthenticated: true,
     accessLevel: 'freemium',
-    accessReason: 'Plan Freemium - Acceso limitado',
-    hasFullAccess: false,
+    accessReason: 'Plan Gratis - Acceso con límites de cantidad únicamente',
+    hasFullAccess: true, // Cambio: acceso a todas las funciones, solo límites de cantidad
     canCreateConductor: getPermissionForResource('conductores'),
     canCreateVehiculo: getPermissionForResource('vehiculos'),
     canCreateSocio: getPermissionForResource('socios'),
@@ -440,7 +402,7 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
     canCreateRemolque: getPermissionForResource('remolques'),
     canCreateViaje: getPermissionForResource('viajes'),
     planInfo: { 
-      name: 'Plan Freemium', 
+      name: 'Plan Gratis', // Cambio: de "Plan Freemium" a "Plan Gratis"
       type: 'freemium', 
       daysRemaining: 0,
       daysUsed: trialInfo.daysUsed,
@@ -456,7 +418,7 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
       remolques: { used: 0, limit: FREEMIUM_LIMITS.remolques },
       viajes: { used: 0, limit: FREEMIUM_LIMITS.viajes_mensual }
     },
-    canPerformAction: () => true, // La validación real será en el interceptor
+    canPerformAction: () => true, // Cambio: siempre permitir, solo validar límites de cantidad
     getPermissionForResource
   };
 }

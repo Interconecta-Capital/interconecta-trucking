@@ -60,7 +60,17 @@ export function PlanBadge({ variant, showDetails = false }: PlanBadgeProps) {
     );
   }
 
-  // Plan activo
+  // Plan Gratis (anteriormente Freemium)
+  if (permissions.accessLevel === 'freemium') {
+    return (
+      <Badge variant={variant || 'outline'} className="bg-gray-100 text-gray-700 border-gray-200">
+        <Calendar className="h-3 w-3 mr-1" />
+        Plan Gratis
+      </Badge>
+    );
+  }
+
+  // Plan activo/pagado
   if (permissions.accessLevel === 'paid') {
     return (
       <Badge variant={variant || 'default'} className="bg-green-100 text-green-800 border-green-200">

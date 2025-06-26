@@ -23,7 +23,7 @@ export const FreemiumTestButtons: React.FC = () => {
     }
   };
 
-  // Solo mostrar si está en plan Freemium
+  // Solo mostrar si está en plan Gratis
   if (permissions.accessLevel !== 'freemium') {
     return null;
   }
@@ -32,10 +32,10 @@ export const FreemiumTestButtons: React.FC = () => {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          🧪 Panel de Pruebas - Plan Freemium
+          🧪 Panel de Pruebas - Plan Gratis
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Usa estos botones para probar los límites del plan Freemium
+          Usa estos botones para probar los límites del plan Gratis
         </p>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
