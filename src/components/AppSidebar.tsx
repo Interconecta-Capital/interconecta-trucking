@@ -35,7 +35,6 @@ interface SidebarItem {
   href: string;
   icon: any;
   badge?: string;
-  requiresPermission?: boolean;
   category: SidebarCategory;
 }
 
@@ -50,7 +49,6 @@ const sidebarItems: SidebarItem[] = [
     title: 'Viajes',
     href: '/viajes',
     icon: Route,
-    requiresPermission: true,
     category: 'OPERACIÓN',
   },
   {
@@ -63,35 +61,30 @@ const sidebarItems: SidebarItem[] = [
     title: 'Vehículos',
     href: '/vehiculos',
     icon: Car,
-    requiresPermission: true,
     category: 'RECURSOS',
   },
   {
     title: 'Conductores',
     href: '/conductores',
     icon: Users,
-    requiresPermission: true,
     category: 'RECURSOS',
   },
   {
     title: 'Socios',
     href: '/socios',
     icon: Building2,
-    requiresPermission: true,
     category: 'RECURSOS',
   },
   {
     title: 'Remolques',
     href: '/remolques',
     icon: Wrench,
-    requiresPermission: true,
     category: 'RECURSOS',
   },
   {
     title: 'Carta Porte',
     href: '/cartas-porte',
     icon: FileText,
-    requiresPermission: true,
     category: 'ADMINISTRACIÓN FISCAL',
   },
   {
@@ -125,42 +118,20 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
     localStorage.setItem('sidebarCollapsed', String(isCollapsed));
   }, [isCollapsed]);
 
-  console.log('Items a renderizar en Sidebar:', sidebarItems);
-
+  // Todos los usuarios tienen acceso completo ahora, solo con límites de cantidad
   const canAccessItem = (item: SidebarItem): boolean => {
     // Superusuarios pueden acceder a todo
     if (permissions.accessLevel === 'superuser') {
       return true;
     }
 
-    // Si no requiere permisos específicos, permitir acceso
-    if (!item.requiresPermission) {
-      return true;
+    // Cuentas bloqueadas no pueden acceder a nada
+    if (permissions.accessLevel === 'blocked') {
+      return false;
     }
 
-    // Con plan activo (trial o paid), acceso completo
-    if (permissions.accessLevel === 'trial' || permissions.accessLevel === 'paid') {
-      return permissions.hasFullAccess;
-    }
-
-    // Sin acceso en otros casos
-    return false;
-  };
-
-  const getItemBadge = (item: SidebarItem): string | undefined => {
-    if (permissions.accessLevel === 'superuser') {
-      return undefined; // Superusuarios no ven badges
-    }
-
-    if (permissions.accessLevel === 'trial') {
-      return 'Trial';
-    }
-
-    if (!canAccessItem(item)) {
-      return 'Pro';
-    }
-
-    return undefined;
+    // Todos los demás usuarios (trial, paid, freemium) tienen acceso completo
+    return true;
   };
 
   const sidebarBody = (
@@ -203,7 +174,6 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
             {items.map((item) => {
               const isActive = location.pathname.startsWith(item.href);
               const canAccess = canAccessItem(item);
-              const badge = getItemBadge(item);
               const Icon = item.icon;
 
               const linkClasses = `
@@ -223,11 +193,6 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
                         <Icon className="h-5 w-5" />
                         {!isCollapsed && <span>{item.title}</span>}
                       </div>
-                      {badge && !isCollapsed && (
-                        <Badge variant="outline" className="text-xs">
-                          {badge}
-                        </Badge>
-                      )}
                     </Link>
                   </TooltipTrigger>
                   {isCollapsed && (
@@ -258,11 +223,16 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
           </div>
         )}
 
-        {(permissions.accessLevel === 'blocked' || permissions.accessLevel === 'expired') && (
+        {permissions.accessLevel === 'freemium' && (
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-sm font-medium text-blue-800">Plan Gratis</p>
+            <p className="text-xs text-blue-600">Acceso completo con límites de cantidad</p>
+          </div>
+        )}
+
+        {permissions.accessLevel === 'blocked' && (
           <div className="bg-red-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-red-800">
-              {permissions.accessLevel === 'blocked' ? 'Cuenta Bloqueada' : 'Plan Expirado'}
-            </p>
+            <p className="text-sm font-medium text-red-800">Cuenta Bloqueada</p>
             <Button size="sm" className="mt-2 w-full">
               <TrendingUp className="w-3 h-3 mr-1" />
               Renovar Plan

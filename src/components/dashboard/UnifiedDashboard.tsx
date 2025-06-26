@@ -3,14 +3,41 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { PersonalizedGreeting } from './PersonalizedGreeting';
 import { FreemiumTestButtons } from './FreemiumTestButtons';
 import { DashboardLayout } from './DashboardLayout';
 import { WelcomeCard } from './WelcomeCard';
+import { QuickActionsCard } from './QuickActionsCard';
+import { AIInsights } from '@/components/ai/AIInsights';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
   const permissions = useUnifiedPermissionsV2();
+
+  // Obtener contadores reales de la base de datos
+  const { data: realCounts } = useQuery({
+    queryKey: ['dashboard-counts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const [vehiculosRes, sociosRes, conductoresRes, cartasRes] = await Promise.all([
+        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('cartas_porte').select('id', { count: 'exact' }).eq('usuario_id', user.id)
+      ]);
+
+      return {
+        vehiculos: vehiculosRes.count || 0,
+        socios: sociosRes.count || 0,
+        conductores: conductoresRes.count || 0,
+        cartas_porte: cartasRes.count || 0
+      };
+    },
+    enabled: !!user?.id
+  });
 
   // Mostrar tarjeta de bienvenida para usuarios nuevos
   const shouldShowWelcome = !user?.profile?.has_visited_dashboard;
@@ -58,7 +85,7 @@ export default function UnifiedDashboard() {
       {/* Tarjeta de bienvenida para usuarios nuevos */}
       <WelcomeCard show={shouldShowWelcome} />
 
-      {/* Métricas del dashboard */}
+      {/* Métricas del dashboard con datos reales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -66,12 +93,13 @@ export default function UnifiedDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {permissions.usage.vehiculos.used}
-              {permissions.usage.vehiculos.limit && `/${permissions.usage.vehiculos.limit}`}
+              {realCounts?.vehiculos || 0}
+              {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && 
+                `/${permissions.planInfo.limits.vehiculos}`}
             </div>
-            {permissions.accessLevel === 'freemium' && permissions.usage.vehiculos.limit && (
+            {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && (
               <p className="text-xs text-muted-foreground">
-                Plan Gratis: máximo {permissions.usage.vehiculos.limit}
+                Plan Gratis: máximo {permissions.planInfo.limits.vehiculos}
               </p>
             )}
           </CardContent>
@@ -83,12 +111,13 @@ export default function UnifiedDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {permissions.usage.socios.used}
-              {permissions.usage.socios.limit && `/${permissions.usage.socios.limit}`}
+              {realCounts?.socios || 0}
+              {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && 
+                `/${permissions.planInfo.limits.socios}`}
             </div>
-            {permissions.accessLevel === 'freemium' && permissions.usage.socios.limit && (
+            {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && (
               <p className="text-xs text-muted-foreground">
-                Plan Gratis: máximo {permissions.usage.socios.limit}
+                Plan Gratis: máximo {permissions.planInfo.limits.socios}
               </p>
             )}
           </CardContent>
@@ -96,18 +125,15 @@ export default function UnifiedDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Viajes</CardTitle>
+            <CardTitle className="text-sm font-medium">Conductores</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {permissions.usage.viajes.used}
-              {permissions.usage.viajes.limit && `/${permissions.usage.viajes.limit}`}
+              {realCounts?.conductores || 0}
             </div>
-            {permissions.accessLevel === 'freemium' && permissions.usage.viajes.limit && (
-              <p className="text-xs text-muted-foreground">
-                Plan Gratis: {permissions.usage.viajes.limit}/mes
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Sin límite
+            </p>
           </CardContent>
         </Card>
 
@@ -117,19 +143,26 @@ export default function UnifiedDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {permissions.usage.cartas_porte.used}
-              {permissions.usage.cartas_porte.limit && `/${permissions.usage.cartas_porte.limit}`}
+              {realCounts?.cartas_porte || 0}
+              {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && 
+                `/${permissions.planInfo.limits.cartas_porte_mensual}`}
             </div>
-            {permissions.accessLevel === 'freemium' && permissions.usage.cartas_porte.limit && (
+            {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && (
               <p className="text-xs text-muted-foreground">
-                Plan Gratis: {permissions.usage.cartas_porte.limit}/mes
+                Plan Gratis: {permissions.planInfo.limits.cartas_porte_mensual}/mes
               </p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Layout del dashboard con calendario, insights y acciones rápidas */}
+      {/* Insights inteligentes */}
+      <AIInsights />
+
+      {/* Acciones rápidas */}
+      <QuickActionsCard />
+
+      {/* Layout del dashboard con calendario */}
       <DashboardLayout />
     </div>
   );

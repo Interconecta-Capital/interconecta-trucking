@@ -31,7 +31,7 @@ export interface UnifiedPermissionsV2 {
   accessReason: string;
   hasFullAccess: boolean;
   
-  // Permisos específicos de creación (ahora todos permitidos, solo verifican límites)
+  // Permisos específicos de creación (todos permitidos, solo verifican límites de cantidad)
   canCreateConductor: PermissionResultV2;
   canCreateVehiculo: PermissionResultV2;
   canCreateSocio: PermissionResultV2;
@@ -67,7 +67,7 @@ export interface UnifiedPermissionsV2 {
   getPermissionForResource: (resource: string) => PermissionResultV2;
 }
 
-// Límites del plan Gratis (anteriormente Freemium)
+// Límites del plan Gratis
 const FREEMIUM_LIMITS: FreemiumLimits = {
   vehiculos: 3,
   remolques: 2,
@@ -337,7 +337,7 @@ function createPaidPlanPermissions(userId: string, suscripcion: any): UnifiedPer
   };
 }
 
-// NUEVA FUNCIÓN: Permisos para Plan Gratis con límites específicos
+// FUNCIÓN: Permisos para Plan Gratis con límites específicos de cantidad
 function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermissionsV2 {
   const getPermissionForResource = (resource: string) => {
     switch (resource) {
@@ -383,8 +383,8 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
         };
       default: 
         return { 
-          allowed: true, // Cambio: ahora todo está permitido, solo con límites de cantidad
-          reason: 'Acceso permitido en plan Gratis' 
+          allowed: true, // Acceso completo a todas las funciones, solo límites de cantidad
+          reason: 'Acceso permitido en Plan Gratis' 
         };
     }
   };
@@ -393,8 +393,8 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
     userId,
     isAuthenticated: true,
     accessLevel: 'freemium',
-    accessReason: 'Plan Gratis - Acceso con límites de cantidad únicamente',
-    hasFullAccess: true, // Cambio: acceso a todas las funciones, solo límites de cantidad
+    accessReason: 'Plan Gratis - Acceso completo con límites de cantidad únicamente',
+    hasFullAccess: true, // Acceso a todas las funciones, solo límites de cantidad
     canCreateConductor: getPermissionForResource('conductores'),
     canCreateVehiculo: getPermissionForResource('vehiculos'),
     canCreateSocio: getPermissionForResource('socios'),
@@ -402,7 +402,7 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
     canCreateRemolque: getPermissionForResource('remolques'),
     canCreateViaje: getPermissionForResource('viajes'),
     planInfo: { 
-      name: 'Plan Gratis', // Cambio: de "Plan Freemium" a "Plan Gratis"
+      name: 'Plan Gratis',
       type: 'freemium', 
       daysRemaining: 0,
       daysUsed: trialInfo.daysUsed,
@@ -418,7 +418,7 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
       remolques: { used: 0, limit: FREEMIUM_LIMITS.remolques },
       viajes: { used: 0, limit: FREEMIUM_LIMITS.viajes_mensual }
     },
-    canPerformAction: () => true, // Cambio: siempre permitir, solo validar límites de cantidad
+    canPerformAction: () => true, // Siempre permitir, solo validar límites de cantidad
     getPermissionForResource
   };
 }
