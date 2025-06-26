@@ -18,9 +18,18 @@ export default function UnifiedDashboard() {
   const permissions = useUnifiedPermissionsV2();
 
   // Obtener contadores reales de la base de datos
-  const { data: realCounts } = useQuery({
+  interface RealCounts {
+    vehiculos: number;
+    socios: number;
+    conductores: number;
+    remolques: number;
+    cartas_porte: number;
+    viajes: number;
+  }
+
+  const { data: realCounts } = useQuery<RealCounts | null>({
     queryKey: ['dashboard-counts', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<RealCounts | null> => {
       if (!user?.id) return null;
 
       const now = new Date();
