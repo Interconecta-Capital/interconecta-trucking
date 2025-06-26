@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Users, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
 
 export default function ConductoresOptimized() {
   const { conductores, loading, eliminarConductor, recargar } = useConductores();
@@ -24,6 +25,7 @@ export default function ConductoresOptimized() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedConductor, setSelectedConductor] = useState<any>(null);
+  const { setFABConfig } = useFAB();
 
   const handleNewConductor = () => {
     console.log('[Conductores] 🆕 Iniciando creación de nuevo conductor');
@@ -38,6 +40,16 @@ export default function ConductoresOptimized() {
     setSelectedConductor(null);
     setShowCreateDialog(true);
   };
+
+  useEffect(() => {
+    setFABConfig({
+      icon: <Users className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewConductor,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
   const handleEdit = (conductor: any) => {
     setSelectedConductor(conductor);
@@ -85,10 +97,10 @@ export default function ConductoresOptimized() {
             </div>
           </div>
           
-          <Button 
-            onClick={handleNewConductor} 
+          <Button
+            onClick={handleNewConductor}
             size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 desktop-new-button"
             disabled={!canCreateConductor.allowed}
           >
             <Plus className="h-5 w-5" />

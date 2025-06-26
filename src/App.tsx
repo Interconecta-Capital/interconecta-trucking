@@ -10,6 +10,7 @@ import { OnboardingProvider } from '@/contexts/OnboardingProvider'
 import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration'
 import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
+import { FABProvider } from './contexts/FABContext'
 
 // Páginas públicas
 import Index from "./pages/Index"
@@ -41,8 +42,9 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <AuthProvider>
-          <ViajeWizardModalProvider>
-            <OnboardingProvider>
+          <FABProvider>
+            <ViajeWizardModalProvider>
+              <OnboardingProvider>
               <OnboardingIntegration />
               <ViajeWizardModal />
               <Routes>
@@ -179,6 +181,7 @@ const App = () => (
             </Routes>
           </OnboardingProvider>
         </ViajeWizardModalProvider>
+        </FABProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
