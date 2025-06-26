@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -11,6 +10,7 @@ import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegra
 import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
 import { FABProvider } from './contexts/FABContext'
+import { GlobalUpgradeModalProvider } from './components/common/GlobalUpgradeModalProvider'
 
 // Páginas públicas
 import Index from "./pages/Index"
@@ -42,12 +42,13 @@ const App = () => (
       <Toaster />
       <BrowserRouter>
         <AuthProvider>
-          <FABProvider>
-            <ViajeWizardModalProvider>
-              <OnboardingProvider>
-              <OnboardingIntegration />
-              <ViajeWizardModal />
-              <Routes>
+          <GlobalUpgradeModalProvider>
+            <FABProvider>
+              <ViajeWizardModalProvider>
+                <OnboardingProvider>
+                <OnboardingIntegration />
+                <ViajeWizardModal />
+                <Routes>
               {/* Página principal - Landing page para usuarios no autenticados */}
               <Route path="/" element={<Index />} />
               
@@ -182,6 +183,7 @@ const App = () => (
           </OnboardingProvider>
         </ViajeWizardModalProvider>
         </FABProvider>
+          </GlobalUpgradeModalProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

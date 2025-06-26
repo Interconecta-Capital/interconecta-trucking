@@ -1,92 +1,101 @@
 
-import { PersonalizedGreeting } from '@/components/dashboard/PersonalizedGreeting';
-import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
-import { DashboardMetricsGrid } from '@/components/dashboard/DashboardMetricsGrid';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { ProtectedContent } from '@/components/ProtectedContent';
-import { PlanNotifications } from '@/components/common/PlanNotifications';
-import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
-import { PlanBadge } from '@/components/common/PlanBadge';
-import { useCartasPorte } from '@/hooks/useCartasPorte';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useConductores } from '@/hooks/useConductores';
-import { useSocios } from '@/hooks/useSocios';
+import { useAuth } from '@/hooks/useAuth'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FreemiumTestButtons } from '@/components/dashboard/FreemiumTestButtons'
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2'
 
 export default function Dashboard() {
-  const { cartasPorte, loading: loadingCartas } = useCartasPorte();
-  const { vehiculos, loading: loadingVehiculos } = useVehiculos();
-  const { conductores, loading: loadingConductores } = useConductores();
-  const { socios, loading: loadingSocios } = useSocios();
-
-  // Calcular métricas reales
-  const totalCartasPorte = cartasPorte.length;
-  const cartasPendientes = cartasPorte.filter(c => c.status === 'borrador' || c.status === 'pendiente').length;
-  const cartasCompletadas = cartasPorte.filter(c => c.status === 'timbrada' || c.status === 'completada').length;
-
-  const totalVehiculos = vehiculos.length;
-  const vehiculosDisponibles = vehiculos.filter(v => v.estado === 'disponible').length;
-  const vehiculosEnUso = vehiculos.filter(v => v.estado === 'en_uso').length;
-  const vehiculosMantenimiento = vehiculos.filter(v => v.estado === 'mantenimiento').length;
-
-  const totalConductores = conductores.length;
-  const conductoresDisponibles = conductores.filter(c => c.estado === 'disponible').length;
-  const conductoresEnViaje = conductores.filter(c => c.estado === 'en_viaje').length;
-
-  const totalSocios = socios.length;
-  const sociosActivos = socios.filter(s => s.estado === 'activo').length;
-
-  const isLoading = loadingCartas || loadingVehiculos || loadingConductores || loadingSocios;
-
-  // Determinar si mostrar la tarjeta de bienvenida
-  const showWelcomeCard = !isLoading && 
-    totalCartasPorte === 0 && 
-    totalVehiculos === 0 && 
-    totalConductores === 0 && 
-    totalSocios === 0;
+  const { user } = useAuth()
+  const permissions = useUnifiedPermissionsV2()
 
   return (
-    <ProtectedContent requiredFeature="dashboard">
-      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
-        {/* Notificaciones de plan */}
-        <PlanNotifications />
-
-        {/* Header con badge de plan */}
-        <div className="flex items-center justify-between">
-          <PersonalizedGreeting />
-          <PlanBadge size="default" />
-        </div>
-
-        {/* Solo Vista Operacional */}
-        <DashboardLayout>
-          {/* Tarjeta de bienvenida - aparece primero si no hay datos */}
-          <WelcomeCard show={showWelcomeCard} />
-
-          {/* Métricas principales */}
-          <DashboardMetricsGrid
-            isLoading={isLoading}
-            totalCartasPorte={totalCartasPorte}
-            cartasPendientes={cartasPendientes}
-            cartasCompletadas={cartasCompletadas}
-            totalVehiculos={totalVehiculos}
-            vehiculosDisponibles={vehiculosDisponibles}
-            vehiculosEnUso={vehiculosEnUso}
-            vehiculosMantenimiento={vehiculosMantenimiento}
-            totalConductores={totalConductores}
-            conductoresDisponibles={conductoresDisponibles}
-            conductoresEnViaje={conductoresEnViaje}
-            totalSocios={totalSocios}
-            sociosActivos={sociosActivos}
-          />
-
-          {/* Indicadores de límites */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <LimitUsageIndicator resourceType="cartas_porte" />
-            <LimitUsageIndicator resourceType="vehiculos" />
-            <LimitUsageIndicator resourceType="conductores" />
-            <LimitUsageIndicator resourceType="socios" />
-          </div>
-        </DashboardLayout>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Bienvenido de vuelta, {user?.email}
+        </p>
       </div>
-    </ProtectedContent>
-  );
+
+      {/* Información del Plan */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Estado de tu Cuenta</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm font-medium">Plan Actual</p>
+              <p className="text-2xl font-bold">{permissions.planInfo.name}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Nivel de Acceso</p>
+              <p className="text-lg capitalize">{permissions.accessLevel}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Estado</p>
+              <p className="text-lg">{permissions.planInfo.isActive ? 'Activo' : 'Inactivo'}</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-4">
+            {permissions.accessReason}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Botones de Prueba para Plan Freemium */}
+      <FreemiumTestButtons />
+
+      {/* Resto del dashboard */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vehículos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {permissions.usage.vehiculos.used}
+              {permissions.usage.vehiculos.limit && `/${permissions.usage.vehiculos.limit}`}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Socios</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {permissions.usage.socios.used}
+              {permissions.usage.socios.limit && `/${permissions.usage.socios.limit}`}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Viajes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {permissions.usage.viajes.used}
+              {permissions.usage.viajes.limit && `/${permissions.usage.viajes.limit}`}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cartas Porte</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {permissions.usage.cartas_porte.used}
+              {permissions.usage.cartas_porte.limit && `/${permissions.usage.cartas_porte.limit}`}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
 }
