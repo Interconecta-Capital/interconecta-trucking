@@ -137,12 +137,6 @@ export const ViajesAnalytics = () => {
     { name: 'Programados', value: analyticsData.viajes.programados, color: '#F59E0B' },
     { name: 'Cancelados', value: analyticsData.viajes.cancelados, color: '#EF4444' }
   ] : [];
-  const totalEstados = analyticsData
-    ? analyticsData.viajes.completados +
-      analyticsData.viajes.enTransito +
-      analyticsData.viajes.programados +
-      analyticsData.viajes.cancelados
-    : 0;
 
   const costosData = analyticsData ? [
     { name: 'Combustible', value: analyticsData.costos.combustible },
@@ -350,9 +344,7 @@ export const ViajesAnalytics = () => {
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      activeIndex={activeIndex}
                       onClick={(_, index) => setActiveIndex(index)}
-                      activeShape={{ outerRadius: 90, stroke: '#000', strokeWidth: 2 }}
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -373,13 +365,6 @@ export const ViajesAnalytics = () => {
                     </li>
                   ))}
                 </ul>
-                {typeof activeIndex === 'number' && totalEstados > 0 && (
-                  <div className="text-center text-sm mt-2">
-                    {pieData[activeIndex].name}: {(
-                      (pieData[activeIndex].value / totalEstados) * 100
-                    ).toFixed(0)}%
-                  </div>
-                )}
               </CardContent>
             </Card>
 
