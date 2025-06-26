@@ -499,6 +499,7 @@
   @media (max-width: 768px) {
     .stat-card {
       position: relative;
+      padding: 1rem;
     }
     .stat-card .icon-container {
       position: absolute;
