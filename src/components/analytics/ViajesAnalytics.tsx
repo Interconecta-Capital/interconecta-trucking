@@ -184,7 +184,7 @@ export const ViajesAnalytics = () => {
             Análisis detallado del desempeño de su flota
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 analytics-controls-container">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -206,7 +206,7 @@ export const ViajesAnalytics = () => {
       <div className="summary-cards-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="stat-card">
               <div>
                 <p className="text-sm text-muted-foreground">Total Viajes</p>
                 <p className="text-2xl font-bold">{analyticsData.viajes.total}</p>
@@ -215,7 +215,7 @@ export const ViajesAnalytics = () => {
                   +12% vs mes anterior
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
+              <div className="icon-container p-3 bg-blue-100 rounded-full">
                 <Truck className="h-6 w-6 text-blue-600" />
               </div>
             </div>
@@ -224,7 +224,7 @@ export const ViajesAnalytics = () => {
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="stat-card">
               <div>
                 <p className="text-sm text-muted-foreground">Puntualidad</p>
                 <p className="text-2xl font-bold">{analyticsData.eficiencia.puntualidad}%</p>
@@ -233,7 +233,7 @@ export const ViajesAnalytics = () => {
                   +2.1% vs mes anterior
                 </p>
               </div>
-              <div className="p-3 bg-green-100 rounded-full">
+              <div className="icon-container p-3 bg-green-100 rounded-full">
                 <Clock className="h-6 w-6 text-green-600" />
               </div>
             </div>
@@ -242,7 +242,7 @@ export const ViajesAnalytics = () => {
 
         <Card>
           <CardContent className="p-6">
-            <div className="costo-total-card">
+            <div className="costo-total-card stat-card">
               <div>
                 <p className="text-sm text-muted-foreground">Costo Total</p>
                 <p className="costo-total-valor font-bold">{formatCurrency(analyticsData.costos.total)}</p>
@@ -251,7 +251,7 @@ export const ViajesAnalytics = () => {
                   +5% vs mes anterior
                 </p>
               </div>
-              <div className="costo-total-icon">
+              <div className="costo-total-icon icon-container">
                 <DollarSign className="h-6 w-6 text-red-600" />
               </div>
             </div>
@@ -260,7 +260,7 @@ export const ViajesAnalytics = () => {
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="stat-card">
               <div>
                 <p className="text-sm text-muted-foreground">Km/Litro</p>
                 <p className="text-2xl font-bold">{analyticsData.eficiencia.kmPorLitro}</p>
@@ -269,7 +269,7 @@ export const ViajesAnalytics = () => {
                   +0.3 vs mes anterior
                 </p>
               </div>
-              <div className="p-3 bg-yellow-100 rounded-full">
+              <div className="icon-container p-3 bg-yellow-100 rounded-full">
                 <Fuel className="h-6 w-6 text-yellow-600" />
               </div>
             </div>

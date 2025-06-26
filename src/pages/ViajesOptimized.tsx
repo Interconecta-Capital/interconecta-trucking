@@ -179,7 +179,7 @@ function ViajesContent() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium text-lg truncate">
+                          <span className="font-medium text-lg address-text">
                             {viaje.origen} → {viaje.destino}
                           </span>
                           <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
