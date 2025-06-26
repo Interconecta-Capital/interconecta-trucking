@@ -644,6 +644,7 @@
   /* Reorganizar contenido DENTRO del widget existente */
   .widget-card,
   .metric-card,
+  .stat-card,
   [class*="widget"],
   [class*="metric"] {
     display: flex;
@@ -656,7 +657,8 @@
 
   /* Área del título e ícono */
   .widget-card > div:first-child,
-  .metric-card > div:first-child {
+  .metric-card > div:first-child,
+  .stat-card > div:first-child {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -669,6 +671,7 @@
   .widget-card h3,
   .widget-card .title,
   .metric-card .title,
+  .stat-card .text-content p:first-child,
   [class*="title"] {
     font-size: 10px !important;
     font-weight: 600 !important;
@@ -680,19 +683,60 @@
     text-overflow: ellipsis !important;
     max-width: calc(100% - 30px) !important;
   }
-  .summary-cards-container > *:nth-child(2) .text-content p:first-child {
+  .summary-cards-container > *:nth-child(2) p:first-child,
+  [class*="summary"] > *:nth-child(2) p:first-child,
+  [class*="cards"] > *:nth-child(2) p:first-child {
+    font-size: 8px !important;
     white-space: normal !important;
-    line-height: 1.0 !important;
-    height: 16px !important;
+    line-height: 0.9 !important;
+    height: 14px !important;
     overflow: hidden !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
+    word-spacing: -1px !important;
+  }
+
+  .summary-cards-container > *:nth-child(3) p:first-child,
+  [class*="summary"] > *:nth-child(3) p:first-child,
+  [class*="cards"] > *:nth-child(3) p:first-child {
+    font-size: 8px !important;
+    letter-spacing: -0.3px !important;
+  }
+
+  [class*="text"] p:nth-child(2),
+  .text-content p:nth-child(2),
+  h2,
+  h1,
+  .value,
+  .number {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    line-height: 1 !important;
+    margin: 4px 0 !important;
+  }
+
+  .summary-cards-container > *:nth-child(3) [class*="text"] p:nth-child(2),
+  .summary-cards-container > *:nth-child(3) .text-content p:nth-child(2) {
+    font-size: 16px !important;
+    letter-spacing: -0.5px !important;
+  }
+
+  [class*="text"] p:last-child,
+  .text-content p:last-child,
+  .change,
+  .percentage {
+    font-size: 8px !important;
+    font-weight: 500 !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
   }
 
   /* Íconos de widget */
   .widget-card .icon,
   .metric-card .icon,
+  .stat-card .icon-container,
   [class*="icon"] {
     width: 20px !important;
     height: 20px !important;
@@ -703,25 +747,24 @@
   .widget-card .value,
   .widget-card .number,
   .metric-card .value,
+  .stat-card .main-value,
   [class*="value"] {
-    font-size: 22px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
     color: #111827 !important;
     line-height: 1.1 !important;
-    margin: 6px 0 4px 0 !important;
+    margin: 4px 0 !important;
   }
 
   /* Indicadores de cambio */
   .widget-card .change,
   .widget-card .percentage,
   .metric-card .change,
+  .stat-card p:last-child,
   [class*="change"] {
-    font-size: 9px !important;
+    font-size: 8px !important;
     font-weight: 500 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    line-height: 1.2 !important;
+    line-height: 1.1 !important;
     margin: 0 !important;
   }
 
@@ -746,11 +789,14 @@
   /* Contenedor existente de widgets */
   .dashboard-content,
   .widgets-container,
-  .metrics-section {
+  .metrics-section,
+  .summary-cards-container,
+  [class*="summary"],
+  [class*="cards"] {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
-    padding: 8px !important;
+    gap: 4px !important;
+    padding: 6px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
@@ -758,19 +804,24 @@
   /* Cada widget individual */
   .dashboard-content > *,
   .widgets-container > *,
-  .metrics-section > * {
+  .metrics-section > *,
+  .summary-cards-container > *,
+  [class*="summary"] > *,
+  [class*="cards"] > * {
     min-height: 100px !important;
     max-height: 115px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
   .widget-card *,
-  .metric-card * {
+  .metric-card *,
+  .stat-card * {
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
   }
   .widget-card,
-  .metric-card {
+  .metric-card,
+  .stat-card {
     max-width: calc(50vw - 10px) !important;
     box-sizing: border-box !important;
   }
