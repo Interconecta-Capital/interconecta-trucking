@@ -531,12 +531,33 @@
       align-items: stretch;
       gap: 0.5rem;
     }
-    .tabs-container {
+    .tabs-wrapper {
       position: relative;
+    }
+
+    .tabs-wrapper.scroll-gradient::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      background: linear-gradient(to left, var(--pure-white), rgba(255, 255, 255, 0));
+      pointer-events: none;
+    }
+
+    .tabs-container {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-start;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
       gap: 0.5rem;
+      padding-right: 40px;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+      display: none;
     }
     .costo-total-card {
       display: flex;
