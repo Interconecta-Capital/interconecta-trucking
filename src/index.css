@@ -465,6 +465,36 @@
     }
   }
 
+  /* Base styles for analytics widgets */
+  .stat-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .stat-card .icon-container,
+  .costo-total-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .costo-total-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: #fee2e2;
+    border-radius: 50%;
+    z-index: 0;
+  }
+  .costo-total-icon svg {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Mobile layout adjustments for analytics */
   @media (max-width: 768px) {
     .summary-cards-container {
@@ -495,40 +525,6 @@
     }
     .costo-total-valor {
       font-size: clamp(1.5rem, 5vw, 2rem);
-    }
-    .costo-total-icon {
-      position: relative;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .costo-total-icon::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-color: #fee2e2;
-      border-radius: 50%;
-      z-index: 0;
-    }
-    .costo-total-icon svg {
-      position: relative;
-      z-index: 1;
-    }
-    .stat-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .stat-card .icon-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      flex-shrink: 0;
     }
     .desktop-programar-button {
       display: none;
@@ -589,10 +585,11 @@
       margin-top: 0.75rem;
     }
     .viaje-card .address-text {
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 250px;
     }
     .viaje-card-status {
       position: absolute;
