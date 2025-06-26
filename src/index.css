@@ -476,28 +476,17 @@
       overflow-x: auto;
       padding-bottom: 10px;
     }
+    .analytics-controls-container {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
     .tabs-container {
       position: relative;
       display: flex;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .tabs-container::-webkit-scrollbar {
-      display: none;
-    }
-    .tabs-container > * {
-      white-space: nowrap;
-    }
-    .scroll-gradient::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 30px;
-      pointer-events: none;
-      background: linear-gradient(to left, #ffffff, rgba(255, 255, 255, 0));
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 0.5rem;
     }
     .costo-total-card {
       display: flex;
@@ -526,6 +515,20 @@
     .costo-total-icon svg {
       position: relative;
       z-index: 1;
+    }
+    .stat-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stat-card .icon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
     .desktop-programar-button {
       display: none;
@@ -584,6 +587,12 @@
       width: 100%;
       justify-content: space-around;
       margin-top: 0.75rem;
+    }
+    .viaje-card .address-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 250px;
     }
     .viaje-card-status {
       position: absolute;
