@@ -632,10 +632,147 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .viaje-card-status {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-    }
+  .viaje-card-status {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
   }
+}
+
+/* SOLO para vista móvil en /viajes */
+@media (max-width: 768px) {
+  /* Reorganizar contenido DENTRO del widget existente */
+  .widget-card,
+  .metric-card,
+  [class*="widget"],
+  [class*="metric"] {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px !important;
+    box-sizing: border-box;
+  }
+
+  /* Área del título e ícono */
+  .widget-card > div:first-child,
+  .metric-card > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* Títulos de widgets */
+  .widget-card h3,
+  .widget-card .title,
+  .metric-card .title,
+  [class*="title"] {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #6B7280 !important;
+    margin: 0 !important;
+    line-height: 1.2;
+    flex-grow: 1;
+  }
+
+  /* Íconos de widget */
+  .widget-card .icon,
+  .metric-card .icon,
+  [class*="icon"] {
+    width: 24px !important;
+    height: 24px !important;
+    flex-shrink: 0;
+  }
+
+  /* Valores principales */
+  .widget-card .value,
+  .widget-card .number,
+  .metric-card .value,
+  [class*="value"] {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    line-height: 1.1 !important;
+    margin: 8px 0 4px 0 !important;
+  }
+
+  /* Indicadores de cambio */
+  .widget-card .change,
+  .widget-card .percentage,
+  .metric-card .change,
+  [class*="change"] {
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+  }
+
+  /* Widget de costo que se desborda */
+  .widget-card:has([text*="Costo"]),
+  .metric-card:has([text*="Costo"]),
+  [class*="cost"] .value,
+  [class*="costo"] .value {
+    font-size: 20px !important;
+    letter-spacing: -0.5px !important;
+  }
+
+  /* Asegurar que números largos no se desborden */
+  .currency,
+  [class*="currency"] {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Contenedor existente de widgets */
+  .dashboard-content,
+  .widgets-container,
+  .metrics-section {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Cada widget individual */
+  .dashboard-content > *,
+  .widgets-container > *,
+  .metrics-section > * {
+    min-height: 110px !important;
+    max-height: 130px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Menú de Pestañas */
+  .tabs-container,
+  .navigation-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 0 12px !important;
+  }
+
+  .tabs-container::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Pestañas individuales existentes */
+  .tab,
+  .tab-item,
+  .navigation-tabs > * {
+    flex: 0 0 auto !important;
+    padding: 8px 12px !important;
+    margin-right: 6px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    border-radius: 16px !important;
+  }
+}
 }
