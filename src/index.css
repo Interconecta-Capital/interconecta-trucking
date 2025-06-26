@@ -497,6 +497,25 @@
 
   /* Mobile layout adjustments for analytics */
   @media (max-width: 768px) {
+    .stat-card {
+      position: relative;
+    }
+    .stat-card .icon-container {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+    }
+    .stat-card .text-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+    .stat-card .main-value {
+      font-size: clamp(1.25rem, 6vw, 1.75rem);
+    }
     .summary-cards-container {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
