@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useSuscripcion } from './useSuscripcion';
 import { useOptimizedSuperuser } from './useOptimizedSuperuser';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 
 // Tipos para el nuevo sistema unificado
 export interface PermissionResultV2 {
@@ -17,6 +17,7 @@ export interface FreemiumLimits {
   vehiculos: number;
   remolques: number;
   socios: number;
+  conductores: number;
   viajes_mensual: number;
   cartas_porte_mensual: number;
 }
@@ -72,6 +73,7 @@ const FREEMIUM_LIMITS: FreemiumLimits = {
   vehiculos: 3,
   remolques: 2,
   socios: 5,
+  conductores: 3,
   viajes_mensual: 5,
   cartas_porte_mensual: 5
 };
@@ -362,6 +364,13 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
           limit: FREEMIUM_LIMITS.socios,
           used: 0
         };
+      case 'conductores': 
+        return {
+          allowed: true,
+          reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.conductores} conductores`,
+          limit: FREEMIUM_LIMITS.conductores,
+          used: 0
+        };
       case 'viajes': 
         return {
           allowed: true,
@@ -375,11 +384,6 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
           reason: `Plan Gratis - Máximo ${FREEMIUM_LIMITS.cartas_porte_mensual} cartas por mes`,
           limit: FREEMIUM_LIMITS.cartas_porte_mensual,
           used: 0
-        };
-      case 'conductores': 
-        return {
-          allowed: true,
-          reason: 'Plan Gratis - Conductores sin límite',
         };
       default: 
         return { 
@@ -411,7 +415,7 @@ function createFreemiumPermissions(userId: string, trialInfo: any): UnifiedPermi
       limits: FREEMIUM_LIMITS
     },
     usage: { 
-      conductores: { used: 0, limit: null }, 
+      conductores: { used: 0, limit: FREEMIUM_LIMITS.conductores }, 
       vehiculos: { used: 0, limit: FREEMIUM_LIMITS.vehiculos }, 
       socios: { used: 0, limit: FREEMIUM_LIMITS.socios }, 
       cartas_porte: { used: 0, limit: FREEMIUM_LIMITS.cartas_porte_mensual },

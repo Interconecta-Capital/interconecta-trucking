@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ import { DashboardLayout } from './DashboardLayout';
 import { WelcomeCard } from './WelcomeCard';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AIInsights } from '@/components/ai/AIInsights';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
@@ -21,18 +23,34 @@ export default function UnifiedDashboard() {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const [vehiculosRes, sociosRes, conductoresRes, cartasRes] = await Promise.all([
+      const now = new Date();
+      const startOfCurrentMonth = startOfMonth(now);
+      const endOfCurrentMonth = endOfMonth(now);
+
+      const [vehiculosRes, sociosRes, conductoresRes, remolquesRes, cartasRes, viajesRes] = await Promise.all([
         supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('cartas_porte').select('id', { count: 'exact' }).eq('usuario_id', user.id)
+        supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id),
+        // Cartas porte del mes actual
+        supabase.from('cartas_porte').select('id', { count: 'exact' })
+          .eq('usuario_id', user.id)
+          .gte('created_at', startOfCurrentMonth.toISOString())
+          .lte('created_at', endOfCurrentMonth.toISOString()),
+        // Viajes del mes actual
+        supabase.from('viajes').select('id', { count: 'exact' })
+          .eq('user_id', user.id)
+          .gte('created_at', startOfCurrentMonth.toISOString())
+          .lte('created_at', endOfCurrentMonth.toISOString())
       ]);
 
       return {
         vehiculos: vehiculosRes.count || 0,
         socios: sociosRes.count || 0,
         conductores: conductoresRes.count || 0,
-        cartas_porte: cartasRes.count || 0
+        remolques: remolquesRes.count || 0,
+        cartas_porte: cartasRes.count || 0,
+        viajes: viajesRes.count || 0
       };
     },
     enabled: !!user?.id
@@ -40,6 +58,72 @@ export default function UnifiedDashboard() {
 
   // Mostrar tarjeta de bienvenida para usuarios nuevos
   const shouldShowWelcome = !user?.profile?.has_visited_dashboard;
+
+  // Función para obtener el color de la barra de progreso
+  const getProgressColor = (used: number, limit: number | null) => {
+    if (!limit) return 'bg-blue-600';
+    const percentage = (used / limit) * 100;
+    if (percentage >= 90) return 'bg-red-600';
+    if (percentage >= 75) return 'bg-yellow-600';
+    return 'bg-green-600';
+  };
+
+  // Función para renderizar una tarjeta de métrica con límites
+  const renderMetricCard = (title: string, used: number, limit: number | null, isMonthly = false) => {
+    const percentage = limit ? (used / limit) * 100 : 0;
+    const progressColor = getProgressColor(used, limit);
+    
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {used}
+            {limit && `/${limit}`}
+          </div>
+          
+          {limit && (
+            <div className="mt-2 space-y-1">
+              <Progress 
+                value={percentage} 
+                className="h-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                {percentage >= 90 ? (
+                  <span className="text-red-600 font-medium">
+                    ¡Límite casi alcanzado!
+                  </span>
+                ) : percentage >= 75 ? (
+                  <span className="text-yellow-600 font-medium">
+                    Acercándose al límite
+                  </span>
+                ) : (
+                  <span className="text-green-600">
+                    {limit - used} disponibles
+                  </span>
+                )}
+                {isMonthly && ' este mes'}
+              </p>
+            </div>
+          )}
+          
+          {permissions.accessLevel === 'freemium' && limit && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Plan Gratis: máximo {limit}{isMonthly ? '/mes' : ''}
+            </p>
+          )}
+          
+          {!limit && (
+            <p className="text-xs text-muted-foreground">
+              Sin límite
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -81,75 +165,45 @@ export default function UnifiedDashboard() {
       {/* Tarjeta de bienvenida para usuarios nuevos */}
       <WelcomeCard show={shouldShowWelcome} />
 
-      {/* Métricas del dashboard con datos reales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vehículos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {realCounts?.vehiculos || 0}
-              {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && 
-                `/${permissions.planInfo.limits.vehiculos}`}
-            </div>
-            {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && (
-              <p className="text-xs text-muted-foreground">
-                Plan Gratis: máximo {permissions.planInfo.limits.vehiculos}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Socios</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {realCounts?.socios || 0}
-              {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && 
-                `/${permissions.planInfo.limits.socios}`}
-            </div>
-            {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && (
-              <p className="text-xs text-muted-foreground">
-                Plan Gratis: máximo {permissions.planInfo.limits.socios}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conductores</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {realCounts?.conductores || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Sin límite
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cartas Porte</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {realCounts?.cartas_porte || 0}
-              {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && 
-                `/${permissions.planInfo.limits.cartas_porte_mensual}`}
-            </div>
-            {permissions.accessLevel === 'freemium' && permissions.planInfo.limits && (
-              <p className="text-xs text-muted-foreground">
-                Plan Gratis: {permissions.planInfo.limits.cartas_porte_mensual}/mes
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      {/* Métricas del dashboard con datos reales y límites */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {renderMetricCard(
+          'Vehículos', 
+          realCounts?.vehiculos || 0, 
+          permissions.usage.vehiculos.limit
+        )}
+        
+        {renderMetricCard(
+          'Conductores', 
+          realCounts?.conductores || 0, 
+          permissions.usage.conductores.limit
+        )}
+        
+        {renderMetricCard(
+          'Socios', 
+          realCounts?.socios || 0, 
+          permissions.usage.socios.limit
+        )}
+        
+        {renderMetricCard(
+          'Remolques', 
+          realCounts?.remolques || 0, 
+          permissions.usage.remolques.limit
+        )}
+        
+        {renderMetricCard(
+          'Cartas Porte', 
+          realCounts?.cartas_porte || 0, 
+          permissions.usage.cartas_porte.limit,
+          true
+        )}
+        
+        {renderMetricCard(
+          'Viajes', 
+          realCounts?.viajes || 0, 
+          permissions.usage.viajes.limit,
+          true
+        )}
       </div>
 
       {/* Insights inteligentes */}
