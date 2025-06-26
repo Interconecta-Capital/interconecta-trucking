@@ -14,7 +14,8 @@ interface ProtectedContentProps {
 }
 
 /**
- * Componente de Contenido Protegido - Usa useUnifiedPermissionsV2 como única fuente de verdad
+ * Componente de Contenido Protegido - Acceso completo para todos los usuarios autenticados
+ * Solo bloquea usuarios no autenticados o con cuentas bloqueadas
  */
 export const ProtectedContent = ({ 
   children, 
@@ -25,36 +26,20 @@ export const ProtectedContent = ({
   const permissions = useUnifiedPermissionsV2();
   const navigate = useNavigate();
   
-  // Superusuarios tienen acceso total
-  if (permissions.accessLevel === 'superuser') {
-    return <>{children}</>;
-  }
-
-  // Verificar si puede acceder al contenido
-  const canAccess = () => {
-    // Durante trial activo, acceso total
-    if (permissions.accessLevel === 'trial') return true;
-    
-    // Con plan activo, verificar permisos específicos
-    if (permissions.accessLevel === 'paid') {
-      return permissions.hasFullAccess;
-    }
-    
-    // Sin acceso en otros casos
-    return false;
-  };
+  // Solo bloquear si no está autenticado o si está bloqueado
+  const canAccess = permissions.isAuthenticated && permissions.accessLevel !== 'blocked';
 
   const getReason = () => {
+    if (!permissions.isAuthenticated) {
+      return 'Debes iniciar sesión para acceder a esta sección.';
+    }
     if (permissions.accessLevel === 'blocked') {
       return 'Tu cuenta está bloqueada por falta de pago.';
     }
-    if (permissions.accessLevel === 'expired') {
-      return 'Tu período de prueba ha finalizado. Actualiza tu plan para continuar.';
-    }
-    return 'Esta sección no está disponible en tu plan actual.';
+    return 'No tienes acceso a esta sección.';
   };
 
-  if (canAccess()) {
+  if (canAccess) {
     return <>{children}</>;
   }
 
@@ -68,7 +53,7 @@ export const ProtectedContent = ({
         <Lock className="h-4 w-4" />
         <AlertDescription className="space-y-3">
           <p>{getReason()}</p>
-          {showUpgrade && (
+          {showUpgrade && permissions.accessLevel === 'blocked' && (
             <Button 
               onClick={() => navigate('/planes')}
               className="w-full"

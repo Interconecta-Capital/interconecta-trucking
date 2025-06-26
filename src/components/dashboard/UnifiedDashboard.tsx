@@ -6,7 +6,6 @@ import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PersonalizedGreeting } from './PersonalizedGreeting';
-import { FreemiumTestButtons } from './FreemiumTestButtons';
 import { DashboardLayout } from './DashboardLayout';
 import { WelcomeCard } from './WelcomeCard';
 import { QuickActionsCard } from './QuickActionsCard';
@@ -78,9 +77,6 @@ export default function UnifiedDashboard() {
           </p>
         </CardContent>
       </Card>
-
-      {/* Panel de pruebas - Solo para plan Gratis */}
-      {permissions.accessLevel === 'freemium' && <FreemiumTestButtons />}
 
       {/* Tarjeta de bienvenida para usuarios nuevos */}
       <WelcomeCard show={shouldShowWelcome} />
