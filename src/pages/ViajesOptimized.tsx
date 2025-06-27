@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,7 +83,7 @@ function ViajesContent() {
   };
 
   // Filtrar viajes por estado
-  const viajesActivos = viajes.filter(v => ['programado', 'en_transito', 'retrasado'].includes(v.estado));
+  const viajesActivos = viajes.filter(v => ['en_transito', 'retrasado'].includes(v.estado)); // Changed: removed 'programado'
   const viajesProgramados = viajes.filter(v => v.estado === 'programado');
   const viajesCancelados = viajes.filter(v => v.estado === 'cancelado');
   const viajesHistorial = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
