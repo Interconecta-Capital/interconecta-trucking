@@ -10,53 +10,15 @@ import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanesCard } from '@/components/suscripcion/PlanesCard';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 
 export default function Planes() {
   const [activeTab, setActiveTab] = useState('plan');
   const permissions = useUnifiedPermissionsV2();
   const { planes, cambiarPlan, isChangingPlan } = useSuscripcion();
-  const { user } = useAuth();
 
   // Obtener contadores reales de la base de datos (mismo hook que usa el dashboard)
-  const { data: realCounts } = useQuery({
-    queryKey: ['dashboard-counts', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const now = new Date();
-      const startOfCurrentMonth = startOfMonth(now);
-      const endOfCurrentMonth = endOfMonth(now);
-
-      const [vehiculosRes, conductoresRes, sociosRes, remolquesRes, cartasRes, viajesRes] = await Promise.all([
-        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('cartas_porte').select('id', { count: 'exact' })
-          .eq('usuario_id', user.id)
-          .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString()),
-        supabase.from('viajes').select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString())
-      ]);
-
-      return {
-        vehiculos: vehiculosRes.count || 0,
-        conductores: conductoresRes.count || 0,
-        socios: sociosRes.count || 0,
-        remolques: remolquesRes.count || 0,
-        cartas_porte: cartasRes.count || 0,
-        viajes: viajesRes.count || 0
-      };
-    },
-    enabled: !!user?.id
-  });
+  const { data: realCounts } = useDashboardCounts();
 
   // Crear planDetails basado en la información real del usuario
   const planDetails = [
@@ -311,7 +273,9 @@ export default function Planes() {
                 <LimitUsageIndicator resourceType="conductores" />
                 <LimitUsageIndicator resourceType="vehiculos" />
                 <LimitUsageIndicator resourceType="socios" />
+                <LimitUsageIndicator resourceType="remolques" />
                 <LimitUsageIndicator resourceType="cartas_porte" />
+                <LimitUsageIndicator resourceType="viajes" />
               </CardContent>
             </Card>
           </TabsContent>

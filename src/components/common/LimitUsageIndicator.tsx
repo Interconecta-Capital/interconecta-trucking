@@ -3,10 +3,7 @@ import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Infinity } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 
 interface LimitUsageIndicatorProps {
   resourceType: 'cartas_porte' | 'conductores' | 'vehiculos' | 'socios' | 'remolques' | 'viajes';
@@ -20,77 +17,8 @@ export const LimitUsageIndicator = ({
   showDetails = true 
 }: LimitUsageIndicatorProps) => {
   const permissions = useUnifiedPermissionsV2();
-  const { user } = useAuth();
-
-  // Obtener conteo real de la base de datos
-  const { data: realCount } = useQuery({
-    queryKey: ['real-count', resourceType, user?.id],
-    queryFn: async () => {
-      if (!user?.id) return 0;
-
-      const now = new Date();
-      const startOfCurrentMonth = startOfMonth(now);
-      const endOfCurrentMonth = endOfMonth(now);
-
-      switch (resourceType) {
-        case 'vehiculos': {
-          const vehiculosRes = await supabase
-            .from('vehiculos')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id);
-          return vehiculosRes.count || 0;
-        }
-
-        case 'conductores': {
-          const conductoresRes = await supabase
-            .from('conductores')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id);
-          return conductoresRes.count || 0;
-        }
-
-        case 'socios': {
-          const sociosRes = await supabase
-            .from('socios')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id);
-          return sociosRes.count || 0;
-        }
-
-        case 'remolques': {
-          const remolquesRes = await supabase
-            .from('remolques_ccp')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id);
-          return remolquesRes.count || 0;
-        }
-
-        case 'cartas_porte': {
-          const cartasRes = await supabase
-            .from('cartas_porte')
-            .select('id', { count: 'exact' })
-            .eq('usuario_id', user.id)
-            .gte('created_at', startOfCurrentMonth.toISOString())
-            .lte('created_at', endOfCurrentMonth.toISOString());
-          return cartasRes.count || 0;
-        }
-
-        case 'viajes': {
-          const viajesRes = await supabase
-            .from('viajes')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id)
-            .gte('created_at', startOfCurrentMonth.toISOString())
-            .lte('created_at', endOfCurrentMonth.toISOString());
-          return viajesRes.count || 0;
-        }
-
-        default:
-          return 0;
-      }
-    },
-    enabled: !!user?.id
-  });
+  const { data: counts } = useDashboardCounts();
+  const realCount = counts ? (counts as any)[resourceType] ?? 0 : 0;
   
   // Obtener datos de uso del recurso desde permissions
   const resourceData = permissions.usage[resourceType];

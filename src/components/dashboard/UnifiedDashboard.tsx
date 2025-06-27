@@ -4,80 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 import { PersonalizedGreeting } from './PersonalizedGreeting';
 import { DashboardLayout } from './DashboardLayout';
 import { WelcomeCard } from './WelcomeCard';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AIInsights } from '@/components/ai/AIInsights';
-import { startOfMonth, endOfMonth } from 'date-fns';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
   const permissions = useUnifiedPermissionsV2();
 
   // Obtener contadores reales de la base de datos
-  interface RealCounts {
-    vehiculos: number;
-    socios: number;
-    conductores: number;
-    remolques: number;
-    cartas_porte: number;
-    viajes: number;
-  }
-
-  const { data: realCounts } = useQuery<RealCounts | null>({
-    queryKey: ['dashboard-counts', user?.id],
-    queryFn: async (): Promise<RealCounts | null> => {
-      if (!user?.id) return null;
-
-      const now = new Date();
-      const startOfCurrentMonth = startOfMonth(now);
-      const endOfCurrentMonth = endOfMonth(now);
-
-      interface CountResult { count: number | null }
-
-      const vehiculosRes = await (supabase
-        .from('vehiculos') as any)
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id) as any;
-      const sociosRes = await (supabase
-        .from('socios') as any)
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id) as any;
-      const conductoresRes = await (supabase
-        .from('conductores') as any)
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id) as any;
-      const remolquesRes = await (supabase
-        .from('remolques_ccp') as any)
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id) as any;
-      const cartasRes = await (supabase
-        .from('cartas_porte') as any)
-        .select('id', { count: 'exact' })
-        .eq('usuario_id', user.id)
-        .gte('created_at', startOfCurrentMonth.toISOString())
-        .lte('created_at', endOfCurrentMonth.toISOString()) as any;
-      const viajesRes = await (supabase
-        .from('viajes') as any)
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id)
-        .gte('created_at', startOfCurrentMonth.toISOString())
-        .lte('created_at', endOfCurrentMonth.toISOString()) as any;
-
-      return {
-        vehiculos: vehiculosRes.count || 0,
-        socios: sociosRes.count || 0,
-        conductores: conductoresRes.count || 0,
-        remolques: remolquesRes.count || 0,
-        cartas_porte: cartasRes.count || 0,
-        viajes: viajesRes.count || 0
-      };
-    },
-    enabled: !!user?.id
-  });
+  const { data: realCounts } = useDashboardCounts();
 
   // Mostrar tarjeta de bienvenida para usuarios nuevos
   const shouldShowWelcome = !user?.profile?.has_visited_dashboard;
