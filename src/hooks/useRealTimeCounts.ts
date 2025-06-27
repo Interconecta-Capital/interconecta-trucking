@@ -18,11 +18,11 @@ export interface RealTimeCounts {
 export function useRealTimeCounts() {
   const { user } = useAuth();
 
-  const queryResult = useQuery({
+  const queryResult = useQuery<RealTimeCounts>({
     queryKey: ['real-time-counts', user?.id],
-    queryFn: async (): Promise<RealTimeCounts> => {
+    queryFn: async () => {
       if (!user?.id) {
-        return {
+        const defaultCounts: RealTimeCounts = {
           vehiculos: 0,
           conductores: 0,
           socios: 0,
@@ -32,62 +32,14 @@ export function useRealTimeCounts() {
           viajes: 0,
           viajes_mes: 0
         };
+        return defaultCounts;
       }
 
       const now = new Date();
       const startOfCurrentMonth = startOfMonth(now);
       const endOfCurrentMonth = endOfMonth(now);
 
-      // Ejecutar consultas de conteos básicos
-      const vehiculosQuery = supabase
-        .from('vehiculos')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('activo', true);
-      
-      const conductoresQuery = supabase
-        .from('conductores')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('activo', true);
-      
-      const sociosQuery = supabase
-        .from('socios')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('activo', true);
-      
-      const remolquesQuery = supabase
-        .from('remolques_ccp')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('activo', true);
-      
-      const cartasQuery = supabase
-        .from('cartas_porte')
-        .select('id', { count: 'exact' })
-        .eq('usuario_id', user.id);
-      
-      const cartasMesQuery = supabase
-        .from('cartas_porte')
-        .select('id', { count: 'exact' })
-        .eq('usuario_id', user.id)
-        .gte('created_at', startOfCurrentMonth.toISOString())
-        .lte('created_at', endOfCurrentMonth.toISOString());
-      
-      const viajesQuery = supabase
-        .from('viajes')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id);
-      
-      const viajesMesQuery = supabase
-        .from('viajes')
-        .select('id', { count: 'exact' })
-        .eq('user_id', user.id)
-        .gte('created_at', startOfCurrentMonth.toISOString())
-        .lte('created_at', endOfCurrentMonth.toISOString());
-
-      // Ejecutar todas las consultas en paralelo
+      // Execute all queries in parallel with simplified type handling
       const [
         vehiculosRes,
         conductoresRes,
@@ -98,33 +50,39 @@ export function useRealTimeCounts() {
         viajesRes,
         viajesMesRes
       ] = await Promise.all([
-        vehiculosQuery,
-        conductoresQuery,
-        sociosQuery,
-        remolquesQuery,
-        cartasQuery,
-        cartasMesQuery,
-        viajesQuery,
-        viajesMesQuery
+        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id).eq('activo', true),
+        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id).eq('activo', true),
+        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id).eq('activo', true),
+        supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id).eq('activo', true),
+        supabase.from('cartas_porte').select('id', { count: 'exact' }).eq('usuario_id', user.id),
+        supabase.from('cartas_porte').select('id', { count: 'exact' })
+          .eq('usuario_id', user.id)
+          .gte('created_at', startOfCurrentMonth.toISOString())
+          .lte('created_at', endOfCurrentMonth.toISOString()),
+        supabase.from('viajes').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('viajes').select('id', { count: 'exact' })
+          .eq('user_id', user.id)
+          .gte('created_at', startOfCurrentMonth.toISOString())
+          .lte('created_at', endOfCurrentMonth.toISOString())
       ]);
 
-      // Construir el resultado con tipos explícitos
+      // Build result with explicit typing
       const result: RealTimeCounts = {
-        vehiculos: vehiculosRes.count ?? 0,
-        conductores: conductoresRes.count ?? 0,
-        socios: sociosRes.count ?? 0,
-        remolques: remolquesRes.count ?? 0,
-        cartas_porte: cartasRes.count ?? 0,
-        cartas_porte_mes: cartasMesRes.count ?? 0,
-        viajes: viajesRes.count ?? 0,
-        viajes_mes: viajesMesRes.count ?? 0
+        vehiculos: vehiculosRes.count || 0,
+        conductores: conductoresRes.count || 0,
+        socios: sociosRes.count || 0,
+        remolques: remolquesRes.count || 0,
+        cartas_porte: cartasRes.count || 0,
+        cartas_porte_mes: cartasMesRes.count || 0,
+        viajes: viajesRes.count || 0,
+        viajes_mes: viajesMesRes.count || 0
       };
 
       return result;
     },
     enabled: !!user?.id,
-    staleTime: 30 * 1000, // 30 segundos
-    refetchInterval: 60 * 1000, // Refrescar cada minuto
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refresh every minute
     refetchOnWindowFocus: true,
   });
 
