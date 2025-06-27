@@ -1,11 +1,13 @@
 
+import React from 'react';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { useRealTimeCounts } from '@/hooks/useRealTimeCounts';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Infinity } from 'lucide-react';
 
 interface LimitUsageIndicatorProps {
-  resourceType: 'cartas_porte' | 'conductores' | 'vehiculos' | 'socios';
+  resourceType: 'cartas_porte' | 'conductores' | 'vehiculos' | 'socios' | 'remolques' | 'viajes';
   className?: string;
   showDetails?: boolean;
 }
@@ -16,11 +18,22 @@ export const LimitUsageIndicator = ({
   showDetails = true 
 }: LimitUsageIndicatorProps) => {
   const permissions = useUnifiedPermissionsV2();
+  const { data: realCounts } = useRealTimeCounts();
   
-  // Obtener datos de uso del recurso
   const resourceData = permissions.usage[resourceType];
-  const isUnlimited = resourceData.limit === null || permissions.accessLevel === 'superuser';
-  const percentage = isUnlimited ? 0 : (resourceData.used / resourceData.limit) * 100;
+  
+  // Usar contadores reales si están disponibles
+  const actualUsed = realCounts ? {
+    cartas_porte: realCounts.cartas_porte_mes,
+    conductores: realCounts.conductores,
+    vehiculos: realCounts.vehiculos,
+    socios: realCounts.socios,
+    remolques: realCounts.remolques,
+    viajes: realCounts.viajes_mes
+  }[resourceType] : resourceData.used;
+
+  const isUnlimited = resourceData.limit === null;
+  const percentage = isUnlimited ? 0 : (actualUsed / resourceData.limit) * 100;
   const isNearLimit = percentage >= 80;
   const isAtLimit = percentage >= 100;
 
@@ -42,7 +55,9 @@ export const LimitUsageIndicator = ({
     cartas_porte: 'Cartas Porte',
     conductores: 'Conductores',
     vehiculos: 'Vehículos',
-    socios: 'Socios'
+    socios: 'Socios',
+    remolques: 'Remolques',
+    viajes: 'Viajes'
   };
 
   if (!showDetails && isUnlimited) {
@@ -59,7 +74,7 @@ export const LimitUsageIndicator = ({
       <div className="flex items-center justify-between">
         <Badge variant={getVariant()} className="flex items-center gap-1">
           {getIcon()}
-          {resourceData.used} {isUnlimited ? '' : `/ ${resourceData.limit}`}
+          {actualUsed} {isUnlimited ? '' : `/ ${resourceData.limit}`}
           {isUnlimited && <span className="text-xs">ilimitado</span>}
         </Badge>
         {!isUnlimited && (
@@ -88,7 +103,7 @@ export const LimitUsageIndicator = ({
             )}
             {!isNearLimit && (
               <p className="text-xs text-green-600">
-                Tienes {resourceData.limit - resourceData.used} {resourceNames[resourceType]} disponibles
+                Tienes {resourceData.limit - actualUsed} {resourceNames[resourceType]} disponibles
               </p>
             )}
           </div>
