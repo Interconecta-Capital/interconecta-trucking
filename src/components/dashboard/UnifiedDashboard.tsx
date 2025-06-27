@@ -4,17 +4,80 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
-import { useRealTimeCounts } from '@/hooks/useRealTimeCounts';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { PersonalizedGreeting } from './PersonalizedGreeting';
 import { DashboardLayout } from './DashboardLayout';
 import { WelcomeCard } from './WelcomeCard';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AIInsights } from '@/components/ai/AIInsights';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
   const permissions = useUnifiedPermissionsV2();
-  const { data: realCounts, isLoading } = useRealTimeCounts();
+
+  // Obtener contadores reales de la base de datos
+  interface RealCounts {
+    vehiculos: number;
+    socios: number;
+    conductores: number;
+    remolques: number;
+    cartas_porte: number;
+    viajes: number;
+  }
+
+  const { data: realCounts } = useQuery<RealCounts | null>({
+    queryKey: ['dashboard-counts', user?.id],
+    queryFn: async (): Promise<RealCounts | null> => {
+      if (!user?.id) return null;
+
+      const now = new Date();
+      const startOfCurrentMonth = startOfMonth(now);
+      const endOfCurrentMonth = endOfMonth(now);
+
+      interface CountResult { count: number | null }
+
+      const vehiculosRes = await (supabase
+        .from('vehiculos') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const sociosRes = await (supabase
+        .from('socios') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const conductoresRes = await (supabase
+        .from('conductores') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const remolquesRes = await (supabase
+        .from('remolques_ccp') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id) as any;
+      const cartasRes = await (supabase
+        .from('cartas_porte') as any)
+        .select('id', { count: 'exact' })
+        .eq('usuario_id', user.id)
+        .gte('created_at', startOfCurrentMonth.toISOString())
+        .lte('created_at', endOfCurrentMonth.toISOString()) as any;
+      const viajesRes = await (supabase
+        .from('viajes') as any)
+        .select('id', { count: 'exact' })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfCurrentMonth.toISOString())
+        .lte('created_at', endOfCurrentMonth.toISOString()) as any;
+
+      return {
+        vehiculos: vehiculosRes.count || 0,
+        socios: sociosRes.count || 0,
+        conductores: conductoresRes.count || 0,
+        remolques: remolquesRes.count || 0,
+        cartas_porte: cartasRes.count || 0,
+        viajes: viajesRes.count || 0
+      };
+    },
+    enabled: !!user?.id
+  });
 
   // Mostrar tarjeta de bienvenida para usuarios nuevos
   const shouldShowWelcome = !user?.profile?.has_visited_dashboard;
@@ -31,6 +94,7 @@ export default function UnifiedDashboard() {
   // Función para renderizar una tarjeta de métrica con límites
   const renderMetricCard = (title: string, used: number, limit: number | null, isMonthly = false) => {
     const percentage = limit ? (used / limit) * 100 : 0;
+    const progressColor = getProgressColor(used, limit);
     
     return (
       <Card>
@@ -68,6 +132,12 @@ export default function UnifiedDashboard() {
             </div>
           )}
           
+          {permissions.accessLevel === 'freemium' && limit && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Plan Gratis: máximo {limit}{isMonthly ? '/mes' : ''}
+            </p>
+          )}
+          
           {!limit && (
             <p className="text-xs text-muted-foreground">
               Sin límite
@@ -77,27 +147,6 @@ export default function UnifiedDashboard() {
       </Card>
     );
   };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <PersonalizedGreeting />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-2 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -118,7 +167,8 @@ export default function UnifiedDashboard() {
             <div>
               <p className="text-sm font-medium">Nivel de Acceso</p>
               <p className="text-lg capitalize">
-                {permissions.accessLevel === 'trial' ? 'Prueba' :
+                {permissions.accessLevel === 'freemium' ? 'Gratis' : 
+                 permissions.accessLevel === 'trial' ? 'Prueba' :
                  permissions.accessLevel === 'paid' ? 'Pagado' :
                  permissions.accessLevel === 'superuser' ? 'Administrador' : 
                  permissions.accessLevel}
@@ -126,9 +176,12 @@ export default function UnifiedDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium">Estado</p>
-              <p className="text-lg">{permissions.hasFullAccess ? 'Activo' : 'Limitado'}</p>
+              <p className="text-lg">{permissions.planInfo.isActive ? 'Activo' : 'Inactivo'}</p>
             </div>
           </div>
+          <p className="text-sm text-muted-foreground mt-4">
+            {permissions.accessReason}
+          </p>
         </CardContent>
       </Card>
 
@@ -163,14 +216,14 @@ export default function UnifiedDashboard() {
         
         {renderMetricCard(
           'Cartas Porte', 
-          realCounts?.cartas_porte_mes || 0, 
+          realCounts?.cartas_porte || 0, 
           permissions.usage.cartas_porte.limit,
           true
         )}
         
         {renderMetricCard(
           'Viajes', 
-          realCounts?.viajes_mes || 0, 
+          realCounts?.viajes || 0, 
           permissions.usage.viajes.limit,
           true
         )}

@@ -9,20 +9,18 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanesCard } from '@/components/suscripcion/PlanesCard';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
-import { useRealTimeCounts } from '@/hooks/useRealTimeCounts';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 
 export default function Planes() {
   const [activeTab, setActiveTab] = useState('plan');
   const permissions = useUnifiedPermissionsV2();
-  const { data: realCounts } = useRealTimeCounts();
   const { planes, cambiarPlan, isChangingPlan } = useSuscripcion();
 
   // Crear planDetails basado en la información disponible en permissions
   const planDetails = [
     {
       feature: permissions.usage.cartas_porte.limit ? 
-        `${permissions.usage.cartas_porte.limit} cartas porte por mes` : 
+        `${permissions.usage.cartas_porte.limit} cartas porte` : 
         'Cartas porte ilimitadas',
       included: true
     },
@@ -42,18 +40,6 @@ export default function Planes() {
       feature: permissions.usage.socios.limit ? 
         `${permissions.usage.socios.limit} socios` : 
         'Socios ilimitados',
-      included: true
-    },
-    {
-      feature: permissions.usage.remolques.limit ? 
-        `${permissions.usage.remolques.limit} remolques` : 
-        'Remolques ilimitados',
-      included: true
-    },
-    {
-      feature: permissions.usage.viajes.limit ? 
-        `${permissions.usage.viajes.limit} viajes por mes` : 
-        'Viajes ilimitados',
       included: true
     },
     { feature: 'Generación de XML', included: permissions.hasFullAccess },
@@ -105,75 +91,17 @@ export default function Planes() {
           </TabsContent>
 
           <TabsContent value="uso" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Uso de Recursos</CardTitle>
-                  <CardDescription>
-                    Contadores en tiempo real de tus recursos
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <LimitUsageIndicator resourceType="conductores" />
-                  <LimitUsageIndicator resourceType="vehiculos" />
-                  <LimitUsageIndicator resourceType="socios" />
-                  <LimitUsageIndicator resourceType="remolques" />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Uso Mensual</CardTitle>
-                  <CardDescription>
-                    Recursos que se renuevan cada mes
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <LimitUsageIndicator resourceType="cartas_porte" />
-                  <LimitUsageIndicator resourceType="viajes" />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Mostrar resumen de contadores reales */}
-            {realCounts && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resumen de Contadores</CardTitle>
-                  <CardDescription>
-                    Vista general de todos tus recursos
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium">Vehículos</p>
-                      <p className="text-2xl font-bold">{realCounts.vehiculos}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Conductores</p>
-                      <p className="text-2xl font-bold">{realCounts.conductores}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Socios</p>
-                      <p className="text-2xl font-bold">{realCounts.socios}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Remolques</p>
-                      <p className="text-2xl font-bold">{realCounts.remolques}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Cartas (este mes)</p>
-                      <p className="text-2xl font-bold">{realCounts.cartas_porte_mes}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Viajes (este mes)</p>
-                      <p className="text-2xl font-bold">{realCounts.viajes_mes}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader>
+                <CardTitle>Uso Detallado por Recurso</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <LimitUsageIndicator resourceType="conductores" />
+                <LimitUsageIndicator resourceType="vehiculos" />
+                <LimitUsageIndicator resourceType="socios" />
+                <LimitUsageIndicator resourceType="cartas_porte" />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="cambiar" className="space-y-6">

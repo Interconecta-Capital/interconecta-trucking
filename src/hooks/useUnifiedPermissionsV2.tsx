@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useRealTimeCounts } from './useRealTimeCounts';
 
 export interface PlanInfo {
   name: string;
@@ -14,8 +13,6 @@ export interface PlanInfo {
     conductores?: number;
     socios?: number;
     cartas_porte?: number;
-    remolques?: number;
-    viajes?: number;
   };
 }
 
@@ -29,20 +26,15 @@ export interface UnifiedPermissionsV2 {
     conductores: { used: number; limit: number | null };
     socios: { used: number; limit: number | null };
     cartas_porte: { used: number; limit: number | null };
-    remolques: { used: number; limit: number | null };
-    viajes: { used: number; limit: number | null };
   };
   canCreateVehiculo: () => { allowed: boolean; reason?: string };
   canCreateConductor: () => { allowed: boolean; reason?: string };
   canCreateSocio: () => { allowed: boolean; reason?: string };
   canCreateCartaPorte: () => { allowed: boolean; reason?: string };
-  canCreateRemolque: () => { allowed: boolean; reason?: string };
-  canCreateViaje: () => { allowed: boolean; reason?: string };
 }
 
 export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
   const { user } = useAuth();
-  const { data: realCounts } = useRealTimeCounts();
 
   // Verificar si es superusuario directamente desde auth metadata
   const isSuperuser = useMemo(() => {
@@ -67,22 +59,28 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
         .in('status', ['trial', 'active'])
         .single();
 
-      return { subscription };
+      // Obtener contadores actuales
+      const [vehiculosRes, conductoresRes, sociosRes, cartasRes] = await Promise.all([
+        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('cartas_porte').select('id', { count: 'exact' }).eq('usuario_id', user.id)
+      ]);
+
+      return {
+        subscription,
+        counts: {
+          vehiculos: vehiculosRes.count || 0,
+          conductores: conductoresRes.count || 0,
+          socios: sociosRes.count || 0,
+          cartas_porte: cartasRes.count || 0
+        }
+      };
     },
     enabled: !!user?.id
   });
 
   return useMemo(() => {
-    // Usar contadores reales si están disponibles
-    const counts = realCounts || {
-      vehiculos: 0,
-      conductores: 0,
-      socios: 0,
-      cartas_porte: 0,
-      remolques: 0,
-      viajes: 0
-    };
-
     // Superusuarios tienen acceso completo
     if (isSuperuser) {
       return {
@@ -95,19 +93,15 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
         },
         planDetails: [],
         usage: {
-          vehiculos: { used: counts.vehiculos, limit: null },
-          conductores: { used: counts.conductores, limit: null },
-          socios: { used: counts.socios, limit: null },
-          cartas_porte: { used: counts.cartas_porte, limit: null },
-          remolques: { used: counts.remolques, limit: null },
-          viajes: { used: counts.viajes, limit: null }
+          vehiculos: { used: 0, limit: null },
+          conductores: { used: 0, limit: null },
+          socios: { used: 0, limit: null },
+          cartas_porte: { used: 0, limit: null }
         },
         canCreateVehiculo: () => ({ allowed: true }),
         canCreateConductor: () => ({ allowed: true }),
         canCreateSocio: () => ({ allowed: true }),
-        canCreateCartaPorte: () => ({ allowed: true }),
-        canCreateRemolque: () => ({ allowed: true }),
-        canCreateViaje: () => ({ allowed: true })
+        canCreateCartaPorte: () => ({ allowed: true })
       };
     }
 
@@ -122,23 +116,19 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
         },
         planDetails: [],
         usage: {
-          vehiculos: { used: counts.vehiculos, limit: 0 },
-          conductores: { used: counts.conductores, limit: 0 },
-          socios: { used: counts.socios, limit: 0 },
-          cartas_porte: { used: counts.cartas_porte, limit: 0 },
-          remolques: { used: counts.remolques, limit: 0 },
-          viajes: { used: counts.viajes, limit: 0 }
+          vehiculos: { used: 0, limit: 0 },
+          conductores: { used: 0, limit: 0 },
+          socios: { used: 0, limit: 0 },
+          cartas_porte: { used: 0, limit: 0 }
         },
         canCreateVehiculo: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
         canCreateConductor: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
         canCreateSocio: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
-        canCreateCartaPorte: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
-        canCreateRemolque: () => ({ allowed: false, reason: 'No tienes un plan activo' }),
-        canCreateViaje: () => ({ allowed: false, reason: 'No tienes un plan activo' })
+        canCreateCartaPorte: () => ({ allowed: false, reason: 'No tienes un plan activo' })
       };
     }
 
-    const { subscription } = permissionsData;
+    const { subscription, counts } = permissionsData;
     const plan = subscription.planes_suscripcion;
     const isTrialActive = subscription.status === 'trial';
 
@@ -198,9 +188,7 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
       vehiculos: { used: counts.vehiculos, limit: plan?.limite_vehiculos ?? null },
       conductores: { used: counts.conductores, limit: plan?.limite_conductores ?? null },
       socios: { used: counts.socios, limit: plan?.limite_socios ?? null },
-      cartas_porte: { used: counts.cartas_porte, limit: plan?.limite_cartas_porte ?? null },
-      remolques: { used: counts.remolques, limit: plan?.limite_remolques ?? null },
-      viajes: { used: counts.viajes, limit: plan?.limite_viajes ?? null }
+      cartas_porte: { used: counts.cartas_porte, limit: plan?.limite_cartas_porte ?? null }
     };
 
     return {
@@ -214,9 +202,7 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
           vehiculos: plan?.limite_vehiculos,
           conductores: plan?.limite_conductores,
           socios: plan?.limite_socios,
-          cartas_porte: plan?.limite_cartas_porte,
-          remolques: plan?.limite_remolques,
-          viajes: plan?.limite_viajes
+          cartas_porte: plan?.limite_cartas_porte
         }
       },
       planDetails,
@@ -224,9 +210,7 @@ export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
       canCreateVehiculo: () => checkLimit('vehiculos', 'limite_vehiculos'),
       canCreateConductor: () => checkLimit('conductores', 'limite_conductores'),
       canCreateSocio: () => checkLimit('socios', 'limite_socios'),
-      canCreateCartaPorte: () => checkLimit('cartas_porte', 'limite_cartas_porte'),
-      canCreateRemolque: () => checkLimit('remolques', 'limite_remolques'),
-      canCreateViaje: () => checkLimit('viajes', 'limite_viajes')
+      canCreateCartaPorte: () => checkLimit('cartas_porte', 'limite_cartas_porte')
     };
-  }, [isSuperuser, permissionsData, realCounts]);
+  }, [isSuperuser, permissionsData]);
 }
