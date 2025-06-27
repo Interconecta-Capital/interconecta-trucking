@@ -91,7 +91,7 @@ function ViajesContent() {
   const renderViajesList = (viajesList: Viaje[], emptyMessage: string) => {
     if (viajesList.length === 0) {
       return (
-        <div className="text-center py-12">
+        <div className="empty-state-container text-center">
           <Route className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-900 mb-2">{emptyMessage}</p>
           <Button onClick={openViajeWizard} className="flex items-center gap-2">

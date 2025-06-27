@@ -400,6 +400,11 @@
     background: rgba(255, 255, 255, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
+
+  /* Empty state container for viajes list */
+  .empty-state-container {
+    @apply flex flex-col justify-center items-center gap-6 p-8 min-h-[300px];
+  }
 }
 
 @layer utilities {
