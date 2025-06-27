@@ -12,6 +12,7 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 import { useFAB } from '@/contexts/FABContext';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 
 export default function RemolquesOptimized() {
   const { remolques, loading, eliminarRemolque } = useRemolques();
@@ -102,6 +103,11 @@ export default function RemolquesOptimized() {
             <p className="text-sm text-yellow-800">{canCreateRemolque.reason}</p>
           </div>
         )}
+
+        {/* Indicador de límites */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <LimitUsageIndicator resourceType="remolques" className="md:col-span-2" />
+        </div>
 
         {/* Filtros y búsqueda */}
         <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
