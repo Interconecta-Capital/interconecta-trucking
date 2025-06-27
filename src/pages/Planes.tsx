@@ -102,38 +102,30 @@ export default function Planes() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Conductores */}
               <div className="space-y-2">
-                <span className="text-sm font-medium">Conductores</span>
                 <LimitUsageIndicator
                   resourceType="conductores"
-                  showDetails={false}
                 />
               </div>
 
               {/* Vehículos */}
               <div className="space-y-2">
-                <span className="text-sm font-medium">Vehículos</span>
                 <LimitUsageIndicator
                   resourceType="vehiculos"
-                  showDetails={false}
                 />
               </div>
 
               {/* Socios */}
               <div className="space-y-2">
-                <span className="text-sm font-medium">Socios</span>
                 <LimitUsageIndicator
                   resourceType="socios"
-                  showDetails={false}
                 />
               </div>
 
               {/* Remolques */}
               <div className="space-y-2">
-                <span className="text-sm font-medium">Remolques</span>
                 {permissions.usage.remolques?.limit ? (
                   <LimitUsageIndicator
                     resourceType="remolques"
-                    showDetails={false}
                   />
                 ) : (
                   <div className="text-xs text-green-600">Sin límite</div>
@@ -142,20 +134,16 @@ export default function Planes() {
 
               {/* Cartas Porte */}
               <div className="space-y-2">
-                <span className="text-sm font-medium">Cartas Porte</span>
                 <LimitUsageIndicator
                   resourceType="cartas_porte"
-                  showDetails={false}
                 />
               </div>
 
               {/* Viajes */}
               <div className="space-y-2">
-                <span className="text-sm font-medium">Viajes</span>
                 {permissions.usage.viajes?.limit ? (
                   <LimitUsageIndicator
                     resourceType="viajes"
-                    showDetails={false}
                   />
                 ) : (
                   <div className="text-xs text-green-600">Sin límite</div>
