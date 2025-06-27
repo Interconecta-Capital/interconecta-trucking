@@ -465,8 +465,58 @@
     }
   }
 
+  /* Base styles for analytics widgets */
+  .stat-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .stat-card .icon-container,
+  .costo-total-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .costo-total-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: #fee2e2;
+    border-radius: 50%;
+    z-index: 0;
+  }
+  .costo-total-icon svg {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Mobile layout adjustments for analytics */
   @media (max-width: 768px) {
+    .stat-card {
+      position: relative;
+      padding: 1rem;
+    }
+    .stat-card .icon-container {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+    }
+    .stat-card .text-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+    .stat-card .main-value {
+      font-size: clamp(1.25rem, 6vw, 1.75rem);
+    }
     .summary-cards-container {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -481,12 +531,33 @@
       align-items: stretch;
       gap: 0.5rem;
     }
-    .tabs-container {
+    .tabs-wrapper {
       position: relative;
+    }
+
+    .tabs-wrapper.scroll-gradient::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      background: linear-gradient(to left, var(--pure-white), rgba(255, 255, 255, 0));
+      pointer-events: none;
+    }
+
+    .tabs-container {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-start;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
       gap: 0.5rem;
+      padding-right: 40px;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+      display: none;
     }
     .costo-total-card {
       display: flex;
@@ -495,40 +566,6 @@
     }
     .costo-total-valor {
       font-size: clamp(1.5rem, 5vw, 2rem);
-    }
-    .costo-total-icon {
-      position: relative;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .costo-total-icon::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-color: #fee2e2;
-      border-radius: 50%;
-      z-index: 0;
-    }
-    .costo-total-icon svg {
-      position: relative;
-      z-index: 1;
-    }
-    .stat-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .stat-card .icon-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      flex-shrink: 0;
     }
     .desktop-programar-button {
       display: none;
@@ -589,10 +626,11 @@
       margin-top: 0.75rem;
     }
     .viaje-card .address-text {
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 250px;
     }
     .viaje-card-status {
       position: absolute;
