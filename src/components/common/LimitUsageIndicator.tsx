@@ -71,7 +71,7 @@ export const LimitUsageIndicator = ({
           {isUnlimited && <span className="text-xs">ilimitado</span>}
         </Badge>
         {!isUnlimited && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground usage-percentage">
             {percentage.toFixed(0)}%
           </span>
         )}

@@ -675,6 +675,37 @@
   .summary-cards-container > *:nth-child(3) h2 {
     font-size: 20px !important;
   }
+
+  /* Mobile styles for plan usage card */
+  .plan-usage-card .usage-percentage {
+    display: none;
+  }
+
+  /* Scrollable tabs for mobile menus */
+  .scrollable-tabs-container {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    scrollbar-width: none;
+  }
+  .scrollable-tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollable-tabs-container-wrapper {
+    position: relative;
+  }
+  .scrollable-tabs-container-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to left, var(--pure-white), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
 }
   }
 }
