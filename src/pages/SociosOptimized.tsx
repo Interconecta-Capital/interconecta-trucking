@@ -12,6 +12,7 @@ import { ProtectedContent } from '@/components/ProtectedContent';
 import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 import { useFAB } from '@/contexts/FABContext';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 
 export default function SociosOptimized() {
   const { socios, loading: isLoading, eliminarSocio } = useSocios();
@@ -103,6 +104,11 @@ export default function SociosOptimized() {
             <p className="text-sm text-yellow-800">{canCreateSocio.reason}</p>
           </div>
         )}
+
+        {/* Indicador de límites */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <LimitUsageIndicator resourceType="socios" className="md:col-span-2" />
+        </div>
 
         {/* Filtros y búsqueda */}
         <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
