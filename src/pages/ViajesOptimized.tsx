@@ -3,6 +3,7 @@ import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MapPin, User, Calendar, Clock, Eye, Edit, Trash2, Route } from 'lucide-react';
 import { useViajes } from '@/hooks/useViajes';
 import { BorradoresSection } from '@/components/viajes/BorradoresSection';
@@ -82,6 +83,107 @@ function ViajesContent() {
     navigate(`/viajes/editar/${viaje.id}`);
   };
 
+  // Filtrar viajes por estado
+  const viajesActivos = viajes.filter(v => ['programado', 'en_transito', 'retrasado'].includes(v.estado));
+  const viajesProgramados = viajes.filter(v => v.estado === 'programado');
+  const viajesCancelados = viajes.filter(v => v.estado === 'cancelado');
+  const viajesHistorial = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
+
+  const renderViajesList = (viajesList: Viaje[], emptyMessage: string) => {
+    if (viajesList.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <Route className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-lg font-medium text-gray-900 mb-2">{emptyMessage}</p>
+          <Button onClick={openViajeWizard} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Programar Primer Viaje
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {viajesList.map((viaje) => (
+          <Card key={viaje.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between viaje-card">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="font-medium text-lg address-text">
+                      {viaje.origen} → {viaje.destino}
+                    </span>
+                    <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
+                      {estadoLabels[viaje.estado]}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        Inicio: {new Date(viaje.fecha_inicio_programada).toLocaleDateString('es-MX', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        Fin: {new Date(viaje.fecha_fin_programada).toLocaleDateString('es-MX', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+
+                    {viaje.tracking_data?.cliente && (
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span className="truncate">
+                          {viaje.tracking_data.cliente.nombre_razon_social}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {viaje.observaciones && (
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                      {viaje.observaciones}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 ml-4 viaje-card-actions">
+                  <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEliminarViaje(viaje)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -149,106 +251,59 @@ function ViajesContent() {
         <ViajesAnalytics />
       </Suspense>
 
-      {/* Lista de Viajes */}
+      {/* Lista de Viajes con Pestañas */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Route className="h-5 w-5 text-blue-600" />
-            <h2 className="text-xl font-semibold">Viajes Activos</h2>
+            <h2 className="text-xl font-semibold">Viajes</h2>
             <Badge variant="secondary">{viajes.length}</Badge>
           </div>
 
-          {viajes.length === 0 ? (
-            <div className="text-center py-12">
-              <Route className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-900 mb-2">No hay viajes programados</p>
-              <p className="text-gray-600 mb-4">
-                Comienza creando tu primer viaje para gestionar tus operaciones de transporte
-              </p>
-              <Button onClick={openViajeWizard} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Programar Primer Viaje
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {viajes.map((viaje) => (
-                <Card key={viaje.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between viaje-card">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium text-lg address-text">
-                            {viaje.origen} → {viaje.destino}
-                          </span>
-                          <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
-                            {estadoLabels[viaje.estado]}
-                          </Badge>
-                        </div>
+          <Tabs defaultValue="activos" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="activos">
+                Activos
+                <Badge variant="secondary" className="ml-2">
+                  {viajesActivos.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="programados">
+                Programados
+                <Badge variant="secondary" className="ml-2">
+                  {viajesProgramados.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="cancelados">
+                Cancelados
+                <Badge variant="secondary" className="ml-2">
+                  {viajesCancelados.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="historial">
+                Historial
+                <Badge variant="secondary" className="ml-2">
+                  {viajesHistorial.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              Inicio: {new Date(viaje.fecha_inicio_programada).toLocaleDateString('es-MX', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          </div>
+            <TabsContent value="activos" className="mt-6">
+              {renderViajesList(viajesActivos, "No hay viajes activos")}
+            </TabsContent>
 
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            <span>
-                              Fin: {new Date(viaje.fecha_fin_programada).toLocaleDateString('es-MX', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          </div>
+            <TabsContent value="programados" className="mt-6">
+              {renderViajesList(viajesProgramados, "No hay viajes programados")}
+            </TabsContent>
 
-                          {viaje.tracking_data?.cliente && (
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              <span className="truncate">
-                                {viaje.tracking_data.cliente.nombre_razon_social}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+            <TabsContent value="cancelados" className="mt-6">
+              {renderViajesList(viajesCancelados, "No hay viajes cancelados")}
+            </TabsContent>
 
-                        {viaje.observaciones && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                            {viaje.observaciones}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 ml-4 viaje-card-actions">
-                        <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEliminarViaje(viaje)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+            <TabsContent value="historial" className="mt-6">
+              {renderViajesList(viajesHistorial, "No hay viajes en el historial")}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
