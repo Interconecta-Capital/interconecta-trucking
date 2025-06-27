@@ -15,6 +15,9 @@ export interface RealTimeCounts {
   viajes_mes: number;
 }
 
+// Simple type for count queries to avoid deep type instantiation
+type CountResult = { count: number | null };
+
 export function useRealTimeCounts() {
   const { user } = useAuth();
 
@@ -39,72 +42,75 @@ export function useRealTimeCounts() {
       const endOfCurrentMonth = endOfMonth(now);
 
       try {
-        // Execute queries and extract counts immediately to avoid deep type instantiation
-        const vehiculosResult = await supabase
-          .from('vehiculos')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .eq('activo', true);
-        const vehiculosCount = vehiculosResult.count ?? 0;
-
-        const conductoresResult = await supabase
-          .from('conductores')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .eq('activo', true);
-        const conductoresCount = conductoresResult.count ?? 0;
-
-        const sociosResult = await supabase
-          .from('socios')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .eq('activo', true);
-        const sociosCount = sociosResult.count ?? 0;
-
-        const remolquesResult = await supabase
-          .from('remolques_ccp')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .eq('activo', true);
-        const remolquesCount = remolquesResult.count ?? 0;
-
-        const cartasResult = await supabase
-          .from('cartas_porte')
-          .select('id', { count: 'exact' })
-          .eq('usuario_id', user.id);
-        const cartasCount = cartasResult.count ?? 0;
-
-        const cartasMesResult = await supabase
-          .from('cartas_porte')
-          .select('id', { count: 'exact' })
-          .eq('usuario_id', user.id)
-          .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString());
-        const cartasMesCount = cartasMesResult.count ?? 0;
-
-        const viajesResult = await supabase
-          .from('viajes')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id);
-        const viajesCount = viajesResult.count ?? 0;
-
-        const viajesMesResult = await supabase
-          .from('viajes')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString());
-        const viajesMesCount = viajesMesResult.count ?? 0;
+        // Use Promise.all with explicit type assertions to avoid type instantiation issues
+        const [
+          vehiculosResult,
+          conductoresResult,
+          sociosResult,
+          remolquesResult,
+          cartasResult,
+          cartasMesResult,
+          viajesResult,
+          viajesMesResult
+        ] = await Promise.all([
+          supabase
+            .from('vehiculos')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .eq('activo', true) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('conductores')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .eq('activo', true) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('socios')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .eq('activo', true) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('remolques_ccp')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .eq('activo', true) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('cartas_porte')
+            .select('id', { count: 'exact' })
+            .eq('usuario_id', user.id) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('cartas_porte')
+            .select('id', { count: 'exact' })
+            .eq('usuario_id', user.id)
+            .gte('created_at', startOfCurrentMonth.toISOString())
+            .lte('created_at', endOfCurrentMonth.toISOString()) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('viajes')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id) as Promise<CountResult & { error: any }>,
+          
+          supabase
+            .from('viajes')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .gte('created_at', startOfCurrentMonth.toISOString())
+            .lte('created_at', endOfCurrentMonth.toISOString()) as Promise<CountResult & { error: any }>
+        ]);
 
         return {
-          vehiculos: vehiculosCount,
-          conductores: conductoresCount,
-          socios: sociosCount,
-          remolques: remolquesCount,
-          cartas_porte: cartasCount,
-          cartas_porte_mes: cartasMesCount,
-          viajes: viajesCount,
-          viajes_mes: viajesMesCount
+          vehiculos: vehiculosResult.count ?? 0,
+          conductores: conductoresResult.count ?? 0,
+          socios: sociosResult.count ?? 0,
+          remolques: remolquesResult.count ?? 0,
+          cartas_porte: cartasResult.count ?? 0,
+          cartas_porte_mes: cartasMesResult.count ?? 0,
+          viajes: viajesResult.count ?? 0,
+          viajes_mes: viajesMesResult.count ?? 0
         };
       } catch (error) {
         console.error('[useRealTimeCounts] Error fetching counts:', error);
