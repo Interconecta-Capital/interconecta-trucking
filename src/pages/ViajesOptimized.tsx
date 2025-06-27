@@ -260,13 +260,14 @@ function ViajesContent() {
           </div>
 
           <Tabs defaultValue="activos" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="activos">
-                Activos
-                <Badge variant="secondary" className="ml-2">
-                  {viajesActivos.length}
-                </Badge>
-              </TabsTrigger>
+            <div className="scrollable-tabs-container-wrapper">
+              <TabsList className="grid w-full grid-cols-4 scrollable-tabs-container">
+                <TabsTrigger value="activos">
+                  Activos
+                  <Badge variant="secondary" className="ml-2">
+                    {viajesActivos.length}
+                  </Badge>
+                </TabsTrigger>
               <TabsTrigger value="programados">
                 Programados
                 <Badge variant="secondary" className="ml-2">
@@ -286,6 +287,7 @@ function ViajesContent() {
                 </Badge>
               </TabsTrigger>
             </TabsList>
+            </div>
 
             <TabsContent value="activos" className="mt-6">
               {renderViajesList(viajesActivos, "No hay viajes activos")}

@@ -74,7 +74,7 @@ export default function Planes() {
         </div>
 
         {/* Tarjeta principal del plan con conteos reales */}
-        <Card>
+        <Card className="plan-usage-card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -155,12 +155,14 @@ export default function Planes() {
 
         {/* Detalles y gestión */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="plan">Plan Actual</TabsTrigger>
-            <TabsTrigger value="uso">Uso de Recursos</TabsTrigger>
-            <TabsTrigger value="cambiar">Cambiar Plan</TabsTrigger>
-            <TabsTrigger value="facturacion">Facturación</TabsTrigger>
-          </TabsList>
+          <div className="scrollable-tabs-container-wrapper">
+            <TabsList className="grid w-full grid-cols-4 scrollable-tabs-container">
+              <TabsTrigger value="plan">Plan Actual</TabsTrigger>
+              <TabsTrigger value="uso">Uso de Recursos</TabsTrigger>
+              <TabsTrigger value="cambiar">Cambiar Plan</TabsTrigger>
+              <TabsTrigger value="facturacion">Facturación</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="plan" className="space-y-6">
             <Card>
