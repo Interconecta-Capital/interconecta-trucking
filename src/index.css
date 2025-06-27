@@ -721,3 +721,19 @@
 }
   }
 }
+
+@media (max-width: 768px) {
+  .mobile-secondary-action {
+    background-color: transparent !important;
+    color: hsl(var(--primary));
+    border: none !important;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+@media (max-width: 768px) {
+  .mobile-stepper .progress-bar {
+    transition: width 0.3s ease;
+  }
+}
+
