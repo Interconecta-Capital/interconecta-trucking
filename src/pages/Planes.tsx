@@ -99,30 +99,30 @@ export default function Planes() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 plan-usage-grid">
               {/* Conductores */}
-              <div className="space-y-2">
+              <div className="space-y-2 usage-item-container">
                 <LimitUsageIndicator
                   resourceType="conductores"
                 />
               </div>
 
               {/* Vehículos */}
-              <div className="space-y-2">
+              <div className="space-y-2 usage-item-container">
                 <LimitUsageIndicator
                   resourceType="vehiculos"
                 />
               </div>
 
               {/* Socios */}
-              <div className="space-y-2">
+              <div className="space-y-2 usage-item-container">
                 <LimitUsageIndicator
                   resourceType="socios"
                 />
               </div>
 
               {/* Remolques */}
-              <div className="space-y-2">
+              <div className="space-y-2 usage-item-container">
                 {permissions.usage.remolques?.limit ? (
                   <LimitUsageIndicator
                     resourceType="remolques"
@@ -133,14 +133,14 @@ export default function Planes() {
               </div>
 
               {/* Cartas Porte */}
-              <div className="space-y-2">
+              <div className="space-y-2 usage-item-container">
                 <LimitUsageIndicator
                   resourceType="cartas_porte"
                 />
               </div>
 
               {/* Viajes */}
-              <div className="space-y-2">
+              <div className="space-y-2 usage-item-container">
                 {permissions.usage.viajes?.limit ? (
                   <LimitUsageIndicator
                     resourceType="viajes"

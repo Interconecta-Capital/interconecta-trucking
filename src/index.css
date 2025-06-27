@@ -677,7 +677,19 @@
   }
 
   /* Mobile styles for plan usage card */
-  .plan-usage-card .usage-percentage {
+  .plan-usage-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .usage-item-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .usage-item-container .usage-percentage {
     display: none;
   }
 
