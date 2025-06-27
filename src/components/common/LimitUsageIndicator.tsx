@@ -33,35 +33,39 @@ export const LimitUsageIndicator = ({
       const endOfCurrentMonth = endOfMonth(now);
 
       switch (resourceType) {
-        case 'vehiculos':
+        case 'vehiculos': {
           const vehiculosRes = await supabase
             .from('vehiculos')
             .select('id', { count: 'exact' })
             .eq('user_id', user.id);
           return vehiculosRes.count || 0;
+        }
 
-        case 'conductores':
+        case 'conductores': {
           const conductoresRes = await supabase
             .from('conductores')
             .select('id', { count: 'exact' })
             .eq('user_id', user.id);
           return conductoresRes.count || 0;
+        }
 
-        case 'socios':
+        case 'socios': {
           const sociosRes = await supabase
             .from('socios')
             .select('id', { count: 'exact' })
             .eq('user_id', user.id);
           return sociosRes.count || 0;
+        }
 
-        case 'remolques':
+        case 'remolques': {
           const remolquesRes = await supabase
             .from('remolques_ccp')
             .select('id', { count: 'exact' })
             .eq('user_id', user.id);
           return remolquesRes.count || 0;
+        }
 
-        case 'cartas_porte':
+        case 'cartas_porte': {
           const cartasRes = await supabase
             .from('cartas_porte')
             .select('id', { count: 'exact' })
@@ -69,8 +73,9 @@ export const LimitUsageIndicator = ({
             .gte('created_at', startOfCurrentMonth.toISOString())
             .lte('created_at', endOfCurrentMonth.toISOString());
           return cartasRes.count || 0;
+        }
 
-        case 'viajes':
+        case 'viajes': {
           const viajesRes = await supabase
             .from('viajes')
             .select('id', { count: 'exact' })
@@ -78,6 +83,7 @@ export const LimitUsageIndicator = ({
             .gte('created_at', startOfCurrentMonth.toISOString())
             .lte('created_at', endOfCurrentMonth.toISOString());
           return viajesRes.count || 0;
+        }
 
         default:
           return 0;
