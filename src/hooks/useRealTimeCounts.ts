@@ -22,7 +22,7 @@ export function useRealTimeCounts() {
     queryKey: ['real-time-counts', user?.id],
     queryFn: async () => {
       if (!user?.id) {
-        return {
+        const emptyResult: RealTimeCounts = {
           vehiculos: 0,
           conductores: 0,
           socios: 0,
@@ -32,6 +32,7 @@ export function useRealTimeCounts() {
           viajes: 0,
           viajes_mes: 0
         };
+        return emptyResult;
       }
 
       const now = new Date();
@@ -39,71 +40,74 @@ export function useRealTimeCounts() {
       const endOfCurrentMonth = endOfMonth(now);
 
       try {
-        // Use separate queries with explicit typing
-        const vehiculosResult = await supabase
+        // Define a simple type for count results
+        type CountResult = { count: number | null };
+
+        // Execute queries with explicit type casting
+        const vehiculosData = await supabase
           .from('vehiculos')
           .select('id', { count: 'exact' })
           .eq('user_id', user.id)
-          .eq('activo', true);
+          .eq('activo', true) as { count: number | null };
 
-        const conductoresResult = await supabase
+        const conductoresData = await supabase
           .from('conductores')
           .select('id', { count: 'exact' })
           .eq('user_id', user.id)
-          .eq('activo', true);
+          .eq('activo', true) as { count: number | null };
 
-        const sociosResult = await supabase
+        const sociosData = await supabase
           .from('socios')
           .select('id', { count: 'exact' })
           .eq('user_id', user.id)
-          .eq('activo', true);
+          .eq('activo', true) as { count: number | null };
 
-        const remolquesResult = await supabase
+        const remolquesData = await supabase
           .from('remolques_ccp')
           .select('id', { count: 'exact' })
           .eq('user_id', user.id)
-          .eq('activo', true);
+          .eq('activo', true) as { count: number | null };
 
-        const cartasResult = await supabase
+        const cartasData = await supabase
           .from('cartas_porte')
           .select('id', { count: 'exact' })
-          .eq('usuario_id', user.id);
+          .eq('usuario_id', user.id) as { count: number | null };
 
-        const cartasMesResult = await supabase
+        const cartasMesData = await supabase
           .from('cartas_porte')
           .select('id', { count: 'exact' })
           .eq('usuario_id', user.id)
           .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString());
+          .lte('created_at', endOfCurrentMonth.toISOString()) as { count: number | null };
 
-        const viajesResult = await supabase
+        const viajesData = await supabase
           .from('viajes')
           .select('id', { count: 'exact' })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id) as { count: number | null };
 
-        const viajesMesResult = await supabase
+        const viajesMesData = await supabase
           .from('viajes')
           .select('id', { count: 'exact' })
           .eq('user_id', user.id)
           .gte('created_at', startOfCurrentMonth.toISOString())
-          .lte('created_at', endOfCurrentMonth.toISOString());
+          .lte('created_at', endOfCurrentMonth.toISOString()) as { count: number | null };
 
-        // Explicitly construct the result object
-        const counts: RealTimeCounts = {
-          vehiculos: Number(vehiculosResult.count ?? 0),
-          conductores: Number(conductoresResult.count ?? 0),
-          socios: Number(sociosResult.count ?? 0),
-          remolques: Number(remolquesResult.count ?? 0),
-          cartas_porte: Number(cartasResult.count ?? 0),
-          cartas_porte_mes: Number(cartasMesResult.count ?? 0),
-          viajes: Number(viajesResult.count ?? 0),
-          viajes_mes: Number(viajesMesResult.count ?? 0)
+        // Construct result with explicit type
+        const result: RealTimeCounts = {
+          vehiculos: vehiculosData.count || 0,
+          conductores: conductoresData.count || 0,
+          socios: sociosData.count || 0,
+          remolques: remolquesData.count || 0,
+          cartas_porte: cartasData.count || 0,
+          cartas_porte_mes: cartasMesData.count || 0,
+          viajes: viajesData.count || 0,
+          viajes_mes: viajesMesData.count || 0
         };
 
-        return counts;
+        return result;
       } catch (error) {
         console.error('[useRealTimeCounts] Error fetching counts:', error);
-        return {
+        const errorResult: RealTimeCounts = {
           vehiculos: 0,
           conductores: 0,
           socios: 0,
@@ -113,6 +117,7 @@ export function useRealTimeCounts() {
           viajes: 0,
           viajes_mes: 0
         };
+        return errorResult;
       }
     },
     enabled: !!user?.id,
