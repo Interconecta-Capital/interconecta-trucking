@@ -13,7 +13,7 @@ import {
   AlertDialogCancel
 } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, CheckCircle, Route, Package, MapPin, Users, Truck, Save, FileText } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Check, Route, Package, MapPin, Users, Truck, Save, FileText } from 'lucide-react';
 import { ViajeWizardMision } from './wizard/ViajeWizardMision';
 import { ViajeWizardRuta } from './wizard/ViajeWizardRuta';
 import { ViajeWizardActivos } from './wizard/ViajeWizardActivos';
@@ -499,8 +499,44 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
           {/* Flow Mode Selector - Solo mostrar en el primer paso */}
           {data.currentStep === 1 && <FlowModeSelector />}
 
+          {/* Mobile Stepper */}
+          <div className="md:hidden mb-6">
+            <div className="relative flex items-center justify-between mobile-stepper">
+              <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-200 rounded-full progress-track"></div>
+              <div
+                className="absolute left-0 top-1/2 h-1 bg-blue-interconecta rounded-full progress-bar"
+                style={{ width: `${progress}%` }}
+              ></div>
+              {STEPS.map((step) => {
+                const isActive = step.id === data.currentStep;
+                const isCompleted = step.id < data.currentStep;
+                const Icon = step.icon;
+                return (
+                  <div key={step.id} className="relative z-10 flex-1 text-center">
+                    <div
+                      className={`mx-auto flex items-center justify-center w-6 h-6 rounded-full border-2 ${
+                        isCompleted
+                          ? 'bg-blue-interconecta border-blue-interconecta text-pure-white'
+                          : isActive
+                          ? 'border-blue-interconecta text-blue-interconecta bg-pure-white'
+                          : 'border-gray-300 text-gray-400 bg-pure-white'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Icon className="w-4 h-4" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-center text-sm font-medium">{currentStepInfo?.title}</p>
+          </div>
+
           {/* Steps Navigation */}
-          <div className="grid grid-cols-5 gap-4 mb-6" data-onboarding="wizard-steps">
+          <div className="hidden md:grid grid-cols-5 gap-4 mb-6" data-onboarding="wizard-steps">
             {STEPS.map((step) => {
               const isActive = step.id === data.currentStep;
               const isCompleted = step.id < data.currentStep;
@@ -553,15 +589,37 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
 
           {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
           {data.currentStep !== 4 && data.currentStep !== 5 && (
-            <div className="flex justify-between mt-6">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={data.currentStep === 1 || isProcessing || viajeConfirmado}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Anterior
-              </Button>
+            <div className="flex justify-between mt-6 mobile-action-row">
+              <div className="flex items-center gap-2 mobile-secondary-group">
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={data.currentStep === 1 || isProcessing || viajeConfirmado}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Anterior
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft || isProcessing}
+                  className="flex items-center gap-2 mobile-secondary-action"
+                >
+                  <Save className="h-4 w-4" />
+                  {isSavingDraft ? 'Guardando...' : 'Guardar Borrador'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleSaveAndExit}
+                  disabled={isSavingDraft || isProcessing}
+                  className="flex items-center gap-2 mobile-secondary-action"
+                >
+                  <FileText className="h-4 w-4" />
+                  Guardar y Salir
+                </Button>
+              </div>
 
               <div className="flex flex-col items-end gap-2">
                 {/* Mensaje de validación específico */}
@@ -571,37 +629,15 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleSaveDraft} 
-                    disabled={isSavingDraft || isProcessing}
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    {isSavingDraft ? 'Guardando...' : 'Guardar Borrador'}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={handleSaveAndExit} 
-                    disabled={isSavingDraft || isProcessing}
-                    className="flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Guardar y Salir
-                  </Button>
-                  
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canAdvance() || isProcessing || viajeConfirmado}
-                    data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
-                    className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
-                  >
-                    Siguiente
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleNext}
+                  disabled={!canAdvance() || isProcessing || viajeConfirmado}
+                  data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
+                  className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
               </div>
             </div>
           )}
