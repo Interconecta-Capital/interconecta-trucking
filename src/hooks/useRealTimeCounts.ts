@@ -20,9 +20,9 @@ export function useRealTimeCounts() {
 
   return useQuery({
     queryKey: ['real-time-counts', user?.id],
-    queryFn: async (): Promise<RealTimeCounts> => {
+    queryFn: async () => {
       if (!user?.id) {
-        return {
+        const defaultCounts: RealTimeCounts = {
           vehiculos: 0,
           conductores: 0,
           socios: 0,
@@ -32,6 +32,7 @@ export function useRealTimeCounts() {
           viajes: 0,
           viajes_mes: 0
         };
+        return defaultCounts;
       }
 
       const now = new Date();
@@ -98,7 +99,7 @@ export function useRealTimeCounts() {
           .lte('created_at', endOfCurrentMonth.toISOString())
       ]);
 
-      return {
+      const result: RealTimeCounts = {
         vehiculos: vehiculosRes.count || 0,
         conductores: conductoresRes.count || 0,
         socios: sociosRes.count || 0,
@@ -108,6 +109,8 @@ export function useRealTimeCounts() {
         viajes: viajesRes.count || 0,
         viajes_mes: viajesMesRes.count || 0
       };
+
+      return result;
     },
     enabled: !!user?.id,
     staleTime: 30 * 1000, // 30 segundos
