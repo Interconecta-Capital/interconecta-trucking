@@ -102,129 +102,63 @@ export default function Planes() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Conductores */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Conductores</span>
-                  <span className="text-xs text-muted-foreground">
-                    {realCounts?.conductores || 0}
-                    {permissions.usage.conductores.limit ? `/${permissions.usage.conductores.limit}` : ''}
-                  </span>
-                </div>
-                <LimitUsageIndicator 
-                  resourceType="conductores" 
+                <span className="text-sm font-medium">Conductores</span>
+                <LimitUsageIndicator
+                  resourceType="conductores"
                   showDetails={false}
                 />
-                {permissions.usage.conductores.limit && (
-                  <div className="text-xs text-muted-foreground">
-                    {((realCounts?.conductores || 0) / permissions.usage.conductores.limit * 100).toFixed(0)}%
-                  </div>
-                )}
               </div>
 
               {/* Vehículos */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Vehículos</span>
-                  <span className="text-xs text-muted-foreground">
-                    {realCounts?.vehiculos || 0}
-                    {permissions.usage.vehiculos.limit ? `/${permissions.usage.vehiculos.limit}` : ''}
-                  </span>
-                </div>
-                <LimitUsageIndicator 
-                  resourceType="vehiculos" 
+                <span className="text-sm font-medium">Vehículos</span>
+                <LimitUsageIndicator
+                  resourceType="vehiculos"
                   showDetails={false}
                 />
-                {permissions.usage.vehiculos.limit && (
-                  <div className="text-xs text-muted-foreground">
-                    {((realCounts?.vehiculos || 0) / permissions.usage.vehiculos.limit * 100).toFixed(0)}%
-                  </div>
-                )}
               </div>
 
               {/* Socios */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Socios</span>
-                  <span className="text-xs text-muted-foreground">
-                    {realCounts?.socios || 0}
-                    {permissions.usage.socios.limit ? `/${permissions.usage.socios.limit}` : ''}
-                  </span>
-                </div>
-                <LimitUsageIndicator 
-                  resourceType="socios" 
+                <span className="text-sm font-medium">Socios</span>
+                <LimitUsageIndicator
+                  resourceType="socios"
                   showDetails={false}
                 />
-                {permissions.usage.socios.limit && (
-                  <div className="text-xs text-muted-foreground">
-                    {((realCounts?.socios || 0) / permissions.usage.socios.limit * 100).toFixed(0)}%
-                  </div>
-                )}
               </div>
 
               {/* Remolques */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Remolques</span>
-                  <span className="text-xs text-muted-foreground">
-                    {realCounts?.remolques || 0}
-                    {permissions.usage.remolques?.limit ? `/${permissions.usage.remolques.limit}` : ''}
-                  </span>
-                </div>
+                <span className="text-sm font-medium">Remolques</span>
                 {permissions.usage.remolques?.limit ? (
-                  <LimitUsageIndicator 
-                    resourceType="remolques" 
+                  <LimitUsageIndicator
+                    resourceType="remolques"
                     showDetails={false}
                   />
                 ) : (
                   <div className="text-xs text-green-600">Sin límite</div>
-                )}
-                {permissions.usage.remolques?.limit && (
-                  <div className="text-xs text-muted-foreground">
-                    {((realCounts?.remolques || 0) / permissions.usage.remolques.limit * 100).toFixed(0)}%
-                  </div>
                 )}
               </div>
 
               {/* Cartas Porte */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Cartas Porte</span>
-                  <span className="text-xs text-muted-foreground">
-                    {realCounts?.cartas_porte || 0}
-                    {permissions.usage.cartas_porte.limit ? `/${permissions.usage.cartas_porte.limit}` : ''}
-                  </span>
-                </div>
-                <LimitUsageIndicator 
-                  resourceType="cartas_porte" 
+                <span className="text-sm font-medium">Cartas Porte</span>
+                <LimitUsageIndicator
+                  resourceType="cartas_porte"
                   showDetails={false}
                 />
-                {permissions.usage.cartas_porte.limit && (
-                  <div className="text-xs text-muted-foreground">
-                    {((realCounts?.cartas_porte || 0) / permissions.usage.cartas_porte.limit * 100).toFixed(0)}%
-                  </div>
-                )}
               </div>
 
               {/* Viajes */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Viajes</span>
-                  <span className="text-xs text-muted-foreground">
-                    {realCounts?.viajes || 0}
-                    {permissions.usage.viajes?.limit ? `/${permissions.usage.viajes.limit}` : ''}
-                  </span>
-                </div>
+                <span className="text-sm font-medium">Viajes</span>
                 {permissions.usage.viajes?.limit ? (
-                  <LimitUsageIndicator 
-                    resourceType="viajes" 
+                  <LimitUsageIndicator
+                    resourceType="viajes"
                     showDetails={false}
                   />
                 ) : (
                   <div className="text-xs text-green-600">Sin límite</div>
-                )}
-                {permissions.usage.viajes?.limit && (
-                  <div className="text-xs text-muted-foreground">
-                    {((realCounts?.viajes || 0) / permissions.usage.viajes.limit * 100).toFixed(0)}%
-                  </div>
                 )}
               </div>
             </div>
