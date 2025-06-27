@@ -18,11 +18,11 @@ export interface RealTimeCounts {
 export function useRealTimeCounts() {
   const { user } = useAuth();
 
-  return useQuery({
+  const queryResult = useQuery({
     queryKey: ['real-time-counts', user?.id],
     queryFn: async () => {
       if (!user?.id) {
-        const defaultCounts: RealTimeCounts = {
+        return {
           vehiculos: 0,
           conductores: 0,
           socios: 0,
@@ -31,8 +31,7 @@ export function useRealTimeCounts() {
           cartas_porte_mes: 0,
           viajes: 0,
           viajes_mes: 0
-        };
-        return defaultCounts;
+        } as RealTimeCounts;
       }
 
       const now = new Date();
@@ -99,7 +98,7 @@ export function useRealTimeCounts() {
           .lte('created_at', endOfCurrentMonth.toISOString())
       ]);
 
-      const result: RealTimeCounts = {
+      return {
         vehiculos: vehiculosRes.count || 0,
         conductores: conductoresRes.count || 0,
         socios: sociosRes.count || 0,
@@ -108,13 +107,13 @@ export function useRealTimeCounts() {
         cartas_porte_mes: cartasMesRes.count || 0,
         viajes: viajesRes.count || 0,
         viajes_mes: viajesMesRes.count || 0
-      };
-
-      return result;
+      } as RealTimeCounts;
     },
     enabled: !!user?.id,
     staleTime: 30 * 1000, // 30 segundos
     refetchInterval: 60 * 1000, // Refrescar cada minuto
     refetchOnWindowFocus: true,
   });
+
+  return queryResult;
 }
