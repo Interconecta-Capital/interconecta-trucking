@@ -6,8 +6,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 import { PersonalizedGreeting } from './PersonalizedGreeting';
-import { DashboardLayout } from './DashboardLayout';
-import { WelcomeCard } from './WelcomeCard';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { EnhancedCalendarView } from './EnhancedCalendarView';
+import { DocumentosProcesadosWidget } from './DocumentosProcesadosWidget';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AIInsights } from '@/components/ai/AIInsights';
 
@@ -18,8 +19,6 @@ export default function UnifiedDashboard() {
   // Obtener contadores reales de la base de datos
   const { data: realCounts } = useDashboardCounts();
 
-  // Mostrar tarjeta de bienvenida para usuarios nuevos
-  const shouldShowWelcome = !user?.profile?.has_visited_dashboard;
 
   // Función para obtener el color de la barra de progreso
   const getProgressColor = (used: number, limit: number | null) => {
@@ -124,58 +123,70 @@ export default function UnifiedDashboard() {
         </CardContent>
       </Card>
 
-      {/* Tarjeta de bienvenida para usuarios nuevos */}
-      <WelcomeCard show={shouldShowWelcome} />
 
       {/* Métricas del dashboard con datos reales y límites */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {renderMetricCard(
-          'Vehículos', 
-          realCounts?.vehiculos || 0, 
-          permissions.usage.vehiculos.limit
-        )}
-        
-        {renderMetricCard(
-          'Conductores', 
-          realCounts?.conductores || 0, 
-          permissions.usage.conductores.limit
-        )}
-        
-        {renderMetricCard(
-          'Socios', 
-          realCounts?.socios || 0, 
-          permissions.usage.socios.limit
-        )}
-        
-        {renderMetricCard(
-          'Remolques', 
-          realCounts?.remolques || 0, 
-          permissions.usage.remolques.limit
-        )}
-        
-        {renderMetricCard(
-          'Cartas Porte', 
-          realCounts?.cartas_porte || 0, 
-          permissions.usage.cartas_porte.limit,
-          true
-        )}
-        
-        {renderMetricCard(
-          'Viajes', 
-          realCounts?.viajes || 0, 
-          permissions.usage.viajes.limit,
-          true
-        )}
+      <Carousel className="w-full">
+        <CarouselContent>
+          <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
+            {renderMetricCard(
+              'Vehículos',
+              realCounts?.vehiculos || 0,
+              permissions.usage.vehiculos.limit
+            )}
+          </CarouselItem>
+          <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
+            {renderMetricCard(
+              'Conductores',
+              realCounts?.conductores || 0,
+              permissions.usage.conductores.limit
+            )}
+          </CarouselItem>
+          <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
+            {renderMetricCard(
+              'Socios',
+              realCounts?.socios || 0,
+              permissions.usage.socios.limit
+            )}
+          </CarouselItem>
+          <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
+            {renderMetricCard(
+              'Remolques',
+              realCounts?.remolques || 0,
+              permissions.usage.remolques.limit
+            )}
+          </CarouselItem>
+          <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
+            {renderMetricCard(
+              'Cartas Porte',
+              realCounts?.cartas_porte || 0,
+              permissions.usage.cartas_porte.limit,
+              true
+            )}
+          </CarouselItem>
+          <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
+            {renderMetricCard(
+              'Viajes',
+              realCounts?.viajes || 0,
+              permissions.usage.viajes.limit,
+              true
+            )}
+          </CarouselItem>
+        </CarouselContent>
+        <CarouselPrevious />
+        <CarouselNext />
+      </Carousel>
+
+      {/* Contenido principal organizado en columnas */}
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="space-y-6">
+          <QuickActionsCard />
+          <EnhancedCalendarView />
+        </div>
+        <div className="space-y-6">
+          <AIInsights />
+          <DocumentosProcesadosWidget />
+        </div>
       </div>
-
-      {/* Insights inteligentes */}
-      <AIInsights />
-
-      {/* Acciones rápidas */}
-      <QuickActionsCard />
-
-      {/* Layout del dashboard con calendario */}
-      <DashboardLayout />
     </div>
   );
 }
