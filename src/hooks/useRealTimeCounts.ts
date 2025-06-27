@@ -64,15 +64,21 @@ export function useRealTimeCounts() {
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const cartasResult = await supabase
+        // Simplify the cartas_porte queries to avoid deep type instantiation
+        const cartasQuery = supabase
           .from('cartas_porte')
           .select('*', { count: 'exact', head: true })
           .eq('usuario_id', user.id);
+        
+        const cartasResult = await cartasQuery;
 
-        const cartasMesResult = await supabase
+        // Use a separate query builder for the monthly filter
+        const cartasMesQuery = supabase
           .from('cartas_porte')
           .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id)
+          .eq('usuario_id', user.id);
+        
+        const cartasMesResult = await cartasMesQuery
           .gte('created_at', startOfCurrentMonth.toISOString())
           .lte('created_at', endOfCurrentMonth.toISOString());
 
@@ -81,10 +87,13 @@ export function useRealTimeCounts() {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        const viajesMesResult = await supabase
+        // Use a separate query builder for the monthly viajes filter
+        const viajesMesQuery = supabase
           .from('viajes')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+          .eq('user_id', user.id);
+        
+        const viajesMesResult = await viajesMesQuery
           .gte('created_at', startOfCurrentMonth.toISOString())
           .lte('created_at', endOfCurrentMonth.toISOString());
 
