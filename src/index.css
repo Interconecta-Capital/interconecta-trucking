@@ -637,5 +637,44 @@
       top: 0.5rem;
       right: 0.5rem;
     }
+/* Mobile adjustments for dashboard widgets */
+@media (max-width: 768px) {
+  .summary-cards-container {
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+  .summary-cards-container > * {
+    padding: 12px !important;
+    min-height: 120px !important;
+    box-sizing: border-box !important;
+  }
+  .summary-cards-container p:first-child,
+  .summary-cards-container h3:first-child,
+  .summary-cards-container span:first-child {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 8px !important;
+    word-wrap: break-word !important;
+  }
+  .summary-cards-container p:nth-child(2),
+  .summary-cards-container h1,
+  .summary-cards-container h2 {
+    font-size: 24px !important;
+    line-height: 1.1 !important;
+    margin: 8px 0 !important;
+  }
+  .summary-cards-container p:last-child,
+  .summary-cards-container small,
+  .summary-cards-container .change {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    margin-top: 4px !important;
+  }
+  .summary-cards-container > *:nth-child(3) p:nth-child(2),
+  .summary-cards-container > *:nth-child(3) h1,
+  .summary-cards-container > *:nth-child(3) h2 {
+    font-size: 20px !important;
+  }
+}
   }
 }
