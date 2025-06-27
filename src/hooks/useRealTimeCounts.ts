@@ -39,75 +39,66 @@ export function useRealTimeCounts() {
       const endOfCurrentMonth = endOfMonth(now);
 
       try {
-        // Execute each query separately to avoid complex type issues
-        const vehiculosResult = await supabase
+        // Execute each query with simplified type handling
+        console.log('[useRealTimeCounts] Starting count queries for user:', user.id);
+
+        // Vehiculos count
+        const { count: vehiculosCount } = await supabase
           .from('vehiculos')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const conductoresResult = await supabase
+        // Conductores count
+        const { count: conductoresCount } = await supabase
           .from('conductores')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const sociosResult = await supabase
+        // Socios count
+        const { count: sociosCount } = await supabase
           .from('socios')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const remolquesResult = await supabase
+        // Remolques count - simplified to avoid deep type instantiation
+        const { count: remolquesCount } = await supabase
           .from('remolques_ccp')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        // Simplify the cartas_porte queries to avoid deep type instantiation
-        const cartasQuery = supabase
+        // Cartas porte total count
+        const { count: cartasCount } = await supabase
           .from('cartas_porte')
           .select('*', { count: 'exact', head: true })
           .eq('usuario_id', user.id);
-        
-        const cartasResult = await cartasQuery;
 
-        // Use a separate query builder for the monthly filter
-        const cartasMesQuery = supabase
+        // Cartas porte monthly count
+        const { count: cartasMesCount } = await supabase
           .from('cartas_porte')
           .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id);
-        
-        const cartasMesResult = await cartasMesQuery
+          .eq('usuario_id', user.id)
           .gte('created_at', startOfCurrentMonth.toISOString())
           .lte('created_at', endOfCurrentMonth.toISOString());
 
-        const viajesResult = await supabase
+        // Viajes total count
+        const { count: viajesCount } = await supabase
           .from('viajes')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Use a separate query builder for the monthly viajes filter
-        const viajesMesQuery = supabase
+        // Viajes monthly count
+        const { count: viajesMesCount } = await supabase
           .from('viajes')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        
-        const viajesMesResult = await viajesMesQuery
+          .eq('user_id', user.id)
           .gte('created_at', startOfCurrentMonth.toISOString())
           .lte('created_at', endOfCurrentMonth.toISOString());
 
-        // Extract counts directly from the results
-        const vehiculosCount = vehiculosResult.count || 0;
-        const conductoresCount = conductoresResult.count || 0;
-        const sociosCount = sociosResult.count || 0;
-        const remolquesCount = remolquesResult.count || 0;
-        const cartasCount = cartasResult.count || 0;
-        const cartasMesCount = cartasMesResult.count || 0;
-        const viajesCount = viajesResult.count || 0;
-        const viajesMesCount = viajesMesResult.count || 0;
-
-        return {
+        console.log('[useRealTimeCounts] Query results:', {
           vehiculos: vehiculosCount,
           conductores: conductoresCount,
           socios: sociosCount,
@@ -116,6 +107,17 @@ export function useRealTimeCounts() {
           cartas_porte_mes: cartasMesCount,
           viajes: viajesCount,
           viajes_mes: viajesMesCount
+        });
+
+        return {
+          vehiculos: vehiculosCount || 0,
+          conductores: conductoresCount || 0,
+          socios: sociosCount || 0,
+          remolques: remolquesCount || 0,
+          cartas_porte: cartasCount || 0,
+          cartas_porte_mes: cartasMesCount || 0,
+          viajes: viajesCount || 0,
+          viajes_mes: viajesMesCount || 0
         };
       } catch (error) {
         console.error('[useRealTimeCounts] Error fetching counts:', error);
