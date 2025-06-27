@@ -207,9 +207,9 @@ export const ViajesAnalytics = () => {
         <Card>
           <CardContent className="p-6">
             <div className="stat-card">
-              <div className="text-content">
+              <div>
                 <p className="text-sm text-muted-foreground">Total Viajes</p>
-                <p className="main-value text-2xl font-bold">{analyticsData.viajes.total}</p>
+                <p className="text-2xl font-bold">{analyticsData.viajes.total}</p>
                 <p className="text-xs text-green-600 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +12% vs mes anterior
@@ -225,9 +225,9 @@ export const ViajesAnalytics = () => {
         <Card>
           <CardContent className="p-6">
             <div className="stat-card">
-              <div className="text-content">
+              <div>
                 <p className="text-sm text-muted-foreground">Puntualidad</p>
-                <p className="main-value text-2xl font-bold">{analyticsData.eficiencia.puntualidad}%</p>
+                <p className="text-2xl font-bold">{analyticsData.eficiencia.puntualidad}%</p>
                 <p className="text-xs text-green-600 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +2.1% vs mes anterior
@@ -243,9 +243,9 @@ export const ViajesAnalytics = () => {
         <Card>
           <CardContent className="p-6">
             <div className="costo-total-card stat-card">
-              <div className="text-content">
+              <div>
                 <p className="text-sm text-muted-foreground">Costo Total</p>
-                <p className="costo-total-valor main-value font-bold">{formatCurrency(analyticsData.costos.total)}</p>
+                <p className="costo-total-valor font-bold">{formatCurrency(analyticsData.costos.total)}</p>
                 <p className="text-xs text-red-600 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +5% vs mes anterior
@@ -261,9 +261,9 @@ export const ViajesAnalytics = () => {
         <Card>
           <CardContent className="p-6">
             <div className="stat-card">
-              <div className="text-content">
+              <div>
                 <p className="text-sm text-muted-foreground">Km/Litro</p>
-                <p className="main-value text-2xl font-bold">{analyticsData.eficiencia.kmPorLitro}</p>
+                <p className="text-2xl font-bold">{analyticsData.eficiencia.kmPorLitro}</p>
                 <p className="text-xs text-green-600 flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +0.3 vs mes anterior
@@ -279,14 +279,15 @@ export const ViajesAnalytics = () => {
 
       {/* Gráficos principales */}
       <Tabs defaultValue="tendencias" className="w-full">
-        <div className={`tabs-wrapper ${showTabsShadow ? 'scroll-gradient' : ''}`}>
-          <TabsList ref={tabsRef} className="tabs-container">
-            <TabsTrigger value="tendencias">Tendencias</TabsTrigger>
-            <TabsTrigger value="estados">Estados de Viajes</TabsTrigger>
-            <TabsTrigger value="costos">Análisis de Costos</TabsTrigger>
-            <TabsTrigger value="eficiencia">Eficiencia</TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList
+          ref={tabsRef}
+          className={`tabs-container ${showTabsShadow ? 'scroll-gradient' : ''}`}
+        >
+          <TabsTrigger value="tendencias">Tendencias</TabsTrigger>
+          <TabsTrigger value="estados">Estados de Viajes</TabsTrigger>
+          <TabsTrigger value="costos">Análisis de Costos</TabsTrigger>
+          <TabsTrigger value="eficiencia">Eficiencia</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="tendencias" className="space-y-6">
           <Card>
