@@ -39,64 +39,74 @@ export function useRealTimeCounts() {
       const endOfCurrentMonth = endOfMonth(now);
 
       try {
-        // Execute queries individually to avoid complex type issues
-        const vehiculosQuery = await supabase
+        // Execute each query separately to avoid complex type issues
+        const vehiculosResult = await supabase
           .from('vehiculos')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const conductoresQuery = await supabase
+        const conductoresResult = await supabase
           .from('conductores')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const sociosQuery = await supabase
+        const sociosResult = await supabase
           .from('socios')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const remolquesQuery = await supabase
+        const remolquesResult = await supabase
           .from('remolques_ccp')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('activo', true);
 
-        const cartasQuery = await supabase
+        const cartasResult = await supabase
           .from('cartas_porte')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('usuario_id', user.id);
 
-        const cartasMesQuery = await supabase
+        const cartasMesResult = await supabase
           .from('cartas_porte')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('usuario_id', user.id)
           .gte('created_at', startOfCurrentMonth.toISOString())
           .lte('created_at', endOfCurrentMonth.toISOString());
 
-        const viajesQuery = await supabase
+        const viajesResult = await supabase
           .from('viajes')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        const viajesMesQuery = await supabase
+        const viajesMesResult = await supabase
           .from('viajes')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .gte('created_at', startOfCurrentMonth.toISOString())
           .lte('created_at', endOfCurrentMonth.toISOString());
 
+        // Extract counts directly from the results
+        const vehiculosCount = vehiculosResult.count || 0;
+        const conductoresCount = conductoresResult.count || 0;
+        const sociosCount = sociosResult.count || 0;
+        const remolquesCount = remolquesResult.count || 0;
+        const cartasCount = cartasResult.count || 0;
+        const cartasMesCount = cartasMesResult.count || 0;
+        const viajesCount = viajesResult.count || 0;
+        const viajesMesCount = viajesMesResult.count || 0;
+
         return {
-          vehiculos: vehiculosQuery.count ?? 0,
-          conductores: conductoresQuery.count ?? 0,
-          socios: sociosQuery.count ?? 0,
-          remolques: remolquesQuery.count ?? 0,
-          cartas_porte: cartasQuery.count ?? 0,
-          cartas_porte_mes: cartasMesQuery.count ?? 0,
-          viajes: viajesQuery.count ?? 0,
-          viajes_mes: viajesMesQuery.count ?? 0
+          vehiculos: vehiculosCount,
+          conductores: conductoresCount,
+          socios: sociosCount,
+          remolques: remolquesCount,
+          cartas_porte: cartasCount,
+          cartas_porte_mes: cartasMesCount,
+          viajes: viajesCount,
+          viajes_mes: viajesMesCount
         };
       } catch (error) {
         console.error('[useRealTimeCounts] Error fetching counts:', error);
