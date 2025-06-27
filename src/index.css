@@ -166,6 +166,7 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1;
+    overflow-x: hidden;
   }
 
   /* Apple Typography System */

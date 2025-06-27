@@ -25,7 +25,7 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
         <GlobalHeader />
         <main
           className={cn(
-            "transition-all duration-200",
+            "transition-all duration-200 overflow-x-hidden",
             "p-3 sm:p-4 md:p-6 lg:p-8",
             "min-h-[calc(100vh-64px)] md:min-h-[calc(100vh-72px)]",
             className
@@ -52,8 +52,8 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
         <div className="flex-1 flex flex-col w-full min-w-0">
           <GlobalHeader onOpenSidebar={() => setMobileOpen(true)} />
           <main
-            className={cn(
-              "flex-1 overflow-auto transition-all duration-200",
+          className={cn(
+              "flex-1 overflow-auto overflow-x-hidden transition-all duration-200",
               "p-3 sm:p-4 md:p-6 lg:p-8",
               "space-y-4 sm:space-y-6",
               className
