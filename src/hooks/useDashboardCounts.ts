@@ -24,32 +24,41 @@ export const useDashboardCounts = () => {
       const start = startOfMonth(now);
       const end = endOfMonth(now);
 
-      const [vehiculosRes, conductoresRes, sociosRes, remolquesRes, cartasRes, viajesRes] = await Promise.all([
-        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase
-          .from('cartas_porte')
-          .select('id', { count: 'exact' })
-          .eq('usuario_id', user.id)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString()),
-        supabase
-          .from('viajes')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString()),
-      ]);
+      const { count: vehiculosCount } = (await (supabase.from('vehiculos') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)) as { count: number | null };
+
+      const { count: conductoresCount } = (await (supabase.from('conductores') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)) as { count: number | null };
+
+      const { count: sociosCount } = (await (supabase.from('socios') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)) as { count: number | null };
+
+      const { count: remolquesCount } = (await (supabase.from('remolques_ccp') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)) as { count: number | null };
+
+      const { count: cartasCount } = (await (supabase.from('cartas_porte') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('usuario_id', user.id)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())) as { count: number | null };
+
+      const { count: viajesCount } = (await (supabase.from('viajes') as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())) as { count: number | null };
 
       return {
-        vehiculos: vehiculosRes.count || 0,
-        conductores: conductoresRes.count || 0,
-        socios: sociosRes.count || 0,
-        remolques: remolquesRes.count || 0,
-        cartas_porte: cartasRes.count || 0,
-        viajes: viajesRes.count || 0,
+        vehiculos: vehiculosCount ?? 0,
+        conductores: conductoresCount ?? 0,
+        socios: sociosCount ?? 0,
+        remolques: remolquesCount ?? 0,
+        cartas_porte: cartasCount ?? 0,
+        viajes: viajesCount ?? 0,
       };
     },
     enabled: !!user?.id,
