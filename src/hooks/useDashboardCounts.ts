@@ -37,24 +37,25 @@ export const useDashboardCounts = () => {
       const end = endOfMonth(now);
 
       try {
-        const [vehiculosRes, conductoresRes, sociosRes, remolquesRes, cartasRes, viajesRes] = await Promise.all([
-          supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase
-            .from('cartas_porte')
-            .select('id', { count: 'exact' })
-            .eq('usuario_id', user.id)
-            .gte('created_at', start.toISOString())
-            .lte('created_at', end.toISOString()),
-          supabase
-            .from('viajes')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id)
-            .gte('created_at', start.toISOString())
-            .lte('created_at', end.toISOString()),
-        ]);
+        // Break down the queries to avoid deep type inference
+        const vehiculosRes = await supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id);
+        const conductoresRes = await supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id);
+        const sociosRes = await supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id);
+        const remolquesRes = await supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id);
+        
+        const cartasRes = await supabase
+          .from('cartas_porte')
+          .select('id', { count: 'exact' })
+          .eq('usuario_id', user.id)
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+          
+        const viajesRes = await supabase
+          .from('viajes')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id)
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
 
         const counts: DashboardCounts = {
           vehiculos: vehiculosRes.count || 0,
