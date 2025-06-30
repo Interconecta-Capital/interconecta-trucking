@@ -37,32 +37,34 @@ export const useDashboardCounts = () => {
       const end = endOfMonth(now);
 
       try {
-        // Use very simple queries with minimal type complexity
-        const [
-          vehiculosCount,
-          conductoresCount,
-          sociosCount,
-          remolquesCount,
-          cartasCount,
-          viajesCount
-        ] = await Promise.all([
-          supabase.from('vehiculos').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
-          supabase.from('conductores').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
-          supabase.from('socios').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
-          supabase.from('remolques_ccp').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
-          supabase.from('cartas_porte')
-            .select('id')
-            .eq('usuario_id', user.id)
-            .gte('created_at', start.toISOString())
-            .lte('created_at', end.toISOString())
-            .then(r => r.data?.length || 0),
-          supabase.from('viajes')
-            .select('id')
-            .eq('user_id', user.id)
-            .gte('created_at', start.toISOString())
-            .lte('created_at', end.toISOString())
-            .then(r => r.data?.length || 0)
-        ]);
+        // Sequential queries to avoid deep type instantiation
+        const vehiculosData = await supabase.from('vehiculos').select('id').eq('user_id', user.id);
+        const vehiculosCount = vehiculosData.data?.length ?? 0;
+
+        const conductoresData = await supabase.from('conductores').select('id').eq('user_id', user.id);
+        const conductoresCount = conductoresData.data?.length ?? 0;
+
+        const sociosData = await supabase.from('socios').select('id').eq('user_id', user.id);
+        const sociosCount = sociosData.data?.length ?? 0;
+
+        const remolquesData = await supabase.from('remolques_ccp').select('id').eq('user_id', user.id);
+        const remolquesCount = remolquesData.data?.length ?? 0;
+
+        const cartasData = await supabase
+          .from('cartas_porte')
+          .select('id')
+          .eq('usuario_id', user.id)
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+        const cartasCount = cartasData.data?.length ?? 0;
+
+        const viajesData = await supabase
+          .from('viajes')
+          .select('id')
+          .eq('user_id', user.id)
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+        const viajesCount = viajesData.data?.length ?? 0;
 
         return {
           vehiculos: vehiculosCount,
