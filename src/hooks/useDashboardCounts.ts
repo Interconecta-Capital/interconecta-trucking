@@ -13,21 +13,23 @@ export interface DashboardCounts {
   viajes: number;
 }
 
+const defaultCounts: DashboardCounts = {
+  vehiculos: 0,
+  conductores: 0,
+  socios: 0,
+  remolques: 0,
+  cartas_porte: 0,
+  viajes: 0,
+};
+
 export const useDashboardCounts = () => {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['dashboard-counts', user?.id],
-    queryFn: async (): Promise<DashboardCounts> => {
+    queryFn: async () => {
       if (!user?.id) {
-        return {
-          vehiculos: 0,
-          conductores: 0,
-          socios: 0,
-          remolques: 0,
-          cartas_porte: 0,
-          viajes: 0,
-        };
+        return defaultCounts;
       }
 
       const now = new Date();
@@ -54,7 +56,7 @@ export const useDashboardCounts = () => {
             .lte('created_at', end.toISOString()),
         ]);
 
-        return {
+        const counts: DashboardCounts = {
           vehiculos: vehiculosRes.count || 0,
           conductores: conductoresRes.count || 0,
           socios: sociosRes.count || 0,
@@ -62,16 +64,11 @@ export const useDashboardCounts = () => {
           cartas_porte: cartasRes.count || 0,
           viajes: viajesRes.count || 0,
         };
+
+        return counts;
       } catch (error) {
         console.error('Error fetching dashboard counts:', error);
-        return {
-          vehiculos: 0,
-          conductores: 0,
-          socios: 0,
-          remolques: 0,
-          cartas_porte: 0,
-          viajes: 0,
-        };
+        return defaultCounts;
       }
     },
     enabled: !!user?.id,

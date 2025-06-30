@@ -37,7 +37,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     peso_bruto_vehicular: '',
     verificacion_vigencia: '',
     estado: 'disponible',
-    tipo_combustible: '' as 'diesel' | 'gasolina' | '',
+    tipo_combustible: '' as '' | 'diesel' | 'gasolina',
     rendimiento: ''
   });
 
@@ -68,7 +68,9 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         estado: vehiculoActual.estado || 'disponible',
-        tipo_combustible: vehiculoActual.tipo_combustible || '',
+        tipo_combustible: (vehiculoActual.tipo_combustible === 'diesel' || vehiculoActual.tipo_combustible === 'gasolina') 
+          ? vehiculoActual.tipo_combustible 
+          : '' as '' | 'diesel' | 'gasolina',
         rendimiento: vehiculoActual.rendimiento?.toString() || ''
       });
     }
@@ -121,20 +123,15 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
         verificacion_vigencia: formData.verificacion_vigencia,
         estado: formData.estado,
-        tipo_combustible: formData.tipo_combustible as 'diesel' | 'gasolina' | undefined,
+        tipo_combustible: formData.tipo_combustible || undefined,
         rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
         activo: true
       };
 
-      // Remove undefined values to ensure clean data
-      const cleanedData = Object.fromEntries(
-        Object.entries(vehiculoData).filter(([_, value]) => value !== undefined && value !== '')
-      );
-
       if (vehiculoId) {
-        await actualizarVehiculo({ id: vehiculoId, data: cleanedData });
+        await actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
       } else {
-        await crearVehiculo(cleanedData);
+        await crearVehiculo(vehiculoData);
       }
 
       if (onSuccess) {
