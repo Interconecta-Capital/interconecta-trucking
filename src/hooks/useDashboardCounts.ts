@@ -37,52 +37,41 @@ export const useDashboardCounts = () => {
       const end = endOfMonth(now);
 
       try {
-        // Simplify queries with explicit typing to avoid deep type inference
-        const vehiculosResult = await supabase
-          .from('vehiculos')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+        // Use very simple queries with minimal type complexity
+        const [
+          vehiculosCount,
+          conductoresCount,
+          sociosCount,
+          remolquesCount,
+          cartasCount,
+          viajesCount
+        ] = await Promise.all([
+          supabase.from('vehiculos').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
+          supabase.from('conductores').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
+          supabase.from('socios').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
+          supabase.from('remolques_ccp').select('id').eq('user_id', user.id).then(r => r.data?.length || 0),
+          supabase.from('cartas_porte')
+            .select('id')
+            .eq('usuario_id', user.id)
+            .gte('created_at', start.toISOString())
+            .lte('created_at', end.toISOString())
+            .then(r => r.data?.length || 0),
+          supabase.from('viajes')
+            .select('id')
+            .eq('user_id', user.id)
+            .gte('created_at', start.toISOString())
+            .lte('created_at', end.toISOString())
+            .then(r => r.data?.length || 0)
+        ]);
 
-        const conductoresResult = await supabase
-          .from('conductores')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        const sociosResult = await supabase
-          .from('socios')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        const remolquesResult = await supabase
-          .from('remolques_ccp')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        const cartasResult = await supabase
-          .from('cartas_porte')
-          .select('*', { count: 'exact', head: true })
-          .eq('usuario_id', user.id)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString());
-
-        const viajesResult = await supabase
-          .from('viajes')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString());
-
-        // Build the counts object with explicit number types
-        const counts: DashboardCounts = {
-          vehiculos: Number(vehiculosResult.count) || 0,
-          conductores: Number(conductoresResult.count) || 0,
-          socios: Number(sociosResult.count) || 0,
-          remolques: Number(remolquesResult.count) || 0,
-          cartas_porte: Number(cartasResult.count) || 0,
-          viajes: Number(viajesResult.count) || 0,
+        return {
+          vehiculos: vehiculosCount,
+          conductores: conductoresCount,
+          socios: sociosCount,
+          remolques: remolquesCount,
+          cartas_porte: cartasCount,
+          viajes: viajesCount,
         };
-
-        return counts;
       } catch (error) {
         console.error('Error fetching dashboard counts:', error);
         return defaultCounts;
