@@ -17,7 +17,29 @@ interface VehiculoFormRefactoredProps {
 }
 
 export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: VehiculoFormRefactoredProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    placa: string;
+    marca: string;
+    modelo: string;
+    anio: string;
+    numero_serie_vin: string;
+    config_vehicular: string;
+    perm_sct: string;
+    num_permiso_sct: string;
+    vigencia_permiso: string;
+    asegura_resp_civil: string;
+    poliza_resp_civil: string;
+    asegura_med_ambiente: string;
+    poliza_med_ambiente: string;
+    vigencia_seguro: string;
+    capacidad_carga: string;
+    tipo_carroceria: string;
+    peso_bruto_vehicular: string;
+    verificacion_vigencia: string;
+    estado: string;
+    tipo_combustible: '' | 'diesel' | 'gasolina';
+    rendimiento: string;
+  }>({
     placa: '',
     marca: '',
     modelo: '',
@@ -68,7 +90,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         estado: vehiculoActual.estado || 'disponible',
-        tipo_combustible: vehiculoActual.tipo_combustible || '',
+        tipo_combustible: (vehiculoActual.tipo_combustible as 'diesel' | 'gasolina' | null) ?? '',
         rendimiento: vehiculoActual.rendimiento?.toString() || ''
       });
     }
@@ -107,6 +129,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         capacidad_carga: formData.capacidad_carga ? parseFloat(formData.capacidad_carga) : undefined,
         peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
         rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
+        tipo_combustible: (formData.tipo_combustible || undefined) as 'diesel' | 'gasolina' | undefined,
         activo: true
       };
 
