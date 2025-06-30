@@ -37,7 +37,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     peso_bruto_vehicular: '',
     verificacion_vigencia: '',
     estado: 'disponible',
-    tipo_combustible: '',
+    tipo_combustible: '' as 'diesel' | 'gasolina' | '',
     rendimiento: ''
   });
 
@@ -102,18 +102,39 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
 
     try {
       const vehiculoData = {
-        ...formData,
+        placa: formData.placa,
+        marca: formData.marca,
+        modelo: formData.modelo,
         anio: formData.anio ? parseInt(formData.anio) : undefined,
+        numero_serie_vin: formData.numero_serie_vin,
+        config_vehicular: formData.config_vehicular,
+        perm_sct: formData.perm_sct,
+        num_permiso_sct: formData.num_permiso_sct,
+        vigencia_permiso: formData.vigencia_permiso,
+        asegura_resp_civil: formData.asegura_resp_civil,
+        poliza_resp_civil: formData.poliza_resp_civil,
+        asegura_med_ambiente: formData.asegura_med_ambiente,
+        poliza_med_ambiente: formData.poliza_med_ambiente,
+        vigencia_seguro: formData.vigencia_seguro,
         capacidad_carga: formData.capacidad_carga ? parseFloat(formData.capacidad_carga) : undefined,
+        tipo_carroceria: formData.tipo_carroceria,
         peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
+        verificacion_vigencia: formData.verificacion_vigencia,
+        estado: formData.estado,
+        tipo_combustible: formData.tipo_combustible as 'diesel' | 'gasolina' | undefined,
         rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
         activo: true
       };
 
+      // Remove undefined values to ensure clean data
+      const cleanedData = Object.fromEntries(
+        Object.entries(vehiculoData).filter(([_, value]) => value !== undefined && value !== '')
+      );
+
       if (vehiculoId) {
-        await actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
+        await actualizarVehiculo({ id: vehiculoId, data: cleanedData });
       } else {
-        await crearVehiculo(vehiculoData);
+        await crearVehiculo(cleanedData);
       }
 
       if (onSuccess) {
