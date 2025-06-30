@@ -13,6 +13,11 @@ export interface Vehiculo {
   anio?: number;
   num_serie?: string;
   config_vehicular?: string;
+  tipo_carroceria?: string;
+  capacidad_carga?: number;
+  peso_bruto_vehicular?: number;
+  rendimiento?: number; // km/litro
+  tipo_combustible?: 'diesel' | 'gasolina';
   poliza_seguro?: string;
   vigencia_seguro?: string;
   verificacion_vigencia?: string;

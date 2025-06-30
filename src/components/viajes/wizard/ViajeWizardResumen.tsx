@@ -17,6 +17,8 @@ import {
   Route
 } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
+import { useIntelligentCostCalculator } from '@/hooks/useIntelligentCostCalculator';
+import { CostBreakdownCard } from './CostBreakdownCard';
 
 interface ViajeWizardResumenProps {
   data: ViajeWizardData;
@@ -37,15 +39,18 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
     }
   };
 
+  // Cálculo básico original para compatibilidad
   const getEstimatedCost = () => {
-    // Cálculo estimado basado en distancia y tipo de servicio
     const baseCost = data.distanciaRecorrida ? data.distanciaRecorrida * 12 : 1000;
     const serviceFactor = data.tipoServicio === 'flete_pagado' ? 1.2 : 1.0;
     return Math.round(baseCost * serviceFactor);
   };
 
+  // Nuevo cálculo inteligente
+  const costBreakdown = useIntelligentCostCalculator({ wizardData: data });
+  const basicCost = getEstimatedCost();
+
   const getEstimatedTime = () => {
-    // Tiempo estimado basado en distancia (promedio 60 km/h)
     if (!data.distanciaRecorrida) return 'Por calcular';
     const hours = Math.round(data.distanciaRecorrida / 60);
     return `${hours} horas aproximadamente`;
@@ -107,8 +112,8 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
               <div className="text-sm text-blue-600">Kilómetros</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-700">${getEstimatedCost().toLocaleString()}</div>
-              <div className="text-sm text-green-600">Costo Estimado</div>
+              <div className="text-2xl font-bold text-green-700">${costBreakdown.total.toLocaleString()}</div>
+              <div className="text-sm text-green-600">Costo Inteligente</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-700">{getEstimatedTime()}</div>
@@ -123,6 +128,9 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
           </div>
         </CardContent>
       </Card>
+
+      {/* Análisis Inteligente de Costos - NUEVA SECCIÓN */}
+      <CostBreakdownCard breakdown={costBreakdown} basicCost={basicCost} />
 
       {/* Detalles de la misión */}
       <Card>
