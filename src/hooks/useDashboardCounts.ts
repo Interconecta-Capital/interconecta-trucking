@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,74 +12,46 @@ export interface DashboardCounts {
   viajes: number;
 }
 
-const defaultCounts: DashboardCounts = {
-  vehiculos: 0,
-  conductores: 0,
-  socios: 0,
-  remolques: 0,
-  cartas_porte: 0,
-  viajes: 0,
-};
-
 export const useDashboardCounts = () => {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<DashboardCounts | null>({
     queryKey: ['dashboard-counts', user?.id],
-    queryFn: async (): Promise<DashboardCounts> => {
-      if (!user?.id) {
-        return defaultCounts;
-      }
+    queryFn: async (): Promise<DashboardCounts | null> => {
+      if (!user?.id) return null;
 
       const now = new Date();
       const start = startOfMonth(now);
       const end = endOfMonth(now);
 
-      try {
-        // Sequential queries to avoid deep type instantiation
-        const vehiculosData = await supabase.from('vehiculos').select('id').eq('user_id', user.id);
-        const vehiculosCount = vehiculosData.data?.length ?? 0;
-
-        const conductoresData = await supabase.from('conductores').select('id').eq('user_id', user.id);
-        const conductoresCount = conductoresData.data?.length ?? 0;
-
-        const sociosData = await supabase.from('socios').select('id').eq('user_id', user.id);
-        const sociosCount = sociosData.data?.length ?? 0;
-
-        const remolquesData = await supabase.from('remolques_ccp').select('id').eq('user_id', user.id);
-        const remolquesCount = remolquesData.data?.length ?? 0;
-
-        const cartasData = await supabase
+      const [vehiculosRes, conductoresRes, sociosRes, remolquesRes, cartasRes, viajesRes] = await Promise.all([
+        supabase.from('vehiculos').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('conductores').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('socios').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('remolques_ccp').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase
           .from('cartas_porte')
-          .select('id')
+          .select('id', { count: 'exact' })
           .eq('usuario_id', user.id)
           .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString());
-        const cartasCount = cartasData.data?.length ?? 0;
-
-        const viajesData = await supabase
+          .lte('created_at', end.toISOString()),
+        supabase
           .from('viajes')
-          .select('id')
+          .select('id', { count: 'exact' })
           .eq('user_id', user.id)
           .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString());
-        const viajesCount = viajesData.data?.length ?? 0;
+          .lte('created_at', end.toISOString()),
+      ]);
 
-        return {
-          vehiculos: vehiculosCount,
-          conductores: conductoresCount,
-          socios: sociosCount,
-          remolques: remolquesCount,
-          cartas_porte: cartasCount,
-          viajes: viajesCount,
-        };
-      } catch (error) {
-        console.error('Error fetching dashboard counts:', error);
-        return defaultCounts;
-      }
+      return {
+        vehiculos: vehiculosRes.count || 0,
+        conductores: conductoresRes.count || 0,
+        socios: sociosRes.count || 0,
+        remolques: remolquesRes.count || 0,
+        cartas_porte: cartasRes.count || 0,
+        viajes: viajesRes.count || 0,
+      };
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
   });
 };

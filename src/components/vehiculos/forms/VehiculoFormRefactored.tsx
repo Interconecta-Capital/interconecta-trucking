@@ -37,7 +37,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     peso_bruto_vehicular: '',
     verificacion_vigencia: '',
     estado: 'disponible',
-    tipo_combustible: '' as '' | 'diesel' | 'gasolina',
+    tipo_combustible: '',
     rendimiento: ''
   });
 
@@ -68,9 +68,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         estado: vehiculoActual.estado || 'disponible',
-        tipo_combustible: (vehiculoActual.tipo_combustible === 'diesel' || vehiculoActual.tipo_combustible === 'gasolina') 
-          ? vehiculoActual.tipo_combustible 
-          : '' as '' | 'diesel' | 'gasolina',
+        tipo_combustible: vehiculoActual.tipo_combustible || '',
         rendimiento: vehiculoActual.rendimiento?.toString() || ''
       });
     }
@@ -104,26 +102,10 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
 
     try {
       const vehiculoData = {
-        placa: formData.placa,
-        marca: formData.marca,
-        modelo: formData.modelo,
+        ...formData,
         anio: formData.anio ? parseInt(formData.anio) : undefined,
-        numero_serie_vin: formData.numero_serie_vin,
-        config_vehicular: formData.config_vehicular,
-        perm_sct: formData.perm_sct,
-        num_permiso_sct: formData.num_permiso_sct,
-        vigencia_permiso: formData.vigencia_permiso,
-        asegura_resp_civil: formData.asegura_resp_civil,
-        poliza_resp_civil: formData.poliza_resp_civil,
-        asegura_med_ambiente: formData.asegura_med_ambiente,
-        poliza_med_ambiente: formData.poliza_med_ambiente,
-        vigencia_seguro: formData.vigencia_seguro,
         capacidad_carga: formData.capacidad_carga ? parseFloat(formData.capacidad_carga) : undefined,
-        tipo_carroceria: formData.tipo_carroceria,
         peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
-        verificacion_vigencia: formData.verificacion_vigencia,
-        estado: formData.estado,
-        tipo_combustible: formData.tipo_combustible || undefined,
         rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
         activo: true
       };
