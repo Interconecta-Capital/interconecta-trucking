@@ -11,19 +11,28 @@ export interface Vehiculo {
   marca?: string;
   modelo?: string;
   anio?: number;
-  num_serie?: string;
+  numero_serie_vin?: string;
   config_vehicular?: string;
   tipo_carroceria?: string;
   capacidad_carga?: number;
   peso_bruto_vehicular?: number;
-  rendimiento?: number; // km/litro
+  rendimiento?: number;
   tipo_combustible?: 'diesel' | 'gasolina';
-  poliza_seguro?: string;
+  poliza_resp_civil?: string;
+  asegura_resp_civil?: string;
+  poliza_med_ambiente?: string;
+  asegura_med_ambiente?: string;
   vigencia_seguro?: string;
   verificacion_vigencia?: string;
-  id_equipo_gps?: string;
-  fecha_instalacion_gps?: string;
-  acta_instalacion_gps?: string;
+  perm_sct?: string;
+  num_permiso_sct?: string;
+  vigencia_permiso?: string;
+  // Nuevos campos de costos
+  costo_mantenimiento_km: number;
+  costo_llantas_km: number;
+  valor_vehiculo?: number;
+  configuracion_ejes: 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3';
+  factor_peajes: number;
   estado: string;
   activo: boolean;
   created_at: string;

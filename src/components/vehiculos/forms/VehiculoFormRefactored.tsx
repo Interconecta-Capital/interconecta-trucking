@@ -37,8 +37,14 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     peso_bruto_vehicular: string;
     verificacion_vigencia: string;
     estado: string;
-    tipo_combustible: '' | 'diesel' | 'gasolina';
+    tipo_combustible: 'diesel' | 'gasolina' | '';
     rendimiento: string;
+    // Nuevos campos de costos
+    costo_mantenimiento_km: string;
+    costo_llantas_km: string;
+    valor_vehiculo: string;
+    configuracion_ejes: 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3';
+    factor_peajes: string;
   }>({
     placa: '',
     marca: '',
@@ -60,7 +66,12 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     verificacion_vigencia: '',
     estado: 'disponible',
     tipo_combustible: '',
-    rendimiento: ''
+    rendimiento: '',
+    costo_mantenimiento_km: '2.07',
+    costo_llantas_km: '1.08',
+    valor_vehiculo: '',
+    configuracion_ejes: 'T3S2',
+    factor_peajes: '2.0'
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,13 +86,13 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         marca: vehiculoActual.marca || '',
         modelo: vehiculoActual.modelo || '',
         anio: vehiculoActual.anio?.toString() || '',
-        numero_serie_vin: vehiculoActual.numero_serie_vin || vehiculoActual.num_serie || '',
+        numero_serie_vin: vehiculoActual.numero_serie_vin || '',
         config_vehicular: vehiculoActual.config_vehicular || '',
         perm_sct: vehiculoActual.perm_sct || '',
         num_permiso_sct: vehiculoActual.num_permiso_sct || '',
         vigencia_permiso: vehiculoActual.vigencia_permiso || '',
         asegura_resp_civil: vehiculoActual.asegura_resp_civil || '',
-        poliza_resp_civil: vehiculoActual.poliza_resp_civil || vehiculoActual.poliza_seguro || '',
+        poliza_resp_civil: vehiculoActual.poliza_resp_civil || '',
         asegura_med_ambiente: vehiculoActual.asegura_med_ambiente || '',
         poliza_med_ambiente: vehiculoActual.poliza_med_ambiente || '',
         vigencia_seguro: vehiculoActual.vigencia_seguro || '',
@@ -90,8 +101,13 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         estado: vehiculoActual.estado || 'disponible',
-        tipo_combustible: (vehiculoActual.tipo_combustible as 'diesel' | 'gasolina' | null) ?? '',
-        rendimiento: vehiculoActual.rendimiento?.toString() || ''
+        tipo_combustible: vehiculoActual.tipo_combustible || '',
+        rendimiento: vehiculoActual.rendimiento?.toString() || '',
+        costo_mantenimiento_km: vehiculoActual.costo_mantenimiento_km?.toString() || '2.07',
+        costo_llantas_km: vehiculoActual.costo_llantas_km?.toString() || '1.08',
+        valor_vehiculo: vehiculoActual.valor_vehiculo?.toString() || '',
+        configuracion_ejes: vehiculoActual.configuracion_ejes || 'T3S2',
+        factor_peajes: vehiculoActual.factor_peajes?.toString() || '2.0'
       });
     }
   }, [vehiculoActual]);
@@ -129,7 +145,11 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         capacidad_carga: formData.capacidad_carga ? parseFloat(formData.capacidad_carga) : undefined,
         peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
         rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
-        tipo_combustible: (formData.tipo_combustible || undefined) as 'diesel' | 'gasolina' | undefined,
+        tipo_combustible: formData.tipo_combustible || undefined,
+        costo_mantenimiento_km: parseFloat(formData.costo_mantenimiento_km) || 2.07,
+        costo_llantas_km: parseFloat(formData.costo_llantas_km) || 1.08,
+        valor_vehiculo: formData.valor_vehiculo ? parseFloat(formData.valor_vehiculo) : undefined,
+        factor_peajes: parseFloat(formData.factor_peajes) || 2.0,
         activo: true
       };
 

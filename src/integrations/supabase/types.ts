@@ -1930,6 +1930,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           configuracion_calendario: Json | null
+          configuracion_costos: Json | null
           created_at: string | null
           email: string
           empresa: string | null
@@ -1945,6 +1946,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           configuracion_calendario?: Json | null
+          configuracion_costos?: Json | null
           created_at?: string | null
           email: string
           empresa?: string | null
@@ -1960,6 +1962,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           configuracion_calendario?: Json | null
+          configuracion_costos?: Json | null
           created_at?: string | null
           email?: string
           empresa?: string | null
@@ -2750,9 +2753,13 @@ export type Database = {
           asegura_resp_civil: string | null
           capacidad_carga: number | null
           config_vehicular: string | null
+          configuracion_ejes: string | null
+          costo_llantas_km: number | null
+          costo_mantenimiento_km: number | null
           created_at: string | null
           dimensiones: Json | null
           estado: string
+          factor_peajes: number | null
           fecha_instalacion_gps: string | null
           id: string
           id_equipo_gps: string | null
@@ -2775,6 +2782,7 @@ export type Database = {
           tipo_combustible: string | null
           updated_at: string | null
           user_id: string
+          valor_vehiculo: number | null
           verificacion_vigencia: string | null
           vigencia_permiso: string | null
           vigencia_seguro: string | null
@@ -2787,9 +2795,13 @@ export type Database = {
           asegura_resp_civil?: string | null
           capacidad_carga?: number | null
           config_vehicular?: string | null
+          configuracion_ejes?: string | null
+          costo_llantas_km?: number | null
+          costo_mantenimiento_km?: number | null
           created_at?: string | null
           dimensiones?: Json | null
           estado?: string
+          factor_peajes?: number | null
           fecha_instalacion_gps?: string | null
           id?: string
           id_equipo_gps?: string | null
@@ -2812,6 +2824,7 @@ export type Database = {
           tipo_combustible?: string | null
           updated_at?: string | null
           user_id: string
+          valor_vehiculo?: number | null
           verificacion_vigencia?: string | null
           vigencia_permiso?: string | null
           vigencia_seguro?: string | null
@@ -2824,9 +2837,13 @@ export type Database = {
           asegura_resp_civil?: string | null
           capacidad_carga?: number | null
           config_vehicular?: string | null
+          configuracion_ejes?: string | null
+          costo_llantas_km?: number | null
+          costo_mantenimiento_km?: number | null
           created_at?: string | null
           dimensiones?: Json | null
           estado?: string
+          factor_peajes?: number | null
           fecha_instalacion_gps?: string | null
           id?: string
           id_equipo_gps?: string | null
@@ -2849,6 +2866,7 @@ export type Database = {
           tipo_combustible?: string | null
           updated_at?: string | null
           user_id?: string
+          valor_vehiculo?: number | null
           verificacion_vigencia?: string | null
           vigencia_permiso?: string | null
           vigencia_seguro?: string | null
