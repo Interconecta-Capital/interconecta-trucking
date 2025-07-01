@@ -17,7 +17,7 @@ import {
   Route
 } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
-import { useIntelligentCostCalculator } from '@/hooks/useIntelligentCostCalculator';
+import { useCalculadoraCostosProfesional } from '@/hooks/useCalculadoraCostosProfesional';
 import { CostBreakdownCard } from './CostBreakdownCard';
 
 interface ViajeWizardResumenProps {
@@ -46,8 +46,30 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
     return Math.round(baseCost * serviceFactor);
   };
 
+  // Preparar parámetros para el cálculo profesional
+  const calculoProfesionalParams = {
+    distancia: data.distanciaRecorrida || 0,
+    tiempoEstimadoHoras: data.distanciaRecorrida ? Math.round(data.distanciaRecorrida / 60) : undefined,
+    vehiculo: data.vehiculo ? {
+      id: data.vehiculo.id,
+      placa: data.vehiculo.placa,
+      marca: data.vehiculo.marca,
+      modelo: data.vehiculo.modelo,
+      rendimiento: data.vehiculo.rendimiento,
+      tipo_combustible: data.vehiculo.tipo_combustible,
+      capacidad_carga: data.vehiculo.capacidad_carga,
+      peso_bruto_vehicular: data.vehiculo.peso_bruto_vehicular,
+      costo_mantenimiento_km: data.vehiculo.costo_mantenimiento_km || 2.07,
+      costo_llantas_km: data.vehiculo.costo_llantas_km || 1.08,
+      valor_vehiculo: data.vehiculo.valor_vehiculo,
+      configuracion_ejes: data.vehiculo.configuracion_ejes || 'T3S2',
+      factor_peajes: data.vehiculo.factor_peajes || 2.0
+    } : undefined,
+    tipoServicio: data.tipoServicio
+  };
+
   // Nuevo cálculo inteligente
-  const costBreakdown = useIntelligentCostCalculator({ wizardData: data });
+  const costBreakdown = useCalculadoraCostosProfesional(calculoProfesionalParams);
   const basicCost = getEstimatedCost();
 
   const getEstimatedTime = () => {
@@ -112,8 +134,12 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
               <div className="text-sm text-blue-600">Kilómetros</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-700">${costBreakdown.total.toLocaleString()}</div>
-              <div className="text-sm text-green-600">Costo Inteligente</div>
+              <div className="text-2xl font-bold text-green-700">
+                ${costBreakdown ? costBreakdown.costoTotal.toLocaleString() : basicCost.toLocaleString()}
+              </div>
+              <div className="text-sm text-green-600">
+                {costBreakdown ? 'Costo Inteligente' : 'Costo Estimado'}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-700">{getEstimatedTime()}</div>
@@ -130,7 +156,9 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
       </Card>
 
       {/* Análisis Inteligente de Costos - NUEVA SECCIÓN */}
-      <CostBreakdownCard breakdown={costBreakdown} basicCost={basicCost} />
+      {costBreakdown && (
+        <CostBreakdownCard breakdown={costBreakdown} basicCost={basicCost} />
+      )}
 
       {/* Detalles de la misión */}
       <Card>
