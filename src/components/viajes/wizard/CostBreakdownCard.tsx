@@ -9,7 +9,7 @@ import {
   ChevronUp, 
   DollarSign, 
   Fuel, 
-  Road, 
+  Navigation, 
   Home, 
   Wrench, 
   Building,
@@ -167,7 +167,7 @@ export function CostBreakdownCard({ breakdown, basicCost }: CostBreakdownCardPro
               {/* Peajes */}
               <div className="p-4 bg-white border rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <Road className="h-5 w-5 text-blue-500" />
+                  <Navigation className="h-5 w-5 text-blue-500" />
                   <h4 className="font-medium">Peajes</h4>
                 </div>
                 <div className="space-y-2 text-sm">
