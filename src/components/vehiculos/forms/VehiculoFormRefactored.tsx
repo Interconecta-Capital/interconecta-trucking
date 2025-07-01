@@ -101,7 +101,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         peso_bruto_vehicular: vehiculoActual.peso_bruto_vehicular?.toString() || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         estado: vehiculoActual.estado || 'disponible',
-        tipo_combustible: vehiculoActual.tipo_combustible || '',
+        tipo_combustible: (vehiculoActual.tipo_combustible as 'diesel' | 'gasolina') || '',
         rendimiento: vehiculoActual.rendimiento?.toString() || '',
         costo_mantenimiento_km: vehiculoActual.costo_mantenimiento_km?.toString() || '2.07',
         costo_llantas_km: vehiculoActual.costo_llantas_km?.toString() || '1.08',

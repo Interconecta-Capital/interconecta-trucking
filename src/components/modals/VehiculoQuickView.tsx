@@ -34,6 +34,16 @@ export const VehiculoQuickView = ({ vehiculo, open, onOpenChange, onEdit, onProg
     { nombre: 'Verificación', fecha: vehiculo.verificacion_vigencia, alerta: isDateCloseToExpiry(vehiculo.verificacion_vigencia) }
   ].filter(doc => doc.fecha);
 
+  // Helper function to get serial number from either field
+  const getNumeroSerie = () => {
+    return vehiculo.num_serie || vehiculo.numero_serie_vin || 'No especificado';
+  };
+
+  // Helper function to get insurance policy number
+  const getPollizaSeguro = () => {
+    return vehiculo.poliza_seguro || vehiculo.poliza_resp_civil || 'No especificada';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -91,12 +101,10 @@ export const VehiculoQuickView = ({ vehiculo, open, onOpenChange, onEdit, onProg
                 </div>
               </div>
               
-              {vehiculo.num_serie && (
-                <div>
-                  <span className="text-sm text-muted-foreground">Número de Serie</span>
-                  <p className="font-medium font-mono text-sm">{vehiculo.num_serie}</p>
-                </div>
-              )}
+              <div>
+                <span className="text-sm text-muted-foreground">Número de Serie</span>
+                <p className="font-medium font-mono text-sm">{getNumeroSerie()}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -123,12 +131,10 @@ export const VehiculoQuickView = ({ vehiculo, open, onOpenChange, onEdit, onProg
                 </div>
               ))}
               
-              {vehiculo.poliza_seguro && (
-                <div>
-                  <span className="text-sm text-muted-foreground">Póliza de Seguro</span>
-                  <p className="font-medium">{vehiculo.poliza_seguro}</p>
-                </div>
-              )}
+              <div>
+                <span className="text-sm text-muted-foreground">Póliza de Seguro</span>
+                <p className="font-medium">{getPollizaSeguro()}</p>
+              </div>
             </CardContent>
           </Card>
 

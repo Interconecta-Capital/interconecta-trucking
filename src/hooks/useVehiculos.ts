@@ -12,6 +12,7 @@ export interface Vehiculo {
   modelo?: string;
   anio?: number;
   numero_serie_vin?: string;
+  num_serie?: string; // alias for numero_serie_vin
   config_vehicular?: string;
   tipo_carroceria?: string;
   capacidad_carga?: number;
@@ -19,6 +20,7 @@ export interface Vehiculo {
   rendimiento?: number;
   tipo_combustible?: 'diesel' | 'gasolina';
   poliza_resp_civil?: string;
+  poliza_seguro?: string; // alias for poliza_resp_civil
   asegura_resp_civil?: string;
   poliza_med_ambiente?: string;
   asegura_med_ambiente?: string;
@@ -27,6 +29,10 @@ export interface Vehiculo {
   perm_sct?: string;
   num_permiso_sct?: string;
   vigencia_permiso?: string;
+  // GPS fields
+  id_equipo_gps?: string;
+  fecha_instalacion_gps?: string;
+  acta_instalacion_gps?: string;
   // Nuevos campos de costos
   costo_mantenimiento_km: number;
   costo_llantas_km: number;

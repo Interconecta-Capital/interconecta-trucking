@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +32,11 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
     id_equipo_gps: '',
     fecha_instalacion_gps: '',
     acta_instalacion_gps: '',
-    estado: 'disponible'
+    estado: 'disponible',
+    costo_mantenimiento_km: 2.07,
+    costo_llantas_km: 1.08,
+    configuracion_ejes: 'T3S2' as const,
+    factor_peajes: 2.0
   });
 
   const [showProgramarModal, setShowProgramarModal] = useState(false);
@@ -49,15 +52,19 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
         marca: vehiculoActual.marca || '',
         modelo: vehiculoActual.modelo || '',
         anio: vehiculoActual.anio?.toString() || '',
-        num_serie: vehiculoActual.num_serie || '',
+        num_serie: vehiculoActual.num_serie || vehiculoActual.numero_serie_vin || '',
         config_vehicular: vehiculoActual.config_vehicular || '',
-        poliza_seguro: vehiculoActual.poliza_seguro || '',
+        poliza_seguro: vehiculoActual.poliza_seguro || vehiculoActual.poliza_resp_civil || '',
         vigencia_seguro: vehiculoActual.vigencia_seguro || '',
         verificacion_vigencia: vehiculoActual.verificacion_vigencia || '',
         id_equipo_gps: vehiculoActual.id_equipo_gps || '',
         fecha_instalacion_gps: vehiculoActual.fecha_instalacion_gps || '',
         acta_instalacion_gps: vehiculoActual.acta_instalacion_gps || '',
-        estado: vehiculoActual.estado || 'disponible'
+        estado: vehiculoActual.estado || 'disponible',
+        costo_mantenimiento_km: vehiculoActual.costo_mantenimiento_km || 2.07,
+        costo_llantas_km: vehiculoActual.costo_llantas_km || 1.08,
+        configuracion_ejes: vehiculoActual.configuracion_ejes || 'T3S2',
+        factor_peajes: vehiculoActual.factor_peajes || 2.0
       });
       
       cargarDocumentos('vehiculo', vehiculoId);
