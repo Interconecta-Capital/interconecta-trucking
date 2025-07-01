@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,7 +64,7 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
         estado: vehiculoActual.estado || 'disponible',
         costo_mantenimiento_km: vehiculoActual.costo_mantenimiento_km || 2.07,
         costo_llantas_km: vehiculoActual.costo_llantas_km || 1.08,
-        configuracion_ejes: vehiculoActual.configuracion_ejes || 'T3S2',
+        configuracion_ejes: (vehiculoActual.configuracion_ejes || 'T3S2') as 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3',
         factor_peajes: vehiculoActual.factor_peajes || 2.0
       });
       
@@ -82,6 +83,12 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
     const vehiculoData = {
       ...formData,
       anio: formData.anio ? parseInt(formData.anio) : undefined,
+      numero_serie_vin: formData.num_serie,
+      poliza_resp_civil: formData.poliza_seguro,
+      costo_mantenimiento_km: formData.costo_mantenimiento_km,
+      costo_llantas_km: formData.costo_llantas_km,
+      configuracion_ejes: formData.configuracion_ejes,
+      factor_peajes: formData.factor_peajes,
       activo: true
     };
 

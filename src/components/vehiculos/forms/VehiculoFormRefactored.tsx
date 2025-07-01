@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,7 +105,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         costo_mantenimiento_km: vehiculoActual.costo_mantenimiento_km?.toString() || '2.07',
         costo_llantas_km: vehiculoActual.costo_llantas_km?.toString() || '1.08',
         valor_vehiculo: vehiculoActual.valor_vehiculo?.toString() || '',
-        configuracion_ejes: vehiculoActual.configuracion_ejes || 'T3S2',
+        configuracion_ejes: (vehiculoActual.configuracion_ejes || 'T3S2') as 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3',
         factor_peajes: vehiculoActual.factor_peajes?.toString() || '2.0'
       });
     }
