@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +35,7 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
     estado: 'disponible',
     costo_mantenimiento_km: 2.07,
     costo_llantas_km: 1.08,
-    configuracion_ejes: 'T3S2' as const,
+    configuracion_ejes: 'T3S2' as 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3',
     factor_peajes: 2.0
   });
 
