@@ -1,6 +1,6 @@
-
 import { useMemo } from 'react';
 import { useAuth } from './useAuth';
+import { usePeajesINEGI } from './usePeajesINEGI';
 import { VehiculoConCostos, CalculoProfesional, ConfiguracionCostos, AlertaCosto, ComparacionCalculo } from '@/types/calculoCostos';
 
 interface ParametrosCalculo {
@@ -9,6 +9,10 @@ interface ParametrosCalculo {
   vehiculo?: VehiculoConCostos;
   pesoMercancia?: number;
   tipoServicio?: string;
+  coordenadas?: {
+    origen: { lat: number; lng: number };
+    destino: { lat: number; lng: number };
+  };
 }
 
 const PRECIOS_COMBUSTIBLE_DEFAULT = {
@@ -25,9 +29,10 @@ const COSTOS_FIJOS_ANUALES = {
 
 export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) => {
   const { user } = useAuth();
+  const { calcularPeajes } = usePeajesINEGI();
   
   return useMemo(() => {
-    const { distancia, tiempoEstimadoHoras, vehiculo, pesoMercancia, tipoServicio } = parametros;
+    const { distancia, tiempoEstimadoHoras, vehiculo, pesoMercancia, tipoServicio, coordenadas } = parametros;
     
     if (!distancia || distancia <= 0) {
       return null;
@@ -90,8 +95,50 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
       };
     };
 
-    // 2. CÁLCULO DE PEAJES
-    const calcularPeajes = () => {
+    // 2. CÁLCULO DE PEAJES MEJORADO CON API INEGI
+    const calcularPeajesAvanzado = async () => {
+      if (coordenadas && vehiculo?.configuracion_ejes) {
+        try {
+          const resultadoPeajes = await calcularPeajes(
+            coordenadas.origen,
+            coordenadas.destino,
+            vehiculo.configuracion_ejes
+          );
+
+          if (resultadoPeajes.rutaOptimizada) {
+            alertas.push({
+              tipo: 'info',
+              mensaje: 'Peajes calculados con API oficial INEGI',
+              impacto: 'Cálculo preciso basado en casetas reales',
+              solucion: 'Datos oficiales actualizados'
+            });
+          } else {
+            alertas.push({
+              tipo: 'warning',
+              mensaje: 'API INEGI no disponible, usando cálculo estimado',
+              impacto: 'Precisión reducida en peajes',
+              solucion: 'Verificar conectividad o intentar más tarde'
+            });
+          }
+
+          return {
+            casetas_estimadas: resultadoPeajes.casetas.length,
+            costo: resultadoPeajes.costoTotal,
+            factor: vehiculo.factor_peajes || 2.0,
+            metodo_calculo: resultadoPeajes.rutaOptimizada ? 'API_INEGI' : 'ESTIMADO',
+            casetas_detalle: resultadoPeajes.casetas
+          };
+        } catch (error) {
+          console.warn('Error en cálculo de peajes avanzado:', error);
+        }
+      }
+
+      // Fallback al método original
+      return calcularPeajesOriginal();
+    };
+
+    // Método original como fallback
+    const calcularPeajesOriginal = () => {
       const factorEjes = vehiculo?.factor_peajes || 2.0;
       const costoPorKm = 2.80; // MXN por km promedio México
       const factorAdicional = 1 + (configuracionDefault.peajes.factor_adicional / 100);
@@ -102,7 +149,9 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
       return {
         casetas_estimadas,
         costo,
-        factor: factorEjes
+        factor: factorEjes,
+        metodo_calculo: 'ESTIMADO',
+        casetas_detalle: []
       };
     };
 
@@ -158,12 +207,15 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
       };
     };
 
-    // EJECUTAR CÁLCULOS
+    // EJECUTAR CÁLCULOS SÍNCRONOS
     const combustible = calcularCombustible();
-    const peajes = calcularPeajes();
     const viaticos = calcularViaticos();
     const mantenimiento = calcularMantenimiento();
     const costosFijos = calcularCostosFijos();
+
+    // Para peajes, usar el método original síncrono como base
+    // La versión avanzada se manejará por separado
+    const peajes = calcularPeajesOriginal();
 
     // CÁLCULO TOTAL
     const costoTotal = combustible.costo + peajes.costo + viaticos.costo + 
@@ -215,7 +267,32 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
     };
 
     return resultado;
-  }, [parametros, user]);
+  }, [parametros, user, calcularPeajes]);
+};
+
+// Hook separado para cálculo avanzado de peajes (asíncrono)
+export const useCalculadoraPeajesAvanzada = () => {
+  const { calcularPeajes } = usePeajesINEGI();
+
+  const calcularPeajesDetallado = async (
+    origen: { lat: number; lng: number },
+    destino: { lat: number; lng: number },
+    configuracion: 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3'
+  ) => {
+    try {
+      const resultado = await calcularPeajes(origen, destino, configuracion);
+      return {
+        ...resultado,
+        precision: 'alta',
+        fuente: 'INEGI_SAKBE'
+      };
+    } catch (error) {
+      console.error('Error en cálculo avanzado de peajes:', error);
+      return null;
+    }
+  };
+
+  return { calcularPeajesDetallado };
 };
 
 // Hook para comparación de cálculos
