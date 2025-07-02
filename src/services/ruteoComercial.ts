@@ -205,14 +205,20 @@ class RuteoComercialService {
             .eq('activa', true);
 
           if (!error && restriccionesCiudad) {
+            // Type assertion for the database results
+            const restriccionesTyped = restriccionesCiudad.map(r => ({
+              ...r,
+              tipo_restriccion: r.tipo_restriccion as 'horaria' | 'peso' | 'dimension' | 'ambiental'
+            }));
+
             const alertasUrbanas = restriccionesUrbanasService.generarAlertasRestricciones(
-              restriccionesCiudad,
+              restriccionesTyped,
               parametros.vehiculo
             );
             advertencias.push(...alertasUrbanas);
 
             // Agregar restricciones específicas encontradas
-            restriccionesCiudad.forEach(r => {
+            restriccionesTyped.forEach(r => {
               if (this.aplicaRestriccion(r, parametros.vehiculo)) {
                 restriccionesEncontradas.push(`${r.ciudad}: ${r.descripcion}`);
               }
@@ -284,9 +290,12 @@ class RuteoComercialService {
   }
 
   private aplicaRestriccion(restriccion: any, vehiculo: ParametrosRuteoComercial['vehiculo']): boolean {
+    // Determine configuration based on vehicle characteristics
+    const configuracion = this.determinarConfiguracion(vehiculo);
+    
     // Verificar si la restricción aplica al vehículo específico
     if (restriccion.aplica_configuraciones && 
-        !restriccion.aplica_configuraciones.includes(vehiculo.configuracion || 'C2')) {
+        !restriccion.aplica_configuraciones.includes(configuracion)) {
       return false;
     }
 
@@ -301,6 +310,15 @@ class RuteoComercialService {
       default:
         return false;
     }
+  }
+
+  private determinarConfiguracion(vehiculo: ParametrosRuteoComercial['vehiculo']): string {
+    // Determinar configuración basada en características del vehículo
+    if (vehiculo.peso <= 3.5) return 'C2';
+    if (vehiculo.peso <= 8) return 'C3';
+    if (vehiculo.ejes <= 4) return 'T2S1';
+    if (vehiculo.ejes <= 5) return 'T3S2';
+    return 'T3S3';
   }
 
   private validarRestriccionesMexico(parametros: ParametrosRuteoComercial): string[] {

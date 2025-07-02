@@ -72,7 +72,12 @@ export const useRestriccionesUrbanas = (): UseRestriccionesUrbanasReturn => {
         .order('tipo_restriccion');
 
       if (error) throw error;
-      return data || [];
+      
+      // Type assertion to ensure proper typing
+      return (data || []).map(item => ({
+        ...item,
+        tipo_restriccion: item.tipo_restriccion as 'horaria' | 'peso' | 'dimension' | 'ambiental'
+      }));
     } catch (err) {
       console.error('Error obteniendo restricciones:', err);
       return [];
