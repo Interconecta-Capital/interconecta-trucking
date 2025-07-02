@@ -9,6 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analisis_viajes: {
+        Row: {
+          cliente_id: string | null
+          costo_estimado: number | null
+          costo_real: number | null
+          created_at: string | null
+          fecha_viaje: string
+          id: string
+          margen_real: number | null
+          precio_cobrado: number | null
+          ruta_hash: string
+          tiempo_estimado: number | null
+          tiempo_real: number | null
+          updated_at: string | null
+          user_id: string
+          vehiculo_tipo: string | null
+          viaje_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          costo_estimado?: number | null
+          costo_real?: number | null
+          created_at?: string | null
+          fecha_viaje: string
+          id?: string
+          margen_real?: number | null
+          precio_cobrado?: number | null
+          ruta_hash: string
+          tiempo_estimado?: number | null
+          tiempo_real?: number | null
+          updated_at?: string | null
+          user_id: string
+          vehiculo_tipo?: string | null
+          viaje_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          costo_estimado?: number | null
+          costo_real?: number | null
+          created_at?: string | null
+          fecha_viaje?: string
+          id?: string
+          margen_real?: number | null
+          precio_cobrado?: number | null
+          ruta_hash?: string
+          tiempo_estimado?: number | null
+          tiempo_real?: number | null
+          updated_at?: string | null
+          user_id?: string
+          vehiculo_tipo?: string | null
+          viaje_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analisis_viajes_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       autotransporte: {
         Row: {
           anio_modelo_vm: number | null
@@ -3054,6 +3116,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      analizar_mercado_ruta: {
+        Args: { p_user_id: string; p_ruta_hash: string }
+        Returns: {
+          precio_promedio: number
+          precio_minimo: number
+          precio_maximo: number
+          margen_promedio: number
+          total_cotizaciones: number
+          tendencia: string
+        }[]
+      }
       assign_missing_trials: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -3085,6 +3158,16 @@ export type Database = {
           zona: string
           total_colonias: number
           colonias: Json
+        }[]
+      }
+      calcular_precision_ruta: {
+        Args: { p_user_id: string; p_ruta_hash: string }
+        Returns: {
+          exactitud_costo: number
+          exactitud_tiempo: number
+          factor_correccion_costo: number
+          factor_correccion_tiempo: number
+          total_viajes: number
         }[]
       }
       check_document_expiration: {
@@ -3119,6 +3202,10 @@ export type Database = {
       cleanup_old_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generar_hash_ruta: {
+        Args: { origen: string; destino: string }
+        Returns: string
       }
       generar_id_ccp_unico: {
         Args: Record<PropertyKey, never>
