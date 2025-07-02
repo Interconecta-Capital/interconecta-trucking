@@ -154,8 +154,7 @@ class PeajesINEGIService {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'TransporteApp/1.0'
-      },
-      timeout: 10000 // 10 segundos timeout
+      }
     });
 
     if (!response.ok) {
