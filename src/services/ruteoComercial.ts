@@ -211,9 +211,16 @@ class RuteoComercialService {
               tipo_restriccion: r.tipo_restriccion as 'horaria' | 'peso' | 'dimension' | 'ambiental'
             }));
 
+            // Create vehicle object with configuration for the service
+            const vehiculoConConfiguracion = {
+              peso: parametros.vehiculo.peso,
+              altura: parametros.vehiculo.altura,
+              configuracion: this.determinarConfiguracion(parametros.vehiculo)
+            };
+
             const alertasUrbanas = restriccionesUrbanasService.generarAlertasRestricciones(
               restriccionesTyped,
-              parametros.vehiculo
+              vehiculoConConfiguracion
             );
             advertencias.push(...alertasUrbanas);
 
