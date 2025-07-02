@@ -1,4 +1,3 @@
-
 interface ParametrosRuteoComercial {
   vehiculo: {
     peso: number; // toneladas
@@ -58,6 +57,9 @@ interface HereRoutingResponse {
     }>;
   }>;
 }
+
+import { restriccionesUrbanasService } from './restriccionesUrbanas';
+import { supabase } from '@/integrations/supabase/client';
 
 class RuteoComercialService {
   private readonly baseURL = 'https://router.hereapi.com/v8/routes';
@@ -176,9 +178,64 @@ class RuteoComercialService {
         }
       });
 
+      // NUEVA FUNCIONALIDAD: Validar restricciones urbanas
+      const waypoints = [
+        {
+          lat: origen.lat,
+          lng: origen.lng,
+          descripcion: 'Punto de origen'
+        },
+        {
+          lat: destino.lat,
+          lng: destino.lng,
+          descripcion: 'Punto de destino'
+        }
+      ];
+
+      const ciudadesDetectadas = restriccionesUrbanasService.detectarCiudadesEnRuta(waypoints);
+      
+      // Consultar restricciones urbanas de la base de datos
+      for (const ciudad of ciudadesDetectadas) {
+        try {
+          const { data: restriccionesCiudad, error } = await supabase
+            .from('restricciones_urbanas')
+            .select('*')
+            .eq('ciudad', ciudad.nombre)
+            .eq('estado', ciudad.estado)
+            .eq('activa', true);
+
+          if (!error && restriccionesCiudad) {
+            const alertasUrbanas = restriccionesUrbanasService.generarAlertasRestricciones(
+              restriccionesCiudad,
+              parametros.vehiculo
+            );
+            advertencias.push(...alertasUrbanas);
+
+            // Agregar restricciones específicas encontradas
+            restriccionesCiudad.forEach(r => {
+              if (this.aplicaRestriccion(r, parametros.vehiculo)) {
+                restriccionesEncontradas.push(`${r.ciudad}: ${r.descripcion}`);
+              }
+            });
+          }
+        } catch (dbError) {
+          console.warn('Error consultando restricciones urbanas:', dbError);
+        }
+      }
+
       // Validar restricciones específicas de México
       const validacionMexico = this.validarRestriccionesMexico(parametros);
       advertencias.push(...validacionMexico);
+
+      // Sugerir rutas alternativas si hay restricciones
+      const ciudadesConRestricciones = ciudadesDetectadas
+        .filter(c => restriccionesEncontradas.some(r => r.includes(c.nombre)))
+        .map(c => c.nombre);
+      
+      if (ciudadesConRestricciones.length > 0) {
+        const sugerenciasRuta = restriccionesUrbanasService.sugerirRutasAlternativas(ciudadesConRestricciones);
+        advertencias.push(...sugerenciasRuta.map(s => `💡 Sugerencia: ${s}`));
+      }
 
       const rutaComercial: RutaComercial = {
         id: `here-${Date.now()}`,
@@ -211,10 +268,11 @@ class RuteoComercialService {
         timestamp: Date.now()
       });
 
-      console.log('Ruta comercial calculada:', {
+      console.log('Ruta comercial calculada con restricciones urbanas:', {
         distancia: rutaComercial.distancia,
         tiempo: rutaComercial.tiempo,
-        restricciones: restriccionesEncontradas.length
+        restricciones: restriccionesEncontradas.length,
+        ciudadesAnalizadas: ciudadesDetectadas.length
       });
 
       return rutaComercial;
@@ -222,6 +280,26 @@ class RuteoComercialService {
     } catch (error) {
       console.warn('Error en HERE Maps, usando cálculo de respaldo:', error);
       return this.calcularRutaRespaldo(origen, destino, parametros);
+    }
+  }
+
+  private aplicaRestriccion(restriccion: any, vehiculo: ParametrosRuteoComercial['vehiculo']): boolean {
+    // Verificar si la restricción aplica al vehículo específico
+    if (restriccion.aplica_configuraciones && 
+        !restriccion.aplica_configuraciones.includes(vehiculo.configuracion || 'C2')) {
+      return false;
+    }
+
+    switch (restriccion.tipo_restriccion) {
+      case 'peso':
+        return vehiculo.peso > (restriccion.peso_maximo || 0);
+      case 'dimension':
+        return vehiculo.altura > (restriccion.altura_maxima || 0);
+      case 'horaria':
+      case 'ambiental':
+        return true; // Siempre mostrar advertencia
+      default:
+        return false;
     }
   }
 
@@ -356,6 +434,13 @@ class RuteoComercialService {
       alertas.push('Transporte de materiales peligrosos - Restricciones especiales');
       recomendaciones.push('Verificar documentación SEMARNAT/SCT');
       recomendaciones.push('Evitar centros urbanos y horarios pico');
+    }
+
+    // NUEVA VALIDACIÓN: Restricciones urbanas encontradas
+    if (ruta.restriccionesEncontradas.length > 0) {
+      alertas.push(`Restricciones urbanas detectadas: ${ruta.restriccionesEncontradas.length}`);
+      recomendaciones.push('Revisar horarios de circulación en ciudades importantes');
+      recomendaciones.push('Considerar rutas periféricas para evitar centros urbanos');
     }
 
     const esSegura = !alertas.some(alerta => alerta.includes('CRÍTICO'));

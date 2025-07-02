@@ -2154,6 +2154,66 @@ export type Database = {
           },
         ]
       }
+      restricciones_urbanas: {
+        Row: {
+          activa: boolean | null
+          altura_maxima: number | null
+          aplica_configuraciones: string[] | null
+          ciudad: string
+          created_at: string | null
+          descripcion: string
+          dias_semana: number[] | null
+          estado: string
+          horario_fin: string | null
+          horario_inicio: string | null
+          id: string
+          multa_promedio: number | null
+          peso_maximo: number | null
+          tipo_restriccion: string
+          updated_at: string | null
+          vigencia_desde: string
+          vigencia_hasta: string | null
+        }
+        Insert: {
+          activa?: boolean | null
+          altura_maxima?: number | null
+          aplica_configuraciones?: string[] | null
+          ciudad: string
+          created_at?: string | null
+          descripcion: string
+          dias_semana?: number[] | null
+          estado: string
+          horario_fin?: string | null
+          horario_inicio?: string | null
+          id?: string
+          multa_promedio?: number | null
+          peso_maximo?: number | null
+          tipo_restriccion: string
+          updated_at?: string | null
+          vigencia_desde?: string
+          vigencia_hasta?: string | null
+        }
+        Update: {
+          activa?: boolean | null
+          altura_maxima?: number | null
+          aplica_configuraciones?: string[] | null
+          ciudad?: string
+          created_at?: string | null
+          descripcion?: string
+          dias_semana?: number[] | null
+          estado?: string
+          horario_fin?: string | null
+          horario_inicio?: string | null
+          id?: string
+          multa_promedio?: number | null
+          peso_maximo?: number | null
+          tipo_restriccion?: string
+          updated_at?: string | null
+          vigencia_desde?: string
+          vigencia_hasta?: string | null
+        }
+        Relationships: []
+      }
       rls_policies_backup: {
         Row: {
           backup_phase: string | null
