@@ -27,10 +27,18 @@ export class IAPredictiva {
       if (!user) throw new Error('Usuario no autenticado');
 
       const datosCompletos = {
-        ...datos,
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        viaje_id: datos.viaje_id,
+        ruta_hash: datos.ruta_hash || '',
+        costo_estimado: datos.costo_estimado,
+        costo_real: datos.costo_real,
+        precio_cobrado: datos.precio_cobrado,
+        margen_real: datos.margen_real,
+        tiempo_estimado: datos.tiempo_estimado,
+        tiempo_real: datos.tiempo_real,
+        fecha_viaje: datos.fecha_viaje || new Date().toISOString().split('T')[0], // Ensure fecha_viaje is provided
+        vehiculo_tipo: datos.vehiculo_tipo,
+        cliente_id: datos.cliente_id,
+        user_id: user.id
       };
 
       const { data, error } = await supabase
