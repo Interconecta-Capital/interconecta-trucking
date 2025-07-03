@@ -175,7 +175,8 @@ export const useOptimizedApiCalls = (): UseOptimizedApiCallsReturn => {
         
         // Calculate costs
         const distanciaEstimada = 450; // This would come from route calculation
-        const rendimiento = vehiculo?.rendimiento_combustible || 3.0;
+        // Use a default rendimiento value since the property doesn't exist
+        const rendimiento = 3.0; // Default fuel efficiency
         const combustibleNecesario = distanciaEstimada / rendimiento;
         const costoCombustible = combustibleNecesario * precios.diesel;
         
@@ -293,7 +294,7 @@ function getRutasFrecuentes(viajes: any[]): Array<{ ruta: string; count: number 
   }, {} as Record<string, number>);
 
   return Object.entries(rutaCount)
-    .map(([ruta, count]) => ({ ruta, count }))
+    .map(([ruta, count]) => ({ ruta, count: count as number }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 }

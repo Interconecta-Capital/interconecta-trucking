@@ -98,7 +98,7 @@ export const useCacheInteligente = (): UseCacheInteligenteReturn => {
     console.log(`🗑️ Cache INVALIDATE PATTERN: ${pattern}`);
     
     // Simple pattern matching for now
-    const keys = Array.from((smartCacheManager as any).memoryCache.keys());
+    const keys = Array.from((smartCacheManager as any).memoryCache.keys()) as string[];
     const regex = new RegExp(pattern.replace('*', '.*'));
     
     for (const key of keys) {
