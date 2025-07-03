@@ -111,7 +111,6 @@ export const RecomendacionesWidget: React.FC<RecomendacionesWidgetProps> = ({
                       {recomendacion.titulo}
                     </h4>
                     <Badge 
-                      size="sm" 
                       variant="outline"
                       className={
                         recomendacion.prioridad === 'alta' 
@@ -132,7 +131,7 @@ export const RecomendacionesWidget: React.FC<RecomendacionesWidgetProps> = ({
                       {recomendacion.impactoEconomico.ahorro && `Ahorro: $${recomendacion.impactoEconomico.ahorro.toLocaleString()}`}
                       {recomendacion.impactoEconomico.ingresoAdicional && `Ingreso: +$${recomendacion.impactoEconomico.ingresoAdicional.toLocaleString()}`}
                     </span>
-                    <Badge variant="outline" size="sm" className="text-xs">
+                    <Badge variant="outline" className="text-xs">
                       {recomendacion.facilidadImplementacion}
                     </Badge>
                   </div>
