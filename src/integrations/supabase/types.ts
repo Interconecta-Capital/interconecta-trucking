@@ -1625,6 +1625,77 @@ export type Database = {
         }
         Relationships: []
       }
+      mantenimientos_programados: {
+        Row: {
+          costo_estimado: number | null
+          costo_real: number | null
+          created_at: string | null
+          descripcion: string
+          documentos: Json | null
+          estado: string | null
+          fecha_programada: string
+          fecha_realizada: string | null
+          id: string
+          kilometraje_actual: number | null
+          kilometraje_programado: number | null
+          notas: string | null
+          proximidad_alerta: number | null
+          taller_id: string | null
+          tipo_mantenimiento: string
+          updated_at: string | null
+          user_id: string
+          vehiculo_id: string | null
+        }
+        Insert: {
+          costo_estimado?: number | null
+          costo_real?: number | null
+          created_at?: string | null
+          descripcion: string
+          documentos?: Json | null
+          estado?: string | null
+          fecha_programada: string
+          fecha_realizada?: string | null
+          id?: string
+          kilometraje_actual?: number | null
+          kilometraje_programado?: number | null
+          notas?: string | null
+          proximidad_alerta?: number | null
+          taller_id?: string | null
+          tipo_mantenimiento: string
+          updated_at?: string | null
+          user_id: string
+          vehiculo_id?: string | null
+        }
+        Update: {
+          costo_estimado?: number | null
+          costo_real?: number | null
+          created_at?: string | null
+          descripcion?: string
+          documentos?: Json | null
+          estado?: string | null
+          fecha_programada?: string
+          fecha_realizada?: string | null
+          id?: string
+          kilometraje_actual?: number | null
+          kilometraje_programado?: number | null
+          notas?: string | null
+          proximidad_alerta?: number | null
+          taller_id?: string | null
+          tipo_mantenimiento?: string
+          updated_at?: string | null
+          user_id?: string
+          vehiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mantenimientos_programados_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mercancias: {
         Row: {
           bienes_transp: string
@@ -2276,6 +2347,54 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews_talleres: {
+        Row: {
+          aspectos_calificados: Json | null
+          calificacion: number | null
+          comentario: string | null
+          created_at: string | null
+          id: string
+          mantenimiento_id: string | null
+          taller_id: string | null
+          user_id: string
+        }
+        Insert: {
+          aspectos_calificados?: Json | null
+          calificacion?: number | null
+          comentario?: string | null
+          created_at?: string | null
+          id?: string
+          mantenimiento_id?: string | null
+          taller_id?: string | null
+          user_id: string
+        }
+        Update: {
+          aspectos_calificados?: Json | null
+          calificacion?: number | null
+          comentario?: string | null
+          created_at?: string | null
+          id?: string
+          mantenimiento_id?: string | null
+          taller_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_talleres_mantenimiento_id_fkey"
+            columns: ["mantenimiento_id"]
+            isOneToOne: false
+            referencedRelation: "mantenimientos_programados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_talleres_taller_id_fkey"
+            columns: ["taller_id"]
+            isOneToOne: false
+            referencedRelation: "talleres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rls_policies_backup: {
         Row: {
           backup_phase: string | null
@@ -2496,6 +2615,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      talleres: {
+        Row: {
+          activo: boolean | null
+          calificacion_promedio: number | null
+          certificaciones: string[] | null
+          created_at: string | null
+          direccion: Json
+          email: string | null
+          especialidades: string[] | null
+          horarios: Json | null
+          id: string
+          nombre: string
+          precios_promedio: Json | null
+          rfc: string | null
+          telefono: string | null
+          total_reviews: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          calificacion_promedio?: number | null
+          certificaciones?: string[] | null
+          created_at?: string | null
+          direccion: Json
+          email?: string | null
+          especialidades?: string[] | null
+          horarios?: Json | null
+          id?: string
+          nombre: string
+          precios_promedio?: Json | null
+          rfc?: string | null
+          telefono?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          calificacion_promedio?: number | null
+          certificaciones?: string[] | null
+          created_at?: string | null
+          direccion?: Json
+          email?: string | null
+          especialidades?: string[] | null
+          horarios?: Json | null
+          id?: string
+          nombre?: string
+          precios_promedio?: Json | null
+          rfc?: string | null
+          telefono?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       tenants: {
         Row: {
@@ -3173,6 +3346,18 @@ export type Database = {
       check_document_expiration: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      check_maintenance_alerts: {
+        Args: { p_user_id: string }
+        Returns: {
+          vehiculo_id: string
+          placa: string
+          tipo_alerta: string
+          descripcion: string
+          dias_restantes: number
+          kilometros_restantes: number
+          urgencia: string
+        }[]
       }
       check_rate_limit: {
         Args: {
