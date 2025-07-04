@@ -89,7 +89,23 @@ export const useMantenimientoPredictivo = () => {
       });
 
       if (error) throw error;
-      setAlertas(data || []);
+      
+      // Transform the data to match ServicioPendiente interface
+      const alertasTransformadas = (data || []).map((item: any) => ({
+        id: `${item.vehiculo_id}-${Date.now()}`, // Generate a unique ID
+        vehiculo_id: item.vehiculo_id,
+        placa: item.placa,
+        tipo_mantenimiento: item.tipo_alerta,
+        descripcion: item.descripcion,
+        fecha_programada: new Date(Date.now() + (item.dias_restantes * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        kilometraje_programado: item.kilometros_restantes || 0,
+        kilometraje_actual: 0,
+        urgencia: item.urgencia as 'normal' | 'pronto' | 'urgente',
+        dias_restantes: item.dias_restantes,
+        kilometros_restantes: item.kilometros_restantes
+      }));
+      
+      setAlertas(alertasTransformadas);
     } catch (err) {
       console.error('Error loading maintenance alerts:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');

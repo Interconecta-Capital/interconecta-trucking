@@ -193,7 +193,7 @@ export const TallerSelector: React.FC<TallerSelectorProps> = ({
                       {Object.entries(taller.precios_promedio).map(([servicio, precio]) => (
                         <div key={servicio} className="flex justify-between">
                           <span className="text-gray-600">{servicio}:</span>
-                          <span className="font-medium">${precio}</span>
+                          <span className="font-medium">${String(precio)}</span>
                         </div>
                       ))}
                     </div>
