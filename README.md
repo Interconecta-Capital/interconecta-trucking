@@ -1,212 +1,236 @@
 
-Bienvenido a Interconecta Trucking
-Información del Proyecto
-URL de Producción: https://trucking.interconecta.capital
-Plataforma: Sistema de gestión logística especializado en automatización de transporte de carga
-¿Cómo puedo editar este código?
-Tienes varias formas de trabajar con la aplicación de Interconecta Trucking:
-Desarrollo Local Recomendado
-Para trabajar en tu IDE preferido y tener control completo del código:
-Requisitos previos:
+# Interconecta Trucking - Sistema de Gestión Logística
 
-Node.js & npm instalados - instalar con nvm
+## 📋 Información del Proyecto
 
-Pasos para configurar el entorno:
-sh# Paso 1: Clonar el repositorio
+**URL de Producción:** https://trucking.interconecta.capital  
+**Plataforma:** Sistema de gestión logística especializado en automatización de transporte de carga  
+**Tecnología Principal:** React + TypeScript + Supabase
+
+## 🚀 Inicio Rápido
+
+### Prerrequisitos
+
+- Node.js 18+ y npm (recomendado instalar con [nvm](https://github.com/nvm-sh/nvm))
+- Cuenta de Supabase (para base de datos y autenticación)
+- Git para control de versiones
+
+### Instalación Local
+
+```bash
+# 1. Clonar el repositorio
 git clone https://github.com/interconecta/trucking-platform.git
-
-# Paso 2: Navegar al directorio del proyecto
 cd trucking-platform
 
-# Paso 3: Instalar dependencias
+# 2. Instalar dependencias
 npm install
 
-# Paso 4: Configurar variables de entorno
+# 3. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones de APIs y base de datos
+# Editar .env con tus configuraciones
 
-# Paso 5: Iniciar servidor de desarrollo
+# 4. Iniciar servidor de desarrollo
 npm run dev
 
-# Paso 6: Para producción
+# 5. Para producción
 npm run build
 npm run preview
+```
 
-# Paso 7: Verificar código (linting)
-npm run lint
+## 🏗️ Arquitectura del Sistema
 
-# Paso 8: Formatear código
-npm run format
-Edición Directa en GitHub
+### Stack Tecnológico
 
-Navega a los archivos que deseas modificar
-Haz clic en el botón "Edit" (ícono de lápiz)
-Realiza tus cambios y confirma los commits
-Los cambios se reflejarán automáticamente en el servidor de producción
+**Frontend:**
+- **React 18** - Framework principal
+- **Vite** - Build tool y servidor de desarrollo
+- **TypeScript** - Tipado estático
+- **Tailwind CSS** - Framework de estilos
+- **Shadcn/UI** - Componentes de interfaz
+- **Lucide React** - Iconografía
 
-Usar GitHub Codespaces
+**Backend & APIs:**
+- **Supabase** - Base de datos PostgreSQL + Auth + Storage
+- **Edge Functions** - Funciones serverless
+- **Row Level Security (RLS)** - Seguridad a nivel de base de datos
 
-Ve a la página principal del repositorio
-Haz clic en el botón "Code" (botón verde)
-Selecciona la pestaña "Codespaces"
-Haz clic en "New codespace" para lanzar el entorno
-Edita archivos directamente y haz push de tus cambios
+**Integraciones:**
+- **WhatsApp Business API** - Notificaciones
+- **Google APIs** - Maps, Calendar, Drive
+- **SAT APIs** - Timbrado de Carta Porte
+- **MercadoPago/Stripe** - Procesamiento de pagos
 
-¿Qué tecnologías usa este proyecto?
-Interconecta Trucking está construido con un stack moderno y robusto:
-Frontend
+### Estructura del Proyecto
 
-React 18 - Framework principal
-Vite - Build tool y servidor de desarrollo
-TypeScript - Tipado estático para mayor confiabilidad
-Tailwind CSS - Framework de estilos utilitarios
-Lucide React - Iconografía moderna
+```
+src/
+├── components/          # Componentes reutilizables
+│   ├── auth/           # Autenticación
+│   ├── carta-porte/    # Módulo Carta Porte
+│   ├── conductores/    # Gestión de conductores
+│   ├── vehiculos/      # Gestión de vehículos
+│   ├── mantenimiento/  # Sistema de mantenimiento
+│   └── ui/             # Componentes base (shadcn/ui)
+├── hooks/              # Hooks personalizados
+├── pages/              # Páginas principales
+├── lib/                # Utilidades y configuraciones
+└── integrations/       # Integraciones externas
+    └── supabase/       # Cliente y tipos de Supabase
+```
 
-Backend & APIs
+## 🗄️ Base de Datos
 
-Node.js + Express - Servidor API
-PostgreSQL - Base de datos principal
-n8n - Motor de automatización de workflows
-OpenAI/Claude APIs - Inteligencia artificial integrada
+### Esquema Principal
 
-Integraciones Específicas
+**Tablas Core:**
+- `profiles` - Perfiles de usuario
+- `usuarios` - Información extendida de usuarios
+- `suscripciones` - Gestión de planes
+- `vehiculos` - Flota de vehículos
+- `conductores` - Personal de conducción
+- `cartas_porte` - Documentos CFDI
 
-WhatsApp Business API - Notificaciones automáticas
-Google APIs - Maps, Calendar, Drive
-SAT APIs - Timbrado de Carta Porte
-MercadoPago/Stripe - Procesamiento de pagos
+**Tablas de Mantenimiento:**
+- `mantenimientos_programados` - Programación de servicios
+- `talleres` - Red de talleres certificados
+- `reviews_talleres` - Sistema de calificaciones
 
-Infraestructura
+**Catálogos SAT:**
+- `cat_*` - Catálogos oficiales del SAT
+- `codigos_postales_mexico` - Códigos postales nacionales
 
-Digital Ocean - Hosting y base de datos
-Nginx - Proxy reverso y SSL
-PM2 - Gestión de procesos
-Let's Encrypt - Certificados SSL
+### Políticas de Seguridad (RLS)
 
-¿Cómo puedo desplegar este proyecto?
-Producción Actual
-El proyecto ya está desplegado en:
+Todas las tablas implementan Row Level Security para:
+- Aislamiento de datos por usuario/tenant
+- Acceso granular basado en roles
+- Protección contra acceso no autorizado
 
-Frontend: https://trucking.interconecta.capital
-API Backend: https://trucking.interconecta.capital/api
-Base de datos: PostgreSQL en Digital Ocean
+## 🔧 Comandos de Desarrollo
 
-Para Nuevos Despliegues
-sh# Construir para producción
-npm run build
+```bash
+# Desarrollo
+npm run dev              # Servidor de desarrollo
+npm run build           # Build para producción
+npm run preview         # Preview del build
 
-# Desplegar con PM2
-pm2 start ecosystem.config.js --env production
+# Calidad de código
+npm run lint            # ESLint
+npm run format          # Prettier
 
-# Actualizar Nginx
-sudo nginx -t && sudo systemctl reload nginx
+# Base de datos (si usas Supabase CLI)
+npx supabase start      # Supabase local
+npx supabase db reset   # Reset de BD local
+```
 
-Extracción de PDFs
-Para procesar documentos en este formato utilizamos la librería `pdfjs-dist`,
-que extrae el texto de cada página de forma individual. El worker se configura
-al inicio de `DocumentProcessor` para asegurar su correcto funcionamiento.
-Variables de Entorno Requeridas
-env# Base de datos
-DATABASE_URL=postgresql://usuario:password@host:puerto/dbname
+## 🌐 Despliegue
 
-# APIs de IA
-OPENAI_API_KEY=tu_clave_openai
-CLAUDE_API_KEY=tu_clave_claude
+### Producción Actual
 
-# WhatsApp Business
-WHATSAPP_API_KEY=tu_clave_whatsapp
-WHATSAPP_WEBHOOK_URL=tu_webhook_url
+El proyecto está desplegado en:
+- **Frontend:** Vercel/Netlify (automático desde main)
+- **Backend:** Supabase (PostgreSQL + Edge Functions)
+- **Dominio:** trucking.interconecta.capital
 
-# Google Services
-GOOGLE_API_KEY=tu_clave_google
-GOOGLE_CLIENT_ID=tu_client_id
+### Variables de Entorno Requeridas
+
+```env
+# Supabase
+VITE_SUPABASE_URL=tu_supabase_url
+VITE_SUPABASE_ANON_KEY=tu_supabase_anon_key
+
+# APIs Externas
+VITE_GOOGLE_MAPS_API_KEY=tu_api_key_google_maps
+VITE_WHATSAPP_API_KEY=tu_api_key_whatsapp
+VITE_FISCAL_API_KEY=tu_api_key_timbrado
 
 # Entorno
 NODE_ENV=production
-PORT=8091
-¿Puedo conectar un dominio personalizado?
-¡Sí, por supuesto!
-Interconecta Trucking ya opera bajo el dominio empresarial:
-
-Dominio principal: interconecta.capital
-Subdominio trucking: trucking.interconecta.capital
-
-Para configurar subdominios adicionales:
-
-Configurar DNS en tu proveedor de dominio
-Actualizar configuración de Nginx
-Generar certificados SSL con Let's Encrypt
-Actualizar variables de entorno
-
-Estructura de Dominios Recomendada:
-
-trucking.interconecta.capital - Aplicación principal
-api.trucking.interconecta.capital - API endpoints
-docs.trucking.interconecta.capital - Documentación
-admin.trucking.interconecta.capital - Panel administrativo
-
-
-Comandos Útiles Adicionales
-Desarrollo
-sh# Instalar dependencias específicas de Interconecta
-npm install @interconecta/shared-components
-npm install @interconecta/api-client
-
-# Linting y formato
-npm run lint
-npm run format
-
-# Análisis de bundle
-npm run analyze
-Base de Datos
-sh# Ejecutar migraciones
-npm run db:migrate
-
-# Sembrar datos de ejemplo
-npm run db:seed
-
-# Backup de producción
-npm run db:backup
-Monitoreo
-sh# Ver logs de PM2
-pm2 logs trucking-api
-
-# Monitorear performance
-pm2 monit
-
-# Restart aplicación
-pm2 restart trucking-api
-
-## Flujo simplificado de Carta Porte
-
-Para depurar o probar el formulario sin las optimizaciones completas puedes activar un modo simplificado.
-
-1. Pasa el prop `simplified` al componente `CartaPorteForm`.
-2. O define la variable de entorno `VITE_SIMPLIFIED_CARTA_PORTE=true` antes de compilar.
-
-```tsx
-<CartaPorteForm simplified />
 ```
 
-Este modo mantiene el estado de manera básica y evita las conversiones de datos estables, facilitando la inspección durante el desarrollo.
+## 📱 Funcionalidades Principales
 
-## Calidad de Código
+### 1. Sistema de Autenticación
+- Registro/Login con email
+- Autenticación con redes sociales
+- Recuperación de contraseña
+- Gestión de perfiles
 
-El proyecto sigue las mejores prácticas de desarrollo:
+### 2. Gestión de Flota
+- **Vehículos:** Registro, documentación, mantenimiento
+- **Conductores:** Perfiles, licencias, asignaciones
+- **Remolques:** Gestión de equipo adicional
 
-- **TypeScript**: Tipado estático para prevenir errores
-- **ESLint**: Análisis estático de código
-- **Prettier**: Formateo automático consistente
-- **Husky**: Hooks de Git para calidad
+### 3. Carta Porte CFDI 4.0
+- Editor inteligente con validación SAT
+- Generación de XML/PDF
+- Timbrado automático
+- Versiones 3.0 y 3.1
 
-Para mantener la calidad del código:
-- Ejecuta `npm run lint` antes de hacer commit
-- Usa `npm run format` para formatear automáticamente
-- Sigue las convenciones de nombres establecidas
-- Mantén los componentes pequeños y focalizados
+### 4. Mantenimiento Predictivo
+- Alertas automáticas por kilometraje/tiempo
+- Red de talleres certificados
+- Optimización de costos
+- Historial de servicios
 
-¡Listo para automatizar el transporte de carga con Interconecta Trucking! 🚛📋✨
+### 5. Dashboard Analítico
+- Métricas de flota
+- Calendario de operaciones
+- Reportes de rendimiento
+- Notificaciones inteligentes
 
-## Integracion con FISCAL API
+## 🔐 Seguridad
 
-Se incluye el servicio `FiscalApiService` para emitir CFDI 4.0 y complementar con Carta Porte 3.1 utilizando FISCAL API. Configure las llaves en `.env` y llame a la función edge `timbrar-invoice` o use el servicio directamente desde el frontend.
+### Implementación
+- **RLS (Row Level Security)** en todas las tablas
+- **JWT Tokens** para autenticación
+- **HTTPS** obligatorio en producción
+- **Rate Limiting** en APIs críticas
+- **Validación** de datos en frontend y backend
+
+### Roles de Usuario
+- **Usuario Regular:** Acceso a su flota
+- **Administrador:** Gestión de sistema
+- **Superusuario:** Acceso completo para desarrollo
+
+## 🧪 Testing
+
+```bash
+# Tests unitarios
+npm run test
+
+# Tests de integración
+npm run test:integration
+
+# Coverage
+npm run test:coverage
+```
+
+## 📚 Documentación Adicional
+
+- [Guía de Configuración](./docs/SETUP.md)
+- [Arquitectura Detallada](./docs/ARCHITECTURE.md)
+- [API Reference](./docs/API.md)
+- [Guía de Contribución](./docs/CONTRIBUTING.md)
+- [Changelog](./CHANGELOG.md)
+
+## 👥 Equipo de Desarrollo
+
+- **Lead Developer:** [Nombre]
+- **Backend:** [Nombre]
+- **Frontend:** [Nombre]
+- **DevOps:** [Nombre]
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia [MIT](./LICENSE).
+
+## 🆘 Soporte
+
+- **Issues:** [GitHub Issues](https://github.com/interconecta/trucking-platform/issues)
+- **Documentación:** [Wiki](https://github.com/interconecta/trucking-platform/wiki)
+- **Email:** desarrollo@interconecta.capital
+
+---
+
+**¡Listo para automatizar el transporte de carga! 🚛📋✨**
