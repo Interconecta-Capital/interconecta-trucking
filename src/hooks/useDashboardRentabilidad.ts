@@ -103,7 +103,7 @@ export const useDashboardRentabilidad = () => {
         .select('*')
         .eq('user_id', user.id)
         .gte('created_at', filtros.fechaInicio.toISOString())
-        .lte('created_at', filtros.fechaFin.toISOISOString())
+        .lte('created_at', filtros.fechaFin.toISOString())
         .in('estado', ['completado']);
 
       if (error) throw error;
