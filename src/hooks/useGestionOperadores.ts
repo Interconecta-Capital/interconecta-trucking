@@ -18,6 +18,45 @@ export const useGestionOperadores = () => {
   const [metricas, setMetricas] = useState<MetricaConductor[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Función para convertir datos de Supabase a nuestros tipos
+  const convertirConductorData = (data: any[]): ConductorExtendido[] => {
+    return data.map(conductor => ({
+      ...conductor,
+      historial_performance: conductor.historial_performance || {
+        viajes_completados: 0,
+        km_totales: 0,
+        calificacion_promedio: 5.0,
+        incidentes: 0,
+        eficiencia_combustible: 0,
+        puntualidad_promedio: 95,
+        costo_promedio_viaje: 0
+      },
+      certificaciones: conductor.certificaciones || {
+        materiales_peligrosos: false,
+        carga_especializada: false,
+        primeros_auxilios: false,
+        manejo_defensivo: false,
+        vigencias: {}
+      },
+      preferencias: conductor.preferencias || {
+        rutas_preferidas: [],
+        tipos_carga: [],
+        disponibilidad_horarios: {},
+        radio_operacion_km: 500
+      }
+    }));
+  };
+
+  const convertirCalificacionData = (data: any[]): CalificacionConductor[] => {
+    return data.map(calificacion => ({
+      ...calificacion,
+      tipo_calificacion: (calificacion.tipo_calificacion === 'conductor_a_cliente' 
+        ? 'conductor_a_cliente' 
+        : 'cliente_a_conductor') as 'cliente_a_conductor' | 'conductor_a_cliente',
+      criterios: calificacion.criterios || {}
+    }));
+  };
+
   // Cargar conductores con datos extendidos
   const cargarConductores = useCallback(async () => {
     if (!user?.id) return;
@@ -32,7 +71,7 @@ export const useGestionOperadores = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setConductores(data || []);
+      setConductores(convertirConductorData(data || []));
     } catch (error) {
       console.error('Error cargando conductores:', error);
       toast.error('Error al cargar conductores');
@@ -58,7 +97,7 @@ export const useGestionOperadores = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      setCalificaciones(data || []);
+      setCalificaciones(convertirCalificacionData(data || []));
     } catch (error) {
       console.error('Error cargando calificaciones:', error);
       toast.error('Error al cargar calificaciones');
