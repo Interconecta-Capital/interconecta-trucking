@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -18,6 +19,9 @@ import Auth from "./pages/Auth"
 
 // Páginas protegidas
 import Dashboard from "./pages/Dashboard"
+import DashboardPrincipal from "./pages/DashboardPrincipal"
+import DashboardEjecutivo from "./pages/DashboardEjecutivo"
+import DashboardOperadores from "./pages/DashboardOperadores"
 import CartasPorteUnified from "./pages/CartasPorteUnified"
 import CartaPorteEditor from "./pages/CartaPorteEditor"
 import Vehiculos from "./pages/Vehiculos"
@@ -33,6 +37,7 @@ import ViajeEditar from "./pages/ViajeEditar"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
+import DashboardHub from "./components/dashboard/DashboardHub"
 
 const queryClient = new QueryClient()
 
@@ -59,7 +64,31 @@ const App = () => (
               <Route path="/dashboard" element={
                 <AuthGuard>
                   <BaseLayout>
-                    <Dashboard />
+                    <DashboardHub />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/dashboard/principal" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <DashboardPrincipal />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/dashboard-ejecutivo" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <DashboardEjecutivo />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/dashboard/operadores" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <DashboardOperadores />
                   </BaseLayout>
                 </AuthGuard>
               } />

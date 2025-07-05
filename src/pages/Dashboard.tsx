@@ -1,3 +1,6 @@
 
-// Re-export del dashboard unificado
-export { default } from '../components/dashboard/UnifiedDashboard';
+import DashboardHub from '@/components/dashboard/DashboardHub';
+
+export default function Dashboard() {
+  return <DashboardHub />;
+}
