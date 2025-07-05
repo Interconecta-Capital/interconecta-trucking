@@ -265,6 +265,53 @@ export type Database = {
         }
         Relationships: []
       }
+      calificaciones_conductores: {
+        Row: {
+          calificacion: number | null
+          cliente_id: string | null
+          comentarios: string | null
+          conductor_id: string | null
+          created_at: string | null
+          criterios: Json | null
+          id: string
+          tipo_calificacion: string | null
+          user_id: string
+          viaje_id: string | null
+        }
+        Insert: {
+          calificacion?: number | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          conductor_id?: string | null
+          created_at?: string | null
+          criterios?: Json | null
+          id?: string
+          tipo_calificacion?: string | null
+          user_id: string
+          viaje_id?: string | null
+        }
+        Update: {
+          calificacion?: number | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          conductor_id?: string | null
+          created_at?: string | null
+          criterios?: Json | null
+          id?: string
+          tipo_calificacion?: string | null
+          user_id?: string
+          viaje_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calificaciones_conductores_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cantidad_transporta: {
         Row: {
           cantidad: number | null
@@ -1159,16 +1206,19 @@ export type Database = {
       conductores: {
         Row: {
           activo: boolean | null
+          certificaciones: Json | null
           created_at: string | null
           curp: string | null
           direccion: Json | null
           email: string | null
           estado: string
+          historial_performance: Json | null
           id: string
           nombre: string
           num_licencia: string | null
           num_reg_id_trib: string | null
           operador_sct: boolean | null
+          preferencias: Json | null
           residencia_fiscal: string | null
           rfc: string | null
           telefono: string | null
@@ -1179,16 +1229,19 @@ export type Database = {
         }
         Insert: {
           activo?: boolean | null
+          certificaciones?: Json | null
           created_at?: string | null
           curp?: string | null
           direccion?: Json | null
           email?: string | null
           estado?: string
+          historial_performance?: Json | null
           id?: string
           nombre: string
           num_licencia?: string | null
           num_reg_id_trib?: string | null
           operador_sct?: boolean | null
+          preferencias?: Json | null
           residencia_fiscal?: string | null
           rfc?: string | null
           telefono?: string | null
@@ -1199,16 +1252,19 @@ export type Database = {
         }
         Update: {
           activo?: boolean | null
+          certificaciones?: Json | null
           created_at?: string | null
           curp?: string | null
           direccion?: Json | null
           email?: string | null
           estado?: string
+          historial_performance?: Json | null
           id?: string
           nombre?: string
           num_licencia?: string | null
           num_reg_id_trib?: string | null
           operador_sct?: boolean | null
+          preferencias?: Json | null
           residencia_fiscal?: string | null
           rfc?: string | null
           telefono?: string | null
@@ -1787,6 +1843,65 @@ export type Database = {
             columns: ["carta_porte_id"]
             isOneToOne: false
             referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metricas_conductor: {
+        Row: {
+          combustible_consumido: number | null
+          conductor_id: string | null
+          costo_total: number | null
+          created_at: string | null
+          entregas_a_tiempo: number | null
+          fecha: string
+          id: string
+          incidentes: number | null
+          ingresos_total: number | null
+          km_recorridos: number | null
+          tiempo_conduccion_horas: number | null
+          total_entregas: number | null
+          user_id: string
+          viajes_completados: number | null
+        }
+        Insert: {
+          combustible_consumido?: number | null
+          conductor_id?: string | null
+          costo_total?: number | null
+          created_at?: string | null
+          entregas_a_tiempo?: number | null
+          fecha: string
+          id?: string
+          incidentes?: number | null
+          ingresos_total?: number | null
+          km_recorridos?: number | null
+          tiempo_conduccion_horas?: number | null
+          total_entregas?: number | null
+          user_id: string
+          viajes_completados?: number | null
+        }
+        Update: {
+          combustible_consumido?: number | null
+          conductor_id?: string | null
+          costo_total?: number | null
+          created_at?: string | null
+          entregas_a_tiempo?: number | null
+          fecha?: string
+          id?: string
+          incidentes?: number | null
+          ingresos_total?: number | null
+          km_recorridos?: number | null
+          tiempo_conduccion_horas?: number | null
+          total_entregas?: number | null
+          user_id?: string
+          viajes_completados?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metricas_conductor_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
             referencedColumns: ["id"]
           },
         ]
@@ -3331,6 +3446,21 @@ export type Database = {
           zona: string
           total_colonias: number
           colonias: Json
+        }[]
+      }
+      calcular_performance_conductor: {
+        Args: { p_conductor_id: string; p_user_id: string }
+        Returns: {
+          eficiencia_combustible: number
+          puntualidad: number
+          cuidado_vehiculo: number
+          satisfaccion_cliente: number
+          tendencia_mejora: boolean
+          areas_mejora: string[]
+          fortalezas: string[]
+          recomendaciones_capacitacion: string[]
+          rutas_optimas: string[]
+          tipos_carga_ideales: string[]
         }[]
       }
       calcular_precision_ruta: {
