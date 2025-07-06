@@ -52,7 +52,7 @@ export default function DashboardNavigation() {
       title: 'Analytics de Viajes',
       description: 'Análisis detallado de viajes',
       icon: Route,
-      href: '/dashboard/viajes/analytics',
+      href: '/viajes/analytics',
       color: 'bg-indigo-500'
     },
     {

@@ -7,7 +7,7 @@ export default function DashboardPrincipal() {
   return (
     <div className="space-y-6">
       <DashboardNavigation />
-      <DashboardLayout hideWidgetsForPrincipal={true}>
+      <DashboardLayout>
         <UnifiedDashboard />
       </DashboardLayout>
     </div>
