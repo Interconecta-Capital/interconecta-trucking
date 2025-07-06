@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,13 +14,6 @@ import { Viaje } from '@/types/viaje';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { useNavigate } from 'react-router-dom';
 import { useFAB } from '@/contexts/FABContext';
-
-// Lazy load components - fix for named export
-const ViajesAnalytics = lazy(() => 
-  import('@/components/analytics/ViajesAnalytics').then(module => ({
-    default: module.ViajesAnalytics
-  }))
-);
 
 const estadoColors = {
   programado: 'bg-blue-100 text-blue-800',
@@ -83,7 +77,7 @@ function ViajesContent() {
   };
 
   // Filtrar viajes por estado
-  const viajesActivos = viajes.filter(v => ['en_transito', 'retrasado'].includes(v.estado)); // Changed: removed 'programado'
+  const viajesActivos = viajes.filter(v => ['en_transito', 'retrasado'].includes(v.estado));
   const viajesProgramados = viajes.filter(v => v.estado === 'programado');
   const viajesCancelados = viajes.filter(v => v.estado === 'cancelado');
   const viajesHistorial = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
@@ -231,24 +225,6 @@ function ViajesContent() {
 
       {/* Sección de Borradores */}
       <BorradoresSection />
-
-      {/* Analytics */}
-      <Suspense fallback={
-        <Card>
-          <CardContent className="p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="grid grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-20 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      }>
-        <ViajesAnalytics />
-      </Suspense>
 
       {/* Lista de Viajes con Pestañas */}
       <Card>

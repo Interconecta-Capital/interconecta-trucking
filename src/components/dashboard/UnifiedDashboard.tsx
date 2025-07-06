@@ -11,6 +11,12 @@ import { EnhancedCalendarView } from './EnhancedCalendarView';
 import { DocumentosProcesadosWidget } from './DocumentosProcesadosWidget';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AIInsights } from '@/components/ai/AIInsights';
+import { 
+  DollarSign,
+  Target,
+  Route,
+  Truck
+} from 'lucide-react';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
@@ -18,7 +24,6 @@ export default function UnifiedDashboard() {
 
   // Obtener contadores reales de la base de datos
   const { data: realCounts } = useDashboardCounts();
-
 
   // Función para obtener el color de la barra de progreso
   const getProgressColor = (used: number, limit: number | null) => {
@@ -123,6 +128,56 @@ export default function UnifiedDashboard() {
         </CardContent>
       </Card>
 
+      {/* Quick Metrics Bar - Widgets principales del sistema */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+              <div>
+                <div className="text-lg font-bold text-blue-900">$125,430</div>
+                <div className="text-xs text-blue-700">Ingresos del mes</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-green-50 to-green-100">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Target className="h-5 w-5 text-green-600" />
+              <div>
+                <div className="text-lg font-bold text-green-900">18.5%</div>
+                <div className="text-xs text-green-700">Margen promedio</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-purple-50 to-purple-100">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Route className="h-5 w-5 text-purple-600" />
+              <div>
+                <div className="text-lg font-bold text-purple-900">247</div>
+                <div className="text-xs text-purple-700">Viajes completados</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-orange-50 to-orange-100">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Truck className="h-5 w-5 text-orange-600" />
+              <div>
+                <div className="text-lg font-bold text-orange-900">85%</div>
+                <div className="text-xs text-orange-700">Utilización flota</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Métricas del dashboard con datos reales y límites */}
       <Carousel className="w-full">

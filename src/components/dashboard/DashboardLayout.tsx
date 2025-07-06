@@ -7,16 +7,24 @@ import { DocumentosProcesadosWidget } from './DocumentosProcesadosWidget';
 interface DashboardLayoutProps {
   children?: ReactNode;
   showWidgets?: boolean;
+  hideWidgetsForPrincipal?: boolean;
 }
 
-export function DashboardLayout({ children, showWidgets = true }: DashboardLayoutProps) {
+export function DashboardLayout({ 
+  children, 
+  showWidgets = true,
+  hideWidgetsForPrincipal = false 
+}: DashboardLayoutProps) {
   const isMobile = useIsMobile();
+
+  // Si está configurado para ocultar widgets en el dashboard principal
+  const shouldShowWidgets = showWidgets && !hideWidgetsForPrincipal;
 
   if (isMobile) {
     return (
       <div className="space-y-6">
         {children}
-        {showWidgets && (
+        {shouldShowWidgets && (
           <>
             <DocumentosProcesadosWidget />
             <EnhancedCalendarView />
@@ -30,7 +38,7 @@ export function DashboardLayout({ children, showWidgets = true }: DashboardLayou
     <div className="space-y-6">
       {children}
       
-      {showWidgets && (
+      {shouldShowWidgets && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendario principal */}
           <div className="lg:col-span-2">
