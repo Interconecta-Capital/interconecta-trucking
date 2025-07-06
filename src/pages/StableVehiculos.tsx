@@ -1,159 +1,267 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Plus, Car, Filter, Search, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
-import { useStableVehiculos } from '@/hooks/useStableVehiculos';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VehiculosTable } from '@/components/vehiculos/VehiculosTable';
 import { VehiculosFilters } from '@/components/vehiculos/VehiculosFilters';
 import { VehiculoFormDialog } from '@/components/vehiculos/VehiculoFormDialog';
 import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
-import { UnifiedPageNavigation } from '@/components/common/UnifiedPageNavigation';
+import { RemolqueFormDialog } from '@/components/vehiculos/RemolqueFormDialog';
+import { SectionHeader } from '@/components/ui/section-header';
+import { useStableVehiculos } from '@/hooks/useStableVehiculos';
+import { useStableAuth } from '@/hooks/useStableAuth';
+import { ProtectedContent } from '@/components/ProtectedContent';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
 
 export default function StableVehiculos() {
-  const {
-    vehiculos,
-    filteredVehiculos,
-    isLoading,
-    searchTerm,
-    setSearchTerm,
-    tipoFilter,
-    setTipoFilter,
-    estadoFilter,
-    setEstadoFilter,
-    refreshVehiculos
-  } = useStableVehiculos();
-
-  const [showForm, setShowForm] = useState(false);
-  const [selectedVehiculo, setSelectedVehiculo] = useState(null);
+  const { user } = useStableAuth();
+  const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
+  const permissions = useUnifiedPermissionsV2();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showRemolqueDialog, setShowRemolqueDialog] = useState(false);
+  const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
+  const { setFABConfig } = useFAB()
 
-  const vehiculosActivos = vehiculos.filter(v => v.estado === 'activo').length;
-  const vehiculosMantenimiento = vehiculos.filter(v => v.estado === 'mantenimiento').length;
-  const vehiculosInactivos = vehiculos.filter(v => v.estado === 'inactivo').length;
+  const handleNewVehiculo = () => {
+    console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');
+    
+    // Verificar permisos antes de abrir el diálogo
+    const permissionCheck = permissions.canCreateVehiculo;
+    if (!permissionCheck.allowed) {
+      toast.error(permissionCheck.reason || 'No tienes permisos para crear vehículos');
+      return;
+    }
+    
+    setSelectedVehiculo(null);
+    setShowCreateDialog(true);
+  };
 
-  const handleViewVehiculo = (vehiculo: any) => {
+  useEffect(() => {
+    setFABConfig({
+      icon: <Car className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewVehiculo,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
+
+  const handleEdit = (vehiculo: any) => {
+    setSelectedVehiculo(vehiculo);
+    setShowEditDialog(true);
+  };
+
+  const handleView = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
     setShowViewDialog(true);
   };
 
-  if (isLoading) {
+  const handleDelete = async (vehiculo: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.num_serie}?`)) {
+      try {
+        await eliminarVehiculo(vehiculo.id);
+      } catch (error) {
+        // Error already handled by hook
+      }
+    }
+  };
+
+  const filteredVehiculos = vehiculos.filter(vehiculo =>
+    vehiculo.num_serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (error) {
     return (
-      <div className="space-y-6">
-        <UnifiedPageNavigation 
-          title="Vehículos" 
-          description="Administra tu flota de vehículos y equipos"
-        />
-        <div className="flex items-center justify-center h-96">
+      <div className="container mx-auto py-8">
+        <Card className="p-8 border-red-200 bg-red-50">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Cargando vehículos...</p>
+            <p className="text-red-800 mb-4">Error cargando vehículos: {error}</p>
+            <Button 
+              variant="outline" 
+              onClick={recargar}
+              className="bg-pure-white"
+            >
+              Reintentar
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
+  // Verificar si se puede crear vehículo
+  const canCreateVehiculo = permissions.canCreateVehiculo;
+
   return (
-    <div className="space-y-6">
-      <UnifiedPageNavigation 
-        title="Vehículos" 
-        description="Administra tu flota de vehículos y equipos"
-      >
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Vehículo
-        </Button>
-      </UnifiedPageNavigation>
+    <ProtectedContent requiredFeature="vehiculos">
+      <div className="container mx-auto py-8 space-y-8 max-w-7xl">
+        {/* Notificaciones de plan */}
+        <PlanNotifications />
 
-      {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Vehículos</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vehiculos.length}</div>
-            <div className="text-xs text-gray-600">En flota</div>
-          </CardContent>
-        </Card>
+        {/* Header con botón de Nueva Carta Porte estilo */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-light">
+              <Car className="h-6 w-6 text-blue-interconecta" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Vehículos</h1>
+              <p className="text-sm text-gray-600 mt-1">Gestiona tu flota de vehículos</p>
+            </div>
+          </div>
+          
+          <Button
+            onClick={handleNewVehiculo}
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 desktop-new-button"
+            disabled={!canCreateVehiculo.allowed}
+          >
+            <Plus className="h-5 w-5" />
+            Nuevo Vehículo
+          </Button>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Activos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{vehiculosActivos}</div>
-            <div className="text-xs text-gray-600">Operando</div>
-          </CardContent>
-        </Card>
+        {!canCreateVehiculo.allowed && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">{canCreateVehiculo.reason}</p>
+          </div>
+        )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En Mantenimiento</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{vehiculosMantenimiento}</div>
-            <div className="text-xs text-gray-600">En servicio</div>
-          </CardContent>
-        </Card>
+        {/* Indicador de límites */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactivos</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{vehiculosInactivos}</div>
-            <div className="text-xs text-gray-600">Fuera de servicio</div>
-          </CardContent>
-        </Card>
+        {/* Filtros y búsqueda estilo Apple */}
+        <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
+            <Input
+              placeholder="Buscar por serie, placa o marca..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
+            />
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={recargar}
+            disabled={loading}
+            className="h-12 px-6 bg-pure-white shadow-sm border-0"
+          >
+            Actualizar
+          </Button>
+        </div>
+
+        {/* Filtros adicionales */}
+        {showFilters && (
+          <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm p-6">
+            <VehiculosFilters />
+          </div>
+        )}
+
+        {/* Stats estilo Apple */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-blue-interconecta">Total Vehículos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-interconecta">{vehiculos.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-700">{filteredVehiculos.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'}`}>
+                {loading ? 'Cargando...' : error ? 'Error' : 'Listo'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabla */}
+        <VehiculosTable 
+          vehiculos={filteredVehiculos}
+          loading={loading}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+        />
+
+        {/* Diálogos */}
+        <VehiculoFormDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={() => {
+            setShowCreateDialog(false);
+            recargar();
+          }}
+        />
+
+        <VehiculoFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          vehiculo={selectedVehiculo}
+          onSuccess={() => {
+            setShowEditDialog(false);
+            setSelectedVehiculo(null);
+            recargar();
+          }}
+        />
+
+        <VehiculoViewDialog
+          open={showViewDialog}
+          onOpenChange={setShowViewDialog}
+          vehiculo={selectedVehiculo}
+          onEdit={() => {
+            setShowViewDialog(false);
+            setSelectedVehiculo(selectedVehiculo);
+            setShowEditDialog(true);
+          }}
+        />
+
+        <RemolqueFormDialog
+          open={showRemolqueDialog}
+          onOpenChange={setShowRemolqueDialog}
+          onSuccess={() => {
+            setShowRemolqueDialog(false);
+            recargar();
+          }}
+        />
       </div>
-
-      {/* Filtros y tabla */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Flota de Vehículos</CardTitle>
-            <Badge variant="secondary">{filteredVehiculos.length}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <VehiculosFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              tipoFilter={tipoFilter}
-              onTipoChange={setTipoFilter}
-              estadoFilter={estadoFilter}
-              onEstadoChange={setEstadoFilter}
-            />
-            
-            <VehiculosTable
-              vehiculos={filteredVehiculos}
-              onViewVehiculo={handleViewVehiculo}
-              onRefresh={refreshVehiculos}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Diálogos */}
-      <VehiculoFormDialog
-        open={showForm}
-        onOpenChange={setShowForm}
-        onSuccess={refreshVehiculos}
-      />
-
-      <VehiculoViewDialog
-        vehiculo={selectedVehiculo}
-        open={showViewDialog}
-        onOpenChange={setShowViewDialog}
-      />
-    </div>
+    </ProtectedContent>
   );
 }

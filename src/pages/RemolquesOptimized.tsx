@@ -1,147 +1,186 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Plus, Truck, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Truck, CheckCircle, AlertTriangle, Settings } from 'lucide-react';
-import { useRemolques } from '@/hooks/useRemolques';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RemolquesTable } from '@/components/remolques/RemolquesTable';
 import { RemolqueFormDialog } from '@/components/remolques/RemolqueFormDialog';
-import { VinculacionDialog } from '@/components/remolques/VinculacionDialog';
-import { UnifiedPageNavigation } from '@/components/common/UnifiedPageNavigation';
+import { useRemolques } from '@/hooks/useRemolques';
+import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { ProtectedContent } from '@/components/ProtectedContent';
+import { PlanNotifications } from '@/components/common/PlanNotifications';
+import { toast } from 'sonner';
+import { useFAB } from '@/contexts/FABContext';
+import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 
 export default function RemolquesOptimized() {
-  const { remolques, loading } = useRemolques();
-  const [showForm, setShowForm] = useState(false);
-  const [showVinculacion, setShowVinculacion] = useState(false);
-  const [selectedRemolque, setSelectedRemolque] = useState(null);
+  const { remolques, loading, eliminarRemolque } = useRemolques();
+  const permissions = useUnifiedPermissionsV2();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedRemolque, setSelectedRemolque] = useState<any>(null);
+  const { setFABConfig } = useFAB();
 
-  const refreshRemolques = () => {
-    // Función de refresh - en este caso podríamos hacer refetch
-    window.location.reload();
+  const handleNewRemolque = () => {
+    console.log('[Remolques] 🆕 Iniciando creación de nuevo remolque');
+    
+    // Verificar permisos antes de abrir el diálogo
+    const permissionCheck = permissions.canCreateRemolque;
+    if (!permissionCheck.allowed) {
+      toast.error(permissionCheck.reason || 'No tienes permisos para crear remolques');
+      return;
+    }
+    
+    setSelectedRemolque(null);
+    setShowCreateDialog(true);
   };
 
-  const remolquesActivos = remolques.filter(r => r.estado === 'activo').length;
-  const remolquesVinculados = remolques.filter(r => r.autotransporte_id).length;
-  const remolquesMantenimiento = remolques.filter(r => r.estado === 'mantenimiento').length;
+  useEffect(() => {
+    setFABConfig({
+      icon: <Truck className="fab-icon" />,
+      text: 'Nuevo',
+      onClick: handleNewRemolque,
+      isVisible: true
+    })
+    return () => setFABConfig({ isVisible: false })
+  }, [])
 
-  const handleVincular = (remolque: any) => {
+  const handleEdit = (remolque: any) => {
     setSelectedRemolque(remolque);
-    setShowVinculacion(true);
+    setShowEditDialog(true);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <UnifiedPageNavigation 
-          title="Remolques" 
-          description="Administra remolques, semirremolques y equipos auxiliares"
-        />
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Cargando remolques...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleDelete = async (remolque: any) => {
+    if (window.confirm(`¿Estás seguro de eliminar el remolque ${remolque.placa}?`)) {
+      try {
+        await eliminarRemolque(remolque.id);
+      } catch (error) {
+        // Error already handled by hook
+      }
+    }
+  };
+
+  const filteredRemolques = remolques.filter(remolque =>
+    remolque.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    remolque.subtipo_rem?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const canCreateRemolque = permissions.canCreateRemolque;
 
   return (
-    <div className="space-y-6">
-      <UnifiedPageNavigation 
-        title="Remolques" 
-        description="Administra remolques, semirremolques y equipos auxiliares"
-      >
-        <div className="flex gap-2">
-          <Button onClick={() => setShowVinculacion(true)} variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Gestionar Vinculaciones
-          </Button>
-          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
+    <ProtectedContent requiredFeature="remolques">
+      <div className="container mx-auto py-8 space-y-8 max-w-7xl">
+        {/* Notificaciones de plan */}
+        <PlanNotifications />
+
+        {/* Header con botón de creación */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-light">
+              <Truck className="h-6 w-6 text-blue-interconecta" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Remolques</h1>
+              <p className="text-sm text-gray-600 mt-1">Gestiona tus remolques y equipos</p>
+            </div>
+          </div>
+          
+          <Button
+            onClick={handleNewRemolque}
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 desktop-new-button"
+            disabled={!canCreateRemolque.allowed}
+          >
+            <Plus className="h-5 w-5" />
             Nuevo Remolque
           </Button>
         </div>
-      </UnifiedPageNavigation>
 
-      {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Remolques</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{remolques.length}</div>
-            <div className="text-xs text-gray-600">En inventario</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Activos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{remolquesActivos}</div>
-            <div className="text-xs text-gray-600">Operativos</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vinculados</CardTitle>
-            <Settings className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{remolquesVinculados}</div>
-            <div className="text-xs text-gray-600">Asignados a vehículos</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En Mantenimiento</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{remolquesMantenimiento}</div>
-            <div className="text-xs text-gray-600">En servicio</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabla de remolques */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Inventario de Remolques</CardTitle>
-            <Badge variant="secondary">{remolques.length}</Badge>
+        {!canCreateRemolque.allowed && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">{canCreateRemolque.reason}</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <RemolquesTable
-            remolques={remolques}
-            onVincular={handleVincular}
-            onRefresh={refreshRemolques}
-          />
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Diálogos */}
-      <RemolqueFormDialog
-        open={showForm}
-        onOpenChange={setShowForm}
-        onSuccess={refreshRemolques}
-      />
+        {/* Indicador de límites */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <LimitUsageIndicator resourceType="remolques" className="md:col-span-2" />
+        </div>
 
-      <VinculacionDialog
-        open={showVinculacion}
-        onOpenChange={setShowVinculacion}
-        remolque={selectedRemolque}
-        onSuccess={refreshRemolques}
-      />
-    </div>
+        {/* Filtros y búsqueda */}
+        <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
+            <Input
+              placeholder="Buscar por placa o tipo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-12 border-0 bg-pure-white shadow-sm"
+            />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-blue-interconecta">Total Remolques</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-interconecta">{remolques.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-green-700">Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-700">{filteredRemolques.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-gray-05 to-gray-10 border-gray-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-70">Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-lg font-semibold ${loading ? 'text-yellow-600' : 'text-green-600'}`}>
+                {loading ? 'Cargando...' : 'Listo'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabla */}
+        <RemolquesTable 
+          remolques={filteredRemolques as any}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+
+        {/* Diálogos */}
+        <RemolqueFormDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={() => {
+            setShowCreateDialog(false);
+          }}
+        />
+
+        <RemolqueFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          remolque={selectedRemolque}
+          onSuccess={() => {
+            setShowEditDialog(false);
+            setSelectedRemolque(null);
+          }}
+        />
+      </div>
+    </ProtectedContent>
   );
 }
