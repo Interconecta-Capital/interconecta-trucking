@@ -1,5 +1,5 @@
 
-import { DashboardNavigation } from '@/components/dashboard/DashboardNavigation';
+import DashboardNavigation from '@/components/dashboard/DashboardNavigation';
 import { ViajesAnalytics } from '@/components/analytics/ViajesAnalytics';
 
 export default function ViajesAnalyticsPage() {
