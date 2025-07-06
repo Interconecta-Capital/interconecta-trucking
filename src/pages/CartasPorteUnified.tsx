@@ -4,15 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, CheckCircle, Clock, AlertTriangle, Eye } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { useCartasPorte } from '@/hooks/useCartasPorte';
 import { CartasPorteTable } from '@/components/cartas-porte/CartasPorteTable';
-import { CartasPorteFilters } from '@/components/cartas-porte/CartasPorteFilters';
 import { Link } from 'react-router-dom';
 import { UnifiedPageNavigation } from '@/components/common/UnifiedPageNavigation';
 
 export default function CartasPorteUnified() {
-  const { cartasPorte, isLoading, error } = useCartasPorte();
+  const { cartasPorte, loading, error } = useCartasPorte();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
 
@@ -20,21 +19,21 @@ export default function CartasPorteUnified() {
   const filteredCartasPorte = cartasPorte.filter(carta => {
     const matchesSearch = !searchTerm || 
       carta.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      carta.emisor?.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      carta.receptor?.rfc?.toLowerCase().includes(searchTerm.toLowerCase());
+      carta.rfc_emisor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      carta.rfc_receptor?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'todos' || carta.estatus === statusFilter;
+    const matchesStatus = statusFilter === 'todos' || carta.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
   // Métricas
   const totalCartas = cartasPorte.length;
-  const cartasTimbradas = cartasPorte.filter(c => c.estatus === 'timbrada').length;
-  const cartasBorrador = cartasPorte.filter(c => c.estatus === 'borrador').length;
-  const cartasCanceladas = cartasPorte.filter(c => c.estatus === 'cancelada').length;
+  const cartasTimbradas = cartasPorte.filter(c => c.status === 'timbrada').length;
+  const cartasBorrador = cartasPorte.filter(c => c.status === 'borrador').length;
+  const cartasCanceladas = cartasPorte.filter(c => c.status === 'cancelada').length;
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <UnifiedPageNavigation 
@@ -142,12 +141,25 @@ export default function CartasPorteUnified() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <CartasPorteFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              statusFilter={statusFilter}
-              onStatusChange={setStatusFilter}
-            />
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Buscar por folio, RFC emisor o RFC receptor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="borrador">Borradores</option>
+                <option value="timbrada">Timbradas</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+            </div>
             
             <Tabs defaultValue="todas" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
@@ -170,24 +182,27 @@ export default function CartasPorteUnified() {
               </TabsList>
 
               <TabsContent value="todas" className="mt-6">
-                <CartasPorteTable cartasPorte={filteredCartasPorte} />
+                <CartasPorteTable cartasPorte={filteredCartasPorte} loading={loading} />
               </TabsContent>
 
               <TabsContent value="timbradas" className="mt-6">
                 <CartasPorteTable 
-                  cartasPorte={filteredCartasPorte.filter(c => c.estatus === 'timbrada')} 
+                  cartasPorte={filteredCartasPorte.filter(c => c.status === 'timbrada')} 
+                  loading={loading}
                 />
               </TabsContent>
 
               <TabsContent value="borradores" className="mt-6">
                 <CartasPorteTable 
-                  cartasPorte={filteredCartasPorte.filter(c => c.estatus === 'borrador')} 
+                  cartasPorte={filteredCartasPorte.filter(c => c.status === 'borrador')} 
+                  loading={loading}
                 />
               </TabsContent>
 
               <TabsContent value="canceladas" className="mt-6">
                 <CartasPorteTable 
-                  cartasPorte={filteredCartasPorte.filter(c => c.estatus === 'cancelada')} 
+                  cartasPorte={filteredCartasPorte.filter(c => c.status === 'cancelada')} 
+                  loading={loading}
                 />
               </TabsContent>
             </Tabs>

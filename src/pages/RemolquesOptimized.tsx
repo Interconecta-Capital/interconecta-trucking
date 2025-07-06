@@ -11,13 +11,18 @@ import { VinculacionDialog } from '@/components/remolques/VinculacionDialog';
 import { UnifiedPageNavigation } from '@/components/common/UnifiedPageNavigation';
 
 export default function RemolquesOptimized() {
-  const { remolques, isLoading, refreshRemolques } = useRemolques();
+  const { remolques, loading } = useRemolques();
   const [showForm, setShowForm] = useState(false);
   const [showVinculacion, setShowVinculacion] = useState(false);
   const [selectedRemolque, setSelectedRemolque] = useState(null);
 
+  const refreshRemolques = () => {
+    // Función de refresh - en este caso podríamos hacer refetch
+    window.location.reload();
+  };
+
   const remolquesActivos = remolques.filter(r => r.estado === 'activo').length;
-  const remolquesVinculados = remolques.filter(r => r.vehiculo_id).length;
+  const remolquesVinculados = remolques.filter(r => r.autotransporte_id).length;
   const remolquesMantenimiento = remolques.filter(r => r.estado === 'mantenimiento').length;
 
   const handleVincular = (remolque: any) => {
@@ -25,7 +30,7 @@ export default function RemolquesOptimized() {
     setShowVinculacion(true);
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <UnifiedPageNavigation 

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Users, Star, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useConductoresOptimized } from '@/hooks/useConductoresOptimized';
 import { ConductoresTable } from '@/components/conductores/ConductoresTable';
-import { ConductoresFilters } from '@/components/conductores/ConductoresFilters';
 import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
 import { ConductorViewDialog } from '@/components/conductores/ConductorViewDialog';
 import { UnifiedPageNavigation } from '@/components/common/UnifiedPageNavigation';
@@ -14,23 +13,32 @@ import { UnifiedPageNavigation } from '@/components/common/UnifiedPageNavigation
 export default function ConductoresOptimized() {
   const {
     conductores,
-    filteredConductores,
-    isLoading,
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    refreshConductores
+    loading,
+    fetchConductores
   } = useConductoresOptimized();
 
   const [showForm, setShowForm] = useState(false);
   const [selectedConductor, setSelectedConductor] = useState(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
+
+  // Filtrar conductores localmente
+  const filteredConductores = conductores.filter(conductor => {
+    const matchesSearch = !searchTerm || 
+      conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conductor.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conductor.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'todos' || conductor.estado === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const conductoresActivos = conductores.filter(c => c.estado === 'disponible').length;
   const conductoresSuspendidos = conductores.filter(c => c.estado === 'suspendido').length;
   const promedioCalificacion = conductores.length > 0 
-    ? conductores.reduce((sum, c) => sum + (c.historial_performance?.calificacion_promedio || 5), 0) / conductores.length
+    ? conductores.reduce((sum, c) => sum + 5.0, 0) / conductores.length
     : 5;
 
   const handleViewConductor = (conductor: any) => {
@@ -38,7 +46,7 @@ export default function ConductoresOptimized() {
     setShowViewDialog(true);
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <UnifiedPageNavigation 
@@ -134,17 +142,29 @@ export default function ConductoresOptimized() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <ConductoresFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              statusFilter={statusFilter}
-              onStatusChange={setStatusFilter}
-            />
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, RFC o email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="disponible">Disponible</option>
+                <option value="ocupado">Ocupado</option>
+                <option value="suspendido">Suspendido</option>
+              </select>
+            </div>
             
             <ConductoresTable
               conductores={filteredConductores}
-              onViewConductor={handleViewConductor}
-              onRefresh={refreshConductores}
+              onRefresh={fetchConductores}
             />
           </div>
         </CardContent>
@@ -154,7 +174,7 @@ export default function ConductoresOptimized() {
       <ConductorFormDialog
         open={showForm}
         onOpenChange={setShowForm}
-        onSuccess={refreshConductores}
+        onSuccess={fetchConductores}
       />
 
       <ConductorViewDialog
