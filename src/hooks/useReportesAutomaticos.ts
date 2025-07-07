@@ -174,10 +174,18 @@ export const useReportesAutomaticos = () => {
         throw new Error(`Emails inválidos: ${emailsInvalidos.join(', ')}`);
       }
 
+      // Preparar datos para la base de datos, convirtiendo tipos complejos a JSON
+      const filtrosParaDB = {
+        ...configuracion.filtros,
+        periodo: configuracion.filtros.periodo ? 
+          configuracion.filtros.periodo.map(date => date.toISOString()) : 
+          undefined
+      };
+
       // Guardar configuración en la base de datos
       const { data, error } = await supabase
         .from('configuraciones_reportes')
-        .insert([{
+        .insert({
           user_id: user.id,
           nombre: configuracion.nombre,
           tipo: configuracion.tipo,
@@ -185,9 +193,9 @@ export const useReportesAutomaticos = () => {
           formato: configuracion.formato,
           secciones: configuracion.secciones,
           horario: configuracion.horario,
-          filtros: configuracion.filtros,
+          filtros: filtrosParaDB,
           activo: configuracion.activo
-        }])
+        })
         .select()
         .single();
 
@@ -276,8 +284,39 @@ export const useReportesAutomaticos = () => {
 
       if (errorHistorial) throw errorHistorial;
 
-      setReportes(configuraciones || []);
-      setHistorialReportes(historial || []);
+      // Convertir datos de la base de datos a los tipos TypeScript
+      const reportesConvertidos: ConfiguracionReporte[] = (configuraciones || []).map(config => ({
+        id: config.id,
+        nombre: config.nombre,
+        tipo: config.tipo as ConfiguracionReporte['tipo'],
+        destinatarios: Array.isArray(config.destinatarios) ? config.destinatarios as string[] : [],
+        formato: config.formato as ConfiguracionReporte['formato'],
+        secciones: Array.isArray(config.secciones) ? config.secciones as SeccionReporte[] : [],
+        horario: config.horario as ConfiguracionReporte['horario'],
+        filtros: {
+          ...config.filtros as any,
+          periodo: config.filtros && (config.filtros as any).periodo ? 
+            (config.filtros as any).periodo.map((date: string) => new Date(date)) : 
+            undefined
+        },
+        activo: config.activo
+      }));
+
+      const historialConvertido: ReporteGenerado[] = (historial || []).map(reporte => ({
+        id: reporte.id,
+        configuracion_id: reporte.configuracion_id,
+        fecha_generacion: new Date(reporte.fecha_generacion),
+        tipo: reporte.tipo,
+        formato: reporte.formato,
+        archivo_url: reporte.archivo_url || undefined,
+        estado: reporte.estado as ReporteGenerado['estado'],
+        error_mensaje: reporte.error_mensaje || undefined,
+        destinatarios_enviados: Array.isArray(reporte.destinatarios_enviados) ? 
+          reporte.destinatarios_enviados as string[] : []
+      }));
+
+      setReportes(reportesConvertidos);
+      setHistorialReportes(historialConvertido);
     } catch (error: any) {
       console.error('Error obteniendo reportes:', error);
       toast.error('Error al cargar reportes');
@@ -291,9 +330,20 @@ export const useReportesAutomaticos = () => {
 
     setLoading(true);
     try {
+      // Preparar filtros para la base de datos
+      const updateData = {
+        ...configuracion,
+        filtros: configuracion.filtros ? {
+          ...configuracion.filtros,
+          periodo: configuracion.filtros.periodo ? 
+            configuracion.filtros.periodo.map(date => date.toISOString()) : 
+            undefined
+        } : undefined
+      };
+
       const { error } = await supabase
         .from('configuraciones_reportes')
-        .update(configuracion)
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', user.id);
 
