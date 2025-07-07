@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -189,11 +188,11 @@ export const useReportesAutomaticos = () => {
           user_id: user.id,
           nombre: configuracion.nombre,
           tipo: configuracion.tipo,
-          destinatarios: configuracion.destinatarios,
+          destinatarios: JSON.stringify(configuracion.destinatarios),
           formato: configuracion.formato,
-          secciones: configuracion.secciones,
-          horario: configuracion.horario,
-          filtros: filtrosParaDB,
+          secciones: JSON.stringify(configuracion.secciones),
+          horario: JSON.stringify(configuracion.horario),
+          filtros: JSON.stringify(filtrosParaDB),
           activo: configuracion.activo
         })
         .select()
@@ -285,22 +284,41 @@ export const useReportesAutomaticos = () => {
       if (errorHistorial) throw errorHistorial;
 
       // Convertir datos de la base de datos a los tipos TypeScript
-      const reportesConvertidos: ConfiguracionReporte[] = (configuraciones || []).map(config => ({
-        id: config.id,
-        nombre: config.nombre,
-        tipo: config.tipo as ConfiguracionReporte['tipo'],
-        destinatarios: Array.isArray(config.destinatarios) ? config.destinatarios as string[] : [],
-        formato: config.formato as ConfiguracionReporte['formato'],
-        secciones: Array.isArray(config.secciones) ? config.secciones as SeccionReporte[] : [],
-        horario: config.horario as ConfiguracionReporte['horario'],
-        filtros: {
-          ...config.filtros as any,
-          periodo: config.filtros && (config.filtros as any).periodo ? 
-            (config.filtros as any).periodo.map((date: string) => new Date(date)) : 
-            undefined
-        },
-        activo: config.activo
-      }));
+      const reportesConvertidos: ConfiguracionReporte[] = (configuraciones || []).map(config => {
+        try {
+          return {
+            id: config.id,
+            nombre: config.nombre,
+            tipo: config.tipo as ConfiguracionReporte['tipo'],
+            destinatarios: typeof config.destinatarios === 'string' ? 
+              JSON.parse(config.destinatarios) : 
+              (Array.isArray(config.destinatarios) ? config.destinatarios : []),
+            formato: config.formato as ConfiguracionReporte['formato'],
+            secciones: typeof config.secciones === 'string' ? 
+              JSON.parse(config.secciones) : 
+              (Array.isArray(config.secciones) ? config.secciones as unknown as SeccionReporte[] : []),
+            horario: typeof config.horario === 'string' ? 
+              JSON.parse(config.horario) : 
+              (config.horario as ConfiguracionReporte['horario']),
+            filtros: (() => {
+              let filtros = typeof config.filtros === 'string' ? 
+                JSON.parse(config.filtros) : 
+                (config.filtros || {});
+              
+              // Convertir periodo de strings a dates si existe
+              if (filtros.periodo && Array.isArray(filtros.periodo)) {
+                filtros.periodo = filtros.periodo.map((date: string) => new Date(date));
+              }
+              
+              return filtros;
+            })(),
+            activo: config.activo
+          };
+        } catch (parseError) {
+          console.error('Error parsing config:', parseError, config);
+          return null;
+        }
+      }).filter(Boolean) as ConfiguracionReporte[];
 
       const historialConvertido: ReporteGenerado[] = (historial || []).map(reporte => ({
         id: reporte.id,
@@ -311,8 +329,9 @@ export const useReportesAutomaticos = () => {
         archivo_url: reporte.archivo_url || undefined,
         estado: reporte.estado as ReporteGenerado['estado'],
         error_mensaje: reporte.error_mensaje || undefined,
-        destinatarios_enviados: Array.isArray(reporte.destinatarios_enviados) ? 
-          reporte.destinatarios_enviados as string[] : []
+        destinatarios_enviados: typeof reporte.destinatarios_enviados === 'string' ? 
+          JSON.parse(reporte.destinatarios_enviados) : 
+          (Array.isArray(reporte.destinatarios_enviados) ? reporte.destinatarios_enviados : [])
       }));
 
       setReportes(reportesConvertidos);
@@ -330,16 +349,35 @@ export const useReportesAutomaticos = () => {
 
     setLoading(true);
     try {
-      // Preparar filtros para la base de datos
-      const updateData = {
-        ...configuracion,
-        filtros: configuracion.filtros ? {
+      // Preparar filtros y datos para la base de datos
+      const updateData: any = {};
+      
+      if (configuracion.nombre) updateData.nombre = configuracion.nombre;
+      if (configuracion.tipo) updateData.tipo = configuracion.tipo;
+      if (configuracion.formato) updateData.formato = configuracion.formato;
+      if (configuracion.activo !== undefined) updateData.activo = configuracion.activo;
+      
+      if (configuracion.destinatarios) {
+        updateData.destinatarios = JSON.stringify(configuracion.destinatarios);
+      }
+      
+      if (configuracion.secciones) {
+        updateData.secciones = JSON.stringify(configuracion.secciones);
+      }
+      
+      if (configuracion.horario) {
+        updateData.horario = JSON.stringify(configuracion.horario);
+      }
+      
+      if (configuracion.filtros) {
+        const filtrosParaDB = {
           ...configuracion.filtros,
           periodo: configuracion.filtros.periodo ? 
             configuracion.filtros.periodo.map(date => date.toISOString()) : 
             undefined
-        } : undefined
-      };
+        };
+        updateData.filtros = JSON.stringify(filtrosParaDB);
+      }
 
       const { error } = await supabase
         .from('configuraciones_reportes')
