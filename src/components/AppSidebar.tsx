@@ -118,7 +118,12 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  isMobileOpen?: boolean;
+  setIsMobileOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function AppSidebar({ isMobileOpen, setIsMobileOpen, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
