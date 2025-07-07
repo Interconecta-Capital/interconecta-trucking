@@ -133,7 +133,7 @@ export const useReportesAutomaticos = () => {
         id: 'rentabilidad-unidades',
         nombre: 'Análisis de Rentabilidad por Unidad',
         tipo: 'grafico',
-        configuración: {
+        configuracion: {
           tipo_grafico: 'barras',
           agrupacion: 'vehiculo',
           metricas: ['ingresos', 'costos', 'margen']
