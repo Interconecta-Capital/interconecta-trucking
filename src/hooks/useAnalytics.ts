@@ -50,80 +50,47 @@ export const useAnalytics = () => {
   const { data: dashboardMetrics, isLoading: isLoadingDashboard } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async (): Promise<DashboardMetrics> => {
-      try {
-        // Obtener cartas porte del usuario actual
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user?.id) {
-          throw new Error('Usuario no autenticado');
-        }
+      // Obtener cartas porte del usuario actual
+      const { data: cartasPorte, error } = await supabase
+        .from('cartas_porte')
+        .select('id, status, created_at')
+        .eq('usuario_id', (await supabase.auth.getUser()).data.user?.id);
 
-        const { data: cartasPorte, error } = await supabase
-          .from('cartas_porte')
-          .select('id, status, created_at')
-          .eq('usuario_id', user.user.id);
+      if (error) throw error;
 
-        if (error) {
-          console.error('Error obteniendo cartas porte:', error);
-          // Devolver datos por defecto en caso de error
-          return {
-            cartasPorteActivas: 0,
-            vehiculosEnRuta: 0,
-            conductoresActivos: 0,
-            ingresosMes: 0,
-            cambioCartasPorte: 0,
-            cambioVehiculos: 0,
-            cambioConductores: 0,
-            cambioIngresos: 0
-          };
-        }
+      const ahora = new Date();
+      const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+      const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
 
-        const ahora = new Date();
-        const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
-        const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+      // Cartas porte activas (no completadas/canceladas)
+      const cartasActivas = cartasPorte?.filter(cp => 
+        cp.status !== 'completado' && cp.status !== 'cancelado'
+      ).length || 0;
 
-        // Cartas porte activas (no completadas/canceladas)
-        const cartasActivas = cartasPorte?.filter(cp => 
-          cp.status !== 'completado' && cp.status !== 'cancelado'
-        ).length || 0;
+      // Cartas del mes actual vs anterior para comparación
+      const cartasMesActual = cartasPorte?.filter(cp => 
+        new Date(cp.created_at) >= inicioMesActual
+      ).length || 0;
 
-        // Cartas del mes actual vs anterior para comparación
-        const cartasMesActual = cartasPorte?.filter(cp => 
-          new Date(cp.created_at) >= inicioMesActual
-        ).length || 0;
+      const cartasMesAnterior = cartasPorte?.filter(cp => {
+        const fecha = new Date(cp.created_at);
+        return fecha >= mesAnterior && fecha < inicioMesActual;
+      }).length || 0;
 
-        const cartasMesAnterior = cartasPorte?.filter(cp => {
-          const fecha = new Date(cp.created_at);
-          return fecha >= mesAnterior && fecha < inicioMesActual;
-        }).length || 0;
+      const cambioCartasPorte = cartasMesAnterior > 0 
+        ? ((cartasMesActual - cartasMesAnterior) / cartasMesAnterior) * 100 
+        : 0;
 
-        const cambioCartasPorte = cartasMesAnterior > 0 
-          ? ((cartasMesActual - cartasMesAnterior) / cartasMesAnterior) * 100 
-          : 0;
-
-        return {
-          cartasPorteActivas: cartasActivas,
-          vehiculosEnRuta: Math.floor(cartasActivas * 0.7), // Estimación basada en cartas activas
-          conductoresActivos: Math.floor(cartasActivas * 0.8),
-          ingresosMes: cartasMesActual * 15000, // Estimación de $15,000 por carta porte
-          cambioCartasPorte: Math.round(cambioCartasPorte),
-          cambioVehiculos: Math.round(cambioCartasPorte * 0.8),
-          cambioConductores: Math.round(cambioCartasPorte * 0.9),
-          cambioIngresos: Math.round(cambioCartasPorte * 1.2)
-        };
-      } catch (error) {
-        console.error('Error en useAnalytics:', error);
-        // Devolver datos por defecto en caso de error
-        return {
-          cartasPorteActivas: 0,
-          vehiculosEnRuta: 0,
-          conductoresActivos: 0,
-          ingresosMes: 0,
-          cambioCartasPorte: 0,
-          cambioVehiculos: 0,
-          cambioConductores: 0,
-          cambioIngresos: 0
-        };
-      }
+      return {
+        cartasPorteActivas: cartasActivas,
+        vehiculosEnRuta: Math.floor(cartasActivas * 0.7), // Estimación basada en cartas activas
+        conductoresActivos: Math.floor(cartasActivas * 0.8),
+        ingresosMes: cartasMesActual * 15000, // Estimación de $15,000 por carta porte
+        cambioCartasPorte: Math.round(cambioCartasPorte),
+        cambioVehiculos: Math.round(cambioCartasPorte * 0.8),
+        cambioConductores: Math.round(cambioCartasPorte * 0.9),
+        cambioIngresos: Math.round(cambioCartasPorte * 1.2)
+      };
     },
     refetchInterval: 5 * 60 * 1000, // Actualizar cada 5 minutos
   });
