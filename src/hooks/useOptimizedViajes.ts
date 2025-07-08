@@ -169,7 +169,6 @@ export const useOptimizedViajes = () => {
       const viajeId = `viaje-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       const viajeData = {
-        id: viajeId,
         carta_porte_id: `CP-${Date.now()}`,
         origen: wizardData.origen.domicilio?.calle || wizardData.origen.direccion || '',
         destino: wizardData.destino.domicilio?.calle || wizardData.destino.direccion || '',
@@ -179,7 +178,7 @@ export const useOptimizedViajes = () => {
         fecha_inicio_programada: wizardData.origen.fechaHoraSalidaLlegada || new Date().toISOString(),
         fecha_fin_programada: wizardData.destino.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         observaciones: `${wizardData.cliente.nombre_razon_social} - ${wizardData.distanciaRecorrida || 0} km`,
-        tracking_data: wizardData,
+        tracking_data: JSON.parse(JSON.stringify(wizardData)) as any,
         user_id: user.id
       };
 
