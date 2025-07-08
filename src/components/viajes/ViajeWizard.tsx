@@ -1,3 +1,4 @@
+
 import React, {
   useState,
   useEffect,
@@ -5,21 +6,170 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { Step } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ClienteSelect } from '@/components/clientes/ClienteSelect';
-import { VehiculoSelect } from '@/components/vehiculos/VehiculoSelect';
-import { ConductorSelect } from '@/components/conductores/ConductorSelect';
 import { toast } from 'sonner';
-import { UbicacionesStep } from './steps/UbicacionesStep';
-import { RecursosStep } from './steps/RecursosStep';
-import { MercanciaStep } from './steps/MercanciaStep';
 import { ViajeConfirmationButton } from './ViajeConfirmationButton';
+
+// Simple selector components for now
+const ClienteSelect = ({ clienteSeleccionado, onClienteSeleccionado }: any) => (
+  <div className="p-4 border rounded-lg">
+    <p className="text-sm text-gray-600">Selector de cliente (por implementar)</p>
+    <Button 
+      onClick={() => onClienteSeleccionado({
+        id: 'cliente-test',
+        nombre_razon_social: 'Cliente de Prueba',
+        rfc: 'XAXX010101000'
+      })}
+      variant="outline"
+      className="mt-2"
+    >
+      Seleccionar Cliente de Prueba
+    </Button>
+  </div>
+);
+
+const UbicacionesStep = ({ origen, destino, onOrigenChange, onDestinoChange, onNext, onBack }: any) => (
+  <div className="p-6 space-y-4">
+    <div className="text-center">
+      <h3 className="text-xl font-semibold mb-2">Definir Ruta</h3>
+      <p className="text-gray-600">Establece origen y destino del viaje</p>
+    </div>
+
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">Origen</label>
+        <input
+          type="text"
+          className="w-full p-2 border rounded-lg"
+          placeholder="Ciudad o dirección de origen"
+          value={origen?.domicilio?.calle || ''}
+          onChange={(e) => onOrigenChange({
+            domicilio: { calle: e.target.value },
+            fechaHoraSalidaLlegada: new Date().toISOString()
+          })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Destino</label>
+        <input
+          type="text"
+          className="w-full p-2 border rounded-lg"
+          placeholder="Ciudad o dirección de destino"
+          value={destino?.domicilio?.calle || ''}
+          onChange={(e) => onDestinoChange({
+            domicilio: { calle: e.target.value },
+            fechaHoraSalidaLlegada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          })}
+        />
+      </div>
+    </div>
+
+    <div className="flex justify-between pt-4">
+      <Button type="button" variant="outline" onClick={onBack}>
+        <ChevronLeft className="h-4 w-4 mr-2" />
+        Atrás
+      </Button>
+      <Button 
+        onClick={onNext} 
+        disabled={!origen?.domicilio?.calle || !destino?.domicilio?.calle}
+      >
+        Siguiente
+        <ChevronRight className="h-4 w-4 ml-2" />
+      </Button>
+    </div>
+  </div>
+);
+
+const RecursosStep = ({ vehiculo, conductor, onVehiculoChange, onConductorChange, onNext, onBack }: any) => (
+  <div className="p-6 space-y-4">
+    <div className="text-center">
+      <h3 className="text-xl font-semibold mb-2">Asignar Recursos</h3>
+      <p className="text-gray-600">Selecciona vehículo y conductor</p>
+    </div>
+
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">Vehículo</label>
+        <Button 
+          onClick={() => onVehiculoChange({
+            id: 'vehiculo-test',
+            placa: 'ABC-123',
+            configuracion_vehicular: 'C2',
+            peso_bruto_vehicular: 3500,
+            anio: 2020
+          })}
+          variant="outline"
+          className="w-full"
+        >
+          {vehiculo ? `${vehiculo.placa} (${vehiculo.configuracion_vehicular})` : 'Seleccionar Vehículo'}
+        </Button>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Conductor</label>
+        <Button 
+          onClick={() => onConductorChange({
+            id: 'conductor-test',
+            nombre: 'Juan Pérez',
+            rfc: 'PEPJ800101000',
+            num_licencia: '123456',
+            tipo_licencia: 'C'
+          })}
+          variant="outline"
+          className="w-full"
+        >
+          {conductor ? conductor.nombre : 'Seleccionar Conductor'}
+        </Button>
+      </div>
+    </div>
+
+    <div className="flex justify-between pt-4">
+      <Button type="button" variant="outline" onClick={onBack}>
+        <ChevronLeft className="h-4 w-4 mr-2" />
+        Atrás
+      </Button>
+      <Button onClick={onNext} disabled={!vehiculo || !conductor}>
+        Siguiente
+        <ChevronRight className="h-4 w-4 ml-2" />
+      </Button>
+    </div>
+  </div>
+);
+
+const MercanciaStep = ({ descripcionMercancia, onDescripcionChange, onNext, onBack }: any) => (
+  <div className="p-6 space-y-4">
+    <div className="text-center">
+      <h3 className="text-xl font-semibold mb-2">Descripción de Mercancía</h3>
+      <p className="text-gray-600">Describe la mercancía a transportar</p>
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium mb-2">Descripción</label>
+      <textarea
+        className="w-full p-2 border rounded-lg"
+        rows={4}
+        placeholder="Describe la mercancía a transportar..."
+        value={descripcionMercancia || ''}
+        onChange={(e) => onDescripcionChange(e.target.value)}
+      />
+    </div>
+
+    <div className="flex justify-between pt-4">
+      <Button type="button" variant="outline" onClick={onBack}>
+        <ChevronLeft className="h-4 w-4 mr-2" />
+        Atrás
+      </Button>
+      <Button onClick={onNext} disabled={!descripcionMercancia}>
+        Siguiente
+        <ChevronRight className="h-4 w-4 ml-2" />
+      </Button>
+    </div>
+  </div>
+);
 
 export interface ViajeWizardData {
   currentStep: number;

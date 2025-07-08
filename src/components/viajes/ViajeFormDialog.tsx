@@ -51,6 +51,7 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
           fechaHoraSalidaLlegada: formData.fecha_programada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
         },
         cliente: {
+          id: 'cliente-basico',
           nombre_razon_social: 'Cliente Básico',
           rfc: 'XAXX010101000'
         },
