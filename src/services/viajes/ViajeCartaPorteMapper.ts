@@ -1,3 +1,4 @@
+
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteData, MercanciaCompleta } from '@/types/cartaPorte';
 
@@ -110,10 +111,7 @@ export class ViajeCartaPorteMapper {
       cliente: cartaPorteData.nombreReceptor ? {
         id: '', // Se debe buscar/crear cliente
         rfc: cartaPorteData.rfcReceptor,
-        nombre_razon_social: cartaPorteData.nombreReceptor,
-        regimen_fiscal: '',
-        domicilio_fiscal: {},
-        uso_cfdi: cartaPorteData.usoCfdi || 'S01'
+        nombre_razon_social: cartaPorteData.nombreReceptor
       } : undefined,
       
       // Origen y destino desde ubicaciones
@@ -203,17 +201,20 @@ export class ViajeCartaPorteMapper {
         tipo_ubicacion: 'Origen',
         rfc: viajeData.cliente?.rfc || 'XEXX010101000',
         nombre: viajeData.cliente?.nombre_razon_social || 'Cliente',
-        fecha_llegada_salida: new Date().toISOString(),
-        fecha_hora_salida_llegada: new Date().toISOString(),
+        fecha_llegada_salida: viajeData.origen.fechaHoraSalidaLlegada,
+        fecha_hora_salida_llegada: viajeData.origen.fechaHoraSalidaLlegada,
         distancia_recorrida: 0,
-        coordenadas: viajeData.origen.coordenadas,
+        coordenadas: viajeData.origen.coordenadas ? {
+          latitud: viajeData.origen.coordenadas.lat,
+          longitud: viajeData.origen.coordenadas.lng
+        } : undefined,
         domicilio: {
           pais: 'MEX',
           codigo_postal: viajeData.origen.codigoPostal || '00000',
           estado: 'No especificado',
           municipio: 'No especificado',
           colonia: 'No especificada',
-          calle: viajeData.origen.direccion || 'No especificada'
+          calle: viajeData.origen.direccion || viajeData.origen.domicilio?.calle || 'No especificada'
         }
       });
     }
@@ -224,17 +225,20 @@ export class ViajeCartaPorteMapper {
         tipo_ubicacion: 'Destino',
         rfc: viajeData.cliente?.rfc || 'XEXX010101000',
         nombre: viajeData.cliente?.nombre_razon_social || 'Cliente',
-        fecha_llegada_salida: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        fecha_hora_salida_llegada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        fecha_llegada_salida: viajeData.destino.fechaHoraSalidaLlegada,
+        fecha_hora_salida_llegada: viajeData.destino.fechaHoraSalidaLlegada,
         distancia_recorrida: viajeData.distanciaRecorrida || 0,
-        coordenadas: viajeData.destino.coordenadas,
+        coordenadas: viajeData.destino.coordenadas ? {
+          latitud: viajeData.destino.coordenadas.lat,
+          longitud: viajeData.destino.coordenadas.lng
+        } : undefined,
         domicilio: {
           pais: 'MEX',
           codigo_postal: viajeData.destino.codigoPostal || '00000',
           estado: 'No especificado',
           municipio: 'No especificado',
           colonia: 'No especificada',
-          calle: viajeData.destino.direccion || 'No especificada'
+          calle: viajeData.destino.direccion || viajeData.destino.domicilio?.calle || 'No especificada'
         }
       });
     }
@@ -294,9 +298,14 @@ export class ViajeCartaPorteMapper {
     if (!origen) return undefined;
     
     return {
+      domicilio: { calle: origen.domicilio?.calle || '' },
       direccion: origen.domicilio?.calle || '',
       codigoPostal: origen.domicilio?.codigo_postal || '',
-      coordenadas: origen.coordenadas
+      coordenadas: origen.coordenadas ? {
+        lat: origen.coordenadas.latitud,
+        lng: origen.coordenadas.longitud
+      } : undefined,
+      fechaHoraSalidaLlegada: origen.fecha_hora_salida_llegada
     };
   }
   
@@ -305,9 +314,14 @@ export class ViajeCartaPorteMapper {
     if (!destino) return undefined;
     
     return {
+      domicilio: { calle: destino.domicilio?.calle || '' },
       direccion: destino.domicilio?.calle || '',
       codigoPostal: destino.domicilio?.codigo_postal || '',
-      coordenadas: destino.coordenadas
+      coordenadas: destino.coordenadas ? {
+        lat: destino.coordenadas.latitud,
+        lng: destino.coordenadas.longitud
+      } : undefined,
+      fechaHoraSalidaLlegada: destino.fecha_hora_salida_llegada
     };
   }
   

@@ -56,7 +56,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
       marca: data.vehiculo.marca || 'N/A',
       modelo: data.vehiculo.modelo || 'N/A',
       rendimiento: data.vehiculo.rendimiento || 3.5,
-      tipo_combustible: data.vehiculo.tipo_combustible || 'Diesel',
+      tipo_combustible: (data.vehiculo.tipo_combustible as 'diesel' | 'gasolina') || 'diesel',
       capacidad_carga: data.vehiculo.capacidad_carga || 28000,
       peso_bruto_vehicular: data.vehiculo.peso_bruto_vehicular,
       costo_mantenimiento_km: data.vehiculo.costo_mantenimiento_km || 2.07,

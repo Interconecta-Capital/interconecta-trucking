@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,8 +104,28 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
   const handleVehiculoSelect = (vehiculoId: string) => {
     const vehiculo = vehiculos.find(v => v.id === vehiculoId);
     if (vehiculo) {
-      setSelectedVehiculo(vehiculo);
-      updateData({ vehiculo });
+      // Mapear el vehículo de la base de datos al formato del wizard
+      const vehiculoMapeado = {
+        id: vehiculo.id,
+        placa: vehiculo.placa,
+        configuracion_vehicular: vehiculo.config_vehicular || 'C2',
+        peso_bruto_vehicular: vehiculo.peso_bruto_vehicular || 0,
+        anio: vehiculo.anio,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        tipo_carroceria: vehiculo.tipo_carroceria,
+        capacidad_carga: vehiculo.capacidad_carga,
+        rendimiento: vehiculo.rendimiento,
+        tipo_combustible: vehiculo.tipo_combustible,
+        costo_mantenimiento_km: vehiculo.costo_mantenimiento_km,
+        costo_llantas_km: vehiculo.costo_llantas_km,
+        valor_vehiculo: vehiculo.valor_vehiculo,
+        configuracion_ejes: vehiculo.configuracion_ejes,
+        factor_peajes: vehiculo.factor_peajes
+      };
+      
+      setSelectedVehiculo(vehiculoMapeado);
+      updateData({ vehiculo: vehiculoMapeado });
       
       // Cargar remolques asociados
       loadVehiculoRemolques(vehiculoId);
@@ -114,8 +135,17 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
   const handleConductorSelect = (conductorId: string) => {
     const conductor = conductores.find(c => c.id === conductorId);
     if (conductor) {
-      setSelectedConductor(conductor);
-      updateData({ conductor });
+      const conductorMapeado = {
+        id: conductor.id,
+        nombre: conductor.nombre,
+        rfc: conductor.rfc,
+        num_licencia: conductor.num_licencia,
+        tipo_licencia: conductor.tipo_licencia,
+        vigencia_licencia: conductor.vigencia_licencia
+      };
+      
+      setSelectedConductor(conductorMapeado);
+      updateData({ conductor: conductorMapeado });
     }
   };
 
@@ -400,7 +430,7 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                 <p className="font-medium">Conductor:</p>
                 <p>{selectedConductor.nombre}</p>
                 <p>Licencia: {selectedConductor.tipo_licencia}</p>
-                <p>Vigencia: {new Date(selectedConductor.vigencia_licencia).toLocaleDateString()}</p>
+                <p>Vigencia: {selectedConductor.vigencia_licencia ? new Date(selectedConductor.vigencia_licencia).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           </CardContent>

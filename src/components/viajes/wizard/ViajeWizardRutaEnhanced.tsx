@@ -143,10 +143,32 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
         routeData
       });
 
-      // Actualizar datos del wizard
+      // Actualizar datos del wizard con formato correcto
+      const origenMapeado = {
+        domicilio: { calle: origenDireccion },
+        direccion: origenDireccion,
+        codigoPostal: '06600',
+        coordenadas: origenGeo.coordenadas ? {
+          lat: origenGeo.coordenadas.latitud,
+          lng: origenGeo.coordenadas.longitud
+        } : undefined,
+        fechaHoraSalidaLlegada: fechaSalida
+      };
+
+      const destinoMapeado = {
+        domicilio: { calle: destinoDireccion },
+        direccion: destinoDireccion,
+        codigoPostal: '44100',
+        coordenadas: destinoGeo.coordenadas ? {
+          lat: destinoGeo.coordenadas.latitud,
+          lng: destinoGeo.coordenadas.longitud
+        } : undefined,
+        fechaHoraSalidaLlegada: fechaLlegada
+      };
+
       updateData({
-        origen: origenGeo,
-        destino: destinoGeo,
+        origen: origenMapeado,
+        destino: destinoMapeado,
         distanciaRecorrida: distancia
       });
 
