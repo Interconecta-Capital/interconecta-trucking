@@ -10,7 +10,8 @@ import {
   Route,
   Calendar,
   ArrowLeft,
-  Home
+  Home,
+  FileText
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -54,18 +55,18 @@ export default function DashboardNavigation() {
       color: 'bg-indigo-500'
     },
     {
+      title: 'Reportes Programados',
+      description: 'Configuración de reportes automáticos',
+      icon: FileText,
+      href: '/dashboard/reportes',
+      color: 'bg-teal-500'
+    },
+    {
       title: 'Análisis de Flota',
       description: 'Performance de vehículos',
       icon: Truck,
       href: '/dashboard/flota',
       color: 'bg-orange-500'
-    },
-    {
-      title: 'Reportes',
-      description: 'Configuración de reportes',
-      icon: Calendar,
-      href: '/dashboard/reportes',
-      color: 'bg-teal-500'
     }
   ];
 

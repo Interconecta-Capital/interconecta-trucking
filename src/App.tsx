@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -22,6 +21,7 @@ import Dashboard from "./pages/Dashboard"
 import DashboardPrincipal from "./pages/DashboardPrincipal"
 import DashboardEjecutivo from "./pages/DashboardEjecutivo"
 import DashboardOperadores from "./pages/DashboardOperadores"
+import DashboardReportes from "./pages/DashboardReportes"
 import CartasPorteUnified from "./pages/CartasPorteUnified"
 import CartaPorteEditor from "./pages/CartaPorteEditor"
 import Vehiculos from "./pages/Vehiculos"
@@ -94,7 +94,16 @@ const App = () => (
                 </AuthGuard>
               } />
 
-              {/* Nueva ruta de Analytics de Viajes */}
+              {/* Nueva ruta de Reportes Programados */}
+              <Route path="/dashboard/reportes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <DashboardReportes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              {/* Ruta de Analytics de Viajes corregida */}
               <Route path="/dashboard/viajes/analytics" element={
                 <AuthGuard>
                   <BaseLayout>

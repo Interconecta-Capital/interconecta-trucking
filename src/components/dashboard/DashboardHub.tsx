@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,8 @@ import {
   Target,
   ArrowRight,
   Download,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
@@ -55,9 +55,18 @@ export default function DashboardHub() {
       title: 'Analytics de Viajes',
       description: 'Análisis detallado de operaciones',
       icon: Route,
-      href: '/viajes/analytics',
+      href: '/dashboard/viajes/analytics',
       color: 'bg-indigo-500',
       stats: 'Última actualización: hace 2 min',
+      status: 'Activo'
+    },
+    {
+      title: 'Reportes Programados',
+      description: 'Configuración de reportes automáticos',
+      icon: FileText,
+      href: '/dashboard/reportes',
+      color: 'bg-teal-500',
+      stats: 'Reportes automáticos disponibles',
       status: 'Activo'
     },
     {
@@ -68,15 +77,6 @@ export default function DashboardHub() {
       color: 'bg-orange-500',
       stats: `${counts?.vehiculos || 0} vehículos`,
       status: 'Próximamente'
-    },
-    {
-      title: 'Reportes Programados',
-      description: 'Configuración de reportes automáticos',
-      icon: Calendar,
-      href: '/dashboard/reportes',
-      color: 'bg-teal-500',
-      stats: '3 reportes activos',
-      status: 'Beta'
     }
   ];
 
@@ -241,6 +241,16 @@ export default function DashboardHub() {
               <div className="flex-1">
                 <p className="font-medium text-gray-900">Evaluación de conductores actualizada</p>
                 <p className="text-sm text-gray-600">Performance mensual calculada - hace 2 horas</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-teal-50 rounded-lg">
+              <div className="p-2 bg-teal-100 rounded-lg">
+                <FileText className="h-4 w-4 text-teal-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Reporte programado ejecutado</p>
+                <p className="text-sm text-gray-600">Reporte semanal enviado por correo - hace 3 horas</p>
               </div>
             </div>
           </div>
