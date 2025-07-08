@@ -53,15 +53,15 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
     vehiculo: data.vehiculo ? {
       id: data.vehiculo.id,
       placa: data.vehiculo.placa,
-      marca: data.vehiculo.marca,
-      modelo: data.vehiculo.modelo,
-      rendimiento: data.vehiculo.rendimiento,
-      tipo_combustible: data.vehiculo.tipo_combustible,
-      capacidad_carga: data.vehiculo.capacidad_carga,
+      marca: data.vehiculo.marca || 'N/A',
+      modelo: data.vehiculo.modelo || 'N/A',
+      rendimiento: data.vehiculo.rendimiento || 3.5,
+      tipo_combustible: data.vehiculo.tipo_combustible || 'Diesel',
+      capacidad_carga: data.vehiculo.capacidad_carga || 28000,
       peso_bruto_vehicular: data.vehiculo.peso_bruto_vehicular,
       costo_mantenimiento_km: data.vehiculo.costo_mantenimiento_km || 2.07,
       costo_llantas_km: data.vehiculo.costo_llantas_km || 1.08,
-      valor_vehiculo: data.vehiculo.valor_vehiculo,
+      valor_vehiculo: data.vehiculo.valor_vehiculo || 1500000,
       configuracion_ejes: data.vehiculo.configuracion_ejes || 'T3S2',
       factor_peajes: data.vehiculo.factor_peajes || 2.0
     } : undefined,
@@ -171,7 +171,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         <CardContent className="space-y-4">
           <div>
             <label className="font-medium text-gray-700">Cliente:</label>
-            <p className="text-gray-900">{data.cliente?.nombre || 'No especificado'}</p>
+            <p className="text-gray-900">{data.cliente?.nombre_razon_social || 'No especificado'}</p>
             {data.cliente?.rfc && (
               <p className="text-sm text-gray-600">RFC: {data.cliente.rfc}</p>
             )}
@@ -208,7 +208,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 Origen:
               </label>
-              <p className="text-gray-900">{data.origen?.nombre || 'No especificado'}</p>
+              <p className="text-gray-900">{data.origen?.domicilio?.calle || 'No especificado'}</p>
               {data.origen?.direccion && (
                 <p className="text-sm text-gray-600">{data.origen.direccion}</p>
               )}
@@ -219,7 +219,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 Destino:
               </label>
-              <p className="text-gray-900">{data.destino?.nombre || 'No especificado'}</p>
+              <p className="text-gray-900">{data.destino?.domicilio?.calle || 'No especificado'}</p>
               {data.destino?.direccion && (
                 <p className="text-sm text-gray-600">{data.destino.direccion}</p>
               )}
@@ -254,11 +254,11 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
               </label>
               {data.vehiculo ? (
                 <div className="mt-1 p-3 bg-gray-50 rounded">
-                  <p className="font-medium">{data.vehiculo.marca} {data.vehiculo.modelo}</p>
+                  <p className="font-medium">{data.vehiculo.marca || 'N/A'} {data.vehiculo.modelo || 'N/A'}</p>
                   <p className="text-sm text-gray-600">Placas: {data.vehiculo.placa}</p>
-                  <p className="text-sm text-gray-600">Tipo: {data.vehiculo.tipo_carroceria}</p>
+                  <p className="text-sm text-gray-600">Tipo: {data.vehiculo.tipo_carroceria || 'N/A'}</p>
                   <p className="text-sm text-gray-600">
-                    Capacidad: {data.vehiculo.capacidad_carga?.toLocaleString()} kg
+                    Capacidad: {data.vehiculo.capacidad_carga?.toLocaleString() || 'N/A'} kg
                   </p>
                 </div>
               ) : (
@@ -276,7 +276,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
                   <p className="font-medium">{data.conductor.nombre}</p>
                   <p className="text-sm text-gray-600">Licencia: {data.conductor.tipo_licencia}</p>
                   <p className="text-sm text-gray-600">
-                    Vigencia: {new Date(data.conductor.vigencia_licencia).toLocaleDateString()}
+                    Vigencia: {data.conductor.vigencia_licencia ? new Date(data.conductor.vigencia_licencia).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
               ) : (

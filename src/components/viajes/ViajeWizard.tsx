@@ -100,7 +100,18 @@ const RecursosStep = ({ vehiculo, conductor, onVehiculoChange, onConductorChange
             placa: 'ABC-123',
             configuracion_vehicular: 'C2',
             peso_bruto_vehicular: 3500,
-            anio: 2020
+            anio: 2020,
+            marca: 'Freightliner',
+            modelo: 'Cascadia',
+            tipo_carroceria: 'Caja seca',
+            capacidad_carga: 28000,
+            rendimiento: 3.5,
+            tipo_combustible: 'Diesel',
+            costo_mantenimiento_km: 2.07,
+            costo_llantas_km: 1.08,
+            valor_vehiculo: 1500000,
+            configuracion_ejes: 'T3S2',
+            factor_peajes: 2.0
           })}
           variant="outline"
           className="w-full"
@@ -117,7 +128,8 @@ const RecursosStep = ({ vehiculo, conductor, onVehiculoChange, onConductorChange
             nombre: 'Juan Pérez',
             rfc: 'PEPJ800101000',
             num_licencia: '123456',
-            tipo_licencia: 'C'
+            tipo_licencia: 'C',
+            vigencia_licencia: '2025-12-31'
           })}
           variant="outline"
           className="w-full"
@@ -210,6 +222,17 @@ export interface ViajeWizardData {
     configuracion_vehicular: string;
     peso_bruto_vehicular: number;
     anio: number;
+    marca?: string;
+    modelo?: string;
+    tipo_carroceria?: string;
+    capacidad_carga?: number;
+    rendimiento?: number;
+    tipo_combustible?: string;
+    costo_mantenimiento_km?: number;
+    costo_llantas_km?: number;
+    valor_vehiculo?: number;
+    configuracion_ejes?: string;
+    factor_peajes?: number;
   };
   conductor?: {
     id: string;
@@ -217,6 +240,7 @@ export interface ViajeWizardData {
     rfc?: string;
     num_licencia?: string;
     tipo_licencia?: string;
+    vigencia_licencia?: string;
   };
   mercancias?: any[];
   descripcionMercancia?: string;

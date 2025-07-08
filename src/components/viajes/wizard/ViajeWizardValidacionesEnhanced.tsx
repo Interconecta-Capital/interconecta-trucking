@@ -67,7 +67,7 @@ export function ViajeWizardValidacionesEnhanced({
           { ...data.destino, tipo_ubicacion: 'Destino' }
         ],
         autotransporte: {
-          config_vehicular: data.vehiculo?.config_vehicular || 'C2',
+          config_vehicular: data.vehiculo?.configuracion_vehicular || 'C2',
           peso_bruto_vehicular: data.vehiculo?.peso_bruto_vehicular || 8500
         }
       };
@@ -245,7 +245,7 @@ export function ViajeWizardValidacionesEnhanced({
                           { ...data.destino, tipo_ubicacion: 'Destino' }
                         ],
                         autotransporte: {
-                          config_vehicular: data.vehiculo?.config_vehicular || 'C2',
+                          config_vehicular: data.vehiculo?.configuracion_vehicular || 'C2',
                           peso_bruto_vehicular: data.vehiculo?.peso_bruto_vehicular || 8500
                         }
                       })}
@@ -301,13 +301,13 @@ export function ViajeWizardValidacionesEnhanced({
                 <span className="font-medium">Servicio:</span> {data.tipoServicio}
               </div>
               <div>
-                <span className="font-medium">Origen:</span> {data.origen?.nombre}
+                <span className="font-medium">Origen:</span> {data.origen?.domicilio?.calle}
               </div>
               <div>
-                <span className="font-medium">Destino:</span> {data.destino?.nombre}
+                <span className="font-medium">Destino:</span> {data.destino?.domicilio?.calle}
               </div>
               <div>
-                <span className="font-medium">Vehículo:</span> {data.vehiculo?.placa_vm}
+                <span className="font-medium">Vehículo:</span> {data.vehiculo?.placa}
               </div>
               <div>
                 <span className="font-medium">Conductor:</span> {data.conductor?.nombre}
