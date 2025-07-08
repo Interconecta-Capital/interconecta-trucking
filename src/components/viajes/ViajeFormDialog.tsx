@@ -25,6 +25,12 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.origen || !formData.destino) {
+      toast.error('Origen y destino son requeridos');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -51,14 +57,15 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
         distanciaRecorrida: 0
       };
 
+      // Usar la función corregida que retorna Promise
       await crearViaje(wizardData);
       
-      toast.success('Viaje programado exitosamente');
       setFormData({ origen: '', destino: '', fecha_programada: '' });
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
-      toast.error('Error al programar viaje: ' + error.message);
+      console.error('Error al programar viaje:', error);
+      toast.error('Error al programar viaje: ' + (error.message || 'Error desconocido'));
     } finally {
       setLoading(false);
     }
