@@ -35,7 +35,7 @@ export const useIntelligentCostCalculator = ({ wizardData }: IntelligentCostPara
         costo_mantenimiento_km: wizardData.vehiculo.costo_mantenimiento_km || 2.07,
         costo_llantas_km: wizardData.vehiculo.costo_llantas_km || 1.08,
         valor_vehiculo: wizardData.vehiculo.valor_vehiculo || 1500000,
-        configuracion_ejes: wizardData.vehiculo.configuracion_ejes || 'T3S2',
+        configuracion_ejes: (wizardData.vehiculo.configuracion_ejes as 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3') || 'T3S2',
         factor_peajes: wizardData.vehiculo.factor_peajes || 2.0
       } : undefined,
       tipoServicio: wizardData.tipoServicio
