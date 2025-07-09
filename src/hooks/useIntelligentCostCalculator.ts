@@ -26,28 +26,28 @@ export const useIntelligentCostCalculator = ({ wizardData }: IntelligentCostPara
       vehiculo: wizardData.vehiculo ? {
         id: wizardData.vehiculo.id,
         placa: wizardData.vehiculo.placa,
-        marca: wizardData.vehiculo.marca || 'N/A',
-        modelo: wizardData.vehiculo.modelo || 'N/A',
-        rendimiento: wizardData.vehiculo.rendimiento || 3.5,
-        tipo_combustible: (wizardData.vehiculo.tipo_combustible as 'diesel' | 'gasolina') || 'diesel',
-        capacidad_carga: wizardData.vehiculo.capacidad_carga || 28000,
+        marca: wizardData.vehiculo.marca,
+        modelo: wizardData.vehiculo.modelo,
+        rendimiento: wizardData.vehiculo.rendimiento,
+        tipo_combustible: wizardData.vehiculo.tipo_combustible,
+        capacidad_carga: wizardData.vehiculo.capacidad_carga,
         peso_bruto_vehicular: wizardData.vehiculo.peso_bruto_vehicular,
         costo_mantenimiento_km: wizardData.vehiculo.costo_mantenimiento_km || 2.07,
         costo_llantas_km: wizardData.vehiculo.costo_llantas_km || 1.08,
-        valor_vehiculo: wizardData.vehiculo.valor_vehiculo || 1500000,
-        configuracion_ejes: (wizardData.vehiculo.configuracion_ejes as 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3') || 'T3S2',
+        valor_vehiculo: wizardData.vehiculo.valor_vehiculo,
+        configuracion_ejes: wizardData.vehiculo.configuracion_ejes || 'T3S2',
         factor_peajes: wizardData.vehiculo.factor_peajes || 2.0
       } : undefined,
       tipoServicio: wizardData.tipoServicio
     };
 
-    // Usar el hook de cálculo profesional
-    const breakdown = useCalculadoraCostosProfesional(calculoParams);
+    // Intentar cálculo profesional
+    const professionalCalc = useCalculadoraCostosProfesional(calculoParams);
 
-    if (breakdown) {
+    if (professionalCalc) {
       return {
-        total: breakdown.costoTotal,
-        breakdown,
+        total: professionalCalc.costoTotal,
+        breakdown: professionalCalc,
         hasBreakdown: true,
         precision: 'professional'
       };
