@@ -1275,6 +1275,51 @@ export type Database = {
         }
         Relationships: []
       }
+      configuraciones_reportes: {
+        Row: {
+          activo: boolean
+          created_at: string | null
+          destinatarios: Json
+          filtros: Json
+          formato: string
+          horario: Json
+          id: string
+          nombre: string
+          secciones: Json
+          tipo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string | null
+          destinatarios?: Json
+          filtros?: Json
+          formato: string
+          horario?: Json
+          id?: string
+          nombre: string
+          secciones?: Json
+          tipo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string | null
+          destinatarios?: Json
+          filtros?: Json
+          formato?: string
+          horario?: Json
+          id?: string
+          nombre?: string
+          secciones?: Json
+          tipo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       documentacion_aduanera: {
         Row: {
           aduana_despacho: string | null
@@ -2398,6 +2443,56 @@ export type Database = {
             columns: ["autotransporte_id"]
             isOneToOne: false
             referencedRelation: "autotransporte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reportes_generados: {
+        Row: {
+          archivo_url: string | null
+          configuracion_id: string
+          created_at: string | null
+          destinatarios_enviados: Json
+          error_mensaje: string | null
+          estado: string
+          fecha_generacion: string
+          formato: string
+          id: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          archivo_url?: string | null
+          configuracion_id: string
+          created_at?: string | null
+          destinatarios_enviados?: Json
+          error_mensaje?: string | null
+          estado: string
+          fecha_generacion?: string
+          formato: string
+          id?: string
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          archivo_url?: string | null
+          configuracion_id?: string
+          created_at?: string | null
+          destinatarios_enviados?: Json
+          error_mensaje?: string | null
+          estado?: string
+          fecha_generacion?: string
+          formato?: string
+          id?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reportes_generados_configuracion_id_fkey"
+            columns: ["configuracion_id"]
+            isOneToOne: false
+            referencedRelation: "configuraciones_reportes"
             referencedColumns: ["id"]
           },
         ]
