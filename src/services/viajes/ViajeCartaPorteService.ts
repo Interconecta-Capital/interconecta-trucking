@@ -3,6 +3,7 @@ import { CartaPorteLifecycleManager } from '@/services/cartaPorte/CartaPorteLife
 import { ViajeToCartaPorteMapper } from './ViajeToCartaPorteMapper';
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export class ViajeCartaPorteService {
   static async crearCartaPorteDesdeViaje(
@@ -92,6 +93,9 @@ export class ViajeCartaPorteService {
         throw error;
       }
 
+      // Crear notificación de éxito
+      await this.crearNotificacionBorradorCreado(borrador.id, wizardData);
+
       return { viaje_id: viajeId, borrador_id: borrador.id };
     } catch (error) {
       console.error('❌ Error creando borrador desde viaje:', error);
@@ -115,6 +119,59 @@ export class ViajeCartaPorteService {
     } catch (error) {
       console.error('Error obteniendo carta porte del viaje:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Crear notificación cuando se crea un borrador
+   */
+  static async crearNotificacionBorradorCreado(
+    borradorId: string,
+    wizardData: ViajeWizardData
+  ) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const clienteNombre = wizardData.cliente?.nombre_razon_social || 'Cliente sin especificar';
+      const origen = wizardData.origen?.nombre || 'Origen sin especificar';
+      const destino = wizardData.destino?.nombre || 'Destino sin especificar';
+
+      await supabase
+        .from('notificaciones')
+        .insert({
+          user_id: user.id,
+          tipo: 'success',
+          titulo: '✅ Borrador de Carta Porte Creado',
+          mensaje: `Se ha creado el borrador de carta porte para el viaje ${origen} → ${destino} (Cliente: ${clienteNombre}). Abre tus cartas porte para completar los datos fiscales y timbrar el documento.`,
+          urgente: false,
+          metadata: {
+            borrador_id: borradorId,
+            viaje_data: {
+              cliente: clienteNombre,
+              origen,
+              destino,
+              tipo_servicio: wizardData.tipoServicio
+            },
+            action_url: `/carta-porte/editor/${borradorId}`
+          }
+        });
+
+      // También mostrar toast inmediato
+      toast.success('Borrador de Carta Porte creado', {
+        description: `Viaje ${origen} → ${destino} programado correctamente`,
+        duration: 5000,
+        action: {
+          label: 'Abrir Carta Porte',
+          onClick: () => {
+            window.location.href = `/carta-porte/editor/${borradorId}`;
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error creando notificación:', error);
+      // No fallar si no se puede crear la notificación
     }
   }
 }

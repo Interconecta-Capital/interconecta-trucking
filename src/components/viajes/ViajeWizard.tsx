@@ -346,7 +346,16 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       );
 
       console.log('✅ Borrador creado exitosamente');
-      toast.success('Viaje programado correctamente');
+      toast.success('Viaje programado correctamente', {
+        description: `Se generó el borrador de carta porte. ID: ${resultado.borrador_id}`,
+        duration: 8000,
+        action: {
+          label: 'Abrir Carta Porte',
+          onClick: () => {
+            navigate(`/carta-porte/editor/${resultado.borrador_id}`);
+          }
+        }
+      });
       setInitialSnapshot(JSON.stringify(data));
       setHasUnsavedChanges(false);
 
@@ -357,7 +366,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
         } else {
           navigate(`/carta-porte/editor/${resultado.borrador_id}`);
         }
-      }, 2000);
+      }, 3000);
 
     } catch (error) {
       console.error('❌ Error en proceso de confirmación:', error);

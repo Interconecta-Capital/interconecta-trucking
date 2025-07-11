@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Route, Clock, Calendar, Calculator, Navigation, AlertTriangle } from 'lucide-react';
+import { MapPin, Route, Clock, Calendar, Calculator, Navigation, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { useUbicacionesGeocodificacion } from '@/hooks/useUbicacionesGeocodificacion';
 import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
+import { useRutasPrecisas } from '@/hooks/useRutasPrecisas';
 import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
+import { toast } from 'sonner';
 
 interface ViajeWizardRutaEnhancedProps {
   data: ViajeWizardData;
@@ -22,17 +24,19 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
   const [destinoDireccion, setDestinoDireccion] = useState('');
   const [fechaSalida, setFechaSalida] = useState('');
   const [fechaLlegada, setFechaLlegada] = useState('');
-  const [calculandoRuta, setCalculandoRuta] = useState(false);
-  const [rutaCalculada, setRutaCalculada] = useState<{
-    distancia: number;
-    tiempoEstimado: number;
-    ruta: string;
-    routeData?: any;
-  } | null>(null);
   const [showMap, setShowMap] = useState(false);
-
-  const { calcularRutaCompleta, geocodificarUbicacion, calcularDistanciaEntrePuntos } = useUbicacionesGeocodificacion();
-  const { isLoaded: isGoogleMapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
+  
+  // Hooks para manejo de rutas precisas
+  const {
+    calculandoRuta,
+    rutaActual,
+    error: errorRuta,
+    calcularRutaOptimizada,
+    tieneRutaValida,
+    precisenEsAlta
+  } = useRutasPrecisas();
+  
+  const { isLoaded: mapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
 
   // Inicializar fechas por defecto
   useEffect(() => {
@@ -48,119 +52,79 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     }
   }, [fechaSalida, fechaLlegada]);
 
-  const handleCalcularRuta = async () => {
+  // Cargar datos existentes del wizard
+  useEffect(() => {
+    if (data.origen?.direccion) {
+      setOrigenDireccion(data.origen.direccion);
+    }
+    if (data.destino?.direccion) {
+      setDestinoDireccion(data.destino.direccion);
+    }
+    if (data.origen?.fechaHoraSalidaLlegada) {
+      setFechaSalida(new Date(data.origen.fechaHoraSalidaLlegada).toISOString().slice(0, 16));
+    }
+    if (data.destino?.fechaHoraSalidaLlegada) {
+      setFechaLlegada(new Date(data.destino.fechaHoraSalidaLlegada).toISOString().slice(0, 16));
+    }
+  }, [data.origen, data.destino]);
+
+  // Calcular ruta automáticamente cuando se tienen origen y destino
+  const calcularRuta = async () => {
     if (!origenDireccion || !destinoDireccion) {
+      toast.error('Debes especificar origen y destino');
       return;
     }
 
-    setCalculandoRuta(true);
     try {
-      // Crear objetos Ubicacion completos con id e idUbicacion
-      const origenGeo = await geocodificarUbicacion({
-        id: `origen-${Date.now()}`,
-        idUbicacion: 'OR000001',
-        tipoUbicacion: 'Origen',
-        nombreRemitenteDestinatario: 'Origen',
-        rfcRemitenteDestinatario: '',
-        domicilio: {
-          calle: origenDireccion,
-          numExterior: '',
-          municipio: 'Ciudad de México',
-          estado: 'Ciudad de México',
-          pais: 'MEX',
-          codigoPostal: '06600',
-          colonia: 'Centro'
-        },
-        fechaHoraSalidaLlegada: fechaSalida
-      });
-
-      const destinoGeo = await geocodificarUbicacion({
-        id: `destino-${Date.now()}`,
-        idUbicacion: 'DE000001',
-        tipoUbicacion: 'Destino',
-        nombreRemitenteDestinatario: 'Destino',
-        rfcRemitenteDestinatario: '',
-        domicilio: {
-          calle: destinoDireccion,
-          numExterior: '',
-          municipio: 'Guadalajara',
-          estado: 'Jalisco',
-          pais: 'MEX',
-          codigoPostal: '44100',
-          colonia: 'Centro Histórico'
-        },
-        fechaHoraSalidaLlegada: fechaLlegada
-      });
-
-      // Calcular ruta usando Google Maps si está disponible
-      let routeData = null;
-      let distancia = 550; // Fallback default
-      let tiempoEstimado = 420; // 7 horas
-
-      if (isGoogleMapsLoaded && window.google) {
-        try {
-          const directionsService = new window.google.maps.DirectionsService();
-          
-          const result = await new Promise((resolve, reject) => {
-            directionsService.route({
-              origin: origenDireccion,
-              destination: destinoDireccion,
-              travelMode: window.google.maps.TravelMode.DRIVING,
-              unitSystem: window.google.maps.UnitSystem.METRIC
-            }, (result: any, status: any) => {
-              if (status === 'OK') {
-                resolve(result);
-              } else {
-                reject(new Error(`Error en Google Directions: ${status}`));
-              }
-            });
-          });
-
-          if (result && (result as any).routes[0]) {
-            const route = (result as any).routes[0];
-            distancia = Math.round(route.legs[0].distance.value / 1000); // metros a km
-            tiempoEstimado = Math.round(route.legs[0].duration.value / 60); // segundos a minutos
-            
-            routeData = {
-              distance_km: distancia,
-              duration_minutes: tiempoEstimado,
-              google_data: {
-                polyline: route.overview_polyline.points,
-                bounds: route.bounds,
-                legs: route.legs
-              }
-            };
-          }
-        } catch (error) {
-          console.warn('⚠️ Error con Google Directions, usando estimación:', error);
+      const rutaCalculada = await calcularRutaOptimizada(
+        origenDireccion,
+        destinoDireccion,
+        {
+          evitarPeajes: false,
+          evitarAutopistas: false,
+          vehiculo: data.vehiculo ? {
+            tipo: data.vehiculo.tipo_carroceria || 'C2',
+            rendimiento: data.vehiculo.rendimiento || 8
+          } : undefined
         }
-      }
+      );
 
-      setRutaCalculada({
-        distancia,
-        tiempoEstimado,
-        ruta: `${origenDireccion} → ${destinoDireccion}`,
-        routeData
-      });
+      if (rutaCalculada) {
+        // Actualizar datos del wizard con información precisa
+        updateData({
+          origen: {
+            nombre: rutaCalculada.origen.nombre,
+            direccion: rutaCalculada.origen.direccion,
+            coordenadas: rutaCalculada.origen.coordenadas,
+            codigoPostal: rutaCalculada.origen.codigoPostal,
+            fechaHoraSalidaLlegada: fechaSalida || new Date().toISOString(),
+            precision: rutaCalculada.origen.precision,
+            validadaGoogleMaps: rutaCalculada.origen.validadaGoogleMaps
+          },
+          destino: {
+            nombre: rutaCalculada.destino.nombre,
+            direccion: rutaCalculada.destino.direccion,
+            coordenadas: rutaCalculada.destino.coordenadas,
+            codigoPostal: rutaCalculada.destino.codigoPostal,
+            fechaHoraSalidaLlegada: fechaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            precision: rutaCalculada.destino.precision,
+            validadaGoogleMaps: rutaCalculada.destino.validadaGoogleMaps
+          },
+          distanciaRecorrida: rutaCalculada.distanciaKm
+        });
 
-      // Actualizar datos del wizard
-      updateData({
-        origen: origenGeo,
-        destino: destinoGeo,
-        distanciaRecorrida: distancia
-      });
-
-      // Mostrar mapa si tenemos datos de ruta
-      if (routeData) {
         setShowMap(true);
+        
+        console.log('✅ Datos de ruta actualizados en wizard:', {
+          distancia: rutaCalculada.distanciaKm,
+          tiempo: rutaCalculada.tiempoEstimadoMinutos,
+          precision: rutaCalculada.precision
+        });
       }
-
-      console.log('✅ Ruta calculada:', { distancia, tiempoEstimado });
-
+      
     } catch (error) {
-      console.error('❌ Error calculando ruta:', error);
-    } finally {
-      setCalculandoRuta(false);
+      console.error('Error calculando ruta:', error);
+      toast.error('Error calculando la ruta. Intenta con direcciones más específicas.');
     }
   };
 
@@ -168,6 +132,13 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     const horas = Math.floor(minutos / 60);
     const mins = minutos % 60;
     return `${horas}h ${mins}m`;
+  };
+
+  const formatearCosto = (costo: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(costo);
   };
 
   return (
@@ -182,12 +153,28 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
         </Alert>
       )}
 
+      {/* Error de ruta */}
+      {errorRuta && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {errorRuta}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Origen */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <MapPin className="h-5 w-5 text-green-600" />
             Punto de Origen
+            {data.origen?.validadaGoogleMaps && (
+              <Badge variant="outline" className="bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Validado
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -200,6 +187,11 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               onChange={(e) => setOrigenDireccion(e.target.value)}
               className="mt-2"
             />
+            {data.origen?.precision && (
+              <div className="mt-1 text-xs text-gray-600">
+                Precisión: {data.origen.precision} • CP: {data.origen.codigoPostal}
+              </div>
+            )}
           </div>
           <div>
             <Label htmlFor="fechaSalida">Fecha y hora de salida</Label>
@@ -220,6 +212,12 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           <CardTitle className="flex items-center gap-2 text-lg">
             <MapPin className="h-5 w-5 text-red-600" />
             Punto de Destino
+            {data.destino?.validadaGoogleMaps && (
+              <Badge variant="outline" className="bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Validado
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -232,6 +230,11 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               onChange={(e) => setDestinoDireccion(e.target.value)}
               className="mt-2"
             />
+            {data.destino?.precision && (
+              <div className="mt-1 text-xs text-gray-600">
+                Precisión: {data.destino.precision} • CP: {data.destino.codigoPostal}
+              </div>
+            )}
           </div>
           <div>
             <Label htmlFor="fechaLlegada">Fecha y hora estimada de llegada</Label>
@@ -250,7 +253,7 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
       {/* Botón calcular ruta */}
       <div className="flex justify-center">
         <Button
-          onClick={handleCalcularRuta}
+          onClick={calcularRuta}
           disabled={!origenDireccion || !destinoDireccion || calculandoRuta}
           size="lg"
           className="flex items-center gap-2"
@@ -258,40 +261,43 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           {calculandoRuta ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Calculando...
+              Calculando ruta optimizada...
             </>
           ) : (
             <>
               <Calculator className="h-4 w-4" />
-              Calcular Ruta y Tiempo
+              Calcular Ruta Optimizada
             </>
           )}
         </Button>
       </div>
 
       {/* Resultado del cálculo */}
-      {rutaCalculada && (
+      {rutaActual && (
         <>
           <Card className="border-green-200 bg-green-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-green-800">
                 <Route className="h-5 w-5" />
                 Ruta Calculada
-                {rutaCalculada.routeData && (
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                    Google Maps
+                <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                  Google Maps
+                </Badge>
+                {precisenEsAlta && (
+                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                    Alta Precisión
                   </Badge>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="flex items-center gap-2">
                   <Navigation className="h-4 w-4 text-blue-600" />
                   <div>
                     <div className="font-medium">Distancia</div>
                     <div className="text-2xl font-bold text-blue-600">
-                      {rutaCalculada.distancia} km
+                      {rutaActual.distanciaKm} km
                     </div>
                   </div>
                 </div>
@@ -300,16 +306,25 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <div>
                     <div className="font-medium">Tiempo estimado</div>
                     <div className="text-2xl font-bold text-orange-600">
-                      {formatearTiempo(rutaCalculada.tiempoEstimado)}
+                      {formatearTiempo(rutaActual.tiempoEstimadoMinutos)}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-purple-600" />
+                  <Calculator className="h-4 w-4 text-purple-600" />
                   <div>
-                    <div className="font-medium">Duración del viaje</div>
-                    <div className="text-sm text-purple-600">
-                      {new Date(fechaSalida).toLocaleDateString()} - {new Date(fechaLlegada).toLocaleDateString()}
+                    <div className="font-medium">Combustible</div>
+                    <div className="text-lg font-bold text-purple-600">
+                      {formatearCosto(rutaActual.costoCombustible)}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <div>
+                    <div className="font-medium">Precisión</div>
+                    <div className="text-lg font-bold text-green-600">
+                      {rutaActual.precision}%
                     </div>
                   </div>
                 </div>
@@ -322,7 +337,13 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <Route className="h-4 w-4 text-gray-600" />
                   <span className="font-medium text-gray-800">Resumen de la ruta:</span>
                 </div>
-                <p className="text-sm text-gray-600">{rutaCalculada.ruta}</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  {rutaActual.origen.nombre} → {rutaActual.destino.nombre}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
+                  <div>Peajes estimados: {formatearCosto(rutaActual.peajes)}</div>
+                  <div>Costo total estimado: {formatearCosto(rutaActual.costoCombustible + rutaActual.peajes)}</div>
+                </div>
                 <div className="mt-2 flex gap-2">
                   <Badge variant="outline" className="bg-blue-100 text-blue-800">
                     Vía terrestre
@@ -330,16 +351,35 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <Badge variant="outline" className="bg-green-100 text-green-800">
                     Distancia verificada
                   </Badge>
+                  {precisenEsAlta && (
+                    <Badge variant="outline" className="bg-purple-100 text-purple-800">
+                      Optimizada
+                    </Badge>
+                  )}
                 </div>
               </div>
+
+              {/* Costos detallados */}
+              {rutaActual.costoCombustible > 0 && (
+                <div className="p-3 bg-blue-50 rounded-lg border">
+                  <div className="text-sm font-medium text-blue-800 mb-2">💰 Desglose de costos estimados:</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>Combustible: <span className="font-bold">{formatearCosto(rutaActual.costoCombustible)}</span></div>
+                    <div>Peajes: <span className="font-bold">{formatearCosto(rutaActual.peajes)}</span></div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-blue-200">
+                    <div className="font-bold">Total estimado: {formatearCosto(rutaActual.costoCombustible + rutaActual.peajes)}</div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Google Map Visualization */}
-          {showMap && rutaCalculada.routeData && (
+          {showMap && data.origen && data.destino && (
             <GoogleMapVisualization
-              ubicaciones={[data.origen, data.destino].filter(Boolean)}
-              routeData={rutaCalculada.routeData}
+              ubicaciones={[data.origen, data.destino]}
+              routeData={rutaActual.rutaOptimizada}
               isVisible={showMap}
             />
           )}
@@ -349,8 +389,19 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
       {/* Validación de fechas */}
       {fechaSalida && fechaLlegada && new Date(fechaLlegada) <= new Date(fechaSalida) && (
         <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             La fecha de llegada debe ser posterior a la fecha de salida.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Indicadores de estado */}
+      {tieneRutaValida && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ Ruta validada y lista para continuar. La información será incluida automáticamente en la carta porte.
           </AlertDescription>
         </Alert>
       )}
