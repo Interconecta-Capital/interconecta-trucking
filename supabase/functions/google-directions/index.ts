@@ -8,9 +8,11 @@ const corsHeaders = {
 }
 
 interface DirectionsRequest {
-  origin: { lat: number; lng: number };
-  destination: { lat: number; lng: number };
+  origin: { lat: number; lng: number } | string;
+  destination: { lat: number; lng: number } | string;
   waypoints?: { lat: number; lng: number }[];
+  action?: 'geocode' | 'directions';
+  address?: string;
 }
 
 serve(async (req) => {
@@ -41,15 +43,80 @@ serve(async (req) => {
     );
   }
 
-  const { origin, destination, waypoints = [] } = requestBody;
+  const { action, address, origin, destination, waypoints = [] } = requestBody;
+
+  // Handle geocoding requests
+  if (action === 'geocode' && address) {
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    
+    if (!googleMapsApiKey) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Google Maps API key not configured',
+          fallback_available: false
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    try {
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsApiKey}&region=mx&language=es`;
+      
+      const response = await fetch(geocodeUrl);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
+        const result = data.results[0];
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            results: [result]
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'No se encontraron resultados para la dirección',
+            fallback_available: false
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Error en geocodificación: ' + error.message,
+          fallback_available: false
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+  }
     
   console.log('🚀 Calculating route with Google Routes API v2');
   console.log('📍 Origin:', origin);
   console.log('📍 Destination:', destination);
   console.log('🛤️ Waypoints:', waypoints);
 
-  // Enhanced coordinate validation
-  if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng ||
+  // Enhanced coordinate validation for directions
+  if (typeof origin !== 'object' || typeof destination !== 'object' ||
+      !origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng ||
       Math.abs(origin.lat) > 90 || Math.abs(origin.lng) > 180 ||
       Math.abs(destination.lat) > 90 || Math.abs(destination.lng) > 180) {
     console.error('❌ Invalid coordinates provided');
