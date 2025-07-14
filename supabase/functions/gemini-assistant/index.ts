@@ -58,10 +58,27 @@ serve(async (req) => {
         Analiza esta descripción de mercancía para carta porte mexicana:
         "${data.descripcion}"
         
+        CÓDIGOS SAT COMUNES:
+        - Frutas/verduras: 01011601, 01021501
+        - Cereales: 01010101 (Trigo), 01010201 (Maíz)
+        - Construcción: 30161501 (Cemento), 30111501 (Arena)
+        - Textiles: 53102600, 11141600
+        - Electrónicos: 43211501, 52141500
+        
+        MÉTODOS DE TRANSPORTE/EMPAQUE SAT:
+        - Tarimas de madera
+        - Cajas de cartón corrugado
+        - Contenedores metálicos
+        - A granel en tolva
+        - Sacos de polipropileno
+        - Rollos protegidos
+        - Pallets europeos
+        
         Responde SOLO un JSON válido:
         {
           "isValid": true/false,
           "claveProdServ": "código SAT sugerido",
+          "metodoTransporte": "forma de empaque/transporte",
           "suggestions": ["mejora 1", "mejora 2"],
           "warnings": ["advertencia 1", "advertencia 2"],
           "confidence": 0.85

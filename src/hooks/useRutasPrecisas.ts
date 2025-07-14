@@ -175,8 +175,8 @@ export const useRutasPrecisas = () => {
       const { data, error } = await supabase.functions.invoke('google-directions', {
         body: {
           action: 'directions',
-          origin: `${origenPreciso.coordenadas.lat},${origenPreciso.coordenadas.lng}`,
-          destination: `${destinoPreciso.coordenadas.lat},${destinoPreciso.coordenadas.lng}`,
+          origin: { lat: origenPreciso.coordenadas.lat, lng: origenPreciso.coordenadas.lng },
+          destination: { lat: destinoPreciso.coordenadas.lat, lng: destinoPreciso.coordenadas.lng },
           avoid: [
             ...(opciones?.evitarPeajes ? ['tolls'] : []),
             ...(opciones?.evitarAutopistas ? ['highways'] : [])
@@ -185,21 +185,27 @@ export const useRutasPrecisas = () => {
         }
       });
 
+      console.log('📡 Respuesta de cálculo de ruta:', { data, error });
+
       if (error) {
-        console.error('Error calculando ruta:', error);
+        console.error('❌ Error calculando ruta:', error);
         throw new Error(error.message);
       }
 
-      if (!data || !data.routes || data.routes.length === 0) {
-        throw new Error('No se encontraron rutas entre los puntos especificados');
+      if (!data) {
+        throw new Error('No se recibió respuesta del servicio de rutas');
       }
 
-      const ruta = data.routes[0];
-      const leg = ruta.legs[0];
+      // La nueva estructura de respuesta unificada
+      if (!data.success) {
+        const errorMsg = data.error || 'Error desconocido calculando ruta';
+        console.error('❌ Error específico de ruta:', errorMsg);
+        throw new Error(errorMsg);
+      }
 
-      // Calcular costos adicionales
-      const distanciaKm = leg.distance.value / 1000;
-      const tiempoEstimadoMinutos = leg.duration.value / 60;
+      // Extraer datos de la respuesta unificada
+      const distanciaKm = data.distance_km || 0;
+      const tiempoEstimadoMinutos = data.duration_minutes || 0;
       
       // Estimar costo de combustible
       const rendimiento = opciones?.vehiculo?.rendimiento || 8; // km/litro por defecto
@@ -221,7 +227,7 @@ export const useRutasPrecisas = () => {
         tiempoEstimadoMinutos: Math.round(tiempoEstimadoMinutos),
         costoCombustible,
         peajes,
-        rutaOptimizada: ruta.legs,
+        rutaOptimizada: data.google_data?.legs || [],
         precision: Math.min(precision, 100),
         origen: origenPreciso,
         destino: destinoPreciso

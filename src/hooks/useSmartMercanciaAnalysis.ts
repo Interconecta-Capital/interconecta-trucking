@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -9,6 +8,7 @@ interface MercanciaAnalizada {
   pesoKg: number;
   cantidad: number;
   valorMercancia: number;
+  metodoTransporte?: string;
   confianza: 'alta' | 'media' | 'baja';
 }
 
@@ -48,6 +48,7 @@ INSTRUCCIONES ESPECÍFICAS:
    - Clave de Producto SAT más probable (formato: código de 8 dígitos)
    - Unidad de medida SAT más probable (código de 3 letras como KGM, TNE, PZA)
    - Valor comercial estimado en pesos mexicanos
+   - MÉTODO DE TRANSPORTE/EMPAQUE según normativa SAT
 
 3. CÓDIGOS SAT COMUNES DE REFERENCIA:
    - Frutas y verduras: 01011601 (Frutas frescas), 01021501 (Verduras frescas)
@@ -59,6 +60,17 @@ INSTRUCCIONES ESPECÍFICAS:
 4. UNIDADES SAT COMUNES:
    - KGM (Kilogramo), TNE (Tonelada), PZA (Pieza), LTR (Litro), MTR (Metro)
 
+5. MÉTODOS DE TRANSPORTE/EMPAQUE SAT:
+   - Tarimas de madera estándar
+   - Cajas de cartón corrugado
+   - Contenedores metálicos ISO
+   - A granel en tolva/tanque
+   - Sacos de polipropileno
+   - Rollos protegidos con plástico
+   - Pallets europeos normalizados
+   - Embalaje anti-derrame
+   - Refrigeración controlada
+
 Responde SOLO con un JSON válido en este formato:
 {
   "mercancias": [
@@ -69,6 +81,7 @@ Responde SOLO con un JSON válido en este formato:
       "pesoKg": número,
       "cantidad": número,
       "valorMercancia": número,
+      "metodoTransporte": "método de empaque/transporte",
       "confianza": "alta|media|baja"
     }
   ],
@@ -121,6 +134,7 @@ Responde SOLO con un JSON válido en este formato:
             pesoKg: 1000, // Default 1 tonelada
             cantidad: 1,
             valorMercancia: 10000, // Default $10,000
+            metodoTransporte: 'Tarimas de madera estándar',
             confianza: 'baja'
           }],
           sugerencias: ['Análisis automático limitado. Revise y ajuste los valores.'],
