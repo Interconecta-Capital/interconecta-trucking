@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Route, Clock, Calendar, Calculator, Navigation, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { MapPin, Route, Clock, Calendar, Calculator, Navigation, AlertTriangle, CheckCircle, Plus, X } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { useUbicacionesGeocodificacion } from '@/hooks/useUbicacionesGeocodificacion';
 import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
@@ -25,6 +26,7 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
   const [fechaSalida, setFechaSalida] = useState('');
   const [fechaLlegada, setFechaLlegada] = useState('');
   const [showMap, setShowMap] = useState(false);
+  const [nuevaParada, setNuevaParada] = useState('');
   
   // Hooks para manejo de rutas precisas
   const {
@@ -141,6 +143,41 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     }).format(costo);
   };
 
+  const handleTieneParadasChange = (checked: boolean) => {
+    updateData({ 
+      tieneParadasAutorizadas: checked,
+      paradasAutorizadas: checked ? data.paradasAutorizadas || [] : []
+    });
+  };
+
+  const agregarParada = async () => {
+    if (!nuevaParada.trim()) {
+      toast.error('Ingresa una dirección para la parada');
+      return;
+    }
+
+    const nuevaParadaObj = {
+      id: crypto.randomUUID(),
+      nombre: `Parada ${(data.paradasAutorizadas?.length || 0) + 1}`,
+      direccion: nuevaParada.trim(),
+      orden: (data.paradasAutorizadas?.length || 0) + 1
+    };
+
+    updateData({
+      paradasAutorizadas: [...(data.paradasAutorizadas || []), nuevaParadaObj]
+    });
+
+    setNuevaParada('');
+    toast.success('Parada agregada correctamente');
+  };
+
+  const eliminarParada = (id: string) => {
+    updateData({
+      paradasAutorizadas: data.paradasAutorizadas?.filter(p => p.id !== id)
+    });
+    toast.success('Parada eliminada');
+  };
+
   return (
     <div className="space-y-6" data-onboarding="ruta-section">
       {/* Google Maps Error Alert */}
@@ -247,6 +284,69 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               min={fechaSalida}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Paradas autorizadas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Route className="h-5 w-5 text-purple-600" />
+            Paradas Autorizadas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tieneParadas"
+              checked={data.tieneParadasAutorizadas || false}
+              onCheckedChange={handleTieneParadasChange}
+            />
+            <Label htmlFor="tieneParadas" className="font-medium">
+              Este viaje tendrá paradas autorizadas
+            </Label>
+          </div>
+
+          {data.tieneParadasAutorizadas && (
+            <div className="space-y-4 border-l-4 border-purple-200 pl-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ej: Centro de Distribución Querétaro"
+                  value={nuevaParada}
+                  onChange={(e) => setNuevaParada(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && agregarParada()}
+                />
+                <Button onClick={agregarParada} size="sm">
+                  <Plus className="h-4 w-4" />
+                  Agregar
+                </Button>
+              </div>
+
+              {data.paradasAutorizadas && data.paradasAutorizadas.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Paradas programadas ({data.paradasAutorizadas.length})
+                  </Label>
+                  {data.paradasAutorizadas.map((parada) => (
+                    <div key={parada.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{parada.nombre}</div>
+                        <div className="text-xs text-gray-600">{parada.direccion}</div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => eliminarParada(parada.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -380,6 +480,18 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                     municipio: data.origen.codigoPostal
                   }
                 },
+                // Agregar paradas autorizadas al mapa
+                ...(data.paradasAutorizadas || []).map((parada, index) => ({
+                  id: parada.id,
+                  idUbicacion: `parada-${index + 1}`,
+                  tipoUbicacion: 'Paso Intermedio',
+                  nombreRemitenteDestinatario: parada.nombre,
+                  domicilio: { 
+                    calle: parada.direccion,
+                    municipio: parada.codigoPostal || 'Sin CP'
+                  },
+                  coordenadas: parada.coordenadas
+                })),
                 {
                   ...data.destino,
                   tipoUbicacion: 'Destino',

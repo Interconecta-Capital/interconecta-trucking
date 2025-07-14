@@ -186,6 +186,25 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
         longitud: origenData.coordenadas?.longitud || -99.1332 
       }
     },
+    // Agregar paradas autorizadas al mapa
+    ...(trackingRealData.paradasAutorizadas || []).map((parada: any, index: number) => ({
+      id: parada.id || `parada-${index}`,
+      idUbicacion: `parada-${index + 1}`,
+      tipoUbicacion: 'Paso Intermedio',
+      nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
+      domicilio: { 
+        calle: parada.direccion || 'Parada autorizada',
+        pais: 'MEX',
+        codigoPostal: parada.codigoPostal || '50000',
+        estado: 'MEX',
+        municipio: 'Ubicación intermedia',
+        colonia: 'Centro'
+      },
+      coordenadas: { 
+        latitud: parada.coordenadas?.latitud || 19.5, 
+        longitud: parada.coordenadas?.longitud || -100.0 
+      }
+    })),
     {
       id: 'destino',
       idUbicacion: 'destino-001',
@@ -334,12 +353,30 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
           <div className={isFullscreen ? 'h-96' : 'h-80'}>
             <GoogleMapVisualization
               ubicaciones={ubicacionesParaMapa}
-              routeData={{
-                distance_km: 550,
+              routeData={trackingRealData.rutaCalculada ? {
+                distance_km: trackingRealData.rutaCalculada.distanciaKm || trackingRealData.distanciaRecorrida || 550,
+                duration_minutes: trackingRealData.rutaCalculada.tiempoEstimadoMinutos || 420,
+                google_data: trackingRealData.rutaCalculada.rutaOptimizada || {
+                  polyline: 'route_data_not_available',
+                  bounds: { 
+                    north: Math.max(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
+                    south: Math.min(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
+                    east: Math.max(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055),
+                    west: Math.min(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055)
+                  },
+                  legs: []
+                }
+              } : {
+                distance_km: trackingRealData.distanciaRecorrida || 550,
                 duration_minutes: 420,
                 google_data: {
-                  polyline: 'mocked_polyline_data',
-                  bounds: { north: 20, south: 19, east: -98, west: -102 },
+                  polyline: 'route_estimation_mode',
+                  bounds: { 
+                    north: Math.max(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
+                    south: Math.min(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
+                    east: Math.max(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055),
+                    west: Math.min(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055)
+                  },
                   legs: []
                 }
               }}

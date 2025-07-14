@@ -36,6 +36,16 @@ export interface ViajeWizardData {
   origen?: any;
   destino?: any;
   distanciaRecorrida?: number;
+  // Paradas autorizadas
+  tieneParadasAutorizadas?: boolean;
+  paradasAutorizadas?: Array<{
+    id: string;
+    nombre: string;
+    direccion: string;
+    coordenadas?: { latitud: number; longitud: number };
+    codigoPostal?: string;
+    orden: number;
+  }>;
   // Paso C: Activos
   vehiculo?: any;
   conductor?: any;
