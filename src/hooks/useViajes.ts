@@ -146,8 +146,8 @@ export const useViajes = () => {
           }
         }
 
-        // Crear nuevo viaje con ID único
-        const viajeId = `viaje-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // Crear nuevo viaje con UUID válido
+        const viajeId = crypto.randomUUID();
         
         const viajeData = {
           id: viajeId,
@@ -207,7 +207,7 @@ export const useViajes = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
 
-      const viajeId = borradorId || `viaje-draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const viajeId = borradorId || crypto.randomUUID();
 
       const viajeData = {
         id: viajeId,

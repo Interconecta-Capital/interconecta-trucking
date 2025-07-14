@@ -378,8 +378,31 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           {/* Google Map Visualization */}
           {showMap && data.origen && data.destino && (
             <GoogleMapVisualization
-              ubicaciones={[data.origen, data.destino]}
-              routeData={rutaActual.rutaOptimizada}
+              ubicaciones={[
+                {
+                  ...data.origen,
+                  tipoUbicacion: 'Origen',
+                  nombreRemitenteDestinatario: 'Origen del viaje',
+                  domicilio: { 
+                    calle: data.origen.direccion,
+                    municipio: data.origen.codigoPostal
+                  }
+                },
+                {
+                  ...data.destino,
+                  tipoUbicacion: 'Destino',
+                  nombreRemitenteDestinatario: 'Destino del viaje',
+                  domicilio: { 
+                    calle: data.destino.direccion,
+                    municipio: data.destino.codigoPostal
+                  }
+                }
+              ]}
+              routeData={rutaActual ? {
+                google_data: rutaActual.rutaOptimizada,
+                distance_km: rutaActual.distanciaKm,
+                duration_minutes: rutaActual.tiempoEstimadoMinutos
+              } : null}
               isVisible={showMap}
             />
           )}

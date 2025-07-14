@@ -118,14 +118,33 @@ export function GoogleMapVisualization({ ubicaciones, routeData, isVisible }: Go
   };
 
   const getCoordinatesForLocation = (ubicacion: any) => {
+    // Verificar diferentes formatos de coordenadas
     if (ubicacion.coordenadas) {
-      return {
-        lat: ubicacion.coordenadas.latitud,
-        lng: ubicacion.coordenadas.longitud
-      };
+      // Formato del hook useRutasPrecisas: { lat, lng }
+      if (typeof ubicacion.coordenadas.lat === 'number' && typeof ubicacion.coordenadas.lng === 'number') {
+        return {
+          lat: ubicacion.coordenadas.lat,
+          lng: ubicacion.coordenadas.lng
+        };
+      }
+      // Formato alternativo: { latitud, longitud }
+      if (typeof ubicacion.coordenadas.latitud === 'number' && typeof ubicacion.coordenadas.longitud === 'number') {
+        return {
+          lat: ubicacion.coordenadas.latitud,
+          lng: ubicacion.coordenadas.longitud
+        };
+      }
+      // Formato alternativo: { latitude, longitude }
+      if (typeof ubicacion.coordenadas.latitude === 'number' && typeof ubicacion.coordenadas.longitude === 'number') {
+        return {
+          lat: ubicacion.coordenadas.latitude,
+          lng: ubicacion.coordenadas.longitude
+        };
+      }
     }
     
-    // Fallback coordinates
+    console.warn('⚠️ Coordenadas inválidas para ubicación:', ubicacion);
+    // Fallback coordinates (Mexico City)
     return { lat: 19.4326, lng: -99.1332 };
   };
 

@@ -19,7 +19,7 @@ interface RutaCalculada {
   tiempoEstimadoMinutos: number;
   costoCombustible: number;
   peajes: number;
-  rutaOptimizada: any[];
+  rutaOptimizada: any; // Contiene google_data con legs y polyline
   precision: number;
   origen: UbicacionPrecisa;
   destino: UbicacionPrecisa;
@@ -227,7 +227,7 @@ export const useRutasPrecisas = () => {
         tiempoEstimadoMinutos: Math.round(tiempoEstimadoMinutos),
         costoCombustible,
         peajes,
-        rutaOptimizada: data.google_data?.legs || [],
+        rutaOptimizada: data.google_data || { legs: [], polyline: null },
         precision: Math.min(precision, 100),
         origen: origenPreciso,
         destino: destinoPreciso
