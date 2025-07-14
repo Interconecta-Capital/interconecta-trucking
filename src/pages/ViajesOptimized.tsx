@@ -15,6 +15,7 @@ import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { useNavigate } from 'react-router-dom';
 import { useFAB } from '@/contexts/FABContext';
 import { DiagnosticPanel } from '@/components/viajes/diagnostic/DiagnosticPanel';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const estadoColors = {
   programado: 'bg-blue-100 text-blue-800',
@@ -39,6 +40,7 @@ function ViajesContent() {
   const { viajes, isLoading, eliminarViaje } = useViajes();
   const { openViajeWizard } = useViajeWizardModal();
   const { setFABConfig } = useFAB();
+  const { isSuperuser } = usePermissions();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
@@ -217,13 +219,15 @@ function ViajesContent() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={() => setShowDiagnostic(true)} 
-            variant="outline" 
-            className="flex items-center gap-2"
-          >
-            🔧 Diagnóstico
-          </Button>
+          {isSuperuser && (
+            <Button 
+              onClick={() => setShowDiagnostic(true)} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              🔧 Diagnóstico
+            </Button>
+          )}
           <Button onClick={openViajeWizard} className="flex items-center gap-2 desktop-programar-button">
             <Plus className="h-4 w-4" />
             Programar Viaje
