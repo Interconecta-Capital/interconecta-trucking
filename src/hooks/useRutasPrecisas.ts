@@ -48,7 +48,15 @@ export const useRutasPrecisas = () => {
         throw new Error(error.message);
       }
 
-      if (!data || !data.results || data.results.length === 0) {
+      console.log('📍 Respuesta de geocodificación:', data);
+
+      if (!data || !data.success) {
+        const errorMsg = data?.error || 'Error desconocido en geocodificación';
+        console.error('❌ Error de geocodificación:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      if (!data.results || data.results.length === 0) {
         throw new Error('No se encontraron resultados para la dirección');
       }
 
