@@ -9,8 +9,15 @@ interface IntelligentCostParams {
 
 export const useIntelligentCostCalculator = ({ wizardData }: IntelligentCostParams) => {
   return useMemo(() => {
+    console.log('🧮 Calculando costos inteligentes para:', {
+      distancia: wizardData.distanciaRecorrida,
+      vehiculo: wizardData.vehiculo?.placa,
+      tipoServicio: wizardData.tipoServicio
+    });
+
     // Si no hay datos suficientes, retornar cálculo básico
-    if (!wizardData.distanciaRecorrida) {
+    if (!wizardData.distanciaRecorrida || isNaN(wizardData.distanciaRecorrida) || wizardData.distanciaRecorrida <= 0) {
+      console.log('⚠️ Datos insuficientes para cálculo profesional, usando básico');
       return {
         total: 1000,
         breakdown: null,

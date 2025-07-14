@@ -73,7 +73,17 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
       const rendimiento = vehiculo?.rendimiento || 3.5; // km/litro por defecto
       const tipoCombustible = vehiculo?.tipo_combustible || 'diesel';
       const precioLitro = configuracionDefault.combustible.precio_fijo_litro || 
-                         PRECIOS_COMBUSTIBLE_DEFAULT[tipoCombustible];
+                         PRECIOS_COMBUSTIBLE_DEFAULT[tipoCombustible] || 24.50;
+      
+      // Validar valores para evitar NaN
+      if (!distancia || distancia <= 0 || !rendimiento || rendimiento <= 0) {
+        return {
+          litros: 0,
+          costo: 0,
+          precio_litro: precioLitro,
+          fuente: 'Error: datos insuficientes'
+        };
+      }
       
       const litros = distancia / rendimiento;
       const costo = litros * precioLitro * (1 + configuracionDefault.combustible.sobrecargo_percentage / 100);
@@ -217,13 +227,19 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
     // La versión avanzada se manejará por separado
     const peajes = calcularPeajesOriginal();
 
-    // CÁLCULO TOTAL
-    const costoTotal = combustible.costo + peajes.costo + viaticos.costo + 
-                      mantenimiento.costo + costosFijos.costo;
+    // CÁLCULO TOTAL - Validar valores NaN
+    const costoTotal = Math.round(
+      (isNaN(combustible.costo) ? 0 : combustible.costo) + 
+      (isNaN(peajes.costo) ? 0 : peajes.costo) + 
+      (isNaN(viaticos.costo) ? 0 : viaticos.costo) + 
+      (isNaN(mantenimiento.costo) ? 0 : mantenimiento.costo) + 
+      (isNaN(costosFijos.costo) ? 0 : costosFijos.costo)
+    );
 
-    // MARGEN Y PRECIO SUGERIDO
+    // MARGEN Y PRECIO SUGERIDO - Validar valores NaN
     const margenSugerido = configuracionDefault.margen_ganancia.porcentaje_objetivo;
-    const precioVentaSugerido = Math.round(costoTotal * (1 + margenSugerido / 100));
+    const precioVentaSugerido = isNaN(costoTotal) || costoTotal === 0 ? 0 : 
+                               Math.round(costoTotal * (1 + margenSugerido / 100));
 
     // CÁLCULO BÁSICO PARA COMPARACIÓN
     const calculoBasico = Math.round((distancia * 12) * (tipoServicio === 'flete_pagado' ? 1.2 : 1.0));

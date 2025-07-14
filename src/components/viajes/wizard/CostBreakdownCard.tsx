@@ -65,19 +65,19 @@ export function CostBreakdownCard({ breakdown, basicCost }: CostBreakdownCardPro
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white rounded-lg border">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-700">
-              ${breakdown.costoTotal.toLocaleString()}
+              ${(isNaN(breakdown.costoTotal) ? 0 : breakdown.costoTotal).toLocaleString()}
             </div>
             <div className="text-sm text-green-600">Costo Total Calculado</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-700">
-              {breakdown.margenSugerido}%
+              {isNaN(breakdown.margenSugerido) ? 0 : breakdown.margenSugerido}%
             </div>
             <div className="text-sm text-blue-600">Margen Sugerido</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-700">
-              ${breakdown.precioVentaSugerido.toLocaleString()}
+              ${(isNaN(breakdown.precioVentaSugerido) ? 0 : breakdown.precioVentaSugerido).toLocaleString()}
             </div>
             <div className="text-sm text-purple-600">Precio Venta Sugerido</div>
           </div>

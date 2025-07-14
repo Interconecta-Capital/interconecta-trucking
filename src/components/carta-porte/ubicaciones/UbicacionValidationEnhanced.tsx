@@ -201,11 +201,26 @@ export function UbicacionValidationEnhanced({
         return;
       }
 
+      console.log('🔧 Auto-corrección iniciada para ubicación:', tipo);
+      console.log('📝 Errores a corregir:', fixableErrors.map(e => e.field));
+      
+      // Mostrar confirmación antes de auto-corregir
+      const shouldProceed = window.confirm(
+        `¿Confirma que desea auto-corregir los siguientes campos?\n\n${fixableErrors.map(e => `• ${e.field}: ${e.message}`).join('\n')}\n\n⚠️ Esta acción sobrescribirá los datos actuales con información del código postal.`
+      );
+      
+      if (!shouldProceed) {
+        toast.info('Auto-corrección cancelada por el usuario');
+        return;
+      }
+
       // Intentar auto-correcciones basadas en código postal
       if (ubicacion.domicilio.codigo_postal) {
         const correctedData = await autocorrectFromCodigoPostal(ubicacion.domicilio.codigo_postal);
         
         if (correctedData) {
+          console.log('✅ Datos corregidos:', correctedData);
+          
           onAutoCorrect({
             ...ubicacion,
             domicilio: {
@@ -214,8 +229,12 @@ export function UbicacionValidationEnhanced({
             }
           });
           
-          toast.success('Ubicación corregida automáticamente');
+          toast.success(`Ubicación ${tipo} corregida automáticamente con datos oficiales`);
+        } else {
+          toast.warning(`No se encontraron datos para el código postal ${ubicacion.domicilio.codigo_postal}`);
         }
+      } else {
+        toast.error('Se requiere un código postal válido para auto-corregir');
       }
     } catch (error) {
       console.error('Error auto-fixing ubicacion:', error);

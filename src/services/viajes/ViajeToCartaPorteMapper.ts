@@ -89,7 +89,16 @@ export class ViajeToCartaPorteMapper {
       figuras,
       // Metadatos del viaje
       tipoServicio: wizardData.tipoServicio,
-      descripcionMercancia: wizardData.descripcionMercancia
+      descripcionMercancia: wizardData.descripcionMercancia,
+      // Sincronizar datos de la ruta calculada
+      rutaCalculada: wizardData.distanciaRecorrida ? {
+        distancia: wizardData.distanciaRecorrida,
+        duracion: wizardData.distanciaRecorrida ? Math.round(wizardData.distanciaRecorrida / 60) : undefined,
+        coordenadas: {
+          origen: wizardData.origen?.coordenadas,
+          destino: wizardData.destino?.coordenadas
+        }
+      } : undefined
     };
   }
 
