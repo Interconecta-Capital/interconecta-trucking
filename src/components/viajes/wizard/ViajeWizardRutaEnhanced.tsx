@@ -12,6 +12,7 @@ import { ViajeWizardData } from '../ViajeWizard';
 import { useUbicacionesGeocodificacion } from '@/hooks/useUbicacionesGeocodificacion';
 import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
 import { useRutasPrecisas } from '@/hooks/useRutasPrecisas';
+import { useRutaConParadas, ParadaAutorizada } from '@/hooks/useRutaConParadas';
 import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
 import { toast } from 'sonner';
 
@@ -27,6 +28,7 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
   const [fechaLlegada, setFechaLlegada] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [nuevaParada, setNuevaParada] = useState('');
+  const [rutaConParadas, setRutaConParadas] = useState<any>(null);
   
   // Hooks para manejo de rutas precisas
   const {
@@ -37,6 +39,12 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     tieneRutaValida,
     precisenEsAlta
   } = useRutasPrecisas();
+
+  const {
+    calcularRutaCompleta,
+    calculando: calculandoParadas,
+    error: errorParadas
+  } = useRutaConParadas();
   
   const { isLoaded: mapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
 
@@ -78,6 +86,71 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     }
 
     try {
+      // Si hay paradas autorizadas, usar el nuevo sistema
+      if (data.tieneParadasAutorizadas && data.paradasAutorizadas?.length > 0) {
+        const paradasParaCalculo: ParadaAutorizada[] = data.paradasAutorizadas.map((parada, index) => ({
+          id: parada.id,
+          direccion: parada.direccion,
+          tiempoServicio: 30, // 30 minutos por defecto
+          orden: parada.orden || index + 1,
+          tipo: 'carga', // tipo por defecto
+          obligatoria: true,
+          nombre: parada.nombre
+        }));
+
+        console.log('🛣️ Calculando ruta con paradas:', paradasParaCalculo.length);
+        
+        const rutaCompleta = await calcularRutaCompleta(
+          origenDireccion,
+          destinoDireccion,
+          paradasParaCalculo
+        );
+
+        if (rutaCompleta) {
+          setRutaConParadas(rutaCompleta);
+          
+          // Actualizar datos del wizard con la ruta que incluye paradas
+          updateData({
+            origen: {
+              nombre: origenDireccion,
+              direccion: origenDireccion,
+              coordenadas: {
+                latitud: rutaCompleta.origen.lat,
+                longitud: rutaCompleta.origen.lng
+              },
+              fechaHoraSalidaLlegada: fechaSalida || new Date().toISOString(),
+              validadaGoogleMaps: true
+            },
+            destino: {
+              nombre: destinoDireccion,
+              direccion: destinoDireccion,
+              coordenadas: {
+                latitud: rutaCompleta.destino.lat,
+                longitud: rutaCompleta.destino.lng
+              },
+              fechaHoraSalidaLlegada: fechaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              validadaGoogleMaps: true
+            },
+            distanciaRecorrida: rutaCompleta.distanciaTotal,
+            paradasAutorizadas: rutaCompleta.paradas.map(parada => ({
+              id: parada.id,
+              nombre: parada.nombre || `Parada ${parada.orden}`,
+              direccion: parada.direccion,
+              orden: parada.orden,
+              coordenadas: parada.coordenadas ? {
+                latitud: parada.coordenadas.lat,
+                longitud: parada.coordenadas.lng
+              } : undefined
+            }))
+          });
+
+          setShowMap(true);
+          toast.success(`Ruta calculada con ${rutaCompleta.paradas.length} paradas - ${rutaCompleta.distanciaTotal} km`);
+          return;
+        }
+      }
+
+      // Fallback al sistema original si no hay paradas
       const rutaCalculada = await calcularRutaOptimizada(
         origenDireccion,
         destinoDireccion,
@@ -191,11 +264,11 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
       )}
 
       {/* Error de ruta */}
-      {errorRuta && (
+      {(errorRuta || errorParadas) && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            {errorRuta}
+            {errorRuta || errorParadas}
           </AlertDescription>
         </Alert>
       )}
@@ -354,14 +427,16 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
       <div className="flex justify-center">
         <Button
           onClick={calcularRuta}
-          disabled={!origenDireccion || !destinoDireccion || calculandoRuta}
+          disabled={!origenDireccion || !destinoDireccion || calculandoRuta || calculandoParadas}
           size="lg"
           className="flex items-center gap-2"
         >
-          {calculandoRuta ? (
+          {(calculandoRuta || calculandoParadas) ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Calculando ruta optimizada...
+              {data.tieneParadasAutorizadas && data.paradasAutorizadas?.length > 0 
+                ? 'Calculando ruta con paradas...' 
+                : 'Calculando ruta optimizada...'}
             </>
           ) : (
             <>
@@ -372,8 +447,8 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
         </Button>
       </div>
 
-      {/* Resultado del cálculo */}
-      {rutaActual && (
+      {/* Resultado del cálculo - Priorizar ruta con paradas */}
+      {(rutaConParadas || rutaActual) && (
         <>
           <Card className="border-green-200 bg-green-50">
             <CardHeader>
@@ -397,7 +472,7 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <div>
                     <div className="font-medium">Distancia</div>
                     <div className="text-2xl font-bold text-blue-600">
-                      {rutaActual.distanciaKm} km
+                      {rutaConParadas ? `${rutaConParadas.distanciaTotal} km` : `${rutaActual.distanciaKm} km`}
                     </div>
                   </div>
                 </div>
@@ -406,7 +481,10 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <div>
                     <div className="font-medium">Tiempo estimado</div>
                     <div className="text-2xl font-bold text-orange-600">
-                      {formatearTiempo(rutaActual.tiempoEstimadoMinutos)}
+                      {rutaConParadas 
+                        ? formatearTiempo(rutaConParadas.tiempoTotal)
+                        : formatearTiempo(rutaActual.tiempoEstimadoMinutos)
+                      }
                     </div>
                   </div>
                 </div>
@@ -415,7 +493,10 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <div>
                     <div className="font-medium">Combustible</div>
                     <div className="text-lg font-bold text-purple-600">
-                      {formatearCosto(rutaActual.costoCombustible)}
+                      {rutaConParadas 
+                        ? formatearCosto(rutaConParadas.combustibleTotal)
+                        : formatearCosto(rutaActual.costoCombustible)
+                      }
                     </div>
                   </div>
                 </div>
@@ -424,7 +505,7 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <div>
                     <div className="font-medium">Precisión</div>
                     <div className="text-lg font-bold text-green-600">
-                      {rutaActual.precision}%
+                      {rutaConParadas ? `${rutaConParadas.precision}%` : `${rutaActual.precision}%`}
                     </div>
                   </div>
                 </div>
@@ -438,12 +519,24 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                   <span className="font-medium text-gray-800">Resumen de la ruta:</span>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">
-                  {rutaActual.origen.nombre} → {rutaActual.destino.nombre}
+                  {rutaConParadas 
+                    ? `${origenDireccion} → ${rutaConParadas.paradas.length} paradas → ${destinoDireccion}`
+                    : `${rutaActual.origen.nombre} → ${rutaActual.destino.nombre}`
+                  }
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
-                  <div>Peajes estimados: {formatearCosto(rutaActual.peajes)}</div>
-                  <div>Costo total estimado: {formatearCosto(rutaActual.costoCombustible + rutaActual.peajes)}</div>
+                  <div>Peajes estimados: {rutaConParadas ? formatearCosto(rutaConParadas.peajesTotal) : formatearCosto(rutaActual.peajes)}</div>
+                  <div>Costo total estimado: {rutaConParadas 
+                    ? formatearCosto(rutaConParadas.combustibleTotal + rutaConParadas.peajesTotal)
+                    : formatearCosto(rutaActual.costoCombustible + rutaActual.peajes)
+                  }</div>
                 </div>
+                {rutaConParadas && rutaConParadas.paradas.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    Tiempo en paradas: {formatearTiempo(rutaConParadas.tiempoServicio)} • 
+                    Paradas: {rutaConParadas.paradas.length}
+                  </div>
+                )}
                 <div className="mt-2 flex gap-2">
                   <Badge variant="outline" className="bg-blue-100 text-blue-800">
                     Vía terrestre

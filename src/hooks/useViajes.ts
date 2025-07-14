@@ -159,8 +159,20 @@ export const useViajes = () => {
           estado: 'programado' as const,
           fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
           fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'} - ${wizardData.origen?.direccion || 'Origen'} → ${wizardData.destino?.direccion || 'Destino'} - Distancia: ${wizardData.distanciaRecorrida || 0} km`,
-          tracking_data: JSON.parse(JSON.stringify(wizardData)),
+          observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'} - ${wizardData.origen?.direccion || 'Origen'} → ${wizardData.destino?.direccion || 'Destino'} - Distancia: ${wizardData.distanciaRecorrida || 0} km${wizardData.paradasAutorizadas?.length ? ` - ${wizardData.paradasAutorizadas.length} paradas` : ''}`,
+          tracking_data: {
+            ...JSON.parse(JSON.stringify(wizardData)),
+            // Asegurar que las paradas autorizadas se guarden correctamente
+            paradasAutorizadas: wizardData.paradasAutorizadas || [],
+            tieneParadasAutorizadas: wizardData.tieneParadasAutorizadas || false,
+            // Información adicional para el tracking
+            rutaCalculada: {
+              distanciaKm: wizardData.distanciaRecorrida || 0,
+              origen: wizardData.origen,
+              destino: wizardData.destino,
+              paradas: wizardData.paradasAutorizadas || []
+            }
+          },
           user_id: user.id
         };
 

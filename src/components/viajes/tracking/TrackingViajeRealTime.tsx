@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Viaje, EventoViaje, useViajesEstados } from '@/hooks/useViajesEstados';
 import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
+import { TrackingMapaMejorado } from './TrackingMapaMejorado';
 import { Ubicacion } from '@/types/ubicaciones';
 
 interface TrackingViajeRealTimeProps {
@@ -341,50 +342,14 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
         </CardContent>
       </Card>
 
-      {/* Mapa en tiempo real */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Visualización en Tiempo Real
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={isFullscreen ? 'h-96' : 'h-80'}>
-            <GoogleMapVisualization
-              ubicaciones={ubicacionesParaMapa}
-              routeData={trackingRealData.rutaCalculada ? {
-                distance_km: trackingRealData.rutaCalculada.distanciaKm || trackingRealData.distanciaRecorrida || 550,
-                duration_minutes: trackingRealData.rutaCalculada.tiempoEstimadoMinutos || 420,
-                google_data: trackingRealData.rutaCalculada.rutaOptimizada || {
-                  polyline: 'route_data_not_available',
-                  bounds: { 
-                    north: Math.max(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
-                    south: Math.min(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
-                    east: Math.max(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055),
-                    west: Math.min(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055)
-                  },
-                  legs: []
-                }
-              } : {
-                distance_km: trackingRealData.distanciaRecorrida || 550,
-                duration_minutes: 420,
-                google_data: {
-                  polyline: 'route_estimation_mode',
-                  bounds: { 
-                    north: Math.max(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
-                    south: Math.min(origenData.coordenadas?.latitud || 19.4326, destinoData.coordenadas?.latitud || 19.6924),
-                    east: Math.max(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055),
-                    west: Math.min(origenData.coordenadas?.longitud || -99.1332, destinoData.coordenadas?.longitud || -101.2055)
-                  },
-                  legs: []
-                }
-              }}
-              isVisible={true}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Mapa mejorado en tiempo real */}
+      <TrackingMapaMejorado
+        viaje={viaje}
+        ubicacionActual={trackingData?.coordenadas}
+        enTiempoReal={viaje.estado === 'en_transito'}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={onToggleFullscreen}
+      />
 
       {/* Detalles del viaje */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
