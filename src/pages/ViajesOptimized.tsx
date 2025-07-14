@@ -14,6 +14,7 @@ import { Viaje } from '@/types/viaje';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
 import { useNavigate } from 'react-router-dom';
 import { useFAB } from '@/contexts/FABContext';
+import { DiagnosticPanel } from '@/components/viajes/diagnostic/DiagnosticPanel';
 
 const estadoColors = {
   programado: 'bg-blue-100 text-blue-800',
@@ -40,6 +41,7 @@ function ViajesContent() {
   const { setFABConfig } = useFAB();
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
 
   const handleEliminarViaje = async (viaje: Viaje) => {
     if (!window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {
@@ -217,10 +219,19 @@ function ViajesContent() {
             Administra y da seguimiento a todos tus viajes de transporte
           </p>
         </div>
-        <Button onClick={openViajeWizard} className="flex items-center gap-2 desktop-programar-button">
-          <Plus className="h-4 w-4" />
-          Programar Viaje
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowDiagnostic(true)} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            🔧 Diagnóstico
+          </Button>
+          <Button onClick={openViajeWizard} className="flex items-center gap-2 desktop-programar-button">
+            <Plus className="h-4 w-4" />
+            Programar Viaje
+          </Button>
+        </div>
       </div>
 
       {/* Sección de Borradores */}
@@ -289,6 +300,10 @@ function ViajesContent() {
         open={showTrackingModal}
         onOpenChange={setShowTrackingModal}
       />
+
+      {showDiagnostic && (
+        <DiagnosticPanel onClose={() => setShowDiagnostic(false)} />
+      )}
     </div>
   );
 }

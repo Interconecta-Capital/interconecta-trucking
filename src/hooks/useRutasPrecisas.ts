@@ -35,6 +35,8 @@ export const useRutasPrecisas = () => {
    */
   const geocodificarDireccion = useCallback(async (direccion: string): Promise<UbicacionPrecisa | null> => {
     try {
+      console.log('🔍 Iniciando geocodificación para:', direccion);
+      
       // Llamar al Edge Function para geocodificación precisa
       const { data, error } = await supabase.functions.invoke('google-directions', {
         body: {
@@ -43,24 +45,42 @@ export const useRutasPrecisas = () => {
         }
       });
 
+      console.log('📡 Respuesta completa del edge function:', { data, error });
+
+      // Si hay error de red o función
       if (error) {
-        console.error('Error en geocodificación:', error);
-        throw new Error(error.message);
+        console.error('❌ Error de invocación de función:', error);
+        throw new Error(`Error de conexión: ${error.message}`);
       }
 
-      console.log('📍 Respuesta de geocodificación:', data);
+      // Verificar si tenemos data
+      if (!data) {
+        console.error('❌ No se recibió respuesta de la función');
+        throw new Error('No se recibió respuesta del servicio de geocodificación');
+      }
 
-      if (!data || !data.success) {
-        const errorMsg = data?.error || 'Error desconocido en geocodificación';
-        console.error('❌ Error de geocodificación:', errorMsg);
+      // Verificar success flag
+      if (!data.success) {
+        const errorMsg = data.error || 'Error desconocido en geocodificación';
+        console.error('❌ Error específico de geocodificación:', errorMsg);
         throw new Error(errorMsg);
       }
 
-      if (!data.results || data.results.length === 0) {
-        throw new Error('No se encontraron resultados para la dirección');
+      // Verificar que tenemos resultados
+      if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
+        console.error('❌ No se encontraron resultados para:', direccion);
+        throw new Error('No se encontraron resultados para la dirección proporcionada');
       }
 
       const resultado = data.results[0];
+      console.log('✅ Resultado de geocodificación:', resultado);
+
+      // Verificar estructura del resultado
+      if (!resultado.geometry || !resultado.geometry.location) {
+        console.error('❌ Estructura de resultado inválida:', resultado);
+        throw new Error('Respuesta de geocodificación con formato inválido');
+      }
+
       const location = resultado.geometry.location;
 
       // Determinar precisión basada en el tipo de resultado
@@ -75,14 +95,16 @@ export const useRutasPrecisas = () => {
 
       // Extraer código postal
       let codigoPostal = '';
-      for (const component of resultado.address_components) {
-        if (component.types.includes('postal_code')) {
-          codigoPostal = component.long_name;
-          break;
+      if (resultado.address_components) {
+        for (const component of resultado.address_components) {
+          if (component.types && component.types.includes('postal_code')) {
+            codigoPostal = component.long_name;
+            break;
+          }
         }
       }
 
-      return {
+      const ubicacionPrecisa = {
         nombre: resultado.formatted_address,
         direccion: resultado.formatted_address,
         coordenadas: {
@@ -94,8 +116,12 @@ export const useRutasPrecisas = () => {
         validadaGoogleMaps: true
       };
 
+      console.log('✅ Geocodificación exitosa:', ubicacionPrecisa);
+      return ubicacionPrecisa;
+
     } catch (error) {
-      console.error('Error geocodificando dirección:', error);
+      console.error('💥 Error completo en geocodificación:', error);
+      console.error('📍 Dirección que falló:', direccion);
       return null;
     }
   }, []);

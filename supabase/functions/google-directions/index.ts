@@ -47,31 +47,45 @@ serve(async (req) => {
 
   // Handle geocoding requests
   if (action === 'geocode' && address) {
+    console.log('📍 [GEOCODE] Iniciando geocodificación para:', address);
+    
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     
-  if (!googleMapsApiKey) {
-    console.error('❌ Google Maps API key not configured');
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Google Maps API key not configured',
-        fallback_available: false
-      }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    if (!googleMapsApiKey) {
+      console.error('❌ [GEOCODE] Google Maps API key not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Google Maps API key not configured',
+          fallback_available: false
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     try {
       const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsApiKey}&region=mx&language=es`;
+      console.log('🌐 [GEOCODE] Llamando a Google Maps API:', geocodeUrl.replace(googleMapsApiKey, 'API_KEY_HIDDEN'));
       
       const response = await fetch(geocodeUrl);
+      console.log('📡 [GEOCODE] Respuesta HTTP status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        console.error('❌ [GEOCODE] HTTP error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ [GEOCODE] Error text:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
       const data = await response.json();
+      console.log('📦 [GEOCODE] Respuesta de Google Maps:', JSON.stringify(data, null, 2));
       
       if (data.status === 'OK' && data.results && data.results.length > 0) {
         const result = data.results[0];
+        console.log('✅ [GEOCODE] Geocodificación exitosa:', result.formatted_address);
         
         return new Response(
           JSON.stringify({
@@ -83,10 +97,14 @@ serve(async (req) => {
           }
         );
       } else {
+        console.error('❌ [GEOCODE] Google Maps status:', data.status, 'Error message:', data.error_message);
+        const errorMsg = data.error_message || `Google Maps status: ${data.status}`;
+        
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'No se encontraron resultados para la dirección',
+            error: `No se encontraron resultados: ${errorMsg}`,
+            google_status: data.status,
             fallback_available: false
           }),
           { 
