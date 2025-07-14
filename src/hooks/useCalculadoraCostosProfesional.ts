@@ -34,8 +34,41 @@ export const useCalculadoraCostosProfesional = (parametros: ParametrosCalculo) =
   return useMemo(() => {
     const { distancia, tiempoEstimadoHoras, vehiculo, pesoMercancia, tipoServicio, coordenadas } = parametros;
     
-    if (!distancia || distancia <= 0) {
-      return null;
+    if (!distancia || distancia <= 0 || isNaN(distancia)) {
+      console.warn('🧮 Distancia inválida:', distancia);
+      return {
+        combustible: {
+          litros: 0,
+          costo: 0,
+          precio_litro: PRECIOS_COMBUSTIBLE_DEFAULT.diesel,
+          fuente: 'Error: distancia inválida'
+        },
+        peajes: {
+          casetas_estimadas: 0,
+          costo: 0,
+          factor: 0
+        },
+        viaticos: {
+          dias: 0,
+          costo: 0,
+          tarifa_diaria: 1500
+        },
+        mantenimiento: {
+          costo: 0,
+          costo_por_km: 0
+        },
+        costos_fijos: {
+          costo: 0,
+          depreciacion: 0,
+          seguros: 0,
+          administracion: 0
+        },
+        costoTotal: 0,
+        margenSugerido: 0,
+        precioVentaSugerido: 0,
+        precisionMejora: 'Error: distancia inválida',
+        alertas: [{ tipo: 'error', mensaje: 'Distancia no válida para calcular costos' }]
+      } as CalculoProfesional;
     }
 
     // Configuración por defecto si no hay configuración de empresa

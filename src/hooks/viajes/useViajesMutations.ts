@@ -80,11 +80,33 @@ export const useViajesMutations = () => {
     }
   });
 
+  // Eliminar viaje
+  const eliminarViajeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('viajes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viajes'] });
+      toast.success('Viaje eliminado correctamente');
+    },
+    onError: (error: any) => {
+      console.error('Error eliminando viaje:', error);
+      toast.error('Error al eliminar el viaje');
+    }
+  });
+
   return {
     cambiarEstadoViaje: cambiarEstadoMutation.mutate,
     registrarEventoViaje: registrarEventoMutation.mutate,
     actualizarViaje: actualizarViajeMutation.mutate,
+    eliminarViaje: eliminarViajeMutation.mutate,
     isLoading: cambiarEstadoMutation.isPending || registrarEventoMutation.isPending,
-    isUpdatingViaje: actualizarViajeMutation.isPending
+    isUpdatingViaje: actualizarViajeMutation.isPending,
+    isDeleting: eliminarViajeMutation.isPending
   };
 };

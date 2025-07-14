@@ -49,10 +49,7 @@ function ViajesContent() {
     }
 
     try {
-      const res = await fetch(`/api/trips/${viaje.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Network response was not ok');
       eliminarViaje(viaje.id);
-      toast.success('Viaje eliminado');
     } catch (err) {
       console.error(err);
       toast.error('Error al eliminar el viaje');
