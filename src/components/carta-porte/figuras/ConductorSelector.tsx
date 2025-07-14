@@ -86,9 +86,9 @@ export const ConductorSelector = ({ value, onValueChange, onConductorSelect, fig
           </SelectTrigger>
           <SelectContent>
             {loading ? (
-              <SelectItem value="" disabled>Cargando conductores...</SelectItem>
+              <SelectItem value="loading" disabled>Cargando conductores...</SelectItem>
             ) : conductoresDisponibles.length === 0 ? (
-              <SelectItem value="" disabled>No hay conductores disponibles</SelectItem>
+              <SelectItem value="no-conductores" disabled>No hay conductores disponibles</SelectItem>
             ) : (
               conductoresDisponibles.map((conductor) => (
                 <SelectItem key={conductor.id} value={conductor.id}>
