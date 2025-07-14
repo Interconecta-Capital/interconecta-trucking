@@ -152,14 +152,14 @@ export const useViajes = () => {
         const viajeData = {
           id: viajeId,
           carta_porte_id: `CP-${Date.now()}`,
-          origen: wizardData.origen?.domicilio?.calle || '',
-          destino: wizardData.destino?.domicilio?.calle || '',
+          origen: wizardData.origen?.direccion || wizardData.origen?.nombre || '',
+          destino: wizardData.destino?.direccion || wizardData.destino?.nombre || '',
           conductor_id: wizardData.conductor?.id,
           vehiculo_id: wizardData.vehiculo?.id,
           estado: 'programado' as const,
           fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
           fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'} - Distancia: ${wizardData.distanciaRecorrida || 0} km`,
+          observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'} - ${wizardData.origen?.direccion || 'Origen'} → ${wizardData.destino?.direccion || 'Destino'} - Distancia: ${wizardData.distanciaRecorrida || 0} km`,
           tracking_data: JSON.parse(JSON.stringify(wizardData)),
           user_id: user.id
         };
@@ -212,14 +212,14 @@ export const useViajes = () => {
       const viajeData = {
         id: viajeId,
         carta_porte_id: `DRAFT-${Date.now()}`,
-        origen: wizardData.origen?.domicilio?.calle || 'Origen por definir',
-        destino: wizardData.destino?.domicilio?.calle || 'Destino por definir',
+        origen: wizardData.origen?.direccion || wizardData.origen?.nombre || 'Origen por definir',
+        destino: wizardData.destino?.direccion || wizardData.destino?.nombre || 'Destino por definir',
         conductor_id: wizardData.conductor?.id,
         vehiculo_id: wizardData.vehiculo?.id,
         estado: 'borrador' as const,
         fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
         fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        observaciones: `Borrador - ${wizardData.cliente?.nombre_razon_social || 'Viaje en progreso'}`,
+        observaciones: `Borrador - ${wizardData.cliente?.nombre_razon_social || 'Viaje en progreso'} - ${wizardData.origen?.direccion || 'Origen'} → ${wizardData.destino?.direccion || 'Destino'}`,
         tracking_data: JSON.parse(JSON.stringify(wizardData)),
         user_id: user.id
       };

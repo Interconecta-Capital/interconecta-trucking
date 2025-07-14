@@ -359,19 +359,11 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
                 </div>
               </div>
 
-              {/* Costos detallados */}
-              {rutaActual.costoCombustible > 0 && (
-                <div className="p-3 bg-blue-50 rounded-lg border">
-                  <div className="text-sm font-medium text-blue-800 mb-2">💰 Desglose de costos estimados:</div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>Combustible: <span className="font-bold">{formatearCosto(rutaActual.costoCombustible)}</span></div>
-                    <div>Peajes: <span className="font-bold">{formatearCosto(rutaActual.peajes)}</span></div>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-blue-200">
-                    <div className="font-bold">Total estimado: {formatearCosto(rutaActual.costoCombustible + rutaActual.peajes)}</div>
-                  </div>
-                </div>
-              )}
+              {/* Información básica de ruta - Sin cálculos complejos */}
+              <div className="p-3 bg-blue-50 rounded-lg border">
+                <div className="text-sm font-medium text-blue-800 mb-2">ℹ️ Los cálculos detallados de costos se mostrarán en el resumen final</div>
+                <p className="text-xs text-blue-600">Esta información será utilizada para generar los documentos oficiales</p>
+              </div>
             </CardContent>
           </Card>
 
