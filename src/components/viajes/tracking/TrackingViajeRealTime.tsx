@@ -14,7 +14,8 @@ import {
   Package,
   AlertTriangle,
   CheckCircle,
-  Maximize2
+  Maximize2,
+  ExternalLink
 } from 'lucide-react';
 import { Viaje, EventoViaje, useViajesEstados } from '@/hooks/useViajesEstados';
 import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
@@ -147,7 +148,25 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
     }
   };
 
-  // Fix the ubicaciones type to match Ubicacion interface
+  // Extraer datos reales del tracking_data del viaje
+  const trackingRealData = viaje.tracking_data || {};
+  const origenData = trackingRealData.origen || {};
+  const destinoData = trackingRealData.destino || {};
+  
+  // Generar enlace de Google Maps
+  const generateGoogleMapsLink = () => {
+    const origenDir = origenData.direccion || viaje.origen;
+    const destinoDir = destinoData.direccion || viaje.destino;
+    if (!origenDir || !destinoDir) return null;
+    const baseUrl = 'https://www.google.com/maps/dir/';
+    const origenEncoded = encodeURIComponent(origenDir);
+    const destinoEncoded = encodeURIComponent(destinoDir);
+    return `${baseUrl}${origenEncoded}/${destinoEncoded}`;
+  };
+
+  const googleMapsUrl = generateGoogleMapsLink();
+
+  // Fix the ubicaciones type to match Ubicacion interface with real data
   const ubicacionesParaMapa: Ubicacion[] = [
     {
       id: 'origen',
@@ -155,14 +174,17 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
       tipoUbicacion: 'Origen',
       nombreRemitenteDestinatario: 'Origen',
       domicilio: { 
-        calle: viaje.origen,
+        calle: origenData.direccion || viaje.origen || 'Origen no especificado',
         pais: 'MEX',
-        codigoPostal: '01000',
-        estado: 'CDMX',
-        municipio: 'Miguel Hidalgo',
-        colonia: 'Centro'
+        codigoPostal: origenData.codigoPostal || '01000',
+        estado: origenData.estado || 'CDMX',
+        municipio: origenData.municipio || 'Miguel Hidalgo',
+        colonia: origenData.colonia || 'Centro'
       },
-      coordenadas: { latitud: 19.4326, longitud: -99.1332 }
+      coordenadas: { 
+        latitud: origenData.coordenadas?.latitud || 19.4326, 
+        longitud: origenData.coordenadas?.longitud || -99.1332 
+      }
     },
     {
       id: 'destino',
@@ -170,14 +192,17 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
       tipoUbicacion: 'Destino',
       nombreRemitenteDestinatario: 'Destino',
       domicilio: { 
-        calle: viaje.destino,
+        calle: destinoData.direccion || viaje.destino || 'Destino no especificado',
         pais: 'MEX',
-        codigoPostal: '44100',
-        estado: 'JAL',
-        municipio: 'Guadalajara',
-        colonia: 'Centro'
+        codigoPostal: destinoData.codigoPostal || '44100',
+        estado: destinoData.estado || 'JAL',
+        municipio: destinoData.municipio || 'Guadalajara',
+        colonia: destinoData.colonia || 'Centro'
       },
-      coordenadas: { latitud: 19.6924, longitud: -101.2055 }
+      coordenadas: { 
+        latitud: destinoData.coordenadas?.latitud || 19.6924, 
+        longitud: destinoData.coordenadas?.longitud || -101.2055 
+      }
     }
   ];
 
@@ -237,23 +262,38 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
             {/* Información de ruta */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Origen:</span>
-                  <span className="text-sm">{viaje.origen}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-red-600" />
-                  <span className="font-medium">Destino:</span>
-                  <span className="text-sm">{viaje.destino}</span>
-                </div>
-                {trackingData && (
-                  <div className="flex items-center gap-2">
-                    <Navigation className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">Ubicación actual:</span>
-                    <span className="text-sm">{trackingData.ubicacionActual}</span>
-                  </div>
-                )}
+                 <div className="flex items-center gap-2">
+                   <MapPin className="h-4 w-4 text-green-600" />
+                   <span className="font-medium">Origen:</span>
+                   <span className="text-sm">{origenData.direccion || viaje.origen || 'No especificado'}</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <MapPin className="h-4 w-4 text-red-600" />
+                   <span className="font-medium">Destino:</span>
+                   <span className="text-sm">{destinoData.direccion || viaje.destino || 'No especificado'}</span>
+                 </div>
+                 {trackingData && (
+                   <div className="flex items-center gap-2">
+                     <Navigation className="h-4 w-4 text-blue-600" />
+                     <span className="font-medium">Ubicación actual:</span>
+                     <span className="text-sm">{trackingData.ubicacionActual}</span>
+                   </div>
+                 )}
+                 
+                 {/* Botón de Google Maps */}
+                 {googleMapsUrl && (
+                   <div className="pt-2 border-t">
+                     <Button 
+                       variant="outline" 
+                       size="sm"
+                       onClick={() => window.open(googleMapsUrl, '_blank')}
+                       className="w-full flex items-center gap-2"
+                     >
+                       <ExternalLink className="h-4 w-4" />
+                       Ver ruta en Google Maps
+                     </Button>
+                   </div>
+                 )}
               </div>
 
               <div className="space-y-2">

@@ -1,7 +1,8 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Clock, Truck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Navigation, Clock, Truck, ExternalLink } from 'lucide-react';
 
 interface TrackingModalProps {
   open: boolean;
@@ -12,15 +13,31 @@ interface TrackingModalProps {
 export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps) {
   if (!viaje) return null;
 
-  // Mock data para el tracking - en el futuro se conectará con un servicio real
+  // Extraer datos reales del viaje usando tracking_data
+  const trackingRealData = viaje.tracking_data || {};
+  const origen = trackingRealData.origen?.direccion || viaje.origen || 'Origen no especificado';
+  const destino = trackingRealData.destino?.direccion || viaje.destino || 'Destino no especificado';
+  
+  // Mock data para el tracking en tiempo real - se puede mejorar conectando con GPS real
   const trackingData = {
-    ubicacionActual: "Carretera México-Guadalajara, Km 25",
+    ubicacionActual: "En ruta hacia destino",
     coordenadas: { lat: 19.4326, lng: -99.1332 },
-    velocidad: "85 km/h",
+    velocidad: "75 km/h",
     ultimaActualizacion: new Date().toLocaleTimeString(),
-    progreso: 35,
-    tiempoEstimadoLlegada: "2024-06-12T16:30:00Z"
+    progreso: viaje.estado === 'en_transito' ? 45 : viaje.estado === 'completado' ? 100 : 15,
+    tiempoEstimadoLlegada: viaje.fecha_fin_programada || new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()
   };
+
+  // Generar enlace de Google Maps
+  const generateGoogleMapsLink = () => {
+    if (!origen || !destino) return null;
+    const baseUrl = 'https://www.google.com/maps/dir/';
+    const origenEncoded = encodeURIComponent(origen);
+    const destinoEncoded = encodeURIComponent(destino);
+    return `${baseUrl}${origenEncoded}/${destinoEncoded}`;
+  };
+
+  const googleMapsUrl = generateGoogleMapsLink();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,16 +67,34 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Origen:</span> {viaje.origen}
+                  <span className="font-medium">Origen:</span> 
+                  <span className="text-sm">{origen}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">Ubicación actual:</span> {trackingData.ubicacionActual}
+                  <span className="font-medium">Ubicación actual:</span> 
+                  <span className="text-sm">{trackingData.ubicacionActual}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-red-600" />
-                  <span className="font-medium">Destino:</span> {viaje.destino}
+                  <span className="font-medium">Destino:</span> 
+                  <span className="text-sm">{destino}</span>
                 </div>
+                
+                {/* Botón de Google Maps */}
+                {googleMapsUrl && (
+                  <div className="pt-2 border-t">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(googleMapsUrl, '_blank')}
+                      className="w-full flex items-center gap-2"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Abrir ruta en Google Maps
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
