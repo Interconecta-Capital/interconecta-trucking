@@ -98,6 +98,9 @@ export interface MercanciaCompleta {
     ancho: number;
     alto: number;
   };
+  // Metadatos de IA
+  aiGenerated?: boolean;
+  aiConfidence?: 'alta' | 'media' | 'baja';
 }
 
 export interface Remolque {
@@ -121,6 +124,8 @@ export interface AutotransporteCompleto {
   // Additional properties used by components
   marca_vehiculo?: string;
   modelo_vehiculo?: string;
+  marca?: string; // Alias para marca_vehiculo
+  modelo?: string; // Alias para modelo_vehiculo
   numero_serie_vin?: string;
   vigencia_permiso?: string;
   numero_permisos_adicionales?: string[];
