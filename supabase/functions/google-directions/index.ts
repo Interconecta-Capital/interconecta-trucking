@@ -34,7 +34,7 @@ serve(async (req) => {
         fallback_available: false
       }),
       { 
-        status: 400,
+        status: 200,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 
@@ -49,18 +49,19 @@ serve(async (req) => {
   if (action === 'geocode' && address) {
     const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     
-    if (!googleMapsApiKey) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Google Maps API key not configured',
-          fallback_available: false
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+  if (!googleMapsApiKey) {
+    console.error('❌ Google Maps API key not configured');
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'Google Maps API key not configured',
+        fallback_available: false
+      }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
     }
 
     try {
@@ -89,12 +90,13 @@ serve(async (req) => {
             fallback_available: false
           }),
           { 
-            status: 400,
+            status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
       }
     } catch (error) {
+      console.error('❌ Geocoding error:', error);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -102,7 +104,7 @@ serve(async (req) => {
           fallback_available: false
         }),
         { 
-          status: 500,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -127,7 +129,7 @@ serve(async (req) => {
         fallback_available: false
       }),
       { 
-        status: 400,
+        status: 200,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 

@@ -11,9 +11,14 @@ serve(async (req) => {
   }
 
   try {
-    const { operation, action, data } = await req.json();
+    const { operation, action, data, message, context } = await req.json();
 
     let op = operation || action;
+    
+    // Support legacy parameters from useSmartMercanciaAnalysis
+    if (message && context === 'mercancia_analysis') {
+      op = 'mercancia_analysis';
+    }
 
     // Support legacy action field names
     switch (op) {
@@ -78,6 +83,10 @@ serve(async (req) => {
           "optimizations": ["optimización 1"]
         }
         `;
+        break;
+
+      case 'mercancia_analysis':
+        prompt = message || (data && data.message) || '';
         break;
 
       case 'parse_document':
@@ -156,6 +165,20 @@ serve(async (req) => {
 
     console.log('[GEMINI] Parsed response:', parsedResponse);
 
+    // Handle mercancia_analysis specifically
+    if (op === 'mercancia_analysis') {
+      return new Response(
+        JSON.stringify({
+          response: textResponse,
+          success: true
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
+
     if (op === 'parse_document') {
       const result = parsedResponse.result ?? parsedResponse;
       return new Response(
@@ -187,11 +210,12 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message,
+        response: `Error en análisis: ${error.message}`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 200,
       }
     );
   }
