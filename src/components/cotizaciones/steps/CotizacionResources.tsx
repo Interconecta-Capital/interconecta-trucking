@@ -175,7 +175,7 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                 <SelectValue placeholder="Selecciona un remolque (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin remolque</SelectItem>
+                <SelectItem value="none">Sin remolque</SelectItem>
                 {remolques.map((remolque) => (
                   <SelectItem 
                     key={remolque.id} 
