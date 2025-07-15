@@ -236,12 +236,21 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
       orden: (data.paradasAutorizadas?.length || 0) + 1
     };
 
+    const paradasActualizadas = [...(data.paradasAutorizadas || []), nuevaParadaObj];
+    
     updateData({
-      paradasAutorizadas: [...(data.paradasAutorizadas || []), nuevaParadaObj]
+      paradasAutorizadas: paradasActualizadas
     });
 
     setNuevaParada('');
-    toast.success('Parada agregada correctamente');
+    toast.success(`Parada agregada: ${nuevaParadaObj.direccion}`);
+    
+    // Auto-calcular si ya tenemos origen y destino
+    if (origenDireccion && destinoDireccion) {
+      setTimeout(() => {
+        calcularRuta();
+      }, 500);
+    }
   };
 
   const eliminarParada = (id: string) => {
