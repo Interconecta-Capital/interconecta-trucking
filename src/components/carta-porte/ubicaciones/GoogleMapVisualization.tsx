@@ -53,37 +53,76 @@ export function GoogleMapVisualization({ ubicaciones, routeData, isVisible }: Go
 
     console.log('📍 Adding markers and route to map');
     const bounds = new window.google.maps.LatLngBounds();
+    const geocoder = (window.google.maps as any).Geocoder ? new (window.google.maps as any).Geocoder() : null;
 
-    // Add location markers
+    const addMarker = (ubicacion: any, index: number, coords: any) => {
+      const marker = new window.google.maps.Marker({
+        position: coords,
+        map: mapInstanceRef.current,
+        title: ubicacion.nombreRemitenteDestinatario || `${ubicacion.tipoUbicacion} ${index + 1}`,
+        icon: {
+          url: getMarkerIcon(ubicacion.tipoUbicacion),
+          scaledSize: new window.google.maps.Size(32, 32)
+        }
+      });
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px; max-width: 200px;">
+            <h3 style="margin: 0 0 4px 0; font-weight: bold;">${ubicacion.tipoUbicacion}</h3>
+            <p style="margin: 0 0 4px 0;">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
+            <p style="margin: 0; font-size: 12px; color: #666;">${ubicacion.domicilio?.calle || ''}, ${ubicacion.domicilio?.municipio || ''}</p>
+          </div>
+        `
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(mapInstanceRef.current, marker);
+      });
+
+      bounds.extend(coords);
+    };
+
+    // Process each location
     ubicaciones.forEach((ubicacion, index) => {
       const coords = getCoordinatesForLocation(ubicacion);
       
-      if (coords) {
-        const marker = new window.google.maps.Marker({
-          position: coords,
-          map: mapInstanceRef.current,
-          title: ubicacion.nombreRemitenteDestinatario || `${ubicacion.tipoUbicacion} ${index + 1}`,
-          icon: {
-            url: getMarkerIcon(ubicacion.tipoUbicacion),
-            scaledSize: new window.google.maps.Size(32, 32)
+      // Check if coordinates are valid (not placeholder coordinates)
+      const isPlaceholder = (coords.lat === 19.4326 && coords.lng === -99.1332) || 
+                           (coords.lat === 0 && coords.lng === 0);
+      
+      if (coords && !isPlaceholder) {
+        // Use valid coordinates directly
+        addMarker(ubicacion, index, coords);
+      } else if (ubicacion.domicilio?.calle && geocoder) {
+        // Try to geocode the address
+        console.log(`🔍 Geocoding address: ${ubicacion.domicilio.calle}`);
+        
+        geocoder.geocode({ 
+          address: ubicacion.domicilio.calle 
+        }, (results: any, status: any) => {
+          if (status === 'OK' && results && results[0]) {
+            const location = results[0].geometry.location;
+            const geocodedCoords = {
+              lat: location.lat(),
+              lng: location.lng()
+            };
+            console.log(`✅ Geocoded ${ubicacion.tipoUbicacion}: ${ubicacion.domicilio.calle}`, geocodedCoords);
+            addMarker(ubicacion, index, geocodedCoords);
+            
+            // Adjust bounds if this is the first successful geocoding
+            if (ubicaciones.length <= 3) {
+              mapInstanceRef.current?.fitBounds(bounds);
+            }
+          } else {
+            console.warn(`❌ Geocoding failed for ${ubicacion.tipoUbicacion}: ${ubicacion.domicilio.calle}`, status);
+            // Use placeholder coordinates as fallback
+            addMarker(ubicacion, index, coords);
           }
         });
-
-        const infoWindow = new window.google.maps.InfoWindow({
-          content: `
-            <div style="padding: 8px; max-width: 200px;">
-              <h3 style="margin: 0 0 4px 0; font-weight: bold;">${ubicacion.tipoUbicacion}</h3>
-              <p style="margin: 0 0 4px 0;">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
-              <p style="margin: 0; font-size: 12px; color: #666;">${ubicacion.domicilio?.calle || ''}, ${ubicacion.domicilio?.municipio || ''}</p>
-            </div>
-          `
-        });
-
-        marker.addListener('click', () => {
-          infoWindow.open(mapInstanceRef.current, marker);
-        });
-
-        bounds.extend(coords);
+      } else {
+        // Use placeholder coordinates as last resort
+        addMarker(ubicacion, index, coords);
       }
     });
 

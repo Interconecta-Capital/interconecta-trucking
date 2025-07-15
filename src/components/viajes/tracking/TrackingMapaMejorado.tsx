@@ -126,8 +126,10 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
     }
   }
   
-  // Agregar paradas que tengan coordenadas
+  // Agregar paradas (con geocodificación si es necesario)
   paradasData.forEach((parada: any, index: number) => {
+    console.log(`🗺️ Procesando parada ${index + 1}:`, parada);
+    
     if (parada.coordenadas) {
       // Manejar diferentes formatos de coordenadas
       const coordenadas = parada.coordenadas;
@@ -154,6 +156,30 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
           }
         });
       }
+    } else if (parada.direccion) {
+      // Si no hay coordenadas pero hay dirección, usar coordenadas aproximadas del centro de México
+      console.log(`🗺️ Parada sin coordenadas: ${parada.direccion}`);
+      
+      // Usar coordenadas del centro de México como placeholder
+      // El GoogleMapVisualization puede geocodificar usando la dirección en el domicilio
+      ubicacionesParaMapa.push({
+        id: parada.id || `parada-${index}`,
+        idUbicacion: `parada-${index + 1}`,
+        tipoUbicacion: 'Paso Intermedio',
+        nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
+        domicilio: { 
+          calle: parada.direccion,
+          pais: 'MEX',
+          codigoPostal: parada.codigoPostal || '50000',
+          estado: 'MEX',
+          municipio: 'Ubicación intermedia',
+          colonia: 'Centro'
+        },
+        coordenadas: { 
+          latitud: 19.4326, // Coordenadas del centro de CDMX como placeholder
+          longitud: -99.1332 // Se geocodificará usando la dirección del domicilio
+        }
+      });
     }
   });
   
