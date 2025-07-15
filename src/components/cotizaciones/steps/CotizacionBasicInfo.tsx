@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, User, Clock } from "lucide-react";
+import { useClientesProveedores } from "@/hooks/crm/useClientesProveedores";
 
 interface CotizacionBasicInfoProps {
   formData: any;
@@ -11,6 +12,8 @@ interface CotizacionBasicInfoProps {
 }
 
 export function CotizacionBasicInfo({ formData, updateFormData }: CotizacionBasicInfoProps) {
+  const { clientes, loading: loadingClientes } = useClientesProveedores();
+
   return (
     <div className="space-y-6">
       {/* Información de la Cotización */}
@@ -136,16 +139,24 @@ export function CotizacionBasicInfo({ formData, updateFormData }: CotizacionBasi
             <div>
               <Label htmlFor="cliente-existente">Seleccionar Cliente</Label>
               <Select
-                value={formData.cliente_existente_id}
-                onValueChange={(value) => updateFormData({ cliente_existente_id: value })}
+                value={formData.cliente_existente_id || ""}
+                onValueChange={(value) => updateFormData({ cliente_existente_id: value === "" ? null : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un cliente registrado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cliente-1">Empresa ABC S.A. de C.V.</SelectItem>
-                  <SelectItem value="cliente-2">Transportes XYZ</SelectItem>
-                  <SelectItem value="cliente-3">Comercializadora DEF</SelectItem>
+                  {loadingClientes ? (
+                    <SelectItem value="" disabled>Cargando clientes...</SelectItem>
+                  ) : clientes.length === 0 ? (
+                    <SelectItem value="" disabled>No hay clientes registrados</SelectItem>
+                  ) : (
+                    clientes.map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.id}>
+                        {cliente.razon_social} - {cliente.rfc}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

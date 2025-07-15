@@ -3,6 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Truck, User, Package, CheckCircle, AlertTriangle } from "lucide-react";
+import { useVehiculos } from "@/hooks/useVehiculos";
+import { useConductoresOptimized } from "@/hooks/useConductoresOptimized";
 
 interface CotizacionResourcesProps {
   formData: any;
@@ -10,19 +12,10 @@ interface CotizacionResourcesProps {
 }
 
 export function CotizacionResources({ formData, updateFormData }: CotizacionResourcesProps) {
-  // Datos simulados - en producción vendrían de la base de datos
-  const vehiculos = [
-    { id: "v1", placa: "ABC-123", marca: "Freightliner", modelo: "Cascadia", estado: "disponible" },
-    { id: "v2", placa: "DEF-456", marca: "Kenworth", modelo: "T680", estado: "disponible" },
-    { id: "v3", placa: "GHI-789", marca: "Volvo", modelo: "VNL", estado: "mantenimiento" }
-  ];
+  const { vehiculos, loading: loadingVehiculos } = useVehiculos();
+  const { conductores, loading: loadingConductores } = useConductoresOptimized();
 
-  const conductores = [
-    { id: "c1", nombre: "Juan Pérez", licencia: "A1234567", estado: "disponible" },
-    { id: "c2", nombre: "María González", licencia: "B7654321", estado: "disponible" },
-    { id: "c3", nombre: "Carlos López", licencia: "C9876543", estado: "en_viaje" }
-  ];
-
+  // Datos simulados para remolques - se puede crear hook similar
   const remolques = [
     { id: "r1", placa: "REM-001", tipo: "Caja seca", estado: "disponible" },
     { id: "r2", placa: "REM-002", tipo: "Refrigerado", estado: "disponible" },
@@ -56,25 +49,31 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
           <div>
             <Label htmlFor="vehiculo">Seleccionar Vehículo</Label>
             <Select
-              value={formData.vehiculo_id}
-              onValueChange={(value) => updateFormData({ vehiculo_id: value })}
+              value={formData.vehiculo_id || ""}
+              onValueChange={(value) => updateFormData({ vehiculo_id: value === "" ? null : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un vehículo" />
               </SelectTrigger>
               <SelectContent>
-                {vehiculos.map((vehiculo) => (
-                  <SelectItem 
-                    key={vehiculo.id} 
-                    value={vehiculo.id}
-                    disabled={vehiculo.estado !== 'disponible'}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span>{vehiculo.placa} - {vehiculo.marca} {vehiculo.modelo}</span>
-                      {getEstadoBadge(vehiculo.estado)}
-                    </div>
-                  </SelectItem>
-                ))}
+                {loadingVehiculos ? (
+                  <SelectItem value="" disabled>Cargando vehículos...</SelectItem>
+                ) : vehiculos.length === 0 ? (
+                  <SelectItem value="" disabled>No hay vehículos registrados</SelectItem>
+                ) : (
+                  vehiculos.map((vehiculo) => (
+                    <SelectItem 
+                      key={vehiculo.id} 
+                      value={vehiculo.id}
+                      disabled={vehiculo.estado !== 'disponible'}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span>{vehiculo.placa} - {vehiculo.marca} {vehiculo.modelo}</span>
+                        {getEstadoBadge(vehiculo.estado)}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -112,25 +111,31 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
           <div>
             <Label htmlFor="conductor">Seleccionar Conductor</Label>
             <Select
-              value={formData.conductor_id}
-              onValueChange={(value) => updateFormData({ conductor_id: value })}
+              value={formData.conductor_id || ""}
+              onValueChange={(value) => updateFormData({ conductor_id: value === "" ? null : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un conductor" />
               </SelectTrigger>
               <SelectContent>
-                {conductores.map((conductor) => (
-                  <SelectItem 
-                    key={conductor.id} 
-                    value={conductor.id}
-                    disabled={conductor.estado !== 'disponible'}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span>{conductor.nombre} - Lic. {conductor.licencia}</span>
-                      {getEstadoBadge(conductor.estado)}
-                    </div>
-                  </SelectItem>
-                ))}
+                {loadingConductores ? (
+                  <SelectItem value="" disabled>Cargando conductores...</SelectItem>
+                ) : conductores.length === 0 ? (
+                  <SelectItem value="" disabled>No hay conductores registrados</SelectItem>
+                ) : (
+                  conductores.map((conductor) => (
+                    <SelectItem 
+                      key={conductor.id} 
+                      value={conductor.id}
+                      disabled={conductor.estado !== 'disponible'}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span>{conductor.nombre} - Lic. {conductor.num_licencia}</span>
+                        {getEstadoBadge(conductor.estado)}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -146,7 +151,7 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                       {getEstadoBadge(conductor.estado)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Licencia: {conductor.licencia}
+                      Licencia: {conductor.num_licencia}
                     </div>
                   </div>
                 ) : null;
@@ -168,8 +173,8 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
           <div>
             <Label htmlFor="remolque">Seleccionar Remolque</Label>
             <Select
-              value={formData.remolque_id}
-              onValueChange={(value) => updateFormData({ remolque_id: value })}
+              value={formData.remolque_id || ""}
+              onValueChange={(value) => updateFormData({ remolque_id: value === "" || value === "none" ? null : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un remolque (opcional)" />

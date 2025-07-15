@@ -266,7 +266,7 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
             {currentStep === STEPS.length - 1 ? (
               <Button onClick={handleSend} className="gap-2">
                 <Send className="h-4 w-4" />
-                Enviar Cotización
+                Crear Cotización
               </Button>
             ) : (
               <Button
