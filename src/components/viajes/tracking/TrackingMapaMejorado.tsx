@@ -45,6 +45,16 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   const paradasData = trackingData.paradasAutorizadas || [];
   const rutaCalculada = trackingData.rutaCalculada || {};
 
+  // Debug: Ver qué coordenadas estamos recibiendo
+  console.log('🗺️ TrackingMapa - Datos recibidos:', {
+    origenCoordenadas: origenData.coordenadas,
+    destinoCoordenadas: destinoData.coordenadas,
+    paradasCoordenadas: paradasData.map((p: any) => ({ 
+      direccion: p.direccion, 
+      coordenadas: p.coordenadas 
+    }))
+  });
+
   // Refrescar mapa cada 30 segundos si está en tiempo real
   useEffect(() => {
     if (enTiempoReal) {
@@ -77,10 +87,12 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
     return url;
   };
 
-  // Preparar ubicaciones para el mapa
-  const ubicacionesParaMapa: Ubicacion[] = [
-    // Origen
-    {
+  // Preparar ubicaciones para el mapa (solo las que tienen coordenadas válidas)
+  const ubicacionesParaMapa: Ubicacion[] = [];
+  
+  // Agregar origen si tiene coordenadas
+  if (origenData.coordenadas) {
+    ubicacionesParaMapa.push({
       id: 'origen',
       idUbicacion: 'origen-001',
       tipoUbicacion: 'Origen',
@@ -94,33 +106,39 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
         colonia: origenData.colonia || 'Centro'
       },
       coordenadas: { 
-        latitud: origenData.coordenadas?.latitud || 19.4326, 
-        longitud: origenData.coordenadas?.longitud || -99.1332 
+        latitud: origenData.coordenadas.latitud, 
+        longitud: origenData.coordenadas.longitud 
       }
-    },
-    
-    // Paradas autorizadas
-    ...paradasData.map((parada: any, index: number) => ({
-      id: parada.id || `parada-${index}`,
-      idUbicacion: `parada-${index + 1}`,
-      tipoUbicacion: 'Paso Intermedio',
-      nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
-      domicilio: { 
-        calle: parada.direccion || 'Parada autorizada',
-        pais: 'MEX',
-        codigoPostal: parada.codigoPostal || '50000',
-        estado: 'MEX',
-        municipio: 'Ubicación intermedia',
-        colonia: 'Centro'
-      },
-      coordenadas: { 
-        latitud: parada.coordenadas?.latitud || 19.5, 
-        longitud: parada.coordenadas?.longitud || -100.0 
-      }
-    })),
-    
-    // Destino
-    {
+    });
+  }
+  
+  // Agregar paradas que tengan coordenadas
+  paradasData.forEach((parada: any, index: number) => {
+    if (parada.coordenadas) {
+      ubicacionesParaMapa.push({
+        id: parada.id || `parada-${index}`,
+        idUbicacion: `parada-${index + 1}`,
+        tipoUbicacion: 'Paso Intermedio',
+        nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
+        domicilio: { 
+          calle: parada.direccion || 'Parada autorizada',
+          pais: 'MEX',
+          codigoPostal: parada.codigoPostal || '50000',
+          estado: 'MEX',
+          municipio: 'Ubicación intermedia',
+          colonia: 'Centro'
+        },
+        coordenadas: { 
+          latitud: parada.coordenadas.latitud, 
+          longitud: parada.coordenadas.longitud 
+        }
+      });
+    }
+  });
+  
+  // Agregar destino si tiene coordenadas
+  if (destinoData.coordenadas) {
+    ubicacionesParaMapa.push({
       id: 'destino',
       idUbicacion: 'destino-001',
       tipoUbicacion: 'Destino',
@@ -134,11 +152,11 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
         colonia: destinoData.colonia || 'Centro'
       },
       coordenadas: { 
-        latitud: destinoData.coordenadas?.latitud || 20.6597, 
-        longitud: destinoData.coordenadas?.longitud || -103.3496 
+        latitud: destinoData.coordenadas.latitud, 
+        longitud: destinoData.coordenadas.longitud 
       }
-    }
-  ];
+    });
+  }
 
   // Agregar ubicación actual si está disponible
   if (ubicacionActual) {
