@@ -50,7 +50,7 @@ export default function DashboardNavigation() {
       title: 'Analytics de Viajes',
       description: 'Análisis detallado de viajes',
       icon: Route,
-      href: '/dashboard/viajes/analytics',
+      href: '/viajes/analytics',
       color: 'bg-indigo-500'
     },
     {
@@ -58,7 +58,8 @@ export default function DashboardNavigation() {
       description: 'Performance de vehículos',
       icon: Truck,
       href: '/dashboard/flota',
-      color: 'bg-orange-500'
+      color: 'bg-orange-500',
+      disabled: true
     },
     {
       title: 'Reportes',
@@ -117,6 +118,26 @@ export default function DashboardNavigation() {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
         {dashboards.map((dashboard) => {
           const isActive = location.pathname === dashboard.href;
+          const isDisabled = dashboard.disabled || false;
+          
+          if (isDisabled) {
+            return (
+              <div key={dashboard.href}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="w-full h-auto p-3 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed"
+                >
+                  <dashboard.icon className="h-4 w-4" />
+                  <span className="text-xs text-center leading-tight">
+                    {dashboard.title}
+                  </span>
+                </Button>
+              </div>
+            );
+          }
+          
           return (
             <Link key={dashboard.href} to={dashboard.href}>
               <Button
