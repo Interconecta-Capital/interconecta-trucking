@@ -57,9 +57,9 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
               </SelectTrigger>
               <SelectContent>
                 {loadingVehiculos ? (
-                  <SelectItem value="" disabled>Cargando vehículos...</SelectItem>
+                  <SelectItem value="loading" disabled>Cargando vehículos...</SelectItem>
                 ) : vehiculos.length === 0 ? (
-                  <SelectItem value="" disabled>No hay vehículos registrados</SelectItem>
+                  <SelectItem value="empty" disabled>No hay vehículos registrados</SelectItem>
                 ) : (
                   vehiculos.map((vehiculo) => (
                     <SelectItem 
@@ -119,9 +119,9 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
               </SelectTrigger>
               <SelectContent>
                 {loadingConductores ? (
-                  <SelectItem value="" disabled>Cargando conductores...</SelectItem>
+                  <SelectItem value="loading" disabled>Cargando conductores...</SelectItem>
                 ) : conductores.length === 0 ? (
-                  <SelectItem value="" disabled>No hay conductores registrados</SelectItem>
+                  <SelectItem value="empty" disabled>No hay conductores registrados</SelectItem>
                 ) : (
                   conductores.map((conductor) => (
                     <SelectItem 
