@@ -49,9 +49,9 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-background">
-        <div className="h-full w-full flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b bg-card">
+      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+        <div className="w-full h-full flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b bg-card flex-shrink-0">
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <Navigation className="h-6 w-6 text-primary" />
               Tracking en Tiempo Real - {viaje.carta_porte_id}
@@ -66,13 +66,12 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
             </Button>
           </div>
           
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 overflow-hidden">
             <TrackingMapaMejorado 
               viaje={viaje}
               ubicacionActual={trackingData.coordenadas}
               enTiempoReal={true}
               isFullscreen={true}
-              onToggleFullscreen={toggleFullscreen}
             />
           </div>
         </div>

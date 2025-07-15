@@ -266,11 +266,6 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 )}
-                {onToggleFullscreen && (
-                  <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
-                    <Minimize2 className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
             </div>
           </CardHeader>
@@ -410,11 +405,6 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
                   }}
                 >
                   <RefreshCw className="h-4 w-4" />
-                </Button>
-              )}
-              {onToggleFullscreen && (
-                <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
-                  <Maximize2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
