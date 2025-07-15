@@ -215,15 +215,16 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+        {/* Fixed Header */}
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {editingCotizacion ? "Editar Cotización" : "Nueva Cotización"}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Progress */}
-        <div className="space-y-2">
+        {/* Fixed Progress */}
+        <div className="space-y-2 flex-shrink-0">
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>Paso {currentStep + 1} de {STEPS.length}</span>
             <span>{Math.round(progressPercentage)}% completado</span>
@@ -235,15 +236,17 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
           </div>
         </div>
 
-        {/* Content */}
-        <Card className="flex-1 overflow-hidden">
-          <CardContent className="p-6 h-full overflow-y-auto">
-            {renderStepContent()}
-          </CardContent>
-        </Card>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-hidden min-h-0">
+          <Card className="h-full">
+            <CardContent className="p-6 h-full overflow-y-auto">
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center pt-4 border-t">
+        {/* Fixed Navigation */}
+        <div className="flex justify-between items-center pt-4 border-t flex-shrink-0">
           <Button
             variant="outline"
             onClick={handlePrevious}

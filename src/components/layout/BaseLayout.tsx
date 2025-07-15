@@ -48,8 +48,19 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-gray-05 flex w-full">
-        <AppSidebar isMobileOpen={mobileOpen} setIsMobileOpen={setMobileOpen} />
-        <div className="flex-1 flex flex-col w-full min-w-0">
+        {/* Fixed sidebar on desktop, overlay on mobile */}
+        <div className={cn(
+          "transition-all duration-200",
+          isMobile ? "relative" : "fixed left-0 top-0 h-full z-30"
+        )}>
+          <AppSidebar isMobileOpen={mobileOpen} setIsMobileOpen={setMobileOpen} />
+        </div>
+        
+        {/* Main content with proper spacing for fixed sidebar on desktop */}
+        <div className={cn(
+          "flex-1 flex flex-col w-full min-w-0 transition-all duration-200",
+          !isMobile ? "ml-64" : ""
+        )}>
           <GlobalHeader onOpenSidebar={() => setMobileOpen(true)} />
           <main
           className={cn(
