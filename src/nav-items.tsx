@@ -1,11 +1,16 @@
 
-import { HomeIcon, TruckIcon, Users, FileText, Calendar, Settings, CreditCard, Wrench } from "lucide-react";
+import { HomeIcon, TruckIcon, Users, FileText, Calendar, Settings, CreditCard, Wrench, Calculator } from "lucide-react";
 
 export const navItems = [
   {
     title: "Dashboard",
     to: "/",
     icon: <HomeIcon className="h-4 w-4" />,
+  },
+  {
+    title: "Cotizaciones",
+    to: "/cotizaciones",
+    icon: <Calculator className="h-4 w-4" />,
   },
   {
     title: "Carta Porte",
@@ -23,11 +28,6 @@ export const navItems = [
     icon: <Users className="h-4 w-4" />,
   },
   {
-    title: "Cotizaciones",
-    to: "/cotizaciones",
-    icon: <FileText className="h-4 w-4" />,
-  },
-  {
     title: "Mantenimiento",
     to: "/mantenimiento",
     icon: <Wrench className="h-4 w-4" />,
@@ -43,7 +43,7 @@ export const navItems = [
     icon: <CreditCard className="h-4 w-4" />,
   },
   {
-    title: "Configuración",
+    title: "Administración",
     to: "/configuracion-empresa",
     icon: <Settings className="h-4 w-4" />,
   },
