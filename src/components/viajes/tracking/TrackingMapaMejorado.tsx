@@ -240,107 +240,108 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
 
   if (mapFullscreen) {
     return (
-      <div className="fixed inset-4 z-50 bg-white flex flex-col shadow-2xl rounded-lg">
+      <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
         {/* Header del mapa para fullscreen */}
-        <Card className="flex-shrink-0">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3">
-                <MapIcon className="h-5 w-5 text-primary" />
+        <div className="bg-white p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MapIcon className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-bold text-black">
                 Mapa de Ruta - {viaje.carta_porte_id}
-                {enTiempoReal && (
-                  <Badge className="bg-success text-success-foreground animate-pulse">
-                    EN VIVO
-                  </Badge>
-                )}
-              </CardTitle>
-              <div className="flex gap-2">
-                {enTiempoReal && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setMapaKey(prev => prev + 1);
-                      setLastUpdate(new Date());
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                )}
+              </h2>
+              {enTiempoReal && (
+                <Badge className="bg-success text-success-foreground animate-pulse">
+                  EN VIVO
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {enTiempoReal && (
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  onClick={() => setMapFullscreen(false)}
+                  size="sm"
+                  onClick={() => {
+                    setMapaKey(prev => prev + 1);
+                    setLastUpdate(new Date());
+                  }}
                 >
-                  <Minimize2 className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
-              </div>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setMapFullscreen(false)}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </Button>
             </div>
-          </CardHeader>
-        </Card>
+          </div>
+        </div>
 
         {/* Mapa principal en fullscreen */}
-        <Card className="flex-1 min-h-0">
-          <CardContent className="p-0 h-full">
-            <div className="h-full w-full">
-              <GoogleMapVisualization
-                key={mapaKey}
-                ubicaciones={ubicacionesParaMapa}
-                routeData={{
-                  distance_km: distanciaTotal,
-                  duration_minutes: 420,
-                  google_data: {
-                    polyline: 'route_with_waypoints',
-                    bounds: ubicacionesParaMapa.length > 0 ? { 
-                      north: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
-                      south: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
-                      east: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.longitud)),
-                      west: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.longitud))
-                    } : undefined,
-                    legs: []
-                  }
-                }}
-                isVisible={true}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex-1 min-h-0">
+          <div className="h-full w-full">
+            <GoogleMapVisualization
+              key={mapaKey}
+              ubicaciones={ubicacionesParaMapa}
+              routeData={{
+                distance_km: distanciaTotal,
+                duration_minutes: 420,
+                google_data: {
+                  polyline: 'route_with_waypoints',
+                  bounds: ubicacionesParaMapa.length > 0 ? { 
+                    north: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
+                    south: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
+                    east: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.longitud)),
+                    west: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.longitud))
+                  } : undefined,
+                  legs: []
+                }
+              }}
+              isVisible={true}
+            />
+          </div>
+        </div>
 
         {/* Información de la ruta en fullscreen */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Navigation className="h-4 w-4 text-primary" />
-            <div>
-              <div className="text-sm font-medium">Distancia</div>
-              <div className="text-lg font-bold text-primary">{distanciaTotal} km</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Route className="h-4 w-4 text-secondary-foreground" />
-            <div>
-              <div className="text-sm font-medium">Paradas</div>
-              <div className="text-lg font-bold text-secondary-foreground">{paradasData.length}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-accent-foreground" />
-            <div>
-              <div className="text-sm font-medium">Estado</div>
-              <div className="text-lg font-bold text-accent-foreground capitalize">
-                {viaje.estado.replace('_', ' ')}
+        <div className="bg-white p-4 border-t border-gray-200 flex-shrink-0">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-2">
+              <Navigation className="h-4 w-4 text-primary" />
+              <div>
+                <div className="text-sm font-medium">Distancia</div>
+                <div className="text-lg font-bold text-primary">{distanciaTotal} km</div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {enTiempoReal ? (
-              <Truck className="h-4 w-4 text-success" />
-            ) : (
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            )}
-            <div>
-              <div className="text-sm font-medium">Actualización</div>
-              <div className="text-xs text-muted-foreground">
-                {lastUpdate.toLocaleTimeString()}
+            <div className="flex items-center gap-2">
+              <Route className="h-4 w-4 text-secondary-foreground" />
+              <div>
+                <div className="text-sm font-medium">Paradas</div>
+                <div className="text-lg font-bold text-secondary-foreground">{paradasData.length}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-accent-foreground" />
+              <div>
+                <div className="text-sm font-medium">Estado</div>
+                <div className="text-lg font-bold text-accent-foreground capitalize">
+                  {viaje.estado.replace('_', ' ')}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {enTiempoReal ? (
+                <Truck className="h-4 w-4 text-success" />
+              ) : (
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div>
+                <div className="text-sm font-medium">Actualización</div>
+                <div className="text-xs text-muted-foreground">
+                  {lastUpdate.toLocaleTimeString()}
+                </div>
               </div>
             </div>
           </div>
@@ -348,40 +349,38 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
 
         {/* Lista de paradas en fullscreen */}
         {paradasData.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div className="bg-white p-4 border-t border-gray-200 flex-shrink-0">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Route className="h-5 w-5" />
                 Paradas Programadas ({paradasData.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {paradasData.map((parada: any, index: number) => (
-                  <div key={parada.id || index} className="flex items-center gap-3 p-3 border rounded-lg">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-purple-700">{index + 1}</span>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">
-                        {parada.nombre || `Parada ${index + 1}`}
-                      </div>
-                      <div className="text-xs text-gray-600">{parada.direccion}</div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      {parada.completada ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <AlertTriangle className="h-4 w-4 text-orange-600" />
-                      )}
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {paradasData.map((parada: any, index: number) => (
+                <div key={parada.id || index} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-purple-700">{index + 1}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">
+                      {parada.nombre || `Parada ${index + 1}`}
+                    </div>
+                    <div className="text-xs text-gray-600">{parada.direccion}</div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {parada.completada ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     );
@@ -395,7 +394,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
               <MapIcon className="h-5 w-5 text-primary" />
-              Mapa de Ruta - {viaje.carta_porte_id}
+              Visualización de Ruta
               {enTiempoReal && (
                 <Badge className="bg-success text-success-foreground animate-pulse">
                   EN VIVO
