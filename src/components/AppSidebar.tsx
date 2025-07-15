@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Calculator,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +44,12 @@ const sidebarItems: SidebarItem[] = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+    category: 'OPERACIÓN',
+  },
+  {
+    title: 'Cotizaciones',
+    href: '/cotizaciones',
+    icon: Calculator,
     category: 'OPERACIÓN',
   },
   {
@@ -94,7 +101,7 @@ const sidebarItems: SidebarItem[] = [
     category: 'CUENTA Y CONFIGURACIÓN',
   },
   {
-    title: 'Mi Empresa',
+    title: 'Administración',
     href: '/configuracion/empresa',
     icon: Building2,
     category: 'CUENTA Y CONFIGURACIÓN',
