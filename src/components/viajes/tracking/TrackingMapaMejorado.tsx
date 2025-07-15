@@ -394,7 +394,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
               <MapIcon className="h-5 w-5 text-primary" />
-              Visualización de Ruta
+              Visualización de MAPA
               {enTiempoReal && (
                 <Badge className="bg-success text-success-foreground animate-pulse">
                   EN VIVO
@@ -414,13 +414,6 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setMapFullscreen(true)}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -478,13 +471,9 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* Mapa principal */}
-      <Card className="flex-1 min-h-0">
-        <CardContent className="p-0 h-full">
-          <div className="h-full w-full">
+          {/* Mapa integrado */}
+          <div className="h-96 w-full border rounded-lg overflow-hidden">
             <GoogleMapVisualization
               key={mapaKey}
               ubicaciones={ubicacionesParaMapa}
@@ -504,6 +493,18 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
               }}
               isVisible={true}
             />
+          </div>
+
+          {/* Botón para fullscreen del mapa */}
+          <div className="mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center gap-2"
+              onClick={() => setMapFullscreen(true)}
+            >
+              <Maximize2 className="h-4 w-4" />
+              Ver mapa en pantalla completa
+            </Button>
           </div>
         </CardContent>
       </Card>
