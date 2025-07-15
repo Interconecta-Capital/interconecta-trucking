@@ -42,7 +42,14 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   const trackingData = viaje.tracking_data || {};
   const origenData = trackingData.origen || {};
   const destinoData = trackingData.destino || {};
-  const paradasData = trackingData.paradasAutorizadas || [];
+  
+  // Buscar paradas en diferentes ubicaciones posibles
+  const paradasData = trackingData.paradasAutorizadas || 
+                      trackingData.paradas || 
+                      trackingData.ubicacionesIntermedias || 
+                      (trackingData.ubicaciones || []).filter((u: any) => u.tipoUbicacion === 'Paso Intermedio') ||
+                      [];
+  
   const rutaCalculada = trackingData.rutaCalculada || {};
 
   // Debug: Ver qué coordenadas estamos recibiendo
@@ -206,16 +213,16 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
 
   if (isFullscreen) {
     return (
-      <div className="h-full w-full space-y-4 overflow-y-auto">
+      <div className="h-full w-full flex flex-col">
         {/* Header del mapa para fullscreen */}
-        <Card>
+        <Card className="flex-shrink-0">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3">
-                <MapIcon className="h-5 w-5 text-blue-600" />
+                <MapIcon className="h-5 w-5 text-primary" />
                 Mapa de Ruta - {viaje.carta_porte_id}
                 {enTiempoReal && (
-                  <Badge className="bg-green-500 text-white animate-pulse">
+                  <Badge className="bg-success text-success-foreground animate-pulse">
                     EN VIVO
                   </Badge>
                 )}
@@ -244,9 +251,9 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
         </Card>
 
         {/* Mapa principal en fullscreen */}
-        <Card className="flex-1">
-          <CardContent className="p-0">
-            <div className="h-96 w-full">
+        <Card className="flex-1 min-h-0">
+          <CardContent className="p-0 h-full">
+            <div className="h-full w-full">
               <GoogleMapVisualization
                 key={mapaKey}
                 ubicaciones={ubicacionesParaMapa}
@@ -271,39 +278,39 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
         </Card>
 
         {/* Información de la ruta en fullscreen */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Navigation className="h-4 w-4 text-blue-600" />
+            <Navigation className="h-4 w-4 text-primary" />
             <div>
               <div className="text-sm font-medium">Distancia</div>
-              <div className="text-lg font-bold text-blue-600">{distanciaTotal} km</div>
+              <div className="text-lg font-bold text-primary">{distanciaTotal} km</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Route className="h-4 w-4 text-purple-600" />
+            <Route className="h-4 w-4 text-secondary-foreground" />
             <div>
               <div className="text-sm font-medium">Paradas</div>
-              <div className="text-lg font-bold text-purple-600">{paradasData.length}</div>
+              <div className="text-lg font-bold text-secondary-foreground">{paradasData.length}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-orange-600" />
+            <Clock className="h-4 w-4 text-accent-foreground" />
             <div>
               <div className="text-sm font-medium">Estado</div>
-              <div className="text-lg font-bold text-orange-600 capitalize">
+              <div className="text-lg font-bold text-accent-foreground capitalize">
                 {viaje.estado.replace('_', ' ')}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {enTiempoReal ? (
-              <Truck className="h-4 w-4 text-green-600" />
+              <Truck className="h-4 w-4 text-success" />
             ) : (
-              <MapPin className="h-4 w-4 text-gray-600" />
+              <MapPin className="h-4 w-4 text-muted-foreground" />
             )}
             <div>
               <div className="text-sm font-medium">Actualización</div>
-              <div className="text-xs text-gray-600">
+              <div className="text-xs text-muted-foreground">
                 {lastUpdate.toLocaleTimeString()}
               </div>
             </div>
@@ -352,16 +359,16 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   }
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="h-full flex flex-col">
       {/* Header del mapa */}
-      <Card>
+      <Card className="flex-shrink-0">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
-              <MapIcon className="h-5 w-5 text-blue-600" />
+              <MapIcon className="h-5 w-5 text-primary" />
               Mapa de Ruta - {viaje.carta_porte_id}
               {enTiempoReal && (
-                <Badge className="bg-green-500 text-white animate-pulse">
+                <Badge className="bg-success text-success-foreground animate-pulse">
                   EN VIVO
                 </Badge>
               )}
@@ -391,37 +398,37 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
           {/* Información de la ruta */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center gap-2">
-              <Navigation className="h-4 w-4 text-blue-600" />
+              <Navigation className="h-4 w-4 text-primary" />
               <div>
                 <div className="text-sm font-medium">Distancia</div>
-                <div className="text-lg font-bold text-blue-600">{distanciaTotal} km</div>
+                <div className="text-lg font-bold text-primary">{distanciaTotal} km</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Route className="h-4 w-4 text-purple-600" />
+              <Route className="h-4 w-4 text-secondary-foreground" />
               <div>
                 <div className="text-sm font-medium">Paradas</div>
-                <div className="text-lg font-bold text-purple-600">{paradasData.length}</div>
+                <div className="text-lg font-bold text-secondary-foreground">{paradasData.length}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-600" />
+              <Clock className="h-4 w-4 text-accent-foreground" />
               <div>
                 <div className="text-sm font-medium">Estado</div>
-                <div className="text-lg font-bold text-orange-600 capitalize">
+                <div className="text-lg font-bold text-accent-foreground capitalize">
                   {viaje.estado.replace('_', ' ')}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {enTiempoReal ? (
-                <Truck className="h-4 w-4 text-green-600" />
+                <Truck className="h-4 w-4 text-success" />
               ) : (
-                <MapPin className="h-4 w-4 text-gray-600" />
+                <MapPin className="h-4 w-4 text-muted-foreground" />
               )}
               <div>
                 <div className="text-sm font-medium">Actualización</div>
-                <div className="text-xs text-gray-600">
+                <div className="text-xs text-muted-foreground">
                   {lastUpdate.toLocaleTimeString()}
                 </div>
               </div>
@@ -445,9 +452,9 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
       </Card>
 
       {/* Mapa principal */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="h-80 w-full">
+      <Card className="flex-1 min-h-0">
+        <CardContent className="p-0 h-full">
+          <div className="h-full w-full">
             <GoogleMapVisualization
               key={mapaKey}
               ubicaciones={ubicacionesParaMapa}
@@ -473,7 +480,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
 
       {/* Lista de paradas */}
       {paradasData.length > 0 && (
-        <Card>
+        <Card className="flex-shrink-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Route className="h-5 w-5" />

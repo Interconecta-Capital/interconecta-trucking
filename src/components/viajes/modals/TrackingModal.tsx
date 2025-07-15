@@ -50,10 +50,10 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
   if (isFullscreen) {
     return (
       <div className="fixed inset-0 z-50 bg-background">
-        <div className="h-full w-full p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
+        <div className="h-full w-full flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b bg-card">
             <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Navigation className="h-6 w-6" />
+              <Navigation className="h-6 w-6 text-primary" />
               Tracking en Tiempo Real - {viaje.carta_porte_id}
             </h2>
             <Button 
@@ -66,13 +66,15 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
             </Button>
           </div>
           
-          <TrackingMapaMejorado 
-            viaje={viaje}
-            ubicacionActual={trackingData.coordenadas}
-            enTiempoReal={true}
-            isFullscreen={true}
-            onToggleFullscreen={toggleFullscreen}
-          />
+          <div className="flex-1 p-4">
+            <TrackingMapaMejorado 
+              viaje={viaje}
+              ubicacionActual={trackingData.coordenadas}
+              enTiempoReal={true}
+              isFullscreen={true}
+              onToggleFullscreen={toggleFullscreen}
+            />
+          </div>
         </div>
       </div>
     );
@@ -80,42 +82,46 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Navigation className="h-5 w-5" />
+            <Navigation className="h-5 w-5 text-primary" />
             Tracking en Tiempo Real - {viaje.carta_porte_id}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-blue-600" />
-              <span className="font-semibold">Estado:</span>
-              <Badge className="bg-green-100 text-green-800">En Tránsito</Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(90vh-120px)]">
+          {/* Panel de información - Izquierda */}
+          <div className="space-y-4 overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Estado:</span>
+                <Badge className="bg-success/10 text-success border-success/20">En Tránsito</Badge>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Última actualización: {trackingData.ultimaActualizacion}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              Última actualización: {trackingData.ultimaActualizacion}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
-              <h4 className="font-semibold text-base">Ruta</h4>
+              <h4 className="font-semibold text-base flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Ruta
+              </h4>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-green-600" />
+                  <MapPin className="h-4 w-4 text-success" />
                   <span className="font-medium">Origen:</span> 
                   <span className="text-sm">{origen}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-600" />
+                  <MapPin className="h-4 w-4 text-primary" />
                   <span className="font-medium">Ubicación actual:</span> 
                   <span className="text-sm">{trackingData.ubicacionActual}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-red-600" />
+                  <MapPin className="h-4 w-4 text-destructive" />
                   <span className="font-medium">Destino:</span> 
                   <span className="text-sm">{destino}</span>
                 </div>
@@ -138,37 +144,40 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
             </div>
 
             <div className="space-y-3">
-              <h4 className="font-semibold text-base">Información de Viaje</h4>
+              <h4 className="font-semibold text-base flex items-center gap-2">
+                <Navigation className="h-4 w-4 text-primary" />
+                Información de Viaje
+              </h4>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Navigation className="h-4 w-4 text-blue-600" />
+                  <Navigation className="h-4 w-4 text-primary" />
                   <span className="font-medium">Velocidad:</span> {trackingData.velocidad}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-green-600" />
+                  <Clock className="h-4 w-4 text-success" />
                   <span className="font-medium">ETA:</span>
                   <span className="text-sm">{new Date(trackingData.tiempoEstimadoLlegada).toLocaleString()}</span>
                 </div>
               </div>
             </div>
+
+            {/* Barra de progreso */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Progreso del viaje</span>
+                <span className="text-sm text-muted-foreground">{trackingData.progreso}%</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${trackingData.progreso}%` }}
+                ></div>
+              </div>
+            </div>
           </div>
 
-          {/* Barra de progreso */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Progreso del viaje</span>
-              <span className="text-sm text-muted-foreground">{trackingData.progreso}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${trackingData.progreso}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Mapa de seguimiento integrado */}
-          <div className="space-y-2">
+          {/* Panel del mapa - Derecha */}
+          <div className="h-full">
             <TrackingMapaMejorado 
               viaje={viaje}
               ubicacionActual={trackingData.coordenadas}
