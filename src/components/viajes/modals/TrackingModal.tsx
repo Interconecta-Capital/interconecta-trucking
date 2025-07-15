@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation, Clock, Truck, ExternalLink } from 'lucide-react';
+import { TrackingMapaMejorado } from '../tracking/TrackingMapaMejorado';
 
 interface TrackingModalProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Navigation className="h-5 w-5" />
@@ -49,7 +50,7 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-blue-600" />
@@ -61,8 +62,8 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
               <h4 className="font-semibold text-base">Ruta</h4>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -98,7 +99,7 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h4 className="font-semibold text-base">Información de Viaje</h4>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -128,16 +129,13 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
             </div>
           </div>
 
-          {/* Área del mapa (placeholder) */}
+          {/* Mapa de seguimiento integrado */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-base">Mapa de Seguimiento</h4>
-            <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-              <div className="text-center text-gray-500">
-                <MapPin className="h-8 w-8 mx-auto mb-2" />
-                <p>Mapa de tracking en tiempo real</p>
-                <p className="text-sm">(Integración pendiente con servicio de mapas)</p>
-              </div>
-            </div>
+            <TrackingMapaMejorado 
+              viaje={viaje}
+              ubicacionActual={trackingData.coordenadas}
+              enTiempoReal={true}
+            />
           </div>
         </div>
       </DialogContent>

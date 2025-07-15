@@ -92,70 +92,91 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   
   // Agregar origen si tiene coordenadas
   if (origenData.coordenadas) {
-    ubicacionesParaMapa.push({
-      id: 'origen',
-      idUbicacion: 'origen-001',
-      tipoUbicacion: 'Origen',
-      nombreRemitenteDestinatario: 'Punto de Origen',
-      domicilio: { 
-        calle: origenData.direccion || viaje.origen || 'Origen no especificado',
-        pais: 'MEX',
-        codigoPostal: origenData.codigoPostal || '01000',
-        estado: origenData.estado || 'CDMX',
-        municipio: origenData.municipio || 'Miguel Hidalgo',
-        colonia: origenData.colonia || 'Centro'
-      },
-      coordenadas: { 
-        latitud: origenData.coordenadas.latitud, 
-        longitud: origenData.coordenadas.longitud 
-      }
-    });
+    // Manejar diferentes formatos de coordenadas
+    const coordenadas = origenData.coordenadas;
+    const latitud = coordenadas.latitud || coordenadas.lat;
+    const longitud = coordenadas.longitud || coordenadas.lng;
+    
+    if (latitud && longitud) {
+      ubicacionesParaMapa.push({
+        id: 'origen',
+        idUbicacion: 'origen-001',
+        tipoUbicacion: 'Origen',
+        nombreRemitenteDestinatario: 'Punto de Origen',
+        domicilio: { 
+          calle: origenData.direccion || viaje.origen || 'Origen no especificado',
+          pais: 'MEX',
+          codigoPostal: origenData.codigoPostal || '01000',
+          estado: origenData.estado || 'CDMX',
+          municipio: origenData.municipio || 'Miguel Hidalgo',
+          colonia: origenData.colonia || 'Centro'
+        },
+        coordenadas: { 
+          latitud: latitud, 
+          longitud: longitud 
+        }
+      });
+    }
   }
   
   // Agregar paradas que tengan coordenadas
   paradasData.forEach((parada: any, index: number) => {
     if (parada.coordenadas) {
-      ubicacionesParaMapa.push({
-        id: parada.id || `parada-${index}`,
-        idUbicacion: `parada-${index + 1}`,
-        tipoUbicacion: 'Paso Intermedio',
-        nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
-        domicilio: { 
-          calle: parada.direccion || 'Parada autorizada',
-          pais: 'MEX',
-          codigoPostal: parada.codigoPostal || '50000',
-          estado: 'MEX',
-          municipio: 'Ubicación intermedia',
-          colonia: 'Centro'
-        },
-        coordenadas: { 
-          latitud: parada.coordenadas.latitud, 
-          longitud: parada.coordenadas.longitud 
-        }
-      });
+      // Manejar diferentes formatos de coordenadas
+      const coordenadas = parada.coordenadas;
+      const latitud = coordenadas.latitud || coordenadas.lat;
+      const longitud = coordenadas.longitud || coordenadas.lng;
+      
+      if (latitud && longitud) {
+        ubicacionesParaMapa.push({
+          id: parada.id || `parada-${index}`,
+          idUbicacion: `parada-${index + 1}`,
+          tipoUbicacion: 'Paso Intermedio',
+          nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
+          domicilio: { 
+            calle: parada.direccion || 'Parada autorizada',
+            pais: 'MEX',
+            codigoPostal: parada.codigoPostal || '50000',
+            estado: 'MEX',
+            municipio: 'Ubicación intermedia',
+            colonia: 'Centro'
+          },
+          coordenadas: { 
+            latitud: latitud, 
+            longitud: longitud 
+          }
+        });
+      }
     }
   });
   
   // Agregar destino si tiene coordenadas
   if (destinoData.coordenadas) {
-    ubicacionesParaMapa.push({
-      id: 'destino',
-      idUbicacion: 'destino-001',
-      tipoUbicacion: 'Destino',
-      nombreRemitenteDestinatario: 'Punto de Destino',
-      domicilio: { 
-        calle: destinoData.direccion || viaje.destino || 'Destino no especificado',
-        pais: 'MEX',
-        codigoPostal: destinoData.codigoPostal || '44100',
-        estado: destinoData.estado || 'JAL',
-        municipio: destinoData.municipio || 'Guadalajara',
-        colonia: destinoData.colonia || 'Centro'
-      },
-      coordenadas: { 
-        latitud: destinoData.coordenadas.latitud, 
-        longitud: destinoData.coordenadas.longitud 
-      }
-    });
+    // Manejar diferentes formatos de coordenadas
+    const coordenadas = destinoData.coordenadas;
+    const latitud = coordenadas.latitud || coordenadas.lat;
+    const longitud = coordenadas.longitud || coordenadas.lng;
+    
+    if (latitud && longitud) {
+      ubicacionesParaMapa.push({
+        id: 'destino',
+        idUbicacion: 'destino-001',
+        tipoUbicacion: 'Destino',
+        nombreRemitenteDestinatario: 'Punto de Destino',
+        domicilio: { 
+          calle: destinoData.direccion || viaje.destino || 'Destino no especificado',
+          pais: 'MEX',
+          codigoPostal: destinoData.codigoPostal || '44100',
+          estado: destinoData.estado || 'JAL',
+          municipio: destinoData.municipio || 'Guadalajara',
+          colonia: destinoData.colonia || 'Centro'
+        },
+        coordenadas: { 
+          latitud: latitud, 
+          longitud: longitud 
+        }
+      });
+    }
   }
 
   // Agregar ubicación actual si está disponible
@@ -184,7 +205,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   const distanciaTotal = rutaCalculada.distanciaKm || viaje.tracking_data?.distanciaRecorrida || 0;
 
   return (
-    <div className={`space-y-4 ${isFullscreen ? 'fixed inset-4 z-50 bg-white p-6 overflow-y-auto' : ''}`}>
+    <div className={`space-y-4 ${isFullscreen ? 'fixed inset-4 z-50 bg-white p-6 overflow-y-auto' : 'w-full'}`}>
       {/* Header del mapa */}
       <Card>
         <CardHeader className="pb-3">
