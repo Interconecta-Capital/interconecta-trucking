@@ -23,6 +23,7 @@ import {
   Navigation
 } from 'lucide-react';
 import { useViajesEstados, Viaje } from '@/hooks/useViajesEstados';
+import { useQueryClient } from '@tanstack/react-query';
 import { EstadosViajeManager } from '@/components/viajes/estados/EstadosViajeManager';
 import { TrackingViajeRealTime } from '@/components/viajes/tracking/TrackingViajeRealTime';
 import { ViajeEditor } from '@/components/viajes/editor/ViajeEditor';
@@ -35,7 +36,7 @@ interface ViajeTrackingModalProps {
 
 export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingModalProps) => {
   const [activeTab, setActiveTab] = useState('resumen');
-  
+  const queryClient = useQueryClient();
   const [viajeData, setViajeData] = useState<Viaje | null>(viaje);
 
   useEffect(() => {
@@ -46,7 +47,15 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   }, [viaje]);
 
   const handleViajeUpdate = () => {
-    console.log('Viaje updated, should refetch data');
+    // Invalidar queries para obtener datos actualizados
+    queryClient.invalidateQueries({ queryKey: ['viajes'] });
+    queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
+    queryClient.invalidateQueries({ queryKey: ['eventos-viaje'] });
+    
+    // Cerrar modal para que se vuelva a abrir con datos frescos
+    setTimeout(() => {
+      onOpenChange(false);
+    }, 500);
   };
 
 

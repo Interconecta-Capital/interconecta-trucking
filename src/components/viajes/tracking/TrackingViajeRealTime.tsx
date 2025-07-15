@@ -43,16 +43,9 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
     cargarEventosViaje();
     calcularProgreso();
     
-    // Simular actualización cada 15 segundos para tracking activo
-    const interval = setInterval(() => {
-      cargarEventosViaje();
-      if (viaje.estado === 'en_transito') {
-        actualizarTrackingSimulado();
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [viaje.id]);
+    // Actualizar progreso cuando cambie el estado del viaje
+    calcularProgreso();
+  }, [viaje.id, viaje.estado]);
 
   const cargarEventosViaje = async () => {
     try {
