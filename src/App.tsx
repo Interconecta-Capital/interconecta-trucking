@@ -35,6 +35,8 @@ import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa"
 import Calendario from "./pages/Calendario"
 import ViajeEditar from "./pages/ViajeEditar"
 import ViajesAnalytics from "./pages/ViajesAnalytics"
+import ReportesAutomaticosPage from "./pages/ReportesAutomaticosPage"
+import ReportesGenerales from "./pages/ReportesGenerales"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -95,10 +97,27 @@ const App = () => (
               } />
 
               {/* Nueva ruta de Analytics de Viajes */}
-              <Route path="/dashboard/viajes/analytics" element={
+              <Route path="/viajes/analytics" element={
                 <AuthGuard>
                   <BaseLayout>
                     <ViajesAnalytics />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              {/* Rutas de Reportes */}
+              <Route path="/dashboard/reportes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ReportesGenerales />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/dashboard/reportes-automaticos" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ReportesAutomaticosPage />
                   </BaseLayout>
                 </AuthGuard>
               } />

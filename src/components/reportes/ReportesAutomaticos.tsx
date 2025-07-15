@@ -16,7 +16,11 @@ import {
   Calendar,
   Clock,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  Zap,
+  Send,
+  TrendingUp,
+  Filter
 } from 'lucide-react';
 import { useReportesAutomaticos, ConfiguracionReporte } from '@/hooks/useReportesAutomaticos';
 import { ConfiguradorReporte } from './ConfiguradorReporte';
@@ -106,10 +110,16 @@ export default function ReportesAutomaticos() {
             Configura y programa reportes automáticos para diferentes niveles organizacionales
           </p>
         </div>
-        <Button onClick={handleNuevoReporte} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Reporte
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={handleNuevoReporte} className="hover-scale">
+            <Filter className="h-4 w-4 mr-2" />
+            Desde Plantilla
+          </Button>
+          <Button onClick={handleNuevoReporte} className="bg-gradient-primary hover:bg-gradient-primary-hover">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Reporte
+          </Button>
+        </div>
       </div>
 
       {/* Estadísticas rápidas */}
@@ -234,14 +244,18 @@ export default function ReportesAutomaticos() {
                           size="sm"
                           onClick={() => generarReporteAhora(reporte.id!)}
                           disabled={loading}
+                          className="hover-scale"
+                          title="Generar ahora"
                         >
-                          <Play className="h-4 w-4" />
+                          <Zap className="h-4 w-4" />
                         </Button>
                         
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditarReporte(reporte)}
+                          className="hover-scale"
+                          title="Configurar"
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
@@ -250,6 +264,8 @@ export default function ReportesAutomaticos() {
                           variant={reporte.activo ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleToggleReporte(reporte.id!, !reporte.activo)}
+                          className={`hover-scale ${reporte.activo ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                          title={reporte.activo ? "Pausar reporte" : "Activar reporte"}
                         >
                           {reporte.activo ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                         </Button>

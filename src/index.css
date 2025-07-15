@@ -122,6 +122,18 @@
     --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    
+    /* Gradients for Reports */
+    --gradient-primary: linear-gradient(135deg, var(--blue-interconecta), var(--blue-hover));
+    --gradient-primary-hover: linear-gradient(135deg, var(--blue-hover), #003d8f);
+    --gradient-subtle: linear-gradient(180deg, var(--pure-white), var(--gray-05));
+    
+    /* Shadows for Reports */
+    --shadow-elegant: 0 10px 30px -10px rgba(0, 122, 255, 0.3);
+    --shadow-glow: 0 0 40px rgba(0, 122, 255, 0.4);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -458,6 +470,41 @@
     .btn-apple {
       @apply min-h-[44px] min-w-[44px];
     }
+  }
+
+  /* Gradient utilities for reports */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-primary-hover {
+    background: var(--gradient-primary-hover);
+  }
+  
+  .bg-gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+  
+  /* Animation utilities */
+  .hover-scale {
+    transition: transform 0.2s var(--apple-ease);
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  /* Shadow utilities */
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
   }
 
   /* Reduced Motion Support */

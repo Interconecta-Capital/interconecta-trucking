@@ -70,13 +70,13 @@ export default function DashboardHub() {
       status: 'Próximamente'
     },
     {
-      title: 'Reportes Programados',
-      description: 'Configuración de reportes automáticos',
+      title: 'Reportes Automáticos',
+      description: 'Configuración avanzada de reportes programados',
       icon: Calendar,
-      href: '/dashboard/reportes',
-      color: 'bg-teal-500',
+      href: '/dashboard/reportes-automaticos',
+      color: 'bg-gradient-to-r from-teal-500 to-blue-500',
       stats: '3 reportes activos',
-      status: 'Beta'
+      status: 'Activo'
     }
   ];
 
@@ -122,14 +122,18 @@ export default function DashboardHub() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar Reporte
-          </Button>
-          <Button size="sm">
-            <Clock className="h-4 w-4 mr-2" />
-            Programar Reporte
-          </Button>
+          <Link to="/dashboard/reportes">
+            <Button variant="outline" size="sm" className="hover-scale">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Reporte
+            </Button>
+          </Link>
+          <Link to="/dashboard/reportes">
+            <Button size="sm" className="bg-gradient-primary hover:bg-gradient-primary-hover">
+              <Clock className="h-4 w-4 mr-2" />
+              Programar Reporte
+            </Button>
+          </Link>
         </div>
       </div>
 
