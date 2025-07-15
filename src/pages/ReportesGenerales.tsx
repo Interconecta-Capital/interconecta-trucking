@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import DashboardNavigation from '@/components/dashboard/DashboardNavigation';
 import { CentroReportes } from '@/components/reportes/CentroReportes';
+import { CentroReportesAvanzado } from '@/components/reportes/CentroReportesAvanzado';
 import { Link } from 'react-router-dom';
 
 export default function ReportesGenerales() {
@@ -123,12 +124,17 @@ export default function ReportesGenerales() {
           </div>
         </div>
 
-        <Tabs defaultValue="generar" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="generar">Generar Reportes</TabsTrigger>
+        <Tabs defaultValue="avanzados" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="avanzados">Reportes Avanzados</TabsTrigger>
+            <TabsTrigger value="generar">Reportes Básicos</TabsTrigger>
             <TabsTrigger value="historial">Historial</TabsTrigger>
             <TabsTrigger value="plantillas">Plantillas</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="avanzados">
+            <CentroReportesAvanzado />
+          </TabsContent>
 
           <TabsContent value="generar" className="space-y-6">
             {/* Centro de Reportes Integrado */}

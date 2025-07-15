@@ -26,6 +26,8 @@ import { useReportesAutomaticos, ConfiguracionReporte } from '@/hooks/useReporte
 import { ConfiguradorReporte } from './ConfiguradorReporte';
 import { HistorialReportes } from './HistorialReportes';
 import { PlantillasReporte } from './PlantillasReporte';
+import { CentroReportesAvanzado } from './CentroReportesAvanzado';
+import { AnalyticsEnTiempoReal } from './AnalyticsEnTiempoReal';
 
 export default function ReportesAutomaticos() {
   const {
@@ -185,12 +187,22 @@ export default function ReportesAutomaticos() {
         </Card>
       </div>
 
-      <Tabs defaultValue="configurados" className="w-full">
-        <TabsList>
-          <TabsTrigger value="configurados">Reportes Configurados</TabsTrigger>
+      <Tabs defaultValue="avanzados" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="avanzados">Reportes Avanzados</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics Tiempo Real</TabsTrigger>
+          <TabsTrigger value="configurados">Configurados</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
           <TabsTrigger value="plantillas">Plantillas</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="avanzados">
+          <CentroReportesAvanzado />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <AnalyticsEnTiempoReal />
+        </TabsContent>
 
         <TabsContent value="configurados" className="space-y-4">
           {loading ? (
