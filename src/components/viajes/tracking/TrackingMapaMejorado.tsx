@@ -25,7 +25,7 @@ interface TrackingMapaMejoradoProps {
   ubicacionActual?: { lat: number; lng: number };
   enTiempoReal?: boolean;
   isFullscreen?: boolean;
-  hideExpandButton?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
 export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
@@ -33,8 +33,9 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   ubicacionActual,
   enTiempoReal = false,
   isFullscreen = false,
-  hideExpandButton = false
+  onToggleFullscreen
 }) => {
+  const [mapFullscreen, setMapFullscreen] = useState(false);
   const [mapaKey, setMapaKey] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   
@@ -237,9 +238,9 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   const googleMapsUrl = generateGoogleMapsLink();
   const distanciaTotal = rutaCalculada.distanciaKm || viaje.tracking_data?.distanciaRecorrida || 0;
 
-  if (isFullscreen) {
+  if (mapFullscreen) {
     return (
-      <div className="h-full w-full flex flex-col">
+      <div className="fixed inset-4 z-50 bg-white flex flex-col shadow-2xl rounded-lg">
         {/* Header del mapa para fullscreen */}
         <Card className="flex-shrink-0">
           <CardHeader className="pb-3">
@@ -266,6 +267,13 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setMapFullscreen(false)}
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -407,6 +415,13 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setMapFullscreen(true)}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
