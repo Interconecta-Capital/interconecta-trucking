@@ -144,6 +144,7 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
               ubicacionActual={trackingData.coordenadas}
               enTiempoReal={true}
               isFullscreen={false}
+              hideExpandButton={true}
             />
           </div>
         </div>

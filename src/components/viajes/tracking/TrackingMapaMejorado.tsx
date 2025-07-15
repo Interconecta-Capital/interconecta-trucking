@@ -25,13 +25,15 @@ interface TrackingMapaMejoradoProps {
   ubicacionActual?: { lat: number; lng: number };
   enTiempoReal?: boolean;
   isFullscreen?: boolean;
+  hideExpandButton?: boolean;
 }
 
 export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   viaje,
   ubicacionActual,
   enTiempoReal = false,
-  isFullscreen = false
+  isFullscreen = false,
+  hideExpandButton = false
 }) => {
   const [mapaKey, setMapaKey] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(new Date());
