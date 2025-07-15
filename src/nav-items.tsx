@@ -23,6 +23,11 @@ export const navItems = [
     icon: <Users className="h-4 w-4" />,
   },
   {
+    title: "Cotizaciones",
+    to: "/cotizaciones",
+    icon: <FileText className="h-4 w-4" />,
+  },
+  {
     title: "Mantenimiento",
     to: "/mantenimiento",
     icon: <Wrench className="h-4 w-4" />,

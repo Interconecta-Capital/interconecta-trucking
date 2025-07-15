@@ -1454,6 +1454,127 @@ export type Database = {
         }
         Relationships: []
       }
+      cotizaciones: {
+        Row: {
+          cliente_existente_id: string | null
+          cliente_nuevo_datos: Json | null
+          cliente_tipo: string
+          condiciones_comerciales: string | null
+          conductor_id: string | null
+          costo_total_interno: number
+          costos_internos: Json
+          created_at: string
+          destino: string
+          distancia_total: number | null
+          empresa_datos: Json
+          estado: string
+          fecha_aprobacion: string | null
+          fecha_envio: string | null
+          fecha_vencimiento: string | null
+          folio_cotizacion: string
+          id: string
+          mapa_datos: Json | null
+          margen_ganancia: number
+          nombre_cotizacion: string
+          notas_internas: string | null
+          origen: string
+          precio_cotizado: number
+          remolque_id: string | null
+          tiempo_estimado: number | null
+          tiempo_validez_dias: number | null
+          ubicaciones_intermedias: Json | null
+          updated_at: string
+          user_id: string
+          vehiculo_id: string | null
+        }
+        Insert: {
+          cliente_existente_id?: string | null
+          cliente_nuevo_datos?: Json | null
+          cliente_tipo?: string
+          condiciones_comerciales?: string | null
+          conductor_id?: string | null
+          costo_total_interno?: number
+          costos_internos?: Json
+          created_at?: string
+          destino: string
+          distancia_total?: number | null
+          empresa_datos?: Json
+          estado?: string
+          fecha_aprobacion?: string | null
+          fecha_envio?: string | null
+          fecha_vencimiento?: string | null
+          folio_cotizacion?: string
+          id?: string
+          mapa_datos?: Json | null
+          margen_ganancia?: number
+          nombre_cotizacion: string
+          notas_internas?: string | null
+          origen: string
+          precio_cotizado?: number
+          remolque_id?: string | null
+          tiempo_estimado?: number | null
+          tiempo_validez_dias?: number | null
+          ubicaciones_intermedias?: Json | null
+          updated_at?: string
+          user_id: string
+          vehiculo_id?: string | null
+        }
+        Update: {
+          cliente_existente_id?: string | null
+          cliente_nuevo_datos?: Json | null
+          cliente_tipo?: string
+          condiciones_comerciales?: string | null
+          conductor_id?: string | null
+          costo_total_interno?: number
+          costos_internos?: Json
+          created_at?: string
+          destino?: string
+          distancia_total?: number | null
+          empresa_datos?: Json
+          estado?: string
+          fecha_aprobacion?: string | null
+          fecha_envio?: string | null
+          fecha_vencimiento?: string | null
+          folio_cotizacion?: string
+          id?: string
+          mapa_datos?: Json | null
+          margen_ganancia?: number
+          nombre_cotizacion?: string
+          notas_internas?: string | null
+          origen?: string
+          precio_cotizado?: number
+          remolque_id?: string | null
+          tiempo_estimado?: number | null
+          tiempo_validez_dias?: number | null
+          ubicaciones_intermedias?: Json | null
+          updated_at?: string
+          user_id?: string
+          vehiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizaciones_cliente_existente_id_fkey"
+            columns: ["cliente_existente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentacion_aduanera: {
         Row: {
           aduana_despacho: string | null
@@ -1790,6 +1911,44 @@ export type Database = {
             columns: ["carta_porte_id"]
             isOneToOne: false
             referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historial_cotizaciones: {
+        Row: {
+          cambiado_por: string
+          comentarios: string | null
+          cotizacion_id: string
+          estado_anterior: string | null
+          estado_nuevo: string
+          fecha_cambio: string
+          id: string
+        }
+        Insert: {
+          cambiado_por: string
+          comentarios?: string | null
+          cotizacion_id: string
+          estado_anterior?: string | null
+          estado_nuevo: string
+          fecha_cambio?: string
+          id?: string
+        }
+        Update: {
+          cambiado_por?: string
+          comentarios?: string | null
+          cotizacion_id?: string
+          estado_anterior?: string | null
+          estado_nuevo?: string
+          fecha_cambio?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historial_cotizaciones_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizaciones"
             referencedColumns: ["id"]
           },
         ]
