@@ -147,9 +147,9 @@ export function CotizacionBasicInfo({ formData, updateFormData }: CotizacionBasi
                 </SelectTrigger>
                 <SelectContent>
                   {loadingClientes ? (
-                    <SelectItem value="" disabled>Cargando clientes...</SelectItem>
+                    <SelectItem value="loading" disabled>Cargando clientes...</SelectItem>
                   ) : clientes.length === 0 ? (
-                    <SelectItem value="" disabled>No hay clientes registrados</SelectItem>
+                    <SelectItem value="empty" disabled>No hay clientes registrados</SelectItem>
                   ) : (
                     clientes.map((cliente) => (
                       <SelectItem key={cliente.id} value={cliente.id}>
