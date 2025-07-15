@@ -330,12 +330,11 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
       </Card>
 
       {/* Mapa mejorado en tiempo real */}
-      <TrackingMapaMejorado
+      <TrackingMapaMejorado 
         viaje={viaje}
         ubicacionActual={trackingData?.coordenadas}
         enTiempoReal={viaje.estado === 'en_transito'}
         isFullscreen={isFullscreen}
-        onToggleFullscreen={onToggleFullscreen}
       />
 
       {/* Detalles del viaje */}
