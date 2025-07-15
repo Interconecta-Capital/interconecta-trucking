@@ -204,8 +204,155 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   const googleMapsUrl = generateGoogleMapsLink();
   const distanciaTotal = rutaCalculada.distanciaKm || viaje.tracking_data?.distanciaRecorrida || 0;
 
+  if (isFullscreen) {
+    return (
+      <div className="h-full w-full space-y-4 overflow-y-auto">
+        {/* Header del mapa para fullscreen */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-3">
+                <MapIcon className="h-5 w-5 text-blue-600" />
+                Mapa de Ruta - {viaje.carta_porte_id}
+                {enTiempoReal && (
+                  <Badge className="bg-green-500 text-white animate-pulse">
+                    EN VIVO
+                  </Badge>
+                )}
+              </CardTitle>
+              <div className="flex gap-2">
+                {enTiempoReal && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setMapaKey(prev => prev + 1);
+                      setLastUpdate(new Date());
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                )}
+                {onToggleFullscreen && (
+                  <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
+                    <Minimize2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Mapa principal en fullscreen */}
+        <Card className="flex-1">
+          <CardContent className="p-0">
+            <div className="h-96 w-full">
+              <GoogleMapVisualization
+                key={mapaKey}
+                ubicaciones={ubicacionesParaMapa}
+                routeData={{
+                  distance_km: distanciaTotal,
+                  duration_minutes: 420,
+                  google_data: {
+                    polyline: 'route_with_waypoints',
+                    bounds: ubicacionesParaMapa.length > 0 ? { 
+                      north: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
+                      south: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
+                      east: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.longitud)),
+                      west: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.longitud))
+                    } : undefined,
+                    legs: []
+                  }
+                }}
+                isVisible={true}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Información de la ruta en fullscreen */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="flex items-center gap-2">
+            <Navigation className="h-4 w-4 text-blue-600" />
+            <div>
+              <div className="text-sm font-medium">Distancia</div>
+              <div className="text-lg font-bold text-blue-600">{distanciaTotal} km</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Route className="h-4 w-4 text-purple-600" />
+            <div>
+              <div className="text-sm font-medium">Paradas</div>
+              <div className="text-lg font-bold text-purple-600">{paradasData.length}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-orange-600" />
+            <div>
+              <div className="text-sm font-medium">Estado</div>
+              <div className="text-lg font-bold text-orange-600 capitalize">
+                {viaje.estado.replace('_', ' ')}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {enTiempoReal ? (
+              <Truck className="h-4 w-4 text-green-600" />
+            ) : (
+              <MapPin className="h-4 w-4 text-gray-600" />
+            )}
+            <div>
+              <div className="text-sm font-medium">Actualización</div>
+              <div className="text-xs text-gray-600">
+                {lastUpdate.toLocaleTimeString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de paradas en fullscreen */}
+        {paradasData.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Route className="h-5 w-5" />
+                Paradas Programadas ({paradasData.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {paradasData.map((parada: any, index: number) => (
+                  <div key={parada.id || index} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-bold text-purple-700">{index + 1}</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">
+                        {parada.nombre || `Parada ${index + 1}`}
+                      </div>
+                      <div className="text-xs text-gray-600">{parada.direccion}</div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      {parada.completada ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className={`space-y-4 ${isFullscreen ? 'fixed inset-4 z-50 bg-white p-6 overflow-y-auto' : 'w-full'}`}>
+    <div className="space-y-4 w-full">
       {/* Header del mapa */}
       <Card>
         <CardHeader className="pb-3">
@@ -234,7 +381,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
               )}
               {onToggleFullscreen && (
                 <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  <Maximize2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -300,7 +447,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
       {/* Mapa principal */}
       <Card>
         <CardContent className="p-0">
-          <div className={isFullscreen ? 'h-96' : 'h-80'}>
+          <div className="h-80 w-full">
             <GoogleMapVisualization
               key={mapaKey}
               ubicaciones={ubicacionesParaMapa}
@@ -309,12 +456,12 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
                 duration_minutes: 420,
                 google_data: {
                   polyline: 'route_with_waypoints',
-                  bounds: { 
+                  bounds: ubicacionesParaMapa.length > 0 ? { 
                     north: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
                     south: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.latitud)),
                     east: Math.max(...ubicacionesParaMapa.map(u => u.coordenadas.longitud)),
                     west: Math.min(...ubicacionesParaMapa.map(u => u.coordenadas.longitud))
-                  },
+                  } : undefined,
                   legs: []
                 }
               }}

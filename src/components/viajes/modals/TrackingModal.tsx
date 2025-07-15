@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation, Clock, Truck, ExternalLink } from 'lucide-react';
 import { TrackingMapaMejorado } from '../tracking/TrackingMapaMejorado';
+import { useState } from 'react';
 
 interface TrackingModalProps {
   open: boolean;
@@ -13,6 +14,8 @@ interface TrackingModalProps {
 
 export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps) {
   if (!viaje) return null;
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Extraer datos reales del viaje usando tracking_data
   const trackingRealData = viaje.tracking_data || {};
@@ -39,6 +42,41 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
   };
 
   const googleMapsUrl = generateGoogleMapsLink();
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background">
+        <div className="h-full w-full p-4 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Navigation className="h-6 w-6" />
+              Tracking en Tiempo Real - {viaje.carta_porte_id}
+            </h2>
+            <Button 
+              variant="outline" 
+              onClick={toggleFullscreen}
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Cerrar Pantalla Completa
+            </Button>
+          </div>
+          
+          <TrackingMapaMejorado 
+            viaje={viaje}
+            ubicacionActual={trackingData.coordenadas}
+            enTiempoReal={true}
+            isFullscreen={true}
+            onToggleFullscreen={toggleFullscreen}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,6 +173,8 @@ export function TrackingModal({ open, onOpenChange, viaje }: TrackingModalProps)
               viaje={viaje}
               ubicacionActual={trackingData.coordenadas}
               enTiempoReal={true}
+              isFullscreen={false}
+              onToggleFullscreen={toggleFullscreen}
             />
           </div>
         </div>
