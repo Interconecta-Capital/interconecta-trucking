@@ -45,9 +45,9 @@ export function ConductorVehiculoAsignacionFields({ formData, onFieldChange }: C
               <SelectValue placeholder="Seleccionar vehículo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Sin asignar</SelectItem>
+              <SelectItem value="sin_asignar">Sin asignar</SelectItem>
               {vehiculosLoading ? (
-                <SelectItem value="" disabled>Cargando vehículos...</SelectItem>
+                <SelectItem value="loading" disabled>Cargando vehículos...</SelectItem>
               ) : (
                 vehiculosDisponibles.map((vehiculo) => (
                   <SelectItem key={vehiculo.id} value={vehiculo.id}>

@@ -333,7 +333,7 @@ export const FormularioCodigoPostalMexicanoNacional: React.FC<FormularioCodigoPo
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no_colonias" disabled>
                         No se encontraron colonias con ese filtro
                       </SelectItem>
                     )}
