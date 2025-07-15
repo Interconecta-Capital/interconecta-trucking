@@ -21,6 +21,7 @@ import {
 import { CotizacionWizard } from "@/components/cotizaciones/CotizacionWizard";
 import { CotizacionViewDialog } from "@/components/cotizaciones/CotizacionViewDialog";
 import { useCotizaciones } from "@/hooks/useCotizaciones";
+import { useCotizacionPDF } from "@/hooks/useCotizacionPDF";
 
 const ESTADOS_CONFIG = {
   borrador: { label: "Borrador", color: "bg-gray-500" },
@@ -38,6 +39,7 @@ export default function Cotizaciones() {
   const [editingCotizacion, setEditingCotizacion] = useState<any>(null);
 
   const { cotizaciones, isLoading } = useCotizaciones();
+  const { generatePDF, isGenerating: isGeneratingPDF } = useCotizacionPDF();
 
   const handleNewCotizacion = () => {
     setEditingCotizacion(null);
@@ -52,6 +54,10 @@ export default function Cotizaciones() {
   const handleViewCotizacion = (cotizacion: any) => {
     setSelectedCotizacion(cotizacion);
     setShowViewDialog(true);
+  };
+
+  const handleDownloadPDF = async (cotizacion: any) => {
+    await generatePDF(cotizacion);
   };
 
   const filteredCotizaciones = cotizaciones?.filter((cotizacion: any) => {
@@ -231,9 +237,12 @@ export default function Cotizaciones() {
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDownloadPDF(cotizacion)}
+                            disabled={isGeneratingPDF}
+                          >
                             <Download className="h-4 w-4 mr-2" />
-                            Descargar PDF
+                            {isGeneratingPDF ? 'Generando PDF...' : 'Descargar PDF'}
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Send className="h-4 w-4 mr-2" />
