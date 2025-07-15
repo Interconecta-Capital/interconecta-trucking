@@ -155,6 +155,9 @@ function ViajesContent() {
                 </div>
 
                 <div className="flex items-center gap-2 ml-4 viaje-card-actions">
+                  <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
                     <Edit className="h-4 w-4" />
                   </Button>
