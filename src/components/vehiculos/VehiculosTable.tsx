@@ -1,8 +1,10 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, AlertTriangle, Clock, MapPin, Fuel, Settings } from 'lucide-react';
+import { VehiculoDetailPanel } from './VehiculoDetailPanel';
+import { Eye, Edit, Trash2, AlertTriangle, Clock, MapPin, Fuel, Settings, BarChart3 } from 'lucide-react';
 import { useDisponibilidad } from '@/hooks/useDisponibilidad';
 
 interface Vehiculo {
@@ -32,6 +34,13 @@ interface VehiculosTableProps {
 
 export function VehiculosTable({ vehiculos, loading, onEdit, onView, onDelete }: VehiculosTableProps) {
   const { verificarDisponibilidad } = useDisponibilidad();
+  const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
+  const [showDetailPanel, setShowDetailPanel] = useState(false);
+
+  const handleAnalyze = (vehiculo: any) => {
+    setSelectedVehiculo(vehiculo);
+    setShowDetailPanel(true);
+  };
   if (loading) {
     return (
       <Card>
@@ -193,6 +202,15 @@ export function VehiculosTable({ vehiculos, loading, onEdit, onView, onDelete }:
               )}
 
               <div className="flex gap-2 mt-4">
+                <Button 
+                  size="sm" 
+                  variant="default"
+                  onClick={() => handleAnalyze(vehiculo)}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <BarChart3 className="h-4 w-4 mr-1" />
+                  Analizar
+                </Button>
                 {onView && (
                   <Button 
                     size="sm" 
@@ -229,6 +247,16 @@ export function VehiculosTable({ vehiculos, loading, onEdit, onView, onDelete }:
           </Card>
         );
       })}
+      
+      {/* Panel de análisis detallado */}
+      <VehiculoDetailPanel
+        vehiculo={selectedVehiculo}
+        open={showDetailPanel}
+        onClose={() => {
+          setShowDetailPanel(false);
+          setSelectedVehiculo(null);
+        }}
+      />
     </div>
   );
 }
