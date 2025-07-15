@@ -9,23 +9,28 @@ const corsHeaders = {
 
 interface RouteRequest {
   origin: {
-    lat: number;
-    lng: number;
+    lat?: number;
+    lng?: number;
+    address?: string;
   };
   destination: {
-    lat: number;
-    lng: number;
+    lat?: number;
+    lng?: number;
+    address?: string;
   };
   waypoints?: Array<{
-    lat: number;
-    lng: number;
+    lat?: number;
+    lng?: number;
+    address?: string;
   }>;
 }
 
 interface RouteResponse {
   distance_km: number;
   duration_minutes: number;
-  route_geometry: {
+  distance: number; // in meters for compatibility
+  duration: number; // in seconds for compatibility
+  route_geometry?: {
     type: string;
     coordinates: number[][];
   };
@@ -57,11 +62,48 @@ serve(async (req) => {
 
     const { origin, destination, waypoints }: RouteRequest = await req.json();
 
-    // Validar datos de entrada
-    if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng) {
+    // Helper function to geocode address to coordinates
+    const geocodeAddress = async (address: string) => {
+      const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=MX`;
+      const response = await fetch(geocodeUrl);
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        return { lat, lng };
+      }
+      throw new Error(`No se pudo geocodificar la dirección: ${address}`);
+    };
+
+    // Resolve coordinates for origin
+    let originCoords;
+    if (origin.lat && origin.lng) {
+      originCoords = { lat: origin.lat, lng: origin.lng };
+    } else if (origin.address) {
+      originCoords = await geocodeAddress(origin.address);
+    } else {
       return new Response(
         JSON.stringify({ 
-          error: 'Coordenadas de origen y destino requeridas',
+          error: 'Origen debe tener coordenadas o dirección',
+          success: false 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Resolve coordinates for destination
+    let destinationCoords;
+    if (destination.lat && destination.lng) {
+      destinationCoords = { lat: destination.lat, lng: destination.lng };
+    } else if (destination.address) {
+      destinationCoords = await geocodeAddress(destination.address);
+    } else {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Destino debe tener coordenadas o dirección',
           success: false 
         }),
         { 
@@ -72,15 +114,25 @@ serve(async (req) => {
     }
 
     // Construir coordenadas para la ruta
-    let coordinates = `${origin.lng},${origin.lat}`;
+    let coordinates = `${originCoords.lng},${originCoords.lat}`;
     
     // Agregar waypoints si existen
     if (waypoints && waypoints.length > 0) {
-      const waypointCoords = waypoints.map(wp => `${wp.lng},${wp.lat}`).join(';');
-      coordinates += `;${waypointCoords}`;
+      const waypointCoords = [];
+      for (const wp of waypoints) {
+        if (wp.lat && wp.lng) {
+          waypointCoords.push(`${wp.lng},${wp.lat}`);
+        } else if (wp.address) {
+          const coords = await geocodeAddress(wp.address);
+          waypointCoords.push(`${coords.lng},${coords.lat}`);
+        }
+      }
+      if (waypointCoords.length > 0) {
+        coordinates += `;${waypointCoords.join(';')}`;
+      }
     }
     
-    coordinates += `;${destination.lng},${destination.lat}`;
+    coordinates += `;${destinationCoords.lng},${destinationCoords.lat}`;
 
     console.log('Calculando ruta con Mapbox:', coordinates);
 
@@ -115,6 +167,8 @@ serve(async (req) => {
     const response: RouteResponse = {
       distance_km: Math.round((route.distance / 1000) * 100) / 100, // Convertir metros a km con 2 decimales
       duration_minutes: Math.round(route.duration / 60), // Convertir segundos a minutos
+      distance: route.distance, // meters for compatibility
+      duration: route.duration, // seconds for compatibility
       route_geometry: route.geometry,
       success: true
     };

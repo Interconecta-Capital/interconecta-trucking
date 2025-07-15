@@ -65,7 +65,6 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                     <SelectItem 
                       key={vehiculo.id} 
                       value={vehiculo.id}
-                      disabled={vehiculo.estado !== 'disponible'}
                     >
                       <div className="flex items-center justify-between w-full">
                         <span>{vehiculo.placa} - {vehiculo.marca} {vehiculo.modelo}</span>
@@ -127,7 +126,6 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                     <SelectItem 
                       key={conductor.id} 
                       value={conductor.id}
-                      disabled={conductor.estado !== 'disponible'}
                     >
                       <div className="flex items-center justify-between w-full">
                         <span>{conductor.nombre} - Lic. {conductor.num_licencia}</span>

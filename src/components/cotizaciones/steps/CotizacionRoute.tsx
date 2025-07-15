@@ -30,19 +30,60 @@ export function CotizacionRoute({ formData, updateFormData }: CotizacionRoutePro
     updateFormData({ ubicaciones_intermedias: nuevasUbicaciones });
   };
 
-  const calculateRoute = () => {
-    // Simular cálculo de ruta
-    const distanciaEstimada = Math.floor(Math.random() * 500) + 100; // 100-600 km
-    const tiempoEstimado = Math.floor((distanciaEstimada / 80) * 60); // ~80 km/h en minutos
-    
-    updateFormData({
-      distancia_total: distanciaEstimada,
-      tiempo_estimado: tiempoEstimado,
-      mapa_datos: {
-        calculado: true,
-        timestamp: new Date().toISOString()
+  const calculateRoute = async () => {
+    if (!formData.origen || !formData.destino) {
+      return;
+    }
+
+    try {
+      // Usar la función de edge de Supabase para cálculo real
+      const response = await fetch('/functions/v1/calculate-route', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          origin: { address: formData.origen },
+          destination: { address: formData.destino },
+          waypoints: formData.ubicaciones_intermedias?.map((u: any) => ({ address: u.direccion })) || []
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al calcular la ruta');
       }
-    });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Error al calcular la ruta');
+      }
+      
+      updateFormData({
+        distancia_total: Math.round(data.distance_km),
+        tiempo_estimado: data.duration_minutes,
+        mapa_datos: {
+          calculado: true,
+          timestamp: new Date().toISOString(),
+          route_data: data
+        }
+      });
+    } catch (error) {
+      console.error('Error calculando ruta:', error);
+      // Fallback a cálculo estimado en caso de error
+      const distanciaEstimada = Math.floor(Math.random() * 500) + 100;
+      const tiempoEstimado = Math.floor((distanciaEstimada / 80) * 60);
+      
+      updateFormData({
+        distancia_total: distanciaEstimada,
+        tiempo_estimado: tiempoEstimado,
+        mapa_datos: {
+          calculado: true,
+          timestamp: new Date().toISOString(),
+          fallback: true
+        }
+      });
+    }
   };
 
   return (
