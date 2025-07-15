@@ -3975,6 +3975,16 @@ export type Database = {
         Args: { rfc_input: string }
         Returns: boolean
       }
+      verificar_disponibilidad_recurso: {
+        Args: {
+          p_entidad_tipo: string
+          p_entidad_id: string
+          p_fecha_inicio: string
+          p_fecha_fin: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       subscription_status_enum:
