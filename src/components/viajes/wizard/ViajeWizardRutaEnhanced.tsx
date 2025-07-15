@@ -88,6 +88,12 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
   // Sincronizar fechas con el wizard principal
   useEffect(() => {
     if (fechaSalida && fechaLlegada) {
+      console.log('🔍 DEBUG: Sincronizando fechas con wizard principal:', {
+        fechaSalida,
+        fechaLlegada,
+        fechaInicio: data.fechaInicio,
+        fechaFin: data.fechaFin
+      });
       updateData({
         fechaInicio: fechaSalida,
         fechaFin: fechaLlegada

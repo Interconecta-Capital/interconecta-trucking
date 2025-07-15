@@ -17,6 +17,14 @@ export const useDisponibilidad = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
 
+      console.log('🔍 DEBUG: Verificando disponibilidad:', {
+        entidadTipo,
+        entidadId,
+        fechaInicio,
+        fechaFin,
+        user_id: user.id
+      });
+
       const { data, error } = await supabase.rpc('verificar_disponibilidad_recurso', {
         p_entidad_tipo: entidadTipo,
         p_entidad_id: entidadId,
