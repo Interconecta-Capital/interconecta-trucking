@@ -1370,6 +1370,90 @@ export type Database = {
         }
         Relationships: []
       }
+      costos_viaje: {
+        Row: {
+          casetas_estimadas: number | null
+          casetas_reales: number | null
+          combustible_estimado: number | null
+          combustible_real: number | null
+          comprobantes_urls: Json | null
+          costo_total_estimado: number | null
+          costo_total_real: number | null
+          created_at: string | null
+          id: string
+          mantenimiento_estimado: number | null
+          mantenimiento_real: number | null
+          margen_estimado: number | null
+          margen_real: number | null
+          notas_costos: string | null
+          otros_costos_estimados: number | null
+          otros_costos_reales: number | null
+          peajes_estimados: number | null
+          peajes_reales: number | null
+          precio_cotizado: number | null
+          precio_final_cobrado: number | null
+          salario_conductor_estimado: number | null
+          salario_conductor_real: number | null
+          updated_at: string | null
+          user_id: string
+          viaje_id: string
+        }
+        Insert: {
+          casetas_estimadas?: number | null
+          casetas_reales?: number | null
+          combustible_estimado?: number | null
+          combustible_real?: number | null
+          comprobantes_urls?: Json | null
+          costo_total_estimado?: number | null
+          costo_total_real?: number | null
+          created_at?: string | null
+          id?: string
+          mantenimiento_estimado?: number | null
+          mantenimiento_real?: number | null
+          margen_estimado?: number | null
+          margen_real?: number | null
+          notas_costos?: string | null
+          otros_costos_estimados?: number | null
+          otros_costos_reales?: number | null
+          peajes_estimados?: number | null
+          peajes_reales?: number | null
+          precio_cotizado?: number | null
+          precio_final_cobrado?: number | null
+          salario_conductor_estimado?: number | null
+          salario_conductor_real?: number | null
+          updated_at?: string | null
+          user_id: string
+          viaje_id: string
+        }
+        Update: {
+          casetas_estimadas?: number | null
+          casetas_reales?: number | null
+          combustible_estimado?: number | null
+          combustible_real?: number | null
+          comprobantes_urls?: Json | null
+          costo_total_estimado?: number | null
+          costo_total_real?: number | null
+          created_at?: string | null
+          id?: string
+          mantenimiento_estimado?: number | null
+          mantenimiento_real?: number | null
+          margen_estimado?: number | null
+          margen_real?: number | null
+          notas_costos?: string | null
+          otros_costos_estimados?: number | null
+          otros_costos_reales?: number | null
+          peajes_estimados?: number | null
+          peajes_reales?: number | null
+          precio_cotizado?: number | null
+          precio_final_cobrado?: number | null
+          salario_conductor_estimado?: number | null
+          salario_conductor_real?: number | null
+          updated_at?: string | null
+          user_id?: string
+          viaje_id?: string
+        }
+        Relationships: []
+      }
       documentacion_aduanera: {
         Row: {
           aduana_despacho: string | null
