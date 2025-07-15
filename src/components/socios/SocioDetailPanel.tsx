@@ -21,7 +21,7 @@ export function SocioDetailPanel({ socio, open, onClose }: SocioDetailPanelProps
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-4xl overflow-y-auto">
+      <SheetContent className="w-full max-w-6xl overflow-y-auto sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl">
         <SheetHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2">
@@ -85,8 +85,8 @@ export function SocioDetailPanel({ socio, open, onClose }: SocioDetailPanelProps
                     Información Detallada
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-2">Datos Principales</p>
                       <div className="space-y-2">
@@ -122,6 +122,25 @@ export function SocioDetailPanel({ socio, open, onClose }: SocioDetailPanelProps
                           <Badge variant={socio.estado === 'activo' ? 'default' : 'secondary'} className="ml-2">
                             {socio.estado}
                           </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Tercera columna para pantallas grandes */}
+                    <div className="lg:block hidden">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Estadísticas</p>
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-sm font-medium">Última actividad:</span>
+                          <p className="text-sm">2 días</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium">Viajes completados:</span>
+                          <p className="text-sm">847</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium">Eficiencia:</span>
+                          <Badge variant="default" className="ml-2">98%</Badge>
                         </div>
                       </div>
                     </div>
@@ -161,8 +180,8 @@ export function SocioDetailPanel({ socio, open, onClose }: SocioDetailPanelProps
                     Calculadora de Rendimiento
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                     <div className="space-y-4">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-2">Proyección Mensual</p>
@@ -226,6 +245,36 @@ export function SocioDetailPanel({ socio, open, onClose }: SocioDetailPanelProps
                           <p className="text-xs text-muted-foreground">• Optimizar tiempo de procesamiento</p>
                           <p className="text-xs text-muted-foreground">• Implementar validación automática</p>
                           <p className="text-xs text-muted-foreground">• Actualizar documentos fiscales</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Tercera columna para métricas adicionales */}
+                    <div className="space-y-4 xl:block hidden">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Métricas Avanzadas</p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm">ROI anual:</span>
+                            <Badge variant="default" className="bg-green-500">23.4%</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm">Crecimiento trimestral:</span>
+                            <span className="font-medium text-green-600">+8.2%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm">Índice de satisfacción:</span>
+                            <span className="font-medium">4.8/5.0</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Próximos Hitos</p>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">• Certificación ISO próxima</p>
+                          <p className="text-xs text-muted-foreground">• Expansión a nueva ruta</p>
+                          <p className="text-xs text-muted-foreground">• Renovación de seguros</p>
                         </div>
                       </div>
                     </div>

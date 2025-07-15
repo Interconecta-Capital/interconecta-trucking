@@ -137,15 +137,18 @@ export function VehiculoDetailPanel({ vehiculo, open, onClose }: VehiculoDetailP
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Calculator className="h-5 w-5" />
-                        Calculadora de Costos
+                        Calculadora de Costos para Nuevo Viaje
                       </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Utiliza esta calculadora para estimar costos de nuevos viajes con este vehículo
+                      </p>
                     </CardHeader>
                     <CardContent>
                       <CalculadoraCostos 
-                        distanciaKm={500}
-                        tipoVehiculo={vehiculo.config_vehicular || 'camion'}
+                        distanciaKm={0}
+                        tipoVehiculo={vehiculo.config_vehicular || 'C2'}
                         onCostosCalculados={(costos, precio) => {
-                          console.log('Costos calculados:', { costos, precio });
+                          console.log('Costos calculados para nuevo viaje:', { costos, precio });
                         }}
                       />
                     </CardContent>
