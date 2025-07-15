@@ -36,6 +36,7 @@ import Calendario from "./pages/Calendario"
 import ViajeEditar from "./pages/ViajeEditar"
 import ViajesAnalytics from "./pages/ViajesAnalytics"
 import ReportesAutomaticosPage from "./pages/ReportesAutomaticosPage"
+import Cotizaciones from "./pages/Cotizaciones"
 import ReportesGenerales from "./pages/ReportesGenerales"
 
 // Nuevos componentes
@@ -126,6 +127,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <CartasPorteUnified />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/cotizaciones" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Cotizaciones />
                   </BaseLayout>
                 </AuthGuard>
               } />

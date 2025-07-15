@@ -6,14 +6,10 @@ import { Button } from '@/components/ui/button';
 import { VehiculoMetricas } from './VehiculoMetricas';
 import { VehiculoHistorialViajes } from './VehiculoHistorialViajes';
 import { ValidadorDisponibilidad } from '../viajes/ValidadorDisponibilidad';
-import { CalculadoraCostos } from '../viajes/CalculadoraCostos';
 import { 
   BarChart3, 
   Route, 
-  Calendar, 
-  Calculator, 
   CheckCircle, 
-  AlertTriangle,
   Clock,
   MapPin,
   X
@@ -83,7 +79,7 @@ export function VehiculoDetailPanel({ vehiculo, open, onClose }: VehiculoDetailP
           {/* Content */}
           <div className="flex-1 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mx-6 mt-4">
+              <TabsList className="grid w-full grid-cols-3 mx-6 mt-4">
                 <TabsTrigger value="metricas" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Métricas
@@ -95,10 +91,6 @@ export function VehiculoDetailPanel({ vehiculo, open, onClose }: VehiculoDetailP
                 <TabsTrigger value="disponibilidad" className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
                   Disponibilidad
-                </TabsTrigger>
-                <TabsTrigger value="costos" className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
-                  Calculadora
                 </TabsTrigger>
               </TabsList>
 
@@ -132,28 +124,6 @@ export function VehiculoDetailPanel({ vehiculo, open, onClose }: VehiculoDetailP
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="costos" className="mt-0">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Calculator className="h-5 w-5" />
-                        Calculadora de Costos para Nuevo Viaje
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Utiliza esta calculadora para estimar costos de nuevos viajes con este vehículo
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <CalculadoraCostos 
-                        distanciaKm={0}
-                        tipoVehiculo={vehiculo.config_vehicular || 'C2'}
-                        onCostosCalculados={(costos, precio) => {
-                          console.log('Costos calculados para nuevo viaje:', { costos, precio });
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
               </div>
             </Tabs>
           </div>
