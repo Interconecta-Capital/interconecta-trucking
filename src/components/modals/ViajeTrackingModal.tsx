@@ -35,7 +35,7 @@ interface ViajeTrackingModalProps {
 
 export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingModalProps) => {
   const [activeTab, setActiveTab] = useState('resumen');
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   const [viajeData, setViajeData] = useState<Viaje | null>(viaje);
 
   useEffect(() => {
@@ -49,9 +49,6 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
     console.log('Viaje updated, should refetch data');
   };
 
-  const handleToggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
 
   const getEstadoBadge = (estado: string) => {
     const configs = {
@@ -110,7 +107,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={`${isFullscreen ? 'fixed inset-4 max-w-none w-auto h-auto' : 'max-w-6xl max-h-[90vh]'} overflow-hidden`}
+        className="max-w-6xl max-h-[90vh] overflow-hidden"
       >
         <DialogHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -128,16 +125,6 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                 </div>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleToggleFullscreen}
-            >
-              {isFullscreen ? 
-                <Minimize2 className="h-4 w-4" /> : 
-                <Maximize2 className="h-4 w-4" />
-              }
-            </Button>
           </div>
         </DialogHeader>
 
@@ -165,7 +152,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             </TabsTrigger>
           </TabsList>
 
-          <div className={`mt-6 ${isFullscreen ? 'h-[calc(100vh-200px)]' : 'max-h-[70vh]'} overflow-y-auto`}>
+          <div className="mt-6 max-h-[70vh] overflow-y-auto">
             
             {/* Tab Resumen - Nueva vista principal */}
             <TabsContent value="resumen" className="mt-0 space-y-6">
@@ -324,8 +311,6 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             <TabsContent value="tracking" className="mt-0">
               <TrackingViajeRealTime 
                 viaje={viajeData}
-                isFullscreen={isFullscreen}
-                onToggleFullscreen={handleToggleFullscreen}
               />
             </TabsContent>
 
