@@ -43,11 +43,13 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
     cargarEventosViaje();
     calcularProgreso();
     
-    // Simular actualización cada 30 segundos
+    // Simular actualización cada 15 segundos para tracking activo
     const interval = setInterval(() => {
       cargarEventosViaje();
-      actualizarTrackingSimulado();
-    }, 30000);
+      if (viaje.estado === 'en_transito') {
+        actualizarTrackingSimulado();
+      }
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [viaje.id]);
@@ -298,23 +300,8 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
                      <span className="font-medium">Ubicación actual:</span>
                      <span className="text-sm">{trackingData.ubicacionActual}</span>
                    </div>
-                 )}
-                 
-                 {/* Botón de Google Maps */}
-                 {googleMapsUrl && (
-                   <div className="pt-2 border-t">
-                     <Button 
-                       variant="outline" 
-                       size="sm"
-                       onClick={() => window.open(googleMapsUrl, '_blank')}
-                       className="w-full flex items-center gap-2"
-                     >
-                       <ExternalLink className="h-4 w-4" />
-                       Ver ruta en Google Maps
-                     </Button>
-                   </div>
-                 )}
-              </div>
+                  )}
+                </div>
 
               <div className="space-y-2">
                 {trackingData && (
