@@ -49,6 +49,10 @@ export interface ViajeWizardData {
   // Paso C: Activos
   vehiculo?: any;
   conductor?: any;
+  remolque?: any;
+  // Fechas del viaje
+  fechaInicio?: string;
+  fechaFin?: string;
   // Estado general
   currentStep: number;
   isValid: boolean;

@@ -76,7 +76,24 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     if (data.destino?.fechaHoraSalidaLlegada) {
       setFechaLlegada(new Date(data.destino.fechaHoraSalidaLlegada).toISOString().slice(0, 16));
     }
-  }, [data.origen, data.destino]);
+    // Cargar fechas del wizard principal si existen
+    if (data.fechaInicio) {
+      setFechaSalida(new Date(data.fechaInicio).toISOString().slice(0, 16));
+    }
+    if (data.fechaFin) {
+      setFechaLlegada(new Date(data.fechaFin).toISOString().slice(0, 16));
+    }
+  }, [data.origen, data.destino, data.fechaInicio, data.fechaFin]);
+
+  // Sincronizar fechas con el wizard principal
+  useEffect(() => {
+    if (fechaSalida && fechaLlegada) {
+      updateData({
+        fechaInicio: fechaSalida,
+        fechaFin: fechaLlegada
+      });
+    }
+  }, [fechaSalida, fechaLlegada, updateData]);
 
   // Calcular ruta automáticamente cuando se tienen origen y destino
   const calcularRuta = async () => {
@@ -318,8 +335,13 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               id="fechaSalida"
               type="datetime-local"
               value={fechaSalida}
-              onChange={(e) => setFechaSalida(e.target.value)}
+              onChange={(e) => {
+                setFechaSalida(e.target.value);
+                // Actualizar inmediatamente en el wizard
+                updateData({ fechaInicio: e.target.value });
+              }}
               className="mt-2"
+              required
             />
           </div>
         </CardContent>
@@ -361,9 +383,14 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               id="fechaLlegada"
               type="datetime-local"
               value={fechaLlegada}
-              onChange={(e) => setFechaLlegada(e.target.value)}
+              onChange={(e) => {
+                setFechaLlegada(e.target.value);
+                // Actualizar inmediatamente en el wizard
+                updateData({ fechaFin: e.target.value });
+              }}
               className="mt-2"
               min={fechaSalida}
+              required
             />
           </div>
         </CardContent>

@@ -3,10 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Truck, User, Package, AlertTriangle, CheckCircle, Link2, Settings } from 'lucide-react';
+import { Truck, User, Package, AlertTriangle, CheckCircle, Link2, Settings, Clock } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { useConductores } from '@/hooks/useConductores';
+import { useRemolques } from '@/hooks/useRemolques';
+import { useDisponibilidad } from '@/hooks/useDisponibilidad';
+import { ValidadorDisponibilidad } from '../ValidadorDisponibilidad';
+import { ConflictoDisponibilidad } from '@/types/viaje';
 import { toast } from 'sonner';
 
 interface ViajeWizardActivosProps {
@@ -28,12 +32,17 @@ interface VehiculoRemolque {
 export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps) {
   const { vehiculos, loading: loadingVehiculos } = useVehiculos();
   const { conductores, loading: loadingConductores } = useConductores();
+  const { remolques, loading: loadingRemolques } = useRemolques();
   
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(data.vehiculo);
   const [selectedConductor, setSelectedConductor] = useState<any>(data.conductor);
+  const [selectedRemolque, setSelectedRemolque] = useState<any>(data.remolque);
   const [vehiculoRemolques, setVehiculoRemolques] = useState<VehiculoRemolque[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [capacidadRequerida, setCapacidadRequerida] = useState(0);
+  const [conflictosDisponibilidad, setConflictosDisponibilidad] = useState<ConflictoDisponibilidad[]>([]);
+  const [recursosDisponibles, setRecursosDisponibles] = useState(true);
+  const [showDisponibilidad, setShowDisponibilidad] = useState(false);
 
   // Calcular capacidad requerida basada en mercancías
   useEffect(() => {
@@ -45,7 +54,14 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
   // Validar compatibilidad vehículo-conductor
   useEffect(() => {
     validateAssignments();
-  }, [selectedVehiculo, selectedConductor, capacidadRequerida]);
+  }, [selectedVehiculo, selectedConductor, selectedRemolque, capacidadRequerida]);
+
+  // Mostrar validador de disponibilidad cuando tengamos fechas y recursos
+  useEffect(() => {
+    const tieneRecursos = selectedVehiculo || selectedConductor || selectedRemolque;
+    const tieneFechas = Boolean(data.fechaInicio && data.fechaFin);
+    setShowDisponibilidad(Boolean(tieneRecursos && tieneFechas));
+  }, [selectedVehiculo, selectedConductor, selectedRemolque, data.fechaInicio, data.fechaFin]);
 
   const validateAssignments = () => {
     const errors: string[] = [];
@@ -119,6 +135,26 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
     }
   };
 
+  const handleRemolqueSelect = (remolqueId: string) => {
+    const remolque = remolques.find(r => r.id === remolqueId);
+    if (remolque) {
+      setSelectedRemolque(remolque);
+      updateData({ remolque });
+    }
+  };
+
+  // Callback para recibir resultados de validación de disponibilidad
+  const handleValidacionDisponibilidad = (disponible: boolean, conflictos: ConflictoDisponibilidad[]) => {
+    setRecursosDisponibles(disponible);
+    setConflictosDisponibilidad(conflictos);
+    
+    if (!disponible) {
+      // Marcar visualmente los recursos con conflictos
+      const mensajeConflictos = conflictos.map(c => c.mensaje || c.descripcion).join(', ');
+      console.log('⚠️ Conflictos de disponibilidad:', mensajeConflictos);
+    }
+  };
+
   const loadVehiculoRemolques = async (vehiculoId: string) => {
     try {
       // Simulación de carga de remolques
@@ -158,14 +194,20 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
   const renderVehiculoCard = (vehiculo: any) => {
     const isSelected = selectedVehiculo?.id === vehiculo.id;
     const capacidadSuficiente = (vehiculo.capacidad_carga || 0) >= capacidadRequerida;
+    const estaDisponible = vehiculo.estado === 'disponible';
+    const tieneConflictos = isSelected && !recursosDisponibles && conflictosDisponibilidad.some(c => 
+      c.mensaje?.includes('vehículo') || c.descripcion?.includes('vehículo')
+    );
     
     return (
       <Card 
         key={vehiculo.id}
         className={`cursor-pointer transition-all ${
           isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
-        } ${!capacidadSuficiente ? 'border-red-200' : ''}`}
-        onClick={() => handleVehiculoSelect(vehiculo.id)}
+        } ${!capacidadSuficiente ? 'border-red-200' : ''} ${
+          tieneConflictos ? 'border-warning/50 bg-warning/5' : ''
+        } ${!estaDisponible ? 'opacity-50' : ''}`}
+        onClick={() => estaDisponible ? handleVehiculoSelect(vehiculo.id) : null}
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
@@ -188,8 +230,15 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
             )}
             
             {vehiculo.estado !== 'disponible' && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="destructive" className="text-xs">
                 {vehiculo.estado}
+              </Badge>
+            )}
+            
+            {isSelected && tieneConflictos && (
+              <Badge variant="outline" className="text-xs border-warning text-warning">
+                <Clock className="w-3 h-3 mr-1" />
+                Conflicto de fechas
               </Badge>
             )}
           </div>
@@ -201,14 +250,20 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
   const renderConductorCard = (conductor: any) => {
     const isSelected = selectedConductor?.id === conductor.id;
     const licenciaVigente = conductor.vigencia_licencia && new Date(conductor.vigencia_licencia) > new Date();
+    const estaDisponible = conductor.estado === 'disponible';
+    const tieneConflictos = isSelected && !recursosDisponibles && conflictosDisponibilidad.some(c => 
+      c.mensaje?.includes('conductor') || c.descripcion?.includes('conductor')
+    );
     
     return (
       <Card 
         key={conductor.id}
         className={`cursor-pointer transition-all ${
           isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
-        } ${!licenciaVigente ? 'border-red-200' : ''}`}
-        onClick={() => handleConductorSelect(conductor.id)}
+        } ${!licenciaVigente ? 'border-red-200' : ''} ${
+          tieneConflictos ? 'border-warning/50 bg-warning/5' : ''
+        } ${!estaDisponible ? 'opacity-50' : ''}`}
+        onClick={() => estaDisponible ? handleConductorSelect(conductor.id) : null}
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
@@ -234,8 +289,15 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
             )}
             
             {conductor.estado !== 'disponible' && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="destructive" className="text-xs">
                 {conductor.estado}
+              </Badge>
+            )}
+            
+            {isSelected && tieneConflictos && (
+              <Badge variant="outline" className="text-xs border-warning text-warning">
+                <Clock className="w-3 h-3 mr-1" />
+                Conflicto de fechas
               </Badge>
             )}
           </div>
@@ -357,8 +419,78 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
         </CardContent>
       </Card>
 
+      {/* Selección de remolque (opcional) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            Seleccionar Remolque (Opcional)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingRemolques ? (
+            <div className="text-center py-4">Cargando remolques...</div>
+          ) : (
+            <div className="space-y-3">
+              <Select
+                value={selectedRemolque?.id || ""}
+                onValueChange={(value) => {
+                  if (value === "sin_remolque") {
+                    setSelectedRemolque(null);
+                    updateData({ remolque: null });
+                  } else {
+                    handleRemolqueSelect(value);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar remolque" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sin_remolque">Sin remolque</SelectItem>
+                  {remolques.filter(r => r.activo !== false).map((remolque) => (
+                    <SelectItem key={remolque.id} value={remolque.id}>
+                      {remolque.placa} - {remolque.tipo_remolque || remolque.subtipo_rem || 'Tipo no especificado'}
+                      {remolque.estado !== 'disponible' && ` (${remolque.estado})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {selectedRemolque && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Remolque seleccionado</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedRemolque.placa} - {selectedRemolque.tipo_remolque || selectedRemolque.subtipo_rem}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {selectedRemolque.estado || 'disponible'}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Validador de Disponibilidad */}
+      {showDisponibilidad && (
+        <ValidadorDisponibilidad
+          conductorId={selectedConductor?.id}
+          vehiculoId={selectedVehiculo?.id}
+          remolqueId={selectedRemolque?.id}
+          fechaInicio={data.fechaInicio || ''}
+          fechaFin={data.fechaFin || ''}
+          onValidacionCompleta={handleValidacionDisponibilidad}
+        />
+      )}
+
       {/* Validaciones */}
-      {validationErrors.length > 0 && (
+      {(validationErrors.length > 0 || !recursosDisponibles) && (
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-800">
@@ -374,13 +506,19 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                   {error}
                 </li>
               ))}
+              {!recursosDisponibles && conflictosDisponibilidad.map((conflicto, index) => (
+                <li key={`disponibilidad-${index}`} className="flex items-start gap-2 text-sm text-red-700">
+                  <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  {conflicto.mensaje || conflicto.descripcion}
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
       )}
 
       {/* Resumen de selección */}
-      {selectedVehiculo && selectedConductor && validationErrors.length === 0 && (
+      {selectedVehiculo && selectedConductor && validationErrors.length === 0 && recursosDisponibles && (
         <Card className="border-green-200 bg-green-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-green-800">
@@ -389,7 +527,7 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="font-medium">Vehículo:</p>
                 <p>{selectedVehiculo.marca} {selectedVehiculo.modelo}</p>
@@ -402,7 +540,20 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
                 <p>Licencia: {selectedConductor.tipo_licencia}</p>
                 <p>Vigencia: {new Date(selectedConductor.vigencia_licencia).toLocaleDateString()}</p>
               </div>
+              {selectedRemolque && (
+                <div>
+                  <p className="font-medium">Remolque:</p>
+                  <p>Placas: {selectedRemolque.placa}</p>
+                  <p>Tipo: {selectedRemolque.tipo_remolque || selectedRemolque.subtipo_rem}</p>
+                  <p>Estado: {selectedRemolque.estado || 'disponible'}</p>
+                </div>
+              )}
             </div>
+            {showDisponibilidad && (
+              <div className="mt-3 p-2 bg-green-100 border border-green-300 rounded text-green-800 text-sm">
+                ✅ Todos los recursos están disponibles para las fechas seleccionadas
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
