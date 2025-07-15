@@ -212,7 +212,7 @@ export function SmartMercanciaInputMejorado({
 
       {/* Clave de Producto SAT */}
       {showClaveProducto && value && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded-md">
+        <div className="text-sm text-gray-600 bg-white p-2 rounded-md">
           <strong>Sugerencia de clave SAT:</strong> Se detectó producto agrícola - Considerar clave 10121800 para frutas y verduras frescas
         </div>
       )}
