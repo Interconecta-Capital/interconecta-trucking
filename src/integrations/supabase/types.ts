@@ -402,6 +402,7 @@ export type Database = {
       cartas_porte: {
         Row: {
           borrador_origen_id: string | null
+          conductor_principal_id: string | null
           created_at: string | null
           datos_formulario: Json | null
           distancia_total: number | null
@@ -423,6 +424,7 @@ export type Database = {
           regimen_fiscal_receptor: string | null
           regimenes_aduaneros: Json | null
           registro_istmo: boolean | null
+          remolque_principal_id: string | null
           rfc_emisor: string
           rfc_receptor: string
           status: string | null
@@ -435,13 +437,16 @@ export type Database = {
           uso_cfdi: string | null
           usuario_id: string | null
           uuid_fiscal: string | null
+          vehiculo_principal_id: string | null
           version_carta_porte: string | null
           version_documento: string | null
           via_entrada_salida: string | null
+          viaje_id: string | null
           xml_generado: string | null
         }
         Insert: {
           borrador_origen_id?: string | null
+          conductor_principal_id?: string | null
           created_at?: string | null
           datos_formulario?: Json | null
           distancia_total?: number | null
@@ -463,6 +468,7 @@ export type Database = {
           regimen_fiscal_receptor?: string | null
           regimenes_aduaneros?: Json | null
           registro_istmo?: boolean | null
+          remolque_principal_id?: string | null
           rfc_emisor: string
           rfc_receptor: string
           status?: string | null
@@ -475,13 +481,16 @@ export type Database = {
           uso_cfdi?: string | null
           usuario_id?: string | null
           uuid_fiscal?: string | null
+          vehiculo_principal_id?: string | null
           version_carta_porte?: string | null
           version_documento?: string | null
           via_entrada_salida?: string | null
+          viaje_id?: string | null
           xml_generado?: string | null
         }
         Update: {
           borrador_origen_id?: string | null
+          conductor_principal_id?: string | null
           created_at?: string | null
           datos_formulario?: Json | null
           distancia_total?: number | null
@@ -503,6 +512,7 @@ export type Database = {
           regimen_fiscal_receptor?: string | null
           regimenes_aduaneros?: Json | null
           registro_istmo?: boolean | null
+          remolque_principal_id?: string | null
           rfc_emisor?: string
           rfc_receptor?: string
           status?: string | null
@@ -515,9 +525,11 @@ export type Database = {
           uso_cfdi?: string | null
           usuario_id?: string | null
           uuid_fiscal?: string | null
+          vehiculo_principal_id?: string | null
           version_carta_porte?: string | null
           version_documento?: string | null
           via_entrada_salida?: string | null
+          viaje_id?: string | null
           xml_generado?: string | null
         }
         Relationships: [
@@ -1211,71 +1223,104 @@ export type Database = {
       conductores: {
         Row: {
           activo: boolean | null
+          banco_clabe: string | null
+          banco_cuenta: string | null
           certificaciones: Json | null
+          contacto_emergencia_nombre: string | null
+          contacto_emergencia_telefono: string | null
           created_at: string | null
           curp: string | null
           direccion: Json | null
           email: string | null
           estado: string
+          fecha_proxima_disponibilidad: string | null
           historial_performance: Json | null
           id: string
+          motivo_no_disponible: string | null
           nombre: string
           num_licencia: string | null
           num_reg_id_trib: string | null
           operador_sct: boolean | null
+          porcentaje_comision: number | null
           preferencias: Json | null
           residencia_fiscal: string | null
           rfc: string | null
+          salario_base: number | null
           telefono: string | null
           tipo_licencia: string | null
+          ubicacion_actual: string | null
           updated_at: string | null
           user_id: string
+          vehiculo_asignado_id: string | null
+          viaje_actual_id: string | null
           vigencia_licencia: string | null
         }
         Insert: {
           activo?: boolean | null
+          banco_clabe?: string | null
+          banco_cuenta?: string | null
           certificaciones?: Json | null
+          contacto_emergencia_nombre?: string | null
+          contacto_emergencia_telefono?: string | null
           created_at?: string | null
           curp?: string | null
           direccion?: Json | null
           email?: string | null
           estado?: string
+          fecha_proxima_disponibilidad?: string | null
           historial_performance?: Json | null
           id?: string
+          motivo_no_disponible?: string | null
           nombre: string
           num_licencia?: string | null
           num_reg_id_trib?: string | null
           operador_sct?: boolean | null
+          porcentaje_comision?: number | null
           preferencias?: Json | null
           residencia_fiscal?: string | null
           rfc?: string | null
+          salario_base?: number | null
           telefono?: string | null
           tipo_licencia?: string | null
+          ubicacion_actual?: string | null
           updated_at?: string | null
           user_id: string
+          vehiculo_asignado_id?: string | null
+          viaje_actual_id?: string | null
           vigencia_licencia?: string | null
         }
         Update: {
           activo?: boolean | null
+          banco_clabe?: string | null
+          banco_cuenta?: string | null
           certificaciones?: Json | null
+          contacto_emergencia_nombre?: string | null
+          contacto_emergencia_telefono?: string | null
           created_at?: string | null
           curp?: string | null
           direccion?: Json | null
           email?: string | null
           estado?: string
+          fecha_proxima_disponibilidad?: string | null
           historial_performance?: Json | null
           id?: string
+          motivo_no_disponible?: string | null
           nombre?: string
           num_licencia?: string | null
           num_reg_id_trib?: string | null
           operador_sct?: boolean | null
+          porcentaje_comision?: number | null
           preferencias?: Json | null
           residencia_fiscal?: string | null
           rfc?: string | null
+          salario_base?: number | null
           telefono?: string | null
           tipo_licencia?: string | null
+          ubicacion_actual?: string | null
           updated_at?: string | null
           user_id?: string
+          vehiculo_asignado_id?: string | null
+          viaje_actual_id?: string | null
           vigencia_licencia?: string | null
         }
         Relationships: []
@@ -2709,54 +2754,81 @@ export type Database = {
       socios: {
         Row: {
           activo: boolean | null
+          calificacion_promedio: number | null
+          conductores_asignados: number | null
           created_at: string | null
           direccion: Json | null
           direccion_fiscal: Json | null
           email: string | null
           estado: string
           id: string
+          ingresos_mes_actual: number | null
+          ingresos_totales: number | null
           nombre_razon_social: string
           regimen_fiscal: string | null
           rfc: string
           telefono: string | null
           tipo_persona: string | null
+          total_viajes_completados: number | null
+          ultimo_viaje_fecha: string | null
+          ultimo_viaje_id: string | null
           updated_at: string | null
           user_id: string
           uso_cfdi: string | null
+          vehiculos_asignados: number | null
+          viajes_activos: number | null
         }
         Insert: {
           activo?: boolean | null
+          calificacion_promedio?: number | null
+          conductores_asignados?: number | null
           created_at?: string | null
           direccion?: Json | null
           direccion_fiscal?: Json | null
           email?: string | null
           estado?: string
           id?: string
+          ingresos_mes_actual?: number | null
+          ingresos_totales?: number | null
           nombre_razon_social: string
           regimen_fiscal?: string | null
           rfc: string
           telefono?: string | null
           tipo_persona?: string | null
+          total_viajes_completados?: number | null
+          ultimo_viaje_fecha?: string | null
+          ultimo_viaje_id?: string | null
           updated_at?: string | null
           user_id: string
           uso_cfdi?: string | null
+          vehiculos_asignados?: number | null
+          viajes_activos?: number | null
         }
         Update: {
           activo?: boolean | null
+          calificacion_promedio?: number | null
+          conductores_asignados?: number | null
           created_at?: string | null
           direccion?: Json | null
           direccion_fiscal?: Json | null
           email?: string | null
           estado?: string
           id?: string
+          ingresos_mes_actual?: number | null
+          ingresos_totales?: number | null
           nombre_razon_social?: string
           regimen_fiscal?: string | null
           rfc?: string
           telefono?: string | null
           tipo_persona?: string | null
+          total_viajes_completados?: number | null
+          ultimo_viaje_fecha?: string | null
+          ultimo_viaje_id?: string | null
           updated_at?: string | null
           user_id?: string
           uso_cfdi?: string | null
+          vehiculos_asignados?: number | null
+          viajes_activos?: number | null
         }
         Relationships: []
       }
@@ -3262,19 +3334,25 @@ export type Database = {
           asegura_med_ambiente: string | null
           asegura_resp_civil: string | null
           capacidad_carga: number | null
+          conductor_asignado_id: string | null
           config_vehicular: string | null
           configuracion_ejes: string | null
+          consumo_promedio_km_litro: number | null
           costo_llantas_km: number | null
           costo_mantenimiento_km: number | null
+          costo_operacion_km: number | null
           created_at: string | null
           dimensiones: Json | null
           estado: string
           factor_peajes: number | null
           fecha_instalacion_gps: string | null
+          fecha_proxima_disponibilidad: string | null
           id: string
           id_equipo_gps: string | null
+          kilometraje_actual: number | null
           marca: string | null
           modelo: string | null
+          motivo_no_disponible: string | null
           num_permiso_sct: string | null
           num_serie: string | null
           numero_ejes: number | null
@@ -3290,10 +3368,15 @@ export type Database = {
           rendimiento: number | null
           tipo_carroceria: string | null
           tipo_combustible: string | null
+          ubicacion_actual: string | null
+          ultima_actualizacion_ubicacion: string | null
+          ultima_ubicacion_lat: number | null
+          ultima_ubicacion_lng: number | null
           updated_at: string | null
           user_id: string
           valor_vehiculo: number | null
           verificacion_vigencia: string | null
+          viaje_actual_id: string | null
           vigencia_permiso: string | null
           vigencia_seguro: string | null
         }
@@ -3304,19 +3387,25 @@ export type Database = {
           asegura_med_ambiente?: string | null
           asegura_resp_civil?: string | null
           capacidad_carga?: number | null
+          conductor_asignado_id?: string | null
           config_vehicular?: string | null
           configuracion_ejes?: string | null
+          consumo_promedio_km_litro?: number | null
           costo_llantas_km?: number | null
           costo_mantenimiento_km?: number | null
+          costo_operacion_km?: number | null
           created_at?: string | null
           dimensiones?: Json | null
           estado?: string
           factor_peajes?: number | null
           fecha_instalacion_gps?: string | null
+          fecha_proxima_disponibilidad?: string | null
           id?: string
           id_equipo_gps?: string | null
+          kilometraje_actual?: number | null
           marca?: string | null
           modelo?: string | null
+          motivo_no_disponible?: string | null
           num_permiso_sct?: string | null
           num_serie?: string | null
           numero_ejes?: number | null
@@ -3332,10 +3421,15 @@ export type Database = {
           rendimiento?: number | null
           tipo_carroceria?: string | null
           tipo_combustible?: string | null
+          ubicacion_actual?: string | null
+          ultima_actualizacion_ubicacion?: string | null
+          ultima_ubicacion_lat?: number | null
+          ultima_ubicacion_lng?: number | null
           updated_at?: string | null
           user_id: string
           valor_vehiculo?: number | null
           verificacion_vigencia?: string | null
+          viaje_actual_id?: string | null
           vigencia_permiso?: string | null
           vigencia_seguro?: string | null
         }
@@ -3346,19 +3440,25 @@ export type Database = {
           asegura_med_ambiente?: string | null
           asegura_resp_civil?: string | null
           capacidad_carga?: number | null
+          conductor_asignado_id?: string | null
           config_vehicular?: string | null
           configuracion_ejes?: string | null
+          consumo_promedio_km_litro?: number | null
           costo_llantas_km?: number | null
           costo_mantenimiento_km?: number | null
+          costo_operacion_km?: number | null
           created_at?: string | null
           dimensiones?: Json | null
           estado?: string
           factor_peajes?: number | null
           fecha_instalacion_gps?: string | null
+          fecha_proxima_disponibilidad?: string | null
           id?: string
           id_equipo_gps?: string | null
+          kilometraje_actual?: number | null
           marca?: string | null
           modelo?: string | null
+          motivo_no_disponible?: string | null
           num_permiso_sct?: string | null
           num_serie?: string | null
           numero_ejes?: number | null
@@ -3374,10 +3474,15 @@ export type Database = {
           rendimiento?: number | null
           tipo_carroceria?: string | null
           tipo_combustible?: string | null
+          ubicacion_actual?: string | null
+          ultima_actualizacion_ubicacion?: string | null
+          ultima_ubicacion_lat?: number | null
+          ultima_ubicacion_lng?: number | null
           updated_at?: string | null
           user_id?: string
           valor_vehiculo?: number | null
           verificacion_vigencia?: string | null
+          viaje_actual_id?: string | null
           vigencia_permiso?: string | null
           vigencia_seguro?: string | null
         }
@@ -3430,17 +3535,33 @@ export type Database = {
       viajes: {
         Row: {
           carta_porte_id: string
+          combustible_estimado: number | null
+          combustible_real: number | null
           conductor_id: string | null
+          costo_estimado: number | null
+          costo_real: number | null
           created_at: string
           destino: string
+          distancia_km: number | null
           estado: string
           fecha_fin_programada: string
           fecha_fin_real: string | null
           fecha_inicio_programada: string
           fecha_inicio_real: string | null
           id: string
+          margen_estimado: number | null
+          margen_real: number | null
           observaciones: string | null
           origen: string
+          peajes_estimados: number | null
+          peajes_reales: number | null
+          precio_cobrado: number | null
+          remolque_id: string | null
+          ruta_destino: string | null
+          ruta_origen: string | null
+          socio_id: string | null
+          tiempo_estimado_horas: number | null
+          tiempo_real_horas: number | null
           tracking_data: Json | null
           updated_at: string
           user_id: string
@@ -3448,17 +3569,33 @@ export type Database = {
         }
         Insert: {
           carta_porte_id: string
+          combustible_estimado?: number | null
+          combustible_real?: number | null
           conductor_id?: string | null
+          costo_estimado?: number | null
+          costo_real?: number | null
           created_at?: string
           destino: string
+          distancia_km?: number | null
           estado?: string
           fecha_fin_programada: string
           fecha_fin_real?: string | null
           fecha_inicio_programada: string
           fecha_inicio_real?: string | null
           id?: string
+          margen_estimado?: number | null
+          margen_real?: number | null
           observaciones?: string | null
           origen: string
+          peajes_estimados?: number | null
+          peajes_reales?: number | null
+          precio_cobrado?: number | null
+          remolque_id?: string | null
+          ruta_destino?: string | null
+          ruta_origen?: string | null
+          socio_id?: string | null
+          tiempo_estimado_horas?: number | null
+          tiempo_real_horas?: number | null
           tracking_data?: Json | null
           updated_at?: string
           user_id: string
@@ -3466,17 +3603,33 @@ export type Database = {
         }
         Update: {
           carta_porte_id?: string
+          combustible_estimado?: number | null
+          combustible_real?: number | null
           conductor_id?: string | null
+          costo_estimado?: number | null
+          costo_real?: number | null
           created_at?: string
           destino?: string
+          distancia_km?: number | null
           estado?: string
           fecha_fin_programada?: string
           fecha_fin_real?: string | null
           fecha_inicio_programada?: string
           fecha_inicio_real?: string | null
           id?: string
+          margen_estimado?: number | null
+          margen_real?: number | null
           observaciones?: string | null
           origen?: string
+          peajes_estimados?: number | null
+          peajes_reales?: number | null
+          precio_cobrado?: number | null
+          remolque_id?: string | null
+          ruta_destino?: string | null
+          ruta_origen?: string | null
+          socio_id?: string | null
+          tiempo_estimado_horas?: number | null
+          tiempo_real_horas?: number | null
           tracking_data?: Json | null
           updated_at?: string
           user_id?: string
