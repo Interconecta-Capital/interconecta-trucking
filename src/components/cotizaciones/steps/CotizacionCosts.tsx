@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DollarSign, Calculator, TrendingUp, AlertCircle } from "lucide-react";
+import { useCostosViaje } from "@/hooks/useCostosViaje";
 
 interface CotizacionCostsProps {
   formData: any;
@@ -13,6 +14,7 @@ interface CotizacionCostsProps {
 }
 
 export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsProps) {
+  const { calcularCostoEstimado, sugerirPrecio } = useCostosViaje();
   const [costos, setCostos] = useState({
     combustible: 0,
     casetas: 0,
@@ -68,26 +70,35 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
   };
 
   const calcularAutomatico = () => {
-    // Cálculos automáticos basados en la distancia
+    // Usar el mismo sistema de costos que los viajes
     const distancia = formData.distancia_total || 0;
-    const tiempo = formData.tiempo_estimado || 0;
+    const tipoVehiculo = 'camion'; // Por defecto, se puede mejorar para detectar el tipo del vehículo seleccionado
+    const incluirConductor = !!formData.conductor_id;
     
-    const costosCalculados = {
-      combustible: distancia * 8.5, // $8.50 por km aproximadamente
-      casetas: distancia * 2.3, // $2.30 por km en casetas
-      salario_conductor: (tiempo / 60) * 250, // $250 por hora
-      mantenimiento: distancia * 1.2, // $1.20 por km en mantenimiento
-      seguros: distancia * 0.8, // $0.80 por km en seguros
-      otros: distancia * 1.0 // $1.00 por km otros gastos
+    if (distancia <= 0) {
+      return;
+    }
+    
+    // Calcular usando el mismo hook que los viajes
+    const costosCalculados = calcularCostoEstimado(distancia, tipoVehiculo, incluirConductor);
+    
+    // Mapear los campos del sistema de viajes al sistema de cotizaciones
+    const costosFormateados = {
+      combustible: costosCalculados.combustible_estimado,
+      casetas: costosCalculados.peajes_estimados + (costosCalculados.casetas_estimadas || 0),
+      salario_conductor: costosCalculados.salario_conductor_estimado,
+      mantenimiento: costosCalculados.mantenimiento_estimado,
+      seguros: costosCalculados.otros_costos_estimados * 0.6, // Parte de "otros" asignada a seguros
+      otros: costosCalculados.otros_costos_estimados * 0.4  // Resto de "otros"
     };
     
-    setCostos(costosCalculados);
+    setCostos(costosFormateados);
     
-    const costoTotal = Object.values(costosCalculados).reduce((sum, val) => sum + val, 0);
-    const precio = costoTotal * (1 + (formData.margen_ganancia || 15) / 100);
+    const costoTotal = costosCalculados.costo_total_estimado;
+    const precio = sugerirPrecio(costoTotal, formData.margen_ganancia || 15);
     
     updateFormData({
-      costos_internos: costosCalculados,
+      costos_internos: costosFormateados,
       costo_total_interno: costoTotal,
       precio_cotizado: precio
     });
@@ -115,7 +126,7 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
             <div>
               <p className="font-medium">Cálculo Automático</p>
               <p className="text-sm text-muted-foreground">
-                Calcula costos basados en la distancia ({formData.distancia_total || 0} km)
+                Usa el mismo sistema de cálculo que los viajes ({formData.distancia_total || 0} km)
               </p>
             </div>
             <Button 

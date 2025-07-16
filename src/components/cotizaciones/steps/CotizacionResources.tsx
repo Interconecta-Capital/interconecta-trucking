@@ -183,7 +183,6 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                   <SelectItem 
                     key={remolque.id} 
                     value={remolque.id}
-                    disabled={remolque.estado !== 'disponible'}
                   >
                     <div className="flex items-center justify-between w-full">
                       <span>{remolque.placa} - {remolque.tipo}</span>

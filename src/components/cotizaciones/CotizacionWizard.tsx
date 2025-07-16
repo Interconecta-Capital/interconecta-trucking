@@ -151,6 +151,10 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
     try {
       const cotizacionData = {
         ...formData,
+        cliente_existente_id: formData.cliente_existente_id || null,
+        conductor_id: formData.conductor_id || null,
+        vehiculo_id: formData.vehiculo_id || null,
+        remolque_id: formData.remolque_id || null,
         estado: "borrador" as const,
         user_id: user?.id
       };
@@ -174,6 +178,10 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
     try {
       const cotizacionData = {
         ...formData,
+        cliente_existente_id: formData.cliente_existente_id || null,
+        conductor_id: formData.conductor_id || null,
+        vehiculo_id: formData.vehiculo_id || null,
+        remolque_id: formData.remolque_id || null,
         estado: "enviada" as const,
         fecha_envio: new Date().toISOString(),
         user_id: user?.id
