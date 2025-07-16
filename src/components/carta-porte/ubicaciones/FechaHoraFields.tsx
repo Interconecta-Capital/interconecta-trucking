@@ -36,11 +36,11 @@ export function FechaHoraFields({
     return 'Cuando pasará por este punto';
   };
 
-  // Calcular fecha mínima (no puede ser anterior a la ubicación previa)
+  // Calcular fecha mínima (solo evitar fechas pasadas)
   const getMinDateTime = () => {
     const now = new Date();
-    const minDate = new Date(now.getTime() + (ubicacionIndex * 60 * 60 * 1000)); // +1 hora por ubicación
-    return minDate.toISOString().slice(0, 16);
+    // Solo establecer la fecha actual como mínimo, sin incrementar automáticamente
+    return now.toISOString().slice(0, 16);
   };
 
   return (
