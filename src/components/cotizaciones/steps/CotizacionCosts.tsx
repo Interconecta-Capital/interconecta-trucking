@@ -82,14 +82,14 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
     // Calcular usando el mismo hook que los viajes
     const costosCalculados = calcularCostoEstimado(distancia, tipoVehiculo, incluirConductor);
     
-    // Mapear los campos del sistema de viajes al sistema de cotizaciones
+    // Mapear los campos del sistema de viajes al sistema de cotizaciones (redondeados)
     const costosFormateados = {
-      combustible: costosCalculados.combustible_estimado,
-      casetas: costosCalculados.peajes_estimados + (costosCalculados.casetas_estimadas || 0),
-      salario_conductor: costosCalculados.salario_conductor_estimado,
-      mantenimiento: costosCalculados.mantenimiento_estimado,
-      seguros: costosCalculados.otros_costos_estimados * 0.6, // Parte de "otros" asignada a seguros
-      otros: costosCalculados.otros_costos_estimados * 0.4  // Resto de "otros"
+      combustible: Math.round(costosCalculados.combustible_estimado * 100) / 100,
+      casetas: Math.round((costosCalculados.peajes_estimados + (costosCalculados.casetas_estimadas || 0)) * 100) / 100,
+      salario_conductor: Math.round(costosCalculados.salario_conductor_estimado * 100) / 100,
+      mantenimiento: Math.round(costosCalculados.mantenimiento_estimado * 100) / 100,
+      seguros: Math.round((costosCalculados.otros_costos_estimados * 0.6) * 100) / 100,
+      otros: Math.round((costosCalculados.otros_costos_estimados * 0.4) * 100) / 100
     };
     
     setCostos(costosFormateados);
@@ -155,7 +155,8 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
               <Input
                 id="combustible"
                 type="number"
-                value={costos.combustible}
+                step="0.01"
+                value={costos.combustible.toFixed(2)}
                 onChange={(e) => actualizarCosto('combustible', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
@@ -165,7 +166,8 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
               <Input
                 id="casetas"
                 type="number"
-                value={costos.casetas}
+                step="0.01"
+                value={costos.casetas.toFixed(2)}
                 onChange={(e) => actualizarCosto('casetas', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
@@ -175,7 +177,8 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
               <Input
                 id="salario"
                 type="number"
-                value={costos.salario_conductor}
+                step="0.01"
+                value={costos.salario_conductor.toFixed(2)}
                 onChange={(e) => actualizarCosto('salario_conductor', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
@@ -185,7 +188,8 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
               <Input
                 id="mantenimiento"
                 type="number"
-                value={costos.mantenimiento}
+                step="0.01"
+                value={costos.mantenimiento.toFixed(2)}
                 onChange={(e) => actualizarCosto('mantenimiento', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
@@ -195,7 +199,8 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
               <Input
                 id="seguros"
                 type="number"
-                value={costos.seguros}
+                step="0.01"
+                value={costos.seguros.toFixed(2)}
                 onChange={(e) => actualizarCosto('seguros', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
@@ -205,7 +210,8 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
               <Input
                 id="otros"
                 type="number"
-                value={costos.otros}
+                step="0.01"
+                value={costos.otros.toFixed(2)}
                 onChange={(e) => actualizarCosto('otros', parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
               />
