@@ -11,6 +11,7 @@ import { CotizacionPreview } from "./steps/CotizacionPreview";
 import { useCotizaciones } from "@/hooks/useCotizaciones";
 import { useAuthStore } from "@/stores/authStore";
 import { ChevronLeft, ChevronRight, Save, Send } from "lucide-react";
+import { toast } from "sonner";
 
 interface CotizacionWizardProps {
   open: boolean;
@@ -43,6 +44,7 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
     origen: "",
     destino: "",
     ubicaciones_intermedias: [],
+    tieneParadasAutorizadas: false,
     distancia_total: 0,
     tiempo_estimado: 0,
     mapa_datos: {},
@@ -75,6 +77,7 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
         origen: editingCotizacion.origen || "",
         destino: editingCotizacion.destino || "",
         ubicaciones_intermedias: editingCotizacion.ubicaciones_intermedias || [],
+        tieneParadasAutorizadas: editingCotizacion.ubicaciones_intermedias?.length > 0 || false,
         distancia_total: editingCotizacion.distancia_total || 0,
         tiempo_estimado: editingCotizacion.tiempo_estimado || 0,
         mapa_datos: editingCotizacion.mapa_datos || {},
@@ -100,6 +103,7 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
         origen: "",
         destino: "",
         ubicaciones_intermedias: [],
+        tieneParadasAutorizadas: false,
         distancia_total: 0,
         tiempo_estimado: 0,
         mapa_datos: {},
@@ -149,12 +153,24 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
 
   const handleSaveDraft = async () => {
     try {
-      const cotizacionData = {
+      // Limpiar campos UUID vacíos y convertir a null
+      const cleanFormData = {
         ...formData,
-        cliente_existente_id: formData.cliente_existente_id || null,
-        conductor_id: formData.conductor_id === "" ? null : formData.conductor_id || null,
-        vehiculo_id: formData.vehiculo_id === "" ? null : formData.vehiculo_id || null,
-        remolque_id: formData.remolque_id === "" ? null : formData.remolque_id || null,
+        cliente_existente_id: formData.cliente_existente_id?.trim() || null,
+        conductor_id: formData.conductor_id?.trim() || null,
+        vehiculo_id: formData.vehiculo_id?.trim() || null,
+        remolque_id: formData.remolque_id?.trim() || null,
+      };
+
+      // Validar que no hay strings vacíos en campos UUID
+      Object.keys(cleanFormData).forEach(key => {
+        if (key.endsWith('_id') && cleanFormData[key] === '') {
+          cleanFormData[key] = null;
+        }
+      });
+
+      const cotizacionData = {
+        ...cleanFormData,
         estado: "borrador" as const,
         user_id: user?.id
       };
@@ -176,12 +192,42 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
 
   const handleSend = async () => {
     try {
-      const cotizacionData = {
+      // Validar campos obligatorios
+      if (!formData.nombre_cotizacion?.trim()) {
+        toast.error('El nombre de la cotización es obligatorio');
+        return;
+      }
+      if (!formData.origen?.trim() || !formData.destino?.trim()) {
+        toast.error('El origen y destino son obligatorios');
+        return;
+      }
+      if (!formData.vehiculo_id?.trim()) {
+        toast.error('Debes seleccionar un vehículo');
+        return;
+      }
+      if (formData.precio_cotizado <= 0) {
+        toast.error('El precio cotizado debe ser mayor a 0');
+        return;
+      }
+
+      // Limpiar campos UUID vacíos y convertir a null
+      const cleanFormData = {
         ...formData,
-        cliente_existente_id: formData.cliente_existente_id || null,
-        conductor_id: formData.conductor_id === "" ? null : formData.conductor_id || null,
-        vehiculo_id: formData.vehiculo_id === "" ? null : formData.vehiculo_id || null,
-        remolque_id: formData.remolque_id === "" ? null : formData.remolque_id || null,
+        cliente_existente_id: formData.cliente_existente_id?.trim() || null,
+        conductor_id: formData.conductor_id?.trim() || null,
+        vehiculo_id: formData.vehiculo_id?.trim() || null,
+        remolque_id: formData.remolque_id?.trim() || null,
+      };
+
+      // Validar que no hay strings vacíos en campos UUID
+      Object.keys(cleanFormData).forEach(key => {
+        if (key.endsWith('_id') && cleanFormData[key] === '') {
+          cleanFormData[key] = null;
+        }
+      });
+
+      const cotizacionData = {
+        ...cleanFormData,
         estado: "enviada" as const,
         fecha_envio: new Date().toISOString(),
         user_id: user?.id
