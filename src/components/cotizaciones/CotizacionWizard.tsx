@@ -169,6 +169,8 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
         }
       });
 
+      console.log('💾 Guardando borrador con datos limpios:', cleanFormData);
+
       const cotizacionData = {
         ...cleanFormData,
         estado: "borrador" as const,
@@ -180,13 +182,16 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
           id: editingCotizacion.id,
           updates: cotizacionData
         });
+        toast.success('Borrador actualizado correctamente');
       } else {
         await createCotizacion.mutateAsync(cotizacionData);
+        toast.success('Borrador guardado correctamente');
       }
       
       onClose();
     } catch (error) {
-      console.error('Error saving draft:', error);
+      console.error('❌ Error saving draft:', error);
+      toast.error('Error al guardar el borrador');
     }
   };
 
@@ -226,6 +231,8 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
         }
       });
 
+      console.log('📤 Enviando cotización con datos limpios:', cleanFormData);
+
       const cotizacionData = {
         ...cleanFormData,
         estado: "enviada" as const,
@@ -238,13 +245,16 @@ export function CotizacionWizard({ open, onClose, editingCotizacion }: Cotizacio
           id: editingCotizacion.id,
           updates: cotizacionData
         });
+        toast.success('Cotización actualizada y enviada');
       } else {
         await createCotizacion.mutateAsync(cotizacionData);
+        toast.success('Cotización creada y enviada');
       }
       
       onClose();
     } catch (error) {
-      console.error('Error sending cotizacion:', error);
+      console.error('❌ Error sending cotizacion:', error);
+      toast.error('Error al enviar la cotización');
     }
   };
 

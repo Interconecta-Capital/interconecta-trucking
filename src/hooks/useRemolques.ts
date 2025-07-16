@@ -34,21 +34,27 @@ export const useRemolques = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Using remolques table instead of remolques_ccp for now
       const { data, error } = await supabase
         .from('remolques')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching remolques:', error);
+        throw error;
+      }
       
-      // Transform data to include legacy fields
+      // Transform data to include legacy fields  
       return (data || []).map(item => ({
         ...item,
         estado: 'disponible',
         activo: true,
         tipo_remolque: item.subtipo_rem,
         subtipo_remolque: item.subtipo_rem,
+        marca: 'Genérico',
+        modelo: item.subtipo_rem,
+        anio: 2020,
+        num_serie: `SER-${item.placa}`,
         user_id: user.id,
         updated_at: item.created_at
       }));

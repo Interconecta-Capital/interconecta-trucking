@@ -157,21 +157,22 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
 
   const loadVehiculoRemolques = async (vehiculoId: string) => {
     try {
-      // Simulación de carga de remolques
-      // En producción, esto sería una llamada a la API
-      const mockRemolques: VehiculoRemolque[] = [
-        {
-          vehiculo_id: vehiculoId,
-          tipo_carroceria: 'Tractocamión',
-          capacidad_carga: 15000,
-          remolques: [
-            { id: '1', tipo: 'Caja Seca', capacidad: 20000 },
-            { id: '2', tipo: 'Caja Refrigerada', capacidad: 18000 }
-          ]
-        }
-      ];
-      
-      setVehiculoRemolques(mockRemolques);
+      // Usar remolques reales de la base de datos
+      if (remolques.length > 0) {
+        const mockRemolques: VehiculoRemolque[] = [
+          {
+            vehiculo_id: vehiculoId,
+            tipo_carroceria: selectedVehiculo?.tipo_carroceria || 'Tractocamión',
+            capacidad_carga: selectedVehiculo?.capacidad_carga || 15000,
+            remolques: remolques.map(r => ({
+              id: r.id,
+              tipo: r.tipo_remolque || r.subtipo_rem || 'Caja Seca',
+              capacidad: 20000 // Capacidad por defecto
+            }))
+          }
+        ];
+        setVehiculoRemolques(mockRemolques);
+      }
     } catch (error) {
       console.error('Error loading remolques:', error);
     }

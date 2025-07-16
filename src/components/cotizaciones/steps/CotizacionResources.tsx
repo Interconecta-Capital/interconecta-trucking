@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Truck, User, Package, CheckCircle, AlertTriangle } from "lucide-react";
 import { useVehiculos } from "@/hooks/useVehiculos";
 import { useConductoresOptimized } from "@/hooks/useConductoresOptimized";
+import { useRemolques } from "@/hooks/useRemolques";
 
 interface CotizacionResourcesProps {
   formData: any;
@@ -14,13 +15,7 @@ interface CotizacionResourcesProps {
 export function CotizacionResources({ formData, updateFormData }: CotizacionResourcesProps) {
   const { vehiculos, loading: loadingVehiculos } = useVehiculos();
   const { conductores, loading: loadingConductores } = useConductoresOptimized();
-
-  // Datos simulados para remolques - se puede crear hook similar
-  const remolques = [
-    { id: "r1", placa: "REM-001", tipo: "Caja seca", estado: "disponible" },
-    { id: "r2", placa: "REM-002", tipo: "Refrigerado", estado: "disponible" },
-    { id: "r3", placa: "REM-003", tipo: "Tanque", estado: "mantenimiento" }
-  ];
+  const { remolques, loading: loadingRemolques } = useRemolques();
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -178,18 +173,24 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                 <SelectValue placeholder="Selecciona un remolque (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Sin remolque</SelectItem>
-                {remolques.map((remolque) => (
-                  <SelectItem 
-                    key={remolque.id} 
-                    value={remolque.id}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span>{remolque.placa} - {remolque.tipo}</span>
-                      {getEstadoBadge(remolque.estado)}
-                    </div>
-                  </SelectItem>
-                ))}
+                {loadingRemolques ? (
+                  <SelectItem value="loading" disabled>Cargando remolques...</SelectItem>
+                ) : (
+                  <>
+                    <SelectItem value="none">Sin remolque</SelectItem>
+                    {remolques.map((remolque) => (
+                      <SelectItem 
+                        key={remolque.id} 
+                        value={remolque.id}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span>{remolque.placa} - {remolque.tipo_remolque || remolque.subtipo_rem}</span>
+                          {getEstadoBadge(remolque.estado)}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -205,7 +206,7 @@ export function CotizacionResources({ formData, updateFormData }: CotizacionReso
                       {getEstadoBadge(remolque.estado)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Tipo: {remolque.tipo}
+                      Tipo: {remolque.tipo_remolque || remolque.subtipo_rem}
                     </div>
                   </div>
                 ) : null;
