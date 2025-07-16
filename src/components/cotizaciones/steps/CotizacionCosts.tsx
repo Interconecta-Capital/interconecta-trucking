@@ -43,6 +43,10 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
     return precio;
   };
 
+  const calcularGananciaBruta = () => {
+    return calcularPrecioCotizado() - calcularCostoTotal();
+  };
+
   const actualizarCosto = (campo: string, valor: number) => {
     const nuevosCostos = { ...costos, [campo]: valor };
     setCostos(nuevosCostos);
@@ -151,69 +155,69 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="combustible">Combustible</Label>
+              <Label htmlFor="combustible">Combustible ($)</Label>
               <Input
                 id="combustible"
                 type="number"
                 step="0.01"
                 value={costos.combustible.toFixed(2)}
                 onChange={(e) => actualizarCosto('combustible', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                placeholder="3500.00"
               />
             </div>
             <div>
-              <Label htmlFor="casetas">Casetas y Peajes</Label>
+              <Label htmlFor="casetas">Casetas y Peajes ($)</Label>
               <Input
                 id="casetas"
                 type="number"
                 step="0.01"
                 value={costos.casetas.toFixed(2)}
                 onChange={(e) => actualizarCosto('casetas', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                placeholder="800.00"
               />
             </div>
             <div>
-              <Label htmlFor="salario">Salario Conductor</Label>
+              <Label htmlFor="salario">Salario Conductor ($)</Label>
               <Input
                 id="salario"
                 type="number"
                 step="0.01"
                 value={costos.salario_conductor.toFixed(2)}
                 onChange={(e) => actualizarCosto('salario_conductor', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                placeholder="2000.00"
               />
             </div>
             <div>
-              <Label htmlFor="mantenimiento">Mantenimiento</Label>
+              <Label htmlFor="mantenimiento">Mantenimiento ($)</Label>
               <Input
                 id="mantenimiento"
                 type="number"
                 step="0.01"
                 value={costos.mantenimiento.toFixed(2)}
                 onChange={(e) => actualizarCosto('mantenimiento', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                placeholder="500.00"
               />
             </div>
             <div>
-              <Label htmlFor="seguros">Seguros</Label>
+              <Label htmlFor="seguros">Seguros ($)</Label>
               <Input
                 id="seguros"
                 type="number"
                 step="0.01"
                 value={costos.seguros.toFixed(2)}
                 onChange={(e) => actualizarCosto('seguros', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                placeholder="400.00"
               />
             </div>
             <div>
-              <Label htmlFor="otros">Otros Gastos</Label>
+              <Label htmlFor="otros">Otros Gastos ($)</Label>
               <Input
                 id="otros"
                 type="number"
                 step="0.01"
                 value={costos.otros.toFixed(2)}
                 onChange={(e) => actualizarCosto('otros', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
+                placeholder="300.00"
               />
             </div>
           </div>
@@ -255,19 +259,25 @@ export function CotizacionCosts({ formData, updateFormData }: CotizacionCostsPro
           {/* Resumen de Costos */}
           <div className="space-y-3">
             <Label>Resumen Financiero</Label>
-            <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
               <div className="text-center">
-                <div className="text-lg font-semibold">{formatCurrency(calcularCostoTotal())}</div>
+                <div className="text-lg font-semibold text-red-600">{formatCurrency(calcularCostoTotal())}</div>
                 <div className="text-sm text-muted-foreground">Costo Total</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-green-600">
-                  {formatCurrency(calcularPrecioCotizado() - calcularCostoTotal())}
+                <div className="text-lg font-semibold text-blue-600">
+                  {formData.margen_ganancia}%
                 </div>
-                <div className="text-sm text-muted-foreground">Ganancia Esperada</div>
+                <div className="text-sm text-muted-foreground">Margen</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-primary">
+                <div className="text-lg font-semibold text-green-600">
+                  {formatCurrency(calcularGananciaBruta())}
+                </div>
+                <div className="text-sm text-muted-foreground">Ganancia</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-purple-600">
                   {formatCurrency(calcularPrecioCotizado())}
                 </div>
                 <div className="text-sm text-muted-foreground">Precio Final</div>
