@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAIValidation } from '@/hooks/useAIValidation';
 import { ViajeWizardData } from '../ViajeWizard';
 import { SmartMercanciaInputMejorado } from '@/components/ai/SmartMercanciaInputMejorado';
+import { SATKeyDetector } from '@/components/ai/SATKeyDetector';
 import { RFCValidator } from '@/utils/rfcValidation';
 
 interface ViajeWizardMisionProps {
@@ -71,54 +72,21 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
     }
   }, [data.cliente?.rfc, autoValidateField, updateData]);
 
-  // Análisis inteligente de mercancía con IA
+  // Análisis inteligente de mercancía con IA (simplificado)
   useEffect(() => {
     if (data.descripcionMercancia) {
       const texto = data.descripcionMercancia.toLowerCase();
       const alertas: string[] = [];
-      const nuevasSugerencias: any = {};
 
-      // Detección de comercio exterior
+      // Solo detección de comercio exterior (lo demás lo maneja SATKeyDetector)
       if (texto.includes('exportación') || texto.includes('importación') || texto.includes('export') || texto.includes('import')) {
         setShowComercioExterior(true);
         alertas.push('Operación de comercio exterior detectada - Se requieren datos adicionales');
       }
 
-      // Detección de productos específicos y sugerencias de IA
-      if (texto.includes('aguacate') || texto.includes('fruta')) {
-        nuevasSugerencias.claveBienesTransp = '01010101';
-        nuevasSugerencias.categoria = 'Frutas y Verduras';
-        nuevasSugerencias.fraccionArancelaria = texto.includes('aguacate') ? '08044000' : null;
-      } else if (texto.includes('cemento') || texto.includes('construcción')) {
-        nuevasSugerencias.claveBienesTransp = '23010000';
-        nuevasSugerencias.categoria = 'Materiales de Construcción';
-      } else if (texto.includes('químico') || texto.includes('tóxico') || texto.includes('peligroso')) {
-        alertas.push('Material peligroso detectado - Requiere documentación especial y permisos');
-        nuevasSugerencias.claveBienesTransp = '28000000';
-        nuevasSugerencias.categoria = 'Productos Químicos';
-      }
-
-      // Detección de especies protegidas
-      if (texto.includes('jaguar') || texto.includes('fauna') || texto.includes('animal silvestre')) {
-        alertas.push('Especie protegida detectada - Requiere permisos de SEMARNAT');
-      }
-
-      // Detección de peso/cantidad
-      const pesoMatch = texto.match(/(\d+)\s*(ton|toneladas|kg|kilogramos)/i);
-      if (pesoMatch) {
-        const cantidad = parseInt(pesoMatch[1]);
-        const unidad = pesoMatch[2].toLowerCase();
-        const pesoKg = unidad.includes('ton') ? cantidad * 1000 : cantidad;
-        nuevasSugerencias.pesoDetectado = pesoKg;
-        nuevasSugerencias.cantidadDetectada = cantidad;
-        nuevasSugerencias.unidadDetectada = unidad;
-      }
-
       setAlertasMercancia(alertas);
-      setSugerenciasIA(nuevasSugerencias);
     } else {
       setAlertasMercancia([]);
-      setSugerenciasIA(null);
       setShowComercioExterior(false);
     }
   }, [data.descripcionMercancia]);
@@ -142,6 +110,17 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   const handleMercanciaSelect = (mercanciaData: any) => {
     console.log('🤖 IA sugiere datos de mercancía:', mercanciaData);
     // Aquí se pueden aplicar automáticamente las sugerencias
+  };
+
+  const handleSATSuggestionApply = (suggestion: any) => {
+    console.log('🔑 Aplicando sugerencia SAT:', suggestion);
+    // Actualizar los datos del viaje con la información SAT
+    updateData({
+      claveBienesTransp: suggestion.claveBienesTransp,
+      categoriaMercancia: suggestion.categoria,
+      fraccionArancelaria: suggestion.fraccionArancelaria,
+      descripcionMercancia: suggestion.descripcionMejorada || data.descripcionMercancia
+    });
   };
 
   const clienteValidation = getFieldValidation('cliente_rfc');
@@ -327,43 +306,12 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
             />
           </div>
 
-          {/* Sugerencias de IA */}
-          {sugerenciasIA && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-900">Sugerencias de IA</span>
-              </div>
-              
-              {sugerenciasIA.claveBienesTransp && (
-                <div className="mb-2">
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                    Clave BienesTransp: {sugerenciasIA.claveBienesTransp}
-                  </Badge>
-                  <span className="ml-2 text-sm text-blue-700">
-                    {sugerenciasIA.categoria}
-                  </span>
-                </div>
-              )}
-
-              {sugerenciasIA.pesoDetectado && (
-                <div className="mb-2">
-                  <span className="text-sm text-blue-700">
-                    Peso detectado: <strong>{sugerenciasIA.cantidadDetectada} {sugerenciasIA.unidadDetectada}</strong>
-                    ({sugerenciasIA.pesoDetectado} kg)
-                  </span>
-                </div>
-              )}
-
-              {sugerenciasIA.fraccionArancelaria && (
-                <div className="mb-2">
-                  <Badge variant="outline" className="bg-green-100 text-green-800">
-                    Fracción Arancelaria: {sugerenciasIA.fraccionArancelaria}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Detector de Claves SAT con IA */}
+          <SATKeyDetector 
+            descripcionMercancia={data.descripcionMercancia || ''}
+            onSuggestionApply={handleSATSuggestionApply}
+            showApplyButton={true}
+          />
 
           {/* Alertas de cumplimiento */}
           {alertasMercancia.length > 0 && (

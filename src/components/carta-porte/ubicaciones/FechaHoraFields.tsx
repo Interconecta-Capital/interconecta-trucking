@@ -36,12 +36,11 @@ export function FechaHoraFields({
     return 'Cuando pasará por este punto';
   };
 
-  // Calcular fecha mínima (solo evitar fechas pasadas)
-  const getMinDateTime = () => {
+  // Calcular fecha mínima (cacheada para evitar re-renders constantes)
+  const getMinDateTime = React.useMemo(() => {
     const now = new Date();
-    // Solo establecer la fecha actual como mínimo, sin incrementar automáticamente
     return now.toISOString().slice(0, 16);
-  };
+  }, []); // Solo calcular una vez al montar el componente
 
   return (
     <div className="space-y-3">
@@ -60,7 +59,7 @@ export function FechaHoraFields({
         type="datetime-local"
         value={ubicacion.fechaHoraSalidaLlegada || ''}
         onChange={(e) => onFieldChange('fechaHoraSalidaLlegada', e.target.value)}
-        min={getMinDateTime()}
+        min={getMinDateTime}
         placeholder={getFieldPlaceholder()}
         className={`${errors.fechaHora ? 'border-red-500' : ''} ${
           isOrigen ? 'border-green-200 focus:border-green-500' :

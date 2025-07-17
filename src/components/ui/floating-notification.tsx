@@ -10,6 +10,11 @@ export interface FloatingNotification {
   message?: string;
   duration?: number;
   persistent?: boolean;
+  actions?: Array<{
+    label: string;
+    action: () => void;
+    variant?: 'default' | 'destructive';
+  }>;
 }
 
 interface FloatingNotificationProps {
@@ -97,10 +102,35 @@ export function FloatingNotificationComponent({ notification, onDismiss }: Float
           <button
             onClick={handleDismiss}
             className="flex-shrink-0 p-1 hover:bg-black hover:bg-opacity-10 rounded-lg transition-colors"
+            aria-label="Cerrar notificación"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
+        
+        {/* Actions section */}
+        {notification.actions && notification.actions.length > 0 && (
+          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+            {notification.actions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  action.action();
+                  if (!notification.persistent) {
+                    handleDismiss();
+                  }
+                }}
+                className={`px-3 py-1 text-xs rounded transition-colors ${
+                  action.variant === 'destructive'
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

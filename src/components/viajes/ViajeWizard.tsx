@@ -32,6 +32,9 @@ export interface ViajeWizardData {
   cliente?: any;
   tipoServicio?: 'flete_pagado' | 'traslado_propio';
   descripcionMercancia?: string;
+  claveBienesTransp?: string;
+  categoriaMercancia?: string;
+  fraccionArancelaria?: string;
   // Paso B: Ruta
   origen?: any;
   destino?: any;
