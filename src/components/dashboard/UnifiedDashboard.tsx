@@ -12,6 +12,8 @@ import { DocumentosProcesadosWidget } from './DocumentosProcesadosWidget';
 import { QuickActionsCard } from './QuickActionsCard';
 import { AIInsights } from '@/components/ai/AIInsights';
 import { RealDashboardMetrics } from './RealDashboardMetrics';
+import { RealTimeMetricsPanel } from './RealTimeMetricsPanel';
+import { DataRepairPanel } from './DataRepairPanel';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
@@ -90,6 +92,14 @@ export default function UnifiedDashboard() {
     <div className="space-y-6">
       {/* Saludo personalizado */}
       <PersonalizedGreeting />
+
+      {/* Panel de reparación de datos - Solo mostrar si hay datos faltantes */}
+      {(!realCounts?.viajes || realCounts.viajes === 0) && (
+        <DataRepairPanel />
+      )}
+
+      {/* Métricas en tiempo real */}
+      <RealTimeMetricsPanel />
 
       {/* Información del Plan - Adaptativa */}
       <Card>
