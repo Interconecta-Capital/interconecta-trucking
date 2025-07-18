@@ -14,6 +14,7 @@ import { AIInsights } from '@/components/ai/AIInsights';
 import { RealDashboardMetrics } from './RealDashboardMetrics';
 import { RealTimeMetricsPanel } from './RealTimeMetricsPanel';
 import { DataRepairPanel } from './DataRepairPanel';
+import { FlowAutomationPanel } from './FlowAutomationPanel';
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
@@ -97,6 +98,9 @@ export default function UnifiedDashboard() {
       {(!realCounts?.viajes || realCounts.viajes === 0) && (
         <DataRepairPanel />
       )}
+
+      {/* Panel de automatización de flujos */}
+      <FlowAutomationPanel />
 
       {/* Métricas en tiempo real */}
       <RealTimeMetricsPanel />

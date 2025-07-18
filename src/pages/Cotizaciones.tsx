@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, FileText, Search, Filter, Eye, Edit, Trash2, Download, Send } from "lucide-react";
+import { Plus, FileText, Search, Filter, Eye, Edit, Trash2, Download, Send, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { CotizacionWizard } from "@/components/cotizaciones/CotizacionWizard";
 import { CotizacionViewDialog } from "@/components/cotizaciones/CotizacionViewDialog";
 import { useCotizaciones } from "@/hooks/useCotizaciones";
 import { useCotizacionPDF } from "@/hooks/useCotizacionPDF";
+import { useDataFlowConnection } from "@/hooks/useDataFlowConnection";
 
 const ESTADOS_CONFIG = {
   borrador: { label: "Borrador", color: "bg-gray-500" },
@@ -40,6 +41,7 @@ export default function Cotizaciones() {
 
   const { cotizaciones, isLoading } = useCotizaciones();
   const { generatePDF, isGenerating: isGeneratingPDF } = useCotizacionPDF();
+  const { convertirCotizacionAViaje } = useDataFlowConnection();
 
   const handleNewCotizacion = () => {
     setEditingCotizacion(null);
@@ -58,6 +60,21 @@ export default function Cotizaciones() {
 
   const handleDownloadPDF = async (cotizacion: any) => {
     await generatePDF(cotizacion);
+  };
+
+  const handleConvertToTrip = async (cotizacion: any) => {
+    try {
+      await convertirCotizacionAViaje.mutateAsync({
+        cotizacionId: cotizacion.id,
+        conductorId: cotizacion.conductor_id,
+        vehiculoId: cotizacion.vehiculo_id,
+        remolqueId: cotizacion.remolque_id,
+        fechaInicioProgramada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        fechaFinProgramada: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      });
+    } catch (error) {
+      console.error('Error convirtiendo cotización:', error);
+    }
   };
 
   const filteredCotizaciones = cotizaciones?.filter((cotizacion: any) => {
@@ -248,6 +265,15 @@ export default function Cotizaciones() {
                             <Send className="h-4 w-4 mr-2" />
                             Enviar Cliente
                           </DropdownMenuItem>
+                          {cotizacion.estado === 'aprobada' && !cotizacion.viaje_id && (
+                            <DropdownMenuItem 
+                              onClick={() => handleConvertToTrip(cotizacion)}
+                              className="text-green-600"
+                            >
+                              <Truck className="h-4 w-4 mr-2" />
+                              Convertir a Viaje
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="text-red-600">
                             <Trash2 className="h-4 w-4 mr-2" />
                             Eliminar
