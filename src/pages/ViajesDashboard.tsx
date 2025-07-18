@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useViajesEstados } from '@/hooks/useViajesEstados';
 import { useRealTimeMetrics } from '@/hooks/useRealTimeMetrics';
+import { Viaje } from '@/hooks/viajes/types';
 
 const ESTADOS_CONFIG = {
   programado: { label: 'Programado', color: 'bg-blue-500', icon: Calendar },
@@ -50,7 +51,7 @@ export default function ViajesDashboard() {
       new Date(v.fecha_fin_real || v.updated_at).toDateString() === new Date().toDateString()
     ).length || 0,
     retrasados: viajesActivos?.filter(v => v.estado === 'retrasado').length || 0,
-    ingresosDia: metrics?.operational?.ingresosDia || 0,
+    ingresosDia: metrics?.ingresosHoy || 0,
     distanciaTotal: viajesActivos?.reduce((sum, v) => sum + (v.distancia_km || 0), 0) || 0
   };
 
@@ -213,7 +214,7 @@ export default function ViajesDashboard() {
                         </Badge>
                         <div className="text-right">
                           <p className="font-medium">
-                            ${(viaje.precio_estimado || 0).toLocaleString()}
+                            ${(viaje.precio_cobrado || 0).toLocaleString()}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(viaje.fecha_inicio_programada).toLocaleDateString()}

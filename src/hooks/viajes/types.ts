@@ -6,6 +6,7 @@ export interface Viaje {
   destino: string;
   conductor_id?: string;
   vehiculo_id?: string;
+  remolque_id?: string;
   estado: 'programado' | 'en_transito' | 'completado' | 'cancelado' | 'retrasado' | 'borrador';
   fecha_inicio_programada: string;
   fecha_inicio_real?: string;
@@ -16,6 +17,18 @@ export interface Viaje {
   user_id: string;
   created_at: string;
   updated_at: string;
+  
+  // Campos financieros
+  precio_cobrado?: number;
+  costo_estimado?: number;
+  costo_real?: number;
+  margen_estimado?: number;
+  margen_real?: number;
+  
+  // Campos de ruta y distancia
+  distancia_km?: number;
+  tiempo_estimado_horas?: number;
+  tiempo_real_horas?: number;
 }
 
 export interface EventoViaje {

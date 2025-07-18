@@ -26,12 +26,12 @@ export default function FinancialDashboard() {
 
   // Cálculos financieros reales
   const financialMetrics = {
-    ingresosTotales: viajesActivos?.reduce((sum, v) => sum + (v.precio_estimado || 0), 0) || 0,
+    ingresosTotales: viajesActivos?.reduce((sum, v) => sum + (v.precio_cobrado || 0), 0) || 0,
     ingresosMes: viajesActivos?.filter(v => {
       const fechaViaje = new Date(v.created_at);
       const ahora = new Date();
       return fechaViaje.getMonth() === ahora.getMonth() && fechaViaje.getFullYear() === ahora.getFullYear();
-    }).reduce((sum, v) => sum + (v.precio_estimado || 0), 0) || 0,
+    }).reduce((sum, v) => sum + (v.precio_cobrado || 0), 0) || 0,
     
     costosTotales: viajesActivos?.reduce((sum, v) => sum + (v.costo_estimado || 0), 0) || 0,
     
@@ -39,7 +39,7 @@ export default function FinancialDashboard() {
       const viajes = viajesActivos || [];
       if (viajes.length === 0) return 0;
       const totalMargen = viajes.reduce((sum, v) => {
-        const ingreso = v.precio_estimado || 0;
+        const ingreso = v.precio_cobrado || 0;
         const costo = v.costo_estimado || 0;
         return sum + (ingreso > 0 ? ((ingreso - costo) / ingreso) * 100 : 0);
       }, 0);
@@ -61,7 +61,7 @@ export default function FinancialDashboard() {
         rutasMap.set(ruta, { ingresos: 0, costos: 0, viajes: 0 });
       }
       const data = rutasMap.get(ruta);
-      data.ingresos += viaje.precio_estimado || 0;
+      data.ingresos += viaje.precio_cobrado || 0;
       data.costos += viaje.costo_estimado || 0;
       data.viajes += 1;
     });
