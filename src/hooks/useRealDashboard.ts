@@ -96,7 +96,7 @@ export const useRealDashboard = () => {
       let viajesConCostos = 0;
 
       viajesData?.forEach(viaje => {
-        const costos = viaje.costos_viaje?.[0];
+        const costos = viaje.costos_viaje?.[0] as any;
         if (costos) {
           const ingreso = costos.precio_final_cobrado || costos.precio_cotizado || 0;
           const costo = costos.costo_total_real || costos.costo_total_estimado || 0;
@@ -163,7 +163,7 @@ export const useRealDashboard = () => {
       let margenAnterior = 0;
       
       viajesAnterior?.forEach(viaje => {
-        const costos = viaje.costos_viaje?.[0];
+        const costos = viaje.costos_viaje?.[0] as any;
         if (costos) {
           ingresosAnterior += costos.precio_final_cobrado || costos.precio_cotizado || 0;
           costosAnterior += costos.costo_total_real || costos.costo_total_estimado || 0;
@@ -198,7 +198,7 @@ export const useRealDashboard = () => {
         const viajesSemanaCount = viajesSemana?.length || 0;
 
         viajesSemana?.forEach(viaje => {
-          const costos = viaje.costos_viaje?.[0];
+          const costos = viaje.costos_viaje?.[0] as any;
           if (costos) {
             ingresosSemana += costos.precio_final_cobrado || costos.precio_cotizado || 0;
             margenSemana += costos.margen_real || costos.margen_estimado || 0;

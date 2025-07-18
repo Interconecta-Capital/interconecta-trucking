@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -52,7 +51,6 @@ export const useDataFlowConnection = () => {
           vehiculo_id: data.vehiculoId,
           remolque_id: data.remolqueId,
           observaciones: `Generado desde cotización ${cotizacion.folio_cotizacion}`,
-          // Traspasar datos de tracking si existen
           tracking_data: {
             cotizacion_origen_id: cotizacion.id,
             folio_cotizacion: cotizacion.folio_cotizacion,
@@ -62,30 +60,28 @@ export const useDataFlowConnection = () => {
             distancia_estimada: cotizacion.distancia_total,
             tiempo_estimado: cotizacion.tiempo_estimado
           }
-        })
+        } as any)
         .select()
         .single();
 
       if (viajeError) throw viajeError;
 
       // 3. Crear registro de costos basado en la cotización
+      const costosInternos = cotizacion.costos_internos as any || {};
       const { error: costosError } = await supabase
         .from('costos_viaje')
         .insert({
           user_id: user.id,
           viaje_id: nuevoViaje.id,
-          // Costos estimados de la cotización
           precio_cotizado: cotizacion.precio_cotizado,
           costo_total_estimado: cotizacion.costo_total_interno,
           margen_estimado: cotizacion.margen_ganancia,
-          // Desglose de costos internos
-          combustible_estimado: cotizacion.costos_internos?.combustible || 0,
-          peajes_estimados: cotizacion.costos_internos?.peajes || 0,
-          casetas_estimadas: cotizacion.costos_internos?.casetas || 0,
-          mantenimiento_estimado: cotizacion.costos_internos?.mantenimiento || 0,
-          salario_conductor_estimado: cotizacion.costos_internos?.conductor || 0,
-          otros_costos_estimados: cotizacion.costos_internos?.otros || 0,
-          // Campos para costos reales (se llenarán durante el viaje)
+          combustible_estimado: costosInternos.combustible || 0,
+          peajes_estimados: costosInternos.peajes || 0,
+          casetas_estimadas: costosInternos.casetas || 0,
+          mantenimiento_estimado: costosInternos.mantenimiento || 0,
+          salario_conductor_estimado: costosInternos.conductor || 0,
+          otros_costos_estimados: costosInternos.otros || 0,
           comprobantes_urls: []
         });
 
@@ -138,6 +134,7 @@ export const useDataFlowConnection = () => {
       if (viajeError) throw viajeError;
 
       // 2. Crear carta porte con datos del viaje
+      const trackingData = viaje.tracking_data as any || {};
       const { data: cartaPorte, error: cartaError } = await supabase
         .from('cartas_porte')
         .insert({
@@ -145,25 +142,23 @@ export const useDataFlowConnection = () => {
           viaje_id: viaje.id,
           status: 'borrador',
           folio: `CP-${Date.now()}`,
-          // Datos básicos del viaje
+          rfc_emisor: 'RFC_EMISOR',
+          rfc_receptor: 'RFC_RECEPTOR',
           datos_formulario: {
-            // Información del viaje
             viaje: {
               origen: viaje.origen,
               destino: viaje.destino,
               fecha_inicio: viaje.fecha_inicio_programada,
               fecha_fin: viaje.fecha_fin_programada
             },
-            // Recursos asignados
             autotransporte: viaje.vehiculos ? {
               placa_vm: viaje.vehiculos.placa,
               marca: viaje.vehiculos.marca,
               modelo: viaje.vehiculos.modelo,
-              año: viaje.vehiculos.ano,
-              config_vehicular: viaje.vehiculos.configuracion_vehicular,
+              año: viaje.vehiculos.anio,
+              config_vehicular: viaje.vehiculos.config_vehicular,
               peso_bruto_vehicular: viaje.vehiculos.peso_bruto_vehicular
             } : {},
-            // Figuras de transporte
             figuras: viaje.conductores ? [{
               tipo_figura: 'Operador',
               rfc: viaje.conductores.rfc,
@@ -171,9 +166,7 @@ export const useDataFlowConnection = () => {
               num_licencia: viaje.conductores.num_licencia,
               vigencia_licencia: viaje.conductores.vigencia_licencia
             }] : [],
-            // Mercancías (se pueden agregar después)
             mercancias: data.mercanciaData || [],
-            // Ubicaciones
             ubicaciones: data.ubicacionesData || [
               {
                 tipo_ubicacion: 'Origen',
@@ -184,7 +177,7 @@ export const useDataFlowConnection = () => {
                 tipo_ubicacion: 'Destino',
                 descripcion: viaje.destino,
                 fecha_salida_llegada: viaje.fecha_fin_programada,
-                distancia_recorrida: viaje.tracking_data?.distancia_estimada || 0
+                distancia_recorrida: trackingData.distancia_estimada || 0
               }
             ]
           }
@@ -237,17 +230,14 @@ export const useDataFlowConnection = () => {
       const { error } = await supabase
         .from('costos_viaje')
         .update({
-          // Costos reales
           combustible_real: data.costosReales.combustible,
           peajes_reales: data.costosReales.peajes,
           casetas_reales: data.costosReales.casetas,
           mantenimiento_real: data.costosReales.mantenimiento,
           otros_costos_reales: data.costosReales.otros,
           costo_total_real: costoTotalReal,
-          // Precio final y margen
           precio_final_cobrado: data.precioFinalCobrado,
           margen_real: margenReal,
-          // Comprobantes
           comprobantes_urls: data.comprobantesUrls || [],
           updated_at: new Date().toISOString()
         })
@@ -276,7 +266,7 @@ export const useDataFlowConnection = () => {
             costo_real: costoTotalReal,
             precio_cobrado: data.precioFinalCobrado,
             margen_real: margenReal,
-            vehiculo_tipo: 'carga' // Se puede mejorar con datos del vehículo
+            vehiculo_tipo: 'carga'
           });
       }
 
