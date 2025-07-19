@@ -74,6 +74,13 @@ export type Database = {
             referencedRelation: "viajes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_analisis_viajes_viaje"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       autotransporte: {
@@ -1452,7 +1459,15 @@ export type Database = {
           user_id?: string
           viaje_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_costos_viaje_viaje"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cotizaciones: {
         Row: {
@@ -3880,6 +3895,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_viajes_conductor"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_viajes_remolque"
+            columns: ["remolque_id"]
+            isOneToOne: false
+            referencedRelation: "remolques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_viajes_vehiculo"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "viajes_conductor_id_fkey"
             columns: ["conductor_id"]
             isOneToOne: false
@@ -4089,6 +4125,10 @@ export type Database = {
           p_ip_address?: unknown
           p_user_agent?: string
         }
+        Returns: string
+      }
+      poblar_datos_viajes_existentes: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       process_expired_trials: {
