@@ -117,24 +117,28 @@ export const useDataFlowConnection = () => {
     mutationFn: async (data: ViajeToCartaPorteData) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      // 1. Obtener datos completos del viaje
+      // 1. Obtener datos básicos del viaje
       const { data: viaje, error: viajeError } = await supabase
         .from('viajes')
-        .select(`
-          *,
-          costos_viaje (*),
-          vehiculos!fk_viajes_vehiculo (*),
-          conductores!fk_viajes_conductor (*),
-          remolques!fk_viajes_remolque (*)
-        `)
+        .select('*')
         .eq('id', data.viajeId)
         .eq('user_id', user.id)
         .single();
 
       if (viajeError) throw viajeError;
 
+      // 2. Obtener datos relacionados por separado
+      const [vehiculosData, conductoresData, costosData] = await Promise.all([
+        viaje.vehiculo_id ? supabase.from('vehiculos').select('*').eq('id', viaje.vehiculo_id).single() : Promise.resolve({ data: null }),
+        viaje.conductor_id ? supabase.from('conductores').select('*').eq('id', viaje.conductor_id).single() : Promise.resolve({ data: null }),
+        supabase.from('costos_viaje').select('*').eq('viaje_id', viaje.id).single()
+      ]);
+
       // 2. Crear carta porte con datos del viaje
       const trackingData = viaje.tracking_data as any || {};
+      const vehiculo = vehiculosData.data;
+      const conductor = conductoresData.data;
+      
       const { data: cartaPorte, error: cartaError } = await supabase
         .from('cartas_porte')
         .insert({
@@ -151,20 +155,20 @@ export const useDataFlowConnection = () => {
               fecha_inicio: viaje.fecha_inicio_programada,
               fecha_fin: viaje.fecha_fin_programada
             },
-            autotransporte: viaje.vehiculos ? {
-              placa_vm: viaje.vehiculos.placa,
-              marca: viaje.vehiculos.marca,
-              modelo: viaje.vehiculos.modelo,
-              año: viaje.vehiculos.anio,
-              config_vehicular: viaje.vehiculos.config_vehicular,
-              peso_bruto_vehicular: viaje.vehiculos.peso_bruto_vehicular
+            autotransporte: vehiculo ? {
+              placa_vm: vehiculo.placa,
+              marca: vehiculo.marca,
+              modelo: vehiculo.modelo,
+              año: vehiculo.anio,
+              config_vehicular: vehiculo.config_vehicular,
+              peso_bruto_vehicular: vehiculo.peso_bruto_vehicular
             } : {},
-            figuras: viaje.conductores ? [{
+            figuras: conductor ? [{
               tipo_figura: 'Operador',
-              rfc: viaje.conductores.rfc,
-              nombre: viaje.conductores.nombre,
-              num_licencia: viaje.conductores.num_licencia,
-              vigencia_licencia: viaje.conductores.vigencia_licencia
+              rfc: conductor.rfc,
+              nombre: conductor.nombre,
+              num_licencia: conductor.num_licencia,
+              vigencia_licencia: conductor.vigencia_licencia
             }] : [],
             mercancias: data.mercanciaData || [],
             ubicaciones: data.ubicacionesData || [

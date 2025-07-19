@@ -76,7 +76,7 @@ export const IntegrityMonitorPanel: React.FC = () => {
         relacionesIncompletas: (viajes?.length || 0) - viajesConCostos.length
       });
 
-      // Calcular datos de integridad
+      // Calcular datos de integridad simplificados
       const integrity: IntegrityStatus[] = [
         {
           entity: 'Viajes → Costos',
@@ -88,11 +88,11 @@ export const IntegrityMonitorPanel: React.FC = () => {
         },
         {
           entity: 'Viajes → Análisis',
-          total: viajes?.filter(v => v.estado === 'completado')?.length || 0,
+          total: viajes?.length || 0,
           connected: viajesConAnalisis.length,
-          missing: (viajes?.filter(v => v.estado === 'completado')?.length || 0) - viajesConAnalisis.length,
-          percentage: viajes?.filter(v => v.estado === 'completado')?.length ? (viajesConAnalisis.length / viajes.filter(v => v.estado === 'completado').length) * 100 : 0,
-          status: viajesConAnalisis.length === viajes?.filter(v => v.estado === 'completado')?.length ? 'good' : 'warning'
+          missing: (viajes?.length || 0) - viajesConAnalisis.length,
+          percentage: viajes?.length ? (viajesConAnalisis.length / viajes.length) * 100 : 0,
+          status: viajesConAnalisis.length === viajes?.length ? 'good' : 'warning'
         },
         {
           entity: 'Viajes → Conductores',
