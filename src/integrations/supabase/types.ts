@@ -4131,6 +4131,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      poblar_datos_viajes_existentes_mejorado: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       process_expired_trials: {
         Args: Record<PropertyKey, never>
         Returns: undefined

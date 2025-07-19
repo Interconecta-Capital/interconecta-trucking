@@ -50,7 +50,7 @@ export const IntegrityMonitorPanel: React.FC = () => {
       setIsLoading(true);
 
       // Obtener métricas del sistema
-      const { data: viajes } = await supabase.from('viajes').select('id, conductor_id, vehiculo_id');
+      const { data: viajes } = await supabase.from('viajes').select('id, conductor_id, vehiculo_id, estado');
       const { data: costos } = await supabase.from('costos_viaje').select('viaje_id');
       const { data: analisis } = await supabase.from('analisis_viajes').select('viaje_id');
       const { data: conductores } = await supabase.from('conductores').select('id, estado');
@@ -129,8 +129,8 @@ export const IntegrityMonitorPanel: React.FC = () => {
     try {
       setIsRepairing(true);
       
-      // Ejecutar función de reparación
-      const { data, error } = await supabase.rpc('poblar_datos_viajes_existentes');
+      // Ejecutar función de reparación mejorada
+      const { data, error } = await supabase.rpc('poblar_datos_viajes_existentes_mejorado');
       
       if (error) throw error;
 

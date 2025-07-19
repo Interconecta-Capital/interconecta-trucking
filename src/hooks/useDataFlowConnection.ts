@@ -123,9 +123,9 @@ export const useDataFlowConnection = () => {
         .select(`
           *,
           costos_viaje (*),
-          vehiculos (*),
-          conductores (*),
-          remolques (*)
+          vehiculos!fk_viajes_vehiculo (*),
+          conductores!fk_viajes_conductor (*),
+          remolques!fk_viajes_remolque (*)
         `)
         .eq('id', data.viajeId)
         .eq('user_id', user.id)

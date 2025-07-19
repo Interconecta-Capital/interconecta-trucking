@@ -18,6 +18,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { IntegrityMonitorPanel } from './IntegrityMonitorPanel';
 
 export default function DashboardHub() {
   const { data: counts } = useDashboardCounts();
@@ -210,6 +211,9 @@ export default function DashboardHub() {
           ))}
         </div>
       </div>
+
+      {/* Monitor de Integridad */}
+      <IntegrityMonitorPanel />
 
       {/* Recent Activity */}
       <Card>
