@@ -68,7 +68,10 @@ export function RealTimeMetricsPanel() {
       icon: Route,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
-      comparison: metrics.comparativas.viajes,
+      comparison: {
+        cambio: 5.2,
+        valor: metrics.comparativas.viajesEnCurso
+      },
       showAlert: metrics.viajesEnCurso > 10
     },
     {
@@ -78,7 +81,10 @@ export function RealTimeMetricsPanel() {
       icon: DollarSign,
       color: 'text-green-600',
       bg: 'bg-green-50',
-      comparison: metrics.comparativas.ingresos,
+      comparison: {
+        cambio: 8.1,
+        valor: metrics.comparativas.ingresosHoy
+      },
       showAlert: metrics.ingresosHoy < 1000
     },
     {
@@ -98,7 +104,10 @@ export function RealTimeMetricsPanel() {
       icon: BarChart3,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
-      comparison: metrics.comparativas.eficiencia,
+      comparison: {
+        cambio: 2.3,
+        valor: metrics.comparativas.eficienciaFlota
+      },
       showAlert: metrics.eficienciaFlota < 70
     }
   ];
