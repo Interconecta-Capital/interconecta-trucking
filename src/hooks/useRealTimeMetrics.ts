@@ -1,164 +1,189 @@
-
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { startOfDay, endOfDay, format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface RealTimeMetrics {
-  // Métricas operacionales actuales
+interface RealTimeMetrics {
+  ingresosMensuales: number;
+  ingresosTotales: number;
+  costosMensuales: number;
+  costosTotales: number;
+  margenPromedio: number;
+  gananciaNeta: number;
+  cotizacionesPendientes: number;
+  cotizacionesAprobadas: number;
+  viajesCompletados: number;
+  viajesEnTransito: number;
+  evolucionIngresos: Array<{
+    mes: string;
+    ingresos: number;
+    costos: number;
+    margen: number;
+  }>;
+  // Campos para compatibilidad hacia atrás
   viajesHoy: number;
   viajesEnCurso: number;
+  ingresosHoy: number;
+  margenHoy: number;
   conductoresActivos: number;
   vehiculosEnUso: number;
-  
-  // Métricas financieras del día
-  ingresosHoy: number;
-  costosHoy: number;
-  margenHoy: number;
-  
-  // Alertas y estado del sistema
-  alertasUrgentes: number;
-  documentosPendientes: number;
-  mantenimientosPendientes: number;
-  
-  // Performance en tiempo real
   eficienciaFlota: number;
-  puntualidadPromedio: number;
   utilizacionRecursos: number;
-  
-  // Comparativas con ayer
+  documentosPendientes: number;
+  alertasUrgentes: number;
   comparativas: {
-    viajes: { actual: number; anterior: number; cambio: number };
-    ingresos: { actual: number; anterior: number; cambio: number };
-    eficiencia: { actual: number; anterior: number; cambio: number };
+    viajesEnCurso: number;
+    ingresosHoy: number;
+    eficienciaFlota: number;
   };
 }
 
 export const useRealTimeMetrics = () => {
   const { user } = useAuth();
+  const [metrics, setMetrics] = useState<RealTimeMetrics | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('month');
 
-  return useQuery({
-    queryKey: ['real-time-metrics', user?.id],
-    queryFn: async (): Promise<RealTimeMetrics> => {
-      if (!user?.id) throw new Error('Usuario no autenticado');
+  const calculateMetrics = useCallback(async () => {
+    if (!user?.id) return;
 
-      const hoy = new Date();
-      const ayer = new Date(hoy);
-      ayer.setDate(ayer.getDate() - 1);
+    setLoading(true);
+    try {
+      const now = new Date();
+      let startDate = new Date();
 
-      // 1. Métricas de viajes hoy
-      const { data: viajesHoy } = await supabase
+      switch (period) {
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          const quarter = Math.floor(now.getMonth() / 3);
+          startDate = new Date(now.getFullYear(), quarter * 3, 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+      }
+
+      // Obtener viajes del período actual
+      const { data: viajes, error: viajesError } = await supabase
         .from('viajes')
-        .select('id, estado, created_at')
+        .select('*')
         .eq('user_id', user.id)
-        .gte('created_at', startOfDay(hoy).toISOString())
-        .lte('created_at', endOfDay(hoy).toISOString());
+        .gte('created_at', startDate.toISOString());
 
-      const viajesHoyCount = viajesHoy?.length || 0;
-      const viajesEnCurso = viajesHoy?.filter(v => v.estado === 'en_transito').length || 0;
+      if (viajesError) throw viajesError;
 
-      // 2. Métricas de ayer para comparación
-      const { data: viajesAyer } = await supabase
+      // Obtener todos los viajes para totales
+      const { data: viajesTotal, error: viajesAError } = await supabase
         .from('viajes')
-        .select('id')
-        .eq('user_id', user.id)
-        .gte('created_at', startOfDay(ayer).toISOString())
-        .lte('created_at', endOfDay(ayer).toISOString());
+        .select('*')
+        .eq('user_id', user.id);
 
-      const viajesAyerCount = viajesAyer?.length || 0;
+      if (viajesAError) throw viajesAError;
 
-      // 3. Métricas financieras del día
-      const { data: costosHoy } = await supabase
+      // Obtener costos
+      const { data: costos, error: costosError } = await supabase
         .from('costos_viaje')
-        .select('precio_final_cobrado, costo_total_real, margen_real')
-        .eq('user_id', user.id)
-        .gte('created_at', startOfDay(hoy).toISOString())
-        .lte('created_at', endOfDay(hoy).toISOString());
+        .select('*')
+        .eq('user_id', user.id);
 
-      const ingresosHoy = costosHoy?.reduce((sum, c) => sum + (c.precio_final_cobrado || 0), 0) || 0;
-      const costosHoyTotal = costosHoy?.reduce((sum, c) => sum + (c.costo_total_real || 0), 0) || 0;
-      const margenHoy = costosHoy?.reduce((sum, c) => sum + (c.margen_real || 0), 0) || 0;
+      if (costosError) throw costosError;
 
-      // 4. Métricas de recursos activos
-      const { data: conductores } = await supabase
-        .from('conductores')
-        .select('estado')
-        .eq('user_id', user.id)
-        .eq('activo', true);
+      // Obtener cotizaciones
+      const { data: cotizaciones, error: cotizacionesError } = await supabase
+        .from('cotizaciones')
+        .select('*')
+        .eq('user_id', user.id);
 
-      const conductoresActivos = conductores?.filter(c => c.estado !== 'inactivo').length || 0;
+      if (cotizacionesError) throw cotizacionesError;
 
-      const { data: vehiculos } = await supabase
-        .from('vehiculos')
-        .select('estado')
-        .eq('user_id', user.id)
-        .eq('activo', true);
+      // Calcular métricas del período actual
+      const ingresosMensuales = viajes?.reduce((sum, v) => sum + (v.precio_cobrado || 0), 0) || 0;
+      const costosMensuales = costos?.filter(c => {
+        const viaje = viajes?.find(v => v.id === c.viaje_id);
+        return !!viaje;
+      }).reduce((sum, c) => sum + (c.costo_total_real || c.costo_total_estimado || 0), 0) || 0;
 
-      const vehiculosEnUso = vehiculos?.filter(v => v.estado === 'en_transito').length || 0;
-      const totalVehiculos = vehiculos?.length || 1;
+      // Calcular métricas totales
+      const ingresosTotales = viajesTotal?.reduce((sum, v) => sum + (v.precio_cobrado || 0), 0) || 0;
+      const costosTotales = costos?.reduce((sum, c) => sum + (c.costo_total_real || c.costo_total_estimado || 0), 0) || 0;
 
-      // 5. Documentos y alertas pendientes
-      const { data: cartasPendientes } = await supabase
-        .from('cartas_porte')
-        .select('id')
-        .eq('usuario_id', user.id)
-        .eq('status', 'borrador');
+      // Calcular otras métricas
+      const margenPromedio = ingresosTotales > 0 ? ((ingresosTotales - costosTotales) / ingresosTotales) * 100 : 0;
+      const gananciaNeta = ingresosMensuales - costosMensuales;
 
-      const documentosPendientes = cartasPendientes?.length || 0;
+      const cotizacionesPendientes = cotizaciones?.filter(c => c.estado === 'pendiente').length || 0;
+      const cotizacionesAprobadas = cotizaciones?.filter(c => c.estado === 'aprobada').length || 0;
 
-      // 6. Cálculos de performance
-      const eficienciaFlota = totalVehiculos > 0 ? (vehiculosEnUso / totalVehiculos) * 100 : 0;
-      const puntualidadPromedio = 92; // Se calculará con datos reales de entregas
-      const utilizacionRecursos = conductoresActivos > 0 ? (viajesEnCurso / conductoresActivos) * 100 : 0;
+      const viajesCompletados = viajes?.filter(v => v.estado === 'completado').length || 0;
+      const viajesEnTransito = viajes?.filter(v => v.estado === 'en_transito').length || 0;
 
-      // 7. Métricas de comparación
-      const cambioViajes = viajesAyerCount > 0 ? ((viajesHoyCount - viajesAyerCount) / viajesAyerCount) * 100 : 0;
+      // Calcular evolución de ingresos (últimos 6 meses)
+      const evolucionIngresos = [];
+      for (let i = 5; i >= 0; i--) {
+        const mesDate = new Date();
+        mesDate.setMonth(mesDate.getMonth() - i);
+        const mesStart = new Date(mesDate.getFullYear(), mesDate.getMonth(), 1);
+        const mesEnd = new Date(mesDate.getFullYear(), mesDate.getMonth() + 1, 0);
 
-      // 8. Ingresos de ayer para comparación
-      const { data: costosAyer } = await supabase
-        .from('costos_viaje')
-        .select('precio_final_cobrado')
-        .eq('user_id', user.id)
-        .gte('created_at', startOfDay(ayer).toISOString())
-        .lte('created_at', endOfDay(ayer).toISOString());
+        const viajesMes = viajesTotal?.filter(v => {
+          const fechaViaje = new Date(v.created_at);
+          return fechaViaje >= mesStart && fechaViaje <= mesEnd;
+        }) || [];
 
-      const ingresosAyer = costosAyer?.reduce((sum, c) => sum + (c.precio_final_cobrado || 0), 0) || 0;
-      const cambioIngresos = ingresosAyer > 0 ? ((ingresosHoy - ingresosAyer) / ingresosAyer) * 100 : 0;
+        const ingresosMes = viajesMes.reduce((sum, v) => sum + (v.precio_cobrado || 0), 0);
+        const costosMes = costos?.filter(c => {
+          const viaje = viajesMes.find(v => v.id === c.viaje_id);
+          return !!viaje;
+        }).reduce((sum, c) => sum + (c.costo_total_real || c.costo_total_estimado || 0), 0) || 0;
 
-      return {
-        viajesHoy: viajesHoyCount,
-        viajesEnCurso,
-        conductoresActivos,
-        vehiculosEnUso,
-        ingresosHoy,
-        costosHoy: costosHoyTotal,
-        margenHoy,
-        alertasUrgentes: documentosPendientes > 5 ? 1 : 0,
-        documentosPendientes,
-        mantenimientosPendientes: 0, // Se implementará con datos de mantenimiento
-        eficienciaFlota,
-        puntualidadPromedio,
-        utilizacionRecursos,
-        comparativas: {
-          viajes: {
-            actual: viajesHoyCount,
-            anterior: viajesAyerCount,
-            cambio: cambioViajes
-          },
-          ingresos: {
-            actual: ingresosHoy,
-            anterior: ingresosAyer,
-            cambio: cambioIngresos
-          },
-          eficiencia: {
-            actual: eficienciaFlota,
-            anterior: 85, // Se calculará con histórico
-            cambio: eficienciaFlota - 85
-          }
-        }
+        evolucionIngresos.push({
+          mes: mesDate.toLocaleString('es', { month: 'short' }),
+          ingresos: ingresosMes,
+          costos: costosMes,
+          margen: ingresosMes - costosMes
+        });
+      }
+
+      const calculatedMetrics: RealTimeMetrics = {
+        ingresosMensuales,
+        ingresosTotales,
+        costosMensuales,
+        costosTotales,
+        margenPromedio,
+        gananciaNeta,
+        cotizacionesPendientes,
+        cotizacionesAprobadas,
+        viajesCompletados,
+        viajesEnTransito,
+        evolucionIngresos
       };
-    },
-    enabled: !!user?.id,
-    refetchInterval: 30000, // Actualizar cada 30 segundos
-  });
+
+      setMetrics(calculatedMetrics);
+    } catch (error) {
+      console.error('Error calculating metrics:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, period]);
+
+  useEffect(() => {
+    calculateMetrics();
+  }, [calculateMetrics]);
+
+  // Actualizar métricas cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(calculateMetrics, 30000);
+    return () => clearInterval(interval);
+  }, [calculateMetrics]);
+
+  return {
+    data: metrics, // Backward compatibility
+    metrics,
+    loading,
+    isLoading: loading, // Backward compatibility
+    period,
+    setPeriod,
+    refreshMetrics: calculateMetrics
+  };
 };

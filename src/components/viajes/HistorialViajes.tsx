@@ -1,46 +1,47 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { ViajeDetalleModal } from './modals/ViajeDetalleModal';
+import { useViajesEstados } from '@/hooks/useViajesEstados';
 
 export function HistorialViajes() {
+  const { viajesActivos, isLoading } = useViajesEstados();
   const [detalleModal, setDetalleModal] = useState<{ open: boolean; viaje: any }>({
     open: false,
     viaje: null
   });
+  const [historialViajes, setHistorialViajes] = useState<any[]>([]);
 
-  // Mock data para el historial - en el futuro se conectará con la API
-  const historialViajes = [
-    {
-      id: '1',
-      carta_porte_id: 'CP-001',
-      origen: 'Ciudad de México',
-      destino: 'Guadalajara',
-      estado: 'completado',
-      fecha_inicio_programada: '2024-06-10T08:00:00Z',
-      fecha_inicio_real: '2024-06-10T08:15:00Z',
-      fecha_fin: '2024-06-10T18:00:00Z',
-      conductor: 'Juan Pérez',
-      vehiculo: 'ABC-123',
-      observaciones: 'Viaje completado sin incidencias'
-    },
-    {
-      id: '2',
-      carta_porte_id: 'CP-002',
-      origen: 'Monterrey',
-      destino: 'Tijuana',
-      estado: 'cancelado',
-      fecha_inicio_programada: '2024-06-09T06:00:00Z',
-      fecha_inicio_real: null,
-      fecha_fin: null,
-      conductor: 'María García',
-      vehiculo: 'XYZ-789',
-      observaciones: 'Cancelado por problemas mecánicos en el vehículo'
-    }
-  ];
+  useEffect(() => {
+    // Usar los viajes reales del hook, incluyendo completados y otros estados
+    const viajesConHistorial = viajesActivos.map(viaje => ({
+      id: viaje.id,
+      carta_porte_id: viaje.carta_porte_id || `CP-${viaje.id.slice(0, 8)}`,
+      origen: viaje.origen,
+      destino: viaje.destino,
+      estado: viaje.estado,
+      fecha_inicio_programada: viaje.fecha_inicio_programada,
+      fecha_inicio_real: viaje.fecha_inicio_real,
+      fecha_fin: viaje.fecha_fin_real || viaje.fecha_fin_programada,
+      conductor: viaje.conductor_id ? `Conductor ID: ${viaje.conductor_id.slice(0, 8)}` : 'No asignado',
+      vehiculo: viaje.vehiculo_id ? `Vehículo ID: ${viaje.vehiculo_id.slice(0, 8)}` : 'No asignado',
+      observaciones: viaje.observaciones || 'Sin observaciones'
+    }));
+
+    setHistorialViajes(viajesConHistorial);
+  }, [viajesActivos]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Cargando historial...</span>
+      </div>
+    );
+  }
 
   const handleVerDetalles = (viaje: any) => {
     setDetalleModal({ open: true, viaje });
