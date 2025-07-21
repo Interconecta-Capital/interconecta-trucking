@@ -10,6 +10,8 @@ import { MapPin, Clock, Route, AlertTriangle } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { useDebounce } from '@/hooks/useDebounce';
+import { OptimizedAutoRouteCalculator } from '@/components/carta-porte/ubicaciones/OptimizedAutoRouteCalculator';
+import { Ubicacion } from '@/types/ubicaciones';
 
 interface ViajeWizardRutaEnhancedProps {
   data: ViajeWizardData;
@@ -125,6 +127,54 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     updateData({ isValid: validation.isValid });
   }, [validation.isValid, updateData]);
 
+  // Crear ubicaciones para el calculador de rutas
+  const ubicaciones: Ubicacion[] = useMemo(() => {
+    const locations: Ubicacion[] = [];
+    
+    if (localOrigen) {
+      locations.push({
+        id: 'origen-wizard',
+        idUbicacion: 'origen-wizard',
+        tipoUbicacion: 'Origen',
+        domicilio: {
+          pais: 'Mexico',
+          codigoPostal: '01000', // Código postal por defecto para Ciudad de México
+          calle: localOrigen,
+          municipio: localOrigen.split(',')[0] || localOrigen,
+          estado: localOrigen.split(',')[1]?.trim() || 'México',
+          colonia: 'Centro'
+        }
+      });
+    }
+    
+    if (localDestino) {
+      locations.push({
+        id: 'destino-wizard',
+        idUbicacion: 'destino-wizard',
+        tipoUbicacion: 'Destino',
+        domicilio: {
+          pais: 'Mexico',
+          codigoPostal: '01000', // Código postal por defecto para Ciudad de México
+          calle: localDestino,
+          municipio: localDestino.split(',')[0] || localDestino,
+          estado: localDestino.split(',')[1]?.trim() || 'México',
+          colonia: 'Centro'
+        }
+      });
+    }
+    
+    return locations;
+  }, [localOrigen, localDestino]);
+
+  // Manejo de distancia calculada automáticamente
+  const handleDistanceCalculated = useCallback((distancia: number, tiempo: number, geometry: any) => {
+    console.log('📊 Distancia calculada automáticamente:', { distancia, tiempo });
+    setLocalDistancia(distancia);
+    updateData({
+      distanciaRecorrida: distancia
+    });
+  }, [updateData]);
+
   const fechaSalida = data.origen?.fechaHoraSalidaLlegada ? new Date(data.origen.fechaHoraSalidaLlegada) : undefined;
   const fechaLlegada = data.destino?.fechaHoraSalidaLlegada ? new Date(data.destino.fechaHoraSalidaLlegada) : undefined;
   const minFechaLlegada = fechaSalida ? new Date(fechaSalida.getTime() + 60 * 60 * 1000) : new Date();
@@ -235,6 +285,16 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
           )}
         </CardContent>
       </Card>
+
+      {/* Calculador automático de ruta */}
+      {ubicaciones.length >= 2 && (
+        <OptimizedAutoRouteCalculator
+          ubicaciones={ubicaciones}
+          onDistanceCalculated={handleDistanceCalculated}
+          distanciaTotal={localDistancia}
+          tiempoEstimado={data.distanciaRecorrida ? Math.round(data.distanciaRecorrida * 1.2) : undefined}
+        />
+      )}
     </div>
   );
 }
