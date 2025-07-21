@@ -94,10 +94,8 @@ export default function UnifiedDashboard() {
       {/* Saludo personalizado */}
       <PersonalizedGreeting />
 
-      {/* Panel de reparación de datos - Solo mostrar si hay datos faltantes */}
-      {(!realCounts?.viajes || realCounts.viajes === 0) && (
-        <DataRepairPanel />
-      )}
+      {/* Panel de reparación de datos - Mostrar siempre para diagnosticar */}
+      <DataRepairPanel />
 
       {/* Panel de automatización de flujos */}
       <FlowAutomationPanel />
@@ -173,16 +171,16 @@ export default function UnifiedDashboard() {
           </CarouselItem>
           <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
             {renderMetricCard(
-              'Cartas Porte',
-              realCounts?.cartas_porte || 0,
+              'Cartas Porte (Mes)',
+              realCounts?.cartas_porte_mes_actual || 0,
               permissions.usage.cartas_porte.limit,
               true
             )}
           </CarouselItem>
           <CarouselItem className="basis-full sm:basis-1/2 md:basis-1/3 xl:basis-1/4">
             {renderMetricCard(
-              'Viajes',
-              realCounts?.viajes || 0,
+              'Viajes (Mes)',
+              realCounts?.viajes_mes_actual || 0,
               permissions.usage.viajes.limit,
               true
             )}
