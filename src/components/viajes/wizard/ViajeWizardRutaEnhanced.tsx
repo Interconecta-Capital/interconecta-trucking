@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react';
+
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin, Route, Clock, Calendar, Calculator, Navigation, AlertTriangle, CheckCircle, Plus, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Clock, Route, AlertTriangle } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
-import { useUbicacionesGeocodificacion } from '@/hooks/useUbicacionesGeocodificacion';
-import { useGoogleMapsAPI } from '@/hooks/useGoogleMapsAPI';
-import { useRutasPrecisas } from '@/hooks/useRutasPrecisas';
-import { useRutaConParadas, ParadaAutorizada } from '@/hooks/useRutaConParadas';
-import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
-import { toast } from 'sonner';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ViajeWizardRutaEnhancedProps {
   data: ViajeWizardData;
@@ -22,651 +17,224 @@ interface ViajeWizardRutaEnhancedProps {
 }
 
 export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnhancedProps) {
-  const [origenDireccion, setOrigenDireccion] = useState('');
-  const [destinoDireccion, setDestinoDireccion] = useState('');
-  const [fechaSalida, setFechaSalida] = useState('');
-  const [fechaLlegada, setFechaLlegada] = useState('');
-  const [showMap, setShowMap] = useState(false);
-  const [nuevaParada, setNuevaParada] = useState('');
-  const [rutaConParadas, setRutaConParadas] = useState<any>(null);
-  
-  // Hooks para manejo de rutas precisas
-  const {
-    calculandoRuta,
-    rutaActual,
-    error: errorRuta,
-    calcularRutaOptimizada,
-    tieneRutaValida,
-    precisenEsAlta
-  } = useRutasPrecisas();
+  // Estados locales para optimización de UX
+  const [localOrigen, setLocalOrigen] = useState(data.origen?.domicilio?.calle || '');
+  const [localDestino, setLocalDestino] = useState(data.destino?.domicilio?.calle || '');
+  const [localDistancia, setLocalDistancia] = useState(data.distanciaRecorrida || 0);
 
-  const {
-    calcularRutaCompleta,
-    calculando: calculandoParadas,
-    error: errorParadas
-  } = useRutaConParadas();
-  
-  const { isLoaded: mapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
+  // Debounce para evitar actualizaciones excesivas
+  const debouncedOrigen = useDebounce(localOrigen, 500);
+  const debouncedDestino = useDebounce(localDestino, 500);
+  const debouncedDistancia = useDebounce(localDistancia, 300);
 
-  // Inicializar fechas por defecto
-  useEffect(() => {
-    if (!fechaSalida) {
-      const mañana = new Date();
-      mañana.setDate(mañana.getDate() + 1);
-      setFechaSalida(mañana.toISOString().slice(0, 16));
-    }
-    if (!fechaLlegada && fechaSalida) {
-      const llegada = new Date(fechaSalida);
-      llegada.setDate(llegada.getDate() + 1);
-      setFechaLlegada(llegada.toISOString().slice(0, 16));
-    }
-  }, [fechaSalida, fechaLlegada]);
-
-  // Cargar datos existentes del wizard
-  useEffect(() => {
-    if (data.origen?.direccion) {
-      setOrigenDireccion(data.origen.direccion);
-    }
-    if (data.destino?.direccion) {
-      setDestinoDireccion(data.destino.direccion);
-    }
-    if (data.origen?.fechaHoraSalidaLlegada) {
-      setFechaSalida(new Date(data.origen.fechaHoraSalidaLlegada).toISOString().slice(0, 16));
-    }
-    if (data.destino?.fechaHoraSalidaLlegada) {
-      setFechaLlegada(new Date(data.destino.fechaHoraSalidaLlegada).toISOString().slice(0, 16));
-    }
-    // Cargar fechas del wizard principal si existen
-    if (data.fechaInicio) {
-      setFechaSalida(new Date(data.fechaInicio).toISOString().slice(0, 16));
-    }
-    if (data.fechaFin) {
-      setFechaLlegada(new Date(data.fechaFin).toISOString().slice(0, 16));
-    }
-  }, [data.origen, data.destino, data.fechaInicio, data.fechaFin]);
-
-  // Sincronizar fechas con el wizard principal
-  useEffect(() => {
-    if (fechaSalida && fechaLlegada) {
-      console.log('🔍 DEBUG: Sincronizando fechas con wizard principal:', {
-        fechaSalida,
-        fechaLlegada,
-        fechaInicio: data.fechaInicio,
-        fechaFin: data.fechaFin
-      });
+  // Sincronizar con data principal solo cuando sea necesario
+  React.useEffect(() => {
+    if (debouncedOrigen !== data.origen?.domicilio?.calle) {
       updateData({
-        fechaInicio: fechaSalida,
-        fechaFin: fechaLlegada
+        origen: {
+          ...data.origen,
+          domicilio: {
+            ...data.origen?.domicilio,
+            calle: debouncedOrigen,
+            municipio: debouncedOrigen.split(',')[0] || debouncedOrigen,
+            estado: debouncedOrigen.split(',')[1]?.trim() || 'México'
+          }
+        }
       });
     }
-  }, [fechaSalida, fechaLlegada, updateData]);
+  }, [debouncedOrigen]);
 
-  // Calcular ruta automáticamente cuando se tienen origen y destino
-  const calcularRuta = async () => {
-    if (!origenDireccion || !destinoDireccion) {
-      toast.error('Debes especificar origen y destino');
-      return;
-    }
-
-    try {
-      // Si hay paradas autorizadas, usar el nuevo sistema
-      if (data.tieneParadasAutorizadas && data.paradasAutorizadas?.length > 0) {
-        const paradasParaCalculo: ParadaAutorizada[] = data.paradasAutorizadas.map((parada, index) => ({
-          id: parada.id,
-          direccion: parada.direccion,
-          tiempoServicio: 30, // 30 minutos por defecto
-          orden: parada.orden || index + 1,
-          tipo: 'carga', // tipo por defecto
-          obligatoria: true,
-          nombre: parada.nombre
-        }));
-
-        console.log('🛣️ Calculando ruta con paradas:', paradasParaCalculo.length);
-        
-        const rutaCompleta = await calcularRutaCompleta(
-          origenDireccion,
-          destinoDireccion,
-          paradasParaCalculo
-        );
-
-        if (rutaCompleta) {
-          setRutaConParadas(rutaCompleta);
-          
-          // Actualizar datos del wizard con la ruta que incluye paradas
-          updateData({
-            origen: {
-              nombre: origenDireccion,
-              direccion: origenDireccion,
-              coordenadas: {
-                latitud: rutaCompleta.origen.lat,
-                longitud: rutaCompleta.origen.lng
-              },
-              fechaHoraSalidaLlegada: fechaSalida || new Date().toISOString(),
-              validadaGoogleMaps: true
-            },
-            destino: {
-              nombre: destinoDireccion,
-              direccion: destinoDireccion,
-              coordenadas: {
-                latitud: rutaCompleta.destino.lat,
-                longitud: rutaCompleta.destino.lng
-              },
-              fechaHoraSalidaLlegada: fechaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-              validadaGoogleMaps: true
-            },
-            distanciaRecorrida: rutaCompleta.distanciaTotal,
-            paradasAutorizadas: rutaCompleta.paradas.map(parada => ({
-              id: parada.id,
-              nombre: parada.nombre || `Parada ${parada.orden}`,
-              direccion: parada.direccion,
-              orden: parada.orden,
-              coordenadas: parada.coordenadas ? {
-                latitud: parada.coordenadas.lat,
-                longitud: parada.coordenadas.lng
-              } : undefined
-            }))
-          });
-
-          setShowMap(true);
-          toast.success(`Ruta calculada con ${rutaCompleta.paradas.length} paradas - ${rutaCompleta.distanciaTotal} km`);
-          return;
+  React.useEffect(() => {
+    if (debouncedDestino !== data.destino?.domicilio?.calle) {
+      updateData({
+        destino: {
+          ...data.destino,
+          domicilio: {
+            ...data.destino?.domicilio,
+            calle: debouncedDestino,
+            municipio: debouncedDestino.split(',')[0] || debouncedDestino,
+            estado: debouncedDestino.split(',')[1]?.trim() || 'México'
+          }
         }
-      }
+      });
+    }
+  }, [debouncedDestino]);
 
-      // Fallback al sistema original si no hay paradas
-      const rutaCalculada = await calcularRutaOptimizada(
-        origenDireccion,
-        destinoDireccion,
-        {
-          evitarPeajes: false,
-          evitarAutopistas: false,
-          vehiculo: data.vehiculo ? {
-            tipo: data.vehiculo.tipo_carroceria || 'C2',
-            rendimiento: data.vehiculo.rendimiento || 8
-          } : undefined
+  React.useEffect(() => {
+    if (debouncedDistancia !== data.distanciaRecorrida) {
+      updateData({
+        distanciaRecorrida: debouncedDistancia
+      });
+    }
+  }, [debouncedDistancia]);
+
+  // Manejo de fechas sin conversiones problemáticas
+  const handleFechaSalidaChange = useCallback((fecha: Date | undefined) => {
+    if (fecha) {
+      updateData({
+        origen: {
+          ...data.origen,
+          fechaHoraSalidaLlegada: fecha.toISOString()
         }
-      );
-
-      if (rutaCalculada) {
-        // Actualizar datos del wizard con información precisa
-        updateData({
-          origen: {
-            nombre: rutaCalculada.origen.nombre,
-            direccion: rutaCalculada.origen.direccion,
-            coordenadas: rutaCalculada.origen.coordenadas,
-            codigoPostal: rutaCalculada.origen.codigoPostal,
-            fechaHoraSalidaLlegada: fechaSalida || new Date().toISOString(),
-            precision: rutaCalculada.origen.precision,
-            validadaGoogleMaps: rutaCalculada.origen.validadaGoogleMaps
-          },
-          destino: {
-            nombre: rutaCalculada.destino.nombre,
-            direccion: rutaCalculada.destino.direccion,
-            coordenadas: rutaCalculada.destino.coordenadas,
-            codigoPostal: rutaCalculada.destino.codigoPostal,
-            fechaHoraSalidaLlegada: fechaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            precision: rutaCalculada.destino.precision,
-            validadaGoogleMaps: rutaCalculada.destino.validadaGoogleMaps
-          },
-          distanciaRecorrida: rutaCalculada.distanciaKm
-        });
-
-        setShowMap(true);
-        
-        console.log('✅ Datos de ruta actualizados en wizard:', {
-          distancia: rutaCalculada.distanciaKm,
-          tiempo: rutaCalculada.tiempoEstimadoMinutos,
-          precision: rutaCalculada.precision
-        });
-      }
-      
-    } catch (error) {
-      console.error('Error calculando ruta:', error);
-      toast.error('Error calculando la ruta. Intenta con direcciones más específicas.');
+      });
     }
-  };
+  }, [data.origen, updateData]);
 
-  const formatearTiempo = (minutos: number) => {
-    const horas = Math.floor(minutos / 60);
-    const mins = minutos % 60;
-    return `${horas}h ${mins}m`;
-  };
+  const handleFechaLlegadaChange = useCallback((fecha: Date | undefined) => {
+    if (fecha) {
+      updateData({
+        destino: {
+          ...data.destino,
+          fechaHoraSalidaLlegada: fecha.toISOString()
+        }
+      });
+    }
+  }, [data.destino, updateData]);
 
-  const formatearCosto = (costo: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(costo);
-  };
-
-  const handleTieneParadasChange = (checked: boolean) => {
-    updateData({ 
-      tieneParadasAutorizadas: checked,
-      paradasAutorizadas: checked ? data.paradasAutorizadas || [] : []
-    });
-  };
-
-  const agregarParada = async () => {
-    if (!nuevaParada.trim()) {
-      toast.error('Ingresa una dirección para la parada');
-      return;
+  // Validaciones computadas
+  const validation = useMemo(() => {
+    const errors: string[] = [];
+    
+    if (!localOrigen.trim()) {
+      errors.push('El origen es requerido');
+    }
+    
+    if (!localDestino.trim()) {
+      errors.push('El destino es requerido');
+    }
+    
+    if (localDistancia <= 0) {
+      errors.push('La distancia debe ser mayor a 0');
     }
 
-    const nuevaParadaObj = {
-      id: crypto.randomUUID(),
-      nombre: `Parada ${(data.paradasAutorizadas?.length || 0) + 1}`,
-      direccion: nuevaParada.trim(),
-      orden: (data.paradasAutorizadas?.length || 0) + 1
+    const fechaSalida = data.origen?.fechaHoraSalidaLlegada ? new Date(data.origen.fechaHoraSalidaLlegada) : null;
+    const fechaLlegada = data.destino?.fechaHoraSalidaLlegada ? new Date(data.destino.fechaHoraSalidaLlegada) : null;
+
+    if (fechaSalida && fechaLlegada && fechaLlegada <= fechaSalida) {
+      errors.push('La fecha de llegada debe ser posterior a la fecha de salida');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
     };
+  }, [localOrigen, localDestino, localDistancia, data.origen?.fechaHoraSalidaLlegada, data.destino?.fechaHoraSalidaLlegada]);
 
-    const paradasActualizadas = [...(data.paradasAutorizadas || []), nuevaParadaObj];
-    
-    updateData({
-      paradasAutorizadas: paradasActualizadas
-    });
+  // Sincronizar validación con el wizard principal
+  React.useEffect(() => {
+    updateData({ isValid: validation.isValid });
+  }, [validation.isValid, updateData]);
 
-    setNuevaParada('');
-    toast.success(`Parada agregada: ${nuevaParadaObj.direccion}`);
-    
-    // Auto-calcular si ya tenemos origen y destino
-    if (origenDireccion && destinoDireccion) {
-      setTimeout(() => {
-        calcularRuta();
-      }, 500);
-    }
-  };
-
-  const eliminarParada = (id: string) => {
-    updateData({
-      paradasAutorizadas: data.paradasAutorizadas?.filter(p => p.id !== id)
-    });
-    toast.success('Parada eliminada');
-  };
+  const fechaSalida = data.origen?.fechaHoraSalidaLlegada ? new Date(data.origen.fechaHoraSalidaLlegada) : undefined;
+  const fechaLlegada = data.destino?.fechaHoraSalidaLlegada ? new Date(data.destino.fechaHoraSalidaLlegada) : undefined;
+  const minFechaLlegada = fechaSalida ? new Date(fechaSalida.getTime() + 60 * 60 * 1000) : new Date();
 
   return (
-    <div className="space-y-6" data-onboarding="ruta-section">
-      {/* Google Maps Error Alert */}
-      {googleMapsError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Error con Google Maps: {googleMapsError}. Las rutas se calcularán con estimaciones.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Error de ruta */}
-      {(errorRuta || errorParadas) && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {errorRuta || errorParadas}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Origen */}
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <MapPin className="h-5 w-5 text-green-600" />
-            Punto de Origen
-            {data.origen?.validadaGoogleMaps && (
-              <Badge variant="outline" className="bg-green-100 text-green-800">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Validado
-              </Badge>
-            )}
+          <CardTitle className="flex items-center gap-2">
+            <Route className="h-5 w-5" />
+            Información de la Ruta
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="origen">Dirección de origen</Label>
-            <Input
-              id="origen"
-              placeholder="Ej: Av. Insurgentes Sur 123, CDMX"
-              value={origenDireccion}
-              onChange={(e) => setOrigenDireccion(e.target.value)}
-              className="mt-2"
-            />
-            {data.origen?.precision && (
-              <div className="mt-1 text-xs text-gray-600">
-                Precisión: {data.origen.precision} • CP: {data.origen.codigoPostal}
-              </div>
-            )}
+        <CardContent className="space-y-6">
+          {/* Ubicaciones */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="origen" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-green-600" />
+                Origen *
+              </Label>
+              <Input
+                id="origen"
+                value={localOrigen}
+                onChange={(e) => setLocalOrigen(e.target.value)}
+                placeholder="Ciudad o dirección de origen"
+                className="border-green-200 focus:border-green-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="destino" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-red-600" />
+                Destino *
+              </Label>
+              <Input
+                id="destino"
+                value={localDestino}
+                onChange={(e) => setLocalDestino(e.target.value)}
+                placeholder="Ciudad o dirección de destino"
+                className="border-red-200 focus:border-red-500"
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="fechaSalida">Fecha y hora de salida</Label>
-            <Input
-              id="fechaSalida"
-              type="datetime-local"
-              value={fechaSalida}
-              onChange={(e) => {
-                setFechaSalida(e.target.value);
-                // Actualizar inmediatamente en el wizard
-                updateData({ fechaInicio: e.target.value });
-              }}
-              className="mt-2"
+
+          {/* Fechas y Horarios */}
+          <Separator />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DateTimePicker
+              label="Fecha y Hora de Salida"
+              date={fechaSalida}
+              onDateChange={handleFechaSalidaChange}
+              placeholder="Selecciona fecha de salida"
               required
+              minDate={new Date()}
+              className="border-green-200 focus:border-green-500"
             />
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Destino */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <MapPin className="h-5 w-5 text-red-600" />
-            Punto de Destino
-            {data.destino?.validadaGoogleMaps && (
-              <Badge variant="outline" className="bg-green-100 text-green-800">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Validado
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="destino">Dirección de destino</Label>
-            <Input
-              id="destino"
-              placeholder="Ej: Av. López Mateos 456, Guadalajara"
-              value={destinoDireccion}
-              onChange={(e) => setDestinoDireccion(e.target.value)}
-              className="mt-2"
-            />
-            {data.destino?.precision && (
-              <div className="mt-1 text-xs text-gray-600">
-                Precisión: {data.destino.precision} • CP: {data.destino.codigoPostal}
-              </div>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="fechaLlegada">Fecha y hora estimada de llegada</Label>
-            <Input
-              id="fechaLlegada"
-              type="datetime-local"
-              value={fechaLlegada}
-              onChange={(e) => {
-                setFechaLlegada(e.target.value);
-                // Actualizar inmediatamente en el wizard
-                updateData({ fechaFin: e.target.value });
-              }}
-              className="mt-2"
-              min={fechaSalida}
+            <DateTimePicker
+              label="Fecha y Hora de Llegada"
+              date={fechaLlegada}
+              onDateChange={handleFechaLlegadaChange}
+              placeholder="Selecciona fecha de llegada"
               required
+              minDate={minFechaLlegada}
+              className="border-red-200 focus:border-red-500"
             />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Paradas autorizadas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Route className="h-5 w-5 text-purple-600" />
-            Paradas Autorizadas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tieneParadas"
-              checked={data.tieneParadasAutorizadas || false}
-              onCheckedChange={handleTieneParadasChange}
+          {/* Distancia */}
+          <div className="space-y-2">
+            <Label htmlFor="distancia">Distancia Estimada (km) *</Label>
+            <Input
+              id="distancia"
+              type="number"
+              min="1"
+              value={localDistancia || ''}
+              onChange={(e) => setLocalDistancia(Number(e.target.value))}
+              placeholder="Distancia en kilómetros"
             />
-            <Label htmlFor="tieneParadas" className="font-medium">
-              Este viaje tendrá paradas autorizadas
-            </Label>
           </div>
 
-          {data.tieneParadasAutorizadas && (
-            <div className="space-y-4 border-l-4 border-purple-200 pl-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ej: Centro de Distribución Querétaro"
-                  value={nuevaParada}
-                  onChange={(e) => setNuevaParada(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && agregarParada()}
-                />
-                <Button onClick={agregarParada} size="sm">
-                  <Plus className="h-4 w-4" />
-                  Agregar
-                </Button>
-              </div>
-
-              {data.paradasAutorizadas && data.paradasAutorizadas.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Paradas programadas ({data.paradasAutorizadas.length})
-                  </Label>
-                  {data.paradasAutorizadas.map((parada) => (
-                    <div key={parada.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{parada.nombre}</div>
-                        <div className="text-xs text-gray-600">{parada.direccion}</div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => eliminarParada(parada.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+          {/* Resumen de validación */}
+          {!validation.isValid && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+              <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-red-800">Errores en la ruta:</p>
+                <ul className="text-sm text-red-700 space-y-1">
+                  {validation.errors.map((error, index) => (
+                    <li key={index}>• {error}</li>
                   ))}
-                </div>
-              )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {validation.isValid && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Ruta válida
+              </Badge>
+              <span className="text-sm text-green-700">
+                {localDistancia}km • {localOrigen} → {localDestino}
+              </span>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Botón calcular ruta */}
-      <div className="flex justify-center">
-        <Button
-          onClick={calcularRuta}
-          disabled={!origenDireccion || !destinoDireccion || calculandoRuta || calculandoParadas}
-          size="lg"
-          className="flex items-center gap-2"
-        >
-          {(calculandoRuta || calculandoParadas) ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {data.tieneParadasAutorizadas && data.paradasAutorizadas?.length > 0 
-                ? 'Calculando ruta con paradas...' 
-                : 'Calculando ruta optimizada...'}
-            </>
-          ) : (
-            <>
-              <Calculator className="h-4 w-4" />
-              Calcular Ruta Optimizada
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Resultado del cálculo - Priorizar ruta con paradas */}
-      {(rutaConParadas || rutaActual) && (
-        <>
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-green-800">
-                <Route className="h-5 w-5" />
-                Ruta Calculada
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                  Google Maps
-                </Badge>
-                {precisenEsAlta && (
-                  <Badge variant="outline" className="bg-green-100 text-green-800">
-                    Alta Precisión
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <Navigation className="h-4 w-4 text-blue-600" />
-                  <div>
-                    <div className="font-medium">Distancia</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {rutaConParadas ? `${rutaConParadas.distanciaTotal} km` : `${rutaActual.distanciaKm} km`}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-orange-600" />
-                  <div>
-                    <div className="font-medium">Tiempo estimado</div>
-                    <div className="text-2xl font-bold text-orange-600">
-                      {rutaConParadas 
-                        ? formatearTiempo(rutaConParadas.tiempoTotal)
-                        : formatearTiempo(rutaActual.tiempoEstimadoMinutos)
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4 text-purple-600" />
-                  <div>
-                    <div className="font-medium">Combustible</div>
-                    <div className="text-lg font-bold text-purple-600">
-                      {rutaConParadas 
-                        ? formatearCosto(rutaConParadas.combustibleTotal)
-                        : formatearCosto(rutaActual.costoCombustible)
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <div>
-                    <div className="font-medium">Precisión</div>
-                    <div className="text-lg font-bold text-green-600">
-                      {rutaConParadas ? `${rutaConParadas.precision}%` : `${rutaActual.precision}%`}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="p-3 bg-white rounded-lg border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Route className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium text-gray-800">Resumen de la ruta:</span>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {rutaConParadas 
-                    ? `${origenDireccion} → ${rutaConParadas.paradas.length} paradas → ${destinoDireccion}`
-                    : `${rutaActual.origen.nombre} → ${rutaActual.destino.nombre}`
-                  }
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
-                  <div>Peajes estimados: {rutaConParadas ? formatearCosto(rutaConParadas.peajesTotal) : formatearCosto(rutaActual.peajes)}</div>
-                  <div>Costo total estimado: {rutaConParadas 
-                    ? formatearCosto(rutaConParadas.combustibleTotal + rutaConParadas.peajesTotal)
-                    : formatearCosto(rutaActual.costoCombustible + rutaActual.peajes)
-                  }</div>
-                </div>
-                {rutaConParadas && rutaConParadas.paradas.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-600">
-                    Tiempo en paradas: {formatearTiempo(rutaConParadas.tiempoServicio)} • 
-                    Paradas: {rutaConParadas.paradas.length}
-                  </div>
-                )}
-                <div className="mt-2 flex gap-2">
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                    Vía terrestre
-                  </Badge>
-                  <Badge variant="outline" className="bg-green-100 text-green-800">
-                    Distancia verificada
-                  </Badge>
-                  {precisenEsAlta && (
-                    <Badge variant="outline" className="bg-purple-100 text-purple-800">
-                      Optimizada
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Información básica de ruta - Sin cálculos complejos */}
-              <div className="p-3 bg-blue-50 rounded-lg border">
-                <div className="text-sm font-medium text-blue-800 mb-2">ℹ️ Los cálculos detallados de costos se mostrarán en el resumen final</div>
-                <p className="text-xs text-blue-600">Esta información será utilizada para generar los documentos oficiales</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Google Map Visualization */}
-          {showMap && data.origen && data.destino && (
-            <GoogleMapVisualization
-              ubicaciones={[
-                {
-                  ...data.origen,
-                  tipoUbicacion: 'Origen',
-                  nombreRemitenteDestinatario: 'Origen del viaje',
-                  domicilio: { 
-                    calle: data.origen.direccion,
-                    municipio: data.origen.codigoPostal
-                  }
-                },
-                // Agregar paradas autorizadas al mapa
-                ...(data.paradasAutorizadas || []).map((parada, index) => ({
-                  id: parada.id,
-                  idUbicacion: `parada-${index + 1}`,
-                  tipoUbicacion: 'Paso Intermedio',
-                  nombreRemitenteDestinatario: parada.nombre,
-                  domicilio: { 
-                    calle: parada.direccion,
-                    municipio: parada.codigoPostal || 'Sin CP'
-                  },
-                  coordenadas: parada.coordenadas
-                })),
-                {
-                  ...data.destino,
-                  tipoUbicacion: 'Destino',
-                  nombreRemitenteDestinatario: 'Destino del viaje',
-                  domicilio: { 
-                    calle: data.destino.direccion,
-                    municipio: data.destino.codigoPostal
-                  }
-                }
-              ]}
-              routeData={rutaActual ? {
-                google_data: rutaActual.rutaOptimizada,
-                distance_km: rutaActual.distanciaKm,
-                duration_minutes: rutaActual.tiempoEstimadoMinutos
-              } : null}
-              isVisible={showMap}
-            />
-          )}
-        </>
-      )}
-
-      {/* Validación de fechas */}
-      {fechaSalida && fechaLlegada && new Date(fechaLlegada) <= new Date(fechaSalida) && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            La fecha de llegada debe ser posterior a la fecha de salida.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Indicadores de estado */}
-      {tieneRutaValida && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Ruta validada y lista para continuar. La información será incluida automáticamente en la carta porte.
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 }

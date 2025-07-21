@@ -1,8 +1,6 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Calendar } from 'lucide-react';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 interface UbicacionDateTimeFieldProps {
   tipoUbicacion: string;
@@ -19,19 +17,29 @@ export function UbicacionDateTimeField({
     return null;
   }
 
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      // Crear un evento sintético para mantener compatibilidad
+      const event = {
+        target: {
+          value: date.toISOString().slice(0, 16) // formato datetime-local
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      onFechaHoraChange(event);
+    }
+  };
+
+  const currentDate = fechaHoraSalidaLlegada ? new Date(fechaHoraSalidaLlegada) : undefined;
+
   return (
-    <div>
-      <Label htmlFor="fechaHora" className="flex items-center gap-2 text-gray-700 font-medium">
-        <Calendar className="h-4 w-4" />
-        Fecha y Hora de {tipoUbicacion === 'Origen' ? 'Salida' : 'Llegada'}
-      </Label>
-      <Input
-        id="fechaHora"
-        type="datetime-local"
-        value={fechaHoraSalidaLlegada}
-        onChange={onFechaHoraChange}
-        className="border-gray-100 bg-white text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
-      />
-    </div>
+    <DateTimePicker
+      label={`Fecha y Hora de ${tipoUbicacion === 'Origen' ? 'Salida' : 'Llegada'}`}
+      date={currentDate}
+      onDateChange={handleDateChange}
+      placeholder={`Selecciona fecha de ${tipoUbicacion === 'Origen' ? 'salida' : 'llegada'}`}
+      required
+      minDate={new Date()}
+    />
   );
 }

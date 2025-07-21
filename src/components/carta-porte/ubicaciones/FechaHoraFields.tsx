@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Clock, Calendar } from 'lucide-react';
 import { Ubicacion } from '@/types/ubicaciones';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 interface FechaHoraFieldsProps {
   ubicacion: Partial<Ubicacion>;
@@ -36,11 +35,13 @@ export function FechaHoraFields({
     return 'Cuando pasará por este punto';
   };
 
-  // Calcular fecha mínima (cacheada para evitar re-renders constantes)
-  const getMinDateTime = React.useMemo(() => {
-    const now = new Date();
-    return now.toISOString().slice(0, 16);
-  }, []); // Solo calcular una vez al montar el componente
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      onFieldChange('fechaHoraSalidaLlegada', date.toISOString());
+    }
+  };
+
+  const currentDate = ubicacion.fechaHoraSalidaLlegada ? new Date(ubicacion.fechaHoraSalidaLlegada) : undefined;
 
   return (
     <div className="space-y-3">
@@ -49,23 +50,21 @@ export function FechaHoraFields({
           {isOrigen && <Calendar className="h-4 w-4 text-green-600" />}
           {isDestino && <Clock className="h-4 w-4 text-red-600" />}
           {isPasoIntermedio && <Clock className="h-4 w-4 text-blue-600" />}
-          <Label className="font-medium">
-            {getFieldLabel()} {(isOrigen || isDestino) && '*'}
-          </Label>
         </div>
       </div>
 
-      <Input
-        type="datetime-local"
-        value={ubicacion.fechaHoraSalidaLlegada || ''}
-        onChange={(e) => onFieldChange('fechaHoraSalidaLlegada', e.target.value)}
-        min={getMinDateTime}
+      <DateTimePicker
+        label={getFieldLabel() + ((isOrigen || isDestino) ? ' *' : '')}
+        date={currentDate}
+        onDateChange={handleDateChange}
         placeholder={getFieldPlaceholder()}
-        className={`${errors.fechaHora ? 'border-red-500' : ''} ${
+        required={isOrigen || isDestino}
+        minDate={new Date()}
+        className={
           isOrigen ? 'border-green-200 focus:border-green-500' :
           isDestino ? 'border-red-200 focus:border-red-500' :
           'border-blue-200 focus:border-blue-500'
-        }`}
+        }
       />
 
       {errors.fechaHora && (
