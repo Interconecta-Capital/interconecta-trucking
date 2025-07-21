@@ -18,11 +18,13 @@ import {
 import { Link } from 'react-router-dom';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
+import { useSuperuser } from '@/hooks/useSuperuser';
 import { IntegrityMonitorPanel } from './IntegrityMonitorPanel';
 
 export default function DashboardHub() {
   const { data: counts } = useDashboardCounts();
   const permissions = useUnifiedPermissionsV2();
+  const { isSuperuser } = useSuperuser();
 
   const dashboards = [
     {
@@ -212,8 +214,8 @@ export default function DashboardHub() {
         </div>
       </div>
 
-      {/* Monitor de Integridad */}
-      <IntegrityMonitorPanel />
+      {/* Monitor de Integridad - Solo para Superusuarios */}
+      {isSuperuser && <IntegrityMonitorPanel />}
 
       {/* Recent Activity */}
       <Card>
