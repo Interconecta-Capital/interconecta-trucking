@@ -73,7 +73,7 @@ export const CostosViajeSmart: React.FC<CostosViajeSmartProps> = ({
       }
       
       setEditMode(false);
-      onCostosUpdate?.(());
+      onCostosUpdate?.();
       toast.success('Costos actualizados correctamente');
     } catch (error) {
       console.error('Error guardando costos:', error);

@@ -92,7 +92,7 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
           rfc: 'XAXX010101000'
         },
         distanciaRecorrida: formData.distancia_km,
-        tipoServicio: 'flete_pagado',
+        tipoServicio: 'flete_pagado' as 'flete_pagado' | 'traslado_propio',
         // Información adicional para costos
         precioClienteDeseado: formData.precio_cliente_deseado,
         observacionesCostos: formData.observaciones
