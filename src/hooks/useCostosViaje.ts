@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CostosViaje } from '@/types/viaje';
@@ -13,31 +14,48 @@ export const useCostosViaje = (viajeId?: string) => {
     tipoVehiculo: string = 'camion',
     incluirConductor: boolean = true
   ) => {
-    // Costos base por km según tipo de vehículo
+    if (!distanciaKm || distanciaKm <= 0) {
+      return {
+        combustible_estimado: 1000,
+        peajes_estimados: 400,
+        casetas_estimadas: 200,
+        mantenimiento_estimado: 200,
+        salario_conductor_estimado: incluirConductor ? 1200 : 0,
+        otros_costos_estimados: 300,
+        costo_total_estimado: 3100
+      };
+    }
+
+    // Costos base por km según tipo de vehículo (actualizados 2024)
     const costosBase = {
-      camion: 8.5,
-      pickup: 6.2,
-      van: 5.8,
-      trailer: 12.0
+      camion: 9.5,    // Incrementado por inflación
+      pickup: 7.2,
+      van: 6.8,
+      trailer: 13.5
     };
 
-    const costoPorKm = costosBase[tipoVehiculo as keyof typeof costosBase] || 8.5;
+    const costoPorKm = costosBase[tipoVehiculo as keyof typeof costosBase] || 9.5;
     
-    const combustible = distanciaKm * 2.8; // $2.8 por km promedio
-    const peajes = distanciaKm * 0.8; // Estimado de peajes
-    const mantenimiento = distanciaKm * 0.5; // Desgaste del vehículo
-    const salarioConductor = incluirConductor ? Math.max(800, distanciaKm * 2) : 0;
-    const otros = distanciaKm * 0.3; // Gastos varios
+    // Cálculos más precisos
+    const combustible = distanciaKm * 3.2; // $3.2 por km (diesel 2024)
+    const peajes = distanciaKm * 1.0; // Incremento en peajes
+    const casetas = peajes * 0.4; // 40% del costo de peajes
+    const mantenimiento = distanciaKm * 0.6; // Desgaste del vehículo
+    const salarioConductor = incluirConductor ? Math.max(1000, distanciaKm * 2.5) : 0; // Salario mínimo actualizado
+    const otros = distanciaKm * 0.4; // Gastos varios
 
-    return {
-      combustible_estimado: combustible,
-      peajes_estimados: peajes,
-      casetas_estimadas: 0, // Se puede agregar lógica específica
-      mantenimiento_estimado: mantenimiento,
-      salario_conductor_estimado: salarioConductor,
-      otros_costos_estimados: otros,
-      costo_total_estimado: combustible + peajes + mantenimiento + salarioConductor + otros
+    const costosCalculados = {
+      combustible_estimado: Math.round(combustible),
+      peajes_estimados: Math.round(peajes),
+      casetas_estimadas: Math.round(casetas),
+      mantenimiento_estimado: Math.round(mantenimiento),
+      salario_conductor_estimado: Math.round(salarioConductor),
+      otros_costos_estimados: Math.round(otros),
+      costo_total_estimado: Math.round(combustible + peajes + casetas + mantenimiento + salarioConductor + otros)
     };
+
+    console.log('💰 Costos calculados para', distanciaKm, 'km:', costosCalculados);
+    return costosCalculados;
   };
 
   // Sugerir precio basado en costos y margen objetivo
@@ -54,7 +72,7 @@ export const useCostosViaje = (viajeId?: string) => {
         .from('costos_viaje')
         .select('*')
         .eq('viaje_id', viajeId)
-        .single();
+        .maybeSingle(); // Usar maybeSingle en lugar de single
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -90,7 +108,10 @@ export const useCostosViaje = (viajeId?: string) => {
           viaje_id: viajeId,
           user_id: user.id,
           precio_cotizado: precioCotizado,
+          precio_final_cobrado: precioCotizado, // Inicialmente igual al cotizado
           margen_estimado: margenEstimado,
+          margen_real: margenEstimado, // Inicialmente igual al estimado
+          comprobantes_urls: [],
           ...costosEstimados
         })
         .select()
@@ -99,7 +120,19 @@ export const useCostosViaje = (viajeId?: string) => {
       if (error) throw error;
 
       setCostos(data as unknown as CostosViaje);
-      toast.success('Costos estimados guardados');
+      
+      // También actualizar el viaje con el precio
+      await supabase
+        .from('viajes')
+        .update({ 
+          precio_cobrado: precioCotizado,
+          costo_estimado: costosEstimados.costo_total_estimado,
+          margen_estimado: margenEstimado
+        })
+        .eq('id', viajeId);
+
+      console.log('✅ Costos creados y viaje actualizado:', data.id);
+      toast.success('Costos estimados guardados correctamente');
       return data;
     } catch (error) {
       console.error('Error creando costos:', error);
@@ -129,12 +162,12 @@ export const useCostosViaje = (viajeId?: string) => {
 
       const updateData: any = {
         ...costosReales,
-        costo_total_real: costoTotalReal
+        costo_total_real: costoTotalReal > 0 ? costoTotalReal : undefined
       };
 
       if (precioFinalCobrado) {
         updateData.precio_final_cobrado = precioFinalCobrado;
-        updateData.margen_real = precioFinalCobrado - costoTotalReal;
+        updateData.margen_real = precioFinalCobrado - (costoTotalReal || costos?.costo_total_estimado || 0);
       }
 
       const { data, error } = await supabase
@@ -147,7 +180,21 @@ export const useCostosViaje = (viajeId?: string) => {
       if (error) throw error;
 
       setCostos(data as unknown as CostosViaje);
-      toast.success('Costos reales actualizados');
+      
+      // Actualizar también el viaje
+      if (precioFinalCobrado) {
+        await supabase
+          .from('viajes')
+          .update({ 
+            precio_cobrado: precioFinalCobrado,
+            costo_real: costoTotalReal > 0 ? costoTotalReal : undefined,
+            margen_real: updateData.margen_real
+          })
+          .eq('id', viajeId);
+      }
+
+      console.log('✅ Costos reales actualizados:', data.id);
+      toast.success('Costos reales actualizados correctamente');
       return data;
     } catch (error) {
       console.error('Error actualizando costos reales:', error);

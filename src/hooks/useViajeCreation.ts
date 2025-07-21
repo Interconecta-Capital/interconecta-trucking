@@ -4,22 +4,28 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Ubicacion } from '@/types/ubicaciones';
+import { useCostosViaje } from './useCostosViaje';
+import { useIntelligentCostCalculator } from './useIntelligentCostCalculator';
 
 interface CreateViajeParams {
   cartaPorteId: string;
   ubicaciones: Ubicacion[];
   distanciaTotal?: number;
   tiempoEstimado?: number;
+  precioClienteDeseado?: number;
+  vehiculoInfo?: any;
+  tipoServicio?: string;
 }
 
 export const useViajeCreation = () => {
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
+  const { calcularCostoEstimado, crearCostosEstimados } = useCostosViaje();
 
   const createViaje = useMutation({
     mutationFn: async (params: CreateViajeParams) => {
       setIsCreating(true);
-      console.log('🚛 Creando viaje:', params);
+      console.log('🚛 Creando viaje con costos inteligentes:', params);
 
       const origen = params.ubicaciones.find(u => u.tipoUbicacion === 'Origen');
       const destino = params.ubicaciones.find(u => u.tipoUbicacion === 'Destino');
@@ -31,11 +37,25 @@ export const useViajeCreation = () => {
       // Calcular fechas programadas
       const fechaInicioProgramada = origen.fechaHoraSalidaLlegada 
         ? new Date(origen.fechaHoraSalidaLlegada).toISOString()
-        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // Mañana por defecto
+        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
       const fechaFinProgramada = destino.fechaHoraSalidaLlegada
         ? new Date(destino.fechaHoraSalidaLlegada).toISOString()
-        : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // Pasado mañana por defecto
+        : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+      // Calcular costos estimados inteligentes
+      const distanciaKm = params.distanciaTotal || 0;
+      const tiempoHoras = params.tiempoEstimado || Math.round(distanciaKm / 60);
+      
+      const costosEstimados = calcularCostoEstimado(
+        distanciaKm,
+        params.vehiculoInfo?.tipo || 'camion',
+        true // incluir conductor
+      );
+
+      // Precio sugerido con margen del 25%
+      const precioSugerido = Math.round(costosEstimados.costo_total_estimado * 1.25);
+      const precioFinal = params.precioClienteDeseado || precioSugerido;
 
       // Crear tracking data con información de la ruta
       const trackingData = {
@@ -47,21 +67,33 @@ export const useViajeCreation = () => {
           fechaEstimada: ub.fechaHoraSalidaLlegada,
           coordenadas: ub.coordenadas
         })),
-        distanciaTotal: params.distanciaTotal,
-        tiempoEstimado: params.tiempoEstimado,
-        fechaCalculada: new Date().toISOString()
+        distanciaTotal: distanciaKm,
+        tiempoEstimado: tiempoHoras,
+        fechaCalculada: new Date().toISOString(),
+        costos: {
+          estimados: costosEstimados,
+          precioSugerido,
+          precioClienteDeseado: params.precioClienteDeseado,
+          margenEstimado: precioFinal - costosEstimados.costo_total_estimado
+        }
       };
 
-      const { data, error } = await supabase
+      // Crear el viaje
+      const { data: viaje, error } = await supabase
         .from('viajes')
         .insert({
           carta_porte_id: params.cartaPorteId,
           origen: `${origen.domicilio.municipio}, ${origen.domicilio.estado}`,
           destino: `${destino.domicilio.municipio}, ${destino.domicilio.estado}`,
-          estado: 'programado', // Estado inicial: programado (equivale a "planificación")
+          estado: 'programado',
           fecha_inicio_programada: fechaInicioProgramada,
           fecha_fin_programada: fechaFinProgramada,
-          observaciones: `Viaje creado desde Carta Porte. Distancia: ${params.distanciaTotal || 'No calculada'} km`,
+          distancia_km: distanciaKm,
+          tiempo_estimado_horas: tiempoHoras,
+          precio_cobrado: precioFinal,
+          costo_estimado: costosEstimados.costo_total_estimado,
+          margen_estimado: precioFinal - costosEstimados.costo_total_estimado,
+          observaciones: `Viaje creado con costos inteligentes. Precio sugerido: $${precioSugerido.toLocaleString()}. Distancia: ${distanciaKm} km`,
           tracking_data: trackingData,
           user_id: (await supabase.auth.getUser()).data.user?.id
         })
@@ -73,13 +105,35 @@ export const useViajeCreation = () => {
         throw error;
       }
 
-      console.log('✅ Viaje creado exitosamente:', data);
-      return data;
+      console.log('✅ Viaje creado:', viaje.id);
+
+      // Crear registro de costos detallado
+      try {
+        await crearCostosEstimados(
+          viaje.id,
+          costosEstimados,
+          precioFinal
+        );
+        console.log('✅ Costos registrados para viaje:', viaje.id);
+      } catch (costError) {
+        console.error('Error registrando costos:', costError);
+        // No fallar el viaje si hay error en costos, pero notificar
+        toast({
+          title: "Advertencia",
+          description: "Viaje creado pero hubo un error registrando los costos detallados",
+          variant: "destructive"
+        });
+      }
+
+      return viaje;
     },
     onSuccess: (viaje) => {
+      const trackingData = viaje.tracking_data as any;
+      const costos = trackingData?.costos;
+      
       toast({
-        title: "Viaje creado",
-        description: `El viaje desde ${viaje.origen} hasta ${viaje.destino} ha sido guardado en el módulo de Viajes.`,
+        title: "Viaje creado exitosamente",
+        description: `${viaje.origen} → ${viaje.destino}. Precio: $${viaje.precio_cobrado?.toLocaleString()} ${costos?.precioClienteDeseado ? '(ajustado por cliente)' : '(sugerido)'}`,
       });
     },
     onError: (error: Error) => {
