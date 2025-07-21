@@ -12,7 +12,6 @@ import { useViajes } from '@/hooks/useViajes';
 import { useCostosViaje } from '@/hooks/useCostosViaje';
 import { toast } from 'sonner';
 import { Navigation, Calculator, DollarSign, Truck } from 'lucide-react';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 interface ViajeFormDialogProps {
   open: boolean;
@@ -28,7 +27,7 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
   const [formData, setFormData] = useState({
     origen: '',
     destino: '',
-    fecha_programada: null as Date | null,
+    fecha_programada: '',
     distancia_km: 0,
     tiempo_estimado: 0,
     precio_cliente_deseado: 0,
@@ -61,13 +60,6 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
     }));
   };
 
-  const handleFechaChange = (fecha: Date | undefined) => {
-    setFormData(prev => ({
-      ...prev,
-      fecha_programada: fecha || null
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -83,7 +75,7 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
             municipio: formData.origen.split(',')[0] || formData.origen,
             estado: formData.origen.split(',')[1]?.trim() || 'México'
           },
-          fechaHoraSalidaLlegada: formData.fecha_programada?.toISOString() || new Date().toISOString(),
+          fechaHoraSalidaLlegada: formData.fecha_programada || new Date().toISOString(),
           nombreRemitenteDestinatario: 'Cliente'
         },
         destino: {
@@ -92,7 +84,7 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
             municipio: formData.destino.split(',')[0] || formData.destino,
             estado: formData.destino.split(',')[1]?.trim() || 'México'
           },
-          fechaHoraSalidaLlegada: formData.fecha_programada?.toISOString() || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          fechaHoraSalidaLlegada: formData.fecha_programada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           nombreRemitenteDestinatario: 'Destinatario'
         },
         cliente: {
@@ -112,7 +104,7 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
       setFormData({ 
         origen: '', 
         destino: '', 
-        fecha_programada: null,
+        fecha_programada: '',
         distancia_km: 0,
         tiempo_estimado: 0,
         precio_cliente_deseado: 0,
@@ -162,13 +154,13 @@ export function ViajeFormDialog({ open, onOpenChange, onSuccess }: ViajeFormDial
               />
             </div>
 
-            <div className="md:col-span-2">
-              <DateTimePicker
-                label="Fecha Programada"
-                date={formData.fecha_programada || undefined}
-                onDateChange={handleFechaChange}
-                placeholder="Selecciona fecha y hora del viaje"
-                minDate={new Date()}
+            <div className="space-y-2">
+              <Label htmlFor="fecha_programada">Fecha Programada</Label>
+              <Input
+                id="fecha_programada"
+                type="datetime-local"
+                value={formData.fecha_programada}
+                onChange={(e) => setFormData(prev => ({ ...prev, fecha_programada: e.target.value }))}
               />
             </div>
 
