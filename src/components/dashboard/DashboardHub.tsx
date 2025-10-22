@@ -17,12 +17,14 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
+import { useRealDashboardMetrics } from '@/hooks/useRealDashboardMetrics';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useSuperuser } from '@/hooks/useSuperuser';
 import { IntegrityMonitorPanel } from './IntegrityMonitorPanel';
 
 export default function DashboardHub() {
   const { data: counts } = useDashboardCounts();
+  const { data: metrics, isLoading: metricsLoading } = useRealDashboardMetrics();
   const permissions = useUnifiedPermissionsV2();
   const { isSuperuser } = useSuperuser();
 
@@ -86,29 +88,29 @@ export default function DashboardHub() {
   const quickMetrics = [
     {
       title: 'Ingresos del Mes',
-      value: '$125,430',
-      change: '+12.5%',
+      value: metricsLoading ? '...' : metrics?.ingresosDelMes ? `$${metrics.ingresosDelMes.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00',
+      change: metrics?.ingresosComparacion || '0%',
       icon: DollarSign,
       color: 'text-green-600'
     },
     {
       title: 'Margen Promedio',
-      value: '18.5%',
-      change: '+2.1%',
+      value: metricsLoading ? '...' : metrics?.margenPromedio ? `${metrics.margenPromedio.toFixed(1)}%` : '0%',
+      change: metrics?.margenComparacion || '0%',
       icon: Target,
       color: 'text-blue-600'
     },
     {
       title: 'Viajes Completados',
-      value: counts?.viajes?.toString() || '0',
-      change: '+15.3%',
+      value: metricsLoading ? '...' : metrics?.viajesCompletados?.toString() || '0',
+      change: metrics?.viajesComparacion || '0%',
       icon: Route,
       color: 'text-purple-600'
     },
     {
       title: 'Utilización Flota',
-      value: '85%',
-      change: '+5.2%',
+      value: metricsLoading ? '...' : metrics?.utilizacionFlota ? `${metrics.utilizacionFlota.toFixed(0)}%` : '0%',
+      change: metrics?.utilizacionComparacion || '0%',
       icon: Truck,
       color: 'text-orange-600'
     }
@@ -141,7 +143,7 @@ export default function DashboardHub() {
       </div>
 
       {/* Quick Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         {quickMetrics.map((metric) => (
           <Card key={metric.title} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
@@ -167,7 +169,7 @@ export default function DashboardHub() {
       {/* Dashboards Grid */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Dashboards Disponibles</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {dashboards.map((dashboard) => (
             <Card key={dashboard.href} className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
               <CardHeader>

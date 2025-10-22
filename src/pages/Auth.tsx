@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MobileAuthInput } from '@/components/auth/MobileAuthInput';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -289,31 +289,31 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="login-email" className="text-gray-300">
+            <Label htmlFor="login-email" className="text-gray-300 text-sm md:text-base">
               Correo Electrónico
             </Label>
-            <Input
+            <MobileAuthInput
               id="login-email"
               type="email"
               placeholder="tu@empresa.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+              className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="login-password" className="text-gray-300">
+            <Label htmlFor="login-password" className="text-gray-300 text-sm md:text-base">
               Contraseña
             </Label>
             <div className="relative">
-              <Input
+              <MobileAuthInput
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
+                className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10"
               />
               <Button
                 type="button"
@@ -343,7 +343,7 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
           
           <Button 
             type="submit" 
-            className="btn-primary w-full rounded-full font-semibold" 
+            className="btn-primary w-full rounded-full font-semibold min-h-[48px]" 
             disabled={loading}
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
@@ -466,72 +466,72 @@ function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="nombre" className="text-gray-300">Nombre</Label>
-            <Input
+            <Label htmlFor="nombre" className="text-gray-300 text-sm md:text-base">Nombre</Label>
+            <MobileAuthInput
               id="nombre"
               value={formData.nombre}
               onChange={(e) => handleChange('nombre', e.target.value)}
               required
-              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+              className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="telefono" className="text-gray-300">Teléfono</Label>
-            <Input
+            <Label htmlFor="telefono" className="text-gray-300 text-sm md:text-base">Teléfono</Label>
+            <MobileAuthInput
               id="telefono"
               value={formData.telefono}
               onChange={(e) => handleChange('telefono', e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+              className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="empresa" className="text-gray-300">Empresa</Label>
-          <Input
+          <Label htmlFor="empresa" className="text-gray-300 text-sm md:text-base">Empresa</Label>
+          <MobileAuthInput
             id="empresa"
             value={formData.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             required
-            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+            className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="rfc" className="text-gray-300">RFC de la Empresa</Label>
-          <Input
+          <Label htmlFor="rfc" className="text-gray-300 text-sm md:text-base">RFC de la Empresa</Label>
+          <MobileAuthInput
             id="rfc"
             value={formData.rfc}
             onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
             required
             maxLength={13}
-            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+            className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-email" className="text-gray-300">Correo Electrónico</Label>
-          <Input
+          <Label htmlFor="register-email" className="text-gray-300 text-sm md:text-base">Correo Electrónico</Label>
+          <MobileAuthInput
             id="register-email"
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             required
-            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+            className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="register-password" className="text-gray-300">Contraseña</Label>
+          <Label htmlFor="register-password" className="text-gray-300 text-sm md:text-base">Contraseña</Label>
           <div className="relative">
-            <Input
+            <MobileAuthInput
               id="register-password"
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
               required
               minLength={6}
-              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
+              className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10"
             />
             <Button
               type="button"
@@ -550,15 +550,15 @@ function RegisterForm() {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirm-password" className="text-gray-300">Confirmar Contraseña</Label>
+          <Label htmlFor="confirm-password" className="text-gray-300 text-sm md:text-base">Confirmar Contraseña</Label>
           <div className="relative">
-            <Input
+            <MobileAuthInput
               id="confirm-password"
               type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
               required
-              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 pr-10"
+              className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10"
             />
             <Button
               type="button"
@@ -578,7 +578,7 @@ function RegisterForm() {
         
         <Button 
           type="submit" 
-          className="btn-primary w-full rounded-full font-semibold" 
+          className="btn-primary w-full rounded-full font-semibold min-h-[48px]" 
           disabled={loading}
         >
           {loading ? 'Creando cuenta...' : 'Crear Cuenta'}

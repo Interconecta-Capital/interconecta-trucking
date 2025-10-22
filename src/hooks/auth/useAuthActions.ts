@@ -167,6 +167,8 @@ export const useAuthActions = () => {
    * Reenviar email de confirmación
    */
   const resendConfirmation = async (email: string) => {
+    console.log('[Auth] Enviando email de confirmación a:', email);
+    
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
@@ -175,7 +177,18 @@ export const useAuthActions = () => {
       },
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('[Auth] Error al enviar confirmación:', error.message);
+      
+      // Detectar rate limit
+      if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+        throw new Error('Has alcanzado el límite de intentos. Por favor espera 60 segundos antes de intentar de nuevo.');
+      }
+      
+      throw error;
+    }
+    
+    console.log('[Auth] Email de confirmación enviado exitosamente');
   };
 
   return {
