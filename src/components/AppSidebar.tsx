@@ -123,6 +123,9 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', String(isCollapsed));
+    // Actualizar CSS variable para el layout
+    const width = isCollapsed ? '80px' : '256px';
+    document.documentElement.style.setProperty('--sidebar-actual-width', width);
   }, [isCollapsed]);
 
   // Todos los usuarios tienen acceso completo ahora, solo con límites de cantidad
@@ -171,20 +174,26 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
           }, {} as Record<SidebarCategory, SidebarItem[]>)
         ).map(([category, items], index) => (
           <div key={category} className="space-y-2">
-            {!isCollapsed && (
-              <span
-                className="block px-3 mt-6 first:mt-0 text-xs font-semibold text-gray-400 uppercase"
-              >
-                {category}
-              </span>
-            )}
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="block px-3 mt-6 first:mt-0 text-xs font-semibold text-gray-400 uppercase overflow-hidden"
+                >
+                  {category}
+                </motion.span>
+              )}
+            </AnimatePresence>
             {items.map((item) => {
               const isActive = location.pathname.startsWith(item.href);
               const canAccess = canAccessItem(item);
               const Icon = item.icon;
 
               const linkClasses = `
-                flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300
                 ${isActive
                   ? 'bg-blue-50 text-blue-700'
                   : canAccess
@@ -193,12 +202,16 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
               `;
 
               return (
-                <Tooltip key={item.href}>
+                <Tooltip key={item.href} delayDuration={0}>
                   <TooltipTrigger asChild>
                     <Link to={item.href} className={linkClasses}>
-                      <div className="flex items-center space-x-3">
-                        <Icon className="h-5 w-5" />
-                        {!isCollapsed && <span>{item.title}</span>}
+                      <div className="flex items-center space-x-3 min-w-0 overflow-hidden">
+                        <Icon className="h-5 w-5 flex-shrink-0" />
+                        <span className={`transition-all duration-300 whitespace-nowrap ${
+                          isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+                        }`}>
+                          {item.title}
+                        </span>
                       </div>
                     </Link>
                   </TooltipTrigger>
@@ -222,35 +235,95 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
         )}
         
         {permissions.accessLevel === 'trial' && (
-          <div className="bg-orange-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-orange-800">Período de Prueba</p>
-            <p className="text-xs text-orange-600">
-              {permissions.planInfo.daysRemaining || 0} días restantes
-            </p>
+          <div className={`bg-orange-50 rounded-lg transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+            {!isCollapsed ? (
+              <>
+                <p className="text-sm font-medium text-orange-800">Período de Prueba</p>
+                <p className="text-xs text-orange-600">
+                  {permissions.planInfo.daysRemaining || 0} días restantes
+                </p>
+              </>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-orange-800 text-center text-xs font-bold">
+                    {permissions.planInfo.daysRemaining || 0}d
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Período de Prueba: {permissions.planInfo.daysRemaining || 0} días restantes
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         )}
 
         {permissions.accessLevel === 'freemium' && (
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-blue-800">Plan Gratis</p>
-            <p className="text-xs text-blue-600">Acceso completo con límites de cantidad</p>
+          <div className={`bg-blue-50 rounded-lg transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+            {!isCollapsed ? (
+              <>
+                <p className="text-sm font-medium text-blue-800">Plan Gratis</p>
+                <p className="text-xs text-blue-600">Acceso completo con límites de cantidad</p>
+              </>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-blue-800 text-center text-xs font-bold">
+                    FREE
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Plan Gratis: Acceso completo con límites de cantidad
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         )}
 
         {permissions.accessLevel === 'blocked' && (
-          <div className="bg-red-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-red-800">Cuenta Bloqueada</p>
-            <Button size="sm" className="mt-2 w-full">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Renovar Plan
-            </Button>
+          <div className={`bg-red-50 rounded-lg transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+            {!isCollapsed ? (
+              <>
+                <p className="text-sm font-medium text-red-800">Cuenta Bloqueada</p>
+                <Button size="sm" className="mt-2 w-full">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  Renovar Plan
+                </Button>
+              </>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-red-800 text-center text-xs font-bold">
+                    ⚠️
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Cuenta Bloqueada - Renovar Plan
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         )}
 
         {permissions.accessLevel === 'paid' && (
-          <div className="bg-green-50 p-3 rounded-lg">
-            <p className="text-sm font-medium text-green-800">Plan Activo</p>
-            <p className="text-xs text-green-600">{permissions.planInfo.name}</p>
+          <div className={`bg-green-50 rounded-lg transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-3'}`}>
+            {!isCollapsed ? (
+              <>
+                <p className="text-sm font-medium text-green-800">Plan Activo</p>
+                <p className="text-xs text-green-600">{permissions.planInfo.name}</p>
+              </>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-green-800 text-center text-xs font-bold">
+                    ✓
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Plan Activo: {permissions.planInfo.name}
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         )}
 
@@ -272,9 +345,9 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
     <>
       {!isMobile && (
         <motion.aside
-          className="hidden md:flex bg-white border-r border-gray-200 h-full"
+          className="hidden md:flex bg-white border-r border-gray-200 h-full overflow-hidden"
           animate={{ width: isCollapsed ? 80 : 256 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         >
           {sidebarBody}
         </motion.aside>
@@ -291,11 +364,11 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
               onClick={() => setIsMobileOpen?.(false)}
             />
             <motion.aside
-              className="fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 w-64"
+              className="fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 w-64 overflow-hidden"
               initial={{ x: -256 }}
               animate={{ x: 0 }}
               exit={{ x: -256 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             >
               {sidebarBody}
             </motion.aside>

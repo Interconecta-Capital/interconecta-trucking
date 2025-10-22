@@ -57,10 +57,12 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
         </div>
         
         {/* Main content with proper spacing for fixed sidebar on desktop */}
-        <div className={cn(
-          "flex-1 flex flex-col w-full min-w-0 transition-all duration-200",
-          !isMobile ? "ml-64" : ""
-        )}>
+        <div 
+          className="flex-1 flex flex-col w-full min-w-0 transition-all duration-300 ease-in-out"
+          style={{
+            marginLeft: isMobile ? 0 : 'var(--sidebar-actual-width, 256px)'
+          }}
+        >
           <GlobalHeader onOpenSidebar={() => setMobileOpen(true)} />
           <main
           className={cn(
