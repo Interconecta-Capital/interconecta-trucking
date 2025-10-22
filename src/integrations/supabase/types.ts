@@ -7,10 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -1329,6 +1329,75 @@ export type Database = {
           vehiculo_asignado_id?: string | null
           viaje_actual_id?: string | null
           vigencia_licencia?: string | null
+        }
+        Relationships: []
+      }
+      configuracion_empresa: {
+        Row: {
+          configuracion_completa: boolean | null
+          created_at: string | null
+          domicilio_fiscal: Json
+          fecha_ultima_validacion: string | null
+          folio_actual: number | null
+          folio_inicial: number | null
+          id: string
+          modo_pruebas: boolean | null
+          permisos_sct: Json | null
+          proveedor_timbrado: string | null
+          razon_social: string
+          regimen_fiscal: string
+          rfc_emisor: string
+          seguro_ambiental: Json | null
+          seguro_carga: Json | null
+          seguro_resp_civil: Json | null
+          serie_carta_porte: string | null
+          updated_at: string | null
+          user_id: string
+          validado_sat: boolean | null
+        }
+        Insert: {
+          configuracion_completa?: boolean | null
+          created_at?: string | null
+          domicilio_fiscal?: Json
+          fecha_ultima_validacion?: string | null
+          folio_actual?: number | null
+          folio_inicial?: number | null
+          id?: string
+          modo_pruebas?: boolean | null
+          permisos_sct?: Json | null
+          proveedor_timbrado?: string | null
+          razon_social?: string
+          regimen_fiscal?: string
+          rfc_emisor?: string
+          seguro_ambiental?: Json | null
+          seguro_carga?: Json | null
+          seguro_resp_civil?: Json | null
+          serie_carta_porte?: string | null
+          updated_at?: string | null
+          user_id: string
+          validado_sat?: boolean | null
+        }
+        Update: {
+          configuracion_completa?: boolean | null
+          created_at?: string | null
+          domicilio_fiscal?: Json
+          fecha_ultima_validacion?: string | null
+          folio_actual?: number | null
+          folio_inicial?: number | null
+          id?: string
+          modo_pruebas?: boolean | null
+          permisos_sct?: Json | null
+          proveedor_timbrado?: string | null
+          razon_social?: string
+          regimen_fiscal?: string
+          rfc_emisor?: string
+          seguro_ambiental?: Json | null
+          seguro_carga?: Json | null
+          seguro_resp_civil?: Json | null
+          serie_carta_porte?: string | null
+          updated_at?: string | null
+          user_id?: string
+          validado_sat?: boolean | null
         }
         Relationships: []
       }
@@ -3937,14 +4006,14 @@ export type Database = {
     }
     Functions: {
       analizar_mercado_ruta: {
-        Args: { p_user_id: string; p_ruta_hash: string }
+        Args: { p_ruta_hash: string; p_user_id: string }
         Returns: {
-          precio_promedio: number
-          precio_minimo: number
-          precio_maximo: number
           margen_promedio: number
-          total_cotizaciones: number
+          precio_maximo: number
+          precio_minimo: number
+          precio_promedio: number
           tendencia: string
+          total_cotizaciones: number
         }[]
       }
       assign_missing_trials: {
@@ -3954,49 +4023,49 @@ export type Database = {
       buscar_codigo_postal: {
         Args: { cp_input: string }
         Returns: {
+          ciudad: string
           codigo_postal: string
+          colonias: Json
           estado: string
           estado_clave: string
+          localidad: string
           municipio: string
           municipio_clave: string
-          localidad: string
-          ciudad: string
           zona: string
-          colonias: Json
         }[]
       }
       buscar_codigo_postal_completo: {
         Args: { cp_input: string }
         Returns: {
+          ciudad: string
           codigo_postal: string
+          colonias: Json
           estado: string
           estado_clave: string
+          localidad: string
           municipio: string
           municipio_clave: string
-          localidad: string
-          ciudad: string
-          zona: string
           total_colonias: number
-          colonias: Json
+          zona: string
         }[]
       }
       calcular_performance_conductor: {
         Args: { p_conductor_id: string; p_user_id: string }
         Returns: {
-          eficiencia_combustible: number
-          puntualidad: number
-          cuidado_vehiculo: number
-          satisfaccion_cliente: number
-          tendencia_mejora: boolean
           areas_mejora: string[]
+          cuidado_vehiculo: number
+          eficiencia_combustible: number
           fortalezas: string[]
+          puntualidad: number
           recomendaciones_capacitacion: string[]
           rutas_optimas: string[]
+          satisfaccion_cliente: number
+          tendencia_mejora: boolean
           tipos_carga_ideales: string[]
         }[]
       }
       calcular_precision_ruta: {
-        Args: { p_user_id: string; p_ruta_hash: string }
+        Args: { p_ruta_hash: string; p_user_id: string }
         Returns: {
           exactitud_costo: number
           exactitud_tiempo: number
@@ -4012,19 +4081,19 @@ export type Database = {
       check_maintenance_alerts: {
         Args: { p_user_id: string }
         Returns: {
-          vehiculo_id: string
-          placa: string
-          tipo_alerta: string
           descripcion: string
           dias_restantes: number
           kilometros_restantes: number
+          placa: string
+          tipo_alerta: string
           urgencia: string
+          vehiculo_id: string
         }[]
       }
       check_rate_limit: {
         Args: {
-          p_identifier: string
           p_action_type: string
+          p_identifier: string
           p_max_attempts?: number
           p_window_minutes?: number
         }
@@ -4051,7 +4120,7 @@ export type Database = {
         Returns: undefined
       }
       generar_hash_ruta: {
-        Args: { origen: string; destino: string }
+        Args: { destino: string; origen: string }
         Returns: string
       }
       generar_id_ccp_unico: {
@@ -4061,15 +4130,15 @@ export type Database = {
       get_active_certificate: {
         Args: { user_uuid: string }
         Returns: {
+          archivo_cer_path: string
+          archivo_key_path: string
+          fecha_fin_vigencia: string
+          fecha_inicio_vigencia: string
           id: string
           nombre_certificado: string
           numero_certificado: string
-          rfc_titular: string
           razon_social: string
-          fecha_inicio_vigencia: string
-          fecha_fin_vigencia: string
-          archivo_cer_path: string
-          archivo_key_path: string
+          rfc_titular: string
         }[]
       }
       get_current_user_tenant_id: {
@@ -4079,26 +4148,26 @@ export type Database = {
       get_documentos_procesados: {
         Args: { user_uuid: string }
         Returns: {
-          id: string
-          user_id: string
-          file_path: string
-          document_type: string
-          extracted_text: string
-          confidence: number
-          mercancias_count: number
-          errors: string
           carta_porte_id: string
-          documento_original_id: string
-          metadata: Json
+          confidence: number
           created_at: string
+          document_type: string
+          documento_original_id: string
+          errors: string
+          extracted_text: string
+          file_path: string
+          id: string
+          mercancias_count: number
+          metadata: Json
+          user_id: string
         }[]
       }
       get_user_storage_usage: {
         Args: { user_uuid: string }
         Returns: {
+          archivos_count: number
           bytes_utilizados: number
           gb_utilizados: number
-          archivos_count: number
         }[]
       }
       get_user_tenant_id: {
@@ -4119,11 +4188,11 @@ export type Database = {
       }
       log_security_event: {
         Args: {
-          p_user_id: string
-          p_event_type: string
           p_event_data?: Json
+          p_event_type: string
           p_ip_address?: unknown
           p_user_agent?: string
+          p_user_id: string
         }
         Returns: string
       }
@@ -4140,7 +4209,7 @@ export type Database = {
         Returns: undefined
       }
       record_rate_limit_attempt: {
-        Args: { p_identifier: string; p_action_type: string; p_metadata?: Json }
+        Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined
       }
       restore_rls_policies_from_backup: {
@@ -4163,7 +4232,7 @@ export type Database = {
         }[]
       }
       update_user_storage_usage: {
-        Args: { user_uuid: string; bytes_delta: number; files_delta?: number }
+        Args: { bytes_delta: number; files_delta?: number; user_uuid: string }
         Returns: undefined
       }
       validate_carta_porte_v31: {
@@ -4180,10 +4249,10 @@ export type Database = {
       }
       verificar_disponibilidad_recurso: {
         Args: {
-          p_entidad_tipo: string
           p_entidad_id: string
-          p_fecha_inicio: string
+          p_entidad_tipo: string
           p_fecha_fin: string
+          p_fecha_inicio: string
           p_user_id: string
         }
         Returns: Json
