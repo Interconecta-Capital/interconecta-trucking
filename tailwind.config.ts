@@ -4,10 +4,20 @@ import type { Config } from "tailwindcss";
 export default {
 	darkMode: ["class"],
 	content: [
+		"./index.html",
 		"./pages/**/*.{ts,tsx}",
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+	],
+	// Configuración agresiva de purge para CSS
+	safelist: [
+		// Solo clases dinámicas críticas
+		/^animate-/,
+		/^transition-/,
+		/^scroll-/,
+		'revealed',
+		'visible',
 	],
 	prefix: "",
 	theme: {

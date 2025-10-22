@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import Header from "@/components/landing/Header";
 import HeroSection from "@/components/landing/HeroSection";
 import VisionSection from "@/components/landing/VisionSection";
@@ -11,42 +11,42 @@ import PricingSection from "@/components/landing/PricingSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 
+// Skeleton loaders para mejor UX
+const ContentSkeleton = () => (
+  <div className="animate-pulse space-y-8 p-8">
+    <div className="h-64 bg-gray-800 rounded-lg"></div>
+    <div className="h-32 bg-gray-800 rounded-lg"></div>
+    <div className="h-48 bg-gray-800 rounded-lg"></div>
+  </div>
+);
+
 export default function Index() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
 
   // Redirigir usuarios autenticados al dashboard
   useEffect(() => {
-    if (!loading && user) {
+    if (initialized && user) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, initialized, navigate]);
 
-  // Mostrar loading mientras verifica autenticación
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Solo mostrar landing page si el usuario NO está autenticado
-  if (user) {
-    return null; // Will redirect via useEffect
-  }
-
+  // Mostrar landing page inmediatamente (Header y Hero)
+  // Auth check se hace en segundo plano
   return (
     <div className="min-h-screen bg-black text-white antialiased">
       <Header />
       <HeroSection />
       
       <main className="max-w-7xl mx-auto">
-        <VisionSection />
-        <FeaturesSection />
-        <WizardFlowSection />
-        <PricingSection />
-        <CTASection />
+        {/* Suspense boundaries para cargar contenido no crítico */}
+        <Suspense fallback={<ContentSkeleton />}>
+          <VisionSection />
+          <FeaturesSection />
+          <WizardFlowSection />
+          <PricingSection />
+          <CTASection />
+        </Suspense>
       </main>
       
       <Footer />
