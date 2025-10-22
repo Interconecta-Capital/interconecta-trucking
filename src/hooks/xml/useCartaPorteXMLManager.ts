@@ -18,7 +18,7 @@ export interface TimbradoResult {
   error?: string;
 }
 
-export function useCartaPorteXMLManager() {
+export function useCartaPorteXMLManager(userId?: string) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTimbring, setIsTimbring] = useState(false);
   const [xmlGenerado, setXMLGenerado] = useState<string | null>(null);
@@ -87,6 +87,36 @@ export function useCartaPorteXMLManager() {
     setIsTimbring(true);
     try {
       console.log('🔄 Iniciando proceso de timbrado PAC...');
+
+      // Validar certificado CSD antes de timbrar
+      if (!userId) {
+        const errorResult = {
+          success: false,
+          error: 'Se requiere autenticación para timbrar'
+        };
+        toast.error('Error', { description: errorResult.error });
+        return errorResult;
+      }
+
+      const { CertificadoValidator } = await import('@/services/certificados/CertificadoValidator');
+      const validacionCertificado = await CertificadoValidator.validarCertificadoParaTimbrado(userId);
+      
+      if (!validacionCertificado.isValid) {
+        toast.error('Error de certificado', {
+          description: validacionCertificado.error
+        });
+        return {
+          success: false,
+          error: validacionCertificado.error
+        };
+      }
+
+      // Advertencia si el certificado está próximo a vencer
+      if (validacionCertificado.diasRestantes && validacionCertificado.diasRestantes <= 7) {
+        toast.warning('Certificado próximo a vencer', {
+          description: validacionCertificado.error
+        });
+      }
       
       const resultado = await PACServiceReal.timbrarCartaPorte(xmlParaTimbrar, 'sandbox');
       

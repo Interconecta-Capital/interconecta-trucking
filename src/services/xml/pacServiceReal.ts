@@ -55,38 +55,12 @@ export class PACServiceReal {
     console.log(`🔄 Iniciando timbrado PAC en ambiente: ${environment}`);
 
     try {
-      // Llamar al edge function de timbrado mejorado
-      const response = await fetch('/api/timbrar-carta-porte', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          xml,
-          ambiente: environment,
-          tipo_documento: 'carta_porte'
-        }),
-      });
+      // Importar adaptador dinámicamente para evitar problemas de carga
+      const { SupabaseFunctionsAdapter } = await import('@/services/api/supabaseFunctionsAdapter');
+      
+      // Llamar al edge function de timbrado a través del adaptador
+      const result = await SupabaseFunctionsAdapter.timbrarCartaPorte(xml, environment);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ Error HTTP ${response.status}:`, errorText);
-        
-        let errorMessage = 'Error de comunicación con servicio de timbrado';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-
-        return {
-          success: false,
-          error: errorMessage
-        };
-      }
-
-      const result = await response.json();
       console.log('📥 Respuesta servicio timbrado:', result);
       
       if (!result.success) {
@@ -137,16 +111,11 @@ export class PACServiceReal {
     console.log(`🔍 Validando conexión PAC en ambiente: ${environment}`);
 
     try {
-      // Llamar al edge function de validación mejorado
-      const response = await fetch('/api/validar-pac', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ambiente: environment }),
-      });
-
-      const result = await response.json();
+      // Importar adaptador dinámicamente
+      const { SupabaseFunctionsAdapter } = await import('@/services/api/supabaseFunctionsAdapter');
+      
+      // Llamar al edge function de validación
+      const result = await SupabaseFunctionsAdapter.validarConexionPAC(environment);
       console.log('📡 Resultado validación PAC:', result);
       
       if (result.success) {
