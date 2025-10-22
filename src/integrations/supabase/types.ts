@@ -1087,6 +1087,7 @@ export type Database = {
           id: string
           nombre_certificado: string
           numero_certificado: string
+          password_vault_id: string | null
           razon_social: string | null
           rfc_titular: string
           updated_at: string | null
@@ -1104,6 +1105,7 @@ export type Database = {
           id?: string
           nombre_certificado: string
           numero_certificado: string
+          password_vault_id?: string | null
           razon_social?: string | null
           rfc_titular: string
           updated_at?: string | null
@@ -1121,6 +1123,7 @@ export type Database = {
           id?: string
           nombre_certificado?: string
           numero_certificado?: string
+          password_vault_id?: string | null
           razon_social?: string | null
           rfc_titular?: string
           updated_at?: string | null
