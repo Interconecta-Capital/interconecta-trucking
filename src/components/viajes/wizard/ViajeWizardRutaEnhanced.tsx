@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,10 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
   const [nuevaParada, setNuevaParada] = useState('');
   const [rutaConParadas, setRutaConParadas] = useState<any>(null);
   
+  // Estados de control para evitar ciclos infinitos
+  const [fechasInicializadas, setFechasInicializadas] = useState(false);
+  const fechasModificadasPorUsuario = useRef(false);
+  
   // Hooks para manejo de rutas precisas
   const {
     calculandoRuta,
@@ -48,22 +52,28 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
   
   const { isLoaded: mapsLoaded, error: googleMapsError } = useGoogleMapsAPI();
 
-  // Inicializar fechas por defecto
+  // Inicializar fechas por defecto (solo una vez al montar)
   useEffect(() => {
-    if (!fechaSalida) {
+    if (!fechasInicializadas && !fechaSalida && !fechaLlegada) {
       const mañana = new Date();
       mañana.setDate(mañana.getDate() + 1);
-      setFechaSalida(mañana.toISOString().slice(0, 16));
-    }
-    if (!fechaLlegada && fechaSalida) {
-      const llegada = new Date(fechaSalida);
+      const salidaInicial = mañana.toISOString().slice(0, 16);
+      
+      const llegada = new Date(mañana);
       llegada.setDate(llegada.getDate() + 1);
-      setFechaLlegada(llegada.toISOString().slice(0, 16));
+      const llegadaInicial = llegada.toISOString().slice(0, 16);
+      
+      setFechaSalida(salidaInicial);
+      setFechaLlegada(llegadaInicial);
+      setFechasInicializadas(true);
     }
-  }, [fechaSalida, fechaLlegada]);
+  }, []); // Sin dependencias - solo se ejecuta al montar
 
-  // Cargar datos existentes del wizard
+  // Cargar datos existentes del wizard (solo si usuario NO ha modificado manualmente)
   useEffect(() => {
+    // Si el usuario ya modificó las fechas, no sobrescribir
+    if (fechasModificadasPorUsuario.current) return;
+    
     if (data.origen?.direccion) {
       setOrigenDireccion(data.origen.direccion);
     }
@@ -85,21 +95,22 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
     }
   }, [data.origen, data.destino, data.fechaInicio, data.fechaFin]);
 
-  // Sincronizar fechas con el wizard principal
+  // Sincronizar fechas con el wizard principal (solo si hay cambios reales)
   useEffect(() => {
     if (fechaSalida && fechaLlegada) {
-      console.log('🔍 DEBUG: Sincronizando fechas con wizard principal:', {
-        fechaSalida,
-        fechaLlegada,
-        fechaInicio: data.fechaInicio,
-        fechaFin: data.fechaFin
-      });
-      updateData({
-        fechaInicio: fechaSalida,
-        fechaFin: fechaLlegada
-      });
+      // Normalizar fechas para comparación
+      const fechaInicioActual = data.fechaInicio ? new Date(data.fechaInicio).toISOString().slice(0, 16) : '';
+      const fechaFinActual = data.fechaFin ? new Date(data.fechaFin).toISOString().slice(0, 16) : '';
+      
+      // Solo updateData si realmente cambió
+      if (fechaSalida !== fechaInicioActual || fechaLlegada !== fechaFinActual) {
+        updateData({
+          fechaInicio: fechaSalida,
+          fechaFin: fechaLlegada
+        });
+      }
     }
-  }, [fechaSalida, fechaLlegada, updateData]);
+  }, [fechaSalida, fechaLlegada, data.fechaInicio, data.fechaFin]); // Removido updateData de dependencias
 
   // Calcular ruta automáticamente cuando se tienen origen y destino
   const calcularRuta = async () => {
@@ -342,9 +353,18 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               type="datetime-local"
               value={fechaSalida}
               onChange={(e) => {
-                setFechaSalida(e.target.value);
-                // Actualizar inmediatamente en el wizard
-                updateData({ fechaInicio: e.target.value });
+                const nuevaSalida = e.target.value;
+                setFechaSalida(nuevaSalida);
+                fechasModificadasPorUsuario.current = true;
+                
+                // Si la llegada es anterior a la nueva salida, ajustarla
+                if (fechaLlegada && new Date(fechaLlegada) <= new Date(nuevaSalida)) {
+                  const nuevaLlegada = new Date(nuevaSalida);
+                  nuevaLlegada.setDate(nuevaLlegada.getDate() + 1);
+                  const nuevaLlegadaStr = nuevaLlegada.toISOString().slice(0, 16);
+                  setFechaLlegada(nuevaLlegadaStr);
+                  toast.info('Fecha de llegada ajustada automáticamente');
+                }
               }}
               className="mt-2"
               required
@@ -390,9 +410,16 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               type="datetime-local"
               value={fechaLlegada}
               onChange={(e) => {
-                setFechaLlegada(e.target.value);
-                // Actualizar inmediatamente en el wizard
-                updateData({ fechaFin: e.target.value });
+                const nuevaLlegada = e.target.value;
+                
+                // Validar que la llegada sea posterior a la salida
+                if (fechaSalida && new Date(nuevaLlegada) <= new Date(fechaSalida)) {
+                  toast.error('La fecha de llegada debe ser posterior a la salida');
+                  return;
+                }
+                
+                setFechaLlegada(nuevaLlegada);
+                fechasModificadasPorUsuario.current = true;
               }}
               className="mt-2"
               min={fechaSalida}
