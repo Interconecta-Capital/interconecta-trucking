@@ -20,28 +20,11 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // 1. PDF.js separate (lazy load - only in carta porte)
-          if (id.includes('pdfjs-dist')) {
-            return 'pdfjs';
-          }
-          
-          // 2. React + Router together (critical - load first)
-          if (id.includes('node_modules/react') || 
-              id.includes('node_modules/react-dom') ||
-              id.includes('react-router')) {
-            return 'react-core';
-          }
-          
-          // 3. All other node_modules
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-          
-          // App code stays in main bundle
+        manualChunks: { 
+          pdfjs: ['pdfjs-dist'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
         },
       },
     },
