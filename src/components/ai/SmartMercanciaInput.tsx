@@ -10,13 +10,15 @@ import { Package, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
 interface SmartMercanciaInputProps {
   value: string;
   onChange: (value: string) => void;
-  onMercanciaSelect?: (mercancia: any) => void;
+  onMercanciaSelect?: (mercanciaData: any) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   field?: string;
   showValidation?: boolean;
   showClaveProducto?: boolean;
+  autoApply?: boolean;
+  onAutoApplied?: (mercanciaData: any) => void;
 }
 
 export function SmartMercanciaInput({
@@ -28,7 +30,9 @@ export function SmartMercanciaInput({
   className,
   field = 'mercancia',
   showValidation = true,
-  showClaveProducto = true
+  showClaveProducto = true,
+  autoApply = false,
+  onAutoApplied
 }: SmartMercanciaInputProps) {
   const {
     suggestions,
@@ -65,7 +69,13 @@ export function SmartMercanciaInput({
   const handleSuggestionSelect = (suggestion: Suggestion) => {
     const mercanciaData = selectSuggestion(suggestion);
     onChange(suggestion.text);
-    onMercanciaSelect?.(mercanciaData);
+    
+    if (autoApply && mercanciaData) {
+      onMercanciaSelect?.(mercanciaData);
+      onAutoApplied?.(mercanciaData);
+    } else {
+      onMercanciaSelect?.(mercanciaData);
+    }
   };
 
   const validation = getFieldValidation(field);

@@ -6,6 +6,7 @@ import { SmartMercanciaForm } from './mercancias/SmartMercanciaForm';
 import { MercanciasListWrapper } from './mercancias/MercanciasListWrapper';
 import { ImportDialog } from './mercancias/ImportDialog';
 import { DocumentUploadDialog } from './mercancias/DocumentUploadDialog';
+import { MercanciasBulkImport } from './mercancias/MercanciasBulkImport';
 import { useMercancias, Mercancia } from '@/hooks/useMercancias';
 import { useAIContext } from '@/hooks/ai/useAIContext';
 import { geminiCore } from '@/services/ai/GeminiCoreService';
@@ -44,6 +45,7 @@ export function SmartMercanciasSection({
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [showAiSuggestions, setShowAiSuggestions] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   // Sync with prop data when there are changes
   React.useEffect(() => {
@@ -229,6 +231,14 @@ export function SmartMercanciasSection({
                 </Button>
                 <Button 
                   type="button"
+                  onClick={() => setShowBulkImport(true)}
+                  className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Carga Masiva IA</span>
+                </Button>
+                <Button 
+                  type="button"
                   onClick={handleAddManually}
                   className="flex items-center space-x-2"
                 >
@@ -361,6 +371,26 @@ export function SmartMercanciasSection({
         onDocumentProcessed={handleDocumentProcessed}
         cartaPorteId={getCartaPorteId()}
       />
+
+      {/* Panel de Carga Masiva IA */}
+      {showBulkImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <MercanciasBulkImport
+              onMercanciaAdd={async (mercancia) => {
+                try {
+                  agregarMercancia(mercancia as Mercancia);
+                  return true;
+                } catch (error) {
+                  console.error('Error adding mercancia:', error);
+                  return false;
+                }
+              }}
+              onClose={() => setShowBulkImport(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

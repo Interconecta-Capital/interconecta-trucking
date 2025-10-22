@@ -159,6 +159,11 @@ export function SmartMercanciaForm({
               placeholder="Describe detalladamente la mercancía..."
               showValidation={true}
               showClaveProducto={true}
+              autoApply={true}
+              onAutoApplied={(producto) => {
+                console.log('✨ Producto auto-aplicado:', producto);
+                toast.info('💡 Los datos SAT se completaron automáticamente. Verifica los valores.');
+              }}
             />
             {errors.descripcion && (
               <p className="text-sm text-red-500 flex items-center gap-1">

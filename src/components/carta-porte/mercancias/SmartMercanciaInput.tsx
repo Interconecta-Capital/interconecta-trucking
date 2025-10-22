@@ -17,6 +17,8 @@ interface SmartMercanciaInputProps {
   placeholder?: string;
   showValidation?: boolean;
   showClaveProducto?: boolean;
+  autoApply?: boolean;
+  onAutoApplied?: (mercancia: any) => void;
 }
 
 interface DetectedProduct {
@@ -35,7 +37,9 @@ export function SmartMercanciaInput({
   onMultipleMercanciaDetected,
   placeholder = 'Describe la mercancía...',
   showValidation = false,
-  showClaveProducto = false
+  showClaveProducto = false,
+  autoApply = false,
+  onAutoApplied
 }: SmartMercanciaInputProps) {
   const { context } = useAIContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -103,17 +107,27 @@ export function SmartMercanciaInput({
         // Producto único - análisis normal
         const result = await geminiCore.analyzeMercancia(description, context);
         
-        setDetectedProducts([{
+        const detectedProduct = {
           descripcion: description,
           claveProdServ: result.claveProdServ,
           claveUnidad: result.claveUnidad,
           tipoEmbalaje: result.tipoEmbalaje,
           materialPeligroso: result.materialPeligroso,
           confidence: result.confidence || 0.8
-        }]);
+        };
+        
+        setDetectedProducts([detectedProduct]);
 
-        if (onMercanciaSelect && result.claveProdServ) {
-          onMercanciaSelect(result);
+        if (result.claveProdServ) {
+          if (autoApply) {
+            // Auto-aplicar automáticamente
+            onMercanciaSelect?.(result);
+            onAutoApplied?.(result);
+            toast.success(`✨ Producto detectado y aplicado automáticamente`);
+          } else {
+            // Solo notificar sin auto-aplicar
+            onMercanciaSelect?.(result);
+          }
         }
       }
 

@@ -35,60 +35,191 @@ export const useSmartMercanciaAnalysis = () => {
       // Llamar al Edge Function de Gemini para análisis
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: {
-          message: `Analiza esta descripción de mercancías para transporte y extrae la información estructurada:
+          operation: 'mercancia_analysis',
+          data: {
+            descripcion: descripcion,
+            extractMultiple: true,
+            inferValues: true
+          },
+          message: `Analiza esta descripción de mercancías para transporte y extrae TODOS los productos mencionados:
 
-Descripción: "${descripcion}"
+DESCRIPCIÓN: "${descripcion}"
 
-INSTRUCCIONES ESPECÍFICAS:
-1. Si encuentras múltiples productos (ej: "30 ton de pepino y 10 de sandía"), sepáralos en entradas distintas
-2. Para cada producto identifica:
-   - Descripción específica del producto
-   - Peso aproximado en kg
-   - Cantidad de unidades
-   - Clave de Producto SAT más probable (formato: código de 8 dígitos)
-   - Unidad de medida SAT más probable (código de 3 letras como KGM, TNE, PZA)
-   - Valor comercial estimado en pesos mexicanos
-   - MÉTODO DE TRANSPORTE/EMPAQUE según normativa SAT
+INSTRUCCIONES CRÍTICAS:
+1. DETECTA MÚLTIPLES PRODUCTOS: Si hay varios productos, sepáralos (ej: "30 ton de pepino, 10 ton de sandía y 5 ton de melón" = 3 productos)
+2. SEPARA POR CONECTORES: Palabras como "y", ",", "también", "además", "más", "con" indican productos separados
+3. CANTIDADES IMPLÍCITAS: Si solo se menciona un producto con cantidad, los demás también llevan esa cantidad por defecto
 
-3. CÓDIGOS SAT COMUNES DE REFERENCIA:
-   - Frutas y verduras: 01011601 (Frutas frescas), 01021501 (Verduras frescas)
-   - Cereales: 01010101 (Trigo), 01010201 (Maíz)
-   - Materiales construcción: 30161501 (Cemento), 30111501 (Arena)
-   - Textiles: 53102600 (Ropa), 11141600 (Telas)
-   - Electrónicos: 43211501 (Computadoras), 52141500 (Celulares)
+Para CADA producto identifica:
+   - descripcion: Nombre específico del producto (ej: "Pepino fresco", "Sandía", "Melón")
+   - pesoKg: Peso INDIVIDUAL en kilogramos (si dice "30 ton" = 30000 kg)
+   - cantidad: Número de unidades (si no se especifica, usar 1)
+   - claveProdServ: Código SAT de 8 dígitos MÁS ESPECÍFICO posible
+   - claveUnidad: Código SAT de 3 letras (KGM=Kilogramo, TNE=Tonelada, PZA=Pieza, LTR=Litro, MTR=Metro, etc.)
+   - valorMercancia: Valor comercial estimado en pesos mexicanos (investigar precios de mercado actuales)
+   - metodoTransporte: Método de empaque/transporte según SAT
 
-4. UNIDADES SAT COMUNES:
-   - KGM (Kilogramo), TNE (Tonelada), PZA (Pieza), LTR (Litro), MTR (Metro)
+CÓDIGOS SAT ESPECÍFICOS (USA EL MÁS EXACTO):
+Frutas y Verduras:
+- 01011601: Pepino fresco
+- 01011602: Sandía
+- 01011603: Melón
+- 01011604: Tomate fresco
+- 01011605: Aguacate
+- 01011606: Limón
+- 01011607: Naranja
+- 01021501: Lechuga
+- 01021502: Zanahoria
+- 01021503: Cebolla
+- 01021504: Papa/Patata
+- 01021505: Chile/Pimiento
 
-5. MÉTODOS DE TRANSPORTE/EMPAQUE SAT:
-   - Tarimas de madera estándar
-   - Cajas de cartón corrugado
-   - Contenedores metálicos ISO
-   - A granel en tolva/tanque
-   - Sacos de polipropileno
-   - Rollos protegidos con plástico
-   - Pallets europeos normalizados
-   - Embalaje anti-derrame
-   - Refrigeración controlada
+Cereales y Granos:
+- 01010101: Trigo
+- 01010201: Maíz amarillo
+- 01010202: Maíz blanco
+- 01010301: Arroz
+- 01010401: Avena
+- 01010501: Sorgo
+
+Materiales Construcción:
+- 30161501: Cemento Portland
+- 30161502: Cemento gris
+- 30111501: Arena de construcción
+- 30111502: Grava
+- 30111503: Piedra triturada
+- 30151501: Varilla corrugada
+- 30151502: Alambrón
+
+Textiles:
+- 53102600: Ropa de algodón
+- 53102601: Playeras
+- 53102602: Pantalones
+- 11141600: Telas de algodón
+- 11141601: Mezclilla
+
+Electrónicos:
+- 43211501: Computadoras portátiles
+- 43211502: Computadoras de escritorio
+- 52141500: Teléfonos celulares
+- 43211800: Monitores
+- 43222600: Impresoras
+
+Alimentos Procesados:
+- 50201700: Pan y productos de panadería
+- 50192300: Productos lácteos
+- 50131600: Carne refrigerada
+- 50151500: Pescado y mariscos
+- 50121500: Bebidas
+
+Químicos y Combustibles:
+- 15111500: Gasolina
+- 15111501: Diésel
+- 15101800: Gas LP
+- 15101801: Gas natural
+- 12141500: Fertilizantes
+
+UNIDADES SAT:
+- KGM (Kilogramo): Para productos sólidos por peso
+- TNE (Tonelada): Para grandes cantidades (1000kg)
+- PZA (Pieza): Para productos individuales
+- LTR (Litro): Para líquidos
+- MTR (Metro): Para materiales por longitud
+- M2 (Metro cuadrado): Para superficies
+- M3 (Metro cúbico): Para volúmenes
+- XBX (Caja): Para productos en cajas
+- XBG (Bolsa): Para productos embolsados
+
+MÉTODOS DE TRANSPORTE/EMPAQUE SAT:
+- Tarimas de madera estándar
+- Cajas de cartón corrugado
+- Contenedores metálicos ISO 20/40 pies
+- A granel en tolva metálica
+- A granel en tanque
+- Sacos de polipropileno 50kg
+- Supersacos (Big Bags) 1000kg
+- Rollos protegidos con plástico
+- Pallets europeos EUR (1200x800mm)
+- Embalaje anti-derrame certificado
+- Refrigeración controlada 2-8°C
+- Congelación -18°C
+- Carga suelta
+- Flejado metálico
+
+EJEMPLOS DE ANÁLISIS:
+Input: "30 ton de pepino y 10 de sandía"
+Output: [
+  {
+    "descripcion": "Pepino fresco",
+    "claveProdServ": "01011601",
+    "claveUnidad": "TNE",
+    "pesoKg": 30000,
+    "cantidad": 1,
+    "valorMercancia": 450000,
+    "metodoTransporte": "Cajas de cartón corrugado sobre tarimas",
+    "confianza": "alta"
+  },
+  {
+    "descripcion": "Sandía",
+    "claveProdServ": "01011602",
+    "claveUnidad": "TNE",
+    "pesoKg": 10000,
+    "cantidad": 1,
+    "valorMercancia": 80000,
+    "metodoTransporte": "A granel en tarimas de madera",
+    "confianza": "alta"
+  }
+]
+
+Input: "500 playeras de algodón y 300 pantalones de mezclilla"
+Output: [
+  {
+    "descripcion": "Playeras de algodón",
+    "claveProdServ": "53102601",
+    "claveUnidad": "PZA",
+    "pesoKg": 150,
+    "cantidad": 500,
+    "valorMercancia": 50000,
+    "metodoTransporte": "Cajas de cartón corrugado",
+    "confianza": "alta"
+  },
+  {
+    "descripcion": "Pantalones de mezclilla",
+    "claveProdServ": "53102602",
+    "claveUnidad": "PZA",
+    "pesoKg": 300,
+    "cantidad": 300,
+    "valorMercancia": 90000,
+    "metodoTransporte": "Cajas de cartón corrugado",
+    "confianza": "alta"
+  }
+]
+
+CALCULA VALORES REALISTAS:
+- Frutas/Verduras: $8-25 MXN/kg
+- Cereales: $5-15 MXN/kg
+- Textiles: $50-300 MXN/pieza
+- Electrónicos: $2000-15000 MXN/pieza
+- Construcción: $100-500 MXN/m3
 
 Responde SOLO con un JSON válido en este formato:
 {
   "mercancias": [
     {
-      "descripcion": "Descripción específica",
-      "claveProdServ": "código SAT",
-      "claveUnidad": "unidad SAT", 
-      "pesoKg": número,
-      "cantidad": número,
-      "valorMercancia": número,
-      "metodoTransporte": "método de empaque/transporte",
+      "descripcion": "Descripción específica del producto",
+      "claveProdServ": "código SAT de 8 dígitos",
+      "claveUnidad": "código SAT de 3 letras", 
+      "pesoKg": número en kilogramos,
+      "cantidad": número de unidades,
+      "valorMercancia": número en pesos MXN,
+      "metodoTransporte": "método de empaque/transporte SAT",
       "confianza": "alta|media|baja"
     }
   ],
-  "sugerencias": ["texto de sugerencias"],
+  "sugerencias": ["sugerencias de mejora si las hay"],
   "errores": ["errores si los hay"]
 }`,
-          context: 'mercancia_analysis'
+          context: 'mercancia_analysis_v2'
         }
       });
 

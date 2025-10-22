@@ -103,6 +103,7 @@ serve(async (req) => {
         break;
 
       case 'mercancia_analysis':
+      case 'mercancia_analysis_v2':
         prompt = message || (data && data.message) || '';
         break;
 
