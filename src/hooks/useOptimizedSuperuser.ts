@@ -12,24 +12,19 @@ export const useOptimizedSuperuser = () => {
     queryKey: ['superuser-status', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
-      
-      if (user.usuario?.rol_especial === 'superuser') {
-        return true;
-      }
 
       try {
-        const { data, error } = await supabase
-          .from('usuarios')
-          .select('rol_especial')
-          .eq('auth_user_id', user.id)
-          .maybeSingle();
+        // ✅ SECURE: Use server-side SECURITY DEFINER function
+        const { data, error } = await supabase.rpc('is_superuser_secure', {
+          _user_id: user.id
+        });
 
         if (error) {
           console.error('[OptimizedSuperuser] Error:', error);
           return false;
         }
 
-        return data?.rol_especial === 'superuser';
+        return data === true;
       } catch (error) {
         console.error('[OptimizedSuperuser] Unexpected error:', error);
         return false;

@@ -4181,12 +4181,24 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      has_role: {
+        Args: { _role: string; _user_id: string }
+        Returns: boolean
+      }
+      is_admin_or_superuser: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_superuser_optimized: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_superuser_secure: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       is_superuser_simple: {

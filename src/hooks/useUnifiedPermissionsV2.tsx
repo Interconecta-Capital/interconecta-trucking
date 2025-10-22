@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOptimizedSuperuser } from './useOptimizedSuperuser';
 
 export interface PlanInfo {
   name: string;
@@ -36,11 +37,8 @@ export interface UnifiedPermissionsV2 {
 export function useUnifiedPermissionsV2(): UnifiedPermissionsV2 {
   const { user } = useAuth();
 
-  // Verificar si es superusuario directamente desde auth metadata
-  const isSuperuser = useMemo(() => {
-    return user?.user_metadata?.is_superuser === true || 
-           user?.user_metadata?.is_superuser === 'true';
-  }, [user]);
+  // ✅ SECURE: Verificar superuser usando servidor (no client metadata)
+  const { isSuperuser } = useOptimizedSuperuser();
 
   // Obtener datos del plan y contadores
   const { data: permissionsData } = useQuery({
