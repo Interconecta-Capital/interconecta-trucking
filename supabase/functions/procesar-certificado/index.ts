@@ -122,11 +122,28 @@ serve(async (req) => {
       );
     }
 
-    // TODO: Encriptar contraseña con AES-256
-    // Por ahora, almacenaremos la contraseña encriptada de forma básica
-    const passwordEncrypted = btoa(password); // Usar encriptación real en producción
+    // Store password securely in Supabase Vault
+    const vaultSecretName = `cert_password_${timestamp}_${user.id}`;
+    const { data: vaultSecret, error: vaultError } = await supabaseClient.rpc(
+      'vault.create_secret',
+      {
+        secret: password,
+        name: vaultSecretName,
+        description: `Password for certificate ${nombreCertificado}`
+      }
+    );
 
-    // Crear registro en la base de datos
+    if (vaultError) {
+      console.error('Error storing password in Vault:', vaultError);
+      // Limpiar archivos subidos
+      await supabaseClient.storage.from('certificados').remove([cerFileName, keyFileName]);
+      return new Response(
+        JSON.stringify({ error: 'Error al almacenar contraseña de forma segura' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Crear registro en la base de datos con referencia al Vault
     const { data: certificado, error: dbError } = await supabaseClient
       .from('certificados_digitales')
       .insert({
@@ -140,6 +157,7 @@ serve(async (req) => {
         archivo_cer_path: cerFileName,
         archivo_key_path: keyFileName,
         archivo_key_encrypted: true,
+        password_vault_id: vaultSecret.id,
         validado: true,
         activo: false // No activar automáticamente
       })
