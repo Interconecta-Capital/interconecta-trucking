@@ -10,15 +10,6 @@ export default {
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
 	],
-	// Configuración agresiva de purge para CSS
-	safelist: [
-		// Solo clases dinámicas críticas
-		/^animate-/,
-		/^transition-/,
-		/^scroll-/,
-		'revealed',
-		'visible',
-	],
 	prefix: "",
 	theme: {
 		container: {
