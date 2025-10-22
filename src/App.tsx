@@ -1,4 +1,4 @@
-
+import { useEffect } from "react"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -45,7 +45,16 @@ import DashboardHub from "./components/dashboard/DashboardHub"
 
 const queryClient = new QueryClient()
 
-const App = () => (
+const App = () => {
+  // Notify that app is ready after first render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event('app-ready'));
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -255,6 +264,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-)
+  );
+}
 
 export default App
