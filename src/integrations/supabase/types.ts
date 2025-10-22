@@ -4230,6 +4230,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      promote_user_to_superuser: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       record_rate_limit_attempt: {
         Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined

@@ -1,7 +1,7 @@
 import mapboxgl from 'mapbox-gl';
 
-// Mapbox access token
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiaW50ZXJjb25lY3RhIiwiYSI6ImNtYndqcWFyajExYTIya3B1NG1oaXJ2YjIifQ.OVtTgnmv6ZA3En2trhim-Q';
+// Mapbox access token - must be configured in environment
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 export interface Coordinates {
   lat: number;

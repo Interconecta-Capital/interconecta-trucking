@@ -79,7 +79,11 @@ class RuteoComercialService {
     destino: Coordenada,
     parametros: ParametrosRuteoComercial
   ): string {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY || 'demo-key';
+    const apiKey = import.meta.env.VITE_HERE_API_KEY || '';
+    
+    if (!apiKey) {
+      throw new Error('VITE_HERE_API_KEY not configured. Please set up your HERE API key.');
+    }
     
     const params = new URLSearchParams({
       'apikey': apiKey,

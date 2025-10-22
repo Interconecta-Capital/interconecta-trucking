@@ -40,13 +40,11 @@ export const useOptimizedSuperuser = () => {
   });
 
   const convertToSuperuserMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update({ rol_especial: 'superuser' })
-        .eq('email', email)
-        .select()
-        .single();
+    mutationFn: async (userId: string) => {
+      // Use secure RPC function instead of direct table update
+      const { data, error } = await supabase.rpc('promote_user_to_superuser', {
+        target_user_id: userId
+      });
 
       if (error) throw error;
       return data;
@@ -71,19 +69,20 @@ export const useOptimizedSuperuser = () => {
         options: {
           data: {
             nombre: 'Superusuario',
-            empresa: 'Sistema',
-            rol_especial: 'superuser'
+            empresa: 'Sistema'
           }
         }
       });
 
       if (error) throw error;
 
+      // Use secure RPC function to promote the newly created user
       if (data.user) {
-        await supabase
-          .from('usuarios')
-          .update({ rol_especial: 'superuser' })
-          .eq('auth_user_id', data.user.id);
+        const { error: promoteError } = await supabase.rpc('promote_user_to_superuser', {
+          target_user_id: data.user.id
+        });
+        
+        if (promoteError) throw promoteError;
       }
 
       return { email, password };
@@ -97,8 +96,8 @@ export const useOptimizedSuperuser = () => {
     },
   });
 
-  const convertToSuperuser = (email: string) => {
-    convertToSuperuserMutation.mutate(email);
+  const convertToSuperuser = (userId: string) => {
+    convertToSuperuserMutation.mutate(userId);
   };
 
   const createSuperuserAccount = () => {
