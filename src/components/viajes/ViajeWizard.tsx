@@ -329,6 +329,26 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
       let nuevoViaje;
+      
+      // Mark first trip as created in onboarding
+      const onboardingProgress = localStorage.getItem('onboarding_progress');
+      let shouldShowCelebration = false;
+      if (onboardingProgress) {
+        try {
+          const progress = JSON.parse(onboardingProgress);
+          if (!progress.firstTripCreated) {
+            shouldShowCelebration = true;
+            localStorage.setItem('onboarding_progress', JSON.stringify({
+              ...progress,
+              firstTripCreated: true,
+              currentStep: 'viaje-completado',
+              completedSteps: [...(progress.completedSteps || []), 'viaje-completado']
+            }));
+          }
+        } catch (error) {
+          console.error('Error updating onboarding progress:', error);
+        }
+      }
 
       // Si es un borrador existente, convertirlo a viaje
       if (currentDraftId) {

@@ -60,46 +60,78 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'welcome',
     title: 'Bienvenido a Interconecta',
     description: 'Te guiaremos paso a paso para que conozcas todas las funcionalidades.',
-    detailedExplanation: 'Interconecta es tu centro de comando para gestión logística.',
-    tips: ['Explora cada sección', 'Configura tu perfil primero', 'Usa los atajos de teclado']
+    detailedExplanation: 'Interconecta es tu centro de comando para gestión logística completa.',
+    tips: ['Explora cada sección', 'Configura tu perfil primero', 'Aprovecha los atajos de teclado']
   },
   {
     id: 'dashboard',
-    title: 'Panel Principal',
-    description: 'Aquí verás un resumen de tus viajes y métricas importantes.',
+    title: 'Explora el Dashboard',
+    description: 'Este es tu centro de control. Aquí verás métricas clave de tu operación.',
     targetElement: '[data-onboarding="dashboard"]',
-    detailedExplanation: 'El dashboard te muestra métricas en tiempo real.',
-    tips: ['Revisa las métricas diariamente', 'Personaliza tu vista']
+    detailedExplanation: 'El dashboard muestra viajes activos, métricas de rendimiento y alertas importantes en tiempo real.',
+    tips: ['Revisa las métricas diariamente', 'Usa los filtros para analizar períodos específicos', 'Personaliza tu vista según tus necesidades']
+  },
+  {
+    id: 'nav-menu',
+    title: 'Menú de Navegación',
+    description: 'Desde aquí puedes acceder a todas las secciones: viajes, conductores, vehículos y más.',
+    targetElement: 'nav',
+    detailedExplanation: 'El menú lateral te da acceso rápido a todas las funcionalidades de la plataforma.',
+    tips: ['Usa el buscador para encontrar secciones rápidamente', 'Las notificaciones aparecen en la campana superior']
   },
   {
     id: 'crear-viaje',
-    title: 'Crear Nuevo Viaje',
-    description: 'Aprende a programar viajes de manera eficiente.',
+    title: 'Crea Tu Primer Viaje',
+    description: 'Es momento de programar tu primer viaje. Haz clic en "Nuevo Viaje" para comenzar.',
     targetElement: '[data-onboarding="crear-viaje-btn"]',
-    detailedExplanation: 'El wizard de viajes simplifica la creación de documentos.',
-    tips: ['Completa todos los campos', 'Verifica la información antes de confirmar']
+    detailedExplanation: 'El wizard te guiará paso a paso para crear documentos fiscalmente válidos.',
+    tips: ['Completa todos los campos obligatorios', 'El sistema te ayudará con las validaciones SAT', 'Puedes guardar borradores en cualquier momento']
+  },
+  {
+    id: 'viaje-completado',
+    title: '¡Excelente Trabajo!',
+    description: 'Has completado la configuración de tu primer viaje. Ya conoces lo esencial de Interconecta.',
+    detailedExplanation: 'Ahora puedes gestionar tu flota de manera profesional y eficiente.',
+    tips: ['Explora los reportes automáticos', 'Configura alertas personalizadas', 'Revisa el centro de ayuda para funciones avanzadas']
   }
 ];
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const [isWizardTutorialActive, setIsWizardTutorialActive] = useState(false); // Cambiado a false
+  const [isWizardTutorialActive, setIsWizardTutorialActive] = useState(false);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [isOnboardingActive, setIsOnboardingActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [userRole, setUserRole] = useState<UserRole>('nuevo');
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
-    // Solo cargar el estado del tutorial, pero no activarlo automáticamente
     const neverShow = localStorage.getItem('never_show_wizard_tutorial');
     if (neverShow === 'true') {
       setIsWizardTutorialActive(false);
     }
 
-    // Load user role
+    // Load saved progress
     const savedRole = localStorage.getItem('user_role') || 'nuevo';
     setUserRole(savedRole as UserRole);
+    
+    const savedProgress = localStorage.getItem('onboarding_progress');
+    if (savedProgress) {
+      try {
+        const progress = JSON.parse(savedProgress);
+        setCompletedSteps(progress.completedSteps || []);
+        setIsOnboardingComplete(progress.onboardingCompleted || false);
+        
+        // Find current step index based on saved progress
+        const stepIndex = ONBOARDING_STEPS.findIndex(s => s.id === progress.currentStep);
+        if (stepIndex >= 0) {
+          setCurrentStepIndex(stepIndex);
+        }
+      } catch (error) {
+        console.error('Error loading onboarding progress:', error);
+      }
+    }
   }, []);
 
   const completeWizardTutorial = () => {
@@ -141,11 +173,29 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     const newCompletedSteps = [...completedSteps, stepId];
     setCompletedSteps(newCompletedSteps);
     
+    // Save progress to localStorage
+    const progress = {
+      currentStep: stepId,
+      completedSteps: newCompletedSteps,
+      onboardingCompleted: false,
+      firstTripCreated: stepId === 'viaje-completado'
+    };
+    localStorage.setItem('onboarding_progress', JSON.stringify(progress));
+    
     if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     } else {
+      // Onboarding completed!
       setIsOnboardingActive(false);
       setIsOnboardingComplete(true);
+      setShowCelebration(true);
+      
+      const finalProgress = {
+        ...progress,
+        onboardingCompleted: true,
+        completedAt: new Date().toISOString()
+      };
+      localStorage.setItem('onboarding_progress', JSON.stringify(finalProgress));
     }
   };
 
@@ -164,6 +214,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   const currentStep = isOnboardingActive ? ONBOARDING_STEPS[currentStepIndex] : null;
   const onboardingProgress = ((currentStepIndex + 1) / ONBOARDING_STEPS.length) * 100;
+
+  const closeCelebration = () => {
+    setShowCelebration(false);
+  };
 
   return (
     <OnboardingContext.Provider value={{

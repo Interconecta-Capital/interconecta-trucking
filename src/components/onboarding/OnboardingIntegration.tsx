@@ -1,17 +1,42 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { OnboardingOverlay } from './OnboardingOverlay';
 import { ContextualHints } from './ContextualHints';
 import { PersonalizedWelcome } from './PersonalizedWelcome';
 import { WizardTutorial } from './WizardTutorial';
+import { OnboardingCelebration } from './OnboardingCelebration';
 import { useOnboarding } from '@/contexts/OnboardingProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 export function OnboardingIntegration() {
   const { 
     isOnboardingActive, 
     currentStep, 
-    isWizardTutorialActive 
+    isWizardTutorialActive,
+    isOnboardingComplete
   } = useOnboarding();
+  const { user } = useAuth();
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Check if user just completed first trip
+  React.useEffect(() => {
+    const onboardingProgress = localStorage.getItem('onboarding_progress');
+    if (onboardingProgress) {
+      try {
+        const progress = JSON.parse(onboardingProgress);
+        if (progress.firstTripCreated && !progress.celebrationShown) {
+          setShowCelebration(true);
+          // Mark celebration as shown
+          localStorage.setItem('onboarding_progress', JSON.stringify({
+            ...progress,
+            celebrationShown: true
+          }));
+        }
+      } catch (error) {
+        console.error('Error checking celebration status:', error);
+      }
+    }
+  }, [isOnboardingComplete]);
 
   // Verificar si se debe mostrar la bienvenida
   const neverShowWelcome = localStorage.getItem('never_show_welcome');
@@ -42,6 +67,13 @@ export function OnboardingIntegration() {
 
       {/* Hints contextuales - siempre activos */}
       <ContextualHints />
+
+      {/* Celebración al completar primer viaje */}
+      <OnboardingCelebration 
+        isVisible={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        userName={user?.email?.split('@')[0] || 'Usuario'}
+      />
     </>
   );
 }
