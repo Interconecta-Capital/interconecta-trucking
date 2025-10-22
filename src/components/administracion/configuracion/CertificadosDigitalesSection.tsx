@@ -3,19 +3,80 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Shield, 
-  Plus, 
   CheckCircle, 
   AlertTriangle, 
   Clock,
-  Upload
+  Upload,
+  Download,
+  Trash2,
+  Star
 } from 'lucide-react';
-import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { useCertificadosDigitales } from '@/hooks/useCertificadosDigitales';
+import { CertificadoUploadDialog } from './CertificadoUploadDialog';
+import { toast } from 'sonner';
 
 export function CertificadosDigitalesSection() {
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const { certificados, activarCertificado } = useConfiguracionEmpresarial();
+  const { 
+    certificados, 
+    certificadoActivo,
+    isLoading,
+    activarCertificado,
+    eliminarCertificado,
+    esCertificadoValido,
+    diasHastaVencimiento,
+    isActivating,
+    isDeleting
+  } = useCertificadosDigitales();
+
+  const handleActivar = async (certificadoId: string) => {
+    try {
+      await activarCertificado(certificadoId);
+    } catch (error) {
+      console.error('Error al activar certificado:', error);
+    }
+  };
+
+  const handleEliminar = async (certificadoId: string) => {
+    if (!confirm('¿Está seguro de eliminar este certificado? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    
+    try {
+      await eliminarCertificado(certificadoId);
+    } catch (error) {
+      console.error('Error al eliminar certificado:', error);
+    }
+  };
+
+  const getBadgeEstado = (certificado: any) => {
+    if (!esCertificadoValido(certificado)) {
+      return <Badge variant="destructive">Vencido</Badge>;
+    }
+    
+    const dias = diasHastaVencimiento(certificado);
+    if (certificado.id === certificadoActivo?.id) {
+      return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Activo</Badge>;
+    }
+    if (dias <= 30) {
+      return <Badge variant="warning"><Clock className="h-3 w-3 mr-1" />Próximo a vencer</Badge>;
+    }
+    return <Badge variant="outline">Inactivo</Badge>;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="animate-pulse">
+          <div className="h-10 bg-muted rounded mb-4" />
+          <div className="h-32 bg-muted rounded" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -23,7 +84,7 @@ export function CertificadosDigitalesSection() {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">Certificados de Sello Digital</h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Gestione los certificados digitales para el timbrado de documentos fiscales
           </p>
         </div>
@@ -36,44 +97,124 @@ export function CertificadosDigitalesSection() {
         </Button>
       </div>
 
-      {/* Lista de certificados */}
-      <Card className="border-dashed border-2">
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          <Shield className="h-12 w-12 text-gray-400 mb-4" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">
-            Sin certificados configurados
-          </h4>
-          <p className="text-gray-600 text-center mb-4">
-            Necesita subir al menos un certificado de sello digital válido para poder generar documentos fiscales.
-          </p>
-          <Button 
-            onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Agregar Primer Certificado
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Alertas de certificados próximos a vencer */}
+      {certificados.some(cert => {
+        const dias = diasHastaVencimiento(cert);
+        return esCertificadoValido(cert) && dias <= 30;
+      }) && (
+        <Alert className="border-yellow-500 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Tiene certificados que vencen pronto. Renueve sus certificados con anticipación para evitar interrupciones.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {/* Mensaje temporal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle>Subir Certificado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Funcionalidad de certificados en desarrollo. Próximamente podrá cargar sus certificados CSD.
-              </p>
-              <Button onClick={() => setShowUploadModal(false)}>
-                Cerrar
-              </Button>
-            </CardContent>
-          </Card>
+      {/* Lista de certificados */}
+      {certificados.length === 0 ? (
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Shield className="h-12 w-12 text-muted-foreground mb-4" />
+            <h4 className="text-lg font-medium mb-2">
+              Sin certificados configurados
+            </h4>
+            <p className="text-muted-foreground text-center mb-4">
+              Necesita subir al menos un certificado de sello digital válido para poder generar documentos fiscales.
+            </p>
+            <Button 
+              onClick={() => setShowUploadModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Agregar Primer Certificado
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {certificados.map((certificado) => {
+            const esActivo = certificado.id === certificadoActivo?.id;
+            const esValido = esCertificadoValido(certificado);
+            const dias = diasHastaVencimiento(certificado);
+
+            return (
+              <Card key={certificado.id} className={esActivo ? 'border-primary border-2' : ''}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {esActivo && <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
+                        {certificado.nombre_certificado}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {certificado.rfc_titular}
+                      </p>
+                    </div>
+                    {getBadgeEstado(certificado)}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Razón Social:</span>
+                      <span className="font-medium">{certificado.razon_social || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Número de Serie:</span>
+                      <span className="font-mono text-xs">{certificado.numero_certificado}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Vigencia:</span>
+                      <span className={esValido ? '' : 'text-destructive font-medium'}>
+                        {new Date(certificado.fecha_fin_vigencia).toLocaleDateString('es-MX')}
+                      </span>
+                    </div>
+                    {esValido && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Días restantes:</span>
+                        <span className={dias <= 30 ? 'text-yellow-600 font-medium' : ''}>
+                          {dias} días
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    {!esActivo && esValido && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleActivar(certificado.id)}
+                        disabled={isActivating}
+                        className="flex-1"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Activar
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEliminar(certificado.id)}
+                      disabled={isDeleting || esActivo}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Eliminar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
+
+      {/* Diálogo de upload */}
+      <CertificadoUploadDialog
+        open={showUploadModal}
+        onOpenChange={setShowUploadModal}
+      />
     </div>
   );
 }

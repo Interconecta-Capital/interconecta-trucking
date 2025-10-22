@@ -1,156 +1,94 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Building2, 
-  Shield, 
-  FileText, 
-  Settings, 
-  CheckCircle, 
-  AlertTriangle,
-  Plus
-} from 'lucide-react';
-import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { Building, Shield, Settings, LayoutDashboard } from 'lucide-react';
 import { DatosFiscalesForm } from './DatosFiscalesForm';
 import { CertificadosDigitalesSection } from './CertificadosDigitalesSection';
 import { ConfiguracionOperativaForm } from './ConfiguracionOperativaForm';
+import { DashboardConfiguracion } from './DashboardConfiguracion';
+import { WizardConfiguracionInicial } from './WizardConfiguracionInicial';
+import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 
 export function MiEmpresaPanel() {
-  const [activeTab, setActiveTab] = useState('datos-fiscales');
-  
-  const {
-    configuracion,
-    certificados,
-    isLoading,
-    validarConfiguracionCompleta,
-    tieneCertificadoValido
-  } = useConfiguracionEmpresarial();
+  const { configuracion, isLoading } = useConfiguracionEmpresarial();
+  const [showWizard, setShowWizard] = useState(false);
+
+  // Detectar si es usuario nuevo y mostrar wizard
+  useEffect(() => {
+    if (!isLoading && configuracion) {
+      const wizardShown = localStorage.getItem('wizard_configuracion_shown');
+      
+      // Mostrar wizard si:
+      // 1. No se ha mostrado antes
+      // 2. La configuración no está completa
+      // 3. No hay RFC configurado (indica usuario nuevo)
+      if (!wizardShown && !configuracion.configuracion_completa && !configuracion.rfc_emisor) {
+        setShowWizard(true);
+      }
+    }
+  }, [configuracion, isLoading]);
+
+  const handleWizardComplete = () => {
+    setShowWizard(false);
+    localStorage.setItem('wizard_configuracion_shown', 'true');
+  };
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            <span>Cargando configuración...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <div className="p-6">Cargando configuración...</div>;
   }
 
-  const configuracionCompleta = validarConfiguracionCompleta();
-  const certificadoValido = tieneCertificadoValido();
-  const sistemaListo = configuracionCompleta && certificadoValido;
-
   return (
-    <div className="space-y-6">
-      {/* Header con estado del sistema */}
-      <Card className={`border-2 ${sistemaListo ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Building2 className="h-6 w-6" />
-            Mi Empresa
-            {sistemaListo ? (
-              <Badge variant="default" className="bg-green-600">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Sistema Listo
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="border-yellow-600 text-yellow-800">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Configuración Pendiente
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Estado de Datos Fiscales */}
-            <div className="flex items-center gap-3 p-4 bg-white rounded-lg border">
-              <FileText className={`h-8 w-8 ${configuracionCompleta ? 'text-green-600' : 'text-gray-400'}`} />
-              <div>
-                <div className="font-medium">Datos Fiscales</div>
-                <div className="text-sm text-gray-600">
-                  {configuracionCompleta ? 'Configuración completa' : 'Pendiente de configurar'}
-                </div>
-              </div>
-            </div>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Configuración de Mi Empresa</h2>
+          <p className="text-muted-foreground">
+            Gestione la información fiscal y operativa de su empresa
+          </p>
+        </div>
 
-            {/* Estado de Certificados */}
-            <div className="flex items-center gap-3 p-4 bg-white rounded-lg border">
-              <Shield className={`h-8 w-8 ${certificadoValido ? 'text-green-600' : 'text-gray-400'}`} />
-              <div>
-                <div className="font-medium">Certificados Digitales</div>
-                <div className="text-sm text-gray-600">
-                  {certificadoValido ? 'Certificado activo' : 'Sin certificado válido'}
-                </div>
-              </div>
-            </div>
+        <Tabs defaultValue="dashboard" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="datos-fiscales" className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Datos Fiscales
+            </TabsTrigger>
+            <TabsTrigger value="certificados" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Certificados
+            </TabsTrigger>
+            <TabsTrigger value="configuracion" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Config. Operativa
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Estado del Sistema */}
-            <div className="flex items-center gap-3 p-4 bg-white rounded-lg border">
-              <Settings className={`h-8 w-8 ${sistemaListo ? 'text-green-600' : 'text-orange-600'}`} />
-              <div>
-                <div className="font-medium">Estado del Sistema</div>
-                <div className="text-sm text-gray-600">
-                  {sistemaListo ? 'Listo para operar' : 'Configuración incompleta'}
-                </div>
-              </div>
-            </div>
-          </div>
+          <TabsContent value="dashboard" className="space-y-4">
+            <DashboardConfiguracion />
+          </TabsContent>
 
-          {!sistemaListo && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm text-yellow-800">
-                  Complete la configuración de su empresa para poder generar Cartas Porte válidas
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <TabsContent value="datos-fiscales" className="space-y-4">
+            <DatosFiscalesForm />
+          </TabsContent>
 
-      {/* Pestañas principales */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="datos-fiscales" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Datos Fiscales
-            {configuracionCompleta && (
-              <CheckCircle className="h-3 w-3 text-green-600" />
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="certificados" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Certificados
-            {certificadoValido && (
-              <CheckCircle className="h-3 w-3 text-green-600" />
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="operativa" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Config. Operativa
-          </TabsTrigger>
-        </TabsList>
+          <TabsContent value="certificados" className="space-y-4">
+            <CertificadosDigitalesSection />
+          </TabsContent>
 
-        <TabsContent value="datos-fiscales" className="space-y-4">
-          <DatosFiscalesForm />
-        </TabsContent>
+          <TabsContent value="configuracion" className="space-y-4">
+            <ConfiguracionOperativaForm />
+          </TabsContent>
+        </Tabs>
+      </div>
 
-        <TabsContent value="certificados" className="space-y-4">
-          <CertificadosDigitalesSection />
-        </TabsContent>
-
-        <TabsContent value="operativa" className="space-y-4">
-          <ConfiguracionOperativaForm />
-        </TabsContent>
-      </Tabs>
-    </div>
+      {/* Wizard de configuración inicial */}
+      <WizardConfiguracionInicial
+        open={showWizard}
+        onComplete={handleWizardComplete}
+      />
+    </>
   );
 }
