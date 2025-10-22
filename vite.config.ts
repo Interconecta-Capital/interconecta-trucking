@@ -22,17 +22,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2015',
     cssCodeSplit: true,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-        drop_debugger: true,
-        pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : [],
-      },
-      format: {
-        comments: false,
-      },
-    },
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
