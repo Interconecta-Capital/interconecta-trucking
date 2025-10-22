@@ -151,7 +151,7 @@ export const useViajes = () => {
         
         const viajeData = {
           id: viajeId,
-          carta_porte_id: `CP-${Date.now()}`,
+          carta_porte_id: null, // UUID se asignará al crear borrador Carta Porte
           origen: wizardData.origen?.direccion || wizardData.origen?.nombre || '',
           destino: wizardData.destino?.direccion || wizardData.destino?.nombre || '',
           conductor_id: wizardData.conductor?.id,
@@ -223,7 +223,7 @@ export const useViajes = () => {
 
       const viajeData = {
         id: viajeId,
-        carta_porte_id: `DRAFT-${Date.now()}`,
+        carta_porte_id: null, // UUID se asignará al crear Carta Porte
         origen: wizardData.origen?.direccion || wizardData.origen?.nombre || 'Origen por definir',
         destino: wizardData.destino?.direccion || wizardData.destino?.nombre || 'Destino por definir',
         conductor_id: wizardData.conductor?.id,
@@ -323,7 +323,7 @@ export const useViajes = () => {
         .from('viajes')
         .update({ 
           estado: 'programado',
-          carta_porte_id: `CP-${Date.now()}`,
+          carta_porte_id: null, // UUID se asignará al crear Carta Porte
           updated_at: new Date().toISOString()
         })
         .eq('id', borradorId)
