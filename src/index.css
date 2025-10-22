@@ -476,6 +476,21 @@
     }
   }
 
+  /* Auto-collapse sidebar en pantallas pequeñas */
+  @media (max-width: 1199px) and (min-width: 768px) {
+    :root {
+      --sidebar-force-collapse: true;
+    }
+  }
+
+  /* Reducir padding del main content en pantallas pequeñas */
+  @media (max-width: 1024px) {
+    .main-content {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+  }
+
   /* Gradient utilities for reports */
   .bg-gradient-primary {
     background: var(--gradient-primary);

@@ -67,9 +67,9 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const canCreateViaje = permissions.canCreateCartaPorte;
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 md:py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {isMobile && onOpenSidebar && (
             <Button
               variant="ghost"
@@ -80,13 +80,14 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          <h1 className="text-xl font-semibold text-gray-900">
-            Sistema de Gestión Logística
+          <h1 className="text-base sm:text-lg md:text-xl font-semibold text-gray-900">
+            <span className="hidden lg:inline">Sistema de Gestión Logística</span>
+            <span className="lg:hidden">Interconecta</span>
           </h1>
           <PlanBadge size="sm" />
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Notificaciones */}
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-4 w-4" />

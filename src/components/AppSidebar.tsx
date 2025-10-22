@@ -121,6 +121,20 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
     localStorage.getItem('sidebarCollapsed') === 'true'
   );
 
+  // Auto-collapse en pantallas pequeñas (tablets y laptops pequeñas)
+  useEffect(() => {
+    const handleResize = () => {
+      const shouldAutoCollapse = window.innerWidth < 1200 && window.innerWidth >= 768;
+      if (shouldAutoCollapse && !isCollapsed) {
+        setIsCollapsed(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', String(isCollapsed));
     // Actualizar CSS variable para el layout
@@ -165,7 +179,7 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
         )}
       </div>
 
-      <nav className="flex-1 px-2 space-y-2">
+      <nav className="flex-1 px-2 space-y-2 overflow-y-auto">
         {Object.entries(
           sidebarItems.reduce<Record<SidebarCategory, SidebarItem[]>>((acc, item) => {
             if (!acc[item.category]) acc[item.category] = [];
@@ -227,7 +241,7 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 space-y-3">
+      <div className="p-4 border-t border-gray-200 space-y-3 shrink-0">
         {permissions.accessLevel === 'superuser' && isMobile && (
           <Badge variant="default" className="bg-yellow-100 text-yellow-800">
             Superusuario
@@ -344,13 +358,13 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
   return (
     <>
       {!isMobile && (
-        <motion.aside
-          className="hidden md:flex bg-white border-r border-gray-200 h-full overflow-hidden"
-          animate={{ width: isCollapsed ? 80 : 256 }}
-          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        <aside
+          className={`hidden md:flex flex-col bg-white border-r border-gray-200 h-screen overflow-hidden transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'w-20 min-w-20 max-w-20' : 'w-64 min-w-64 max-w-64'
+          }`}
         >
           {sidebarBody}
-        </motion.aside>
+        </aside>
       )}
 
       <AnimatePresence>
