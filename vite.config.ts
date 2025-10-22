@@ -99,7 +99,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['pdfjs-dist', 'tesseract.js', 'mapbox-gl', '@fullcalendar/core'],
+    include: ['react', 'react-dom', 'react-router-dom', 'mapbox-gl'],
+    exclude: ['pdfjs-dist', 'tesseract.js', '@fullcalendar/core'],
   },
 }));
