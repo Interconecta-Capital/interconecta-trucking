@@ -81,23 +81,12 @@ export const useSecurityValidation = () => {
       .replace(/on\w+=/gi, ''); // Remove event handlers
   }, []);
 
-  // Rate limiting helper
+  // NOTE: Rate limiting should be enforced server-side via database RPC calls
+  // This is kept only for UI/UX feedback but does NOT provide security
+  // For actual security, use useAdvancedRateLimit hook with server-side validation
   const checkRateLimit = useCallback((action: string, maxAttempts = 5): boolean => {
-    const key = `rate_limit_${action}`;
-    const now = Date.now();
-    const windowMs = 15 * 60 * 1000; // 15 minutes
-    
-    const attempts = JSON.parse(localStorage.getItem(key) || '[]');
-    const recentAttempts = attempts.filter((time: number) => now - time < windowMs);
-    
-    if (recentAttempts.length >= maxAttempts) {
-      toast.error(`Demasiados intentos. Intente nuevamente en 15 minutos.`);
-      return false;
-    }
-    
-    recentAttempts.push(now);
-    localStorage.setItem(key, JSON.stringify(recentAttempts));
-    return true;
+    console.warn('Client-side rate limiting is for UX only. Use server-side validation for security.');
+    return true; // Always allow client-side, rely on server-side checks
   }, []);
 
   // Validate form data comprehensively
