@@ -115,7 +115,7 @@ export class ViajeToCartaPorteMapper {
     };
   }
 
-  static mapToValidCartaPorteFormat(wizardData: ViajeWizardData): CartaPorteData {
+  static async mapToValidCartaPorteFormat(wizardData: ViajeWizardData): Promise<CartaPorteData> {
     const baseData = this.mapToCartaPorteData(wizardData);
     
     // Validaciones más tolerantes con fallbacks
@@ -162,8 +162,8 @@ export class ViajeToCartaPorteMapper {
 
     console.log('✅ Validaciones completadas, generando CartaPorteData');
 
-    // Obtener datos del usuario para el emisor
-    const emisorData = this.getEmisorData(wizardData);
+    // Obtener datos del usuario para el emisor (AHORA ES ASYNC)
+    const emisorData = await this.getEmisorData();
 
     // Retornar en formato CartaPorteData con todos los campos sincronizados
     return {
@@ -237,16 +237,23 @@ export class ViajeToCartaPorteMapper {
   }
 
   /**
-   * Obtener datos del emisor (usuario actual)
+   * Obtener datos del emisor (usuario actual) desde configuracion_empresa
    */
-  static getEmisorData(wizardData: ViajeWizardData) {
-    // En un viaje real, estos datos vendrían del perfil del usuario
-    // Por ahora, usar datos por defecto válidos
-    return {
-      rfc: 'XAXX010101000', // RFC genérico para pruebas
-      nombre: 'Empresa Transportista S.A. de C.V.',
-      regimenFiscal: '601' // General de Ley Personas Morales
-    };
+  static async getEmisorData(): Promise<{ rfc: string; nombre: string; regimenFiscal: string }> {
+    // IMPORTAR SERVICIO DE CONFIGURACIÓN
+    const { ConfiguracionEmisorService } = await import('@/services/configuracion/ConfiguracionEmisorService');
+    
+    try {
+      const emisorData = await ConfiguracionEmisorService.obtenerDatosEmisor();
+      return {
+        rfc: emisorData.rfc,
+        nombre: emisorData.nombre,
+        regimenFiscal: emisorData.regimenFiscal
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo datos del emisor:', error);
+      throw new Error(`No se pueden obtener datos del emisor: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   }
 
   /**

@@ -1,14 +1,69 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Save, Settings, Shield, Cloud } from 'lucide-react';
+import { Save, Settings, Shield, Cloud, Loader2 } from 'lucide-react';
+import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { toast } from 'sonner';
 
 export function ConfiguracionOperativaForm() {
+  const { configuracion, isSaving, guardarConfiguracion } = useConfiguracionEmpresarial();
+  
+  const [formData, setFormData] = useState({
+    // Seguros
+    seguroRespCivilPoliza: '',
+    seguroRespCivilAseguradora: '',
+    seguroCargaPoliza: '',
+    seguroCargaAseguradora: '',
+    seguroAmbientalPoliza: '',
+    seguroAmbientalAseguradora: '',
+    // Timbrado
+    proveedorTimbrado: 'fiscal_api',
+    modoPruebas: true,
+  });
+
+  // Cargar datos de configuración al iniciar
+  useEffect(() => {
+    if (configuracion) {
+      setFormData({
+        seguroRespCivilPoliza: configuracion.seguro_resp_civil_empresa?.poliza || '',
+        seguroRespCivilAseguradora: configuracion.seguro_resp_civil_empresa?.aseguradora || '',
+        seguroCargaPoliza: configuracion.seguro_carga_empresa?.poliza || '',
+        seguroCargaAseguradora: configuracion.seguro_carga_empresa?.aseguradora || '',
+        seguroAmbientalPoliza: configuracion.seguro_ambiental_empresa?.poliza || '',
+        seguroAmbientalAseguradora: configuracion.seguro_ambiental_empresa?.aseguradora || '',
+        proveedorTimbrado: configuracion.proveedor_timbrado || 'fiscal_api',
+        modoPruebas: configuracion.modo_pruebas !== false,
+      });
+    }
+  }, [configuracion]);
+
+  const handleGuardar = async () => {
+    try {
+      await guardarConfiguracion({
+        seguro_resp_civil_empresa: {
+          poliza: formData.seguroRespCivilPoliza,
+          aseguradora: formData.seguroRespCivilAseguradora
+        },
+        seguro_carga_empresa: {
+          poliza: formData.seguroCargaPoliza,
+          aseguradora: formData.seguroCargaAseguradora
+        },
+        seguro_ambiental_empresa: {
+          poliza: formData.seguroAmbientalPoliza,
+          aseguradora: formData.seguroAmbientalAseguradora
+        },
+        proveedor_timbrado: formData.proveedorTimbrado,
+        modo_pruebas: formData.modoPruebas,
+      });
+    } catch (error) {
+      console.error('Error guardando configuración:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Configuración de Seguros */}
@@ -22,25 +77,64 @@ export function ConfiguracionOperativaForm() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Seguro de Responsabilidad Civil</Label>
-              <Input placeholder="Número de póliza" />
+              <Label>Seguro de Responsabilidad Civil *</Label>
+              <Input 
+                placeholder="Número de póliza" 
+                value={formData.seguroRespCivilPoliza}
+                onChange={(e) => setFormData({ ...formData, seguroRespCivilPoliza: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
-              <Label>Aseguradora</Label>
-              <Input placeholder="Nombre de la aseguradora" />
+              <Label>Aseguradora *</Label>
+              <Input 
+                placeholder="Nombre de la aseguradora" 
+                value={formData.seguroRespCivilAseguradora}
+                onChange={(e) => setFormData({ ...formData, seguroRespCivilAseguradora: e.target.value })}
+              />
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Seguro de Carga</Label>
-              <Input placeholder="Número de póliza" />
+              <Input 
+                placeholder="Número de póliza" 
+                value={formData.seguroCargaPoliza}
+                onChange={(e) => setFormData({ ...formData, seguroCargaPoliza: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Aseguradora</Label>
-              <Input placeholder="Nombre de la aseguradora" />
+              <Input 
+                placeholder="Nombre de la aseguradora" 
+                value={formData.seguroCargaAseguradora}
+                onChange={(e) => setFormData({ ...formData, seguroCargaAseguradora: e.target.value })}
+              />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Seguro Ambiental</Label>
+              <Input 
+                placeholder="Número de póliza" 
+                value={formData.seguroAmbientalPoliza}
+                onChange={(e) => setFormData({ ...formData, seguroAmbientalPoliza: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Aseguradora</Label>
+              <Input 
+                placeholder="Nombre de la aseguradora" 
+                value={formData.seguroAmbientalAseguradora}
+                onChange={(e) => setFormData({ ...formData, seguroAmbientalAseguradora: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            * El seguro de responsabilidad civil es obligatorio para Carta Porte SAT 3.1
+          </p>
         </CardContent>
       </Card>
 
@@ -56,19 +150,26 @@ export function ConfiguracionOperativaForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Proveedor de Timbrado</Label>
-              <Select defaultValue="interno">
+              <Select 
+                value={formData.proveedorTimbrado}
+                onValueChange={(value) => setFormData({ ...formData, proveedorTimbrado: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="interno">PAC Interno</SelectItem>
+                  <SelectItem value="fiscal_api">FISCAL API</SelectItem>
                   <SelectItem value="external">PAC Externo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="flex items-center space-x-2">
-              <Switch id="modo-pruebas" defaultChecked />
+              <Switch 
+                id="modo-pruebas" 
+                checked={formData.modoPruebas}
+                onCheckedChange={(checked) => setFormData({ ...formData, modoPruebas: checked })}
+              />
               <Label htmlFor="modo-pruebas">Modo de Pruebas</Label>
             </div>
           </div>
@@ -84,8 +185,8 @@ export function ConfiguracionOperativaForm() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-center py-8 text-gray-500">
-            <Settings className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <div className="text-center py-8 text-muted-foreground">
+            <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p>Configuraciones operativas adicionales en desarrollo</p>
             <p className="text-sm">Próximamente: permisos SCT, configuraciones avanzadas</p>
           </div>
@@ -94,9 +195,22 @@ export function ConfiguracionOperativaForm() {
 
       {/* Botón de Guardar */}
       <div className="flex justify-end">
-        <Button className="flex items-center gap-2">
-          <Save className="h-4 w-4" />
-          Guardar Configuración
+        <Button 
+          className="flex items-center gap-2"
+          onClick={handleGuardar}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Guardando...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Guardar Configuración
+            </>
+          )}
         </Button>
       </div>
     </div>

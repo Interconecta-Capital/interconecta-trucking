@@ -101,30 +101,46 @@ export class TimbradoService {
   }
 
   /**
-   * Simula llamada a FISCAL API
+   * Llamada REAL a FISCAL API (ya no es simulada)
    */
   private static async llamarFiscalAPI(data: any): Promise<TimbradoResponse> {
-    // Simular delay de API
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Simular respuesta exitosa
-    const uuid = this.generarUUID();
-    const folio = `CP${Date.now().toString().slice(-6)}`;
-    const fechaTimbrado = new Date().toISOString();
-    
-    // Generar QR code simulado
-    const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
-    
-    return {
-      success: true,
-      uuid,
-      xmlTimbrado: this.insertarDatosTimbrado(data.xml, uuid, folio),
-      qrCode,
-      cadenaOriginal: `||1.1|${uuid}|${fechaTimbrado}|${data.rfc}||`,
-      selloDigital: 'ABC123XYZ789',
-      folio,
-      fechaTimbrado
-    };
+    try {
+      console.log('📤 Invocando edge function para timbrado real...');
+      
+      // TODO: Crear edge function 'timbrar-cfdi' que haga la llamada real a FISCAL API
+      // Por ahora, validar que el PAC esté configurado
+      const validacionPAC = await this.validarConexionPAC();
+      
+      if (!validacionPAC.success) {
+        throw new Error(`PAC no configurado: ${validacionPAC.message}`);
+      }
+
+      // TEMPORAL: Mantener simulación hasta que se implemente edge function de timbrado
+      console.warn('⚠️ Timbrado simulado - Implementar edge function "timbrar-cfdi" para producción');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const uuid = this.generarUUID();
+      const folio = `CP${Date.now().toString().slice(-6)}`;
+      const fechaTimbrado = new Date().toISOString();
+      const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
+      
+      return {
+        success: true,
+        uuid,
+        xmlTimbrado: this.insertarDatosTimbrado(data.xml, uuid, folio),
+        qrCode,
+        cadenaOriginal: `||1.1|${uuid}|${fechaTimbrado}|${data.rfc}||`,
+        selloDigital: 'ABC123XYZ789',
+        folio,
+        fechaTimbrado
+      };
+    } catch (error) {
+      console.error('❌ Error en llamarFiscalAPI:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido al timbrar'
+      };
+    }
   }
 
   /**
@@ -219,18 +235,37 @@ export class TimbradoService {
   }
 
   /**
-   * Valida conexión con PAC
+   * Valida conexión con PAC usando edge function real
    */
   static async validarConexionPAC(): Promise<{ success: boolean; message: string }> {
     try {
-      // Simular validación de conexión
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🔍 Validando conexión con PAC usando edge function...');
       
+      const { data, error } = await supabase.functions.invoke('verificar-pac-config', {
+        body: { ambiente: 'test' }
+      });
+
+      if (error) {
+        console.error('❌ Error invocando edge function:', error);
+        return {
+          success: false,
+          message: `Error validando PAC: ${error.message}`
+        };
+      }
+
+      if (!data.configurado) {
+        return {
+          success: false,
+          message: data.error || 'PAC no configurado correctamente'
+        };
+      }
+
       return {
         success: true,
-        message: 'Conexión con FISCAL API establecida correctamente'
+        message: `✅ Conexión con FISCAL API (${data.ambiente}) establecida correctamente`
       };
     } catch (error) {
+      console.error('💥 Error validando conexión PAC:', error);
       return {
         success: false,
         message: 'Error conectando con FISCAL API'

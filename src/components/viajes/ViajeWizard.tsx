@@ -26,6 +26,7 @@ import { ViajeWizardValidacionesEnhanced } from './wizard/ViajeWizardValidacione
 import { AdaptiveFlowProvider, FlowModeSelector } from './wizard/AdaptiveFlowManager';
 import { ValidationProvider } from '@/contexts/ValidationProvider';
 import { useOnboarding } from '@/contexts/OnboardingProvider';
+import { ValidacionPreViajeDialog } from './ValidacionPreViajeDialog';
 
 export interface ViajeWizardData {
   // Paso A: Misión
@@ -141,6 +142,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [showBorradorOptions, setShowBorradorOptions] = useState(false);
+  const [showValidacionPreViaje, setShowValidacionPreViaje] = useState(false);
 
   // Cargar borrador existente al inicializar
   useEffect(() => {
@@ -306,13 +308,21 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     requestClose: handleRequestClose
   }));
 
-  // Finalizar viaje (convertir borrador o crear nuevo)
+  // Finalizar viaje (convertir borrador o crear nuevo) - CON VALIDACIÓN PRE-VIAJE
   const handleConfirmarViaje = async () => {
     // Prevenir múltiples ejecuciones
     if (isGeneratingDocuments || isCreatingViaje || viajeConfirmado || isConvertingDraft) {
       console.log('🚫 Proceso ya en curso, ignorando clic adicional');
       return;
     }
+
+    // MOSTRAR DIÁLOGO DE VALIDACIÓN PRE-VIAJE
+    console.log('🔍 Iniciando validación pre-viaje...');
+    setShowValidacionPreViaje(true);
+  };
+
+  // Proceder con la creación después de validación exitosa
+  const handleProcederConCreacion = async () => {
 
     try {
       setIsGeneratingDocuments(true);
@@ -710,6 +720,14 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Diálogo de Validación Pre-Viaje */}
+        <ValidacionPreViajeDialog
+          open={showValidacionPreViaje}
+          onOpenChange={setShowValidacionPreViaje}
+          onConfirm={handleProcederConCreacion}
+          onCancel={() => setShowValidacionPreViaje(false)}
+        />
 
       </ValidationProvider>
     </AdaptiveFlowProvider>
