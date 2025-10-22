@@ -31,7 +31,7 @@ export function StableGoogleMap({
     loadingMessage: 'Iniciando Google Maps...'
   });
 
-  // Check if container is ready usando ResizeObserver (mejor performance)
+  // Check if container is ready
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -58,16 +58,10 @@ export function StableGoogleMap({
       }
     }, 2000);
 
-    // Usar ResizeObserver para detectar cambios de tamaño sin forced reflows
     if ('ResizeObserver' in window) {
       const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
-          // Las dimensiones ya están disponibles en contentRect
-          const { width, height } = entry.contentRect;
-          
-          if (entry.target === mapRef.current && width > 0 && height > 0) {
-            console.log('✅ Map container is ready via ResizeObserver');
-            setMapState(prev => ({ ...prev, containerReady: true }));
+          if (entry.target === mapRef.current && checkContainer()) {
             resizeObserver.disconnect();
             clearTimeout(timeout);
           }
@@ -102,20 +96,11 @@ export function StableGoogleMap({
 
         const container = mapRef.current;
         
-        // Batch de lecturas
-        const hasWidth = container && container.offsetWidth > 0;
-        const hasHeight = container && container.offsetHeight > 0;
-        
-        // Batch de escrituras en requestAnimationFrame
-        if (!hasWidth || !hasHeight) {
+        if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
           console.warn('⚠️ Map container not ready yet, forcing dimensions');
-          requestAnimationFrame(() => {
-            if (container) {
-              container.style.width = '100%';
-              container.style.height = '100%';
-              container.style.minHeight = '400px';
-            }
-          });
+          container!.style.width = '100%';
+          container!.style.height = '100%';
+          container!.style.minHeight = '400px';
         }
 
         const defaultCenter = { lat: 19.4326, lng: -99.1332 };

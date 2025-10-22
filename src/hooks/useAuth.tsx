@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { useUnifiedAuth } from './useUnifiedAuth';
 import { useAuthState } from './auth/useAuthState';
 import { useAuthActions } from './auth/useAuthActions';
@@ -55,23 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Usar useMemo para evitar re-renders innecesarios del contexto
-  const contextValue = React.useMemo(() => ({
-    user, 
-    session,
-    loading, 
-    initialized,
-    hasAccess,
-    signOut,
-    signIn,
-    signUp,
-    signInWithGoogle,
-    resendConfirmation,
-    updateProfile
-  }), [user, session, loading, initialized, signIn, signUp, signInWithGoogle, resendConfirmation, updateProfile]);
-
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session,
+      loading, 
+      initialized,
+      hasAccess,
+      signOut,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      resendConfirmation,
+      updateProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );

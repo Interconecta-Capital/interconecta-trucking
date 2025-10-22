@@ -6,41 +6,11 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Interconecta Trucking - El Centro de Comando para tu Logística</title>
-    <!-- DNS prefetch para recursos externos -->
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-    
-    <!-- Preconnect para fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Fuente con font-display swap para mejor FCP -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    
-    <!-- Critical CSS inline para above-the-fold -->
-    <style>
-      body{
-        font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-        background-color:#000;
-        color:#F5F5F7;
-        margin:0;
-        padding:0;
-      }
-      #root{min-height:100vh}
-      .scroll-animation{
-        opacity:0;
-        transform:translateY(30px);
-        transition:opacity .6s ease-out,transform .6s ease-out;
-      }
-      .scroll-animation.visible{
-        opacity:1;
-        transform:translateY(0);
-      }
-      @media(max-width:768px){
-        .scroll-animation{transform:translateY(20px)}
-      }
-    </style>
+    <style>body{font-family:'Inter',sans-serif;background-color:#000;color:#F5F5F7}.scroll-animation{opacity:0;transform:translateY(30px);transition:opacity .6s ease-out,transform .6s ease-out}.scroll-animation.visible{opacity:1;transform:translateY(0)}@media(max-width:768px){.scroll-animation{transform:translateY(20px)}}</style>
   </head>
   <body class="antialiased">
     <div id="root"></div>
