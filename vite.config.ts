@@ -20,9 +20,38 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    target: 'es2015',
+    cssCodeSplit: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        drop_debugger: true,
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : [],
+      },
+      format: {
+        comments: false,
+      },
+    },
     rollupOptions: {
       output: {
-        manualChunks: { pdfjs: ['pdfjs-dist'] },
+        manualChunks: (id) => {
+          if (id.includes('pdfjs-dist')) {
+            return 'pdfjs';
+          }
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'radix-vendor';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            return 'vendor';
+          }
+        },
       },
     },
   },
