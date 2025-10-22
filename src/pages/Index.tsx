@@ -13,29 +13,16 @@ import Footer from "@/components/landing/Footer";
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, initialized } = useAuth();
 
   // Redirigir usuarios autenticados al dashboard
   useEffect(() => {
-    if (!loading && user) {
+    if (initialized && user) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, initialized, navigate]);
 
-  // Mostrar loading mientras verifica autenticación
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Solo mostrar landing page si el usuario NO está autenticado
-  if (user) {
-    return null; // Will redirect via useEffect
-  }
-
+  // Mostrar landing page inmediatamente
   return (
     <div className="min-h-screen bg-black text-white antialiased">
       <Header />

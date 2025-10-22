@@ -246,12 +246,34 @@ export const ViajesAnalytics = () => {
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return;
-    const updateShadow = () => {
-      setShowTabsShadow(
-        el.scrollWidth > el.clientWidth &&
-          el.scrollLeft + el.clientWidth < el.scrollWidth - 1
-      );
+    
+    // Throttle para limitar ejecuciones
+    const throttle = (func: Function, limit: number) => {
+      let inThrottle: boolean;
+      return function(this: any, ...args: any[]) {
+        if (!inThrottle) {
+          func.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => (inThrottle = false), limit);
+        }
+      };
     };
+    
+    const updateShadow = throttle(() => {
+      // Batch de lecturas
+      const scrollWidth = el.scrollWidth;
+      const clientWidth = el.clientWidth;
+      const scrollLeft = el.scrollLeft;
+      
+      // Batch de escrituras en requestAnimationFrame
+      requestAnimationFrame(() => {
+        setShowTabsShadow(
+          scrollWidth > clientWidth &&
+          scrollLeft + clientWidth < scrollWidth - 1
+        );
+      });
+    }, 100);
+    
     updateShadow();
     el.addEventListener('scroll', updateShadow);
     window.addEventListener('resize', updateShadow);

@@ -11,17 +11,50 @@ interface AuthState {
 }
 
 export function useUnifiedAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: null,
-    loading: true,
-    initialized: false
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    // Intentar cargar desde sessionStorage para auth más rápido
+    try {
+      const cachedAuth = sessionStorage.getItem('auth-state');
+      if (cachedAuth) {
+        const parsed = JSON.parse(cachedAuth);
+        // Solo usar cache si es reciente (< 5 minutos)
+        const cacheAge = Date.now() - (parsed.timestamp || 0);
+        if (cacheAge < 5 * 60 * 1000) {
+          console.log('[UnifiedAuth] Using cached auth state');
+          return {
+            user: parsed.user,
+            session: parsed.session,
+            loading: false,
+            initialized: true
+          };
+        }
+      }
+    } catch (error) {
+      console.error('[UnifiedAuth] Error reading cache:', error);
+    }
+    
+    return {
+      user: null,
+      session: null,
+      loading: true,
+      initialized: false
+    };
   });
 
-  // Optimized auth initialization
+  // Optimized auth initialization con timeout
   const initializeAuth = useCallback(async () => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      // Race condition: timeout vs auth check
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth timeout')), 100)
+      );
+      
+      const authPromise = supabase.auth.getSession();
+      
+      const { data: { session }, error } = await Promise.race([
+        authPromise,
+        timeoutPromise
+      ]).catch(() => ({ data: { session: null }, error: null })) as any;
       
       if (error) {
         console.error('[UnifiedAuth] Session error:', error);
@@ -34,12 +67,24 @@ export function useUnifiedAuth() {
         return;
       }
 
-      setAuthState({
+      const newState = {
         user: session?.user ?? null,
         session,
         loading: false,
         initialized: true
-      });
+      };
+      
+      setAuthState(newState);
+      
+      // Guardar en sessionStorage para siguiente carga
+      try {
+        sessionStorage.setItem('auth-state', JSON.stringify({
+          ...newState,
+          timestamp: Date.now()
+        }));
+      } catch (error) {
+        console.error('[UnifiedAuth] Error caching auth:', error);
+      }
 
       console.log('[UnifiedAuth] Session initialized:', session?.user?.id ? 'authenticated' : 'not authenticated');
     } catch (error) {
