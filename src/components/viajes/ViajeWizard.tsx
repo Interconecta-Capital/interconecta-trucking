@@ -27,6 +27,7 @@ import { AdaptiveFlowProvider, FlowModeSelector } from './wizard/AdaptiveFlowMan
 import { ValidationProvider } from '@/contexts/ValidationProvider';
 import { useOnboarding } from '@/contexts/OnboardingProvider';
 import { ValidacionPreViajeDialog } from './ValidacionPreViajeDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ViajeWizardData {
   // Paso A: Misión
@@ -393,6 +394,46 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       );
 
       console.log('✅ Borrador creado exitosamente');
+
+      // 3. Registrar en analisis_viajes para IA predictiva
+      try {
+        console.log('🧠 Registrando análisis IA...');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user && data.origen?.domicilio && data.destino?.domicilio) {
+          const origenStr = `${data.origen.domicilio.municipio}, ${data.origen.domicilio.estado}`;
+          const destinoStr = `${data.destino.domicilio.municipio}, ${data.destino.domicilio.estado}`;
+          
+          // Generar hash de ruta
+          const hashResponse = await fetch('https://api.hashify.net/hash/md5/hex', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: `${origenStr}-${destinoStr}` })
+          }).catch(() => null);
+          
+          const rutaHash = hashResponse 
+            ? (await hashResponse.json()).Digest 
+            : btoa(`${origenStr}-${destinoStr}`).substring(0, 32);
+
+          await supabase.from('analisis_viajes').insert({
+            viaje_id: nuevoViaje.id,
+            ruta_hash: rutaHash,
+            costo_estimado: nuevoViaje.costo_estimado,
+            precio_cobrado: nuevoViaje.precio_cobrado,
+            tiempo_estimado: data.distanciaRecorrida ? Math.round(data.distanciaRecorrida / 60) : null,
+            fecha_viaje: new Date().toISOString().split('T')[0],
+            vehiculo_tipo: data.vehiculo?.tipo_carroceria,
+            cliente_id: data.cliente?.id,
+            user_id: user.id
+          });
+          
+          console.log('✅ Análisis IA registrado para futuras predicciones');
+        }
+      } catch (error) {
+        console.warn('⚠️ No se pudo registrar análisis IA:', error);
+        // No fallar el viaje por esto
+      }
+
       toast.success('Viaje programado correctamente', {
         description: `Se generó el borrador de carta porte. ID: ${resultado.borrador_id}`,
         duration: 8000,
@@ -406,7 +447,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       setInitialSnapshot(JSON.stringify(data));
       setHasUnsavedChanges(false);
 
-      // 3. Redirigir después de un breve delay
+      // 4. Redirigir después de un breve delay
       setTimeout(() => {
         if (onComplete) {
           onComplete();

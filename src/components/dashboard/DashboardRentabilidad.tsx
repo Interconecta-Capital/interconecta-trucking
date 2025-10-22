@@ -17,6 +17,7 @@ import {
 import { useDashboardRentabilidad } from '@/hooks/useDashboardRentabilidad';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { IALearningPanel } from './IALearningPanel';
 import {
   LineChart,
   Line,
@@ -81,6 +82,9 @@ export default function DashboardRentabilidad() {
           </Button>
         </div>
       </div>
+
+      {/* Panel de Aprendizaje IA */}
+      <IALearningPanel />
 
       {/* KPIs Principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

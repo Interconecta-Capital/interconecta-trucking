@@ -62,6 +62,44 @@ export const useViajeActions = () => {
         automatico: false
       });
 
+    // Actualizar analisis_viajes con datos reales para aprendizaje IA
+    try {
+      // Obtener costos reales del viaje
+      const { data: costosData } = await supabase
+        .from('costos_viaje')
+        .select('costo_total_real')
+        .eq('viaje_id', viajeId)
+        .maybeSingle();
+
+      // Calcular tiempo real en horas
+      const tiempoRealHoras = data.fecha_inicio_real && data.fecha_fin_real
+        ? Math.round((new Date(data.fecha_fin_real).getTime() - new Date(data.fecha_inicio_real).getTime()) / (1000 * 60 * 60))
+        : null;
+
+      // Calcular margen real
+      const costoReal = costosData?.costo_total_real || data.costo_estimado;
+      const margenReal = data.precio_cobrado && costoReal 
+        ? ((data.precio_cobrado - costoReal) / data.precio_cobrado) * 100
+        : null;
+
+      // Actualizar registro de análisis
+      await supabase
+        .from('analisis_viajes')
+        .update({
+          costo_real: costoReal,
+          margen_real: margenReal,
+          tiempo_real: tiempoRealHoras,
+          updated_at: new Date().toISOString()
+        })
+        .eq('viaje_id', viajeId);
+
+      console.log('✅ IA actualizada con datos reales del viaje');
+      toast.success('Viaje completado. IA aprendiendo de esta experiencia.');
+    } catch (iaError) {
+      console.warn('⚠️ No se pudo actualizar análisis IA:', iaError);
+      // No fallar la operación principal por esto
+    }
+
     queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
     return data;
   };

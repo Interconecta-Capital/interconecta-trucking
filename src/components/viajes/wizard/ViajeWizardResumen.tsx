@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +14,16 @@ import {
   AlertTriangle,
   Clock,
   DollarSign,
-  Route
+  Route,
+  Brain,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
 import { useCalculadoraCostosProfesional } from '@/hooks/useCalculadoraCostosProfesional';
 import { CostBreakdownCard } from './CostBreakdownCard';
+import { useIAPredictiva } from '@/hooks/useIAPredictiva';
+import { AnalisisIA } from '@/types/iaPredictiva';
 
 interface ViajeWizardResumenProps {
   data: ViajeWizardData;
@@ -27,6 +32,18 @@ interface ViajeWizardResumenProps {
 
 export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const { analizarRuta, loading: iaLoading } = useIAPredictiva();
+  const [analisisIA, setAnalisisIA] = useState<AnalisisIA | null>(null);
+
+  // Ejecutar análisis IA cuando haya origen y destino
+  useEffect(() => {
+    if (data.origen?.domicilio && data.destino?.domicilio) {
+      const origenStr = `${data.origen.domicilio.municipio}, ${data.origen.domicilio.estado}`;
+      const destinoStr = `${data.destino.domicilio.municipio}, ${data.destino.domicilio.estado}`;
+      
+      analizarRuta(origenStr, destinoStr).then(setAnalisisIA);
+    }
+  }, [data.origen, data.destino, analizarRuta]);
 
   const handleConfirm = async () => {
     setIsConfirming(true);
@@ -158,6 +175,91 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
       {/* Análisis Inteligente de Costos - NUEVA SECCIÓN */}
       {costBreakdown && (
         <CostBreakdownCard breakdown={costBreakdown} basicCost={basicCost} />
+      )}
+
+      {/* Análisis Predictivo IA */}
+      {analisisIA && analisisIA.precision.totalViajes > 0 && (
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-900">
+              <Brain className="h-5 w-5 text-purple-600" />
+              Análisis Predictivo IA
+              {iaLoading && (
+                <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin ml-2" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-white/60 p-4 rounded-lg">
+                <label className="text-xs font-medium text-purple-700 uppercase tracking-wide">Precio Óptimo Sugerido</label>
+                <p className="text-3xl font-bold text-purple-900 mt-1">
+                  ${analisisIA.sugerencias.precioOptimo.toLocaleString('es-MX')}
+                </p>
+                <Badge className="mt-2 bg-purple-600 hover:bg-purple-700">
+                  {analisisIA.sugerencias.probabilidadAceptacion}% prob. aceptación
+                </Badge>
+              </div>
+              <div className="bg-white/60 p-4 rounded-lg">
+                <label className="text-xs font-medium text-purple-700 uppercase tracking-wide">Tendencia del Mercado</label>
+                <p className="text-lg font-medium capitalize flex items-center gap-2 mt-2">
+                  {analisisIA.mercado.tendencia === 'subida' && <TrendingUp className="h-6 w-6 text-green-600" />}
+                  {analisisIA.mercado.tendencia === 'bajada' && <TrendingDown className="h-6 w-6 text-red-600" />}
+                  {analisisIA.mercado.tendencia === 'estable' && <span className="text-blue-600">→</span>}
+                  <span className="text-2xl font-bold">{analisisIA.mercado.tendencia}</span>
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Rango: ${analisisIA.mercado.precioMinimo.toLocaleString()} - ${analisisIA.mercado.precioMaximo.toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-white/60 p-4 rounded-lg">
+                <label className="text-xs font-medium text-purple-700 uppercase tracking-wide">Precisión Histórica</label>
+                <p className="text-3xl font-bold text-purple-900 mt-1">
+                  {analisisIA.precision.exactitudCosto.toFixed(1)}%
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Basado en {analisisIA.precision.totalViajes} viajes similares
+                </p>
+                <Badge variant="outline" className="mt-2">
+                  Confianza: {(analisisIA.precision.confianza * 100).toFixed(0)}%
+                </Badge>
+              </div>
+            </div>
+            
+            <Separator className="my-4 bg-purple-200" />
+            
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-purple-900">💡 Recomendaciones IA:</p>
+              <div className="bg-white/60 p-3 rounded-lg space-y-1">
+                {analisisIA.sugerencias.recomendaciones.map((rec, i) => (
+                  <p key={i} className="text-sm text-purple-800 flex items-start gap-2">
+                    <span className="text-purple-600 font-bold">•</span>
+                    {rec}
+                  </p>
+                ))}
+              </div>
+              <p className="text-xs text-purple-700 italic mt-2">
+                {analisisIA.sugerencias.justificacion}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analisisIA && analisisIA.precision.totalViajes === 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <Brain className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">Primera vez en esta ruta</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  No hay datos históricos para esta ruta. La IA aprenderá de este viaje para mejorar futuras predicciones.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Detalles de la misión */}
