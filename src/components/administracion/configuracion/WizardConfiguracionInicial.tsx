@@ -97,7 +97,12 @@ export function WizardConfiguracionInicial({ open, onComplete }: WizardConfigura
 
   return (
     <>
-      <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      // Permitir cerrar solo si el wizard está completado (paso final)
+      if (!newOpen && step === steps.length - 1) {
+        onComplete();
+      }
+    }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">

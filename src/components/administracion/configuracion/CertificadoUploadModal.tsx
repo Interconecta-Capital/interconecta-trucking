@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, AlertTriangle } from 'lucide-react';
-import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { useCertificadosDigitales } from '@/hooks/useCertificadosDigitales';
 
 const certificadoSchema = z.object({
   nombre_certificado: z.string().min(1, 'El nombre del certificado es obligatorio'),
@@ -39,7 +39,7 @@ export function CertificadoUploadModal({ open, onOpenChange }: CertificadoUpload
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const { agregarCertificado } = useConfiguracionEmpresarial();
+  const { subirCertificado } = useCertificadosDigitales();
 
   const form = useForm<CertificadoForm>({
     resolver: zodResolver(certificadoSchema),
@@ -84,15 +84,12 @@ export function CertificadoUploadModal({ open, onOpenChange }: CertificadoUpload
       setIsUploading(true);
       setUploadError(null);
 
-      // Por ahora guardamos los datos básicos
-      // En una implementación completa, aquí subiríamos los archivos al storage
-      await agregarCertificado({
-        ...data,
-        archivo_cer_path: `certificados/${archivoCer.name}`,
-        archivo_key_path: `certificados/${archivoKey.name}`,
-        es_valido: true, // En producción, validar el certificado
-        es_activo: false,
-        validado_sat: false
+      // Subir certificado usando el servicio correcto
+      await subirCertificado({
+        nombreCertificado: data.nombre_certificado,
+        archivoCer,
+        archivoKey,
+        passwordKey: data.password_encriptado
       });
 
       form.reset();

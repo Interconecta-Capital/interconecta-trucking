@@ -3861,7 +3861,7 @@ export type Database = {
       }
       viajes: {
         Row: {
-          carta_porte_id: string
+          carta_porte_id: string | null
           combustible_estimado: number | null
           combustible_real: number | null
           conductor_id: string | null
@@ -3895,7 +3895,7 @@ export type Database = {
           vehiculo_id: string | null
         }
         Insert: {
-          carta_porte_id: string
+          carta_porte_id?: string | null
           combustible_estimado?: number | null
           combustible_real?: number | null
           conductor_id?: string | null
@@ -3929,7 +3929,7 @@ export type Database = {
           vehiculo_id?: string | null
         }
         Update: {
-          carta_porte_id?: string
+          carta_porte_id?: string | null
           combustible_estimado?: number | null
           combustible_real?: number | null
           conductor_id?: string | null
@@ -3963,6 +3963,13 @@ export type Database = {
           vehiculo_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_viajes_carta_porte"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_viajes_conductor"
             columns: ["conductor_id"]

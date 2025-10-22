@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { RFCValidator } from '@/services/validacion/RFCValidator';
 
 export interface ConfiguracionEmpresarial {
   id?: string;
@@ -228,28 +229,9 @@ export const useConfiguracionEmpresarial = () => {
     }
   };
 
-  const agregarCertificado = async (certificado: Partial<CertificadoEmpresarial>) => {
-    try {
-      toast.success('Certificado agregado exitosamente (simulado)');
-      await cargarConfiguracion();
-      
-    } catch (error) {
-      console.error('Error agregando certificado:', error);
-      toast.error('Error al agregar el certificado');
-      throw error;
-    }
-  };
-
-  const activarCertificado = async (certificadoId: string) => {
-    try {
-      toast.success('Certificado activado exitosamente (simulado)');
-      await cargarConfiguracion();
-      
-    } catch (error) {
-      console.error('Error activando certificado:', error);
-      toast.error('Error al activar el certificado');
-    }
-  };
+  // NOTA: Los métodos agregarCertificado y activarCertificado fueron eliminados.
+  // Ahora la gestión de certificados se hace a través del hook useCertificadosDigitales
+  // para evitar duplicación de lógica y mantener una única fuente de verdad.
 
   const validarConfiguracionCompleta = (): boolean => {
     if (!configuracion) return false;
@@ -271,9 +253,9 @@ export const useConfiguracionEmpresarial = () => {
       return false;
     }
 
-    // Validar formato de RFC (12-13 caracteres alfanuméricos)
-    const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
-    if (!rfcRegex.test(configuracion.rfc_emisor)) {
+    // Validar RFC usando servicio centralizado
+    const rfcValidation = RFCValidator.validar(configuracion.rfc_emisor);
+    if (!rfcValidation.valido) {
       return false;
     }
 
@@ -298,15 +280,21 @@ export const useConfiguracionEmpresarial = () => {
   }, []);
 
   return {
+    // Datos
     configuracion,
     certificados,
+    
+    // Estados
     isLoading,
     isSaving,
+    
+    // Métodos
     guardarConfiguracion,
-    agregarCertificado,
-    activarCertificado,
     validarConfiguracionCompleta,
     tieneCertificadoValido,
     recargar: cargarConfiguracion
+    
+    // NOTA: agregarCertificado y activarCertificado fueron eliminados.
+    // Usar useCertificadosDigitales para gestión de certificados.
   };
 };

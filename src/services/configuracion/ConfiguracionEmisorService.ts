@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { RFCValidator } from '@/services/validacion/RFCValidator';
 
 export interface EmisorData {
   rfc: string;
@@ -110,9 +111,10 @@ export class ConfiguracionEmisorService {
     try {
       const emisorData = await this.obtenerDatosEmisor();
 
-      // Validar RFC
-      if (!emisorData.rfc || emisorData.rfc.length < 12) {
-        errors.push('RFC del emisor inválido o faltante');
+      // Validar RFC usando RFCValidator centralizado
+      const rfcValidation = RFCValidator.validar(emisorData.rfc || '');
+      if (!rfcValidation.valido) {
+        errors.push(`RFC del emisor inválido: ${rfcValidation.error}`);
       }
 
       // Validar razón social
