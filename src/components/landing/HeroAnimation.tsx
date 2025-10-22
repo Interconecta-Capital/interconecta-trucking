@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const COLORS = {
   BACKGROUND: "#0D0D0D",
@@ -57,6 +57,9 @@ class Particle {
 
 const HeroAnimation = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -78,9 +81,17 @@ const HeroAnimation = () => {
       canvas.height = rect.height;
     };
 
-    const createParticles = (count: number) => {
+    // Reducir partículas en móvil para mejor rendimiento
+    const getParticleCount = () => {
+      if (window.innerWidth < 768) return 30;
+      if (window.innerWidth < 1024) return 50;
+      return 80;
+    };
+
+    const createParticles = (count?: number) => {
       particles = [];
-      for (let i = 0; i < count; i++) {
+      const particleCount = count ?? getParticleCount();
+      for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle(canvas, ctx));
       }
     };
@@ -353,6 +364,12 @@ const HeroAnimation = () => {
     }
 
     const animate = (timestamp: number) => {
+      // Pausar animación si no es visible o el documento está oculto
+      if (isPaused || !isVisible) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const elapsedTime = timestamp - animationState.startTime;
@@ -390,22 +407,64 @@ const HeroAnimation = () => {
           break;
       }
 
-      requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     const setup = () => {
       resize();
-      createParticles(80);
+      createParticles();
       animationState.startTime = performance.now();
-      requestAnimationFrame(animate);
+      if (isVisible) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      }
     };
 
-    setup();
+    // Solo iniciar si es visible
+    if (isVisible) {
+      setup();
+    }
+
+    // Page Visibility API para pausar cuando no es visible
+    const handleVisibilityChange = () => {
+      setIsPaused(document.hidden);
+    };
+
     window.addEventListener("resize", setup);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
     return () => {
       window.removeEventListener("resize", setup);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, []);
+  }, [isVisible, isPaused]);
+
+  // IntersectionObserver para iniciar animación solo cuando sea visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isVisible) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      observer.observe(canvas);
+    }
+
+    return () => {
+      if (canvas) {
+        observer.unobserve(canvas);
+      }
+    };
+  }, [isVisible]);
 
   return (
     <div className="w-full max-w-2xl mx-auto">

@@ -1,11 +1,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useEffect, useRef } from "react";
-import HeroAnimation from "./HeroAnimation";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
+
+// Lazy load del componente de animación pesada
+const HeroAnimation = lazy(() => import("./HeroAnimation"));
 
 const HeroSection = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,11 +35,11 @@ const HeroSection = () => {
       vy: number;
     }> = [];
     
-    // Ajustar número de partículas según el tamaño de pantalla
+    // Ajustar número de partículas según el tamaño de pantalla (reducido para mejor rendimiento)
     const getParticleCount = () => {
-      if (window.innerWidth < 768) return 30;
-      if (window.innerWidth < 1024) return 60;
-      return 100;
+      if (window.innerWidth < 768) return 20;
+      if (window.innerWidth < 1024) return 40;
+      return 60;
     };
 
     const initParticles = () => {
@@ -55,6 +60,11 @@ const HeroSection = () => {
     initParticles();
 
     const animate = () => {
+      if (isPaused) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'rgba(245, 245, 247, 0.5)';
 
@@ -70,17 +80,59 @@ const HeroSection = () => {
         ctx.fill();
       });
 
-      requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(animate);
     };
-    animate();
+    
+    // Solo iniciar animación si es visible
+    if (isVisible) {
+      animate();
+    }
 
     const handleResize = () => {
       resizeCanvas();
       initParticles();
     };
 
+    // Page Visibility API para pausar cuando no es visible
+    const handleVisibilityChange = () => {
+      setIsPaused(document.hidden);
+    };
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isVisible, isPaused]);
+
+  // IntersectionObserver para iniciar animación solo cuando sea visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      observer.observe(canvas);
+    }
+
+    return () => {
+      if (canvas) {
+        observer.unobserve(canvas);
+      }
+    };
   }, []);
 
   return (
@@ -115,7 +167,11 @@ const HeroSection = () => {
         </div>
 
         <div className="mt-8 sm:mt-12 md:mt-16 lg:mt-20">
-          <HeroAnimation />
+          <Suspense fallback={
+            <div className="w-full max-w-2xl mx-auto aspect-video rounded-xl bg-black/20 animate-pulse" />
+          }>
+            <HeroAnimation />
+          </Suspense>
         </div>
       </div>
     </header>
