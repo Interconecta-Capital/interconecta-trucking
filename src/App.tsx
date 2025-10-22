@@ -12,43 +12,38 @@ import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
 import { FABProvider } from './contexts/FABContext'
 import { GlobalUpgradeModalProvider } from './components/common/GlobalUpgradeModalProvider'
-import { lazy, Suspense } from 'react'
 
-// Páginas públicas (carga inmediata)
+// Páginas públicas
 import Index from "./pages/Index"
 import Auth from "./pages/Auth"
 
-// Páginas protegidas (lazy loading)
-const Dashboard = lazy(() => import("./pages/Dashboard"))
-const DashboardPrincipal = lazy(() => import("./pages/DashboardPrincipal"))
-const DashboardEjecutivo = lazy(() => import("./pages/DashboardEjecutivo"))
-const DashboardOperadores = lazy(() => import("./pages/DashboardOperadores"))
-const CartasPorteUnified = lazy(() => import("./pages/CartasPorteUnified"))
-const CartaPorteEditor = lazy(() => import("./pages/CartaPorteEditor"))
-const Vehiculos = lazy(() => import("./pages/Vehiculos"))
-const Conductores = lazy(() => import("./pages/Conductores"))
-const Socios = lazy(() => import("./pages/Socios"))
-const Viajes = lazy(() => import("./pages/Viajes"))
-const Remolques = lazy(() => import("./pages/Remolques"))
-const Administracion = lazy(() => import("./pages/Administracion"))
-const Planes = lazy(() => import("./pages/Planes"))
-const ConfiguracionEmpresa = lazy(() => import("./pages/ConfiguracionEmpresa"))
-const Calendario = lazy(() => import("./pages/Calendario"))
-const ViajeEditar = lazy(() => import("./pages/ViajeEditar"))
-const ViajesAnalytics = lazy(() => import("./pages/ViajesAnalytics"))
-const ReportesAutomaticosPage = lazy(() => import("./pages/ReportesAutomaticosPage"))
-const Cotizaciones = lazy(() => import("./pages/Cotizaciones"))
-const ReportesGenerales = lazy(() => import("./pages/ReportesGenerales"))
-const ViajeWizard = lazy(() => import("./components/viajes/ViajeWizard").then(m => ({ default: m.ViajeWizard })))
-const DashboardHub = lazy(() => import("./components/dashboard/DashboardHub"))
+// Páginas protegidas
+import Dashboard from "./pages/Dashboard"
+import DashboardPrincipal from "./pages/DashboardPrincipal"
+import DashboardEjecutivo from "./pages/DashboardEjecutivo"
+import DashboardOperadores from "./pages/DashboardOperadores"
+import CartasPorteUnified from "./pages/CartasPorteUnified"
+import CartaPorteEditor from "./pages/CartaPorteEditor"
+import Vehiculos from "./pages/Vehiculos"
+import Conductores from "./pages/Conductores"
+import Socios from "./pages/Socios"
+import Viajes from "./pages/Viajes"
+import Remolques from "./pages/Remolques"
+import Administracion from "./pages/Administracion"
+import Planes from "./pages/Planes"
+import ConfiguracionEmpresa from "./pages/ConfiguracionEmpresa"
+import Calendario from "./pages/Calendario"
+import ViajeEditar from "./pages/ViajeEditar"
+import ViajesAnalytics from "./pages/ViajesAnalytics"
+import ReportesAutomaticosPage from "./pages/ReportesAutomaticosPage"
+import Cotizaciones from "./pages/Cotizaciones"
+import ReportesGenerales from "./pages/ReportesGenerales"
+
+// Nuevos componentes
+import { ViajeWizard } from "./components/viajes/ViajeWizard"
+import DashboardHub from "./components/dashboard/DashboardHub"
 
 const queryClient = new QueryClient()
-
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-)
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -62,7 +57,6 @@ const App = () => (
                 <OnboardingProvider>
                 <OnboardingIntegration />
                 <ViajeWizardModal />
-                <Suspense fallback={<LoadingFallback />}>
                 <Routes>
               {/* Página principal - Landing page para usuarios no autenticados */}
               <Route path="/" element={<Index />} />
@@ -253,7 +247,6 @@ const App = () => (
               {/* Redirección por defecto - a la landing page */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            </Suspense>
           </OnboardingProvider>
         </ViajeWizardModalProvider>
         </FABProvider>
