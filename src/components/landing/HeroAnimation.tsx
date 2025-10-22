@@ -76,16 +76,9 @@ const HeroAnimation = () => {
     };
 
     const resize = () => {
-      // Fase 1: Batch de lecturas (evita forced reflow)
       const rect = canvas.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-      
-      // Fase 2: Batch de escrituras en requestAnimationFrame
-      requestAnimationFrame(() => {
-        canvas.width = width;
-        canvas.height = height;
-      });
+      canvas.width = rect.width;
+      canvas.height = rect.height;
     };
 
     // Reducir partículas en móvil para mejor rendimiento
