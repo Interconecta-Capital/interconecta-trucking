@@ -24,34 +24,24 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // PDF.js separado
+          // 1. PDF.js separate (lazy load - only in carta porte)
           if (id.includes('pdfjs-dist')) {
             return 'pdfjs';
           }
-          // React core separado
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'react-vendor';
+          
+          // 2. React + Router together (critical - load first)
+          if (id.includes('node_modules/react') || 
+              id.includes('node_modules/react-dom') ||
+              id.includes('react-router')) {
+            return 'react-core';
           }
-          // React Router separado
-          if (id.includes('react-router')) {
-            return 'router';
-          }
-          // Supabase separado (lazy load)
-          if (id.includes('@supabase')) {
-            return 'supabase';
-          }
-          // Radix UI (lazy load)
-          if (id.includes('@radix-ui')) {
-            return 'radix';
-          }
-          // Chart libraries (lazy load)
-          if (id.includes('recharts') || id.includes('d3')) {
-            return 'charts';
-          }
-          // Resto de node_modules
+          
+          // 3. All other node_modules
           if (id.includes('node_modules')) {
             return 'vendor';
           }
+          
+          // App code stays in main bundle
         },
       },
     },

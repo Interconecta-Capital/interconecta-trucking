@@ -24,10 +24,7 @@
       /* Instant splash screen with meaningful content */
       #splash-screen {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
         background: linear-gradient(135deg, #000 0%, #0a0a0a 100%);
         display: flex;
         flex-direction: column;
@@ -70,111 +67,6 @@
       #root {
         min-height: 100vh;
       }
-      
-      /* Critical design tokens */
-      :root {
-        --primary: #007AFF;
-        --background: #000000;
-        --foreground: #F5F5F7;
-      }
-      .apple-gradient-text {
-        background: -webkit-linear-gradient(45deg, #A7B3C1, #F5F5F7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-      .btn-primary {
-        background-color: #0071e3;
-        color: white;
-        transition: all 0.3s ease;
-      }
-      .btn-primary:hover {
-        background-color: #0077ed;
-        transform: translateY(-1px);
-        box-shadow: 0 10px 25px rgba(0, 113, 227, 0.3);
-      }
-      .btn-secondary {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: #F5F5F7;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-      }
-      .btn-secondary:hover {
-        background-color: rgba(255, 255, 255, 0.15);
-        transform: translateY(-1px);
-        box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
-      }
-      .feature-card {
-        background: linear-gradient(145deg, #1c1c1e, #111113);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-      }
-      .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        border-color: rgba(255, 255, 255, 0.2);
-      }
-      .glass-nav {
-        background: rgba(18, 18, 18, 0.7);
-        backdrop-filter: saturate(180%) blur(20px);
-        -webkit-backdrop-filter: saturate(180%) blur(20px);
-      }
-      .scroll-animation {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-      }
-      .scroll-animation.visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      
-      /* Responsive animations */
-      @media (max-width: 768px) {
-        .scroll-animation {
-          transform: translateY(20px);
-        }
-      }
-      
-      /* Enhanced hover effects */
-      .hover-lift {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .hover-lift:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-      }
-      
-      /* Pulse animation for highlights */
-      .pulse-glow {
-        animation: pulse-glow 2s ease-in-out infinite alternate;
-      }
-      
-      @keyframes pulse-glow {
-        from {
-          box-shadow: 0 0 20px rgba(0, 113, 227, 0.4);
-        }
-        to {
-          box-shadow: 0 0 30px rgba(0, 113, 227, 0.8);
-        }
-      }
-
-      /* Fade in animation */
-      .animate-fade-in {
-        animation: fadeIn 0.5s ease-in-out;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
     </style>
   </head>
   <body class="antialiased">
@@ -189,33 +81,22 @@
     <!-- Load main script -->
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Hide splash when React mounts -->
+    <!-- Hide splash when React is ready -->
     <script>
-      (function() {
-        var rootObserver = new MutationObserver(function(mutations) {
-          var root = document.getElementById('root');
-          if (root && root.children.length > 0) {
-            var splash = document.getElementById('splash-screen');
-            if (splash) {
-              splash.classList.add('fade-out');
-              setTimeout(function() {
-                splash.style.display = 'none';
-              }, 300);
-            }
-            rootObserver.disconnect();
-          }
-        });
-        rootObserver.observe(document.getElementById('root'), { childList: true, subtree: true });
-        
-        // Fallback timeout
-        setTimeout(function() {
-          var splash = document.getElementById('splash-screen');
-          if (splash) {
-            splash.classList.add('fade-out');
-            setTimeout(function() { splash.style.display = 'none'; }, 300);
-          }
-        }, 5000);
-      })();
+      window.addEventListener('app-ready', function() {
+        var splash = document.getElementById('splash-screen');
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(function() {
+            splash.style.display = 'none';
+          }, 300);
+        }
+      });
+      
+      // Fallback timeout in case app-ready never fires
+      setTimeout(function() {
+        window.dispatchEvent(new Event('app-ready'));
+      }, 8000);
     </script>
     
     <script defer>
