@@ -2,9 +2,21 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// CORS Configuration: Restricted to allowed origins
+const allowedOrigins = [
+  'https://interconecta-trucking.lovable.app',
+  'https://trucking.interconecta.capital',
+  'http://localhost:5173', // Local development
+  Deno.env.get('ALLOWED_ORIGIN') || '' // Additional origin from env
+].filter(Boolean);
+
+const getCorsHeaders = (origin: string | null) => {
+  const isAllowed = origin && allowedOrigins.includes(origin);
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true'
+  };
 };
 
 interface TimbradoRequest {
@@ -14,6 +26,9 @@ interface TimbradoRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
