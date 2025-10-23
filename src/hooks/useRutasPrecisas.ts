@@ -34,8 +34,16 @@ export const useRutasPrecisas = () => {
    * Geocodificar una dirección con alta precisión
    */
   const geocodificarDireccion = useCallback(async (direccion: string): Promise<UbicacionPrecisa | null> => {
+    console.log('🔍 Iniciando geocodificación de:', direccion);
+    
+    // Validar formato mínimo de dirección
+    if (!direccion || direccion.trim().length < 10) {
+      toast.error('La dirección es demasiado corta. Incluye calle, número, ciudad y código postal');
+      return null;
+    }
+    
     try {
-      console.log('🔍 Iniciando geocodificación para:', direccion);
+      console.log('📡 Llamando al edge function para geocodificar...');
       
       // Llamar al Edge Function para geocodificación precisa
       const { data, error } = await supabase.functions.invoke('google-directions', {
@@ -50,25 +58,47 @@ export const useRutasPrecisas = () => {
       // Si hay error de red o función
       if (error) {
         console.error('❌ Error de invocación de función:', error);
+        
+        // Proporcionar mensaje específico según el error
+        if (error.message?.includes('API key')) {
+          toast.error('Error de configuración: Google Maps API no está configurada correctamente');
+        } else if (error.message?.includes('timeout')) {
+          toast.error('Timeout: Intenta nuevamente en unos segundos');
+        } else {
+          toast.error('Error al geocodificar: ' + error.message);
+        }
+        
         throw new Error(`Error de conexión: ${error.message}`);
       }
 
       // Verificar si tenemos data
       if (!data) {
         console.error('❌ No se recibió respuesta de la función');
+        toast.error('No se recibió respuesta del servicio. Verifica tu conexión');
         throw new Error('No se recibió respuesta del servicio de geocodificación');
       }
 
       // Verificar success flag
       if (!data.success) {
         const errorMsg = data.error || 'Error desconocido en geocodificación';
-        console.error('❌ Error específico de geocodificación:', errorMsg);
+        console.error('❌ Error específico de geocodificación:', errorMsg, 'Status:', data.google_status);
+        
+        // Mensajes específicos según el estado de Google Maps
+        if (data?.google_status === 'ZERO_RESULTS') {
+          toast.error('No se encontró la dirección. Intenta ser más específico (incluye ciudad, estado, CP)');
+        } else if (data?.google_status === 'INVALID_REQUEST') {
+          toast.error('Dirección inválida. Formato sugerido: Calle Número, Colonia, Ciudad, CP');
+        } else {
+          toast.error(errorMsg);
+        }
+        
         throw new Error(errorMsg);
       }
 
       // Verificar que tenemos resultados
       if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
         console.error('❌ No se encontraron resultados para:', direccion);
+        toast.error('No se encontraron resultados. Verifica la dirección');
         throw new Error('No se encontraron resultados para la dirección proporcionada');
       }
 
@@ -78,6 +108,7 @@ export const useRutasPrecisas = () => {
       // Verificar estructura del resultado
       if (!resultado.geometry || !resultado.geometry.location) {
         console.error('❌ Estructura de resultado inválida:', resultado);
+        toast.error('Respuesta inválida del servicio');
         throw new Error('Respuesta de geocodificación con formato inválido');
       }
 
@@ -117,11 +148,22 @@ export const useRutasPrecisas = () => {
       };
 
       console.log('✅ Geocodificación exitosa:', ubicacionPrecisa);
+      
+      // Feedback positivo al usuario
+      if (precision === 'alta') {
+        toast.success('✓ Dirección validada con alta precisión');
+      } else if (precision === 'media') {
+        toast.success('✓ Dirección validada (precisión media)');
+      } else {
+        toast.warning('⚠️ Dirección validada pero con baja precisión. Considera agregar más detalles');
+      }
+      
       return ubicacionPrecisa;
 
     } catch (error) {
       console.error('💥 Error completo en geocodificación:', error);
       console.error('📍 Dirección que falló:', direccion);
+      // Los toasts ya se mostraron arriba, solo registrar el error
       return null;
     }
   }, []);

@@ -22,13 +22,23 @@ interface SATSuggestion {
   especieProtegida?: boolean;
 }
 
-// Diccionario mejorado de productos SAT
+// Diccionario expandido de productos SAT (más productos comunes)
 const SAT_PRODUCTS_DICTIONARY: Record<string, SATSuggestion> = {
   // Construcción y materiales
   'varilla': {
     claveBienesTransp: '72142000',
     categoria: 'Barras de hierro o acero sin alear',
     confidence: 0.95
+  },
+  'acero': {
+    claveBienesTransp: '72071200',
+    categoria: 'Productos laminados planos de hierro o acero',
+    confidence: 0.9
+  },
+  'block': {
+    claveBienesTransp: '69100000',
+    categoria: 'Bloques de construcción de cerámica',
+    confidence: 0.9
   },
   'concreto': {
     claveBienesTransp: '68159100',
@@ -117,6 +127,53 @@ const SAT_PRODUCTS_DICTIONARY: Record<string, SATSuggestion> = {
     claveBienesTransp: '40111000',
     categoria: 'Neumáticos nuevos de caucho',
     confidence: 0.9
+  },
+  
+  // Productos agrícolas adicionales
+  'aguacate': {
+    claveBienesTransp: '08044000',
+    categoria: 'Aguacates frescos o secos',
+    fraccionArancelaria: '08044000',
+    confidence: 0.95
+  },
+  'limón': {
+    claveBienesTransp: '08055000',
+    categoria: 'Limones y limas, frescos o secos',
+    confidence: 0.95
+  },
+  'trigo': {
+    claveBienesTransp: '10011000',
+    categoria: 'Trigo',
+    confidence: 0.95
+  },
+  'arroz': {
+    claveBienesTransp: '10061000',
+    categoria: 'Arroz',
+    confidence: 0.95
+  },
+  
+  // Productos químicos adicionales
+  'plástico': {
+    claveBienesTransp: '39012000',
+    categoria: 'Polietileno con densidad superior o igual a 0.94',
+    confidence: 0.85
+  },
+  'pintura': {
+    claveBienesTransp: '32091000',
+    categoria: 'Pinturas y barnices a base de polímeros acrílicos',
+    confidence: 0.85
+  },
+  
+  // Materiales de construcción adicionales
+  'grava': {
+    claveBienesTransp: '25171000',
+    categoria: 'Cantos, grava, piedras trituradas',
+    confidence: 0.9
+  },
+  'arena': {
+    claveBienesTransp: '25051000',
+    categoria: 'Arenas silíceas y arenas cuarzosas',
+    confidence: 0.9
   }
 };
 
@@ -137,19 +194,23 @@ export function SATKeyDetector({ descripcionMercancia, onSuggestionApply, showAp
     setIsAnalyzing(true);
     
     try {
-      // Paso 1: Búsqueda en diccionario local (rápido)
+      // Paso 1: Búsqueda en diccionario local (rápido) - SIN IA
+      console.log('🔍 Buscando en catálogo SAT local...');
       const localSuggestion = findInDictionary(descripcion);
       
       if (localSuggestion && localSuggestion.confidence > 0.8) {
+        console.log('✅ Clave SAT encontrada en catálogo local');
         setSuggestion(localSuggestion);
         setIsAnalyzing(false);
         return;
       }
 
-      // Paso 2: Análisis con IA (más preciso pero más lento)
+      // Paso 2: Solo si no hay alta confianza, usar IA (más preciso pero más lento)
+      console.log('🤖 Consultando IA para mejorar descripción...');
       const improvedDescription = await improveDescription(descripcion);
       
       if (improvedDescription) {
+        console.log('✅ IA mejoró la descripción');
         // Buscar nuevamente con la descripción mejorada
         const enhancedSuggestion = findInDictionary(improvedDescription) || localSuggestion;
         
@@ -160,6 +221,7 @@ export function SATKeyDetector({ descripcionMercancia, onSuggestionApply, showAp
           });
         }
       } else if (localSuggestion) {
+        console.log('ℹ️ Usando resultado del catálogo local');
         setSuggestion(localSuggestion);
       }
       
@@ -168,6 +230,7 @@ export function SATKeyDetector({ descripcionMercancia, onSuggestionApply, showAp
       // Fallback al diccionario local
       const localSuggestion = findInDictionary(descripcion);
       if (localSuggestion) {
+        console.log('⚠️ Error en IA, usando catálogo local como fallback');
         setSuggestion(localSuggestion);
       }
     }
@@ -222,14 +285,14 @@ export function SATKeyDetector({ descripcionMercancia, onSuggestionApply, showAp
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-5 w-5 text-blue-600" />
           <span className="font-medium text-blue-900">
-            {isAnalyzing ? 'Analizando producto...' : 'Clave SAT Detectada'}
+            {isAnalyzing ? '🔍 Buscando Clave SAT' : '✓ Clave SAT Encontrada'}
           </span>
         </div>
 
         {isAnalyzing ? (
           <div className="flex items-center gap-2 text-blue-700">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            <span className="text-sm">Identificando clave SAT correcta...</span>
+            <span className="text-sm">Buscando en catálogo SAT y consultando IA...</span>
           </div>
         ) : suggestion && (
           <div className="space-y-3">

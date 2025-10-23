@@ -335,11 +335,14 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             <Label htmlFor="origen">Dirección de origen</Label>
             <Input
               id="origen"
-              placeholder="Ej: Av. Insurgentes Sur 123, CDMX"
+              placeholder="Ej: Av. Insurgentes Sur 123, Col. Del Valle, CDMX, 03100"
               value={origenDireccion}
               onChange={(e) => setOrigenDireccion(e.target.value)}
               className="mt-2"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              💡 Incluye: Calle, Número, Colonia, Ciudad, Código Postal para mejor precisión
+            </p>
             {data.origen?.precision && (
               <div className="mt-1 text-xs text-gray-600">
                 Precisión: {data.origen.precision} • CP: {data.origen.codigoPostal}
@@ -392,11 +395,14 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             <Label htmlFor="destino">Dirección de destino</Label>
             <Input
               id="destino"
-              placeholder="Ej: Av. López Mateos 456, Guadalajara"
+              placeholder="Ej: Av. López Mateos 456, Col. Americana, Guadalajara, 44160"
               value={destinoDireccion}
               onChange={(e) => setDestinoDireccion(e.target.value)}
               className="mt-2"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              💡 Incluye: Calle, Número, Colonia, Ciudad, Código Postal para mejor precisión
+            </p>
             {data.destino?.precision && (
               <div className="mt-1 text-xs text-gray-600">
                 Precisión: {data.destino.precision} • CP: {data.destino.codigoPostal}

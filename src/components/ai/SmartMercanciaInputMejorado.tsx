@@ -51,15 +51,14 @@ export function SmartMercanciaInputMejorado({
     // Detectar patrones básicos sin IA para casos simples
     const basicPatterns = {
       peso: inputValue.match(/(\d+)\s*(ton|toneladas|kg|kilogramos)/i),
-      producto: inputValue.toLowerCase(),
     };
 
-    console.log('🤖 Generando sugerencias IA para:', inputValue.substring(0, 50) + '...');
+    console.log('🔍 Analizando texto (búsqueda local):', inputValue.substring(0, 50) + '...');
     setIsGeneratingSuggestions(true);
     setLastProcessedValue(inputValue);
 
     try {
-      // Simular análisis inteligente básico (sin llamadas externas por ahora)
+      // Análisis básico local (NO hardcodear productos específicos)
       const newSuggestions = [];
 
       // Análisis de peso
@@ -75,18 +74,11 @@ export function SmartMercanciaInputMejorado({
         });
       }
 
-      // Análisis de producto básico
-      if (basicPatterns.producto.includes('sandia') || basicPatterns.producto.includes('sandía')) {
-        newSuggestions.push({
-          tipo: 'clave_producto',
-          valor: '10121800',
-          texto: 'Frutas y verduras frescas',
-          aplicado: false
-        });
-      }
+      // NO más detección hardcodeada de productos específicos
+      // Eso lo maneja SATKeyDetector con su diccionario mejorado
 
       setSuggestions(newSuggestions);
-      console.log('✅ Sugerencias IA generadas:', newSuggestions.length);
+      console.log('✅ Análisis local completado:', newSuggestions.length, 'sugerencias');
 
     } catch (error) {
       console.error('❌ Error generando sugerencias:', error);
@@ -102,9 +94,10 @@ export function SmartMercanciaInputMejorado({
     }
 
     if (value && value.length >= 10 && value !== lastProcessedValue) {
+      // Incrementar debounce a 1200ms para evitar llamadas excesivas
       debounceRef.current = setTimeout(() => {
         generateSuggestions(value);
-      }, 1500);
+      }, 1200);
     }
 
     return () => {
@@ -150,9 +143,12 @@ export function SmartMercanciaInputMejorado({
         />
         
         {/* Indicador de IA */}
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
           {isGeneratingSuggestions ? (
-            <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+              <span className="text-xs text-blue-600">Analizando...</span>
+            </>
           ) : suggestions.length > 0 ? (
             <Sparkles className="h-4 w-4 text-purple-500" />
           ) : showValidation && isValid ? (
@@ -177,8 +173,11 @@ export function SmartMercanciaInputMejorado({
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="h-4 w-4 text-purple-600" />
               <span className="text-sm font-medium text-purple-800">
-                Sugerencias Inteligentes
+                Sugerencias de Análisis de Texto
               </span>
+              <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700">
+                Búsqueda Local
+              </Badge>
             </div>
             
             <div className="space-y-2">
@@ -210,12 +209,8 @@ export function SmartMercanciaInputMejorado({
         </Card>
       )}
 
-      {/* Clave de Producto SAT */}
-      {showClaveProducto && value && (
-        <div className="text-sm text-gray-600 bg-white p-2 rounded-md">
-          <strong>Sugerencia de clave SAT:</strong> Se detectó producto agrícola - Considerar clave 10121800 para frutas y verduras frescas
-        </div>
-      )}
+      {/* Nota: No mostrar sugerencia hardcodeada de clave SAT */}
+      {/* SATKeyDetector se encarga de eso con su diccionario completo */}
     </div>
   );
 }
