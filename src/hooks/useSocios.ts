@@ -67,6 +67,28 @@ export const useSocios = () => {
       if (checkError) throw checkError;
       
       if (existingSocios && existingSocios.length > 0) {
+        // Crear notificación de RFC duplicado
+        try {
+          await supabase
+            .from('notificaciones')
+            .insert({
+              user_id: user.id,
+              tipo: 'error',
+              titulo: 'RFC duplicado detectado',
+              mensaje: `Ya existe un socio registrado con el RFC: ${data.rfc}. No puedes crear duplicados.`,
+              urgente: false,
+              metadata: {
+                link: '/socios',
+                entityType: 'socio',
+                actionRequired: true,
+                icon: 'AlertTriangle',
+                rfc: data.rfc
+              }
+            });
+        } catch (notifError) {
+          console.warn('Error creando notificación de RFC duplicado:', notifError);
+        }
+        
         throw new Error('Ya existe un socio con este RFC');
       }
 

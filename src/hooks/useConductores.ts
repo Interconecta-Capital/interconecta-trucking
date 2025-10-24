@@ -72,7 +72,57 @@ export const useConductores = () => {
         const hoy = new Date();
         
         if (fechaVigencia < hoy) {
+          // Crear notificación de licencia vencida
+          try {
+            await supabase
+              .from('notificaciones')
+              .insert({
+                user_id: user.id,
+                tipo: 'error',
+                titulo: 'Licencia de conductor vencida',
+                mensaje: `No puedes registrar al conductor "${data.nombre}" porque su licencia está vencida desde el ${fechaVigencia.toLocaleDateString('es-MX')}. Solicita renovación.`,
+                urgente: true,
+                metadata: {
+                  link: '/conductores',
+                  entityType: 'licencia',
+                  actionRequired: true,
+                  icon: 'AlertTriangle',
+                  conductorNombre: data.nombre,
+                  numLicencia: data.num_licencia
+                }
+              });
+          } catch (notifError) {
+            console.warn('Error creando notificación de licencia vencida:', notifError);
+          }
+          
           throw new Error('La licencia de conducir está vencida');
+        }
+
+        // Advertencia si la licencia vence pronto (dentro de 30 días)
+        const diasRestantes = Math.ceil((fechaVigencia.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+        if (diasRestantes <= 30 && diasRestantes > 0) {
+          try {
+            await supabase
+              .from('notificaciones')
+              .insert({
+                user_id: user.id,
+                tipo: 'warning',
+                titulo: 'Licencia de conductor próxima a vencer',
+                mensaje: `La licencia del conductor "${data.nombre}" vencerá en ${diasRestantes} días (${fechaVigencia.toLocaleDateString('es-MX')}). Planifica su renovación.`,
+                urgente: diasRestantes <= 7,
+                metadata: {
+                  link: '/conductores',
+                  entityType: 'licencia',
+                  actionRequired: true,
+                  icon: 'Clock',
+                  conductorNombre: data.nombre,
+                  numLicencia: data.num_licencia,
+                  diasRestantes
+                }
+              });
+          } catch (notifError) {
+            console.warn('Error creando notificación de licencia próxima a vencer:', notifError);
+          }
         }
       }
 

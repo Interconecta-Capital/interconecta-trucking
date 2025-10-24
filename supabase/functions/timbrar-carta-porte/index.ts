@@ -378,6 +378,32 @@ const handler = async (req: Request): Promise<Response> => {
       // No fallar el timbrado por error de log
     }
 
+    // Crear notificación de timbrado exitoso
+    try {
+      await supabase
+        .from('notificaciones')
+        .insert({
+          user_id: user.id,
+          tipo: 'success',
+          titulo: 'Carta Porte timbrada exitosamente',
+          mensaje: `Tu documento ha sido timbrado correctamente. UUID: ${uuid.substring(0, 8)}...`,
+          urgente: false,
+          metadata: {
+            link: '/cartas-porte',
+            entityType: 'carta_porte',
+            entityId: cartaPorteId,
+            uuid: uuid,
+            folio: folio_fiscal,
+            ambiente: ambiente,
+            icon: 'CheckCircle'
+          }
+        });
+      console.log('📬 Notificación de timbrado exitoso creada');
+    } catch (notifError) {
+      console.warn('⚠️ Error creando notificación de éxito:', notifError);
+      // No fallar el timbrado por error de notificación
+    }
+
     // Generar respuesta estandarizada
     const timbradoResponse = {
       success: true,
@@ -404,7 +430,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error('💥 Error interno en timbrado:', error);
     
-    // Registrar intento fallido
+    // Registrar intento fallido y crear notificación
     try {
       const authHeader = req.headers.get('authorization');
       if (authHeader) {
@@ -412,7 +438,10 @@ const handler = async (req: Request): Promise<Response> => {
         const { data: { user } } = await createClient(supabaseUrl, supabaseKey).auth.getUser(token);
         
         if (user) {
-          await createClient(supabaseUrl, supabaseKey)
+          const supabaseClient = createClient(supabaseUrl, supabaseKey);
+          
+          // Log del error
+          await supabaseClient
             .from('timbrados_log')
             .insert({
               user_id: user.id,
@@ -422,10 +451,29 @@ const handler = async (req: Request): Promise<Response> => {
               error_mensaje: error instanceof Error ? error.message : 'Error desconocido',
               pac: 'FISCAL_API'
             });
+
+          // Notificación de error urgente
+          await supabaseClient
+            .from('notificaciones')
+            .insert({
+              user_id: user.id,
+              tipo: 'error',
+              titulo: 'Error al timbrar Carta Porte',
+              mensaje: `No se pudo completar el timbrado: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+              urgente: true,
+              metadata: {
+                link: '/cartas-porte',
+                actionRequired: true,
+                icon: 'AlertTriangle',
+                error: error instanceof Error ? error.message : 'Error desconocido'
+              }
+            });
+          
+          console.log('📬 Notificación de error de timbrado creada');
         }
       }
     } catch (logError) {
-      console.warn('⚠️ Error registrando log de error:', logError);
+      console.warn('⚠️ Error registrando log/notificación de error:', logError);
     }
 
     return new Response(

@@ -92,6 +92,28 @@ export const useVehiculos = () => {
         if (checkError) throw checkError;
         
         if (existingVehiculos && existingVehiculos.length > 0) {
+          // Crear notificación de placa duplicada
+          try {
+            await supabase
+              .from('notificaciones')
+              .insert({
+                user_id: user.id,
+                tipo: 'error',
+                titulo: 'Placa duplicada detectada',
+                mensaje: `Ya existe un vehículo registrado con la placa: ${data.placa}. No puedes crear duplicados.`,
+                urgente: false,
+                metadata: {
+                  link: '/vehiculos',
+                  entityType: 'vehiculo',
+                  actionRequired: true,
+                  icon: 'AlertTriangle',
+                  placa: data.placa
+                }
+              });
+          } catch (notifError) {
+            console.warn('Error creando notificación de placa duplicada:', notifError);
+          }
+          
           throw new Error('Ya existe un vehículo con esta placa');
         }
       }
