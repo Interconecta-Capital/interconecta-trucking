@@ -409,6 +409,7 @@ export type Database = {
       cartas_porte: {
         Row: {
           borrador_origen_id: string | null
+          cancelable: string | null
           conductor_principal_id: string | null
           created_at: string | null
           datos_formulario: Json | null
@@ -417,10 +418,13 @@ export type Database = {
           domicilio_fiscal_receptor: Json | null
           entrada_salida_merc: string | null
           es_plantilla: boolean | null
+          estatus_cancelacion: string | null
+          fecha_cancelacion: string | null
           fecha_timbrado: string | null
           folio: string | null
           id: string
           id_ccp: string | null
+          motivo_cancelacion: string | null
           nombre_documento: string | null
           nombre_emisor: string | null
           nombre_receptor: string | null
@@ -453,6 +457,7 @@ export type Database = {
         }
         Insert: {
           borrador_origen_id?: string | null
+          cancelable?: string | null
           conductor_principal_id?: string | null
           created_at?: string | null
           datos_formulario?: Json | null
@@ -461,10 +466,13 @@ export type Database = {
           domicilio_fiscal_receptor?: Json | null
           entrada_salida_merc?: string | null
           es_plantilla?: boolean | null
+          estatus_cancelacion?: string | null
+          fecha_cancelacion?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
           id?: string
           id_ccp?: string | null
+          motivo_cancelacion?: string | null
           nombre_documento?: string | null
           nombre_emisor?: string | null
           nombre_receptor?: string | null
@@ -497,6 +505,7 @@ export type Database = {
         }
         Update: {
           borrador_origen_id?: string | null
+          cancelable?: string | null
           conductor_principal_id?: string | null
           created_at?: string | null
           datos_formulario?: Json | null
@@ -505,10 +514,13 @@ export type Database = {
           domicilio_fiscal_receptor?: Json | null
           entrada_salida_merc?: string | null
           es_plantilla?: boolean | null
+          estatus_cancelacion?: string | null
+          fecha_cancelacion?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
           id?: string
           id_ccp?: string | null
+          motivo_cancelacion?: string | null
           nombre_documento?: string | null
           nombre_emisor?: string | null
           nombre_receptor?: string | null
@@ -3057,7 +3069,7 @@ export type Database = {
           event_data: Json | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -3066,7 +3078,7 @@ export type Database = {
           event_data?: Json | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -3075,7 +3087,7 @@ export type Database = {
           event_data?: Json | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -3161,6 +3173,74 @@ export type Database = {
           viajes_activos?: number | null
         }
         Relationships: []
+      }
+      solicitudes_cancelacion_cfdi: {
+        Row: {
+          acuse_cancelacion: string | null
+          carta_porte_id: string | null
+          codigo_respuesta: string | null
+          created_at: string | null
+          estado: string
+          fecha_procesamiento: string | null
+          fecha_solicitud: string | null
+          folio_sustitucion: string | null
+          id: string
+          mensaje_error: string | null
+          motivo_cancelacion: string
+          requiere_aceptacion: boolean | null
+          rfc_emisor: string
+          rfc_receptor: string | null
+          updated_at: string | null
+          user_id: string
+          uuid_cfdi: string
+        }
+        Insert: {
+          acuse_cancelacion?: string | null
+          carta_porte_id?: string | null
+          codigo_respuesta?: string | null
+          created_at?: string | null
+          estado?: string
+          fecha_procesamiento?: string | null
+          fecha_solicitud?: string | null
+          folio_sustitucion?: string | null
+          id?: string
+          mensaje_error?: string | null
+          motivo_cancelacion: string
+          requiere_aceptacion?: boolean | null
+          rfc_emisor: string
+          rfc_receptor?: string | null
+          updated_at?: string | null
+          user_id: string
+          uuid_cfdi: string
+        }
+        Update: {
+          acuse_cancelacion?: string | null
+          carta_porte_id?: string | null
+          codigo_respuesta?: string | null
+          created_at?: string | null
+          estado?: string
+          fecha_procesamiento?: string | null
+          fecha_solicitud?: string | null
+          folio_sustitucion?: string | null
+          id?: string
+          mensaje_error?: string | null
+          motivo_cancelacion?: string
+          requiere_aceptacion?: boolean | null
+          rfc_emisor?: string
+          rfc_receptor?: string | null
+          updated_at?: string | null
+          user_id?: string
+          uuid_cfdi?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_cancelacion_cfdi_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suscripciones: {
         Row: {
@@ -4026,10 +4106,7 @@ export type Database = {
           total_cotizaciones: number
         }[]
       }
-      assign_missing_trials: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      assign_missing_trials: { Args: never; Returns: undefined }
       buscar_codigo_postal: {
         Args: { cp_input: string }
         Returns: {
@@ -4084,10 +4161,7 @@ export type Database = {
           total_viajes: number
         }[]
       }
-      check_document_expiration: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_document_expiration: { Args: never; Returns: undefined }
       check_maintenance_alerts: {
         Args: { p_user_id: string }
         Returns: {
@@ -4109,34 +4183,16 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_subscription_expiry: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_superuser_safe_v2: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
-      check_user_access: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
-      cleanup_expired_grace_users: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_subscription_expiry: { Args: never; Returns: undefined }
+      check_superuser_safe_v2: { Args: { user_uuid: string }; Returns: boolean }
+      check_user_access: { Args: { user_uuid: string }; Returns: boolean }
+      cleanup_expired_grace_users: { Args: never; Returns: undefined }
+      cleanup_old_notifications: { Args: never; Returns: undefined }
       generar_hash_ruta: {
         Args: { destino: string; origen: string }
         Returns: string
       }
-      generar_id_ccp_unico: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generar_id_ccp_unico: { Args: never; Returns: string }
       get_active_certificate: {
         Args: { user_uuid: string }
         Returns: {
@@ -4151,10 +4207,7 @@ export type Database = {
           rfc_titular: string
         }[]
       }
-      get_current_user_tenant_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_tenant_id: { Args: never; Returns: string }
       get_documentos_procesados: {
         Args: { user_uuid: string }
         Returns: {
@@ -4180,34 +4233,13 @@ export type Database = {
           gb_utilizados: number
         }[]
       }
-      get_user_tenant_id: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
-      has_role: {
-        Args: { _role: string; _user_id: string }
-        Returns: boolean
-      }
-      is_admin_or_superuser: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_superuser_optimized: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_superuser_secure: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      is_superuser_simple: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
+      get_user_tenant_id: { Args: { user_uuid: string }; Returns: string }
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_admin_or_superuser: { Args: { _user_id: string }; Returns: boolean }
+      is_admin_user: { Args: never; Returns: boolean }
+      is_superuser_optimized: { Args: never; Returns: boolean }
+      is_superuser_secure: { Args: { _user_id: string }; Returns: boolean }
+      is_superuser_simple: { Args: { user_uuid: string }; Returns: boolean }
       log_security_event: {
         Args: {
           p_event_data?: Json
@@ -4218,18 +4250,9 @@ export type Database = {
         }
         Returns: string
       }
-      poblar_datos_viajes_existentes: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      poblar_datos_viajes_existentes_mejorado: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      process_expired_trials: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      poblar_datos_viajes_existentes: { Args: never; Returns: string }
+      poblar_datos_viajes_existentes_mejorado: { Args: never; Returns: string }
+      process_expired_trials: { Args: never; Returns: undefined }
       promote_user_to_superuser: {
         Args: { target_user_id: string }
         Returns: Json
@@ -4238,18 +4261,9 @@ export type Database = {
         Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined
       }
-      restore_rls_policies_from_backup: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      run_automated_tasks: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      send_cleanup_warnings: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      restore_rls_policies_from_backup: { Args: never; Returns: string }
+      run_automated_tasks: { Args: never; Returns: undefined }
+      send_cleanup_warnings: { Args: never; Returns: undefined }
       sugerir_codigos_similares: {
         Args: { cp_input: string }
         Returns: {
@@ -4269,10 +4283,7 @@ export type Database = {
         Args: { carta_porte_data: Json }
         Returns: Json
       }
-      validate_rfc_format: {
-        Args: { rfc_input: string }
-        Returns: boolean
-      }
+      validate_rfc_format: { Args: { rfc_input: string }; Returns: boolean }
       verificar_disponibilidad_recurso: {
         Args: {
           p_entidad_id: string
