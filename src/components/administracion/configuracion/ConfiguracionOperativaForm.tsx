@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Save, Settings, Shield, Cloud, Loader2 } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 import { toast } from 'sonner';
 
@@ -42,30 +43,57 @@ export function ConfiguracionOperativaForm() {
   }, [configuracion]);
 
   const handleGuardar = async () => {
+    console.log('💾 [ConfiguracionOperativaForm] Guardando seguros...');
     try {
+      // Validar que seguros opcionales no se guarden vacíos
+      const seguroRespCivil = formData.seguroRespCivilPoliza.trim() || formData.seguroRespCivilAseguradora.trim()
+        ? {
+            poliza: formData.seguroRespCivilPoliza.trim(),
+            aseguradora: formData.seguroRespCivilAseguradora.trim()
+          }
+        : null;
+        
+      const seguroCarga = formData.seguroCargaPoliza.trim() || formData.seguroCargaAseguradora.trim()
+        ? {
+            poliza: formData.seguroCargaPoliza.trim(),
+            aseguradora: formData.seguroCargaAseguradora.trim()
+          }
+        : null;
+        
+      const seguroAmbiental = formData.seguroAmbientalPoliza.trim() || formData.seguroAmbientalAseguradora.trim()
+        ? {
+            poliza: formData.seguroAmbientalPoliza.trim(),
+            aseguradora: formData.seguroAmbientalAseguradora.trim()
+          }
+        : null;
+      
       await guardarConfiguracion({
-        seguro_resp_civil_empresa: {
-          poliza: formData.seguroRespCivilPoliza,
-          aseguradora: formData.seguroRespCivilAseguradora
-        },
-        seguro_carga_empresa: {
-          poliza: formData.seguroCargaPoliza,
-          aseguradora: formData.seguroCargaAseguradora
-        },
-        seguro_ambiental_empresa: {
-          poliza: formData.seguroAmbientalPoliza,
-          aseguradora: formData.seguroAmbientalAseguradora
-        },
+        seguro_resp_civil_empresa: seguroRespCivil,
+        seguro_carga_empresa: seguroCarga,
+        seguro_ambiental_empresa: seguroAmbiental,
         proveedor_timbrado: formData.proveedorTimbrado,
         modo_pruebas: formData.modoPruebas,
       });
+      
+      console.log('✅ [ConfiguracionOperativaForm] Seguros guardados exitosamente');
     } catch (error) {
-      console.error('Error guardando configuración:', error);
+      console.error('❌ [ConfiguracionOperativaForm] Error guardando configuración:', error);
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Advertencia Legal sobre Validación de Seguros */}
+      <Alert variant="default" className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+        <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <AlertTitle className="text-amber-900 dark:text-amber-100">Validación de Seguros</AlertTitle>
+        <AlertDescription className="text-amber-800 dark:text-amber-200">
+          El sistema NO valida si las pólizas son reales o vigentes. 
+          Usted es responsable de proporcionar información verídica y vigente. 
+          El uso de datos falsos puede resultar en sanciones del SAT.
+        </AlertDescription>
+      </Alert>
+      
       {/* Configuración de Seguros */}
       <Card>
         <CardHeader>

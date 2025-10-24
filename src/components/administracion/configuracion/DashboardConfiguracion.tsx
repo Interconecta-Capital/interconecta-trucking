@@ -36,34 +36,54 @@ export function DashboardConfiguracion() {
     );
   }
 
-  // Calcular completitud de configuración
+  // Calcular completitud de configuración (6 campos obligatorios)
   const calcularCompletitud = () => {
     let puntos = 0;
-    const total = 6; // ✅ Solo 6 campos obligatorios (sin seguro de carga)
+    const total = 6;
 
-    // Campos básicos
-    if (configuracion?.rfc_emisor) puntos++;
-    if (configuracion?.razon_social) puntos++;
-    if (configuracion?.regimen_fiscal) puntos++;
+    // 1. RFC del emisor
+    if (configuracion?.rfc_emisor?.trim()) puntos++;
     
-    // ✅ Domicilio fiscal completo desde los campos planos
-    if (configuracion?.codigo_postal && 
-        configuracion?.calle && 
-        configuracion?.colonia && 
-        configuracion?.municipio && 
-        configuracion?.estado) {
+    // 2. Razón social
+    if (configuracion?.razon_social?.trim()) puntos++;
+    
+    // 3. Régimen fiscal
+    if (configuracion?.regimen_fiscal?.trim()) puntos++;
+    
+    // 4. Domicilio fiscal completo (todos los campos requeridos)
+    if (configuracion?.codigo_postal?.trim() && 
+        configuracion?.calle?.trim() && 
+        configuracion?.colonia?.trim() && 
+        configuracion?.municipio?.trim() && 
+        configuracion?.estado?.trim()) {
       puntos++;
     }
     
-    // ✅ Seguro de responsabilidad civil COMPLETO (póliza + aseguradora)
+    // 5. Seguro de responsabilidad civil COMPLETO (póliza + aseguradora)
     const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
-    if (seguroRespCivil?.poliza && seguroRespCivil?.aseguradora) {
+    if (seguroRespCivil?.poliza?.trim() && seguroRespCivil?.aseguradora?.trim()) {
       puntos++;
     }
     
-    // Proveedor de timbrado
-    if (configuracion?.proveedor_timbrado) puntos++;
-
+    // 6. Proveedor de timbrado
+    if (configuracion?.proveedor_timbrado?.trim()) puntos++;
+    
+    console.log('📊 [DashboardConfiguracion] Completitud:', {
+      total,
+      puntos,
+      porcentaje: Math.round((puntos / total) * 100),
+      desglose: {
+        rfc: !!configuracion?.rfc_emisor?.trim(),
+        razon_social: !!configuracion?.razon_social?.trim(),
+        regimen_fiscal: !!configuracion?.regimen_fiscal?.trim(),
+        domicilio: !!(configuracion?.codigo_postal?.trim() && configuracion?.calle?.trim() && 
+                      configuracion?.colonia?.trim() && configuracion?.municipio?.trim() && 
+                      configuracion?.estado?.trim()),
+        seguro_rc: !!(seguroRespCivil?.poliza?.trim() && seguroRespCivil?.aseguradora?.trim()),
+        proveedor_timbrado: !!configuracion?.proveedor_timbrado?.trim()
+      }
+    });
+    
     return Math.round((puntos / total) * 100);
   };
 
@@ -97,23 +117,21 @@ export function DashboardConfiguracion() {
   if (!certificadoActivo) warnings.push('Sin certificado digital activo');
   if (!configuracion?.proveedor_timbrado) warnings.push('Proveedor de timbrado no configurado');
   
-  // ✅ Validar seguro de resp. civil COMPLETO (obligatorio)
+  // Validar seguro de responsabilidad civil (OBLIGATORIO)
   const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
-  if (!seguroRespCivil?.poliza) {
-    warnings.push('Póliza de Responsabilidad Civil no configurada (obligatorio)');
-  } else if (!seguroRespCivil?.aseguradora) {
-    warnings.push('Aseguradora de Responsabilidad Civil no configurada (obligatorio)');
+  if (!seguroRespCivil?.poliza?.trim() || !seguroRespCivil?.aseguradora?.trim()) {
+    warnings.push('Seguro de Responsabilidad Civil incompleto: se requiere póliza y aseguradora (obligatorio)');
   }
 
-  // ✅ Seguros opcionales (solo recomendación)
+  // Advertencias para seguros opcionales (recomendados)
   const seguroCarga = configuracion?.seguro_carga_empresa as any;
-  if (!seguroCarga?.poliza) {
-    warnings.push('Seguro de carga no configurado (recomendado)');
+  if (!seguroCarga?.poliza?.trim() || !seguroCarga?.aseguradora?.trim()) {
+    warnings.push('Seguro de carga no configurado o incompleto (recomendado para protección de mercancía)');
   }
-  
+
   const seguroAmbiental = configuracion?.seguro_ambiental_empresa as any;
-  if (!seguroAmbiental?.poliza) {
-    warnings.push('Seguro ambiental no configurado (recomendado)');
+  if (!seguroAmbiental?.poliza?.trim() || !seguroAmbiental?.aseguradora?.trim()) {
+    warnings.push('Seguro ambiental no configurado o incompleto (recomendado para sustancias peligrosas)');
   }
   
   if (certificadosProximosVencer > 0) warnings.push(`${certificadosProximosVencer} certificado(s) próximo(s) a vencer`);

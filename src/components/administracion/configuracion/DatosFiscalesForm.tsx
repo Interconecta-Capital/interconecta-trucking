@@ -94,12 +94,15 @@ export function DatosFiscalesForm() {
   }, [configuracion]);
 
   const onSubmit = async (data: DatosFiscalesForm) => {
+    console.log('📝 [DatosFiscalesForm] Datos del formulario a guardar:', data);
     try {
       await guardarConfiguracion(data);
+      console.log('✅ [DatosFiscalesForm] Guardado exitoso, recargando...');
       await recargar();
+      console.log('✅ [DatosFiscalesForm] Recarga completada');
       setIsEditing(false);
     } catch (error) {
-      console.error('Error al guardar:', error);
+      console.error('❌ [DatosFiscalesForm] Error al guardar:', error);
     }
   };
 
