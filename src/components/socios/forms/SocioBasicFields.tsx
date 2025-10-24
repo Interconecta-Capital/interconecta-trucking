@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building } from 'lucide-react';
+import { RFCValidator } from '@/utils/rfcValidation';
+import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
 
 interface SocioBasicFieldsProps {
   formData: any;
@@ -13,6 +15,33 @@ interface SocioBasicFieldsProps {
 }
 
 export function SocioBasicFields({ formData, onFieldChange, errors }: SocioBasicFieldsProps) {
+  const [rfcValidationStatus, setRfcValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [rfcValidationMessage, setRfcValidationMessage] = useState<string>('');
+
+  useEffect(() => {
+    if (formData.rfc && formData.rfc.length >= 12) {
+      setRfcValidationStatus('validating');
+      const validation = RFCValidator.validarRFC(formData.rfc);
+      setTimeout(() => {
+        if (validation.esValido) {
+          setRfcValidationStatus('valid');
+          setRfcValidationMessage('');
+        } else {
+          setRfcValidationStatus('invalid');
+          setRfcValidationMessage(validation.errores[0] || 'RFC inválido');
+        }
+      }, 300);
+    } else {
+      setRfcValidationStatus('idle');
+      setRfcValidationMessage('');
+    }
+  }, [formData.rfc]);
+
+  const handleRfcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rfc = e.target.value.toUpperCase();
+    onFieldChange('rfc', rfc);
+  };
+
   const tiposPersona = [
     { value: 'fisica', label: 'Persona Física' },
     { value: 'moral', label: 'Persona Moral' }
@@ -45,12 +74,15 @@ export function SocioBasicFields({ formData, onFieldChange, errors }: SocioBasic
             <Input
               id="rfc"
               value={formData.rfc || ''}
-              onChange={(e) => onFieldChange('rfc', e.target.value.toUpperCase())}
-              placeholder="RFC del socio"
+              onChange={handleRfcChange}
+              placeholder="XAXX010101000"
               maxLength={13}
-              className={`uppercase ${errors?.rfc ? 'border-red-500' : ''}`}
+              className="uppercase"
             />
-            {errors?.rfc && <p className="text-sm text-red-500 mt-1">{errors.rfc}</p>}
+            <ValidationIndicator 
+              status={rfcValidationStatus} 
+              message={rfcValidationMessage || errors?.rfc}
+            />
           </div>
 
           <div>

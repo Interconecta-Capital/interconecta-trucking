@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { VehicleValidator } from '@/utils/vehicleValidation';
 
 export interface Vehiculo {
   id: string;
@@ -72,6 +73,54 @@ export const useVehiculos = () => {
   const createMutation = useMutation({
     mutationFn: async (data: Omit<Vehiculo, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
+
+      // Validar placa
+      if (data.placa) {
+        const placaValidation = VehicleValidator.validarPlaca(data.placa);
+        if (!placaValidation.esValido) {
+          throw new Error(placaValidation.errores[0] || 'Placa inválida');
+        }
+
+        // Verificar placa única
+        const { data: existingVehiculos, error: checkError } = await supabase
+          .from('vehiculos')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('placa', data.placa)
+          .eq('activo', true);
+
+        if (checkError) throw checkError;
+        
+        if (existingVehiculos && existingVehiculos.length > 0) {
+          throw new Error('Ya existe un vehículo con esta placa');
+        }
+      }
+
+      // Validar año del modelo
+      if (data.anio) {
+        const anioValidation = VehicleValidator.validarAnioModelo(data.anio);
+        if (!anioValidation.esValido) {
+          throw new Error(anioValidation.errores[0] || 'Año del modelo inválido');
+        }
+      }
+
+      // Validar vigencia del seguro
+      if (data.vigencia_seguro) {
+        const fechaVigencia = new Date(data.vigencia_seguro);
+        const hoy = new Date();
+        
+        if (fechaVigencia < hoy) {
+          throw new Error('La póliza de seguro está vencida');
+        }
+      }
+
+      // Validar permiso SCT
+      if (data.num_permiso_sct) {
+        const permisoValidation = VehicleValidator.validarPermisoSCT(data.num_permiso_sct);
+        if (!permisoValidation.esValido) {
+          throw new Error(permisoValidation.errores[0] || 'Permiso SCT inválido');
+        }
+      }
       
       const { data: result, error } = await supabase
         .from('vehiculos')
@@ -97,6 +146,57 @@ export const useVehiculos = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Vehiculo> }) => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+
+      // Validar placa si se está actualizando
+      if (data.placa) {
+        const placaValidation = VehicleValidator.validarPlaca(data.placa);
+        if (!placaValidation.esValido) {
+          throw new Error(placaValidation.errores[0] || 'Placa inválida');
+        }
+
+        // Verificar placa única (excepto el vehículo actual)
+        const { data: existingVehiculos, error: checkError } = await supabase
+          .from('vehiculos')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('placa', data.placa)
+          .eq('activo', true)
+          .neq('id', id);
+
+        if (checkError) throw checkError;
+        
+        if (existingVehiculos && existingVehiculos.length > 0) {
+          throw new Error('Ya existe otro vehículo con esta placa');
+        }
+      }
+
+      // Validar año del modelo
+      if (data.anio) {
+        const anioValidation = VehicleValidator.validarAnioModelo(data.anio);
+        if (!anioValidation.esValido) {
+          throw new Error(anioValidation.errores[0] || 'Año del modelo inválido');
+        }
+      }
+
+      // Validar vigencia del seguro
+      if (data.vigencia_seguro) {
+        const fechaVigencia = new Date(data.vigencia_seguro);
+        const hoy = new Date();
+        
+        if (fechaVigencia < hoy) {
+          throw new Error('La póliza de seguro está vencida');
+        }
+      }
+
+      // Validar permiso SCT
+      if (data.num_permiso_sct) {
+        const permisoValidation = VehicleValidator.validarPermisoSCT(data.num_permiso_sct);
+        if (!permisoValidation.esValido) {
+          throw new Error(permisoValidation.errores[0] || 'Permiso SCT inválido');
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('vehiculos')
         .update(data)

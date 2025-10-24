@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { LicenseValidator } from '@/utils/licenseValidation';
 
 export interface Conductor {
   id: string;
@@ -53,6 +54,28 @@ export const useConductores = () => {
     mutationFn: async (data: Omit<Conductor, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
+      // Validar licencia si se proporciona
+      if (data.num_licencia && data.tipo_licencia) {
+        const licenciaValidation = LicenseValidator.validarLicencia(
+          data.num_licencia,
+          '01' // Tipo figura operador
+        );
+        
+        if (!licenciaValidation.esValida) {
+          throw new Error(licenciaValidation.errores[0] || 'Licencia inválida');
+        }
+      }
+
+      // Validar vigencia de licencia
+      if (data.vigencia_licencia) {
+        const fechaVigencia = new Date(data.vigencia_licencia);
+        const hoy = new Date();
+        
+        if (fechaVigencia < hoy) {
+          throw new Error('La licencia de conducir está vencida');
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('conductores')
         .insert({
@@ -79,6 +102,28 @@ export const useConductores = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Conductor> }) => {
+      // Validar licencia si se está actualizando
+      if (data.num_licencia && data.tipo_licencia) {
+        const licenciaValidation = LicenseValidator.validarLicencia(
+          data.num_licencia,
+          '01' // Tipo figura operador
+        );
+        
+        if (!licenciaValidation.esValida) {
+          throw new Error(licenciaValidation.errores[0] || 'Licencia inválida');
+        }
+      }
+
+      // Validar vigencia de licencia
+      if (data.vigencia_licencia) {
+        const fechaVigencia = new Date(data.vigencia_licencia);
+        const hoy = new Date();
+        
+        if (fechaVigencia < hoy) {
+          throw new Error('La licencia de conducir está vencida');
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('conductores')
         .update(data)

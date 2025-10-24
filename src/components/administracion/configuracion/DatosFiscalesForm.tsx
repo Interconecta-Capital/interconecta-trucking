@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,15 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Save, Building2, MapPin } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 import { CodigoPostalSelector } from '@/components/catalogos/CodigoPostalSelector';
+import { RegimesFiscalesSelector } from '@/components/shared/RegimesFiscalesSelector';
+import { RFCValidator } from '@/utils/rfcValidation';
+import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
 
 const datosFiscalesSchema = z.object({
   razon_social: z.string().min(1, 'La razón social es obligatoria').max(254),
-  rfc_emisor: z.string().min(12, 'RFC debe tener al menos 12 caracteres').max(13),
-  regimen_fiscal: z.string().min(3, 'Seleccione un régimen fiscal válido').max(3),
+  rfc_emisor: z.string()
+    .min(12, 'RFC debe tener al menos 12 caracteres')
+    .max(13)
+    .refine((rfc) => {
+      const validation = RFCValidator.validarRFC(rfc);
+      return validation.esValido;
+    }, 'Formato de RFC inválido'),
+  regimen_fiscal: z.string().min(3, 'Seleccione un régimen fiscal válido'),
   calle: z.string().min(1, 'La calle es obligatoria').max(100),
   numero_exterior: z.string().max(55).optional(),
   numero_interior: z.string().max(55).optional(),
@@ -34,6 +42,7 @@ type DatosFiscalesForm = z.infer<typeof datosFiscalesSchema>;
 
 export function DatosFiscalesForm() {
   const { configuracion, isSaving, guardarConfiguracion } = useConfiguracionEmpresarial();
+  const [rfcValidationStatus, setRfcValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
 
   const form = useForm<DatosFiscalesForm>({
     resolver: zodResolver(datosFiscalesSchema),
@@ -77,6 +86,21 @@ export function DatosFiscalesForm() {
     }
   };
 
+  const handleRfcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rfc = e.target.value.toUpperCase();
+    form.setValue('rfc_emisor', rfc);
+    
+    if (rfc.length >= 12) {
+      setRfcValidationStatus('validating');
+      const validation = RFCValidator.validarRFC(rfc);
+      setTimeout(() => {
+        setRfcValidationStatus(validation.esValido ? 'valid' : 'invalid');
+      }, 300);
+    } else {
+      setRfcValidationStatus('idle');
+    }
+  };
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       {/* Datos de la Empresa */}
@@ -106,30 +130,24 @@ export function DatosFiscalesForm() {
               <Input
                 id="rfc_emisor"
                 {...form.register('rfc_emisor')}
+                onChange={handleRfcChange}
                 placeholder="EEM123456789"
-                style={{ textTransform: 'uppercase' }}
+                className="uppercase"
+                maxLength={13}
               />
-              {form.formState.errors.rfc_emisor && (
-                <p className="text-sm text-red-600">{form.formState.errors.rfc_emisor.message}</p>
-              )}
+              <ValidationIndicator 
+                status={rfcValidationStatus} 
+                message={form.formState.errors.rfc_emisor?.message}
+              />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="regimen_fiscal">Régimen Fiscal *</Label>
-            <Input
-              id="regimen_fiscal"
-              {...form.register('regimen_fiscal')}
-              placeholder="601"
-              maxLength={3}
-            />
-            {form.formState.errors.regimen_fiscal && (
-              <p className="text-sm text-red-600">{form.formState.errors.regimen_fiscal.message}</p>
-            )}
-            <p className="text-xs text-gray-500">
-              Ejemplo: 601 (General de Ley Personas Morales), 612 (Personas Físicas con Actividades Empresariales)
-            </p>
-          </div>
+          <RegimesFiscalesSelector
+            value={form.watch('regimen_fiscal')}
+            onValueChange={(value) => form.setValue('regimen_fiscal', value)}
+            required
+            error={form.formState.errors.regimen_fiscal?.message}
+          />
         </CardContent>
       </Card>
 

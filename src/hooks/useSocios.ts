@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { RFCValidator } from '@/utils/rfcValidation';
 
 export interface Socio {
   id: string;
@@ -47,6 +48,28 @@ export const useSocios = () => {
     mutationFn: async (data: Omit<Socio, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
       
+      // Validar formato de RFC
+      if (data.rfc) {
+        const rfcValidation = RFCValidator.validarRFC(data.rfc);
+        if (!rfcValidation.esValido) {
+          throw new Error(rfcValidation.errores[0] || 'RFC inválido');
+        }
+      }
+
+      // Verificar RFC único
+      const { data: existingSocios, error: checkError } = await supabase
+        .from('socios')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('rfc', data.rfc)
+        .eq('activo', true);
+
+      if (checkError) throw checkError;
+      
+      if (existingSocios && existingSocios.length > 0) {
+        throw new Error('Ya existe un socio con este RFC');
+      }
+
       const { data: result, error } = await supabase
         .from('socios')
         .insert({
@@ -70,6 +93,31 @@ export const useSocios = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Socio> }) => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+
+      // Validar formato de RFC si se está actualizando
+      if (data.rfc) {
+        const rfcValidation = RFCValidator.validarRFC(data.rfc);
+        if (!rfcValidation.esValido) {
+          throw new Error(rfcValidation.errores[0] || 'RFC inválido');
+        }
+
+        // Verificar RFC único (excepto el socio actual)
+        const { data: existingSocios, error: checkError } = await supabase
+          .from('socios')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('rfc', data.rfc)
+          .eq('activo', true)
+          .neq('id', id);
+
+        if (checkError) throw checkError;
+        
+        if (existingSocios && existingSocios.length > 0) {
+          throw new Error('Ya existe otro socio con este RFC');
+        }
+      }
+
       const { data: result, error } = await supabase
         .from('socios')
         .update(data)

@@ -264,6 +264,22 @@ export const useConfiguracionEmpresarial = () => {
       return false;
     }
 
+    // Validar vigencia del seguro
+    if (configuracion.seguro_resp_civil_empresa?.vigencia_poliza) {
+      const fechaVigencia = new Date(configuracion.seguro_resp_civil_empresa.vigencia_poliza);
+      const hoy = new Date();
+      
+      if (fechaVigencia < hoy) {
+        console.warn('El seguro de responsabilidad civil está vencido');
+        return false;
+      }
+    }
+
+    // Validar que tenga certificado digital válido
+    if (!tieneCertificadoValido()) {
+      return false;
+    }
+
     return true;
   };
 
