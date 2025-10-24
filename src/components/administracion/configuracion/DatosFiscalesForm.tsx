@@ -41,34 +41,63 @@ const datosFiscalesSchema = z.object({
 type DatosFiscalesForm = z.infer<typeof datosFiscalesSchema>;
 
 export function DatosFiscalesForm() {
-  const { configuracion, isSaving, guardarConfiguracion } = useConfiguracionEmpresarial();
+  const { configuracion, isSaving, guardarConfiguracion, recargar } = useConfiguracionEmpresarial();
   const [rfcValidationStatus, setRfcValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [isEditing, setIsEditing] = useState(false);
 
   const form = useForm<DatosFiscalesForm>({
     resolver: zodResolver(datosFiscalesSchema),
     defaultValues: {
-      razon_social: configuracion?.razon_social || '',
-      rfc_emisor: configuracion?.rfc_emisor || '',
-      regimen_fiscal: configuracion?.regimen_fiscal || '',
-      calle: configuracion?.calle || '',
-      numero_exterior: configuracion?.numero_exterior || '',
-      numero_interior: configuracion?.numero_interior || '',
-      colonia: configuracion?.colonia || '',
-      localidad: configuracion?.localidad || '',
-      referencia: configuracion?.referencia || '',
-      municipio: configuracion?.municipio || '',
-      estado: configuracion?.estado || '',
-      pais: configuracion?.pais || 'MEX',
-      codigo_postal: configuracion?.codigo_postal || '',
-      serie_carta_porte: configuracion?.serie_carta_porte || 'CP',
-      folio_inicial: configuracion?.folio_inicial || 1
+      razon_social: '',
+      rfc_emisor: '',
+      regimen_fiscal: '',
+      calle: '',
+      numero_exterior: '',
+      numero_interior: '',
+      colonia: '',
+      localidad: '',
+      referencia: '',
+      municipio: '',
+      estado: '',
+      pais: 'MEX',
+      codigo_postal: '',
+      serie_carta_porte: 'CP',
+      folio_inicial: 1
     }
   });
+
+  // Cargar datos cuando la configuración esté disponible
+  React.useEffect(() => {
+    if (configuracion) {
+      form.reset({
+        razon_social: configuracion.razon_social || '',
+        rfc_emisor: configuracion.rfc_emisor || '',
+        regimen_fiscal: configuracion.regimen_fiscal || '',
+        calle: configuracion.calle || '',
+        numero_exterior: configuracion.numero_exterior || '',
+        numero_interior: configuracion.numero_interior || '',
+        colonia: configuracion.colonia || '',
+        localidad: configuracion.localidad || '',
+        referencia: configuracion.referencia || '',
+        municipio: configuracion.municipio || '',
+        estado: configuracion.estado || '',
+        pais: configuracion.pais || 'MEX',
+        codigo_postal: configuracion.codigo_postal || '',
+        serie_carta_porte: configuracion.serie_carta_porte || 'CP',
+        folio_inicial: configuracion.folio_inicial || 1
+      });
+
+      // Determinar si hay datos guardados para mostrar modo "solo lectura"
+      const hasDatos = configuracion.razon_social && configuracion.rfc_emisor && configuracion.regimen_fiscal;
+      setIsEditing(!hasDatos);
+    }
+  }, [configuracion]);
 
   const onSubmit = async (data: DatosFiscalesForm) => {
     try {
       await guardarConfiguracion(data);
-      form.reset(data);
+      await recargar();
+      setIsEditing(false);
     } catch (error) {
       console.error('Error al guardar:', error);
     }
@@ -119,6 +148,7 @@ export function DatosFiscalesForm() {
                 id="razon_social"
                 {...form.register('razon_social')}
                 placeholder="EMPRESA EJEMPLO S.A. DE C.V."
+                disabled={!isEditing}
               />
               {form.formState.errors.razon_social && (
                 <p className="text-sm text-red-600">{form.formState.errors.razon_social.message}</p>
@@ -134,6 +164,7 @@ export function DatosFiscalesForm() {
                 placeholder="EEM123456789"
                 className="uppercase"
                 maxLength={13}
+                disabled={!isEditing}
               />
               <ValidationIndicator 
                 status={rfcValidationStatus} 
@@ -147,6 +178,7 @@ export function DatosFiscalesForm() {
             onValueChange={(value) => form.setValue('regimen_fiscal', value)}
             required
             error={form.formState.errors.regimen_fiscal?.message}
+            disabled={!isEditing}
           />
         </CardContent>
       </Card>
@@ -167,6 +199,7 @@ export function DatosFiscalesForm() {
               value={form.watch('codigo_postal')}
               onValueChange={handleCodigoPostalSelect}
               placeholder="Buscar código postal..."
+              disabled={!isEditing}
             />
             {form.formState.errors.codigo_postal && (
               <p className="text-sm text-red-600">{form.formState.errors.codigo_postal.message}</p>
@@ -201,6 +234,7 @@ export function DatosFiscalesForm() {
               id="colonia"
               {...form.register('colonia')}
               placeholder="Centro"
+              disabled={!isEditing}
             />
             {form.formState.errors.colonia && (
               <p className="text-sm text-red-600">{form.formState.errors.colonia.message}</p>
@@ -213,6 +247,7 @@ export function DatosFiscalesForm() {
               id="calle"
               {...form.register('calle')}
               placeholder="Av. Principal"
+              disabled={!isEditing}
             />
             {form.formState.errors.calle && (
               <p className="text-sm text-red-600">{form.formState.errors.calle.message}</p>
@@ -226,6 +261,7 @@ export function DatosFiscalesForm() {
                 id="numero_exterior"
                 {...form.register('numero_exterior')}
                 placeholder="123"
+                disabled={!isEditing}
               />
             </div>
 
@@ -235,6 +271,7 @@ export function DatosFiscalesForm() {
                 id="numero_interior"
                 {...form.register('numero_interior')}
                 placeholder="A"
+                disabled={!isEditing}
               />
             </div>
 
@@ -244,6 +281,7 @@ export function DatosFiscalesForm() {
                 id="localidad"
                 {...form.register('localidad')}
                 placeholder="Guadalajara"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -254,6 +292,7 @@ export function DatosFiscalesForm() {
               id="referencia"
               {...form.register('referencia')}
               placeholder="Entre calle X y calle Y"
+              disabled={!isEditing}
             />
           </div>
         </CardContent>
@@ -272,6 +311,7 @@ export function DatosFiscalesForm() {
                 id="serie_carta_porte"
                 {...form.register('serie_carta_porte')}
                 placeholder="CP"
+                disabled={!isEditing}
               />
             </div>
 
@@ -282,22 +322,50 @@ export function DatosFiscalesForm() {
                 type="number"
                 {...form.register('folio_inicial', { valueAsNumber: true })}
                 placeholder="1"
+                disabled={!isEditing}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Botón de Guardar */}
-      <div className="flex justify-end">
-        <Button 
-          type="submit" 
-          disabled={isSaving}
-          className="flex items-center gap-2"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? 'Guardando...' : 'Guardar Configuración'}
-        </Button>
+      {/* Botones de Acción */}
+      <div className="flex justify-end gap-3">
+        {!isEditing && (
+          <Button 
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            Editar Información
+          </Button>
+        )}
+        
+        {isEditing && (
+          <>
+            {configuracion?.razon_social && (
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  form.reset();
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button 
+              type="submit" 
+              disabled={isSaving}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isSaving ? 'Guardando...' : 'Guardar Configuración'}
+            </Button>
+          </>
+        )}
       </div>
     </form>
   );

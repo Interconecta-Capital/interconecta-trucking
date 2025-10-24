@@ -133,6 +133,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
   const { 
     configuracion, 
     validarConfiguracionCompleta,
+    tieneCertificadoValido,
     isLoading: isLoadingConfig 
   } = useConfiguracionEmpresarial();
   
@@ -152,21 +153,37 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
   const [showBorradorOptions, setShowBorradorOptions] = useState(false);
   const [showValidacionPreViaje, setShowValidacionPreViaje] = useState(false);
 
-  // Validar configuración empresarial al iniciar
+  // Validar configuración empresarial al iniciar (versión simplificada)
   useEffect(() => {
     const validarConfiguracionInicial = async () => {
       if (isLoadingConfig) return;
+      if (!configuracion) return;
 
-      const esCompleta = validarConfiguracionCompleta();
-      
-      if (!esCompleta) {
+      // Validación básica: campos obligatorios mínimos
+      const camposObligatorios = [
+        configuracion.razon_social,
+        configuracion.rfc_emisor,
+        configuracion.regimen_fiscal,
+        configuracion.calle,
+        configuracion.colonia,
+        configuracion.municipio,
+        configuracion.estado,
+        configuracion.codigo_postal
+      ];
+
+      const faltanCampos = camposObligatorios.some(campo => !campo || campo.trim() === '');
+      const noTieneCertificado = !tieneCertificadoValido();
+
+      if (faltanCampos || noTieneCertificado) {
         toast.error('⚠️ Configuración empresarial incompleta', {
-          description: 'Debes completar tu configuración empresarial antes de crear viajes',
+          description: faltanCampos 
+            ? 'Completa tus datos fiscales en la configuración' 
+            : 'Configura un certificado digital válido',
           duration: 6000,
           action: {
             label: 'Configurar Ahora',
             onClick: () => {
-              navigate('/configuracion/empresa');
+              navigate('/administracion/configuracion');
               if (onCancel) onCancel();
             }
           }
@@ -184,7 +201,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     };
 
     validarConfiguracionInicial();
-  }, [isLoadingConfig, validarConfiguracionCompleta, navigate, onCancel]);
+  }, [isLoadingConfig, configuracion, tieneCertificadoValido, navigate, onCancel]);
 
   // Cargar borrador existente al inicializar
   useEffect(() => {

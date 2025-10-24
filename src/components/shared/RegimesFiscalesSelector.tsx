@@ -9,6 +9,7 @@ interface RegimesFiscalesSelectorProps {
   placeholder?: string;
   required?: boolean;
   error?: string;
+  disabled?: boolean;
 }
 
 export const REGIMENES_FISCALES = [
@@ -42,7 +43,8 @@ export function RegimesFiscalesSelector({
   label = 'Régimen Fiscal',
   placeholder = 'Seleccionar régimen fiscal...',
   required = false,
-  error
+  error,
+  disabled = false
 }: RegimesFiscalesSelectorProps) {
   return (
     <div className="space-y-2">
@@ -50,7 +52,7 @@ export function RegimesFiscalesSelector({
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      <Select value={value || ''} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange} disabled={disabled}>
         <SelectTrigger className={error ? 'border-destructive' : ''}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
