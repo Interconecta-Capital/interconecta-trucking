@@ -1802,6 +1802,54 @@ export type Database = {
         }
         Relationships: []
       }
+      esquemas_xml_sat: {
+        Row: {
+          activo: boolean | null
+          campos_opcionales: Json | null
+          campos_requeridos: Json | null
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          tipo_documento: string
+          tipo_operacion: string | null
+          tipo_transporte: string
+          updated_at: string | null
+          version_carta_porte: string
+          version_cfdi: string
+          xml_ejemplo: string
+        }
+        Insert: {
+          activo?: boolean | null
+          campos_opcionales?: Json | null
+          campos_requeridos?: Json | null
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          tipo_documento: string
+          tipo_operacion?: string | null
+          tipo_transporte: string
+          updated_at?: string | null
+          version_carta_porte?: string
+          version_cfdi?: string
+          xml_ejemplo: string
+        }
+        Update: {
+          activo?: boolean | null
+          campos_opcionales?: Json | null
+          campos_requeridos?: Json | null
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          tipo_documento?: string
+          tipo_operacion?: string | null
+          tipo_transporte?: string
+          updated_at?: string | null
+          version_carta_porte?: string
+          version_cfdi?: string
+          xml_ejemplo?: string
+        }
+        Relationships: []
+      }
       eventos_calendario: {
         Row: {
           carta_porte_id: string | null
@@ -3681,6 +3729,51 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validaciones_xml_log: {
+        Row: {
+          carta_porte_id: string | null
+          created_at: string | null
+          esquema_id: string | null
+          id: string
+          puntaje_conformidad: number | null
+          resultado_validacion: Json | null
+          xml_generado: string | null
+        }
+        Insert: {
+          carta_porte_id?: string | null
+          created_at?: string | null
+          esquema_id?: string | null
+          id?: string
+          puntaje_conformidad?: number | null
+          resultado_validacion?: Json | null
+          xml_generado?: string | null
+        }
+        Update: {
+          carta_porte_id?: string | null
+          created_at?: string | null
+          esquema_id?: string | null
+          id?: string
+          puntaje_conformidad?: number | null
+          resultado_validacion?: Json | null
+          xml_generado?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validaciones_xml_log_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validaciones_xml_log_esquema_id_fkey"
+            columns: ["esquema_id"]
+            isOneToOne: false
+            referencedRelation: "esquemas_xml_sat"
             referencedColumns: ["id"]
           },
         ]
