@@ -39,27 +39,30 @@ export function DashboardConfiguracion() {
   // Calcular completitud de configuración
   const calcularCompletitud = () => {
     let puntos = 0;
-    const total = 8;
+    const total = 6; // ✅ Solo 6 campos obligatorios (sin seguro de carga)
 
+    // Campos básicos
     if (configuracion?.rfc_emisor) puntos++;
     if (configuracion?.razon_social) puntos++;
     if (configuracion?.regimen_fiscal) puntos++;
     
-    // ✅ Validar domicilio completo
-    if (configuracion?.codigo_postal && configuracion?.calle && 
-        configuracion?.colonia && configuracion?.municipio && configuracion?.estado) {
+    // ✅ Domicilio fiscal completo desde los campos planos
+    if (configuracion?.codigo_postal && 
+        configuracion?.calle && 
+        configuracion?.colonia && 
+        configuracion?.municipio && 
+        configuracion?.estado) {
       puntos++;
     }
     
-    // ✅ Validar seguros con estructura completa
+    // ✅ Seguro de responsabilidad civil COMPLETO (póliza + aseguradora)
     const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
-    if (seguroRespCivil?.poliza && seguroRespCivil?.aseguradora) puntos++;
+    if (seguroRespCivil?.poliza && seguroRespCivil?.aseguradora) {
+      puntos++;
+    }
     
-    const seguroCarga = configuracion?.seguro_carga_empresa as any;
-    if (seguroCarga?.poliza && seguroCarga?.aseguradora) puntos++;
-    
+    // Proveedor de timbrado
     if (configuracion?.proveedor_timbrado) puntos++;
-    if (certificadoActivo) puntos++;
 
     return Math.round((puntos / total) * 100);
   };
@@ -94,14 +97,24 @@ export function DashboardConfiguracion() {
   if (!certificadoActivo) warnings.push('Sin certificado digital activo');
   if (!configuracion?.proveedor_timbrado) warnings.push('Proveedor de timbrado no configurado');
   
-  // ✅ Validar estructura completa de seguros
+  // ✅ Validar seguro de resp. civil COMPLETO (obligatorio)
   const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
-  if (!seguroRespCivil?.poliza || !seguroRespCivil?.aseguradora) {
-    warnings.push('Seguro de responsabilidad civil incompleto');
+  if (!seguroRespCivil?.poliza) {
+    warnings.push('Póliza de Responsabilidad Civil no configurada (obligatorio)');
+  } else if (!seguroRespCivil?.aseguradora) {
+    warnings.push('Aseguradora de Responsabilidad Civil no configurada (obligatorio)');
+  }
+
+  // ✅ Seguros opcionales (solo recomendación)
+  const seguroCarga = configuracion?.seguro_carga_empresa as any;
+  if (!seguroCarga?.poliza) {
+    warnings.push('Seguro de carga no configurado (recomendado)');
   }
   
-  const seguroCarga = configuracion?.seguro_carga_empresa as any;
-  if (!seguroCarga?.poliza) warnings.push('Seguro de carga no configurado (recomendado)');
+  const seguroAmbiental = configuracion?.seguro_ambiental_empresa as any;
+  if (!seguroAmbiental?.poliza) {
+    warnings.push('Seguro ambiental no configurado (recomendado)');
+  }
   
   if (certificadosProximosVencer > 0) warnings.push(`${certificadosProximosVencer} certificado(s) próximo(s) a vencer`);
   if (configuracion?.modo_pruebas) warnings.push('Sistema en modo de pruebas');
@@ -142,7 +155,7 @@ export function DashboardConfiguracion() {
               <div className="text-2xl font-bold">{completitud}%</div>
               <Progress value={completitud} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                {completitud === 100 ? 'Configuración completa' : `${8 - Math.round(completitud / 12.5)} campos pendientes`}
+                {completitud === 100 ? 'Configuración completa' : `${6 - Math.round((completitud / 100) * 6)} campos pendientes`}
               </p>
             </div>
           </CardContent>
@@ -222,11 +235,13 @@ export function DashboardConfiguracion() {
           <CardContent>
             <div className="space-y-2">
               <div className="text-2xl font-bold">
-                {completitud < 100 ? '∞' : '0'}
+                {completitud < 100 || !certificadoActivo ? '∞' : '0'}
               </div>
               <p className="text-xs text-muted-foreground">
                 {completitud < 100 
-                  ? 'Complete configuración para crear viajes'
+                  ? 'Complete campos obligatorios para crear viajes'
+                  : !certificadoActivo
+                  ? 'Configure certificado digital para crear viajes'
                   : 'Sin restricciones'
                 }
               </p>

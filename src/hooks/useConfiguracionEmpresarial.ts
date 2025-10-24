@@ -171,38 +171,47 @@ export const useConfiguracionEmpresarial = () => {
         throw new Error('No se puede guardar: usuario no identificado');
       }
 
-      // Construir objeto domicilio_fiscal estructurado
-      const domicilioFiscal = {
-        calle: datos.calle || '',
-        numero_exterior: datos.numero_exterior || '',
-        numero_interior: datos.numero_interior || '',
-        colonia: datos.colonia || '',
-        localidad: datos.localidad || '',
-        municipio: datos.municipio || '',
-        estado: datos.estado || '',
-        pais: datos.pais || 'MEX',
-        codigo_postal: datos.codigo_postal || '',
-        referencia: datos.referencia || ''
+      // ✅ Solo actualizar domicilio si se envían datos de domicilio
+      const actualizarDomicilio = datos.calle !== undefined || datos.codigo_postal !== undefined;
+      let domicilioFiscal = null;
+      
+      if (actualizarDomicilio) {
+        domicilioFiscal = {
+          calle: datos.calle || '',
+          numero_exterior: datos.numero_exterior || '',
+          numero_interior: datos.numero_interior || '',
+          colonia: datos.colonia || '',
+          localidad: datos.localidad || '',
+          municipio: datos.municipio || '',
+          estado: datos.estado || '',
+          pais: datos.pais || 'MEX',
+          codigo_postal: datos.codigo_postal || '',
+          referencia: datos.referencia || ''
+        };
+      }
+
+      // ✅ Construir objeto de actualización solo con campos definidos
+      const updateData: any = {
+        updated_at: new Date().toISOString()
       };
 
-      // Actualizar configuracion_empresa con TODOS los campos
+      if (datos.razon_social !== undefined) updateData.razon_social = datos.razon_social;
+      if (datos.rfc_emisor !== undefined) updateData.rfc_emisor = datos.rfc_emisor?.toUpperCase();
+      if (datos.regimen_fiscal !== undefined) updateData.regimen_fiscal = datos.regimen_fiscal;
+      if (domicilioFiscal) updateData.domicilio_fiscal = domicilioFiscal;
+      if (datos.serie_carta_porte !== undefined) updateData.serie_carta_porte = datos.serie_carta_porte;
+      if (datos.folio_inicial !== undefined) updateData.folio_inicial = datos.folio_inicial;
+      if (datos.seguro_resp_civil_empresa !== undefined) updateData.seguro_resp_civil = datos.seguro_resp_civil_empresa;
+      if (datos.seguro_carga_empresa !== undefined) updateData.seguro_carga = datos.seguro_carga_empresa;
+      if (datos.seguro_ambiental_empresa !== undefined) updateData.seguro_ambiental = datos.seguro_ambiental_empresa;
+      if (datos.permisos_sct_empresa !== undefined) updateData.permisos_sct = datos.permisos_sct_empresa;
+      if (datos.proveedor_timbrado !== undefined) updateData.proveedor_timbrado = datos.proveedor_timbrado;
+      if (datos.modo_pruebas !== undefined) updateData.modo_pruebas = datos.modo_pruebas;
+
+      // Actualizar solo los campos enviados
       const { error } = await supabase
         .from('configuracion_empresa')
-        .update({
-          razon_social: datos.razon_social,
-          rfc_emisor: datos.rfc_emisor?.toUpperCase(),
-          regimen_fiscal: datos.regimen_fiscal,
-          domicilio_fiscal: domicilioFiscal,
-          serie_carta_porte: datos.serie_carta_porte,
-          folio_inicial: datos.folio_inicial,
-          seguro_resp_civil: datos.seguro_resp_civil_empresa,
-          seguro_carga: datos.seguro_carga_empresa,
-          seguro_ambiental: datos.seguro_ambiental_empresa,
-          permisos_sct: datos.permisos_sct_empresa,
-          proveedor_timbrado: datos.proveedor_timbrado,
-          modo_pruebas: datos.modo_pruebas,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('user_id', configuracion.user_id);
 
       if (error) throw error;

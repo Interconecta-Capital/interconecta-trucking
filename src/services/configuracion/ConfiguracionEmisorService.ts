@@ -173,26 +173,41 @@ export class ConfiguracionEmisorService {
       }
 
       // ========== VALIDAR SEGUROS ==========
-      // Seguro de responsabilidad civil (OBLIGATORIO para Carta Porte)
+      // ✅ Seguro de responsabilidad civil (OBLIGATORIO)
+      const segurosErrores: string[] = [];
+      
       if (!emisorData.seguros.responsabilidadCivil?.poliza || 
           emisorData.seguros.responsabilidadCivil.poliza.trim() === '') {
-        segurosErrores.push('Póliza de Responsabilidad Civil no configurada (obligatorio)');
-        errors.push('Póliza de Responsabilidad Civil no configurada (obligatorio para Carta Porte)');
+        segurosErrores.push('Póliza de Responsabilidad Civil vacía (obligatorio)');
+        errors.push('Póliza de Responsabilidad Civil vacía (obligatorio)');
       }
-      
+
       if (!emisorData.seguros.responsabilidadCivil?.aseguradora || 
           emisorData.seguros.responsabilidadCivil.aseguradora.trim() === '') {
-        segurosErrores.push('Aseguradora de Responsabilidad Civil no configurada');
-        errors.push('Aseguradora de Responsabilidad Civil no configurada');
+        segurosErrores.push('Aseguradora de Responsabilidad Civil vacía (obligatorio)');
+        errors.push('Aseguradora de Responsabilidad Civil vacía (obligatorio)');
       }
 
-      // Warnings para otros seguros
+      // ⚠️ Advertencias para seguros opcionales (NO bloquean creación de viajes)
+      const segurosWarnings: string[] = [];
+      
       if (!emisorData.seguros.carga?.poliza || emisorData.seguros.carga.poliza.trim() === '') {
-        warnings.push('Seguro de Carga no configurado (recomendado)');
+        segurosWarnings.push('Seguro de carga no configurado (recomendado)');
+        warnings.push('Seguro de carga no configurado (recomendado)');
+      } else if (!emisorData.seguros.carga?.aseguradora || 
+                 emisorData.seguros.carga.aseguradora.trim() === '') {
+        segurosWarnings.push('Aseguradora de seguro de carga no configurada (recomendado)');
+        warnings.push('Aseguradora de seguro de carga no configurada (recomendado)');
       }
 
-      if (!emisorData.seguros.medioAmbiente?.poliza || emisorData.seguros.medioAmbiente.poliza.trim() === '') {
-        warnings.push('Seguro de Medio Ambiente no configurado (recomendado)');
+      if (!emisorData.seguros.medioAmbiente?.poliza || 
+          emisorData.seguros.medioAmbiente.poliza.trim() === '') {
+        segurosWarnings.push('Seguro ambiental no configurado (recomendado para carga peligrosa)');
+        warnings.push('Seguro ambiental no configurado (recomendado para carga peligrosa)');
+      } else if (!emisorData.seguros.medioAmbiente?.aseguradora || 
+                 emisorData.seguros.medioAmbiente.aseguradora.trim() === '') {
+        segurosWarnings.push('Aseguradora de seguro ambiental no configurada (recomendado)');
+        warnings.push('Aseguradora de seguro ambiental no configurada (recomendado)');
       }
 
       // ========== VALIDAR PERMISOS SCT ==========

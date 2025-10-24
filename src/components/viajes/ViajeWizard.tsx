@@ -183,7 +183,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
           action: {
             label: 'Configurar Ahora',
             onClick: () => {
-              navigate('/administracion/configuracion');
+              navigate('/configuracion/empresa');
               if (onCancel) onCancel();
             }
           }
