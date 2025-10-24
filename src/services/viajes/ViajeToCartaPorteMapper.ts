@@ -292,43 +292,127 @@ export class ViajeToCartaPorteMapper {
   static analyzeCargoDescription(descripcion: string) {
     const desc = descripcion.toLowerCase();
     
-    // Patrones comunes para diferentes tipos de mercancía
+    // Patrones comunes para diferentes tipos de mercancía (AMPLIADO)
     const patterns = {
       textiles: {
-        keywords: ['ropa', 'textil', 'tela', 'prendas', 'algodón', 'poliéster'],
+        keywords: ['ropa', 'textil', 'tela', 'prendas', 'algodón', 'poliéster', 'vestido', 'camisa', 'pantalón'],
         claveProdServ: '53101500', // Textiles
         fraccionArancelaria: '61091000',
         claveUnidad: 'H87', // Pieza
         pesoPromedio: 50
       },
       alimentos: {
-        keywords: ['comida', 'alimento', 'fruta', 'verdura', 'carne', 'lácteos'],
+        keywords: ['comida', 'alimento', 'fruta', 'verdura', 'carne', 'lácteos', 'queso', 'leche', 'pan', 'cereal'],
         claveProdServ: '50101500', // Alimentos
         fraccionArancelaria: '08042000',
         claveUnidad: 'KGM', // Kilogramo
         pesoPromedio: 100
       },
       electronica: {
-        keywords: ['computadora', 'electrónico', 'teléfono', 'tv', 'tablet', 'equipo'],
+        keywords: ['computadora', 'electrónico', 'teléfono', 'tv', 'tablet', 'equipo', 'laptop', 'celular', 'smartphone'],
         claveProdServ: '43211500', // Equipos electrónicos
         fraccionArancelaria: '85171100',
         claveUnidad: 'H87', // Pieza
         pesoPromedio: 25
       },
       construccion: {
-        keywords: ['cemento', 'ladrillo', 'material', 'construcción', 'fierro', 'varilla'],
+        keywords: ['cemento', 'ladrillo', 'material', 'construcción', 'fierro', 'varilla', 'arena', 'grava', 'block'],
         claveProdServ: '30111500', // Materiales construcción
         fraccionArancelaria: '72142000',
         claveUnidad: 'TNE', // Tonelada
         pesoPromedio: 1000
       },
       quimicos: {
-        keywords: ['químico', 'pintura', 'solvente', 'ácido', 'reactivo'],
+        keywords: ['químico', 'pintura', 'solvente', 'ácido', 'reactivo', 'corrosivo', 'tóxico'],
         claveProdServ: '12101600', // Productos químicos
         fraccionArancelaria: '38099100',
         claveUnidad: 'LTR', // Litro
         pesoPromedio: 200,
         materialPeligroso: true
+      },
+      automotriz: {
+        keywords: ['auto', 'automóvil', 'coche', 'refacciones', 'llantas', 'motor', 'transmisión', 'frenos', 'suspensión', 'batería'],
+        claveProdServ: '25101500', // Partes automotrices
+        fraccionArancelaria: '87089900',
+        claveUnidad: 'H87', // Pieza
+        pesoPromedio: 30
+      },
+      farmaceuticos: {
+        keywords: ['medicamento', 'fármaco', 'medicina', 'vacuna', 'antibiótico', 'pastillas', 'jarabe', 'inyección'],
+        claveProdServ: '51101500', // Productos farmacéuticos
+        fraccionArancelaria: '30049000',
+        claveUnidad: 'H87', // Pieza
+        pesoPromedio: 10
+      },
+      maquinaria: {
+        keywords: ['maquinaria', 'equipo industrial', 'herramienta', 'torno', 'prensa', 'compresor', 'generador'],
+        claveProdServ: '21101500', // Maquinaria industrial
+        fraccionArancelaria: '84159000',
+        claveUnidad: 'H87', // Pieza
+        pesoPromedio: 500
+      },
+      bebidas: {
+        keywords: ['bebida', 'refresco', 'agua', 'jugo', 'cerveza', 'vino', 'licor', 'alcohol'],
+        claveProdServ: '50202200', // Bebidas
+        fraccionArancelaria: '22021000',
+        claveUnidad: 'LTR', // Litro
+        pesoPromedio: 150
+      },
+      papel: {
+        keywords: ['papel', 'cartón', 'embalaje', 'caja', 'cuaderno', 'libro', 'revista'],
+        claveProdServ: '14111500', // Productos de papel
+        fraccionArancelaria: '48191000',
+        claveUnidad: 'KGM', // Kilogramo
+        pesoPromedio: 80
+      },
+      plasticos: {
+        keywords: ['plástico', 'pet', 'polietileno', 'pvc', 'resina', 'envase plástico'],
+        claveProdServ: '40101600', // Plásticos
+        fraccionArancelaria: '39201000',
+        claveUnidad: 'KGM', // Kilogramo
+        pesoPromedio: 60
+      },
+      madera: {
+        keywords: ['madera', 'mueble', 'tarima', 'pallet', 'triplay', 'aglomerado'],
+        claveProdServ: '30101500', // Productos de madera
+        fraccionArancelaria: '44071000',
+        claveUnidad: 'MTR', // Metro
+        pesoPromedio: 200
+      },
+      metales: {
+        keywords: ['acero', 'aluminio', 'metal', 'hierro', 'cobre', 'lámina', 'perfil'],
+        claveProdServ: '30111700', // Metales
+        fraccionArancelaria: '72142000',
+        claveUnidad: 'KGM', // Kilogramo
+        pesoPromedio: 500
+      },
+      vidrio: {
+        keywords: ['vidrio', 'cristal', 'ventana', 'espejo', 'botella de vidrio'],
+        claveProdServ: '30131500', // Productos de vidrio
+        fraccionArancelaria: '70051000',
+        claveUnidad: 'H87', // Pieza
+        pesoPromedio: 100
+      },
+      electrodomesticos: {
+        keywords: ['refrigerador', 'lavadora', 'estufa', 'microondas', 'licuadora', 'electrodoméstico'],
+        claveProdServ: '52141500', // Electrodomésticos
+        fraccionArancelaria: '85161000',
+        claveUnidad: 'H87', // Pieza
+        pesoPromedio: 40
+      },
+      agricola: {
+        keywords: ['semilla', 'fertilizante', 'agroquímico', 'herbicida', 'pesticida', 'agrícola'],
+        claveProdServ: '10171500', // Productos agrícolas
+        fraccionArancelaria: '31010000',
+        claveUnidad: 'KGM', // Kilogramo
+        pesoPromedio: 150
+      },
+      cosmeticos: {
+        keywords: ['cosmético', 'perfume', 'crema', 'shampoo', 'maquillaje', 'jabón'],
+        claveProdServ: '53131600', // Cosméticos
+        fraccionArancelaria: '33049900',
+        claveUnidad: 'H87', // Pieza
+        pesoPromedio: 20
       }
     };
 

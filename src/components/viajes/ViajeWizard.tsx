@@ -28,6 +28,7 @@ import { ValidationProvider } from '@/contexts/ValidationProvider';
 import { useOnboarding } from '@/contexts/OnboardingProvider';
 import { ValidacionPreViajeDialog } from './ValidacionPreViajeDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 
 export interface ViajeWizardData {
   // Paso A: Misión
@@ -128,6 +129,12 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     isWizardTutorialActive,
     wizardStep 
   } = useOnboarding();
+
+  const { 
+    configuracion, 
+    validarConfiguracionCompleta,
+    isLoading: isLoadingConfig 
+  } = useConfiguracionEmpresarial();
   
   const [data, setData] = useState<ViajeWizardData>({
     currentStep: 1,
@@ -144,6 +151,40 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [showBorradorOptions, setShowBorradorOptions] = useState(false);
   const [showValidacionPreViaje, setShowValidacionPreViaje] = useState(false);
+
+  // Validar configuración empresarial al iniciar
+  useEffect(() => {
+    const validarConfiguracionInicial = async () => {
+      if (isLoadingConfig) return;
+
+      const esCompleta = validarConfiguracionCompleta();
+      
+      if (!esCompleta) {
+        toast.error('⚠️ Configuración empresarial incompleta', {
+          description: 'Debes completar tu configuración empresarial antes de crear viajes',
+          duration: 6000,
+          action: {
+            label: 'Configurar Ahora',
+            onClick: () => {
+              navigate('/configuracion/empresa');
+              if (onCancel) onCancel();
+            }
+          }
+        });
+        
+        // Cerrar el wizard después de un breve delay
+        setTimeout(() => {
+          if (onCancel) {
+            onCancel();
+          } else {
+            navigate('/viajes');
+          }
+        }, 500);
+      }
+    };
+
+    validarConfiguracionInicial();
+  }, [isLoadingConfig, validarConfiguracionCompleta, navigate, onCancel]);
 
   // Cargar borrador existente al inicializar
   useEffect(() => {
