@@ -2,6 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { useCartaPorteValidation } from './useCartaPorteValidation';
 import { useAIValidationEnhanced } from '../ai/useAIValidationEnhanced';
 import { CartaPorteData } from '@/types/cartaPorte';
+import { useCartaPorteBusinessValidations } from './useCartaPorteBusinessValidations';
 
 interface UseCartaPorteValidationEnhancedOptions {
   formData: CartaPorteData;
@@ -45,16 +46,33 @@ export const useCartaPorteValidationEnhanced = ({
   enableAI = false 
 }: UseCartaPorteValidationEnhancedOptions) => {
   const { validateComplete: validateTraditional, getValidationSummary } = useCartaPorteValidation();
+  const businessValidations = useCartaPorteBusinessValidations();
   
   const validateCompleteWithAI = useCallback(async (data: CartaPorteData) => {
+    // FASE 2.2: Ejecutar validaciones de negocio
+    const businessResult = await businessValidations.validateAll(data);
+    
     return {
-      isValid: true,
-      aiSuggestions: [],
-      aiWarnings: [],
+      isValid: businessResult.isValid,
+      aiSuggestions: businessResult.errors
+        .filter(e => e.severity === 'warning')
+        .map(e => ({
+          type: 'warning' as const,
+          title: e.field,
+          message: e.message,
+          confidence: 0.9
+        })),
+      aiWarnings: businessResult.errors
+        .filter(e => e.severity === 'error')
+        .map(e => ({
+          field: e.field,
+          message: e.message,
+          severity: 'high' as const
+        })),
       predictiveAlerts: [],
-      validationScore: 85
+      validationScore: businessResult.isValid ? 95 : 60
     };
-  }, []);
+  }, [businessValidations]);
 
   const stepValidations: StepValidation = useMemo(() => {
     const summary = getValidationSummary(formData);
