@@ -38,6 +38,7 @@ import ViajesAnalytics from "./pages/ViajesAnalytics"
 import ReportesAutomaticosPage from "./pages/ReportesAutomaticosPage"
 import Cotizaciones from "./pages/Cotizaciones"
 import ReportesGenerales from "./pages/ReportesGenerales"
+import Notificaciones from "./pages/Notificaciones"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -224,6 +225,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <Planes />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/notificaciones" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Notificaciones />
                   </BaseLayout>
                 </AuthGuard>
               } />

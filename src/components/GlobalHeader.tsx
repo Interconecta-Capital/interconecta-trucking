@@ -1,9 +1,9 @@
 
-import { Bell, User, LogOut, Shield, Menu, Plus } from 'lucide-react';
+import { User, LogOut, Shield, Menu, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlanBadge } from '@/components/common/PlanBadge';
+import { NotificationBellDropdown } from '@/components/notifications/NotificationBellDropdown';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useNavigate } from 'react-router-dom';
@@ -45,25 +45,6 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
     }
   };
 
-  const getAlertCount = () => {
-    let count = 0;
-    
-    // Cuenta bloqueada
-    if (permissions.accessLevel === 'blocked') count++;
-    
-    // Plan expirado
-    if (permissions.accessLevel === 'expired') count++;
-    
-    // Trial próximo a expirar
-    if (permissions.accessLevel === 'trial') {
-      const daysRemaining = permissions.planInfo.daysRemaining || 0;
-      if (daysRemaining <= 5) count++;
-    }
-    
-    return count;
-  };
-
-  const alertCount = getAlertCount();
   const canCreateViaje = permissions.canCreateCartaPorte;
 
   return (
@@ -88,18 +69,8 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">
-          {/* Notificaciones */}
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-4 w-4" />
-            {alertCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                {alertCount}
-              </Badge>
-            )}
-          </Button>
+          {/* Notificaciones en tiempo real */}
+          <NotificationBellDropdown />
 
           {/* Botón Nuevo Viaje - Ahora usa el mismo hook que la página de viajes */}
           <Tooltip>
