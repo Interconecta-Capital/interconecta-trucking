@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -17,7 +19,12 @@ import {
   Settings, 
   Shield,
   FileKey,
-  Loader2
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Building,
+  MapPin,
+  FileText
 } from 'lucide-react';
 import { ConfiguracionEmisorService } from '@/services/configuracion/ConfiguracionEmisorService';
 
@@ -34,6 +41,12 @@ interface EstadoValidacion {
   errores: string[];
   advertencias: string[];
   puedeCrearViaje: boolean;
+  categorias?: {
+    datosFiscales: { valido: boolean; errores: string[] };
+    domicilioFiscal: { valido: boolean; errores: string[] };
+    seguros: { valido: boolean; errores: string[] };
+    permisosSCT: { valido: boolean; errores: string[] };
+  };
 }
 
 export function ValidacionPreViajeDialog({
@@ -42,6 +55,7 @@ export function ValidacionPreViajeDialog({
   onConfirm,
   onCancel
 }: ValidacionPreViajeDialogProps) {
+  const navigate = useNavigate();
   const [validando, setValidando] = useState(true);
   const [estado, setEstado] = useState<EstadoValidacion>({
     configuracionCompleta: false,
@@ -49,6 +63,12 @@ export function ValidacionPreViajeDialog({
     errores: [],
     advertencias: [],
     puedeCrearViaje: false
+  });
+  const [expandedSections, setExpandedSections] = useState({
+    datosFiscales: false,
+    domicilioFiscal: false,
+    seguros: false,
+    permisosSCT: false
   });
 
   useEffect(() => {
@@ -72,7 +92,8 @@ export function ValidacionPreViajeDialog({
         certificadoActivo: tieneCertificado,
         errores: validacionConfig.errors,
         advertencias: validacionConfig.warnings,
-        puedeCrearViaje: validacionConfig.isValid && tieneCertificado
+        puedeCrearViaje: validacionConfig.isValid && tieneCertificado,
+        categorias: validacionConfig.categorias
       });
     } catch (error) {
       console.error('Error validando configuración:', error);
@@ -97,7 +118,15 @@ export function ValidacionPreViajeDialog({
 
   const handleIrAConfiguracion = () => {
     onCancel();
-    window.location.href = '/configuracion-empresa';
+    onOpenChange(false);
+    navigate('/configuracion-empresa');
+  };
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   return (
@@ -119,7 +148,7 @@ export function ValidacionPreViajeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
           {validando ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -127,59 +156,238 @@ export function ValidacionPreViajeDialog({
             </div>
           ) : (
             <>
-              {/* Estado de Configuración Empresarial */}
-              <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                <Settings className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium">Configuración Empresarial</h4>
-                    <Badge variant={estado.configuracionCompleta ? "success" : "destructive"}>
-                      {estado.configuracionCompleta ? 'Completa' : 'Incompleta'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    RFC, razón social, domicilio fiscal y seguros
-                  </p>
-                </div>
-              </div>
+              {/* Secciones de Configuración con detalles expandibles */}
+              {estado.categorias && (
+                <div className="space-y-3">
+                  {/* Datos Fiscales */}
+                  <Collapsible
+                    open={expandedSections.datosFiscales}
+                    onOpenChange={() => toggleSection('datosFiscales')}
+                  >
+                    <div className="rounded-lg border bg-card overflow-hidden">
+                      <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {estado.categorias.datosFiscales.valido ? (
+                            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+                          )}
+                          <Building className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 text-left">
+                            <h4 className="font-medium">Datos Fiscales</h4>
+                            <p className="text-sm text-muted-foreground">
+                              RFC, razón social y régimen fiscal
+                            </p>
+                          </div>
+                          {!estado.categorias.datosFiscales.valido && (
+                            <Badge variant="destructive" className="mr-2">
+                              {estado.categorias.datosFiscales.errores.length} error{estado.categorias.datosFiscales.errores.length > 1 ? 'es' : ''}
+                            </Badge>
+                          )}
+                          {expandedSections.datosFiscales ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {estado.categorias.datosFiscales.errores.length > 0 && (
+                          <div className="px-4 pb-4 pt-2 border-t bg-destructive/5">
+                            <p className="text-sm font-medium text-destructive mb-2">Campos faltantes:</p>
+                            <ul className="space-y-1">
+                              {estado.categorias.datosFiscales.errores.map((error, index) => (
+                                <li key={index} className="text-sm text-destructive flex items-start gap-2">
+                                  <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <span>{error}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
 
-              {/* Estado de Certificado CSD */}
-              <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                <FileKey className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium">Certificado Digital (CSD)</h4>
-                    <Badge variant={estado.certificadoActivo ? "success" : "destructive"}>
-                      {estado.certificadoActivo ? 'Activo' : 'No configurado'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Requerido para firmar documentos fiscales
-                  </p>
-                </div>
-              </div>
+                  {/* Domicilio Fiscal */}
+                  <Collapsible
+                    open={expandedSections.domicilioFiscal}
+                    onOpenChange={() => toggleSection('domicilioFiscal')}
+                  >
+                    <div className="rounded-lg border bg-card overflow-hidden">
+                      <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {estado.categorias.domicilioFiscal.valido ? (
+                            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+                          )}
+                          <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 text-left">
+                            <h4 className="font-medium">Domicilio Fiscal</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Dirección completa del emisor
+                            </p>
+                          </div>
+                          {!estado.categorias.domicilioFiscal.valido && (
+                            <Badge variant="destructive" className="mr-2">
+                              {estado.categorias.domicilioFiscal.errores.length} error{estado.categorias.domicilioFiscal.errores.length > 1 ? 'es' : ''}
+                            </Badge>
+                          )}
+                          {expandedSections.domicilioFiscal ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {estado.categorias.domicilioFiscal.errores.length > 0 && (
+                          <div className="px-4 pb-4 pt-2 border-t bg-destructive/5">
+                            <p className="text-sm font-medium text-destructive mb-2">Campos faltantes:</p>
+                            <ul className="space-y-1">
+                              {estado.categorias.domicilioFiscal.errores.map((error, index) => (
+                                <li key={index} className="text-sm text-destructive flex items-start gap-2">
+                                  <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <span>{error}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
 
-              {/* Errores Críticos */}
-              {estado.errores.length > 0 && (
-                <Alert variant="destructive">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="font-medium mb-2">Errores que impiden crear el viaje:</div>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {estado.errores.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
+                  {/* Seguros */}
+                  <Collapsible
+                    open={expandedSections.seguros}
+                    onOpenChange={() => toggleSection('seguros')}
+                  >
+                    <div className="rounded-lg border bg-card overflow-hidden">
+                      <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {estado.categorias.seguros.valido ? (
+                            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+                          )}
+                          <Shield className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 text-left">
+                            <h4 className="font-medium">Seguros</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Pólizas de seguro requeridas
+                            </p>
+                          </div>
+                          {!estado.categorias.seguros.valido && (
+                            <Badge variant="destructive" className="mr-2">
+                              {estado.categorias.seguros.errores.length} error{estado.categorias.seguros.errores.length > 1 ? 'es' : ''}
+                            </Badge>
+                          )}
+                          {expandedSections.seguros ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {estado.categorias.seguros.errores.length > 0 && (
+                          <div className="px-4 pb-4 pt-2 border-t bg-destructive/5">
+                            <p className="text-sm font-medium text-destructive mb-2">Seguros faltantes:</p>
+                            <ul className="space-y-1">
+                              {estado.categorias.seguros.errores.map((error, index) => (
+                                <li key={index} className="text-sm text-destructive flex items-start gap-2">
+                                  <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <span>{error}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+
+                  {/* Permisos SCT */}
+                  <Collapsible
+                    open={expandedSections.permisosSCT}
+                    onOpenChange={() => toggleSection('permisosSCT')}
+                  >
+                    <div className="rounded-lg border bg-card overflow-hidden">
+                      <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {estado.categorias.permisosSCT.valido ? (
+                            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
+                          ) : (
+                            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
+                          )}
+                          <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 text-left">
+                            <h4 className="font-medium">Permisos SCT</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Permisos de transporte federal
+                            </p>
+                          </div>
+                          {!estado.categorias.permisosSCT.valido && (
+                            <Badge variant="outline" className="mr-2">
+                              Advertencia
+                            </Badge>
+                          )}
+                          {expandedSections.permisosSCT ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {estado.categorias.permisosSCT.errores.length > 0 && (
+                          <div className="px-4 pb-4 pt-2 border-t bg-warning/5">
+                            <p className="text-sm font-medium text-warning mb-2">Información:</p>
+                            <ul className="space-y-1">
+                              {estado.categorias.permisosSCT.errores.map((error, index) => (
+                                <li key={index} className="text-sm text-warning flex items-start gap-2">
+                                  <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <span>{error}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                </div>
               )}
 
-              {/* Advertencias */}
+              {/* Estado de Certificado CSD */}
+              <div className="rounded-lg border bg-card overflow-hidden">
+                <div className="flex items-center gap-3 p-4">
+                  {estado.certificadoActivo ? (
+                    <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+                  )}
+                  <FileKey className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-medium">Certificado Digital (CSD)</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Requerido para firmar documentos fiscales
+                    </p>
+                  </div>
+                  <Badge variant={estado.certificadoActivo ? "success" : "destructive"}>
+                    {estado.certificadoActivo ? 'Activo' : 'No configurado'}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Advertencias generales */}
               {estado.advertencias.length > 0 && (
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="font-medium mb-2">Advertencias:</div>
+                    <div className="font-medium mb-2">Recomendaciones:</div>
                     <ul className="list-disc list-inside space-y-1 text-sm">
                       {estado.advertencias.map((warning, index) => (
                         <li key={index}>{warning}</li>
