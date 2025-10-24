@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TimbradoResult {
   success: boolean;
@@ -9,6 +10,10 @@ export interface TimbradoResult {
   fecha_timbrado?: string;
   ambiente?: string;
   error?: string;
+  codigo?: string;
+  xmlTimbrado?: string;
+  qrCode?: string;
+  cadenaOriginal?: string;
 }
 
 export function useTimbrado() {
@@ -18,23 +23,50 @@ export function useTimbrado() {
   const timbrarCartaPorte = async (cartaPorteData: CartaPorteData): Promise<TimbradoResult> => {
     setIsTimbring(true);
     try {
-      // Simular timbrado con FISCAL API
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('🚀 Iniciando timbrado con SW/Conectia...');
+      
+      const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
+        body: {
+          cartaPorteData,
+          cartaPorteId: crypto.randomUUID(),
+          ambiente: 'sandbox'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error en edge function:', error);
+        toast.error(`Error: ${error.message}`);
+        return { success: false, error: error.message };
+      }
+
+      if (!data.success) {
+        console.error('❌ Error del PAC:', data.error);
+        toast.error(`Error del PAC: ${data.error}`);
+        return { 
+          success: false, 
+          error: data.error,
+          codigo: data.codigo
+        };
+      }
       
       const resultado = {
         success: true,
-        uuid: `UUID-${Date.now()}`,
-        fecha_timbrado: new Date().toISOString(),
-        ambiente: 'test'
+        uuid: data.uuid,
+        fecha_timbrado: data.fechaTimbrado,
+        ambiente: 'sandbox',
+        xmlTimbrado: data.xmlTimbrado,
+        qrCode: data.qrCode,
+        cadenaOriginal: data.cadenaOriginal
       };
       
       setDatosTimbre(resultado);
-      toast.success('Carta Porte timbrada exitosamente');
+      toast.success(`✅ Timbrado exitoso - UUID: ${data.uuid}`);
       return resultado;
     } catch (error) {
-      console.error('Error al timbrar:', error);
-      toast.error('Error al timbrar la Carta Porte');
-      return { success: false, error: 'Error en el timbrado' };
+      console.error('💥 Error al timbrar:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Error en el timbrado';
+      toast.error(`Error: ${errorMsg}`);
+      return { success: false, error: errorMsg };
     } finally {
       setIsTimbring(false);
     }

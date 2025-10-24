@@ -15,14 +15,18 @@ export interface TimbradoResponse {
   qrCode?: string;
   cadenaOriginal?: string;
   selloDigital?: string;
+  selloSAT?: string;
   folio?: string;
   error?: string;
+  codigo?: string;
   certificadoUsado?: {
     numero: string;
     rfc: string;
     nombre: string;
   };
   fechaTimbrado?: string;
+  certificadoSAT?: string;
+  pac?: string;
   pdf?: Blob;
   details?: any;
 }
@@ -101,41 +105,52 @@ export class TimbradoService {
   }
 
   /**
-   * Llamada REAL a FISCAL API (ya no es simulada)
+   * Llamada REAL a SW/Conectia PAC
    */
   private static async llamarFiscalAPI(data: any): Promise<TimbradoResponse> {
     try {
-      console.log('📤 Invocando edge function para timbrado real...');
+      console.log('📤 Invocando edge function de SW/Conectia...');
       
-      // TODO: Crear edge function 'timbrar-cfdi' que haga la llamada real a FISCAL API
-      // Por ahora, validar que el PAC esté configurado
-      const validacionPAC = await this.validarConexionPAC();
-      
-      if (!validacionPAC.success) {
-        throw new Error(`PAC no configurado: ${validacionPAC.message}`);
+      const { data: result, error } = await supabase.functions.invoke('timbrar-con-sw', {
+        body: {
+          cartaPorteData: data,
+          cartaPorteId: data.cartaPorteId || crypto.randomUUID(),
+          ambiente: data.environment || 'sandbox'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error en edge function:', error);
+        throw new Error(error.message || 'Error llamando a función de timbrado');
       }
 
-      // TEMPORAL: Mantener simulación hasta que se implemente edge function de timbrado
-      console.warn('⚠️ Timbrado simulado - Implementar edge function "timbrar-cfdi" para producción');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const uuid = this.generarUUID();
-      const folio = `CP${Date.now().toString().slice(-6)}`;
-      const fechaTimbrado = new Date().toISOString();
-      const qrCode = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
-      
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error,
+          codigo: result.codigo,
+          details: result.details
+        };
+      }
+
+      console.log(`✅ Timbrado exitoso con SW/Conectia - UUID: ${result.uuid}`);
+
       return {
         success: true,
-        uuid,
-        xmlTimbrado: this.insertarDatosTimbrado(data.xml, uuid, folio),
-        qrCode,
-        cadenaOriginal: `||1.1|${uuid}|${fechaTimbrado}|${data.rfc}||`,
-        selloDigital: 'ABC123XYZ789',
-        folio,
-        fechaTimbrado
+        uuid: result.uuid,
+        xmlTimbrado: result.xmlTimbrado,
+        qrCode: result.qrCode,
+        cadenaOriginal: result.cadenaOriginal,
+        selloDigital: result.selloDigital,
+        selloSAT: result.selloSAT,
+        folio: result.noCertificadoCFDI,
+        fechaTimbrado: result.fechaTimbrado,
+        certificadoSAT: result.noCertificadoSAT,
+        pac: result.pac
       };
+
     } catch (error) {
-      console.error('❌ Error en llamarFiscalAPI:', error);
+      console.error('💥 Error en llamarFiscalAPI:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido al timbrar'
