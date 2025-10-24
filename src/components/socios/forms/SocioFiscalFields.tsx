@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
+import { RegimesFiscalesSelector } from '@/components/shared/RegimesFiscalesSelector';
 
 interface SocioFiscalFieldsProps {
   formData: any;
@@ -11,27 +12,6 @@ interface SocioFiscalFieldsProps {
 }
 
 export function SocioFiscalFields({ formData, onFieldChange }: SocioFiscalFieldsProps) {
-  const regimenesFiscales = [
-    { value: '601', label: '601 - General de Ley Personas Morales' },
-    { value: '603', label: '603 - Personas Morales con Fines no Lucrativos' },
-    { value: '605', label: '605 - Sueldos y Salarios e Ingresos Asimilados a Salarios' },
-    { value: '606', label: '606 - Arrendamiento' },
-    { value: '608', label: '608 - Demás ingresos' },
-    { value: '610', label: '610 - Residentes en el Extranjero sin Establecimiento Permanente en México' },
-    { value: '611', label: '611 - Ingresos por Dividendos (socios y accionistas)' },
-    { value: '612', label: '612 - Personas Físicas con Actividades Empresariales y Profesionales' },
-    { value: '614', label: '614 - Ingresos por intereses' },
-    { value: '616', label: '616 - Sin obligaciones fiscales' },
-    { value: '620', label: '620 - Sociedades Cooperativas de Producción que optan por diferir sus ingresos' },
-    { value: '621', label: '621 - Incorporación Fiscal' },
-    { value: '622', label: '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras' },
-    { value: '623', label: '623 - Optativo para Grupos de Sociedades' },
-    { value: '624', label: '624 - Coordinados' },
-    { value: '628', label: '628 - Hidrocarburos' },
-    { value: '629', label: '629 - De los Regímenes Fiscales Preferentes y de las Empresas Multinacionales' },
-    { value: '630', label: '630 - Enajenación de acciones en bolsa de valores' }
-  ];
-
   const usosCFDI = [
     { value: 'G01', label: 'G01 - Adquisición de mercancías' },
     { value: 'G02', label: 'G02 - Devoluciones, descuentos o bonificaciones' },
@@ -66,24 +46,12 @@ export function SocioFiscalFields({ formData, onFieldChange }: SocioFiscalFields
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="regimen_fiscal">Régimen Fiscal</Label>
-          <Select 
-            value={formData.regimen_fiscal || ''} 
-            onValueChange={(value) => onFieldChange('regimen_fiscal', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar régimen fiscal..." />
-            </SelectTrigger>
-            <SelectContent className="max-h-60 overflow-y-auto">
-              {regimenesFiscales.map((regimen) => (
-                <SelectItem key={regimen.value} value={regimen.value}>
-                  {regimen.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <RegimesFiscalesSelector
+          value={formData.regimen_fiscal || ''}
+          onValueChange={(value) => onFieldChange('regimen_fiscal', value)}
+          label="Régimen Fiscal"
+          placeholder="Seleccionar régimen fiscal..."
+        />
 
         <div>
           <Label htmlFor="uso_cfdi">Uso CFDI</Label>
