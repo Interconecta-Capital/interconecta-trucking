@@ -174,20 +174,24 @@ export class ConfiguracionEmisorService {
 
       // ========== VALIDAR SEGUROS ==========
       // Seguro de responsabilidad civil (OBLIGATORIO para Carta Porte)
-      if (!emisorData.seguros.responsabilidadCivil?.poliza) {
-        segurosErrores.push('Seguro de Responsabilidad Civil no configurado (obligatorio)');
-        errors.push('Seguro de Responsabilidad Civil no configurado (obligatorio para Carta Porte)');
-      } else if (!emisorData.seguros.responsabilidadCivil?.aseguradora) {
+      if (!emisorData.seguros.responsabilidadCivil?.poliza || 
+          emisorData.seguros.responsabilidadCivil.poliza.trim() === '') {
+        segurosErrores.push('Póliza de Responsabilidad Civil no configurada (obligatorio)');
+        errors.push('Póliza de Responsabilidad Civil no configurada (obligatorio para Carta Porte)');
+      }
+      
+      if (!emisorData.seguros.responsabilidadCivil?.aseguradora || 
+          emisorData.seguros.responsabilidadCivil.aseguradora.trim() === '') {
         segurosErrores.push('Aseguradora de Responsabilidad Civil no configurada');
         errors.push('Aseguradora de Responsabilidad Civil no configurada');
       }
 
       // Warnings para otros seguros
-      if (!emisorData.seguros.carga?.poliza) {
+      if (!emisorData.seguros.carga?.poliza || emisorData.seguros.carga.poliza.trim() === '') {
         warnings.push('Seguro de Carga no configurado (recomendado)');
       }
 
-      if (!emisorData.seguros.medioAmbiente?.poliza) {
+      if (!emisorData.seguros.medioAmbiente?.poliza || emisorData.seguros.medioAmbiente.poliza.trim() === '') {
         warnings.push('Seguro de Medio Ambiente no configurado (recomendado)');
       }
 

@@ -119,7 +119,7 @@ export function ValidacionPreViajeDialog({
   const handleIrAConfiguracion = () => {
     onCancel();
     onOpenChange(false);
-    navigate('/configuracion-empresa');
+    navigate('/configuracion/empresa');
   };
 
   const toggleSection = (section: keyof typeof expandedSections) => {

@@ -44,9 +44,20 @@ export function DashboardConfiguracion() {
     if (configuracion?.rfc_emisor) puntos++;
     if (configuracion?.razon_social) puntos++;
     if (configuracion?.regimen_fiscal) puntos++;
-    if (configuracion?.codigo_postal) puntos++;
-    if (configuracion?.seguro_resp_civil_empresa) puntos++;
-    if (configuracion?.seguro_carga_empresa) puntos++;
+    
+    // ✅ Validar domicilio completo
+    if (configuracion?.codigo_postal && configuracion?.calle && 
+        configuracion?.colonia && configuracion?.municipio && configuracion?.estado) {
+      puntos++;
+    }
+    
+    // ✅ Validar seguros con estructura completa
+    const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
+    if (seguroRespCivil?.poliza && seguroRespCivil?.aseguradora) puntos++;
+    
+    const seguroCarga = configuracion?.seguro_carga_empresa as any;
+    if (seguroCarga?.poliza && seguroCarga?.aseguradora) puntos++;
+    
     if (configuracion?.proveedor_timbrado) puntos++;
     if (certificadoActivo) puntos++;
 
@@ -82,7 +93,16 @@ export function DashboardConfiguracion() {
   if (!configuracion?.rfc_emisor) warnings.push('RFC no configurado');
   if (!certificadoActivo) warnings.push('Sin certificado digital activo');
   if (!configuracion?.proveedor_timbrado) warnings.push('Proveedor de timbrado no configurado');
-  if (!configuracion?.seguro_carga_empresa) warnings.push('Seguro de carga no configurado');
+  
+  // ✅ Validar estructura completa de seguros
+  const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
+  if (!seguroRespCivil?.poliza || !seguroRespCivil?.aseguradora) {
+    warnings.push('Seguro de responsabilidad civil incompleto');
+  }
+  
+  const seguroCarga = configuracion?.seguro_carga_empresa as any;
+  if (!seguroCarga?.poliza) warnings.push('Seguro de carga no configurado (recomendado)');
+  
   if (certificadosProximosVencer > 0) warnings.push(`${certificadosProximosVencer} certificado(s) próximo(s) a vencer`);
   if (configuracion?.modo_pruebas) warnings.push('Sistema en modo de pruebas');
 

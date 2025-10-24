@@ -210,14 +210,21 @@ export const useConfiguracionEmpresarial = () => {
       toast.success('✅ Configuración guardada exitosamente');
       await cargarConfiguracion();
       
-      // Validar si la configuración está completa
-      const esCompleta = validarConfiguracionCompleta();
+      // ✅ Usar validación del servicio para actualizar flag automáticamente
+      const { ConfiguracionEmisorService } = await import('@/services/configuracion/ConfiguracionEmisorService');
+      const validacion = await ConfiguracionEmisorService.validarConfiguracionCompleta();
       
-      if (esCompleta !== configuracion?.configuracion_completa) {
+      // Actualizar flag de configuracion_completa si cambió
+      if (validacion.isValid !== configuracion?.configuracion_completa) {
         await supabase
           .from('configuracion_empresa')
-          .update({ configuracion_completa: esCompleta })
+          .update({ configuracion_completa: validacion.isValid })
           .eq('user_id', configuracion.user_id);
+          
+        // Mostrar mensaje si ahora está completa
+        if (validacion.isValid) {
+          toast.success('🎉 Configuración empresarial completa');
+        }
       }
       
     } catch (error) {
