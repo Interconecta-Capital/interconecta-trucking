@@ -2669,6 +2669,7 @@ export type Database = {
           empresa: string | null
           id: string
           nombre: string
+          plan_suscripcion: string | null
           plan_type: string | null
           rfc: string | null
           telefono: string | null
@@ -2685,6 +2686,7 @@ export type Database = {
           empresa?: string | null
           id: string
           nombre: string
+          plan_suscripcion?: string | null
           plan_type?: string | null
           rfc?: string | null
           telefono?: string | null
@@ -2701,6 +2703,7 @@ export type Database = {
           empresa?: string | null
           id?: string
           nombre?: string
+          plan_suscripcion?: string | null
           plan_type?: string | null
           rfc?: string | null
           telefono?: string | null
@@ -3442,6 +3445,42 @@ export type Database = {
           rfc_empresa?: string
           subdominio?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      timbrados_log: {
+        Row: {
+          ambiente: string
+          created_at: string
+          error_mensaje: string | null
+          exitoso: boolean
+          id: string
+          pac: string
+          tipo_documento: string
+          user_id: string
+          uuid: string | null
+        }
+        Insert: {
+          ambiente: string
+          created_at?: string
+          error_mensaje?: string | null
+          exitoso?: boolean
+          id?: string
+          pac: string
+          tipo_documento: string
+          user_id: string
+          uuid?: string | null
+        }
+        Update: {
+          ambiente?: string
+          created_at?: string
+          error_mensaje?: string | null
+          exitoso?: boolean
+          id?: string
+          pac?: string
+          tipo_documento?: string
+          user_id?: string
+          uuid?: string | null
         }
         Relationships: []
       }
