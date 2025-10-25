@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle, Info, CheckCircle2, HelpCircle } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 import { toast } from 'sonner';
 
@@ -83,86 +85,152 @@ export function ConfiguracionOperativaForm() {
 
   return (
     <div className="space-y-6">
-      {/* Advertencia Legal sobre Validación de Seguros */}
-      <Alert variant="default" className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-900 dark:text-amber-100">Validación de Seguros</AlertTitle>
-        <AlertDescription className="text-amber-800 dark:text-amber-200">
-          El sistema NO valida si las pólizas son reales o vigentes. 
-          Usted es responsable de proporcionar información verídica y vigente. 
-          El uso de datos falsos puede resultar en sanciones del SAT.
-        </AlertDescription>
-      </Alert>
-      
       {/* Configuración de Seguros */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Seguros Empresariales
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-warning" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-2">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    Validación de Seguros
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    El sistema NO valida si las pólizas son reales o vigentes. 
+                    Usted es responsable de proporcionar información verídica.
+                  </p>
+                  <Alert className="border-warning/50 bg-warning/10">
+                    <AlertDescription className="text-xs">
+                      ⚠️ El uso de datos falsos puede resultar en sanciones del SAT.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Seguro de Responsabilidad Civil *</Label>
-              <Input 
-                placeholder="Número de póliza" 
-                value={formData.seguroRespCivilPoliza}
-                onChange={(e) => setFormData({ ...formData, seguroRespCivilPoliza: e.target.value })}
-              />
+        <CardContent className="space-y-6">
+          {/* Seguro de Responsabilidad Civil - OBLIGATORIO */}
+          <div className="space-y-3 p-4 border rounded-lg bg-card">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="flex items-center gap-2 text-base font-medium">
+                Seguro de Responsabilidad Civil
+                <Badge variant="destructive" className="text-xs">OBLIGATORIO</Badge>
+              </Label>
+              {formData.seguroRespCivilPoliza && formData.seguroRespCivilAseguradora && (
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Aseguradora *</Label>
-              <Input 
-                placeholder="Nombre de la aseguradora" 
-                value={formData.seguroRespCivilAseguradora}
-                onChange={(e) => setFormData({ ...formData, seguroRespCivilAseguradora: e.target.value })}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Número de Póliza *</Label>
+                <Input 
+                  placeholder="Número de póliza" 
+                  value={formData.seguroRespCivilPoliza}
+                  onChange={(e) => setFormData({ ...formData, seguroRespCivilPoliza: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Aseguradora *</Label>
+                <Input 
+                  placeholder="Nombre de la aseguradora" 
+                  value={formData.seguroRespCivilAseguradora}
+                  onChange={(e) => setFormData({ ...formData, seguroRespCivilAseguradora: e.target.value })}
+                />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Requerido por el SAT para Carta Porte 3.1
+            </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Seguro de Carga</Label>
-              <Input 
-                placeholder="Número de póliza" 
-                value={formData.seguroCargaPoliza}
-                onChange={(e) => setFormData({ ...formData, seguroCargaPoliza: e.target.value })}
-              />
+          {/* Seguro de Carga - RECOMENDADO */}
+          <div className="space-y-3 p-4 border rounded-lg bg-card">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="flex items-center gap-2 text-base font-medium">
+                Seguro de Carga
+                <Badge variant="secondary" className="text-xs">RECOMENDADO</Badge>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 text-xs">
+                    Recomendado para protección de mercancías de alto valor. 
+                    NO es obligatorio para crear viajes.
+                  </PopoverContent>
+                </Popover>
+              </Label>
+              {formData.seguroCargaPoliza && formData.seguroCargaAseguradora && (
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Aseguradora</Label>
-              <Input 
-                placeholder="Nombre de la aseguradora" 
-                value={formData.seguroCargaAseguradora}
-                onChange={(e) => setFormData({ ...formData, seguroCargaAseguradora: e.target.value })}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Número de Póliza</Label>
+                <Input 
+                  placeholder="Número de póliza" 
+                  value={formData.seguroCargaPoliza}
+                  onChange={(e) => setFormData({ ...formData, seguroCargaPoliza: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Aseguradora</Label>
+                <Input 
+                  placeholder="Nombre de la aseguradora" 
+                  value={formData.seguroCargaAseguradora}
+                  onChange={(e) => setFormData({ ...formData, seguroCargaAseguradora: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Seguro Ambiental</Label>
-              <Input 
-                placeholder="Número de póliza" 
-                value={formData.seguroAmbientalPoliza}
-                onChange={(e) => setFormData({ ...formData, seguroAmbientalPoliza: e.target.value })}
-              />
+          {/* Seguro Ambiental - RECOMENDADO */}
+          <div className="space-y-3 p-4 border rounded-lg bg-card">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="flex items-center gap-2 text-base font-medium">
+                Seguro Ambiental
+                <Badge variant="secondary" className="text-xs">RECOMENDADO</Badge>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 text-xs">
+                    Recomendado para transporte de sustancias peligrosas. 
+                    NO es obligatorio para crear viajes.
+                  </PopoverContent>
+                </Popover>
+              </Label>
+              {formData.seguroAmbientalPoliza && formData.seguroAmbientalAseguradora && (
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Aseguradora</Label>
-              <Input 
-                placeholder="Nombre de la aseguradora" 
-                value={formData.seguroAmbientalAseguradora}
-                onChange={(e) => setFormData({ ...formData, seguroAmbientalAseguradora: e.target.value })}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Número de Póliza</Label>
+                <Input 
+                  placeholder="Número de póliza" 
+                  value={formData.seguroAmbientalPoliza}
+                  onChange={(e) => setFormData({ ...formData, seguroAmbientalPoliza: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Aseguradora</Label>
+                <Input 
+                  placeholder="Nombre de la aseguradora" 
+                  value={formData.seguroAmbientalAseguradora}
+                  onChange={(e) => setFormData({ ...formData, seguroAmbientalAseguradora: e.target.value })}
+                />
+              </div>
             </div>
           </div>
-
-          <p className="text-sm text-muted-foreground">
-            * El seguro de responsabilidad civil es obligatorio para Carta Porte SAT 3.1
-          </p>
         </CardContent>
       </Card>
 

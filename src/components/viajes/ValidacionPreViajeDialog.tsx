@@ -24,7 +24,8 @@ import {
   ChevronUp,
   Building,
   MapPin,
-  FileText
+  FileText,
+  Info
 } from 'lucide-react';
 import { ConfiguracionEmisorService } from '@/services/configuracion/ConfiguracionEmisorService';
 
@@ -87,12 +88,23 @@ export function ValidacionPreViajeDialog({
       // Validar certificado CSD
       const tieneCertificado = await ConfiguracionEmisorService.tieneCertificadoActivo();
 
+      // Separar errores obligatorios de recomendaciones opcionales
+      const erroresObligatorios = validacionConfig.errors.filter(error => 
+        !error.toLowerCase().includes('seguro de carga') && 
+        !error.toLowerCase().includes('seguro ambiental')
+      );
+      
+      const recomendacionesOpcionales = validacionConfig.errors.filter(error => 
+        error.toLowerCase().includes('seguro de carga') || 
+        error.toLowerCase().includes('seguro ambiental')
+      );
+
       setEstado({
-        configuracionCompleta: validacionConfig.isValid,
+        configuracionCompleta: erroresObligatorios.length === 0, // Solo contar obligatorios
         certificadoActivo: tieneCertificado,
-        errores: validacionConfig.errors,
-        advertencias: validacionConfig.warnings,
-        puedeCrearViaje: validacionConfig.isValid && tieneCertificado,
+        errores: erroresObligatorios, // Solo errores bloqueantes
+        advertencias: [...validacionConfig.warnings, ...recomendacionesOpcionales],
+        puedeCrearViaje: erroresObligatorios.length === 0 && tieneCertificado,
         categorias: validacionConfig.categorias
       });
     } catch (error) {
@@ -279,11 +291,21 @@ export function ValidacionPreViajeDialog({
                               Pólizas de seguro requeridas
                             </p>
                           </div>
-                          {!estado.categorias.seguros.valido && (
-                            <Badge variant="destructive" className="mr-2">
-                              {estado.categorias.seguros.errores.length} error{estado.categorias.seguros.errores.length > 1 ? 'es' : ''}
-                            </Badge>
-                          )}
+                  {!estado.categorias.seguros.valido && (() => {
+                    const erroresObligatorios = estado.categorias.seguros.errores.filter(e => 
+                      !e.toLowerCase().includes('seguro de carga') && 
+                      !e.toLowerCase().includes('seguro ambiental')
+                    );
+                    return erroresObligatorios.length > 0 ? (
+                      <Badge variant="destructive" className="mr-2">
+                        {erroresObligatorios.length} error{erroresObligatorios.length > 1 ? 'es' : ''}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="mr-2">
+                        Recomendaciones
+                      </Badge>
+                    );
+                  })()}
                           {expandedSections.seguros ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
                           ) : (
@@ -293,16 +315,56 @@ export function ValidacionPreViajeDialog({
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         {estado.categorias.seguros.errores.length > 0 && (
-                          <div className="px-4 pb-4 pt-2 border-t bg-destructive/5">
-                            <p className="text-sm font-medium text-destructive mb-2">Seguros faltantes:</p>
-                            <ul className="space-y-1">
-                              {estado.categorias.seguros.errores.map((error, index) => (
-                                <li key={index} className="text-sm text-destructive flex items-start gap-2">
-                                  <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                  <span>{error}</span>
-                                </li>
-                              ))}
-                            </ul>
+                          <div className="px-4 pb-4 pt-2 border-t">
+                            {/* Errores obligatorios (Responsabilidad Civil) */}
+                            {(() => {
+                              const erroresObligatorios = estado.categorias.seguros.errores.filter(e => 
+                                !e.toLowerCase().includes('seguro de carga') && 
+                                !e.toLowerCase().includes('seguro ambiental')
+                              );
+                              return erroresObligatorios.length > 0 && (
+                                <div className="bg-destructive/5 p-3 rounded-md mb-3">
+                                  <p className="text-sm font-medium text-destructive mb-2">
+                                    Seguros Obligatorios Faltantes:
+                                  </p>
+                                  <ul className="space-y-1">
+                                    {erroresObligatorios.map((error, index) => (
+                                      <li key={index} className="text-sm text-destructive flex items-start gap-2">
+                                        <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                        <span>{error}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              );
+                            })()}
+                            
+                            {/* Recomendaciones (Seguros opcionales) */}
+                            {(() => {
+                              const recomendaciones = estado.categorias.seguros.errores.filter(e => 
+                                e.toLowerCase().includes('seguro de carga') || 
+                                e.toLowerCase().includes('seguro ambiental')
+                              );
+                              return recomendaciones.length > 0 && (
+                                <div className="bg-warning/5 p-3 rounded-md border border-warning/20">
+                                  <p className="text-sm font-medium text-warning mb-2">
+                                    Seguros Recomendados (Opcionales):
+                                  </p>
+                                  <ul className="space-y-1">
+                                    {recomendaciones.map((error, index) => (
+                                      <li key={index} className="text-sm text-warning flex items-start gap-2">
+                                        <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                        <span>{error.replace('no configurado o incompleto', 'no configurado (recomendado)')}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                    <Info className="h-3 w-3" />
+                                    Estos seguros NO bloquean la creación de viajes
+                                  </p>
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </CollapsibleContent>

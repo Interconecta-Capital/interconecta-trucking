@@ -69,6 +69,13 @@ export function DatosFiscalesForm() {
   // Cargar datos cuando la configuración esté disponible
   React.useEffect(() => {
     if (configuracion) {
+      console.log('🔍 [DatosFiscalesForm] Cargando configuración existente:', {
+        razon_social: configuracion.razon_social || '(vacío)',
+        rfc_emisor: configuracion.rfc_emisor || '(vacío)',
+        regimen_fiscal: configuracion.regimen_fiscal || '(vacío)',
+        tiene_domicilio: !!(configuracion.codigo_postal && configuracion.calle)
+      });
+      
       form.reset({
         razon_social: configuracion.razon_social || '',
         rfc_emisor: configuracion.rfc_emisor || '',
@@ -89,20 +96,43 @@ export function DatosFiscalesForm() {
 
       // Determinar si hay datos guardados para mostrar modo "solo lectura"
       const hasDatos = configuracion.razon_social && configuracion.rfc_emisor && configuracion.regimen_fiscal;
+      console.log('🔍 [DatosFiscalesForm] ¿Tiene datos guardados?', hasDatos);
+      console.log('🔍 [DatosFiscalesForm] Modo edición:', !hasDatos);
       setIsEditing(!hasDatos);
     }
   }, [configuracion]);
 
   const onSubmit = async (data: DatosFiscalesForm) => {
-    console.log('📝 [DatosFiscalesForm] Datos del formulario a guardar:', data);
+    console.log('📝 [DatosFiscalesForm] ===== INICIO GUARDADO =====');
+    console.log('📝 [DatosFiscalesForm] Datos del formulario:', {
+      razon_social: data.razon_social,
+      rfc_emisor: data.rfc_emisor,
+      regimen_fiscal: data.regimen_fiscal,
+      domicilio: {
+        codigo_postal: data.codigo_postal,
+        calle: data.calle,
+        colonia: data.colonia,
+        municipio: data.municipio,
+        estado: data.estado
+      }
+    });
+    
     try {
+      console.log('🔄 [DatosFiscalesForm] Llamando a guardarConfiguracion...');
       await guardarConfiguracion(data);
-      console.log('✅ [DatosFiscalesForm] Guardado exitoso, recargando...');
+      console.log('✅ [DatosFiscalesForm] Guardado exitoso');
+      
+      console.log('🔄 [DatosFiscalesForm] Recargando configuración desde BD...');
       await recargar();
       console.log('✅ [DatosFiscalesForm] Recarga completada');
+      
+      console.log('🔄 [DatosFiscalesForm] Deshabilitando modo edición...');
       setIsEditing(false);
+      console.log('✅ [DatosFiscalesForm] ===== FIN GUARDADO EXITOSO =====');
     } catch (error) {
-      console.error('❌ [DatosFiscalesForm] Error al guardar:', error);
+      console.error('❌ [DatosFiscalesForm] ===== ERROR EN GUARDADO =====');
+      console.error('❌ [DatosFiscalesForm] Error completo:', error);
+      console.error('❌ [DatosFiscalesForm] Stack:', error instanceof Error ? error.stack : 'No stack available');
     }
   };
 
