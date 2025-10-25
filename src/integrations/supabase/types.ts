@@ -4206,20 +4206,6 @@ export type Database = {
             referencedRelation: "vehiculos"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "viajes_conductor_id_fkey"
-            columns: ["conductor_id"]
-            isOneToOne: false
-            referencedRelation: "conductores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "viajes_vehiculo_id_fkey"
-            columns: ["vehiculo_id"]
-            isOneToOne: false
-            referencedRelation: "vehiculos"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }

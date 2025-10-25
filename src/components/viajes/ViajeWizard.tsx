@@ -482,7 +482,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
         data
       );
 
-      console.log('✅ Borrador creado exitosamente');
+      console.log('✅ Borrador creado exitosamente. carta_porte_id permanece NULL hasta timbrar.');
 
       // 3. Registrar en analisis_viajes para IA predictiva
       try {
@@ -524,7 +524,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       }
 
       toast.success('Viaje programado correctamente', {
-        description: `Se generó el borrador de carta porte. ID: ${resultado.borrador_id}`,
+        description: 'Se creó el borrador de Carta Porte. Completa los datos fiscales y timbra para finalizar.',
         duration: 8000,
         action: {
           label: 'Abrir Carta Porte',

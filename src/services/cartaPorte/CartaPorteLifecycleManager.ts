@@ -350,6 +350,58 @@ export class CartaPorteLifecycleManager {
   }
 
   /**
+   * Vincular Carta Porte con Viaje después de timbrar
+   * @param cartaPorteId ID de la carta porte timbrada
+   * @param viajeId ID del viaje a actualizar
+   */
+  static async vincularCartaPorteConViaje(
+    cartaPorteId: string, 
+    viajeId: string
+  ): Promise<void> {
+    try {
+      console.log(`🔗 Vinculando Carta Porte ${cartaPorteId} con Viaje ${viajeId}...`);
+
+      // Obtener tracking_data actual
+      const { data: viaje, error: fetchError } = await supabase
+        .from('viajes')
+        .select('tracking_data')
+        .eq('id', viajeId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error obteniendo viaje:', fetchError);
+        throw fetchError;
+      }
+
+      // Actualizar tracking_data para marcar que se timbró
+      const trackingDataActualizado = {
+        ...(viaje.tracking_data as any || {}),
+        carta_porte_timbrada: true,
+        fecha_timbre: new Date().toISOString()
+      };
+
+      // Actualizar viaje con la carta porte timbrada
+      const { error } = await supabase
+        .from('viajes')
+        .update({ 
+          carta_porte_id: cartaPorteId,
+          tracking_data: trackingDataActualizado
+        })
+        .eq('id', viajeId);
+
+      if (error) {
+        console.error('Error vinculando carta porte:', error);
+        throw error;
+      }
+
+      console.log(`✅ Viaje ${viajeId} vinculado correctamente con Carta Porte ${cartaPorteId}`);
+    } catch (error) {
+      console.error('Error en vincularCartaPorteConViaje:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtener carta porte por ID
    */
   static async obtenerCartaPorte(cartaPorteId: string): Promise<CartaPorteCompleta | null> {

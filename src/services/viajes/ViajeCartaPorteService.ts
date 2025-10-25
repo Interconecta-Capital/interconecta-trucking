@@ -83,15 +83,36 @@ export class ViajeCartaPorteService {
 
       console.log('📄 Borrador creado:', borrador.id);
 
+      // ✅ NO actualizar carta_porte_id aquí (solo se actualiza al timbrar)
+      // Almacenar la relación en tracking_data
+      const { data: viaje, error: viajeError } = await supabase
+        .from('viajes')
+        .select('tracking_data')
+        .eq('id', viajeId)
+        .single();
+
+      if (viajeError) {
+        console.error('Error obteniendo viaje:', viajeError);
+        throw viajeError;
+      }
+
+      const trackingDataActualizado = {
+        ...(viaje.tracking_data as any || {}),
+        borrador_carta_porte_id: borrador.id,
+        borrador_creado_en: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('viajes')
-        .update({ carta_porte_id: borrador.id })
+        .update({ tracking_data: trackingDataActualizado })
         .eq('id', viajeId);
 
       if (error) {
-        console.error('Error actualizando viaje con borrador:', error);
+        console.error('Error actualizando tracking_data del viaje:', error);
         throw error;
       }
+
+      console.log('✅ Borrador vinculado en tracking_data (carta_porte_id permanece NULL hasta timbrar)');
 
       // Crear notificación de éxito
       await this.crearNotificacionBorradorCreado(borrador.id, wizardData);
