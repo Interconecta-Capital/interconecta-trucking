@@ -91,57 +91,65 @@ export function DashboardConfiguracion() {
       return { puntos: 0, total: 6, porcentaje: 0, desglose: {}, camposPendientes: [] };
     }
 
-    // Usar los errores de la validación real para calcular completitud
-    const total = 6; // RFC, Razón Social, Régimen Fiscal, Domicilio (completo), Seguro RC, Proveedor Timbrado
-    const erroresObligatorios = validacionReal.errors.length;
-    const puntos = Math.max(0, total - erroresObligatorios);
+    // Calcular completitud basándose en las categorías de validación
+    const total = 6;
+    let puntos = 0;
+    
+    // Verificar cada categoría
+    const rfcValido = validacionReal.categorias.datosFiscales.valido || 
+                      !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.toLowerCase().includes('rfc'));
+    const razonSocialValida = validacionReal.categorias.datosFiscales.valido || 
+                              !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.toLowerCase().includes('razón social'));
+    const regimenFiscalValido = validacionReal.categorias.datosFiscales.valido || 
+                                !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.toLowerCase().includes('régimen fiscal'));
+    const domicilioValido = validacionReal.categorias.domicilioFiscal.valido;
+    const seguroRCValido = validacionReal.categorias.seguros.valido;
+    const proveedorValido = datosRawDB?.proveedor_timbrado && datosRawDB.proveedor_timbrado !== '';
+    
+    if (rfcValido) puntos++;
+    if (razonSocialValida) puntos++;
+    if (regimenFiscalValido) puntos++;
+    if (domicilioValido) puntos++;
+    if (seguroRCValido) puntos++;
+    if (proveedorValido) puntos++;
+    
     const porcentaje = Math.round((puntos / total) * 100);
 
-    // Crear desglose basado en las categorías de validación
     const desglose = {
-      rfc: validacionReal.categorias.datosFiscales.valido && 
-           !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.includes('RFC')),
-      razon_social: validacionReal.categorias.datosFiscales.valido && 
-                    !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.includes('Razón social')),
-      regimen_fiscal: validacionReal.categorias.datosFiscales.valido && 
-                      !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.includes('Régimen fiscal')),
-      domicilio: validacionReal.categorias.domicilioFiscal.valido,
-      seguro_rc: validacionReal.categorias.seguros.valido,
-      proveedor_timbrado: !validacionReal.errors.some((e: string) => e.includes('proveedor_timbrado'))
+      rfc: rfcValido,
+      razon_social: razonSocialValida,
+      regimen_fiscal: regimenFiscalValido,
+      domicilio: domicilioValido,
+      seguro_rc: seguroRCValido,
+      proveedor_timbrado: proveedorValido
     };
 
-    // Identificar campos pendientes específicos
+    // Identificar campos pendientes específicos basados en el desglose
     const camposPendientes: string[] = [];
     
-    if (!validacionReal.categorias.datosFiscales.valido) {
-      validacionReal.categorias.datosFiscales.errores.forEach((error: string) => {
-        if (error.includes('Razón social')) camposPendientes.push('Razón Social');
-        if (error.includes('RFC')) camposPendientes.push('RFC');
-        if (error.includes('Régimen fiscal')) camposPendientes.push('Régimen Fiscal');
-      });
-    }
-    
-    if (!validacionReal.categorias.domicilioFiscal.valido) {
+    if (!desglose.rfc) camposPendientes.push('RFC');
+    if (!desglose.razon_social) camposPendientes.push('Razón Social');
+    if (!desglose.regimen_fiscal) camposPendientes.push('Régimen Fiscal');
+    if (!desglose.domicilio) {
       validacionReal.categorias.domicilioFiscal.errores.forEach((error: string) => {
-        if (error.includes('calle')) camposPendientes.push('Calle');
-        if (error.includes('código postal')) camposPendientes.push('Código Postal');
-        if (error.includes('colonia')) camposPendientes.push('Colonia');
-        if (error.includes('municipio')) camposPendientes.push('Municipio');
-        if (error.includes('estado')) camposPendientes.push('Estado');
+        const errorLower = error.toLowerCase();
+        if (errorLower.includes('calle')) camposPendientes.push('Calle');
+        if (errorLower.includes('código postal')) camposPendientes.push('Código Postal');
+        if (errorLower.includes('colonia')) camposPendientes.push('Colonia');
+        if (errorLower.includes('municipio')) camposPendientes.push('Municipio');
+        if (errorLower.includes('estado')) camposPendientes.push('Estado');
       });
+      if (validacionReal.categorias.domicilioFiscal.errores.length === 0) {
+        camposPendientes.push('Domicilio Fiscal');
+      }
     }
-    
-    if (!validacionReal.categorias.seguros.valido) {
-      validacionReal.categorias.seguros.errores.forEach((error: string) => {
-        if (error.includes('Responsabilidad Civil')) camposPendientes.push('Seguro RC');
-      });
-    }
+    if (!desglose.seguro_rc) camposPendientes.push('Seguro RC');
+    if (!desglose.proveedor_timbrado) camposPendientes.push('Proveedor de Timbrado');
 
     console.log('📊 [DashboardConfiguracion] Completitud REAL desde BD:', {
       total,
       puntos,
       porcentaje,
-      erroresObligatorios,
       desglose,
       camposPendientes,
       validacionCompleta: validacionReal
@@ -314,8 +322,8 @@ export function DashboardConfiguracion() {
                 </CollapsibleContent>
               </Collapsible>
             ) : (
-              <p className="text-xs text-muted-foreground mt-2">
-                ✅ Configuración completa
+              <p className="text-xs text-success mt-2">
+                Configuración completa
               </p>
             )}
           </CardContent>

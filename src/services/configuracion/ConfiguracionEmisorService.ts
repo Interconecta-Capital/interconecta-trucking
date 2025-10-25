@@ -53,10 +53,8 @@ export class ConfiguracionEmisorService {
         throw new Error('No existe configuración empresarial. Por favor, configura tu empresa en Administración > Mi Empresa.');
       }
 
-      // Validar que la configuración esté completa
-      if (!configData.configuracion_completa) {
-        throw new Error('La configuración empresarial está incompleta. Por favor, completa todos los campos requeridos.');
-      }
+      // ⚠️ NO validar configuracion_completa aquí - ese flag se actualiza DESPUÉS de validar
+      // La validación real se hace en validarConfiguracionCompleta()
 
       const domicilio = (configData.domicilio_fiscal || {}) as {
         calle?: string;

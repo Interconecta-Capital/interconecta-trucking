@@ -347,37 +347,6 @@ export const useConfiguracionEmpresarial = () => {
       }
 
       console.log('✅ [guardarConfiguracion] Datos guardados correctamente en BD:', JSON.stringify(data, null, 2));
-      
-      // ✅ FASE 5.3: Verificación POST-guardado inmediata
-      console.log('🔍 [VERIFICACIÓN POST-GUARDADO] Comparando datos enviados vs guardados...');
-      
-      const camposEnviados = Object.keys(updateData);
-      const discrepancias: string[] = [];
-      
-      for (const campo of camposEnviados) {
-        const valorEnviado = updateData[campo];
-        const valorGuardado = data[campo];
-        
-        // Comparar como JSON para manejar objetos
-        const enviado = JSON.stringify(valorEnviado);
-        const guardado = JSON.stringify(valorGuardado);
-        
-        if (enviado !== guardado) {
-          console.warn(`⚠️ [DISCREPANCIA] Campo: ${campo}`);
-          console.warn(`   Enviado: ${enviado}`);
-          console.warn(`   Guardado: ${guardado}`);
-          discrepancias.push(campo);
-        }
-      }
-      
-      if (discrepancias.length > 0) {
-        console.error('❌ [VERIFICACIÓN] Se encontraron discrepancias:', discrepancias);
-        toast.error(`Los siguientes campos no se guardaron correctamente: ${discrepancias.join(', ')}`, {
-          duration: 8000
-        });
-      } else {
-        console.log('✅ [VERIFICACIÓN POST-GUARDADO] Todos los campos coinciden');
-      }
 
       if (data) {
         setConfiguracion(mapConfiguracionFromDB(data));
@@ -403,9 +372,7 @@ export const useConfiguracionEmpresarial = () => {
         }
       }
 
-      if (discrepancias.length === 0) {
-        toast.success('Configuración guardada y verificada correctamente');
-      }
+      toast.success('Configuración guardada correctamente');
       console.log('✅ [guardarConfiguracion] ===== FIN GUARDADO EXITOSO =====');
       return true;
     } catch (error) {
