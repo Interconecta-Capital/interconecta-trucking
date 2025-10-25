@@ -7,6 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -16,11 +18,14 @@ import {
   Settings,
   TrendingUp,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  Bug,
+  ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ConfiguracionEmisorService } from '@/services/configuracion/ConfiguracionEmisorService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function DashboardConfiguracion() {
   const { configuracion, isLoading, cargarConfiguracion } = useConfiguracionEmpresarial();
@@ -30,6 +35,8 @@ export function DashboardConfiguracion() {
   // Estado para validación en tiempo real desde BD
   const [validacionReal, setValidacionReal] = useState<any>(null);
   const [validando, setValidando] = useState(false);
+  const [datosRawDB, setDatosRawDB] = useState<any>(null);
+  const [showDebugDialog, setShowDebugDialog] = useState(false);
 
   // Validar configuración real desde BD al montar y cuando cambie configuracion
   useEffect(() => {
@@ -42,6 +49,16 @@ export function DashboardConfiguracion() {
       const resultado = await ConfiguracionEmisorService.validarConfiguracionCompleta();
       setValidacionReal(resultado);
       console.log('📊 [DashboardConfiguracion] Validación REAL desde BD:', resultado);
+      
+      // ✅ FASE 5.1: Obtener datos RAW de la BD para diagnóstico
+      const { data: rawData } = await supabase
+        .from('configuracion_empresa')
+        .select('*')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+      
+      setDatosRawDB(rawData);
+      console.log('🔍 [DEBUG] Datos RAW de BD:', rawData);
     } catch (error) {
       console.error('Error validando configuración:', error);
     } finally {
@@ -160,6 +177,26 @@ export function DashboardConfiguracion() {
 
   return (
     <div className="space-y-6">
+      {/* ✅ FASE 6.4: Banner de desincronización */}
+      {completitud.porcentaje < 100 && validacionReal?.isValid && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>⚠️ Datos Desincronizados</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>Los datos en pantalla no coinciden con la base de datos</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRecargarDesdeBD}
+              className="ml-4"
+            >
+              <RefreshCw className="h-3 w-3 mr-2" />
+              Sincronizar Ahora
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Estado General del Sistema */}
       <Alert variant={estadoSistema === 'critico' ? 'destructive' : 'default'}>
         <div className="flex items-center justify-between">
@@ -184,15 +221,57 @@ export function DashboardConfiguracion() {
               </AlertDescription>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleRecargarDesdeBD}
-            className="h-8 w-8 ml-4"
-            title="Sincronizar con base de datos"
-          >
-            <RefreshCw className="h-3 w-3" />
-          </Button>
+          <div className="flex gap-2 ml-4">
+            {/* ✅ FASE 5.1: Botón de diagnóstico (solo en development) */}
+            {process.env.NODE_ENV === 'development' && (
+              <Dialog open={showDebugDialog} onOpenChange={setShowDebugDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="🔍 Diagnóstico DB (Dev Mode)"
+                  >
+                    <Bug className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>🔍 Diagnóstico de Base de Datos</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">📦 Datos RAW de BD:</h3>
+                      <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-60">
+                        {JSON.stringify(datosRawDB, null, 2)}
+                      </pre>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">🔄 Datos Mapeados por Hook:</h3>
+                      <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-60">
+                        {JSON.stringify(configuracion, null, 2)}
+                      </pre>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">✅ Resultado de Validación:</h3>
+                      <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-60">
+                        {JSON.stringify(validacionReal, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleRecargarDesdeBD}
+              className="h-8 w-8"
+              title="Sincronizar con base de datos"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
       </Alert>
 
@@ -205,17 +284,39 @@ export function DashboardConfiguracion() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completitud.porcentaje}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {completitud.camposPendientes.length > 0 
-                ? `Pendiente: ${completitud.camposPendientes.slice(0, 2).join(', ')}${completitud.camposPendientes.length > 2 ? '...' : ''}`
-                : `${completitud.puntos} de ${completitud.total} campos completos`
-              }
-            </p>
-            {completitud.porcentaje < 100 && completitud.camposPendientes.length > 0 && (
-              <Badge variant="outline" className="mt-2">
-                {completitud.camposPendientes.length} pendiente{completitud.camposPendientes.length > 1 ? 's' : ''}
-              </Badge>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{completitud.porcentaje}%</span>
+              {completitud.porcentaje === 100 ? (
+                <CheckCircle2 className="h-6 w-6 text-success" />
+              ) : (
+                <AlertTriangle className="h-6 w-6 text-warning" />
+              )}
+            </div>
+            
+            {/* ✅ FASE 6.3: Lista expandible de campos pendientes */}
+            {completitud.camposPendientes.length > 0 ? (
+              <Collapsible className="w-full mt-2">
+                <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
+                  <Badge variant="destructive" className="text-xs">
+                    {completitud.camposPendientes.length} {completitud.camposPendientes.length === 1 ? 'campo pendiente' : 'campos pendientes'}
+                  </Badge>
+                  <ChevronDown className="h-3 w-3" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ul className="text-xs mt-3 space-y-1.5 pl-2">
+                    {completitud.camposPendientes.map((campo, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                        <span>{campo}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-2">
+                ✅ Configuración completa
+              </p>
             )}
           </CardContent>
         </Card>

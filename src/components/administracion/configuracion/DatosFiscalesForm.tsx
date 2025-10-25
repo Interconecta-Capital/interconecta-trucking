@@ -117,6 +117,19 @@ export function DatosFiscalesForm() {
       }
     });
     
+    // ✅ FASE 6.2: Validación PRE-guardado en formulario
+    if (!data.regimen_fiscal || data.regimen_fiscal.trim() === '') {
+      console.error('❌ [VALIDACIÓN] Régimen fiscal vacío');
+      return; // El form ya muestra el error por Zod
+    }
+
+    if (!data.codigo_postal || !/^\d{5}$/.test(data.codigo_postal)) {
+      console.error('❌ [VALIDACIÓN] Código postal inválido');
+      return; // El form ya muestra el error por Zod
+    }
+
+    console.log('✅ [VALIDACIÓN] Pre-guardado pasado en formulario');
+    
     try {
       console.log('🔄 [DatosFiscalesForm] Llamando a guardarConfiguracion...');
       await guardarConfiguracion(data);

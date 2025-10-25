@@ -46,6 +46,56 @@ export function ConfiguracionOperativaForm() {
 
   const handleGuardar = async () => {
     console.log('💾 [ConfiguracionOperativaForm] Guardando seguros...');
+    
+    // ✅ FASE 6.2: Validación PRE-guardado para seguros
+    console.log('🔍 [VALIDACIÓN] Verificando seguros obligatorios...');
+    
+    // Validar seguro de responsabilidad civil (OBLIGATORIO)
+    if (!formData.seguroRespCivilPoliza.trim() && !formData.seguroRespCivilAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Seguro de Resp. Civil está vacío (OBLIGATORIO)');
+      toast.error('El Seguro de Responsabilidad Civil es obligatorio');
+      return;
+    }
+    
+    if (formData.seguroRespCivilPoliza.trim() && !formData.seguroRespCivilAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Falta aseguradora del seguro de Resp. Civil');
+      toast.error('Debe especificar la aseguradora del seguro de Responsabilidad Civil');
+      return;
+    }
+    
+    if (!formData.seguroRespCivilPoliza.trim() && formData.seguroRespCivilAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Falta póliza del seguro de Resp. Civil');
+      toast.error('Debe especificar el número de póliza del seguro de Responsabilidad Civil');
+      return;
+    }
+    
+    // Validar seguros opcionales (si tienen uno, deben tener ambos campos)
+    if (formData.seguroCargaPoliza.trim() && !formData.seguroCargaAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Falta aseguradora del seguro de Carga');
+      toast.error('Si ingresa póliza de seguro de Carga, debe especificar la aseguradora');
+      return;
+    }
+    
+    if (!formData.seguroCargaPoliza.trim() && formData.seguroCargaAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Falta póliza del seguro de Carga');
+      toast.error('Si ingresa aseguradora de seguro de Carga, debe especificar la póliza');
+      return;
+    }
+    
+    if (formData.seguroAmbientalPoliza.trim() && !formData.seguroAmbientalAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Falta aseguradora del seguro Ambiental');
+      toast.error('Si ingresa póliza de seguro Ambiental, debe especificar la aseguradora');
+      return;
+    }
+    
+    if (!formData.seguroAmbientalPoliza.trim() && formData.seguroAmbientalAseguradora.trim()) {
+      console.error('❌ [VALIDACIÓN] Falta póliza del seguro Ambiental');
+      toast.error('Si ingresa aseguradora de seguro Ambiental, debe especificar la póliza');
+      return;
+    }
+    
+    console.log('✅ [VALIDACIÓN] Todas las validaciones de seguros pasadas');
+    
     try {
       // Validar que seguros opcionales no se guarden vacíos
       const seguroRespCivil = formData.seguroRespCivilPoliza.trim() || formData.seguroRespCivilAseguradora.trim()

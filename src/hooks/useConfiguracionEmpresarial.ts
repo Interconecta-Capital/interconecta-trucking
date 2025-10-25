@@ -209,7 +209,38 @@ export const useConfiguracionEmpresarial = () => {
         return false;
       }
 
+      console.log('💾 [guardarConfiguracion] ===== INICIO GUARDADO =====');
       console.log('💾 [guardarConfiguracion] Datos a guardar (antes de mapeo):', JSON.stringify(datos, null, 2));
+      
+      // ✅ FASE 5.2: Validación PRE-guardado
+      console.log('🔍 [VALIDACIÓN PRE-GUARDADO] Iniciando validaciones...');
+      
+      // Validar campos obligatorios de datos fiscales
+      if (datos.razon_social !== undefined && !datos.razon_social?.trim()) {
+        console.error('❌ [VALIDACIÓN] razon_social está vacía');
+        toast.error('La razón social no puede estar vacía');
+        throw new Error('Validación fallida: razon_social vacía');
+      }
+      
+      if (datos.rfc_emisor !== undefined && !datos.rfc_emisor?.trim()) {
+        console.error('❌ [VALIDACIÓN] rfc_emisor está vacío');
+        toast.error('El RFC no puede estar vacío');
+        throw new Error('Validación fallida: rfc_emisor vacío');
+      }
+      
+      if (datos.regimen_fiscal !== undefined && !datos.regimen_fiscal?.trim()) {
+        console.error('❌ [VALIDACIÓN] regimen_fiscal está vacío');
+        toast.error('El régimen fiscal no puede estar vacío');
+        throw new Error('Validación fallida: regimen_fiscal vacío');
+      }
+      
+      if (datos.codigo_postal !== undefined && !/^\d{5}$/.test(datos.codigo_postal)) {
+        console.error('❌ [VALIDACIÓN] codigo_postal inválido:', datos.codigo_postal);
+        toast.error('El código postal debe tener 5 dígitos');
+        throw new Error('Validación fallida: codigo_postal inválido');
+      }
+      
+      console.log('✅ [VALIDACIÓN PRE-GUARDADO] Todas las validaciones pasadas');
 
       // Construir el objeto de actualización
       const updateData: any = {};
@@ -316,6 +347,37 @@ export const useConfiguracionEmpresarial = () => {
       }
 
       console.log('✅ [guardarConfiguracion] Datos guardados correctamente en BD:', JSON.stringify(data, null, 2));
+      
+      // ✅ FASE 5.3: Verificación POST-guardado inmediata
+      console.log('🔍 [VERIFICACIÓN POST-GUARDADO] Comparando datos enviados vs guardados...');
+      
+      const camposEnviados = Object.keys(updateData);
+      const discrepancias: string[] = [];
+      
+      for (const campo of camposEnviados) {
+        const valorEnviado = updateData[campo];
+        const valorGuardado = data[campo];
+        
+        // Comparar como JSON para manejar objetos
+        const enviado = JSON.stringify(valorEnviado);
+        const guardado = JSON.stringify(valorGuardado);
+        
+        if (enviado !== guardado) {
+          console.warn(`⚠️ [DISCREPANCIA] Campo: ${campo}`);
+          console.warn(`   Enviado: ${enviado}`);
+          console.warn(`   Guardado: ${guardado}`);
+          discrepancias.push(campo);
+        }
+      }
+      
+      if (discrepancias.length > 0) {
+        console.error('❌ [VERIFICACIÓN] Se encontraron discrepancias:', discrepancias);
+        toast.error(`Los siguientes campos no se guardaron correctamente: ${discrepancias.join(', ')}`, {
+          duration: 8000
+        });
+      } else {
+        console.log('✅ [VERIFICACIÓN POST-GUARDADO] Todos los campos coinciden');
+      }
 
       if (data) {
         setConfiguracion(mapConfiguracionFromDB(data));
@@ -341,7 +403,10 @@ export const useConfiguracionEmpresarial = () => {
         }
       }
 
-      toast.success('Configuración guardada y verificada exitosamente');
+      if (discrepancias.length === 0) {
+        toast.success('Configuración guardada y verificada correctamente');
+      }
+      console.log('✅ [guardarConfiguracion] ===== FIN GUARDADO EXITOSO =====');
       return true;
     } catch (error) {
       console.error('💥 Error guardando configuración:', error);
