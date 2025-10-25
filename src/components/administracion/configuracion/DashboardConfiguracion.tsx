@@ -71,7 +71,7 @@ export function DashboardConfiguracion() {
   // Calcular completitud basado en validación REAL desde BD
   const calcularCompletitud = () => {
     if (!validacionReal) {
-      return { puntos: 0, total: 6, porcentaje: 0, desglose: {} };
+      return { puntos: 0, total: 6, porcentaje: 0, desglose: {}, camposPendientes: [] };
     }
 
     // Usar los errores de la validación real para calcular completitud
@@ -93,16 +93,44 @@ export function DashboardConfiguracion() {
       proveedor_timbrado: !validacionReal.errors.some((e: string) => e.includes('proveedor_timbrado'))
     };
 
+    // Identificar campos pendientes específicos
+    const camposPendientes: string[] = [];
+    
+    if (!validacionReal.categorias.datosFiscales.valido) {
+      validacionReal.categorias.datosFiscales.errores.forEach((error: string) => {
+        if (error.includes('Razón social')) camposPendientes.push('Razón Social');
+        if (error.includes('RFC')) camposPendientes.push('RFC');
+        if (error.includes('Régimen fiscal')) camposPendientes.push('Régimen Fiscal');
+      });
+    }
+    
+    if (!validacionReal.categorias.domicilioFiscal.valido) {
+      validacionReal.categorias.domicilioFiscal.errores.forEach((error: string) => {
+        if (error.includes('calle')) camposPendientes.push('Calle');
+        if (error.includes('código postal')) camposPendientes.push('Código Postal');
+        if (error.includes('colonia')) camposPendientes.push('Colonia');
+        if (error.includes('municipio')) camposPendientes.push('Municipio');
+        if (error.includes('estado')) camposPendientes.push('Estado');
+      });
+    }
+    
+    if (!validacionReal.categorias.seguros.valido) {
+      validacionReal.categorias.seguros.errores.forEach((error: string) => {
+        if (error.includes('Responsabilidad Civil')) camposPendientes.push('Seguro RC');
+      });
+    }
+
     console.log('📊 [DashboardConfiguracion] Completitud REAL desde BD:', {
       total,
       puntos,
       porcentaje,
       erroresObligatorios,
       desglose,
+      camposPendientes,
       validacionCompleta: validacionReal
     });
 
-    return { puntos, total, porcentaje, desglose };
+    return { puntos, total, porcentaje, desglose, camposPendientes };
   };
 
   const completitud = calcularCompletitud();
@@ -157,13 +185,13 @@ export function DashboardConfiguracion() {
             </div>
           </div>
           <Button 
-            variant="outline" 
-            size="sm" 
+            variant="ghost" 
+            size="icon" 
             onClick={handleRecargarDesdeBD}
-            className="ml-4"
+            className="h-8 w-8 ml-4"
+            title="Sincronizar con base de datos"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Recargar desde BD
+            <RefreshCw className="h-3 w-3" />
           </Button>
         </div>
       </Alert>
@@ -179,11 +207,14 @@ export function DashboardConfiguracion() {
           <CardContent>
             <div className="text-2xl font-bold">{completitud.porcentaje}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {completitud.puntos} de {completitud.total} campos completos
+              {completitud.camposPendientes.length > 0 
+                ? `Pendiente: ${completitud.camposPendientes.slice(0, 2).join(', ')}${completitud.camposPendientes.length > 2 ? '...' : ''}`
+                : `${completitud.puntos} de ${completitud.total} campos completos`
+              }
             </p>
-            {completitud.porcentaje < 100 && (
+            {completitud.porcentaje < 100 && completitud.camposPendientes.length > 0 && (
               <Badge variant="outline" className="mt-2">
-                {completitud.total - completitud.puntos} pendientes
+                {completitud.camposPendientes.length} pendiente{completitud.camposPendientes.length > 1 ? 's' : ''}
               </Badge>
             )}
           </CardContent>

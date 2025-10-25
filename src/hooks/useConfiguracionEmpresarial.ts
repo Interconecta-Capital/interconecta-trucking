@@ -299,13 +299,20 @@ export const useConfiguracionEmpresarial = () => {
       const { data, error } = await supabase
         .from('configuracion_empresa')
         .update(updateData)
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
       if (error) {
-        console.error('❌ Error al guardar en BD:', error);
+        console.error('❌ [guardarConfiguracion] Error al guardar en BD:', error);
+        toast.error(`Error al guardar: ${error.message}`);
         throw error;
+      }
+
+      if (!data) {
+        console.error('❌ [guardarConfiguracion] No se actualizó ningún registro');
+        toast.error('No se pudo guardar la configuración. Intenta recargar la página.');
+        throw new Error('No se actualizó ningún registro en la BD');
       }
 
       console.log('✅ [guardarConfiguracion] Datos guardados correctamente en BD:', JSON.stringify(data, null, 2));
@@ -327,7 +334,7 @@ export const useConfiguracionEmpresarial = () => {
         await supabase
           .from('configuracion_empresa')
           .update({ configuracion_completa: validacion.isValid })
-          .eq('id', user.id);
+          .eq('user_id', user.id);
           
         if (validacion.isValid) {
           toast.success('🎉 Configuración empresarial completa');
