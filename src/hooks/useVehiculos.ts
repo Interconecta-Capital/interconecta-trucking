@@ -40,7 +40,7 @@ export interface Vehiculo {
   valor_vehiculo?: number;
   configuracion_ejes: 'C2' | 'C3' | 'T2S1' | 'T3S2' | 'T3S3';
   factor_peajes: number;
-  estado: string;
+  estado: 'disponible' | 'en_viaje' | 'mantenimiento' | 'revision' | 'fuera_servicio';
   activo: boolean;
   created_at: string;
   updated_at: string;

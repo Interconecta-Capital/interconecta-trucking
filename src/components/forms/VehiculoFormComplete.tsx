@@ -88,6 +88,7 @@ export const VehiculoFormComplete = ({ vehiculoId, onSuccess, onCancel }: Vehicu
       costo_llantas_km: formData.costo_llantas_km,
       configuracion_ejes: formData.configuracion_ejes,
       factor_peajes: formData.factor_peajes,
+      estado: (formData.estado as 'disponible' | 'en_viaje' | 'mantenimiento' | 'revision' | 'fuera_servicio') || 'disponible',
       activo: true
     };
 

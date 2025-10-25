@@ -149,6 +149,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         costo_llantas_km: parseFloat(formData.costo_llantas_km) || 1.08,
         valor_vehiculo: formData.valor_vehiculo ? parseFloat(formData.valor_vehiculo) : undefined,
         factor_peajes: parseFloat(formData.factor_peajes) || 2.0,
+        estado: (formData.estado as 'disponible' | 'en_viaje' | 'mantenimiento' | 'revision' | 'fuera_servicio') || 'disponible',
         activo: true
       };
 
