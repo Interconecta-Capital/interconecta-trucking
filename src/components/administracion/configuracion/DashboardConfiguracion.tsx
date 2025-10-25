@@ -1,279 +1,260 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
+import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { useCertificadosDigitales } from '@/hooks/useCertificadosDigitales';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
-  Shield, 
-  FileText, 
-  Truck,
-  Clock,
-  TrendingUp
+  Shield,
+  FileKey,
+  Settings,
+  TrendingUp,
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
-import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
-import { useCertificadosDigitales } from '@/hooks/useCertificadosDigitales';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ConfiguracionEmisorService } from '@/services/configuracion/ConfiguracionEmisorService';
 
 export function DashboardConfiguracion() {
-  const { configuracion, isLoading } = useConfiguracionEmpresarial();
-  const { certificados, certificadoActivo, esCertificadoValido, diasHastaVencimiento } = useCertificadosDigitales();
+  const { configuracion, isLoading, cargarConfiguracion } = useConfiguracionEmpresarial();
+  const { certificados } = useCertificadosDigitales();
   const navigate = useNavigate();
+  
+  // Estado para validación en tiempo real desde BD
+  const [validacionReal, setValidacionReal] = useState<any>(null);
+  const [validando, setValidando] = useState(false);
 
-  if (isLoading) {
+  // Validar configuración real desde BD al montar y cuando cambie configuracion
+  useEffect(() => {
+    validarConfiguracionReal();
+  }, [configuracion]);
+
+  const validarConfiguracionReal = async () => {
+    setValidando(true);
+    try {
+      const resultado = await ConfiguracionEmisorService.validarConfiguracionCompleta();
+      setValidacionReal(resultado);
+      console.log('📊 [DashboardConfiguracion] Validación REAL desde BD:', resultado);
+    } catch (error) {
+      console.error('Error validando configuración:', error);
+    } finally {
+      setValidando(false);
+    }
+  };
+
+  const handleRecargarDesdeBD = async () => {
+    await cargarConfiguracion();
+    await validarConfiguracionReal();
+  };
+
+  if (isLoading || validando) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="h-24 bg-muted" />
-            <CardContent className="h-32 bg-muted/50" />
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <Skeleton className="h-[200px] w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-[180px]" />
+          <Skeleton className="h-[180px]" />
+          <Skeleton className="h-[180px]" />
+          <Skeleton className="h-[180px]" />
+        </div>
       </div>
     );
   }
 
-  // Calcular completitud de configuración (6 campos obligatorios)
+  // Calcular completitud basado en validación REAL desde BD
   const calcularCompletitud = () => {
-    let puntos = 0;
-    const total = 6;
+    if (!validacionReal) {
+      return { puntos: 0, total: 6, porcentaje: 0, desglose: {} };
+    }
 
-    // 1. RFC del emisor
-    if (configuracion?.rfc_emisor?.trim()) puntos++;
-    
-    // 2. Razón social
-    if (configuracion?.razon_social?.trim()) puntos++;
-    
-    // 3. Régimen fiscal
-    if (configuracion?.regimen_fiscal?.trim()) puntos++;
-    
-    // 4. Domicilio fiscal completo (todos los campos requeridos)
-    if (configuracion?.codigo_postal?.trim() && 
-        configuracion?.calle?.trim() && 
-        configuracion?.colonia?.trim() && 
-        configuracion?.municipio?.trim() && 
-        configuracion?.estado?.trim()) {
-      puntos++;
-    }
-    
-    // 5. Seguro de responsabilidad civil COMPLETO (póliza + aseguradora)
-    const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
-    if (seguroRespCivil?.poliza?.trim() && seguroRespCivil?.aseguradora?.trim()) {
-      puntos++;
-    }
-    
-    // 6. Proveedor de timbrado
-    if (configuracion?.proveedor_timbrado?.trim()) puntos++;
-    
-    console.log('📊 [DashboardConfiguracion] Completitud:', {
+    // Usar los errores de la validación real para calcular completitud
+    const total = 6; // RFC, Razón Social, Régimen Fiscal, Domicilio (completo), Seguro RC, Proveedor Timbrado
+    const erroresObligatorios = validacionReal.errors.length;
+    const puntos = Math.max(0, total - erroresObligatorios);
+    const porcentaje = Math.round((puntos / total) * 100);
+
+    // Crear desglose basado en las categorías de validación
+    const desglose = {
+      rfc: validacionReal.categorias.datosFiscales.valido && 
+           !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.includes('RFC')),
+      razon_social: validacionReal.categorias.datosFiscales.valido && 
+                    !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.includes('Razón social')),
+      regimen_fiscal: validacionReal.categorias.datosFiscales.valido && 
+                      !validacionReal.categorias.datosFiscales.errores.some((e: string) => e.includes('Régimen fiscal')),
+      domicilio: validacionReal.categorias.domicilioFiscal.valido,
+      seguro_rc: validacionReal.categorias.seguros.valido,
+      proveedor_timbrado: !validacionReal.errors.some((e: string) => e.includes('proveedor_timbrado'))
+    };
+
+    console.log('📊 [DashboardConfiguracion] Completitud REAL desde BD:', {
       total,
       puntos,
-      porcentaje: Math.round((puntos / total) * 100),
-      desglose: {
-        rfc: !!configuracion?.rfc_emisor?.trim(),
-        razon_social: !!configuracion?.razon_social?.trim(),
-        regimen_fiscal: !!configuracion?.regimen_fiscal?.trim(),
-        domicilio: !!(configuracion?.codigo_postal?.trim() && configuracion?.calle?.trim() && 
-                      configuracion?.colonia?.trim() && configuracion?.municipio?.trim() && 
-                      configuracion?.estado?.trim()),
-        seguro_rc: !!(seguroRespCivil?.poliza?.trim() && seguroRespCivil?.aseguradora?.trim()),
-        proveedor_timbrado: !!configuracion?.proveedor_timbrado?.trim()
-      }
+      porcentaje,
+      erroresObligatorios,
+      desglose,
+      validacionCompleta: validacionReal
     });
-    
-    return Math.round((puntos / total) * 100);
+
+    return { puntos, total, porcentaje, desglose };
   };
 
   const completitud = calcularCompletitud();
 
   // Determinar estado del sistema
-  const getEstadoSistema = () => {
-    if (!certificadoActivo || !configuracion?.rfc_emisor || !configuracion?.proveedor_timbrado) {
-      return { estado: 'critico', color: 'destructive', icon: XCircle, texto: 'Sistema no operativo' };
-    }
-    if (completitud < 80) {
-      return { estado: 'advertencia', color: 'warning', icon: AlertTriangle, texto: 'Configuración incompleta' };
-    }
-    return { estado: 'operativo', color: 'success', icon: CheckCircle2, texto: 'Sistema operativo' };
+  const getEstado_Sistema = () => {
+    if (!validacionReal) return 'critico';
+    if (validacionReal.isValid && certificados.length > 0) return 'operativo';
+    if (completitud.porcentaje >= 50) return 'advertencia';
+    return 'critico';
   };
 
-  const estadoSistema = getEstadoSistema();
+  const estadoSistema = getEstado_Sistema();
 
-  // Calcular certificados próximos a vencer
-  const certificadosProximosVencer = certificados.filter((cert) => {
-    if (!esCertificadoValido(cert)) return false;
-    const dias = diasHastaVencimiento(cert);
-    return dias <= 30 && dias > 0;
+  // Usar warnings de la validación real
+  const warnings = validacionReal ? [
+    ...validacionReal.errors,  // Errores obligatorios
+    ...validacionReal.warnings // Advertencias/recomendaciones
+  ] : [];
+
+  const certificadosProximosVencer = certificados.filter(cert => {
+    const diasRestantes = Math.ceil((new Date(cert.fecha_fin_vigencia).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return diasRestantes > 0 && diasRestantes <= 30;
   }).length;
 
-  const certificadosVencidos = certificados.filter((cert) => !esCertificadoValido(cert)).length;
-
-  // Warnings activos
-  const warnings = [];
-  if (!configuracion?.rfc_emisor) warnings.push('RFC no configurado');
-  if (!certificadoActivo) warnings.push('Sin certificado digital activo');
-  if (!configuracion?.proveedor_timbrado) warnings.push('Proveedor de timbrado no configurado');
-  
-  // Validar seguro de responsabilidad civil (OBLIGATORIO)
-  const seguroRespCivil = configuracion?.seguro_resp_civil_empresa as any;
-  if (!seguroRespCivil?.poliza?.trim() || !seguroRespCivil?.aseguradora?.trim()) {
-    warnings.push('Seguro de Responsabilidad Civil incompleto: se requiere póliza y aseguradora (obligatorio)');
-  }
-
-  // Advertencias para seguros opcionales (recomendados)
-  const seguroCarga = configuracion?.seguro_carga_empresa as any;
-  if (!seguroCarga?.poliza?.trim() || !seguroCarga?.aseguradora?.trim()) {
-    warnings.push('Seguro de carga no configurado o incompleto (recomendado para protección de mercancía)');
-  }
-
-  const seguroAmbiental = configuracion?.seguro_ambiental_empresa as any;
-  if (!seguroAmbiental?.poliza?.trim() || !seguroAmbiental?.aseguradora?.trim()) {
-    warnings.push('Seguro ambiental no configurado o incompleto (recomendado para sustancias peligrosas)');
-  }
-  
-  if (certificadosProximosVencer > 0) warnings.push(`${certificadosProximosVencer} certificado(s) próximo(s) a vencer`);
-  if (configuracion?.modo_pruebas) warnings.push('Sistema en modo de pruebas');
-
-  const IconoEstado = estadoSistema.icon;
+  const certificadosVencidos = certificados.filter(cert => new Date(cert.fecha_fin_vigencia) < new Date()).length;
 
   return (
     <div className="space-y-6">
       {/* Estado General del Sistema */}
-      <Alert className={`border-2 ${
-        estadoSistema.estado === 'operativo' ? 'border-green-500 bg-green-50' :
-        estadoSistema.estado === 'advertencia' ? 'border-yellow-500 bg-yellow-50' :
-        'border-red-500 bg-red-50'
-      }`}>
-        <IconoEstado className="h-5 w-5" />
-        <AlertTitle className="text-lg font-semibold">
-          {estadoSistema.texto}
-        </AlertTitle>
-        <AlertDescription>
-          {estadoSistema.estado === 'operativo' && 'Su configuración está completa y el sistema está listo para operar.'}
-          {estadoSistema.estado === 'advertencia' && 'Complete la configuración para habilitar todas las funcionalidades.'}
-          {estadoSistema.estado === 'critico' && 'Complete la configuración obligatoria para poder generar documentos fiscales.'}
-        </AlertDescription>
+      <Alert variant={estadoSistema === 'critico' ? 'destructive' : 'default'}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-1">
+            {estadoSistema === 'operativo' ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : estadoSistema === 'advertencia' ? (
+              <AlertTriangle className="h-5 w-5" />
+            ) : (
+              <XCircle className="h-5 w-5" />
+            )}
+            <div className="flex-1">
+              <AlertTitle className="mb-0">
+                {estadoSistema === 'operativo' && 'Sistema Operativo'}
+                {estadoSistema === 'advertencia' && 'Configuración Incompleta'}
+                {estadoSistema === 'critico' && 'Configuración Crítica'}
+              </AlertTitle>
+              <AlertDescription className="mt-2">
+                {estadoSistema === 'operativo' && 'Todos los sistemas están configurados correctamente y operando normalmente.'}
+                {estadoSistema === 'advertencia' && `Hay ${warnings.length} elemento${warnings.length > 1 ? 's' : ''} que requiere${warnings.length === 1 ? '' : 'n'} atención.`}
+                {estadoSistema === 'critico' && 'La configuración está incompleta. Algunos módulos pueden no funcionar correctamente.'}
+              </AlertDescription>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRecargarDesdeBD}
+            className="ml-4"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Recargar desde BD
+          </Button>
+        </div>
       </Alert>
 
-      {/* Métricas principales */}
+      {/* Métricas Principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Completitud */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Completitud de Configuración
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Completitud de Configuración</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">{completitud}%</div>
-              <Progress value={completitud} className="h-2" />
-              <p className="text-xs text-muted-foreground">
-                {completitud === 100 ? 'Configuración completa' : `${6 - Math.round((completitud / 100) * 6)} campos pendientes`}
-              </p>
+            <div className="text-2xl font-bold">{completitud.porcentaje}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {completitud.puntos} de {completitud.total} campos completos
+            </p>
+            {completitud.porcentaje < 100 && (
+              <Badge variant="outline" className="mt-2">
+                {completitud.total - completitud.puntos} pendientes
+              </Badge>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Certificados Digitales */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Certificados Digitales</CardTitle>
+            <FileKey className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{certificados.length}</div>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {certificadosProximosVencer > 0 && (
+                <Badge variant="warning">{certificadosProximosVencer} próx. vencer</Badge>
+              )}
+              {certificadosVencidos > 0 && (
+                <Badge variant="destructive">{certificadosVencidos} vencidos</Badge>
+              )}
+              {certificados.length > 0 && certificadosVencidos === 0 && (
+                <Badge variant="default">Activo</Badge>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Certificados */}
+        {/* Estado Fiscal */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Certificados Digitales
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Estado Fiscal</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">{certificados.length}</div>
-              <div className="flex gap-2">
-                {certificadoActivo && (
-                  <Badge variant="outline" className="text-xs">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    1 Activo
-                  </Badge>
-                )}
-                {certificadosProximosVencer > 0 && (
-                  <Badge variant="warning" className="text-xs">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {certificadosProximosVencer} Próx. vencer
-                  </Badge>
-                )}
-                {certificadosVencidos > 0 && (
-                  <Badge variant="destructive" className="text-xs">
-                    {certificadosVencidos} Vencido(s)
-                  </Badge>
-                )}
-              </div>
+            <div className="text-2xl font-bold">
+              {configuracion?.rfc_emisor ? 'Configurado' : 'Pendiente'}
             </div>
+            {configuracion?.rfc_emisor && (
+              <Badge variant="outline" className="mt-2">{configuracion.rfc_emisor}</Badge>
+            )}
+            {configuracion?.regimen_fiscal && (
+              <p className="text-xs text-muted-foreground mt-1">Régimen: {configuracion.regimen_fiscal}</p>
+            )}
           </CardContent>
         </Card>
 
-        {/* Documentos Fiscales */}
+        {/* Viajes Bloqueados */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Estado Fiscal
-            </CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Viajes Bloqueados</CardTitle>
+            <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">
-                {configuracion?.rfc_emisor ? 'RFC Configurado' : 'Pendiente'}
-              </div>
-              <div className="space-y-1">
-                {configuracion?.rfc_emisor && (
-                  <Badge variant="outline" className="text-xs">
-                    {configuracion.rfc_emisor}
-                  </Badge>
-                )}
-                {configuracion?.regimen_fiscal && (
-                  <p className="text-xs text-muted-foreground">
-                    Régimen: {configuracion.regimen_fiscal}
-                  </p>
-                )}
-              </div>
+            <div className="text-2xl font-bold">
+              {validacionReal?.isValid && certificados.length > 0 ? '0' : '∞'}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Viajes */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Viajes Bloqueados
-            </CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">
-                {completitud < 100 || !certificadoActivo ? '∞' : '0'}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {completitud < 100 
-                  ? 'Complete campos obligatorios para crear viajes'
-                  : !certificadoActivo
-                  ? 'Configure certificado digital para crear viajes'
-                  : 'Sin restricciones'
-                }
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {validacionReal?.isValid 
+                ? 'Sin restricciones' 
+                : 'Complete la configuración'}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Warnings Activos */}
+      {/* Advertencias Activas */}
       {warnings.length > 0 && (
-        <Card className="border-yellow-500">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-700">
-              <AlertTriangle className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
               Advertencias Activas ({warnings.length})
             </CardTitle>
           </CardHeader>
@@ -281,7 +262,7 @@ export function DashboardConfiguracion() {
             <ul className="space-y-2">
               {warnings.map((warning, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                   <span>{warning}</span>
                 </li>
               ))}
@@ -291,19 +272,10 @@ export function DashboardConfiguracion() {
       )}
 
       {/* Última Actualización */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Última actualización:</span>
-            <span className="font-medium">
-              {new Date().toLocaleString('es-MX', {
-                dateStyle: 'medium',
-                timeStyle: 'short'
-              })}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>Última actualización:</span>
+        <span className="font-medium">{format(new Date(), 'PPp', { locale: es })}</span>
+      </div>
     </div>
   );
 }

@@ -53,22 +53,34 @@ export interface CertificadoEmpresarial {
 
 // Helper para mapear datos de DB a interfaz
 const mapConfiguracionFromDB = (dbData: any): ConfiguracionEmpresarial => {
-  // Manejar domicilio_fiscal que puede ser null, undefined o un objeto
-  const domicilio = dbData.domicilio_fiscal || {};
-  
-  // Manejar seguros que pueden ser null, undefined o un objeto
-  const seguroRespCivil = dbData.seguro_resp_civil || {};
-  const seguroCarga = dbData.seguro_carga || {};
-  const seguroAmbiental = dbData.seguro_ambiental || {};
-  
-  console.log('🔍 [mapConfiguracionFromDB] Datos recibidos de BD:', {
-    rfc: dbData.rfc_emisor,
+  console.log('🔍 [mapConfiguracionFromDB] Datos RAW recibidos de BD:', JSON.stringify({
+    rfc_emisor: dbData.rfc_emisor,
+    razon_social: dbData.razon_social,
     regimen_fiscal: dbData.regimen_fiscal,
     domicilio_fiscal: dbData.domicilio_fiscal,
     seguro_resp_civil: dbData.seguro_resp_civil,
     seguro_carga: dbData.seguro_carga,
     seguro_ambiental: dbData.seguro_ambiental,
-  });
+    proveedor_timbrado: dbData.proveedor_timbrado
+  }, null, 2));
+
+  // Manejar domicilio_fiscal que puede ser null o un objeto vacío
+  const domicilio = (typeof dbData.domicilio_fiscal === 'object' && dbData.domicilio_fiscal !== null) 
+    ? dbData.domicilio_fiscal 
+    : {};
+  
+  // Manejar seguros que pueden ser null o objetos vacíos
+  const seguroRespCivil = (typeof dbData.seguro_resp_civil === 'object' && dbData.seguro_resp_civil !== null)
+    ? dbData.seguro_resp_civil
+    : {};
+  
+  const seguroCarga = (typeof dbData.seguro_carga === 'object' && dbData.seguro_carga !== null)
+    ? dbData.seguro_carga
+    : {};
+  
+  const seguroAmbiental = (typeof dbData.seguro_ambiental === 'object' && dbData.seguro_ambiental !== null)
+    ? dbData.seguro_ambiental
+    : {};
   
   return {
     id: dbData.id,
@@ -137,7 +149,6 @@ export const useConfiguracionEmpresarial = () => {
     try {
       setIsLoading(true);
       
-      // CAMBIO: Leer de configuracion_empresa en lugar de profiles
       const { data: configData, error: configError } = await supabase
         .from('configuracion_empresa')
         .select('*')
@@ -189,113 +200,150 @@ export const useConfiguracionEmpresarial = () => {
   };
 
   const guardarConfiguracion = async (datos: Partial<ConfiguracionEmpresarial>) => {
-    console.log('💾 [guardarConfiguracion] Datos a guardar:', datos);
-    
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-
-      if (!configuracion?.user_id) {
-        throw new Error('No se puede guardar: usuario no identificado');
-      }
-
-      // ✅ Solo actualizar domicilio si se envían datos de domicilio
-      const actualizarDomicilio = datos.calle !== undefined || datos.codigo_postal !== undefined;
-      let domicilioFiscal = null;
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (actualizarDomicilio) {
-        domicilioFiscal = {
-          calle: datos.calle || '',
-          numero_exterior: datos.numero_exterior || '',
-          numero_interior: datos.numero_interior || '',
-          colonia: datos.colonia || '',
-          localidad: datos.localidad || '',
-          municipio: datos.municipio || '',
-          estado: datos.estado || '',
-          pais: datos.pais || 'MEX',
-          codigo_postal: datos.codigo_postal || '',
-          referencia: datos.referencia || ''
-        };
+      if (!user) {
+        toast.error('No hay usuario autenticado');
+        return false;
       }
 
-      // ✅ Construir objeto de actualización solo con campos definidos
-      const updateData: any = {
-        updated_at: new Date().toISOString()
-      };
+      console.log('💾 [guardarConfiguracion] Datos a guardar (antes de mapeo):', JSON.stringify(datos, null, 2));
 
-      if (datos.razon_social !== undefined) updateData.razon_social = datos.razon_social;
-      if (datos.rfc_emisor !== undefined) updateData.rfc_emisor = datos.rfc_emisor?.toUpperCase();
-      if (datos.regimen_fiscal !== undefined) updateData.regimen_fiscal = datos.regimen_fiscal;
-      if (domicilioFiscal) updateData.domicilio_fiscal = domicilioFiscal;
+      // Construir el objeto de actualización
+      const updateData: any = {};
+
+      // Mapear campos simples - ASEGURARSE de incluir todos los campos importantes
+      if (datos.rfc_emisor !== undefined) {
+        updateData.rfc_emisor = datos.rfc_emisor.trim();
+        console.log('✅ RFC a guardar:', updateData.rfc_emisor);
+      }
+      if (datos.razon_social !== undefined) {
+        updateData.razon_social = datos.razon_social.trim();
+        console.log('✅ Razón Social a guardar:', updateData.razon_social);
+      }
+      if (datos.regimen_fiscal !== undefined) {
+        updateData.regimen_fiscal = datos.regimen_fiscal.trim();
+        console.log('✅ Régimen Fiscal a guardar:', updateData.regimen_fiscal);
+      }
+
+      // Construir domicilio_fiscal - SIEMPRE construir si cualquier campo de dirección está presente
+      const tieneDatosDomicilio = datos.calle || datos.codigo_postal || datos.colonia || 
+                                   datos.municipio || datos.estado || datos.numero_exterior;
+      
+      if (tieneDatosDomicilio) {
+        updateData.domicilio_fiscal = {
+          calle: (datos.calle || '').trim(),
+          numero_exterior: (datos.numero_exterior || '').trim(),
+          numero_interior: (datos.numero_interior || '').trim(),
+          colonia: (datos.colonia || '').trim(),
+          localidad: (datos.localidad || '').trim(),
+          municipio: (datos.municipio || '').trim(),
+          estado: (datos.estado || '').trim(),
+          pais: (datos.pais || 'MEX').trim(),
+          codigo_postal: (datos.codigo_postal || '').trim(),
+          referencia: (datos.referencia || '').trim()
+        };
+        console.log('✅ Domicilio Fiscal a guardar:', JSON.stringify(updateData.domicilio_fiscal, null, 2));
+      }
+
+      // Seguros - guardar como null si están vacíos, o con ambos campos si están presentes
+      if (datos.seguro_resp_civil_empresa !== undefined) {
+        const seguro = datos.seguro_resp_civil_empresa;
+        const tienePoliza = seguro?.poliza && seguro.poliza.trim() !== '';
+        const tieneAseguradora = seguro?.aseguradora && seguro.aseguradora.trim() !== '';
+        
+        updateData.seguro_resp_civil = (tienePoliza && tieneAseguradora)
+          ? { poliza: seguro.poliza.trim(), aseguradora: seguro.aseguradora.trim() }
+          : null;
+        
+        console.log('✅ Seguro Resp. Civil a guardar:', updateData.seguro_resp_civil);
+      }
+
+      if (datos.seguro_carga_empresa !== undefined) {
+        const seguro = datos.seguro_carga_empresa;
+        const tienePoliza = seguro?.poliza && seguro.poliza.trim() !== '';
+        const tieneAseguradora = seguro?.aseguradora && seguro.aseguradora.trim() !== '';
+        
+        updateData.seguro_carga = (tienePoliza && tieneAseguradora)
+          ? { poliza: seguro.poliza.trim(), aseguradora: seguro.aseguradora.trim() }
+          : null;
+        
+        console.log('✅ Seguro Carga a guardar:', updateData.seguro_carga);
+      }
+
+      if (datos.seguro_ambiental_empresa !== undefined) {
+        const seguro = datos.seguro_ambiental_empresa;
+        const tienePoliza = seguro?.poliza && seguro.poliza.trim() !== '';
+        const tieneAseguradora = seguro?.aseguradora && seguro.aseguradora.trim() !== '';
+        
+        updateData.seguro_ambiental = (tienePoliza && tieneAseguradora)
+          ? { poliza: seguro.poliza.trim(), aseguradora: seguro.aseguradora.trim() }
+          : null;
+        
+        console.log('✅ Seguro Ambiental a guardar:', updateData.seguro_ambiental);
+      }
+
+      if (datos.proveedor_timbrado !== undefined) {
+        updateData.proveedor_timbrado = datos.proveedor_timbrado.trim();
+        console.log('✅ Proveedor Timbrado a guardar:', updateData.proveedor_timbrado);
+      }
+      if (datos.permisos_sct_empresa !== undefined) updateData.permisos_sct = datos.permisos_sct_empresa;
+      if (datos.modo_pruebas !== undefined) updateData.modo_pruebas = datos.modo_pruebas;
       if (datos.serie_carta_porte !== undefined) updateData.serie_carta_porte = datos.serie_carta_porte;
       if (datos.folio_inicial !== undefined) updateData.folio_inicial = datos.folio_inicial;
-      
-      // ✅ Guardar seguros como null si están vacíos
-      if (datos.seguro_resp_civil_empresa !== undefined) {
-        const seguro = datos.seguro_resp_civil_empresa as any;
-        updateData.seguro_resp_civil = (seguro?.poliza?.trim() || seguro?.aseguradora?.trim()) ? seguro : null;
-      }
-      if (datos.seguro_carga_empresa !== undefined) {
-        const seguro = datos.seguro_carga_empresa as any;
-        updateData.seguro_carga = (seguro?.poliza?.trim() || seguro?.aseguradora?.trim()) ? seguro : null;
-      }
-      if (datos.seguro_ambiental_empresa !== undefined) {
-        const seguro = datos.seguro_ambiental_empresa as any;
-        updateData.seguro_ambiental = (seguro?.poliza?.trim() || seguro?.aseguradora?.trim()) ? seguro : null;
-      }
-      
-      if (datos.permisos_sct_empresa !== undefined) updateData.permisos_sct = datos.permisos_sct_empresa;
-      if (datos.proveedor_timbrado !== undefined) updateData.proveedor_timbrado = datos.proveedor_timbrado;
-      if (datos.modo_pruebas !== undefined) updateData.modo_pruebas = datos.modo_pruebas;
 
-      console.log('✅ [guardarConfiguracion] Datos enviados a BD:', updateData);
-      
-      // Actualizar solo los campos enviados
-      const { error } = await supabase
+      console.log('🚀 [guardarConfiguracion] Objeto FINAL a enviar a BD:', JSON.stringify(updateData, null, 2));
+
+      const { data, error } = await supabase
         .from('configuracion_empresa')
         .update(updateData)
-        .eq('user_id', configuracion.user_id);
+        .eq('id', user.id)
+        .select()
+        .single();
 
       if (error) {
-        console.error('❌ [guardarConfiguracion] Error guardando:', error);
+        console.error('❌ Error al guardar en BD:', error);
         throw error;
       }
 
-      console.log('✅ [guardarConfiguracion] Guardado exitoso, recargando...');
-      toast.success('✅ Configuración guardada exitosamente');
-      
-      // Recargar configuración después de guardar
+      console.log('✅ [guardarConfiguracion] Datos guardados correctamente en BD:', JSON.stringify(data, null, 2));
+
+      if (data) {
+        setConfiguracion(mapConfiguracionFromDB(data));
+      }
+
+      // CRÍTICO: Recargar desde BD y revalidar para sincronizar
+      console.log('🔄 Recargando configuración desde BD...');
       await cargarConfiguracion();
       
-      // ✅ Usar validación del servicio para actualizar flag automáticamente
+      console.log('🔄 Revalidando configuración completa...');
       const { ConfiguracionEmisorService } = await import('@/services/configuracion/ConfiguracionEmisorService');
       const validacion = await ConfiguracionEmisorService.validarConfiguracionCompleta();
       
-      // Actualizar flag de configuracion_completa si cambió
-      if (validacion.isValid !== configuracion?.configuracion_completa) {
+      // Actualizar flag de configuracion_completa basado en validación real
+      if (validacion.isValid !== data.configuracion_completa) {
         await supabase
           .from('configuracion_empresa')
           .update({ configuracion_completa: validacion.isValid })
-          .eq('user_id', configuracion.user_id);
+          .eq('id', user.id);
           
-        // Mostrar mensaje si ahora está completa
         if (validacion.isValid) {
           toast.success('🎉 Configuración empresarial completa');
         }
       }
-      
-      console.log('✅ [guardarConfiguracion] Recarga completada');
+
+      toast.success('Configuración guardada y verificada exitosamente');
+      return true;
     } catch (error) {
-      console.error('❌ [guardarConfiguracion] Error al guardar configuración:', error);
-      toast.error('❌ Error al guardar la configuración');
-      throw error;
+      console.error('💥 Error guardando configuración:', error);
+      toast.error('Error al guardar la configuración');
+      return false;
     } finally {
       setIsSaving(false);
     }
   };
-
-  // NOTA: Los métodos agregarCertificado y activarCertificado fueron eliminados.
-  // Ahora la gestión de certificados se hace a través del hook useCertificadosDigitales
-  // para evitar duplicación de lógica y mantener una única fuente de verdad.
 
   const validarConfiguracionCompleta = (): boolean => {
     if (!configuracion) return false;
@@ -372,9 +420,7 @@ export const useConfiguracionEmpresarial = () => {
     guardarConfiguracion,
     validarConfiguracionCompleta,
     tieneCertificadoValido,
+    cargarConfiguracion,
     recargar: cargarConfiguracion
-    
-    // NOTA: agregarCertificado y activarCertificado fueron eliminados.
-    // Usar useCertificadosDigitales para gestión de certificados.
   };
 };

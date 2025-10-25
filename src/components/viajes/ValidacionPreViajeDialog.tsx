@@ -382,13 +382,16 @@ export function ValidacionPreViajeDialog({
                 </div>
               </div>
 
-              {/* Advertencias generales */}
+              {/* Sección de Recomendaciones (seguros opcionales) */}
               {estado.advertencias.length > 0 && (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
+                <Alert className="border-warning/50 bg-warning/5">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
                   <AlertDescription>
-                    <div className="font-medium mb-2">Recomendaciones:</div>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
+                    <div className="font-medium mb-2 text-warning">Recomendaciones Opcionales:</div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Los siguientes elementos son recomendados pero NO bloquean la creación de viajes:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                       {estado.advertencias.map((warning, index) => (
                         <li key={index}>{warning}</li>
                       ))}
