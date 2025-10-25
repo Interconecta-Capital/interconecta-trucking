@@ -20,7 +20,7 @@ export interface Conductor {
   residencia_fiscal?: string;
   operador_sct?: boolean;
   direccion?: any;
-  estado: string;
+  estado: 'disponible' | 'en_viaje' | 'descanso' | 'vacaciones' | 'baja_temporal' | 'fuera_servicio';
   activo: boolean;
   created_at: string;
   updated_at: string;

@@ -387,6 +387,37 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       setIsGeneratingDocuments(true);
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
+      // FASE 4: Validación pre-creación del conductor
+      if (data.conductor?.id) {
+        console.log('🔍 Verificando disponibilidad del conductor...');
+        const { data: conductorActual, error: conductorError } = await supabase
+          .from('conductores')
+          .select('estado, viaje_actual_id, nombre')
+          .eq('id', data.conductor.id)
+          .single();
+          
+        if (conductorError) {
+          console.error('❌ Error verificando conductor:', conductorError);
+          toast.error('Error al verificar la disponibilidad del conductor');
+          setIsGeneratingDocuments(false);
+          setShowValidacionPreViaje(false);
+          return;
+        }
+        
+        if (conductorActual && conductorActual.estado !== 'disponible') {
+          console.warn('⚠️ Conductor no disponible:', conductorActual);
+          toast.error(
+            `El conductor "${conductorActual.nombre}" no está disponible. Estado actual: ${conductorActual.estado}`,
+            { duration: 5000 }
+          );
+          setIsGeneratingDocuments(false);
+          setShowValidacionPreViaje(false);
+          return;
+        }
+        
+        console.log('✅ Conductor disponible para el viaje');
+      }
+
       let nuevoViaje;
       
       // Mark first trip as created in onboarding
