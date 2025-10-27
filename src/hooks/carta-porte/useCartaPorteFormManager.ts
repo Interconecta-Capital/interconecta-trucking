@@ -87,6 +87,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       const newIdCCP = UUIDService.generateValidIdCCP();
       setIdCCP(newIdCCP);
       console.log('[CartaPorteForm] IdCCP generado automáticamente:', newIdCCP);
+      
+      // FASE 4: Guardar IdCCP inmediatamente en formData
+      setFormData(prev => ({
+        ...prev,
+        cartaPorteId: newIdCCP
+      }));
     }
   }, [currentCartaPorteId, idCCP]);
 

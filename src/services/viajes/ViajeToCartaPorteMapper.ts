@@ -165,6 +165,7 @@ export class ViajeToCartaPorteMapper {
     // Obtener datos del usuario para el emisor (AHORA ES ASYNC)
     const emisorData = await this.getEmisorData();
 
+    // FASE 2: Mapear configuración general con tipo CFDI estandarizado
     // Retornar en formato CartaPorteData con todos los campos sincronizados
     return {
       cartaPorteVersion: '3.1',
@@ -174,7 +175,7 @@ export class ViajeToCartaPorteMapper {
       rfcReceptor: baseData.configuracion.receptor.rfc,
       nombreReceptor: baseData.configuracion.receptor.nombre,
       usoCfdi: baseData.configuracion.receptor.usoCfdi || 'S01',
-      tipoCfdi: 'T', // Traslado
+      tipoCfdi: 'Traslado', // FASE 2: Usar 'Traslado' en lugar de 'T' (se convierte en XML generator)
       transporteInternacional: false,
       registroIstmo: false,
       viaTransporte: '01', // Autotransporte
@@ -332,11 +333,41 @@ export class ViajeToCartaPorteMapper {
    */
   /**
    * Genera mercancías inteligentes basado en la descripción usando IA/heurísticas
+   * FASE 1: Integrado con MercanciaMultipleParser para detectar múltiples productos
    */
   static generateIntelligentMercancia(wizardData: ViajeWizardData): MercanciaCompleta[] {
     const descripcion = wizardData.descripcionMercancia || 'Mercancía general';
     
-    // Análisis inteligente de la descripción para sugerir datos
+    // FASE 1: Primero intentar detectar múltiples productos
+    const { MercanciaMultipleParser } = require('@/services/mercancias/MercanciaMultipleParser');
+    const productosDetectados = MercanciaMultipleParser.analizarDescripcion(descripcion);
+    
+    if (productosDetectados.length > 1) {
+      console.log(`✅ FASE 1: Detectados ${productosDetectados.length} productos distintos`);
+      
+      // Generar una mercancía por cada producto detectado
+      return productosDetectados.map((producto, index) => {
+        const analisis = this.analyzeCargoDescription(producto.descripcion);
+        
+        return {
+          id: `mercancia-${Date.now()}-${index}`,
+          bienes_transp: analisis.claveProdServ,
+          descripcion: producto.descripcion,
+          cantidad: producto.cantidad,
+          clave_unidad: producto.unidad, // Usar unidad detectada por el parser
+          peso_kg: analisis.peso, // Usar peso calculado por analyzeCargoDescription
+          valor_mercancia: analisis.valor, // Usar valor calculado
+          moneda: 'MXN',
+          material_peligroso: analisis.materialPeligroso,
+          especie_protegida: analisis.especieProtegida,
+          fraccion_arancelaria: analisis.fraccionArancelaria,
+          aiGenerated: true,
+          aiConfidence: analisis.confidence
+        };
+      });
+    }
+    
+    // Si solo hay un producto o no se detectaron múltiples, usar análisis normal
     const analisis = this.analyzeCargoDescription(descripcion);
     
     return [{
@@ -351,7 +382,6 @@ export class ViajeToCartaPorteMapper {
       material_peligroso: analisis.materialPeligroso,
       especie_protegida: analisis.especieProtegida,
       fraccion_arancelaria: analisis.fraccionArancelaria,
-      // Agregar metadatos de IA
       aiGenerated: true,
       aiConfidence: analisis.confidence
     }];

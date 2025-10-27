@@ -31,6 +31,7 @@ import { MercanciasSection } from './sections/MercanciasSection';
 import { AutotransporteSection } from './sections/AutotransporteSection';
 import { FigurasTransporteSection } from './sections/FigurasTransporteSection';
 import { GeneracionSection } from './sections/GeneracionSection';
+import { AlertasValidacion } from './AlertasValidacion';
 
 interface ModernCartaPorteEditorProps {
   documentId?: string;
@@ -429,6 +430,14 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
+                {/* FASE 7: Alertas de validación en tiempo real */}
+                <AlertasValidacion
+                  ubicaciones={ubicaciones}
+                  mercancias={mercancias}
+                  autotransporte={autotransporte || defaultAutotransporte}
+                  figuras={figuras}
+                  configuracion={configuracion}
+                />
                 {renderActiveSection()}
               </CardContent>
             </Card>
