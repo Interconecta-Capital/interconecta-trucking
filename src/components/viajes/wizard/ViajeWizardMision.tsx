@@ -14,6 +14,7 @@ import { ViajeWizardData } from '../ViajeWizard';
 import { SmartMercanciaInputMejorado } from '@/components/ai/SmartMercanciaInputMejorado';
 import { SATKeyDetector } from '@/components/ai/SATKeyDetector';
 import { RFCValidator } from '@/utils/rfcValidation';
+import { useClienteCompletoDatos } from '@/hooks/viajes/useClienteCompletoDatos';
 
 interface ViajeWizardMisionProps {
   data: ViajeWizardData;
@@ -42,6 +43,9 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
     autoValidate: true,
     debounceMs: 800
   });
+
+  // Cargar datos completos del cliente cuando se selecciona
+  const { clienteCompleto, loading: loadingClienteCompleto } = useClienteCompletoDatos(data.cliente?.id);
 
   // Filtrar socios por búsqueda
   const sociosFiltrados = socios.filter(socio =>
@@ -102,6 +106,24 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
     updateData({ cliente: socio });
     setSearchCliente('');
   };
+
+  // Enriquecer datos del cliente cuando se carguen los datos completos
+  useEffect(() => {
+    if (clienteCompleto && data.cliente?.id === clienteCompleto.id) {
+      console.log('✅ Enriqueciendo datos del cliente con información fiscal completa:', clienteCompleto);
+      updateData({ 
+        cliente: {
+          ...data.cliente,
+          regimen_fiscal: clienteCompleto.regimen_fiscal,
+          uso_cfdi: clienteCompleto.uso_cfdi,
+          domicilio_fiscal: clienteCompleto.domicilio_fiscal,
+          tipo_persona: clienteCompleto.tipo_persona,
+          email: clienteCompleto.email,
+          telefono: clienteCompleto.telefono
+        }
+      });
+    }
+  }, [clienteCompleto]);
 
   const handleMercanciaChange = (descripcion: string) => {
     updateData({ descripcionMercancia: descripcion });

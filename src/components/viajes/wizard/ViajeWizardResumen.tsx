@@ -273,7 +273,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         <CardContent className="space-y-4">
           <div>
             <label className="font-medium text-gray-700">Cliente:</label>
-            <p className="text-gray-900">{data.cliente?.nombre || 'No especificado'}</p>
+            <p className="text-gray-900">{data.cliente?.nombre_razon_social || data.cliente?.nombre || 'No especificado'}</p>
             {data.cliente?.rfc && (
               <p className="text-sm text-gray-600">RFC: {data.cliente.rfc}</p>
             )}

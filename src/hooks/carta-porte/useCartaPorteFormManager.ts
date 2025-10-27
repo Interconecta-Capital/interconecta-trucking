@@ -9,6 +9,7 @@ import { useBorradorRecovery } from './useBorradorRecovery';
 import { useAuth } from '../useAuth';
 import { UUIDService } from '@/services/uuid/UUIDService';
 import { CartaPorteLifecycleManager } from '@/services/cartaPorte/CartaPorteLifecycleManager';
+import { supabase } from '@/integrations/supabase/client';
 
 // Estado inicial unificado y por defecto
 const initialCartaPorteData: CartaPorteData = {
@@ -118,10 +119,48 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       if (borrador) {
         console.log('✅ Borrador cargado:', borrador.id);
         
-        const savedData = {
+        let savedData = {
           ...borrador.datos_formulario,
           currentStep: borrador.datos_formulario?.currentStep || 0
         };
+
+        // FASE 5: Si el borrador proviene de un viaje, enriquecer con datos del viaje
+        try {
+          const { data: viaje } = await supabase
+            .from('viajes')
+            .select('*')
+            .eq('tracking_data->>borrador_carta_porte_id', borrador.id)
+            .single();
+
+          if (viaje) {
+            console.log('✅ Borrador vinculado a viaje, cargando datos del cliente...');
+            
+            // Cargar datos del cliente desde tracking_data
+            const trackingData = viaje.tracking_data as any;
+            const datosCliente = trackingData?.datos_cliente;
+            
+            if (datosCliente) {
+              // Enriquecer con datos del cliente almacenados
+              savedData = {
+                ...savedData,
+                rfcReceptor: savedData.rfcReceptor || datosCliente.rfc || '',
+                nombreReceptor: savedData.nombreReceptor || datosCliente.nombre || '',
+                // Agregar metadatos del viaje
+                metadata: {
+                  ...savedData.metadata,
+                  viaje_id: viaje.id,
+                  origen_viaje: true,
+                  viaje_origen: viaje.origen,
+                  viaje_destino: viaje.destino
+                }
+              };
+
+              console.log('✅ Datos enriquecidos con información del viaje');
+            }
+          }
+        } catch (viajeError) {
+          console.log('ℹ️ No se encontró viaje vinculado al borrador (es normal si se creó manualmente)');
+        }
         
         setFormData(savedData);
 

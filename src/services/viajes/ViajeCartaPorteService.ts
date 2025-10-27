@@ -69,37 +69,89 @@ export class ViajeCartaPorteService {
     try {
       console.log('🚛 Iniciando creación de borrador de Carta Porte:', viajeId);
 
-      const cartaPorteData = ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(
-        wizardData
-      );
+      // 1. VERIFICAR SI YA EXISTE UN BORRADOR
+      const { data: viajeExistente, error: viajeError } = await supabase
+        .from('viajes')
+        .select('tracking_data')
+        .eq('id', viajeId)
+        .single();
 
+      if (viajeError) throw viajeError;
+
+      const trackingData = viajeExistente.tracking_data as any;
+      const borradorExistenteId = trackingData?.borrador_carta_porte_id;
+      
+      if (borradorExistenteId) {
+        console.log('⚠️ Ya existe un borrador:', borradorExistenteId);
+        
+        // Verificar que el borrador aún existe
+        const { data: borradorExistente } = await supabase
+          .from('borradores_carta_porte')
+          .select('id')
+          .eq('id', borradorExistenteId)
+          .single();
+        
+        if (borradorExistente) {
+          console.log('✅ Reutilizando borrador existente');
+          toast.info('Ya existe un borrador para este viaje', {
+            description: 'Abriendo el borrador existente...',
+            duration: 3000
+          });
+          return { viaje_id: viajeId, borrador_id: borradorExistenteId };
+        } else {
+          console.log('⚠️ Borrador anterior eliminado, creando nuevo');
+        }
+      }
+
+      // 2. Validar datos completos
+      console.log('🔍 Validando datos del wizard...');
+      const validacion = ViajeToCartaPorteMapper.validarDatosCompletos(wizardData);
+      if (!validacion.valido) {
+        const errorMsg = `Datos incompletos para crear Carta Porte:\n${validacion.errores.join('\n• ')}`;
+        console.error('❌', errorMsg);
+        toast.error('Datos incompletos', {
+          description: validacion.errores[0],
+          duration: 5000
+        });
+        throw new Error(errorMsg);
+      }
+
+      console.log('✅ Validación exitosa, mapeando datos...');
+
+      // 3. Mapear datos con validación (ahora es async)
+      const cartaPorteData = await ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardData);
+
+      console.log('✅ Datos mapeados correctamente:', {
+        emisor: cartaPorteData.rfcEmisor,
+        receptor: cartaPorteData.rfcReceptor,
+        ubicaciones: cartaPorteData.ubicaciones?.length,
+        mercancias: cartaPorteData.mercancias?.length
+      });
+
+      // 4. Crear borrador
       const borrador = await CartaPorteLifecycleManager.crearBorrador({
-        nombre_borrador: `Viaje - ${
-          wizardData.cliente?.nombre_razon_social || 'Sin cliente'
-        }`,
+        nombre_borrador: `Viaje - ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'}`,
         datos_formulario: cartaPorteData,
         version_formulario: '3.1'
       });
 
       console.log('📄 Borrador creado:', borrador.id);
 
-      // ✅ NO actualizar carta_porte_id aquí (solo se actualiza al timbrar)
-      // Almacenar la relación en tracking_data
-      const { data: viaje, error: viajeError } = await supabase
-        .from('viajes')
-        .select('tracking_data')
-        .eq('id', viajeId)
-        .single();
-
-      if (viajeError) {
-        console.error('Error obteniendo viaje:', viajeError);
-        throw viajeError;
-      }
-
+      // 5. Vincular en tracking_data con metadatos enriquecidos
+      const existingTrackingData = viajeExistente.tracking_data as any || {};
       const trackingDataActualizado = {
-        ...(viaje.tracking_data as any || {}),
+        ...existingTrackingData,
         borrador_carta_porte_id: borrador.id,
-        borrador_creado_en: new Date().toISOString()
+        borrador_creado_en: new Date().toISOString(),
+        datos_cliente: {
+          rfc: wizardData.cliente?.rfc,
+          nombre: wizardData.cliente?.nombre_razon_social,
+          regimen_fiscal: wizardData.cliente?.regimen_fiscal
+        },
+        datos_emisor: {
+          rfc: cartaPorteData.rfcEmisor,
+          nombre: cartaPorteData.nombreEmisor
+        }
       };
 
       const { error } = await supabase
@@ -114,7 +166,7 @@ export class ViajeCartaPorteService {
 
       console.log('✅ Borrador vinculado en tracking_data (carta_porte_id permanece NULL hasta timbrar)');
 
-      // Crear notificación de éxito
+      // 6. Crear notificación
       await this.crearNotificacionBorradorCreado(borrador.id, wizardData);
 
       return { viaje_id: viajeId, borrador_id: borrador.id };

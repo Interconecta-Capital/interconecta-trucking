@@ -257,6 +257,77 @@ export class ViajeToCartaPorteMapper {
   }
 
   /**
+   * Validar que los datos del wizard están completos para crear Carta Porte
+   */
+  static validarDatosCompletos(wizardData: ViajeWizardData): { valido: boolean; errores: string[] } {
+    const errores: string[] = [];
+
+    // Validar cliente
+    if (!wizardData.cliente) {
+      errores.push('Cliente no seleccionado');
+    } else {
+      if (!wizardData.cliente.rfc) errores.push('RFC del cliente faltante');
+      if (!wizardData.cliente.nombre_razon_social) errores.push('Nombre del cliente faltante');
+      // Régimen fiscal es recomendado pero no bloqueante
+      if (!wizardData.cliente.regimen_fiscal) {
+        console.warn('⚠️ Régimen fiscal del cliente no especificado');
+      }
+    }
+
+    // Validar ubicaciones
+    if (!wizardData.origen) {
+      errores.push('Origen no especificado');
+    } else {
+      if (!wizardData.origen.direccion && !wizardData.origen.nombre) {
+        errores.push('Dirección de origen incompleta');
+      }
+    }
+
+    if (!wizardData.destino) {
+      errores.push('Destino no especificado');
+    } else {
+      if (!wizardData.destino.direccion && !wizardData.destino.nombre) {
+        errores.push('Dirección de destino incompleta');
+      }
+    }
+
+    // Validar vehículo
+    if (!wizardData.vehiculo) {
+      errores.push('Vehículo no seleccionado');
+    } else {
+      if (!wizardData.vehiculo.placa) errores.push('Placa del vehículo faltante');
+      // Permiso SCT es recomendado pero no bloqueante para borrador
+      if (!wizardData.vehiculo.permiso_sct) {
+        console.warn('⚠️ Permiso SCT del vehículo no especificado');
+      }
+    }
+
+    // Validar conductor
+    if (!wizardData.conductor) {
+      errores.push('Conductor no seleccionado');
+    } else {
+      if (!wizardData.conductor.nombre) errores.push('Nombre del conductor faltante');
+      // RFC y licencia son recomendados pero no bloqueantes para borrador
+      if (!wizardData.conductor.rfc) {
+        console.warn('⚠️ RFC del conductor no especificado');
+      }
+      if (!wizardData.conductor.num_licencia) {
+        console.warn('⚠️ Número de licencia del conductor no especificado');
+      }
+    }
+
+    // Mercancía
+    if (!wizardData.descripcionMercancia) {
+      errores.push('Descripción de mercancía faltante');
+    }
+
+    return {
+      valido: errores.length === 0,
+      errores
+    };
+  }
+
+  /**
    * Generar ID único para la carta porte
    */
   /**
