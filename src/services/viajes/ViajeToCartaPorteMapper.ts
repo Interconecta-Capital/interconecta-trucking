@@ -180,24 +180,33 @@ export class ViajeToCartaPorteMapper {
       registroIstmo: false,
       viaTransporte: '01', // Autotransporte
       mercancias: baseData.mercancias,
-      ubicaciones: baseData.ubicaciones.map(ub => ({
-        id: ub.idUbicacion,
-        tipo_ubicacion: ub.tipoUbicacion,
-        rfc: baseData.configuracion.receptor.rfc,
-        nombre: baseData.configuracion.receptor.nombre,
-        fecha_llegada_salida: ub.fechaHoraSalidaLlegada,
-        fecha_hora_salida_llegada: ub.fechaHoraSalidaLlegada,
-        distancia_recorrida: ub.distanciaRecorrida || 0,
-        coordenadas: ub.coordenadas,
-        domicilio: {
-          pais: 'MEX',
-          codigo_postal: ub.codigoPostal || '06600',
-          estado: 'Ciudad de México',
-          municipio: 'Ciudad de México',
-          colonia: 'Centro',
-          calle: ub.direccion || 'Calle sin número'
+      ubicaciones: baseData.ubicaciones.map(ub => {
+        // ✅ CORRECCIÓN: Soportar ambas estructuras (domicilio.codigo_postal y codigoPostal directo)
+        const codigoPostal = ub.domicilio?.codigo_postal || ub.domicilio?.codigoPostal || ub.codigoPostal || '';
+        
+        if (!codigoPostal) {
+          console.warn('⚠️ Ubicación sin código postal:', ub.tipoUbicacion, ub.direccion);
         }
-      })),
+        
+        return {
+          id: ub.idUbicacion,
+          tipo_ubicacion: ub.tipoUbicacion,
+          rfc: baseData.configuracion.receptor.rfc,
+          nombre: baseData.configuracion.receptor.nombre,
+          fecha_llegada_salida: ub.fechaHoraSalidaLlegada,
+          fecha_hora_salida_llegada: ub.fechaHoraSalidaLlegada,
+          distancia_recorrida: ub.distanciaRecorrida || 0,
+          coordenadas: ub.coordenadas,
+          domicilio: {
+            pais: ub.domicilio?.pais || 'MEX',
+            codigo_postal: codigoPostal,
+            estado: ub.domicilio?.estado || '',
+            municipio: ub.domicilio?.municipio || '',
+            colonia: ub.domicilio?.colonia || '',
+            calle: ub.domicilio?.calle || ub.direccion || ''
+          }
+        };
+      }),
       autotransporte: {
         placa_vm: baseData.autotransporte.placa,
         anio_modelo_vm: baseData.autotransporte.anioModeloVm,

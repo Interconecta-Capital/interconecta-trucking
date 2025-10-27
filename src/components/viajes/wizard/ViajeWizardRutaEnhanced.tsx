@@ -205,7 +205,15 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             nombre: rutaCalculada.origen.nombre,
             direccion: rutaCalculada.origen.direccion,
             coordenadas: rutaCalculada.origen.coordenadas,
-            codigoPostal: rutaCalculada.origen.codigoPostal,
+            domicilio: {
+              pais: 'MEX',
+              codigo_postal: rutaCalculada.origen.codigoPostal || '',
+              codigoPostal: rutaCalculada.origen.codigoPostal || '',
+              estado: '',
+              municipio: '',
+              colonia: '',
+              calle: rutaCalculada.origen.direccion || ''
+            },
             fechaHoraSalidaLlegada: fechaSalida || new Date().toISOString(),
             precision: rutaCalculada.origen.precision,
             validadaGoogleMaps: rutaCalculada.origen.validadaGoogleMaps
@@ -214,7 +222,15 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             nombre: rutaCalculada.destino.nombre,
             direccion: rutaCalculada.destino.direccion,
             coordenadas: rutaCalculada.destino.coordenadas,
-            codigoPostal: rutaCalculada.destino.codigoPostal,
+            domicilio: {
+              pais: 'MEX',
+              codigo_postal: rutaCalculada.destino.codigoPostal || '',
+              codigoPostal: rutaCalculada.destino.codigoPostal || '',
+              estado: '',
+              municipio: '',
+              colonia: '',
+              calle: rutaCalculada.destino.direccion || ''
+            },
             fechaHoraSalidaLlegada: fechaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             precision: rutaCalculada.destino.precision,
             validadaGoogleMaps: rutaCalculada.destino.validadaGoogleMaps

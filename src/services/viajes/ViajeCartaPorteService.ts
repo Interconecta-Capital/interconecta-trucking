@@ -1,6 +1,7 @@
 
 import { CartaPorteLifecycleManager } from '@/services/cartaPorte/CartaPorteLifecycleManager';
 import { ViajeToCartaPorteMapper } from './ViajeToCartaPorteMapper';
+import { FigurasAutoPopulationService } from '@/services/figuras/FigurasAutoPopulationService';
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -116,28 +117,44 @@ export class ViajeCartaPorteService {
         throw new Error(errorMsg);
       }
 
-      console.log('✅ Validación exitosa, mapeando datos...');
+      console.log('✅ Validación exitosa, obteniendo figuras auto-pobladas...');
 
-      // 3. Mapear datos con validación (ahora es async)
-      const cartaPorteData = await ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardData);
+      // 3. AUTO-POBLAR FIGURAS (FASE 2 - CRÍTICO)
+      const figurasAutopopuladas = await FigurasAutoPopulationService.obtenerFigurasDeViaje(
+        wizardData.conductor?.id,
+        wizardData.cliente?.id
+      );
+
+      console.log(`✅ ${figurasAutopopuladas.length} figuras auto-pobladas:`, 
+        figurasAutopopuladas.map(f => `${f.tipo_figura} - ${f.nombre_figura}`).join(', ')
+      );
+
+      // 4. Mapear datos con validación (ahora es async) e incluir figuras
+      const wizardDataConFiguras = {
+        ...wizardData,
+        figuras: figurasAutopopuladas
+      };
+      
+      const cartaPorteData = await ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardDataConFiguras);
 
       console.log('✅ Datos mapeados correctamente:', {
         emisor: cartaPorteData.rfcEmisor,
         receptor: cartaPorteData.rfcReceptor,
         ubicaciones: cartaPorteData.ubicaciones?.length,
-        mercancias: cartaPorteData.mercancias?.length
+        mercancias: cartaPorteData.mercancias?.length,
+        figuras: cartaPorteData.figuras?.length
       });
 
-      // 4. Crear borrador
+      // 5. Crear borrador
       const borrador = await CartaPorteLifecycleManager.crearBorrador({
         nombre_borrador: `Viaje - ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'}`,
         datos_formulario: cartaPorteData,
         version_formulario: '3.1'
       });
 
-      console.log('📄 Borrador creado:', borrador.id);
+      console.log('📄 Borrador creado con figuras auto-pobladas:', borrador.id);
 
-      // 5. Vincular en tracking_data con metadatos enriquecidos
+      // 6. Vincular en tracking_data con metadatos enriquecidos
       const existingTrackingData = viajeExistente.tracking_data as any || {};
       const trackingDataActualizado = {
         ...existingTrackingData,
@@ -166,7 +183,7 @@ export class ViajeCartaPorteService {
 
       console.log('✅ Borrador vinculado en tracking_data (carta_porte_id permanece NULL hasta timbrar)');
 
-      // 6. Crear notificación
+      // 7. Crear notificación
       await this.crearNotificacionBorradorCreado(borrador.id, wizardData);
 
       return { viaje_id: viajeId, borrador_id: borrador.id };
