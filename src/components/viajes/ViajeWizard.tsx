@@ -387,31 +387,22 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       setIsGeneratingDocuments(true);
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
-      // VALIDACIÓN PRE-CREACIÓN: Verificar datos completos de ubicaciones
-      if (!data.origen?.domicilio?.estado || !data.origen?.domicilio?.municipio) {
-        toast.error('Datos incompletos del origen', {
-          description: 'Falta estado o municipio. Recalcula la ruta para obtener datos completos.',
-          duration: 6000
+      // VALIDACIÓN PRE-CREACIÓN: Verificar datos básicos de ubicaciones (PERMISIVA PARA BORRADOR)
+      const origenIncompleto = !data.origen?.domicilio?.codigo_postal && !data.origen?.domicilio?.codigoPostal;
+      const destinoIncompleto = !data.destino?.domicilio?.codigo_postal && !data.destino?.domicilio?.codigoPostal;
+      
+      if (origenIncompleto || destinoIncompleto) {
+        console.warn('⚠️ Ubicaciones sin código postal, pero permitiendo crear borrador');
+        toast.warning('Datos de ubicaciones incompletos', {
+          description: 'El borrador se creará, pero deberás completar los datos antes de timbrar.',
+          duration: 5000
         });
-        setIsGeneratingDocuments(false);
-        setShowValidacionPreViaje(false);
-        return;
-      }
-
-      if (!data.destino?.domicilio?.estado || !data.destino?.domicilio?.municipio) {
-        toast.error('Datos incompletos del destino', {
-          description: 'Falta estado o municipio. Recalcula la ruta para obtener datos completos.',
-          duration: 6000
+      } else {
+        console.log('✅ Ubicaciones con códigos postales:', {
+          origen: data.origen?.domicilio?.codigo_postal || data.origen?.domicilio?.codigoPostal,
+          destino: data.destino?.domicilio?.codigo_postal || data.destino?.domicilio?.codigoPostal
         });
-        setIsGeneratingDocuments(false);
-        setShowValidacionPreViaje(false);
-        return;
       }
-
-      console.log('✅ Validación de ubicaciones completa:', {
-        origen: `${data.origen.domicilio.municipio}, ${data.origen.domicilio.estado}`,
-        destino: `${data.destino.domicilio.municipio}, ${data.destino.domicilio.estado}`
-      });
 
       // FASE 4: Validación pre-creación del conductor
       if (data.conductor?.id) {

@@ -268,67 +268,66 @@ export class ViajeToCartaPorteMapper {
 
   /**
    * Validar que los datos del wizard están completos para crear Carta Porte
+   * NOTA: Esta validación es PERMISIVA para borradores - solo valida campos críticos
    */
   static validarDatosCompletos(wizardData: ViajeWizardData): { valido: boolean; errores: string[] } {
     const errores: string[] = [];
 
-    // Validar cliente
+    // Validar cliente (CRÍTICO)
     if (!wizardData.cliente) {
       errores.push('Cliente no seleccionado');
     } else {
       if (!wizardData.cliente.rfc) errores.push('RFC del cliente faltante');
       if (!wizardData.cliente.nombre_razon_social) errores.push('Nombre del cliente faltante');
-      // Régimen fiscal es recomendado pero no bloqueante
-      if (!wizardData.cliente.regimen_fiscal) {
-        console.warn('⚠️ Régimen fiscal del cliente no especificado');
-      }
     }
 
-    // Validar ubicaciones
+    // Validar ubicaciones básicas (PERMISIVO - solo validar que existan)
     if (!wizardData.origen) {
       errores.push('Origen no especificado');
-    } else {
-      if (!wizardData.origen.direccion && !wizardData.origen.nombre) {
-        errores.push('Dirección de origen incompleta');
-      }
+    } else if (!wizardData.origen.direccion && !wizardData.origen.nombre) {
+      errores.push('Dirección de origen incompleta');
     }
 
     if (!wizardData.destino) {
       errores.push('Destino no especificado');
-    } else {
-      if (!wizardData.destino.direccion && !wizardData.destino.nombre) {
-        errores.push('Dirección de destino incompleta');
-      }
+    } else if (!wizardData.destino.direccion && !wizardData.destino.nombre) {
+      errores.push('Dirección de destino incompleta');
     }
 
-    // Validar vehículo
+    // Validar vehículo (CRÍTICO)
     if (!wizardData.vehiculo) {
       errores.push('Vehículo no seleccionado');
-    } else {
-      if (!wizardData.vehiculo.placa) errores.push('Placa del vehículo faltante');
-      // Permiso SCT es recomendado pero no bloqueante para borrador
-      if (!wizardData.vehiculo.permiso_sct) {
-        console.warn('⚠️ Permiso SCT del vehículo no especificado');
-      }
+    } else if (!wizardData.vehiculo.placa) {
+      errores.push('Placa del vehículo faltante');
     }
 
-    // Validar conductor
+    // Validar conductor (CRÍTICO)
     if (!wizardData.conductor) {
       errores.push('Conductor no seleccionado');
-    } else {
-      if (!wizardData.conductor.nombre) errores.push('Nombre del conductor faltante');
-      // RFC y licencia son recomendados pero no bloqueantes para borrador
-      if (!wizardData.conductor.rfc) {
-        console.warn('⚠️ RFC del conductor no especificado');
-      }
-      if (!wizardData.conductor.num_licencia) {
-        console.warn('⚠️ Número de licencia del conductor no especificado');
-      }
+    } else if (!wizardData.conductor.nombre) {
+      errores.push('Nombre del conductor faltante');
     }
 
-    // Mercancía
+    // Mercancía (CRÍTICO)
     if (!wizardData.descripcionMercancia) {
       errores.push('Descripción de mercancía faltante');
+    }
+
+    // ⚠️ WARNINGS (no bloquean creación de borrador)
+    if (wizardData.cliente && !wizardData.cliente.regimen_fiscal) {
+      console.warn('⚠️ Régimen fiscal del cliente faltante (completar antes de timbrar)');
+    }
+    if (wizardData.vehiculo && !wizardData.vehiculo.permiso_sct) {
+      console.warn('⚠️ Permiso SCT del vehículo faltante (completar antes de timbrar)');
+    }
+    if (wizardData.conductor && !wizardData.conductor.rfc) {
+      console.warn('⚠️ RFC del conductor faltante (completar antes de timbrar)');
+    }
+    if (wizardData.origen && !wizardData.origen.domicilio?.codigo_postal && !wizardData.origen.domicilio?.codigoPostal) {
+      console.warn('⚠️ Código postal de origen faltante (completar antes de timbrar)');
+    }
+    if (wizardData.destino && !wizardData.destino.domicilio?.codigo_postal && !wizardData.destino.domicilio?.codigoPostal) {
+      console.warn('⚠️ Código postal de destino faltante (completar antes de timbrar)');
     }
 
     return {
