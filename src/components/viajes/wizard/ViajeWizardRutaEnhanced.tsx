@@ -219,10 +219,12 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             nombre: rutaCalculada.origen.nombre,
             direccion: rutaCalculada.origen.direccion,
             coordenadas: rutaCalculada.origen.coordenadas,
+            codigoPostal: rutaCalculada.origen.codigoPostal || '', // ← CAMPO DIRECTO
+            codigo_postal: rutaCalculada.origen.codigoPostal || '', // ← CAMPO DIRECTO (alternativo)
             domicilio: {
               pais: 'MEX',
-              codigo_postal: rutaCalculada.origen.codigoPostal || '',
-              codigoPostal: rutaCalculada.origen.codigoPostal || '',
+              codigo_postal: rutaCalculada.origen.codigoPostal || '', // ← DENTRO DEL JSON
+              codigoPostal: rutaCalculada.origen.codigoPostal || '', // ← DENTRO DEL JSON (alternativo)
               estado: origenGeo.estado,
               municipio: origenGeo.municipio,
               colonia: origenGeo.colonia,
@@ -236,10 +238,12 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             nombre: rutaCalculada.destino.nombre,
             direccion: rutaCalculada.destino.direccion,
             coordenadas: rutaCalculada.destino.coordenadas,
+            codigoPostal: rutaCalculada.destino.codigoPostal || '', // ← CAMPO DIRECTO
+            codigo_postal: rutaCalculada.destino.codigoPostal || '', // ← CAMPO DIRECTO (alternativo)
             domicilio: {
               pais: 'MEX',
-              codigo_postal: rutaCalculada.destino.codigoPostal || '',
-              codigoPostal: rutaCalculada.destino.codigoPostal || '',
+              codigo_postal: rutaCalculada.destino.codigoPostal || '', // ← DENTRO DEL JSON
+              codigoPostal: rutaCalculada.destino.codigoPostal || '', // ← DENTRO DEL JSON (alternativo)
               estado: destinoGeo.estado,
               municipio: destinoGeo.municipio,
               colonia: destinoGeo.colonia,

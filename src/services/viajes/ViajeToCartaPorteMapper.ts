@@ -181,11 +181,17 @@ export class ViajeToCartaPorteMapper {
       viaTransporte: '01', // Autotransporte
       mercancias: baseData.mercancias,
       ubicaciones: baseData.ubicaciones.map(ub => {
-        // ✅ CORRECCIÓN: Soportar ambas estructuras (domicilio.codigo_postal y codigoPostal directo)
-        const codigoPostal = ub.domicilio?.codigo_postal || ub.domicilio?.codigoPostal || ub.codigoPostal || '';
+        // ✅ CORRECCIÓN COMPLETA: Extraer código postal de múltiples fuentes posibles
+        const codigoPostal = ub.domicilio?.codigo_postal 
+          || ub.domicilio?.codigoPostal 
+          || ub.codigoPostal 
+          || ub.codigo_postal 
+          || '';
         
         if (!codigoPostal) {
           console.warn('⚠️ Ubicación sin código postal:', ub.tipoUbicacion, ub.direccion);
+        } else {
+          console.log('✅ Código postal encontrado:', codigoPostal, 'para ubicación:', ub.tipoUbicacion);
         }
         
         return {
@@ -197,9 +203,10 @@ export class ViajeToCartaPorteMapper {
           fecha_hora_salida_llegada: ub.fechaHoraSalidaLlegada,
           distancia_recorrida: ub.distanciaRecorrida || 0,
           coordenadas: ub.coordenadas,
+          codigo_postal: codigoPostal, // ← CAMPO DIRECTO (columna en tabla)
           domicilio: {
             pais: ub.domicilio?.pais || 'MEX',
-            codigo_postal: codigoPostal,
+            codigo_postal: codigoPostal, // ← DENTRO DEL JSON
             estado: ub.domicilio?.estado || '',
             municipio: ub.domicilio?.municipio || '',
             colonia: ub.domicilio?.colonia || '',
@@ -514,6 +521,20 @@ export class ViajeToCartaPorteMapper {
         fraccionArancelaria: '31010000',
         claveUnidad: 'KGM', // Kilogramo
         pesoPromedio: 150
+      },
+      granos: {
+        keywords: ['elote', 'maíz', 'grano', 'trigo', 'frijol', 'soya', 'avena', 'cebada', 'arroz', 'costal'],
+        claveProdServ: '10101500', // Cereales y granos
+        fraccionArancelaria: '10059000',
+        claveUnidad: 'KGM', // Kilogramo
+        pesoPromedio: 50
+      },
+      frutas_verduras: {
+        keywords: ['fruta', 'verdura', 'hortaliza', 'jitomate', 'tomate', 'cebolla', 'papa', 'zanahoria', 'manzana', 'naranja', 'aguacate'],
+        claveProdServ: '10151500', // Frutas y verduras frescas
+        fraccionArancelaria: '07020000',
+        claveUnidad: 'KGM', // Kilogramo
+        pesoPromedio: 80
       },
       cosmeticos: {
         keywords: ['cosmético', 'perfume', 'crema', 'shampoo', 'maquillaje', 'jabón'],

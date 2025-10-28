@@ -1,5 +1,9 @@
 
 export interface CartaPorteData {
+  // Identificadores del documento
+  id?: string;
+  idCCP?: string;
+  
   // Configuración General
   rfcEmisor?: string;
   nombreEmisor?: string;
@@ -57,8 +61,9 @@ export interface UbicacionCompleta {
   rfc: string;
   nombre: string;
   fecha_llegada_salida: string;
-  fecha_hora_salida_llegada?: string; // Add this missing property
+  fecha_hora_salida_llegada?: string;
   distancia_recorrida: number;
+  codigo_postal?: string; // Campo directo (columna en tabla)
   rfc_remitente_destinatario?: string;
   nombre_remitente_destinatario?: string;
   id_ubicacion?: string;
@@ -68,7 +73,7 @@ export interface UbicacionCompleta {
   };
   domicilio?: {
     pais?: string;
-    codigo_postal?: string;
+    codigo_postal?: string; // Dentro del JSON
     estado?: string;
     municipio?: string;
     colonia?: string;

@@ -36,11 +36,19 @@ export function FechaHoraFields({
     return 'Cuando pasará por este punto';
   };
 
-  // Calcular fecha mínima (cacheada para evitar re-renders constantes)
+  // Calcular fecha mínima: permitir hasta 48 horas en el pasado
   const getMinDateTime = React.useMemo(() => {
-    const now = new Date();
-    return now.toISOString().slice(0, 16);
-  }, []); // Solo calcular una vez al montar el componente
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+    return twoDaysAgo.toISOString().slice(0, 16);
+  }, []);
+
+  // Calcular fecha máxima: hasta 30 días en el futuro
+  const getMaxDateTime = React.useMemo(() => {
+    const thirtyDaysAhead = new Date();
+    thirtyDaysAhead.setDate(thirtyDaysAhead.getDate() + 30);
+    return thirtyDaysAhead.toISOString().slice(0, 16);
+  }, []);
 
   return (
     <div className="space-y-3">
@@ -60,6 +68,7 @@ export function FechaHoraFields({
         value={ubicacion.fechaHoraSalidaLlegada || ''}
         onChange={(e) => onFieldChange('fechaHoraSalidaLlegada', e.target.value)}
         min={getMinDateTime}
+        max={getMaxDateTime}
         placeholder={getFieldPlaceholder()}
         className={`${errors.fechaHora ? 'border-red-500' : ''} ${
           isOrigen ? 'border-green-200 focus:border-green-500' :

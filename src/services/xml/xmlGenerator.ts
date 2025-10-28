@@ -1,6 +1,8 @@
 import { CartaPorteData } from '@/types/cartaPorte';
 import { XMLGeneratorEnhanced, XMLGenerationResultEnhanced } from './xmlGeneratorEnhanced';
 import { XMLValidatorSAT31 } from './xmlValidatorSAT31';
+import { UUIDService } from '@/services/uuid/UUIDService';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mantener compatibilidad con la interfaz existente
 export interface XMLGenerationResult {
@@ -19,9 +21,40 @@ export interface XMLGenerationResult {
 export class XMLCartaPorteGenerator {
   static async generarXML(data: CartaPorteData): Promise<XMLGenerationResult> {
     try {
-      console.log('🚀 Delegando a generador mejorado...');
+      console.log('🚀 Iniciando generación de XML...');
       
-      // Usar el generador mejorado
+      // PASO 1: Generar IdCCP si no existe o está vacío
+      if (!data.idCCP || data.idCCP === 'Sin generar' || data.idCCP.length !== 32) {
+        const nuevoIdCCP = UUIDService.generateValidIdCCP();
+        console.log('🆔 Generando nuevo IdCCP:', nuevoIdCCP);
+        
+        // Actualizar en la data
+        data.idCCP = nuevoIdCCP;
+        
+        // Guardar en base de datos si existe el ID del documento
+        if (data.id) {
+          try {
+            const { error } = await supabase
+              .from('cartas_porte')
+              .update({ id_ccp: nuevoIdCCP })
+              .eq('id', data.id);
+              
+            if (error) {
+              console.error('⚠️ Error guardando IdCCP en DB:', error);
+            } else {
+              console.log('✅ IdCCP guardado en DB:', nuevoIdCCP);
+            }
+          } catch (dbError) {
+            console.error('⚠️ Error de conexión al guardar IdCCP:', dbError);
+            // No fallar el proceso por este error
+          }
+        }
+      } else {
+        console.log('✅ IdCCP existente:', data.idCCP);
+      }
+      
+      // PASO 2: Usar el generador mejorado
+      console.log('🚀 Delegando a generador mejorado...');
       const enhancedResult = await XMLGeneratorEnhanced.generarXMLCompleto(data);
       
       // Convertir a formato compatible

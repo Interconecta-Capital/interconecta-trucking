@@ -3,7 +3,8 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Scale, DollarSign, Package } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Scale, DollarSign, Package, Info } from 'lucide-react';
 
 interface MercanciaCantidadesProps {
   formData: any;
@@ -67,26 +68,43 @@ export function MercanciaCantidades({ formData, errors, onFieldChange }: Mercanc
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="valor_mercancia">
-            <DollarSign className="h-4 w-4 inline mr-1" />
-            Valor *
+          <Label htmlFor="valor_mercancia" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 inline" />
+            Valor de la Mercancía *
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-blue-500 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-sm">
+                    <strong>Campo obligatorio por SAT:</strong> Ingrese el valor comercial de la mercancía en pesos mexicanos.
+                    Este valor es necesario para efectos de cobertura de seguros, responsabilidad civil y cumplimiento fiscal.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </Label>
           <Input
             id="valor_mercancia"
             type="number"
-            placeholder="0.00"
+            placeholder="Ej: 5000.00"
             step="0.01"
+            required
             value={formData.valor_mercancia || ''}
             onChange={(e) => {
               const value = e.target.value;
               onFieldChange('valor_mercancia', value ? parseFloat(value) : 0);
             }}
             className={errors.valor_mercancia ? 'border-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-            min="0"
+            min="0.01"
           />
           {errors.valor_mercancia && (
             <p className="text-sm text-red-500">{errors.valor_mercancia}</p>
           )}
+          <p className="text-xs text-gray-500">
+            💡 El valor debe ser mayor a $0.01 MXN
+          </p>
         </div>
       </div>
 
