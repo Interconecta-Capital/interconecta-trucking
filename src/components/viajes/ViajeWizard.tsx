@@ -387,6 +387,32 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       setIsGeneratingDocuments(true);
       console.log('🚛 Iniciando proceso de confirmación de viaje...');
 
+      // VALIDACIÓN PRE-CREACIÓN: Verificar datos completos de ubicaciones
+      if (!data.origen?.domicilio?.estado || !data.origen?.domicilio?.municipio) {
+        toast.error('Datos incompletos del origen', {
+          description: 'Falta estado o municipio. Recalcula la ruta para obtener datos completos.',
+          duration: 6000
+        });
+        setIsGeneratingDocuments(false);
+        setShowValidacionPreViaje(false);
+        return;
+      }
+
+      if (!data.destino?.domicilio?.estado || !data.destino?.domicilio?.municipio) {
+        toast.error('Datos incompletos del destino', {
+          description: 'Falta estado o municipio. Recalcula la ruta para obtener datos completos.',
+          duration: 6000
+        });
+        setIsGeneratingDocuments(false);
+        setShowValidacionPreViaje(false);
+        return;
+      }
+
+      console.log('✅ Validación de ubicaciones completa:', {
+        origen: `${data.origen.domicilio.municipio}, ${data.origen.domicilio.estado}`,
+        destino: `${data.destino.domicilio.municipio}, ${data.destino.domicilio.estado}`
+      });
+
       // FASE 4: Validación pre-creación del conductor
       if (data.conductor?.id) {
         console.log('🔍 Verificando disponibilidad del conductor...');
@@ -475,14 +501,38 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       // Marcar como confirmado para prevenir duplicados
       setViajeConfirmado(true);
 
-      // 2. Generar borrador de Carta Porte desde el viaje
+      // 2. Generar borrador de Carta Porte desde el viaje (CON MANEJO DE ERRORES MEJORADO)
       console.log('📄 Generando borrador de Carta Porte...');
-      const resultado = await ViajeCartaPorteService.crearBorradorDesdeViaje(
-        nuevoViaje.id,
-        data
-      );
+      
+      let borradorId: string | null = null;
+      
+      try {
+        const resultado = await ViajeCartaPorteService.crearBorradorDesdeViaje(
+          nuevoViaje.id,
+          data
+        );
 
-      console.log('✅ Borrador creado exitosamente. carta_porte_id permanece NULL hasta timbrar.');
+        console.log('✅ Borrador creado exitosamente:', resultado.borrador_id);
+        borradorId = resultado.borrador_id;
+        
+      } catch (errorBorrador) {
+        console.error('❌ Error creando borrador de Carta Porte:', errorBorrador);
+        
+        // El viaje YA se creó, solo falló el borrador - NO es un error fatal
+        toast.warning('⚠️ Viaje creado pero falta crear Carta Porte', {
+          description: `${(errorBorrador as Error).message}. Puedes crear la Carta Porte manualmente desde el viaje.`,
+          duration: 10000,
+          action: {
+            label: 'Ver Viajes',
+            onClick: () => {
+              navigate('/viajes');
+            }
+          }
+        });
+        
+        // Continuar con el flujo - NO lanzar error
+        console.log('⚠️ Continuando flujo a pesar del error en borrador CP');
+      }
 
       // 3. Registrar en analisis_viajes para IA predictiva
       try {
@@ -523,16 +573,25 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
         // No fallar el viaje por esto
       }
 
-      toast.success('Viaje programado correctamente', {
-        description: 'Se creó el borrador de Carta Porte. Completa los datos fiscales y timbra para finalizar.',
-        duration: 8000,
-        action: {
-          label: 'Abrir Carta Porte',
-          onClick: () => {
-            navigate(`/carta-porte/editor/${resultado.borrador_id}`);
+      // Mostrar mensaje de éxito según si se creó el borrador o no
+      if (borradorId) {
+        toast.success('Viaje programado correctamente', {
+          description: 'Se creó el borrador de Carta Porte. Completa los datos fiscales y timbra para finalizar.',
+          duration: 8000,
+          action: {
+            label: 'Abrir Carta Porte',
+            onClick: () => {
+              navigate(`/carta-porte/editor/${borradorId}`);
+            }
           }
-        }
-      });
+        });
+      } else {
+        toast.success('Viaje programado correctamente', {
+          description: 'El viaje fue creado. Puedes crear la Carta Porte desde la lista de viajes.',
+          duration: 6000
+        });
+      }
+      
       setInitialSnapshot(JSON.stringify(data));
       setHasUnsavedChanges(false);
 
@@ -540,8 +599,10 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       setTimeout(() => {
         if (onComplete) {
           onComplete();
+        } else if (borradorId) {
+          navigate(`/carta-porte/editor/${borradorId}`);
         } else {
-          navigate(`/carta-porte/editor/${resultado.borrador_id}`);
+          navigate('/viajes');
         }
       }, 3000);
 

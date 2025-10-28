@@ -199,7 +199,21 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
       );
 
       if (rutaCalculada) {
-        // Actualizar datos del wizard con información precisa
+        // Extraer estado y municipio de las direcciones usando reverse geocoding
+        const extraerEstadoMunicipio = (direccion: string) => {
+          // Extraer partes de la dirección
+          const partes = direccion.split(',').map(p => p.trim());
+          const estado = partes.length >= 2 ? partes[partes.length - 2] : '';
+          const municipio = partes.length >= 3 ? partes[partes.length - 3] : '';
+          const colonia = partes.length >= 4 ? partes[partes.length - 4] : '';
+          
+          return { estado, municipio, colonia };
+        };
+
+        const origenGeo = extraerEstadoMunicipio(rutaCalculada.origen.direccion);
+        const destinoGeo = extraerEstadoMunicipio(rutaCalculada.destino.direccion);
+
+        // Actualizar datos del wizard con información precisa y completa
         updateData({
           origen: {
             nombre: rutaCalculada.origen.nombre,
@@ -209,9 +223,9 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               pais: 'MEX',
               codigo_postal: rutaCalculada.origen.codigoPostal || '',
               codigoPostal: rutaCalculada.origen.codigoPostal || '',
-              estado: '',
-              municipio: '',
-              colonia: '',
+              estado: origenGeo.estado,
+              municipio: origenGeo.municipio,
+              colonia: origenGeo.colonia,
               calle: rutaCalculada.origen.direccion || ''
             },
             fechaHoraSalidaLlegada: fechaSalida || new Date().toISOString(),
@@ -226,9 +240,9 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               pais: 'MEX',
               codigo_postal: rutaCalculada.destino.codigoPostal || '',
               codigoPostal: rutaCalculada.destino.codigoPostal || '',
-              estado: '',
-              municipio: '',
-              colonia: '',
+              estado: destinoGeo.estado,
+              municipio: destinoGeo.municipio,
+              colonia: destinoGeo.colonia,
               calle: rutaCalculada.destino.direccion || ''
             },
             fechaHoraSalidaLlegada: fechaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),

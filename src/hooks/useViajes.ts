@@ -115,14 +115,14 @@ export const useViajes = () => {
       setIsCreatingViaje(true);
 
       try {
-        // Verificar duplicados en base de datos (últimos 2 minutos)
-        const dosMinutosAtras = new Date(Date.now() - 120000).toISOString();
+        // Verificar duplicados en base de datos (últimos 30 segundos - ventana reducida)
+        const treintaSegundosAtras = new Date(Date.now() - 30000).toISOString();
         
         const { data: viajesRecientes, error: errorConsulta } = await supabase
           .from('viajes')
           .select('id, tracking_data, created_at')
           .eq('user_id', user.id)
-          .gte('created_at', dosMinutosAtras)
+          .gte('created_at', treintaSegundosAtras)
           .order('created_at', { ascending: false })
           .limit(10);
 
@@ -140,8 +140,12 @@ export const useViajes = () => {
                 trackingExistente.origen?.domicilio?.calle === wizardData.origen?.domicilio?.calle &&
                 trackingExistente.destino?.domicilio?.calle === wizardData.destino?.domicilio?.calle) {
               
+              const segundosDesdeCreacion = Math.round((Date.now() - new Date(viajeExistente.created_at).getTime()) / 1000);
               console.log('🔍 Viaje duplicado detectado:', viajeExistente.id);
-              throw new Error(`Ya existe un viaje similar creado hace ${Math.round((Date.now() - new Date(viajeExistente.created_at).getTime()) / 1000)} segundos. Revisa la lista de viajes.`);
+              throw new Error(
+                `Ya existe un viaje similar (ID: ${viajeExistente.id.substring(0, 8)}...) creado hace ${segundosDesdeCreacion} segundos. ` +
+                `Si deseas crear otro viaje con los mismos datos, espera unos segundos e inténtalo de nuevo.`
+              );
             }
           }
         }

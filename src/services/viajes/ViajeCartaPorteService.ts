@@ -104,12 +104,42 @@ export class ViajeCartaPorteService {
         }
       }
 
-      // 2. Validar datos completos
+      // 2. Validar datos completos CON LOGS DETALLADOS
       console.log('🔍 Validando datos del wizard...');
+      console.log('📍 Datos recibidos:', {
+        viajeId,
+        cliente: wizardData.cliente?.nombre_razon_social,
+        clienteRFC: wizardData.cliente?.rfc,
+        origen: {
+          direccion: wizardData.origen?.direccion,
+          domicilio: wizardData.origen?.domicilio,
+          coordenadas: wizardData.origen?.coordenadas
+        },
+        destino: {
+          direccion: wizardData.destino?.direccion,
+          domicilio: wizardData.destino?.domicilio,
+          coordenadas: wizardData.destino?.coordenadas
+        },
+        conductor: wizardData.conductor?.nombre,
+        vehiculo: wizardData.vehiculo?.placa
+      });
+
       const validacion = ViajeToCartaPorteMapper.validarDatosCompletos(wizardData);
+      
+      console.log('🔍 Resultado validación:', validacion);
+      
       if (!validacion.valido) {
-        const errorMsg = `Datos incompletos para crear Carta Porte:\n${validacion.errores.join('\n• ')}`;
+        const errorMsg = `Datos incompletos para crear Carta Porte:\n• ${validacion.errores.join('\n• ')}`;
         console.error('❌', errorMsg);
+        console.error('❌ Datos que fallaron la validación:', {
+          origen_estado: wizardData.origen?.domicilio?.estado,
+          origen_municipio: wizardData.origen?.domicilio?.municipio,
+          origen_cp: wizardData.origen?.domicilio?.codigo_postal,
+          destino_estado: wizardData.destino?.domicilio?.estado,
+          destino_municipio: wizardData.destino?.domicilio?.municipio,
+          destino_cp: wizardData.destino?.domicilio?.codigo_postal
+        });
+        
         toast.error('Datos incompletos', {
           description: validacion.errores[0],
           duration: 5000
