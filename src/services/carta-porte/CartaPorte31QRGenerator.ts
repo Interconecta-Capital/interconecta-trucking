@@ -1,3 +1,5 @@
+import { UUIDService } from '@/services/uuid/UUIDService';
+
 export interface QRCodeData31 {
   uuid: string;
   fechaOrigen: string;
@@ -6,7 +8,7 @@ export interface QRCodeData31 {
 }
 
 export class CartaPorte31QRGenerator {
-  
+
   // Generar código QR según especificaciones v3.1
   static generateQRCode31(data: QRCodeData31): string {
     // Validar que el IdCCP tenga 36 caracteres (RFC 4122)
@@ -36,8 +38,6 @@ export class CartaPorte31QRGenerator {
 
   // Generar IdCCP válido para v3.1 (36 caracteres RFC 4122)
   static generateIdCCP31(): string {
-    // Usar el servicio UUID centralizado
-    const UUIDService = require('@/services/uuid/UUIDService').UUIDService;
     return UUIDService.generateValidIdCCP();
   }
 

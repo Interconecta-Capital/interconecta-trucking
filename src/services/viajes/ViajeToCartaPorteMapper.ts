@@ -1,6 +1,6 @@
-
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteData, MercanciaCompleta } from '@/types/cartaPorte';
+import { MercanciaMultipleParser } from '@/services/mercancias/MercanciaMultipleParser';
 
 export class ViajeToCartaPorteMapper {
   static mapToCartaPorteData(wizardData: ViajeWizardData) {
@@ -347,9 +347,8 @@ export class ViajeToCartaPorteMapper {
     const descripcion = wizardData.descripcionMercancia || 'Mercancía general';
     
     // FASE 1: Primero intentar detectar múltiples productos
-    const { MercanciaMultipleParser } = require('@/services/mercancias/MercanciaMultipleParser');
     const productosDetectados = MercanciaMultipleParser.analizarDescripcion(descripcion);
-    
+
     if (productosDetectados.length > 1) {
       console.log(`✅ FASE 1: Detectados ${productosDetectados.length} productos distintos`);
       
