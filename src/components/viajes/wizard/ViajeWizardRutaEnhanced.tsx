@@ -213,6 +213,19 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
         const origenGeo = extraerEstadoMunicipio(rutaCalculada.origen.direccion);
         const destinoGeo = extraerEstadoMunicipio(rutaCalculada.destino.direccion);
 
+        console.log('🗺️ [ViajeWizardRutaEnhanced] Actualizando wizard con datos de ruta:', {
+          origen: {
+            direccion: rutaCalculada.origen.direccion,
+            codigoPostal: rutaCalculada.origen.codigoPostal
+          },
+          destino: {
+            direccion: rutaCalculada.destino.direccion,
+            codigoPostal: rutaCalculada.destino.codigoPostal
+          },
+          distancia: rutaCalculada.distanciaKm,
+          tiempo: rutaCalculada.tiempoEstimadoMinutos
+        });
+
         // Actualizar datos del wizard con información precisa y completa
         updateData({
           origen: {

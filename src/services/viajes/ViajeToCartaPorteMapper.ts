@@ -174,16 +174,22 @@ export class ViajeToCartaPorteMapper {
     // Obtener datos del usuario para el emisor (AHORA ES ASYNC)
     const emisorData = await this.getEmisorData();
 
-    // FASE 2: Mapear configuración general con tipo CFDI estandarizado
-    // Retornar en formato CartaPorteData con todos los campos sincronizados
-    return {
-      cartaPorteVersion: '3.1',
-      rfcEmisor: emisorData.rfc,
-      nombreEmisor: emisorData.nombre,
-      regimenFiscalEmisor: emisorData.regimenFiscal,
-      rfcReceptor: baseData.configuracion.receptor.rfc,
-      nombreReceptor: baseData.configuracion.receptor.nombre,
-      usoCfdi: wizardData.cliente?.uso_cfdi || baseData.configuracion.receptor.usoCfdi || 'G03',
+      // FASE 2: Mapear configuración general con tipo CFDI estandarizado
+      console.log('🔧 [ViajeToCartaPorteMapper] Configuración CFDI:', {
+        cliente_uso_cfdi: wizardData.cliente?.uso_cfdi,
+        baseData_uso_cfdi: baseData.configuracion.receptor.usoCfdi,
+        final_uso_cfdi: wizardData.cliente?.uso_cfdi || baseData.configuracion.receptor.usoCfdi || 'G03'
+      });
+
+      // Retornar en formato CartaPorteData con todos los campos sincronizados
+      return {
+        cartaPorteVersion: '3.1',
+        rfcEmisor: emisorData.rfc,
+        nombreEmisor: emisorData.nombre,
+        regimenFiscalEmisor: emisorData.regimenFiscal,
+        rfcReceptor: baseData.configuracion.receptor.rfc,
+        nombreReceptor: baseData.configuracion.receptor.nombre,
+        usoCfdi: wizardData.cliente?.uso_cfdi || baseData.configuracion.receptor.usoCfdi || 'G03',
       tipoCfdi: 'Traslado', // FASE 2: Usar 'Traslado' en lugar de 'T' (se convierte en XML generator)
       transporteInternacional: false,
       registroIstmo: false,
@@ -197,10 +203,19 @@ export class ViajeToCartaPorteMapper {
           || ub.codigo_postal 
           || '';
         
+        console.log('🔍 [ViajeToCartaPorteMapper] Extrayendo código postal:', {
+          ubicacion: ub.tipoUbicacion,
+          fuentes: {
+            'domicilio.codigo_postal': ub.domicilio?.codigo_postal,
+            'domicilio.codigoPostal': ub.domicilio?.codigoPostal,
+            'codigoPostal': ub.codigoPostal,
+            'codigo_postal': ub.codigo_postal
+          },
+          resultado: codigoPostal || '❌ FALTANTE'
+        });
+        
         if (!codigoPostal) {
           console.warn('⚠️ Ubicación sin código postal:', ub.tipoUbicacion, ub.direccion);
-        } else {
-          console.log('✅ Código postal encontrado:', codigoPostal, 'para ubicación:', ub.tipoUbicacion);
         }
         
         return {
@@ -211,7 +226,15 @@ export class ViajeToCartaPorteMapper {
           fecha_llegada_salida: ub.fechaHoraSalidaLlegada,
           fecha_hora_salida_llegada: ub.fechaHoraSalidaLlegada,
           distancia_recorrida: ub.tipoUbicacion === 'Destino' 
-            ? ((wizardData as any).distanciaTotal || (ub.distanciaRecorrida && ub.distanciaRecorrida > 0 ? ub.distanciaRecorrida : 0))
+            ? (() => {
+                const distancia = (wizardData as any).distanciaTotal || (ub.distanciaRecorrida && ub.distanciaRecorrida > 0 ? ub.distanciaRecorrida : 0);
+                console.log('📏 [ViajeToCartaPorteMapper] Distancia calculada:', {
+                  distanciaTotal: (wizardData as any).distanciaTotal,
+                  distanciaRecorrida: ub.distanciaRecorrida,
+                  final: distancia
+                });
+                return distancia;
+              })()
             : 0,
           coordenadas: ub.coordenadas,
           codigo_postal: codigoPostal, // ← CAMPO DIRECTO (columna en tabla)

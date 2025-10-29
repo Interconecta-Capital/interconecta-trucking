@@ -240,7 +240,15 @@ export class FigurasAutoPopulationService {
       console.log('✅ Figura de emisor agregada:', figuraEmisor.nombre_figura);
     }
 
-    console.log(`📋 Total de figuras auto-pobladas: ${figuras.length}`);
+    console.log('👥 [FigurasAutoPopulation] Total de figuras:', {
+      cantidad: figuras.length,
+      desglose: figuras.map(f => ({
+        tipo: f.tipo_figura,
+        nombre: f.nombre_figura,
+        rfc: f.rfc_figura
+      }))
+    });
+    
     return figuras;
   }
 }
