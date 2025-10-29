@@ -160,8 +160,54 @@ export class FigurasAutoPopulationService {
   }
 
   /**
+   * Obtiene datos del usuario emisor y los formatea como figura tipo '02' (Propietario)
+   */
+  static async obtenerFiguraEmisor(): Promise<FiguraCompleta | null> {
+    try {
+      console.log('🏢 Obteniendo datos del usuario emisor');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('⚠️ No hay usuario autenticado');
+        return null;
+      }
+      
+      // Obtener datos del perfil del usuario
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nombre, rfc, empresa')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profile) {
+        console.log('⚠️ No se encontró perfil del usuario');
+        return null;
+      }
+      
+      return {
+        id: `figura-emisor-${user.id}`,
+        tipo_figura: '02', // Propietario
+        rfc_figura: profile.rfc || '',
+        nombre_figura: profile.nombre || profile.empresa || 'Usuario Emisor',
+        residencia_fiscal_figura: 'MEX',
+        domicilio: {
+          pais: 'MEX',
+          codigo_postal: '00000',
+          estado: '',
+          municipio: '',
+          colonia: '',
+          calle: ''
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error procesando figura de emisor:', error);
+      return null;
+    }
+  }
+
+  /**
    * Obtiene todas las figuras auto-pobladas para un viaje
-   * Incluye conductor y cliente si están disponibles
+   * Incluye conductor, cliente y emisor si están disponibles
    */
   static async obtenerFigurasDeViaje(
     conductorId?: string,
@@ -169,7 +215,7 @@ export class FigurasAutoPopulationService {
   ): Promise<FiguraCompleta[]> {
     const figuras: FiguraCompleta[] = [];
 
-    // 1. Agregar conductor como primera figura
+    // 1. Agregar conductor como primera figura (Operador - 01)
     if (conductorId) {
       const figuraConductor = await this.obtenerFiguraConductor(conductorId);
       if (figuraConductor) {
@@ -178,13 +224,20 @@ export class FigurasAutoPopulationService {
       }
     }
 
-    // 2. Agregar cliente como segunda figura
+    // 2. Agregar cliente como segunda figura (Propietario mercancías - 02)
     if (clienteId) {
       const figuraCliente = await this.obtenerFiguraCliente(clienteId);
       if (figuraCliente) {
         figuras.push(figuraCliente);
         console.log('✅ Figura de cliente agregada:', figuraCliente.nombre_figura);
       }
+    }
+
+    // 3. Agregar emisor como tercera figura (Propietario transporte - 02)
+    const figuraEmisor = await this.obtenerFiguraEmisor();
+    if (figuraEmisor) {
+      figuras.push(figuraEmisor);
+      console.log('✅ Figura de emisor agregada:', figuraEmisor.nombre_figura);
     }
 
     console.log(`📋 Total de figuras auto-pobladas: ${figuras.length}`);

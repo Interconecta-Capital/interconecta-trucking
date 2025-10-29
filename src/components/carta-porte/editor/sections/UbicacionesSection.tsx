@@ -18,11 +18,12 @@ export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) 
     setDistanciaTotal(distancia);
     setTiempoEstimado(tiempo);
 
-    // Actualizar el destino con la distancia calculada
+    // Actualizar el destino con la distancia calculada en km
     const updatedData = data.map(ubicacion => {
       if (ubicacion.tipoUbicacion === 'Destino') {
         return {
           ...ubicacion,
+          distancia_recorrida: distancia, // Guardar en km
           distanciaRecorrida: distancia
         };
       }

@@ -253,7 +253,9 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
             precision: rutaCalculada.destino.precision,
             validadaGoogleMaps: rutaCalculada.destino.validadaGoogleMaps
           },
-          distanciaRecorrida: rutaCalculada.distanciaKm
+          distanciaRecorrida: rutaCalculada.distanciaKm,
+          distanciaTotal: rutaCalculada.distanciaKm,
+          tiempoEstimado: rutaCalculada.tiempoEstimadoMinutos
         });
 
         setShowMap(true);

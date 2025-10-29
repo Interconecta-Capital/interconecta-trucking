@@ -42,6 +42,8 @@ export interface ViajeWizardData {
   origen?: any;
   destino?: any;
   distanciaRecorrida?: number;
+  distanciaTotal?: number;
+  tiempoEstimado?: number;
   // Paradas autorizadas
   tieneParadasAutorizadas?: boolean;
   paradasAutorizadas?: Array<{

@@ -16,8 +16,17 @@ export class ViajeToCartaPorteMapper {
       receptor: {
         rfc: wizardData.cliente?.rfc || '',
         nombre: wizardData.cliente?.nombre_razon_social || '',
-        usoCfdi: 'S01'
-      }
+        regimenFiscal: wizardData.cliente?.regimen_fiscal || '612',
+        usoCfdi: wizardData.cliente?.uso_cfdi || 'G03',
+        domicilio: {
+          pais: 'MEX',
+          codigo_postal: wizardData.cliente?.direccion_fiscal?.codigo_postal || '',
+          estado: wizardData.cliente?.direccion_fiscal?.estado || '',
+          municipio: wizardData.cliente?.direccion_fiscal?.municipio || '',
+          colonia: wizardData.cliente?.direccion_fiscal?.colonia || '',
+          calle: wizardData.cliente?.direccion_fiscal?.calle || '',
+        }
+      },
     };
 
     // Mapear ubicaciones (origen y destino)
@@ -174,7 +183,7 @@ export class ViajeToCartaPorteMapper {
       regimenFiscalEmisor: emisorData.regimenFiscal,
       rfcReceptor: baseData.configuracion.receptor.rfc,
       nombreReceptor: baseData.configuracion.receptor.nombre,
-      usoCfdi: baseData.configuracion.receptor.usoCfdi || 'S01',
+      usoCfdi: wizardData.cliente?.uso_cfdi || baseData.configuracion.receptor.usoCfdi || 'G03',
       tipoCfdi: 'Traslado', // FASE 2: Usar 'Traslado' en lugar de 'T' (se convierte en XML generator)
       transporteInternacional: false,
       registroIstmo: false,
@@ -201,7 +210,9 @@ export class ViajeToCartaPorteMapper {
           nombre: baseData.configuracion.receptor.nombre,
           fecha_llegada_salida: ub.fechaHoraSalidaLlegada,
           fecha_hora_salida_llegada: ub.fechaHoraSalidaLlegada,
-          distancia_recorrida: ub.distanciaRecorrida || 0,
+          distancia_recorrida: ub.tipoUbicacion === 'Destino' 
+            ? ((wizardData as any).distanciaTotal || (ub.distanciaRecorrida && ub.distanciaRecorrida > 0 ? ub.distanciaRecorrida : 0))
+            : 0,
           coordenadas: ub.coordenadas,
           codigo_postal: codigoPostal, // ← CAMPO DIRECTO (columna en tabla)
           domicilio: {
