@@ -64,14 +64,16 @@ function ViajesContent() {
   };
 
   useEffect(() => {
+    // FASE 3: Ocultar botón FAB durante creación de viaje
+    const isCreating = isLoading; // Usar estado de loading para detectar creación
     setFABConfig({
       icon: <Route className="fab-icon" />,
       text: 'Nuevo',
       onClick: openViajeWizard,
-      isVisible: true
+      isVisible: !isCreating // Ocultar si está creando
     })
     return () => setFABConfig({ isVisible: false })
-  }, [])
+  }, [isLoading])
 
   const handleEditarViaje = (viaje: Viaje) => {
     navigate(`/viajes/editar/${viaje.id}`);

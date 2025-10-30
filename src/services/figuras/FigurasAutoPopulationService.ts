@@ -20,6 +20,7 @@ interface FiguraCompleta {
     calle: string;
   };
 }
+import { toast } from 'sonner';
 
 export class FigurasAutoPopulationService {
   /**
@@ -248,6 +249,14 @@ export class FigurasAutoPopulationService {
         rfc: f.rfc_figura
       }))
     });
+
+    // FASE 2: Toast informativo sobre figuras
+    if (figuras.length > 0) {
+      toast.info(`👥 ${figuras.length} figuras detectadas`, {
+        description: figuras.map(f => f.nombre_figura).join(', '),
+        duration: 4000
+      });
+    }
     
     return figuras;
   }

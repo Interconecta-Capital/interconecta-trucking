@@ -35,12 +35,22 @@ export class ViajeCartaPorteService {
 
       console.log('📋 Carta Porte creada:', cartaPorte.id);
 
-      // 4. Actualizar viaje con el ID de la carta porte
+      // 4. Actualizar tracking_data (carta_porte_id permanece NULL hasta timbrar)
+      const { data: viajeData } = await supabase
+        .from('viajes')
+        .select('tracking_data')
+        .eq('id', viajeId)
+        .single();
+
+      const trackingData = viajeData?.tracking_data as any || {};
       const { error: updateError } = await supabase
         .from('viajes')
         .update({ 
-          carta_porte_id: cartaPorte.id,
-          estado: 'completado'
+          tracking_data: {
+            ...trackingData,
+            carta_porte_creada_id: cartaPorte.id,
+            carta_porte_creada_en: new Date().toISOString()
+          }
         })
         .eq('id', viajeId);
 
@@ -48,6 +58,11 @@ export class ViajeCartaPorteService {
         console.error('Error actualizando viaje:', updateError);
         throw updateError;
       }
+
+      toast.success('✅ Carta Porte creada', {
+        description: 'El documento ha sido generado correctamente',
+        duration: 4000
+      });
 
       console.log('✅ Carta Porte creada exitosamente desde viaje');
       

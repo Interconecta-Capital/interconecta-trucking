@@ -1,6 +1,7 @@
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteData, MercanciaCompleta } from '@/types/cartaPorte';
 import { MercanciaMultipleParser } from '@/services/mercancias/MercanciaMultipleParser';
+import { toast } from 'sonner';
 
 export class ViajeToCartaPorteMapper {
   static mapToCartaPorteData(wizardData: ViajeWizardData) {
@@ -174,12 +175,17 @@ export class ViajeToCartaPorteMapper {
     // Obtener datos del usuario para el emisor (AHORA ES ASYNC)
     const emisorData = await this.getEmisorData();
 
-      // FASE 2: Mapear configuración general con tipo CFDI estandarizado
-      console.log('🔧 [ViajeToCartaPorteMapper] Configuración CFDI:', {
-        cliente_uso_cfdi: wizardData.cliente?.uso_cfdi,
-        baseData_uso_cfdi: baseData.configuracion.receptor.usoCfdi,
-        final_uso_cfdi: wizardData.cliente?.uso_cfdi || baseData.configuracion.receptor.usoCfdi || 'G03'
-      });
+    // FASE 2: Logs visibles con toasts
+    toast.info('📋 Configurando Carta Porte', {
+      description: `Cliente: ${wizardData.cliente?.nombre_razon_social || 'No especificado'}`,
+      duration: 3000
+    });
+
+    console.log('🔧 [ViajeToCartaPorteMapper] Configuración CFDI:', {
+      cliente_uso_cfdi: wizardData.cliente?.uso_cfdi,
+      baseData_uso_cfdi: baseData.configuracion.receptor.usoCfdi,
+      final_uso_cfdi: wizardData.cliente?.uso_cfdi || baseData.configuracion.receptor.usoCfdi || 'G03'
+    });
 
       // Retornar en formato CartaPorteData con todos los campos sincronizados
       return {
@@ -196,27 +202,24 @@ export class ViajeToCartaPorteMapper {
       viaTransporte: '01', // Autotransporte
       mercancias: baseData.mercancias,
       ubicaciones: baseData.ubicaciones.map(ub => {
-        // ✅ CORRECCIÓN COMPLETA: Extraer código postal de múltiples fuentes posibles
         const codigoPostal = ub.domicilio?.codigo_postal 
           || ub.domicilio?.codigoPostal 
           || ub.codigoPostal 
           || ub.codigo_postal 
           || '';
         
+        // FASE 2: Toast informativo sobre código postal
+        if (!codigoPostal && ub.tipoUbicacion) {
+          toast.warning(`⚠️ Falta código postal en ${ub.tipoUbicacion}`, {
+            description: 'Verifica la dirección ingresada',
+            duration: 4000
+          });
+        }
+        
         console.log('🔍 [ViajeToCartaPorteMapper] Extrayendo código postal:', {
           ubicacion: ub.tipoUbicacion,
-          fuentes: {
-            'domicilio.codigo_postal': ub.domicilio?.codigo_postal,
-            'domicilio.codigoPostal': ub.domicilio?.codigoPostal,
-            'codigoPostal': ub.codigoPostal,
-            'codigo_postal': ub.codigo_postal
-          },
           resultado: codigoPostal || '❌ FALTANTE'
         });
-        
-        if (!codigoPostal) {
-          console.warn('⚠️ Ubicación sin código postal:', ub.tipoUbicacion, ub.direccion);
-        }
         
         return {
           id: ub.idUbicacion,
@@ -228,6 +231,12 @@ export class ViajeToCartaPorteMapper {
           distancia_recorrida: ub.tipoUbicacion === 'Destino' 
             ? (() => {
                 const distancia = (wizardData as any).distanciaTotal || (ub.distanciaRecorrida && ub.distanciaRecorrida > 0 ? ub.distanciaRecorrida : 0);
+                // FASE 2: Toast informativo sobre distancia
+                if (distancia > 0) {
+                  toast.success(`📏 Distancia calculada: ${distancia} km`, {
+                    duration: 3000
+                  });
+                }
                 console.log('📏 [ViajeToCartaPorteMapper] Distancia calculada:', {
                   distanciaTotal: (wizardData as any).distanciaTotal,
                   distanciaRecorrida: ub.distanciaRecorrida,
@@ -579,10 +588,11 @@ export class ViajeToCartaPorteMapper {
       }
     };
 
-    // Buscar coincidencias
+    // Buscar coincidencias en catálogo local
     let categoria = null;
     let maxCoincidencias = 0;
     
+    // FASE 5: Priorizar catálogo local con toast informativo
     for (const [key, pattern] of Object.entries(patterns)) {
       const coincidencias = pattern.keywords.filter(keyword => desc.includes(keyword)).length;
       if (coincidencias > maxCoincidencias) {
@@ -591,8 +601,22 @@ export class ViajeToCartaPorteMapper {
       }
     }
 
+    if (categoria && maxCoincidencias > 0) {
+      // FASE 2 + FASE 5: Toast cuando se usa catálogo local
+      toast.success('📦 Mercancía detectada en catálogo local', {
+        description: `${maxCoincidencias} palabras clave encontradas`,
+        duration: 3000
+      });
+    }
+
     // Si no hay coincidencias, usar valores por defecto
     if (!categoria || maxCoincidencias === 0) {
+      // FASE 2 + FASE 5: Toast cuando NO se encuentra en catálogo
+      toast.warning('⚠️ Mercancía no encontrada en catálogo', {
+        description: 'Se usarán valores por defecto. Verifica manualmente los datos fiscales.',
+        duration: 5000
+      });
+      
       categoria = {
         claveProdServ: '99999999',
         fraccionArancelaria: '99999999',

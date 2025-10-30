@@ -815,26 +815,27 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
           </div>
 
           {/* Main Content */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                {currentStepInfo && <currentStepInfo.icon className="h-5 w-5" />}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                {currentStepInfo && <currentStepInfo.icon className="h-6 w-6" />}
                 {currentStepInfo?.title}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {renderStepContent()}
             </CardContent>
           </Card>
 
           {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
           {data.currentStep !== 4 && data.currentStep !== 5 && (
-            <div className="flex justify-between mt-6 mobile-action-row">
-              <div className="flex items-center gap-2 mobile-secondary-group">
+            <div className="flex justify-between mt-8 pt-6 border-t mobile-action-row gap-4">
+              <div className="flex items-center gap-3 mobile-secondary-group flex-wrap">
                 <Button
                   variant="outline"
                   onClick={handlePrevious}
                   disabled={data.currentStep === 1 || isProcessing || viajeConfirmado}
+                  className="min-w-[100px]"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Anterior
@@ -844,7 +845,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
                   variant="outline"
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft || isProcessing}
-                  className="flex items-center gap-2 mobile-secondary-action"
+                  className="flex items-center gap-2 mobile-secondary-action min-w-[140px]"
                 >
                   <Save className="h-4 w-4" />
                   {isSavingDraft ? 'Guardando...' : 'Guardar Borrador'}
@@ -854,17 +855,17 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
                   variant="outline"
                   onClick={handleSaveAndExit}
                   disabled={isSavingDraft || isProcessing}
-                  className="flex items-center gap-2 mobile-secondary-action"
+                  className="flex items-center gap-2 mobile-secondary-action min-w-[140px]"
                 >
                   <FileText className="h-4 w-4" />
                   Guardar y Salir
                 </Button>
               </div>
 
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-end gap-3">
                 {/* Mensaje de validación específico */}
                 {getStep1ValidationMessage() && (
-                  <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md border border-red-200">
+                  <div className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg border border-red-200 max-w-md">
                     {getStep1ValidationMessage()}
                   </div>
                 )}
@@ -873,7 +874,8 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
                   onClick={handleNext}
                   disabled={!canAdvance() || isProcessing || viajeConfirmado}
                   data-onboarding={data.currentStep === 1 ? "next-step-btn" : undefined}
-                  className={!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}
+                  className={`min-w-[120px] ${!canAdvance() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  size="lg"
                 >
                   Siguiente
                   <ArrowRight className="h-4 w-4 ml-2" />

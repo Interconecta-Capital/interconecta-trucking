@@ -135,7 +135,7 @@ export const useDataFlowConnection = () => {
       ]);
 
       // 2. Crear carta porte con datos del viaje
-      const trackingData = viaje.tracking_data as any || {};
+      const trackingDataViaje = viaje.tracking_data as any || {};
       const vehiculo = vehiculosData.data;
       const conductor = conductoresData.data;
       
@@ -181,7 +181,7 @@ export const useDataFlowConnection = () => {
                 tipo_ubicacion: 'Destino',
                 descripcion: viaje.destino,
                 fecha_salida_llegada: viaje.fecha_fin_programada,
-                distancia_recorrida: trackingData.distancia_estimada || 0
+                distanciaRecorrida: trackingDataViaje.distancia_estimada || 0
               }
             ]
           }
@@ -191,10 +191,32 @@ export const useDataFlowConnection = () => {
 
       if (cartaError) throw cartaError;
 
-      // 3. Actualizar viaje con referencia a carta porte
+      // 3. Actualizar tracking_data con referencia a carta porte (NO FK hasta timbrar)
+      const { data: viajeData } = await supabase
+        .from('viajes')
+        .select('tracking_data')
+        .eq('id', viaje.id)
+        .single();
+
+      const trackingData = viajeData?.tracking_data as any || {};
+      
+      // Solo actualizar FK si la carta porte está timbrada
+      const updates: any = {
+        tracking_data: {
+          ...trackingData,
+          carta_porte_borrador_id: cartaPorte.id,
+          carta_porte_creada_en: new Date().toISOString()
+        }
+      };
+
+      // SOLO asignar FK si ya está timbrada
+      if (cartaPorte.status === 'timbrado') {
+        updates.carta_porte_id = cartaPorte.id;
+      }
+
       const { error: updateError } = await supabase
         .from('viajes')
-        .update({ carta_porte_id: cartaPorte.id })
+        .update(updates)
         .eq('id', viaje.id);
 
       if (updateError) throw updateError;

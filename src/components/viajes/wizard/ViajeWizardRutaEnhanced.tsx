@@ -15,6 +15,7 @@ import { useRutasPrecisas } from '@/hooks/useRutasPrecisas';
 import { useRutaConParadas, ParadaAutorizada } from '@/hooks/useRutaConParadas';
 import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
 import { toast } from 'sonner';
+import { AddressParserService } from '@/services/viajes/AddressParserService';
 
 interface ViajeWizardRutaEnhancedProps {
   data: ViajeWizardData;
@@ -387,6 +388,31 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               placeholder="Ej: Av. Insurgentes Sur 123, Col. Del Valle, CDMX, 03100"
               value={origenDireccion}
               onChange={(e) => setOrigenDireccion(e.target.value)}
+              onPaste={(e) => {
+                // FASE 4: Parser de direcciones al pegar
+                const pastedText = e.clipboardData.getData('text');
+                if (pastedText && pastedText.length > 20) {
+                  setTimeout(() => {
+                    const parsed = AddressParserService.parseAddress(pastedText);
+                    if (AddressParserService.isValidParsedAddress(parsed)) {
+                      toast.info(`📍 Dirección detectada (${parsed.confianza})`, {
+                        description: `${parsed.estado}, ${parsed.municipio} - CP: ${parsed.codigoPostal}`,
+                        duration: 4000
+                      });
+                      // Actualizar con dirección parseada completa
+                      updateData({
+                        origen: {
+                          nombre: pastedText,
+                          direccion: pastedText,
+                          domicilio: AddressParserService.toDomicilio(parsed),
+                          codigoPostal: parsed.codigoPostal,
+                          codigo_postal: parsed.codigoPostal
+                        }
+                      });
+                    }
+                  }, 100);
+                }
+              }}
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -447,6 +473,31 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
               placeholder="Ej: Av. López Mateos 456, Col. Americana, Guadalajara, 44160"
               value={destinoDireccion}
               onChange={(e) => setDestinoDireccion(e.target.value)}
+              onPaste={(e) => {
+                // FASE 4: Parser de direcciones al pegar
+                const pastedText = e.clipboardData.getData('text');
+                if (pastedText && pastedText.length > 20) {
+                  setTimeout(() => {
+                    const parsed = AddressParserService.parseAddress(pastedText);
+                    if (AddressParserService.isValidParsedAddress(parsed)) {
+                      toast.info(`📍 Dirección detectada (${parsed.confianza})`, {
+                        description: `${parsed.estado}, ${parsed.municipio} - CP: ${parsed.codigoPostal}`,
+                        duration: 4000
+                      });
+                      // Actualizar con dirección parseada completa
+                      updateData({
+                        destino: {
+                          nombre: pastedText,
+                          direccion: pastedText,
+                          domicilio: AddressParserService.toDomicilio(parsed),
+                          codigoPostal: parsed.codigoPostal,
+                          codigo_postal: parsed.codigoPostal
+                        }
+                      });
+                    }
+                  }, 100);
+                }
+              }}
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
