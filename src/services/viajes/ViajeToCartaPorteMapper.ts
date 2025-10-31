@@ -78,21 +78,24 @@ export class ViajeToCartaPorteMapper {
       poliza_medio_ambiente: wizardData.vehiculo?.poliza_medio_ambiente || 'POL123456'
     };
 
-    // Mapear figuras de transporte completas
+    // Mapear figuras de transporte completas (FASE 2 - MEJORADO)
+    // Si ya hay figuras auto-pobladas en wizardData, usarlas
     const figuras = [];
-    if (wizardData.conductor) {
+    if (wizardData.figuras && Array.isArray(wizardData.figuras) && wizardData.figuras.length > 0) {
+      console.log('✅ Usando', wizardData.figuras.length, 'figuras auto-pobladas');
+      figuras.push(...wizardData.figuras);
+    } else if (wizardData.conductor) {
+      // Fallback: crear figura del conductor manualmente
       figuras.push({
         tipoFigura: '01', // Operador
         nombreFigura: wizardData.conductor.nombre,
         rfcFigura: wizardData.conductor.rfc || 'XEXX010101000',
         numLicencia: wizardData.conductor.num_licencia || '',
         tipoLicencia: wizardData.conductor.tipo_licencia || 'C',
-        // Datos adicionales del conductor
         curp: wizardData.conductor.curp || '',
         operador_sct: wizardData.conductor.operador_sct || false,
         residencia_fiscal: wizardData.conductor.residencia_fiscal || 'MEX',
         vigencia_licencia: wizardData.conductor.vigencia_licencia || '',
-        // Domicilio del conductor si está disponible
         domicilio: {
           pais: 'MEX',
           codigo_postal: wizardData.conductor.direccion?.codigo_postal || '06000',
@@ -102,6 +105,7 @@ export class ViajeToCartaPorteMapper {
           calle: wizardData.conductor.direccion?.calle || 'Calle sin número'
         }
       });
+      console.log('⚠️ No había figuras auto-pobladas, creada figura del conductor manualmente');
     }
 
     return {

@@ -12,15 +12,25 @@ interface FigurasTransporteSectionProps {
 }
 
 export function FigurasTransporteSection({ data, onChange, onPrev, onNext }: FigurasTransporteSectionProps) {
-  // Validar que hay al menos un operador
+  console.log('🎭 [FigurasTransporteSection] Figuras recibidas:', data.length);
+  
+  // FASE 2: Validar que hay al menos un operador
   const isDataComplete = () => {
-    return data.length > 0 && 
-           data.some(figura => figura.tipo_figura === '01') &&
-           data.every(figura => 
-             figura.rfc_figura && 
-             figura.nombre_figura && 
-             figura.tipo_figura
-           );
+    const tieneOperador = data.some(figura => figura.tipo_figura === '01');
+    const todasCompletas = data.every(figura => 
+      figura.rfc_figura && 
+      figura.nombre_figura && 
+      figura.tipo_figura
+    );
+    
+    console.log('✅ Validación figuras:', {
+      total: data.length,
+      tieneOperador,
+      todasCompletas,
+      valido: data.length > 0 && tieneOperador && todasCompletas
+    });
+    
+    return data.length > 0 && tieneOperador && todasCompletas;
   };
 
   const handleAddFigura = () => {

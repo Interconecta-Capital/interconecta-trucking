@@ -127,10 +127,49 @@ export const useUbicacionesGeocodificacion = () => {
     }
   }, [geocodificarUbicacion, calcularRuta]);
 
+  // FASE 3: Validar que todas las ubicaciones tengan coordenadas
+  const validarCoordenadasObligatorias = useCallback((ubicaciones: Ubicacion[]) => {
+    const ubicacionesSinCoordenadas: Ubicacion[] = [];
+    const ubicacionesValidas: Ubicacion[] = [];
+
+    ubicaciones.forEach(ubicacion => {
+      if (!ubicacion.coordenadas || !ubicacion.coordenadas.latitud || !ubicacion.coordenadas.longitud) {
+        ubicacionesSinCoordenadas.push(ubicacion);
+      } else {
+        ubicacionesValidas.push(ubicacion);
+      }
+    });
+
+    return {
+      todasTienenCoordenadas: ubicacionesSinCoordenadas.length === 0,
+      ubicacionesSinCoordenadas,
+      ubicacionesValidas,
+      mensaje: ubicacionesSinCoordenadas.length === 0 
+        ? `✅ Todas las ubicaciones (${ubicacionesValidas.length}) tienen coordenadas`
+        : `⚠️ ${ubicacionesSinCoordenadas.length} ubicaciones sin coordenadas`
+    };
+  }, []);
+
+  // FASE 3: Geocodificar todas las ubicaciones sin coordenadas
+  const geocodificarTodasLasUbicaciones = useCallback(async (ubicaciones: Ubicacion[]) => {
+    const ubicacionesGeocodificadas = await Promise.all(
+      ubicaciones.map(async (ubicacion) => {
+        if (!ubicacion.coordenadas) {
+          return await geocodificarUbicacion(ubicacion);
+        }
+        return ubicacion;
+      })
+    );
+
+    return ubicacionesGeocodificadas;
+  }, [geocodificarUbicacion]);
+
   return {
     geocodificarUbicacion,
     calcularRutaCompleta,
     calcularDistanciaEntrePuntos,
-    calcularDistanciasAutomaticas
+    calcularDistanciasAutomaticas,
+    validarCoordenadasObligatorias,
+    geocodificarTodasLasUbicaciones
   };
 };

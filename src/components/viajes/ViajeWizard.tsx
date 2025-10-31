@@ -61,6 +61,8 @@ export interface ViajeWizardData {
   // Fechas del viaje
   fechaInicio?: string;
   fechaFin?: string;
+  // FASE 2: Figuras auto-pobladas
+  figuras?: any[];
   // Estado general
   currentStep: number;
   isValid: boolean;
@@ -387,23 +389,32 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
 
     try {
       setIsGeneratingDocuments(true);
-      console.log('🚛 Iniciando proceso de confirmación de viaje...');
+      console.group('🚛 [ViajeWizard] Iniciando proceso de confirmación');
+      console.log('Datos del wizard:', data);
 
-      // VALIDACIÓN PRE-CREACIÓN: Verificar datos básicos de ubicaciones (PERMISIVA PARA BORRADOR)
+      // FASE 3: VALIDACIÓN PRE-CREACIÓN - Verificar ubicaciones con coordenadas
+      console.log('📍 Validando ubicaciones...');
       const origenIncompleto = !data.origen?.domicilio?.codigo_postal && !data.origen?.domicilio?.codigoPostal;
       const destinoIncompleto = !data.destino?.domicilio?.codigo_postal && !data.destino?.domicilio?.codigoPostal;
       
-      if (origenIncompleto || destinoIncompleto) {
-        console.warn('⚠️ Ubicaciones sin código postal, pero permitiendo crear borrador');
+      const origenSinCoordenadas = !data.origen?.coordenadas;
+      const destinoSinCoordenadas = !data.destino?.coordenadas;
+      
+      // FASE 3: Advertencias sobre datos incompletos
+      const advertencias: string[] = [];
+      if (origenIncompleto) advertencias.push('Origen sin código postal completo');
+      if (destinoIncompleto) advertencias.push('Destino sin código postal completo');
+      if (origenSinCoordenadas) advertencias.push('Origen sin coordenadas GPS');
+      if (destinoSinCoordenadas) advertencias.push('Destino sin coordenadas GPS');
+      
+      if (advertencias.length > 0) {
+        console.warn('⚠️ Advertencias de validación:', advertencias);
         toast.warning('Datos de ubicaciones incompletos', {
-          description: 'El borrador se creará, pero deberás completar los datos antes de timbrar.',
-          duration: 5000
+          description: `${advertencias.join(', ')}. El borrador se creará, pero deberás completar antes de timbrar.`,
+          duration: 6000
         });
       } else {
-        console.log('✅ Ubicaciones con códigos postales:', {
-          origen: data.origen?.domicilio?.codigo_postal || data.origen?.domicilio?.codigoPostal,
-          destino: data.destino?.domicilio?.codigo_postal || data.destino?.domicilio?.codigoPostal
-        });
+        console.log('✅ Ubicaciones validadas correctamente');
       }
 
       // FASE 4: Validación pre-creación del conductor
@@ -493,9 +504,11 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
 
       // Marcar como confirmado para prevenir duplicados
       setViajeConfirmado(true);
+      console.log('✅ Viaje confirmado');
 
-      // 2. Generar borrador de Carta Porte desde el viaje (CON MANEJO DE ERRORES MEJORADO)
+      // 2. Generar borrador de Carta Porte desde el viaje
       console.log('📄 Generando borrador de Carta Porte...');
+      console.groupEnd();
       
       let borradorId: string | null = null;
       

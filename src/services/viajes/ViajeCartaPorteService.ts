@@ -145,7 +145,8 @@ export class ViajeCartaPorteService {
 
       console.log('✅ Validación exitosa, obteniendo figuras auto-pobladas...');
 
-      // 3. AUTO-POBLAR FIGURAS (FASE 2 - CRÍTICO)
+      // 3. AUTO-POBLAR FIGURAS (FASE 2 - CRÍTICO) y persistir
+      console.log('🎭 Auto-poblando figuras de transporte...');
       const figurasAutopopuladas = await FigurasAutoPopulationService.obtenerFigurasDeViaje(
         wizardData.conductor?.id,
         wizardData.cliente?.id
@@ -156,6 +157,7 @@ export class ViajeCartaPorteService {
       );
 
       // 4. Mapear datos con validación (ahora es async) e incluir figuras
+      console.log('🗺️ Mapeando datos del wizard a Carta Porte con', figurasAutopopuladas.length, 'figuras...');
       const wizardDataConFiguras = {
         ...wizardData,
         figuras: figurasAutopopuladas
@@ -168,7 +170,7 @@ export class ViajeCartaPorteService {
         receptor: cartaPorteData.rfcReceptor,
         ubicaciones: cartaPorteData.ubicaciones?.length,
         mercancias: cartaPorteData.mercancias?.length,
-        figuras: cartaPorteData.figuras?.length
+        figuras: figurasAutopopuladas.length // ← CONFIRMAR QUE SE INCLUYERON
       });
 
       // 5. Crear borrador
