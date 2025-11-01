@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { UserSignUpData, UserProfile } from './types';
-import { createTenantAndUser, getRedirectUrl } from './useAuthUtils';
+import { getRedirectUrl } from './useAuthUtils';
 
 /**
  * Hook personalizado para manejar todas las acciones de autenticación
@@ -29,10 +29,12 @@ export const useAuthActions = () => {
 
   /**
    * Registrar nuevo usuario con email y contraseña
-   * Maneja la creación del tenant y usuario asociado
+   * El trigger de base de datos handle_new_user se encarga de crear tenant/usuario/perfil
    */
   const signUp = async (email: string, password: string, userData: UserSignUpData) => {
     const redirectUrl = getRedirectUrl();
+    
+    console.log('[Auth] Iniciando registro de usuario:', email);
     
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -44,6 +46,7 @@ export const useAuthActions = () => {
     });
     
     if (error) {
+      console.error('[Auth] Error en registro:', error);
       // Detectar si el usuario ya existe y lanzar error específico
       if (error.message?.includes('User already registered')) {
         throw new Error('El correo electrónico ya está registrado. Por favor inicia sesión.');
@@ -53,13 +56,14 @@ export const useAuthActions = () => {
     
     // Si el usuario se registró exitosamente pero necesita confirmar email
     if (data.user && !data.user.email_confirmed_at) {
-      console.log('Usuario creado, necesita confirmación por email');
+      console.log('[Auth] Usuario creado exitosamente, requiere confirmación por email');
       return { needsVerification: true };
     }
     
-    // Si el usuario se registró exitosamente y ya está confirmado
+    // Si el usuario se registró y ya está confirmado (confirmación instantánea)
+    // El trigger handle_new_user ya creó todo automáticamente
     if (data.user && data.user.email_confirmed_at) {
-      await createTenantAndUser(data.user.id, email, userData);
+      console.log('[Auth] Usuario creado y confirmado automáticamente');
     }
     
     return {};

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { AuthUser } from './types';
 import { useNavigate } from 'react-router-dom';
+import { handleOAuthUser } from './useAuthUtils';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -115,6 +116,17 @@ export function useAuthState() {
           
           if (event === 'SIGNED_IN' && session?.user) {
             setLoading(true);
+            
+            // Verificar si es login OAuth
+            const isOAuth = session.user.app_metadata?.provider && 
+                           session.user.app_metadata.provider !== 'email';
+            
+            if (isOAuth) {
+              console.log('[AuthState] OAuth login detected, handling OAuth user');
+              // Manejar usuario OAuth (trigger + fallback)
+              await handleOAuthUser(session.user);
+            }
+            
             // Delay más largo para evitar conflictos
             setTimeout(async () => {
               await loadUserData(session.user);
