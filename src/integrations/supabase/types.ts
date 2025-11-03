@@ -1674,6 +1674,36 @@ export type Database = {
           },
         ]
       }
+      creditos_usuarios: {
+        Row: {
+          balance_disponible: number
+          created_at: string | null
+          id: string
+          total_comprados: number
+          total_consumidos: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_disponible?: number
+          created_at?: string | null
+          id?: string
+          total_comprados?: number
+          total_consumidos?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_disponible?: number
+          created_at?: string | null
+          id?: string
+          total_comprados?: number
+          total_consumidos?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       documentacion_aduanera: {
         Row: {
           aduana_despacho: string | null
@@ -2485,6 +2515,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      paquetes_creditos: {
+        Row: {
+          activo: boolean | null
+          cantidad_creditos: number
+          created_at: string | null
+          descripcion: string | null
+          descuento_porcentaje: number | null
+          id: string
+          nombre: string
+          orden: number | null
+          precio_mxn: number
+          precio_por_credito: number
+        }
+        Insert: {
+          activo?: boolean | null
+          cantidad_creditos: number
+          created_at?: string | null
+          descripcion?: string | null
+          descuento_porcentaje?: number | null
+          id?: string
+          nombre: string
+          orden?: number | null
+          precio_mxn: number
+          precio_por_credito: number
+        }
+        Update: {
+          activo?: boolean | null
+          cantidad_creditos?: number
+          created_at?: string | null
+          descripcion?: string | null
+          descuento_porcentaje?: number | null
+          id?: string
+          nombre?: string
+          orden?: number | null
+          precio_mxn?: number
+          precio_por_credito?: number
+        }
+        Relationships: []
       }
       permisos_semarnat: {
         Row: {
@@ -3528,6 +3597,63 @@ export type Database = {
           },
         ]
       }
+      transacciones_creditos: {
+        Row: {
+          balance_anterior: number
+          balance_nuevo: number
+          cantidad: number
+          carta_porte_id: string | null
+          created_at: string | null
+          id: string
+          notas: string | null
+          paquete_id: string | null
+          stripe_payment_intent_id: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          balance_anterior: number
+          balance_nuevo: number
+          cantidad: number
+          carta_porte_id?: string | null
+          created_at?: string | null
+          id?: string
+          notas?: string | null
+          paquete_id?: string | null
+          stripe_payment_intent_id?: string | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          balance_anterior?: number
+          balance_nuevo?: number
+          cantidad?: number
+          carta_porte_id?: string | null
+          created_at?: string | null
+          id?: string
+          notas?: string | null
+          paquete_id?: string | null
+          stripe_payment_intent_id?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacciones_creditos_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacciones_creditos_paquete_id_fkey"
+            columns: ["paquete_id"]
+            isOneToOne: false
+            referencedRelation: "paquetes_creditos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ubicaciones: {
         Row: {
           carta_porte_id: string | null
@@ -4210,7 +4336,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_creditos_dashboard: {
+        Row: {
+          compras_ultimo_mes: number | null
+          creditos_vendidos_ultimo_mes: number | null
+          promedio_balance_por_usuario: number | null
+          total_creditos_consumidos: number | null
+          total_creditos_disponibles: number | null
+          total_creditos_vendidos: number | null
+          usuarios_con_creditos: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       analizar_mercado_ruta: {

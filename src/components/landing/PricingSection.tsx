@@ -1,84 +1,70 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Check, Star } from "lucide-react";
+import { Check, Star, Ticket } from "lucide-react";
 
 const PricingSection = () => {
   const [isAnnual, setIsAnnual] = useState(false);
 
-  // Precios base (mensuales)
+  // Precios base actualizados (mensuales) - Modelo Híbrido
   const basePrices = {
-    operador: 149,
-    flota: 299,
-    enterprise: null // Personalizado
-  };
-
-  // Calcular precios según el toggle
-  const getPrice = (basePrice: number | null) => {
-    if (basePrice === null) return "Personalizado";
-    if (isAnnual) {
-      const annualPrice = Math.round(basePrice * 0.8); // 20% descuento
-      return annualPrice;
-    }
-    return basePrice;
+    gratuito: 0,
+    operador: 249,
+    flota: 599,
   };
 
   const plans = [
     {
-      name: "Operador",
-      price: getPrice(basePrices.operador),
-      originalPrice: isAnnual ? basePrices.operador : null,
-      description: "Para transportistas independientes",
+      name: "Plan Gratuito",
+      monthlyPrice: basePrices.gratuito,
+      annualPrice: basePrices.gratuito,
+      description: "Para probar la plataforma",
       features: [
-        "Hasta 50 viajes al mes",
-        "Validaciones SAT automáticas",
-        "Generación de Carta Porte 3.1",
-        "Soporte por correo electrónico",
-        "Dashboard básico",
-        "Almacenamiento de 1GB"
+        "5 timbres gratis al mes",
+        "1 usuario",
+        "2 vehículos",
+        "Gestión básica de catálogos",
+        "Timbrado manual (sin IA)",
+        "Sin Dashboard de Rentabilidad"
       ],
-      buttonText: "Empezar",
-      buttonVariant: "secondary" as const,
+      popular: false,
+      isFree: true
+    },
+    {
+      name: "Plan Operador",
+      monthlyPrice: basePrices.operador,
+      annualPrice: basePrices.operador * 12 * 0.8,
+      description: "Acceso al Software completo",
+      features: [
+        "Timbres: Se compran por separado",
+        "IA Anti-Errores (Claves SAT)",
+        "Dashboard Básico",
+        "3 Usuarios",
+        "10 Vehículos y Conductores",
+        "Gestión avanzada de viajes",
+        "Timbrado digital CFDI 4.0",
+        "Cumplimiento Carta Porte 3.1",
+        "Soporte por email"
+      ],
       popular: false
     },
     {
-      name: "Flota",
-      price: getPrice(basePrices.flota),
-      originalPrice: isAnnual ? basePrices.flota : null,
-      description: "Para empresas medianas",
+      name: "Plan Flota",
+      monthlyPrice: basePrices.flota,
+      annualPrice: basePrices.flota * 12 * 0.8,
+      description: "Inteligencia de Negocios",
       features: [
-        "Hasta 200 viajes al mes",
-        "Todas las funciones de IA",
-        "ViajeWizard completo",
-        "Alertas y validaciones avanzadas",
-        "Soporte prioritario",
-        "Reportes y analítica",
-        "Integración básica API",
-        "Almacenamiento de 10GB"
+        "Timbres: Se compran por separado",
+        "Todo lo del Plan Operador",
+        "Dashboard de Rentabilidad",
+        "Análisis de costos por ruta",
+        "Conexión GPS/API",
+        "Usuarios Ilimitados",
+        "Vehículos y Conductores Ilimitados",
+        "Generación de reportes avanzados",
+        "Soporte prioritario"
       ],
-      buttonText: "Prueba Gratis 14 días",
-      buttonVariant: "primary" as const,
       popular: true
-    },
-    {
-      name: "Enterprise",
-      price: "Personalizado",
-      originalPrice: null,
-      description: "Para flotas grandes",
-      features: [
-        "Viajes ilimitados",
-        "Integración completa ERP/WMS",
-        "Manager de cuenta dedicado",
-        "Analítica avanzada e informes",
-        "SLA garantizado 99.9%",
-        "Soporte 24/7",
-        "Entrenamientos personalizados",
-        "Almacenamiento ilimitado"
-      ],
-      buttonText: "Contactar Ventas",
-      buttonVariant: "secondary" as const,
-      popular: false
     }
   ];
 
@@ -90,7 +76,7 @@ const PricingSection = () => {
             Planes para cada flota.
           </h2>
           <p className="mt-4 md:mt-6 text-base md:text-lg text-gray-400">
-            Empieza con lo que necesitas y escala a medida que tu operación crece. Simple y transparente.
+            Paga solo por el software. Los timbres se compran por separado según tu uso.
           </p>
         </div>
         
@@ -119,7 +105,7 @@ const PricingSection = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto scroll-animation">
-          {plans.map((plan, index) => (
+          {plans.map((plan) => (
             <div 
               key={plan.name}
               className={`feature-card p-6 md:p-8 flex flex-col relative transition-all duration-300 hover:scale-105 ${
@@ -137,31 +123,26 @@ const PricingSection = () => {
                 <h3 className="text-xl md:text-2xl font-bold mb-2">{plan.name}</h3>
                 <p className="text-sm text-gray-400 mb-4">{plan.description}</p>
                 
-                <div className="mb-4">
-                  {plan.price === "Personalizado" ? (
-                    <p className="text-3xl md:text-4xl font-bold">Personalizado</p>
-                  ) : (
-                    <div className="flex items-center justify-center">
-                      <span className="text-3xl md:text-4xl font-bold">
-                        ${plan.price}
-                      </span>
-                      <span className="text-base md:text-lg font-normal text-gray-400 ml-1">
-                        /{isAnnual ? 'año' : 'mes'}
-                      </span>
+                {plan.monthlyPrice !== null ? (
+                  <>
+                    <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                      ${isAnnual 
+                        ? Math.round(plan.annualPrice! / 12) 
+                        : plan.monthlyPrice}
+                      <span className="text-lg font-normal text-muted-foreground"> MXN/mes</span>
                     </div>
-                  )}
-                  
-                  {plan.originalPrice && isAnnual && (
-                    <div className="mt-2">
-                      <span className="text-sm text-gray-500 line-through">
-                        ${plan.originalPrice}/{isAnnual ? 'año' : 'mes'}
-                      </span>
-                      <span className="ml-2 text-sm text-green-400 font-semibold">
-                        Ahorrás ${plan.originalPrice - (plan.price as number)}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                    {plan.isFree && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Incluye 5 timbres de cortesía mensuales
+                      </p>
+                    )}
+                    {isAnnual && !plan.isFree && (
+                      <p className="text-sm text-green-400 mt-2">
+                        Ahorra ${Math.round((plan.monthlyPrice * 12) - plan.annualPrice!)} MXN al año
+                      </p>
+                    )}
+                  </>
+                ) : null}
               </div>
 
               <ul className="text-left space-y-3 mb-8 text-gray-300 flex-grow">
@@ -176,28 +157,88 @@ const PricingSection = () => {
               <Link to="/auth" className="block">
                 <Button 
                   className={`w-full py-3 rounded-full font-semibold transition-all duration-300 ${
-                    plan.buttonVariant === 'primary' 
+                    plan.popular 
                       ? 'btn-primary hover:scale-105' 
                       : 'btn-secondary hover:bg-white hover:text-black'
                   }`}
                 >
-                  {plan.buttonText}
+                  {plan.isFree ? 'Empezar Gratis' : 'Prueba 14 días gratis'}
                 </Button>
               </Link>
             </div>
           ))}
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-12 text-center scroll-animation">
-          <p className="text-sm text-gray-400 mb-4">
-            Todos los planes incluyen acceso completo durante el período de prueba
+        {/* Sección de Paquetes de Créditos */}
+        <div className="text-center space-y-6 mt-16 scroll-animation">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center space-x-2">
+              <Ticket className="w-8 h-8 text-primary" />
+              <h3 className="text-2xl font-bold">¿Cómo funcionan los Timbres?</h3>
+            </div>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Los timbres (créditos) se compran por separado del plan de software. Esto te da mayor control y flexibilidad.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div className="bg-card border border-border rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Paquete Básico</h4>
+              <p className="text-2xl font-bold text-primary">$50</p>
+              <p className="text-sm text-muted-foreground">50 timbres</p>
+              <p className="text-xs text-muted-foreground mt-1">$1.00/timbre</p>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Paquete Profesional</h4>
+              <p className="text-2xl font-bold text-primary">$135</p>
+              <p className="text-sm text-muted-foreground">150 timbres</p>
+              <p className="text-xs text-green-400 mt-1">$0.90/timbre • Ahorra 10%</p>
+            </div>
+            <div className="bg-card border border-primary rounded-lg p-4 border-2">
+              <h4 className="font-semibold mb-2">Paquete Flota</h4>
+              <p className="text-2xl font-bold text-primary">$425</p>
+              <p className="text-sm text-muted-foreground">500 timbres</p>
+              <p className="text-xs text-green-400 mt-1">$0.85/timbre • Ahorra 15%</p>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Paquete Corporativo</h4>
+              <p className="text-2xl font-bold text-primary">$750</p>
+              <p className="text-sm text-muted-foreground">1000 timbres</p>
+              <p className="text-xs text-green-400 mt-1">$0.75/timbre • Ahorra 25%</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground mt-4">
+            ✨ Los créditos nunca expiran • Paga solo por lo que uses • Sin compromisos
           </p>
-          <div className="flex flex-wrap justify-center items-center space-x-6 text-xs text-gray-500">
-            <span>✓ Sin compromisos</span>
-            <span>✓ Cancela cuando quieras</span>
-            <span>✓ Soporte incluido</span>
-            <span>✓ Actualizaciones automáticas</span>
+        </div>
+
+        <div className="text-center space-y-4 mt-12 scroll-animation">
+          <h3 className="text-2xl font-bold">¿Necesitas más información?</h3>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Todos nuestros planes incluyen:
+          </p>
+          <div className="flex flex-wrap justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span>✓ 14 días de prueba gratis</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span>✓ Sin compromiso de permanencia</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span>✓ Cancela cuando quieras</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span>✓ Soporte incluido</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span>✓ Actualizaciones automáticas</span>
+            </div>
           </div>
         </div>
       </div>
