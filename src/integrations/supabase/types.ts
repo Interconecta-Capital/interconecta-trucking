@@ -1678,7 +1678,9 @@ export type Database = {
         Row: {
           balance_disponible: number
           created_at: string | null
+          fecha_renovacion: string | null
           id: string
+          timbres_mes_actual: number | null
           total_comprados: number
           total_consumidos: number
           updated_at: string | null
@@ -1687,7 +1689,9 @@ export type Database = {
         Insert: {
           balance_disponible?: number
           created_at?: string | null
+          fecha_renovacion?: string | null
           id?: string
+          timbres_mes_actual?: number | null
           total_comprados?: number
           total_consumidos?: number
           updated_at?: string | null
@@ -1696,7 +1700,9 @@ export type Database = {
         Update: {
           balance_disponible?: number
           created_at?: string | null
+          fecha_renovacion?: string | null
           id?: string
+          timbres_mes_actual?: number | null
           total_comprados?: number
           total_consumidos?: number
           updated_at?: string | null
@@ -2624,6 +2630,7 @@ export type Database = {
           puede_generar_xml: boolean | null
           puede_timbrar: boolean | null
           puede_tracking: boolean | null
+          timbres_mensuales: number | null
           updated_at: string | null
         }
         Insert: {
@@ -2647,6 +2654,7 @@ export type Database = {
           puede_generar_xml?: boolean | null
           puede_timbrar?: boolean | null
           puede_tracking?: boolean | null
+          timbres_mensuales?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -2670,6 +2678,7 @@ export type Database = {
           puede_generar_xml?: boolean | null
           puede_timbrar?: boolean | null
           puede_tracking?: boolean | null
+          timbres_mensuales?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -4348,6 +4357,34 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_metricas_timbres: {
+        Row: {
+          consumo_dia_actual: number | null
+          consumo_mes_actual: number | null
+          consumo_semana_actual: number | null
+          conversiones_ultimo_mes: number | null
+          timbres_consumidos_historico: number | null
+          timbres_disponibles_total: number | null
+          total_usuarios_activos: number | null
+          usuarios_cerca_agotar: number | null
+          usuarios_gratuitos: number | null
+        }
+        Relationships: []
+      }
+      admin_top_usuarios_consumo: {
+        Row: {
+          consumidos_este_mes: number | null
+          email: string | null
+          limite_mensual: number | null
+          plan_nombre: string | null
+          porcentaje_usado: number | null
+          timbres_mes_actual: number | null
+          timbres_mes_actual_count: number | null
+          total_historico: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       analizar_mercado_ruta: {
@@ -4414,6 +4451,15 @@ export type Database = {
           factor_correccion_costo: number
           factor_correccion_tiempo: number
           total_viajes: number
+        }[]
+      }
+      calcular_proyeccion_consumo: {
+        Args: never
+        Returns: {
+          dias_transcurridos: number
+          estimado_fin_mes: number
+          promedio_diario: number
+          proyeccion_mensual: number
         }[]
       }
       check_document_expiration: { Args: never; Returns: undefined }

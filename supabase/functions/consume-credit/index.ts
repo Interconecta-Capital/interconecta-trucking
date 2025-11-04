@@ -38,10 +38,10 @@ serve(async (req) => {
     const { carta_porte_id } = await req.json();
     logStep("Request data", { carta_porte_id });
 
-    // Obtener balance actual del usuario
+    // Obtener timbres mensuales del usuario
     const { data: creditos, error: creditosError } = await supabaseClient
       .from('creditos_usuarios')
-      .select('balance_disponible, total_consumidos')
+      .select('timbres_mes_actual, total_consumidos')
       .eq('user_id', user.id)
       .single();
 
@@ -49,7 +49,7 @@ serve(async (req) => {
       logStep("No credits account found");
       return new Response(JSON.stringify({ 
         error: 'NO_CREDITS_ACCOUNT',
-        message: 'No tienes una cuenta de créditos. Compra tu primer paquete de timbres.',
+        message: 'No tienes una cuenta de timbres. Contacta a soporte.',
         balance: 0
       }), { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -57,29 +57,30 @@ serve(async (req) => {
       });
     }
 
-    logStep("Current balance", { balance: creditos.balance_disponible });
+    logStep("Current monthly balance", { timbres: creditos.timbres_mes_actual });
 
-    // Verificar si tiene créditos disponibles
-    if (creditos.balance_disponible < 1) {
-      logStep("Insufficient credits");
+    // Verificar si tiene timbres disponibles este mes
+    if (creditos.timbres_mes_actual < 1) {
+      logStep("Insufficient monthly credits");
       return new Response(JSON.stringify({ 
         error: 'INSUFFICIENT_CREDITS',
-        message: '¡Agotaste tus créditos! Recarga tu saldo para seguir timbrando.',
-        balance: 0
+        message: '¡Agotaste tus timbres del mes! Haz upgrade a un plan superior para seguir timbrando.',
+        balance: 0,
+        requiresUpgrade: true
       }), { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 402 
       });
     }
 
-    // Consumir 1 crédito (transacción atómica)
-    const nuevoBalance = creditos.balance_disponible - 1;
+    // Consumir 1 timbre del mes actual
+    const nuevosTimbres = creditos.timbres_mes_actual - 1;
     const nuevoTotalConsumidos = (creditos.total_consumidos || 0) + 1;
 
     const { error: updateError } = await supabaseClient
       .from('creditos_usuarios')
       .update({ 
-        balance_disponible: nuevoBalance,
+        timbres_mes_actual: nuevosTimbres,
         total_consumidos: nuevoTotalConsumidos,
         updated_at: new Date().toISOString()
       })
@@ -87,7 +88,7 @@ serve(async (req) => {
 
     if (updateError) {
       logStep("ERROR updating balance", { error: updateError.message });
-      throw new Error('Error al actualizar el balance de créditos');
+      throw new Error('Error al actualizar los timbres');
     }
 
     // Registrar transacción
@@ -97,8 +98,8 @@ serve(async (req) => {
         user_id: user.id,
         tipo: 'consumo',
         cantidad: -1,
-        balance_anterior: creditos.balance_disponible,
-        balance_nuevo: nuevoBalance,
+        balance_anterior: creditos.timbres_mes_actual,
+        balance_nuevo: nuevosTimbres,
         carta_porte_id: carta_porte_id,
         notas: 'Timbre consumido para Carta Porte'
       });
@@ -107,12 +108,12 @@ serve(async (req) => {
       logStep("ERROR registering transaction", { error: transactionError.message });
     }
 
-    logStep("Credit consumed successfully", { newBalance: nuevoBalance });
+    logStep("Credit consumed successfully", { newBalance: nuevosTimbres });
 
     return new Response(JSON.stringify({ 
       success: true, 
-      balance: nuevoBalance,
-      message: `Crédito consumido exitosamente. Te quedan ${nuevoBalance} timbres disponibles.`
+      balance: nuevosTimbres,
+      message: `Timbre consumido exitosamente. Te quedan ${nuevosTimbres} timbres este mes.`
     }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200 

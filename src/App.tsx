@@ -40,6 +40,7 @@ import ReportesAutomaticosPage from "./pages/ReportesAutomaticosPage"
 import Cotizaciones from "./pages/Cotizaciones"
 import ReportesGenerales from "./pages/ReportesGenerales"
 import Notificaciones from "./pages/Notificaciones"
+import AdminTimbres from "./pages/admin/AdminTimbres"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -242,6 +243,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <Notificaciones />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/admin/timbres" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <AdminTimbres />
                   </BaseLayout>
                 </AuthGuard>
               } />
