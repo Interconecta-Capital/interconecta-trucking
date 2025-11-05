@@ -4359,14 +4359,13 @@ export type Database = {
       }
       admin_metricas_timbres: {
         Row: {
-          consumo_dia_actual: number | null
-          consumo_mes_actual: number | null
-          consumo_semana_actual: number | null
-          conversiones_ultimo_mes: number | null
+          consumos_dia_actual: number | null
+          consumos_mes_actual: number | null
+          tasa_conversion_pct: number | null
           timbres_consumidos_historico: number | null
           timbres_disponibles_total: number | null
           total_usuarios_activos: number | null
-          usuarios_cerca_agotar: number | null
+          usuarios_cerca_limite: number | null
           usuarios_gratuitos: number | null
         }
         Relationships: []
@@ -4375,11 +4374,11 @@ export type Database = {
         Row: {
           consumidos_este_mes: number | null
           email: string | null
+          estado_consumo: string | null
           limite_mensual: number | null
           plan_nombre: string | null
           porcentaje_usado: number | null
           timbres_mes_actual: number | null
-          timbres_mes_actual_count: number | null
           total_historico: number | null
           user_id: string | null
         }

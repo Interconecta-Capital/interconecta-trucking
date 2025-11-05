@@ -36,7 +36,23 @@ serve(async (req) => {
     if (!user?.id) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { carta_porte_id } = await req.json();
+    // SECURITY: Validate input with Zod
+    const ConsumeSchema = z.object({
+      carta_porte_id: z.string().uuid('Invalid carta_porte_id format')
+    });
+
+    let validatedData;
+    try {
+      validatedData = ConsumeSchema.parse(await req.json());
+    } catch (error) {
+      logStep("Validation error", { error: error.errors });
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { carta_porte_id } = validatedData;
     logStep("Request data", { carta_porte_id });
 
     // Obtener timbres mensuales del usuario
