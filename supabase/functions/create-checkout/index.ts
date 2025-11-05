@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,8 +38,23 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { planId } = await req.json();
-    if (!planId) throw new Error("Plan ID is required");
+    // SECURITY: Validate input with Zod
+    const CheckoutSchema = z.object({
+      planId: z.string().uuid('Invalid planId format')
+    });
+
+    let validatedData;
+    try {
+      validatedData = CheckoutSchema.parse(await req.json());
+    } catch (error) {
+      logStep("Validation error", { error: error.errors });
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { planId } = validatedData;
     logStep("Plan ID received", { planId });
 
     // Obtener detalles del plan

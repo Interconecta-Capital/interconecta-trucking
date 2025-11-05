@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 // CORS Configuration: Restricted to allowed origins
 const allowedOrigins = [
@@ -86,7 +87,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { xml, ambiente, tipo_documento }: TimbradoRequest = await req.json();
+    // SECURITY: Validate input with Zod
+    const TimbradoSchema = z.object({
+      xml: z.string().min(100, 'XML too short').max(10000000, 'XML too large'),
+      ambiente: z.enum(['sandbox', 'production'], { errorMap: () => ({ message: 'Invalid ambiente, must be sandbox or production' }) }),
+      tipo_documento: z.string().regex(/^[A-Z0-9_]+$/, 'Invalid tipo_documento format')
+    });
+
+    let validatedData;
+    try {
+      validatedData = TimbradoSchema.parse(await req.json());
+    } catch (error) {
+      console.error('❌ Validation error:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid input', details: error.errors }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    const { xml, ambiente, tipo_documento } = validatedData;
 
     console.log(`🔄 Iniciando timbrado ${ambiente} con FISCAL API para usuario: ${user.id}, tipo: ${tipo_documento}`);
 
