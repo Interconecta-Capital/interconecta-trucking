@@ -28,7 +28,6 @@ import Vehiculos from "./pages/Vehiculos"
 import Conductores from "./pages/Conductores"
 import Socios from "./pages/Socios"
 import Viajes from "./pages/Viajes"
-import Creditos from "./pages/Creditos"
 import Remolques from "./pages/Remolques"
 import Administracion from "./pages/Administracion"
 import Planes from "./pages/Planes"
@@ -231,13 +230,6 @@ const App = () => (
                 </AuthGuard>
               } />
 
-              <Route path="/creditos" element={
-                <AuthGuard>
-                  <BaseLayout>
-                    <Creditos />
-                  </BaseLayout>
-                </AuthGuard>
-              } />
 
               <Route path="/notificaciones" element={
                 <AuthGuard>

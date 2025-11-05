@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap, X, TrendingUp } from 'lucide-react';
+import { Check, Crown, Star, Zap, X, TrendingUp, Ticket } from 'lucide-react';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 
 interface UpgradeModalProps {
@@ -14,51 +14,7 @@ interface UpgradeModalProps {
   blockedAction?: string;
 }
 
-const planes = [
-  {
-    id: 'basico',
-    nombre: 'Básico',
-    precio: 299,
-    descripcion: 'Perfecto para pequeñas empresas',
-    icon: Star,
-    caracteristicas: [
-      'Hasta 50 cartas porte por mes',
-      'Gestión básica de vehículos',
-      'Soporte por email',
-      'Reportes básicos'
-    ]
-  },
-  {
-    id: 'profesional',
-    nombre: 'Profesional',
-    precio: 599,
-    descripcion: 'Para empresas en crecimiento',
-    icon: Zap,
-    caracteristicas: [
-      'Hasta 200 cartas porte por mes',
-      'Gestión completa de flota',
-      'Soporte prioritario',
-      'Reportes avanzados',
-      'Integraciones API'
-    ],
-    popular: true
-  },
-  {
-    id: 'empresarial',
-    nombre: 'Empresarial',
-    precio: 999,
-    descripcion: 'Para grandes operaciones',
-    icon: Crown,
-    caracteristicas: [
-      'Cartas porte ilimitadas',
-      'Gestión completa de operaciones',
-      'Soporte 24/7',
-      'Reportes personalizados',
-      'Integraciones avanzadas',
-      'Gerente de cuenta dedicado'
-    ]
-  }
-];
+// Planes ahora se obtienen dinámicamente desde Supabase
 
 export const UpgradeModal = ({ 
   isOpen, 
@@ -67,7 +23,7 @@ export const UpgradeModal = ({
   description = "Tu período de prueba ha expirado. Selecciona un plan para continuar usando la plataforma.",
   blockedAction
 }: UpgradeModalProps) => {
-  const { crearCheckout, isCreatingCheckout } = useSuscripcion();
+  const { planes, crearCheckout, isCreatingCheckout } = useSuscripcion();
 
   const handleSelectPlan = async (planId: string) => {
     try {
@@ -75,6 +31,23 @@ export const UpgradeModal = ({
     } catch (error) {
       console.error('Error al crear sesión de checkout:', error);
     }
+  };
+
+  const getIconForPlan = (planName: string) => {
+    if (planName.toLowerCase().includes('operador')) return Star;
+    if (planName.toLowerCase().includes('flota')) return Zap;
+    if (planName.toLowerCase().includes('business') || planName.toLowerCase().includes('empresarial')) return Crown;
+    return Star;
+  };
+
+  const getFeatures = (plan: any) => {
+    const features = [];
+    if (plan.timbres_mensuales) features.push(`${plan.timbres_mensuales} timbres mensuales renovables`);
+    if (plan.limite_conductores) features.push(`Hasta ${plan.limite_conductores} conductores`);
+    if (plan.limite_vehiculos) features.push(`Hasta ${plan.limite_vehiculos} vehículos`);
+    if (plan.puede_timbrar) features.push('Timbrado automático');
+    if (plan.puede_tracking) features.push('Tracking en tiempo real');
+    return features;
   };
 
   return (
@@ -108,15 +81,17 @@ export const UpgradeModal = ({
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          {planes.map((plan) => {
-            const Icon = plan.icon;
+          {planes.filter(p => p.precio_mensual > 0).map((plan) => {
+            const Icon = getIconForPlan(plan.nombre);
+            const features = getFeatures(plan);
+            const isPopular = plan.nombre === 'Flota';
             
             return (
               <Card 
                 key={plan.id} 
-                className={`relative ${plan.popular ? 'border-blue-500 border-2' : ''}`}
+                className={`relative ${isPopular ? 'border-blue-500 border-2' : ''}`}
               >
-                {plan.popular && (
+                {isPopular && (
                   <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
                     Más Popular
                   </Badge>
@@ -124,31 +99,39 @@ export const UpgradeModal = ({
                 
                 <CardHeader className="text-center">
                   <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${
-                    plan.popular ? 'bg-blue-600 text-white' : 'bg-gray-100'
+                    isPopular ? 'bg-blue-600 text-white' : 'bg-gray-100'
                   }`}>
                     <Icon className="h-6 w-6" />
                   </div>
                   <CardTitle className="text-xl">{plan.nombre}</CardTitle>
                   <CardDescription>{plan.descripcion}</CardDescription>
-                  <div className="text-3xl font-bold">
-                    ${plan.precio}
-                    <span className="text-sm font-normal text-muted-foreground">/mes</span>
+                  
+                  {plan.timbres_mensuales && (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-blue-600 bg-blue-50 dark:bg-blue-950/20 py-2 px-3 rounded-lg">
+                      <Ticket className="w-4 h-4" />
+                      <span className="text-sm font-semibold">{plan.timbres_mensuales} timbres/mes</span>
+                    </div>
+                  )}
+                  
+                  <div className="text-3xl font-bold mt-3">
+                    ${plan.precio_mensual}
+                    <span className="text-sm font-normal text-muted-foreground"> MXN/mes</span>
                   </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
                   <ul className="space-y-2">
-                    {plan.caracteristicas.map((caracteristica, index) => (
+                    {features.map((feature, index) => (
                       <li key={index} className="flex items-center gap-2">
                         <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                        <span className="text-sm">{caracteristica}</span>
+                        <span className="text-sm">{feature}</span>
                       </li>
                     ))}
                   </ul>
                   
                   <Button 
-                    className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
-                    variant={plan.popular ? 'default' : 'outline'}
+                    className={`w-full ${isPopular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                    variant={isPopular ? 'default' : 'outline'}
                     disabled={isCreatingCheckout}
                     onClick={() => handleSelectPlan(plan.id)}
                   >

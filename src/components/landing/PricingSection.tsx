@@ -6,11 +6,12 @@ import { Check, Star, Ticket } from "lucide-react";
 const PricingSection = () => {
   const [isAnnual, setIsAnnual] = useState(false);
 
-  // Precios base actualizados (mensuales) - Modelo Híbrido
+  // Precios nuevos con timbres renovables incluidos
   const basePrices = {
     gratuito: 0,
-    operador: 249,
-    flota: 599,
+    operador: 349,
+    flota: 799,
+    business: 1499,
   };
 
   const plans = [
@@ -19,8 +20,10 @@ const PricingSection = () => {
       monthlyPrice: basePrices.gratuito,
       annualPrice: basePrices.gratuito,
       description: "Para probar la plataforma",
+      timbres: 5,
       features: [
-        "5 timbres gratis al mes",
+        "5 timbres mensuales renovables",
+        "Los timbres se renuevan cada mes",
         "1 usuario",
         "2 vehículos",
         "Gestión básica de catálogos",
@@ -35,8 +38,10 @@ const PricingSection = () => {
       monthlyPrice: basePrices.operador,
       annualPrice: basePrices.operador * 12 * 0.8,
       description: "Acceso al Software completo",
+      timbres: 50,
       features: [
-        "Timbres: Se compran por separado",
+        "50 timbres mensuales renovables",
+        "Los timbres se renuevan cada mes",
         "IA Anti-Errores (Claves SAT)",
         "Dashboard Básico",
         "3 Usuarios",
@@ -53,8 +58,10 @@ const PricingSection = () => {
       monthlyPrice: basePrices.flota,
       annualPrice: basePrices.flota * 12 * 0.8,
       description: "Inteligencia de Negocios",
+      timbres: 200,
       features: [
-        "Timbres: Se compran por separado",
+        "200 timbres mensuales renovables",
+        "Los timbres se renuevan cada mes",
         "Todo lo del Plan Operador",
         "Dashboard de Rentabilidad",
         "Análisis de costos por ruta",
@@ -65,6 +72,25 @@ const PricingSection = () => {
         "Soporte prioritario"
       ],
       popular: true
+    },
+    {
+      name: "Plan Business",
+      monthlyPrice: basePrices.business,
+      annualPrice: basePrices.business * 12 * 0.8,
+      description: "Para grandes operaciones",
+      timbres: 500,
+      features: [
+        "500 timbres mensuales renovables",
+        "Los timbres se renuevan cada mes",
+        "Todo lo del Plan Flota",
+        "Soporte prioritario 24/7",
+        "Gerente de cuenta dedicado",
+        "Integraciones personalizadas",
+        "Reportes personalizados",
+        "Capacitación especializada",
+        "SLA garantizado"
+      ],
+      popular: false
     }
   ];
 
@@ -131,11 +157,12 @@ const PricingSection = () => {
                         : plan.monthlyPrice}
                       <span className="text-lg font-normal text-muted-foreground"> MXN/mes</span>
                     </div>
-                    {plan.isFree && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Incluye 5 timbres de cortesía mensuales
+                    <div className="flex items-center justify-center gap-2 mt-2 text-primary">
+                      <Ticket className="w-4 h-4" />
+                      <p className="text-sm font-medium">
+                        {plan.timbres} timbres/mes renovables
                       </p>
-                    )}
+                    </div>
                     {isAnnual && !plan.isFree && (
                       <p className="text-sm text-green-400 mt-2">
                         Ahorra ${Math.round((plan.monthlyPrice * 12) - plan.annualPrice!)} MXN al año
@@ -169,55 +196,29 @@ const PricingSection = () => {
           ))}
         </div>
 
-        {/* Sección de Paquetes de Créditos */}
-        <div className="text-center space-y-6 mt-16 scroll-animation">
-          <div className="space-y-4">
-            <div className="flex items-center justify-center space-x-2">
+        {/* Nueva sección explicando el modelo */}
+        <div className="text-center space-y-6 mt-16 scroll-animation max-w-3xl mx-auto">
+          <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-8">
+            <div className="flex items-center justify-center space-x-2 mb-4">
               <Ticket className="w-8 h-8 text-primary" />
-              <h3 className="text-2xl font-bold">¿Cómo funcionan los Timbres?</h3>
+              <h3 className="text-2xl font-bold">💡 Modelo de Timbres Renovables</h3>
             </div>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Los timbres (créditos) se compran por separado del plan de software. Esto te da mayor control y flexibilidad.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h4 className="font-semibold mb-2">Paquete Básico</h4>
-              <p className="text-2xl font-bold text-primary">$50</p>
-              <p className="text-sm text-muted-foreground">50 timbres</p>
-              <p className="text-xs text-muted-foreground mt-1">$1.00/timbre</p>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h4 className="font-semibold mb-2">Paquete Profesional</h4>
-              <p className="text-2xl font-bold text-primary">$135</p>
-              <p className="text-sm text-muted-foreground">150 timbres</p>
-              <p className="text-xs text-green-400 mt-1">$0.90/timbre • Ahorra 10%</p>
-            </div>
-            <div className="bg-card border border-primary rounded-lg p-4 border-2">
-              <h4 className="font-semibold mb-2">Paquete Flota</h4>
-              <p className="text-2xl font-bold text-primary">$425</p>
-              <p className="text-sm text-muted-foreground">500 timbres</p>
-              <p className="text-xs text-green-400 mt-1">$0.85/timbre • Ahorra 15%</p>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h4 className="font-semibold mb-2">Paquete Corporativo</h4>
-              <p className="text-2xl font-bold text-primary">$750</p>
-              <p className="text-sm text-muted-foreground">1000 timbres</p>
-              <p className="text-xs text-green-400 mt-1">$0.75/timbre • Ahorra 25%</p>
+            <div className="space-y-4 text-left">
+              <p className="text-muted-foreground">
+                ✅ <strong>Tus timbres se renuevan automáticamente cada mes</strong> - Siempre tendrás tu límite completo disponible el día 1.
+              </p>
+              <p className="text-muted-foreground">
+                📅 <strong>Si no los usas, se pierden</strong> - Como un plan de datos celular, los timbres no se acumulan.
+              </p>
+              <p className="text-muted-foreground">
+                🚀 <strong>¿Necesitas más timbres?</strong> - Simplemente haz upgrade a un plan superior para obtener más capacidad mensual.
+              </p>
             </div>
           </div>
-
-          <p className="text-sm text-muted-foreground mt-4">
-            ✨ Los créditos nunca expiran • Paga solo por lo que uses • Sin compromisos
-          </p>
         </div>
 
-        <div className="text-center space-y-4 mt-12 scroll-animation">
-          <h3 className="text-2xl font-bold">¿Necesitas más información?</h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Todos nuestros planes incluyen:
-          </p>
+        <div className="text-center space-y-4 mt-16 scroll-animation">
+          <h3 className="text-2xl font-bold">Todos los planes incluyen:</h3>
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-primary" />

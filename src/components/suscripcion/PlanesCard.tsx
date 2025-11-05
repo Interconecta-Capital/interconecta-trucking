@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Star } from 'lucide-react';
+import { Check, Star, Ticket } from 'lucide-react';
 import { PlanSuscripcion } from '@/hooks/useSuscripcion';
 
 interface PlanesCardProps {
@@ -22,6 +22,11 @@ export const PlanesCard = ({ plan, isCurrentPlan, onSelectPlan, isChanging }: Pl
 
   const getFeatures = () => {
     const features = [];
+    
+    // Priorizar timbres mensuales como primera feature
+    if (plan.timbres_mensuales) {
+      features.push(`${plan.timbres_mensuales} timbres mensuales renovables`);
+    }
     
     if (plan.limite_cartas_porte) {
       features.push(`${plan.limite_cartas_porte} cartas porte`);
@@ -55,7 +60,7 @@ export const PlanesCard = ({ plan, isCurrentPlan, onSelectPlan, isChanging }: Pl
     return features;
   };
 
-  const isPopular = plan.nombre === 'Profesional';
+  const isPopular = plan.nombre === 'Flota';
 
   const getButtonText = () => {
     if (isCurrentPlan) return 'Plan Actual';
@@ -81,6 +86,13 @@ export const PlanesCard = ({ plan, isCurrentPlan, onSelectPlan, isChanging }: Pl
       <CardHeader className="text-center">
         <CardTitle className="text-xl">{plan.nombre}</CardTitle>
         <CardDescription>{plan.descripcion}</CardDescription>
+        
+        {plan.timbres_mensuales && (
+          <div className="mt-3 mb-2 flex items-center justify-center gap-2 text-blue-600 bg-blue-50 dark:bg-blue-950/20 py-2 px-4 rounded-lg">
+            <Ticket className="w-5 h-5" />
+            <span className="font-semibold">{plan.timbres_mensuales} timbres/mes renovables</span>
+          </div>
+        )}
         
         <div className="mt-4">
           <div className="text-3xl font-bold">

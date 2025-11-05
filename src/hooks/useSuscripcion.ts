@@ -9,6 +9,7 @@ export interface PlanSuscripcion {
   precio_mensual: number;
   precio_anual?: number;
   dias_prueba: number;
+  timbres_mensuales?: number;
   limite_cartas_porte?: number;
   limite_conductores?: number;
   limite_vehiculos?: number;

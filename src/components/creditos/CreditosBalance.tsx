@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Ticket, Plus, TrendingUp } from "lucide-react";
-import { CompraCreditosModal } from "./CompraCreditosModal";
+import { Ticket, TrendingUp } from "lucide-react";
 import { useSuperuser } from "@/hooks/useSuperuser";
 import { Link } from "react-router-dom";
 
 export function CreditosBalance() {
-  const [showCompraModal, setShowCompraModal] = useState(false);
   const { isSuperuser } = useSuperuser();
 
   const { data: balanceData, isLoading } = useQuery({
