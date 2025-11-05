@@ -101,9 +101,9 @@ export default function AdminTimbres() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metricas?.consumo_dia_actual || 0}</div>
+            <div className="text-2xl font-bold">{metricas?.consumos_dia_actual || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Esta semana: {metricas?.consumo_semana_actual || 0}
+              Este mes: {metricas?.consumos_mes_actual || 0}
             </p>
           </CardContent>
         </Card>
@@ -114,9 +114,9 @@ export default function AdminTimbres() {
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metricas?.consumo_mes_actual || 0}</div>
+            <div className="text-2xl font-bold">{metricas?.consumos_mes_actual || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Costo: ${((metricas?.consumo_mes_actual || 0) * costoTimbre).toFixed(2)} MXN
+              Costo: ${((metricas?.consumos_mes_actual || 0) * costoTimbre).toFixed(2)} MXN
             </p>
           </CardContent>
         </Card>
@@ -127,7 +127,7 @@ export default function AdminTimbres() {
             <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metricas?.usuarios_cerca_agotar || 0}</div>
+            <div className="text-2xl font-bold">{metricas?.usuarios_cerca_limite || 0}</div>
             <p className="text-xs text-muted-foreground">
               Menos del 20% de timbres
             </p>
@@ -183,15 +183,9 @@ export default function AdminTimbres() {
               <span className="font-semibold">{metricas?.usuarios_gratuitos || 0}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Conversiones</span>
-              <span className="font-semibold">{metricas?.conversiones_ultimo_mes || 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Tasa de conversión</span>
               <span className="font-bold text-lg">
-                {metricas?.usuarios_gratuitos > 0 
-                  ? ((metricas.conversiones_ultimo_mes / metricas.usuarios_gratuitos) * 100).toFixed(1)
-                  : 0}%
+                {metricas?.tasa_conversion_pct || 0}%
               </span>
             </div>
           </CardContent>
