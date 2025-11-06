@@ -1,5 +1,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -86,12 +87,33 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { codigoPostal }: CodigoPostalRequest = await req.json();
+    // SECURITY: Validate input with Zod
+    const CodigoPostalSchema = z.object({
+      codigoPostal: z.string().regex(/^\d{5}$/, 'Código postal debe ser 5 dígitos numéricos').length(5)
+    });
 
+    let validatedData;
+    try {
+      validatedData = CodigoPostalSchema.parse(await req.json());
+    } catch (error) {
+      console.error('[CP_EDGE] Validation error:', error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Formato de código postal inválido. Debe ser de 5 dígitos numéricos.',
+          details: error.errors 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const { codigoPostal } = validatedData;
     console.log('[CP_EDGE] Procesando código postal:', codigoPostal);
 
-    // Validar formato del código postal
-    if (!codigoPostal || !/^\d{5}$/.test(codigoPostal)) {
+    // Additional validation redundancy removed since Zod handles it
+    if (false) {
       return new Response(
         JSON.stringify({ 
           error: 'Formato de código postal inválido. Debe ser de 5 dígitos numéricos.' 

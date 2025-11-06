@@ -1,6 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
@@ -11,7 +12,36 @@ serve(async (req) => {
   }
 
   try {
-    const { operation, action, data, message, context } = await req.json();
+    // SECURITY: Validate input with Zod
+    const GeminiRequestSchema = z.object({
+      operation: z.string().optional(),
+      action: z.string().optional(),
+      data: z.any().optional(),
+      message: z.string().max(10000, 'Message too long').optional(),
+      context: z.string().optional()
+    }).refine(data => data.operation || data.action, {
+      message: 'Either operation or action must be provided'
+    });
+
+    let validatedData;
+    try {
+      validatedData = GeminiRequestSchema.parse(await req.json());
+    } catch (error) {
+      console.error('[GEMINI] Validation error:', error);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid input', 
+          details: error.errors 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const { operation, action, data, message, context } = validatedData;
 
     let op = operation || action;
     
