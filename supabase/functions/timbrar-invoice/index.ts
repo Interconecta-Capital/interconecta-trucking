@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,8 +12,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const fiscalApiKey = Deno.env.get('FISCAL_API_KEY');
-    if (!fiscalApiKey) throw new Error('FISCAL_API_KEY not configured');
+    // ✅ SEGURO: Obtener API key desde Supabase Vault (ISO 27001 A.10.1)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: fiscalApiKey, error: secretError } = await supabaseAdmin
+      .rpc('get_secret', { secret_name: 'FISCAL_API_KEY' });
+
+    if (secretError || !fiscalApiKey) {
+      console.error('[Timbrar] Error obteniendo FISCAL_API_KEY del Vault:', secretError);
+      throw new Error('No se pudo obtener credenciales del PAC');
+    }
+
+    console.log('[Timbrar] API Key obtenida exitosamente desde Vault');
 
     const invoiceData = await req.json();
 

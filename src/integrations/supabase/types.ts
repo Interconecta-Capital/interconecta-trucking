@@ -3192,6 +3192,45 @@ export type Database = {
         }
         Relationships: []
       }
+      secrets_metadata: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          descripcion: string
+          id: string
+          proxima_rotacion: string | null
+          rotacion_requerida_dias: number | null
+          secret_name: string
+          tipo: string
+          ultima_rotacion: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion: string
+          id?: string
+          proxima_rotacion?: string | null
+          rotacion_requerida_dias?: number | null
+          secret_name: string
+          tipo: string
+          ultima_rotacion?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string
+          id?: string
+          proxima_rotacion?: string | null
+          rotacion_requerida_dias?: number | null
+          secret_name?: string
+          tipo?: string
+          ultima_rotacion?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_audit_log: {
         Row: {
           created_at: string | null
@@ -4386,6 +4425,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_rotate_pac_token: { Args: { new_token: string }; Returns: boolean }
       analizar_mercado_ruta: {
         Args: { p_ruta_hash: string; p_user_id: string }
         Returns: {
@@ -4525,6 +4565,9 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_pac_credentials: { Args: never; Returns: Json }
+      get_pac_token: { Args: { secret_name?: string }; Returns: string }
+      get_secret: { Args: { secret_name: string }; Returns: string }
       get_user_storage_usage: {
         Args: { user_uuid: string }
         Returns: {
