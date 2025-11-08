@@ -1,7 +1,8 @@
 import mapboxgl from 'mapbox-gl';
+import { PUBLIC_CONFIG } from '@/config/publicKeys';
 
-// Mapbox access token - must be configured in environment
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
+// ✅ ISO 27001 A.10.1 - Using centralized public configuration
+const MAPBOX_ACCESS_TOKEN = PUBLIC_CONFIG.mapbox.token;
 
 export interface Coordinates {
   lat: number;
@@ -39,7 +40,7 @@ class MapService {
 
   // Check if Mapbox token is configured
   isConfigured(): boolean {
-    return this.accessToken !== 'your-mapbox-token-here' && this.accessToken.length > 0;
+    return PUBLIC_CONFIG.mapbox.isConfigured();
   }
 
   // Geocodificar una dirección a coordenadas

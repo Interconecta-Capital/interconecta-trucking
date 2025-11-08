@@ -60,6 +60,7 @@ interface HereRoutingResponse {
 
 import { restriccionesUrbanasService } from './restriccionesUrbanas';
 import { supabase } from '@/integrations/supabase/client';
+import { PUBLIC_CONFIG } from '@/config/publicKeys';
 
 class RuteoComercialService {
   private readonly baseURL = 'https://router.hereapi.com/v8/routes';
@@ -79,10 +80,11 @@ class RuteoComercialService {
     destino: Coordenada,
     parametros: ParametrosRuteoComercial
   ): string {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY || '';
+    // ✅ ISO 27001 A.10.1 - Using centralized public configuration
+    const apiKey = PUBLIC_CONFIG.here.apiKey;
     
-    if (!apiKey) {
-      throw new Error('VITE_HERE_API_KEY not configured. Please set up your HERE API key.');
+    if (!PUBLIC_CONFIG.here.isConfigured()) {
+      throw new Error('HERE API key not configured. Please set VITE_HERE_API_KEY in .env for development.');
     }
     
     const params = new URLSearchParams({

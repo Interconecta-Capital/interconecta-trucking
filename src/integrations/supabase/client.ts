@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// ✅ ISO 27001 A.10.1 - Public configuration (centralized in src/config/publicKeys.ts)
 const SUPABASE_URL = "https://qulhweffinppyjpfkknh.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1bGh3ZWZmaW5wcHlqcGZra25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MTg3ODEsImV4cCI6MjA2NTE5NDc4MX0.7MwqHsoSSdlzizarradrdMGUHG9QuXyIGFXd0imNrMM";
 

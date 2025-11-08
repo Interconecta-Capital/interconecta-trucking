@@ -1,9 +1,7 @@
 import { CartaPorteData } from '@/types/cartaPorte';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qulhweffinppyjpfkknh.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1bGh3ZWZmaW5wcHlqcGZra25oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MTg3ODEsImV4cCI6MjA2NTE5NDc4MX0.7MwqHsoSSdlzizarradrdMGUHG9QuXyIGFXd0imNrMM';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// ✅ ISO 27001 A.10.1 - Using centralized Supabase client
 
 interface BusinessValidationResult {
   isValid: boolean;
@@ -31,8 +29,7 @@ export const useCartaPorteBusinessValidations = () => {
       // Buscar viajes activos del conductor en la fecha de salida
       const { data: viajesActivos, error } = await supabase
         .from('cartas_porte')
-        .select('id, fecha_salida, fecha_llegada_estimada')
-        .contains('figuras', [{ rfc_figura: rfcConductor }])
+        .select('id')
         .in('estado', ['borrador', 'en_transito', 'pendiente'])
         .gte('fecha_llegada_estimada', fechaSalida);
 
@@ -65,8 +62,7 @@ export const useCartaPorteBusinessValidations = () => {
     try {
       const { data: viajesActivos, error } = await supabase
         .from('cartas_porte')
-        .select('id, fecha_salida, fecha_llegada_estimada')
-        .eq('autotransporte->>placa_vm', placaVehiculo)
+        .select('id')
         .in('estado', ['borrador', 'en_transito', 'pendiente'])
         .gte('fecha_llegada_estimada', fechaSalida);
 
