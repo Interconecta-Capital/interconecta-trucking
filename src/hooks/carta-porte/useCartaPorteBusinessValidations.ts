@@ -27,11 +27,12 @@ export const useCartaPorteBusinessValidations = () => {
   ): Promise<{ isValid: boolean; error?: string }> => {
     try {
       // Buscar viajes activos del conductor en la fecha de salida
-      const { data: viajesActivos, error } = await supabase
-        .from('cartas_porte')
-        .select('id')
-        .in('estado', ['borrador', 'en_transito', 'pendiente'])
-        .gte('fecha_llegada_estimada', fechaSalida);
+    const { data: viajesActivos, error } = await supabase
+      .from('cartas_porte')
+      .select('id')
+      .in('estado', ['borrador', 'en_transito', 'pendiente'])
+      .gte('fecha_llegada_estimada', fechaSalida)
+      .returns<CartaPorteIdOnly[]>();
 
       if (error) throw error;
 
@@ -60,11 +61,12 @@ export const useCartaPorteBusinessValidations = () => {
     fechaSalida: string
   ): Promise<{ isValid: boolean; error?: string }> => {
     try {
-      const { data: viajesActivos, error } = await supabase
-        .from('cartas_porte')
-        .select('id')
-        .in('estado', ['borrador', 'en_transito', 'pendiente'])
-        .gte('fecha_llegada_estimada', fechaSalida);
+    const { data: viajesActivos, error } = await supabase
+      .from('cartas_porte')
+      .select('id')
+      .in('estado', ['borrador', 'en_transito', 'pendiente'])
+      .gte('fecha_llegada_estimada', fechaSalida)
+      .returns<CartaPorteIdOnly[]>();
 
       if (error) throw error;
 
@@ -92,12 +94,12 @@ export const useCartaPorteBusinessValidations = () => {
     rfc: string
   ): Promise<{ isValid: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase
-        .from('socios')
-        .select('id, nombre_razon_social')
-        .eq('rfc', rfc)
-        .eq('activo', true)
-        .single();
+    const { data, error } = await supabase
+      .from('socios')
+      .select('id, nombre_razon_social')
+      .eq('rfc', rfc)
+      .eq('activo', true)
+      .maybeSingle<SocioBasic>();
 
       if (error || !data) {
         return {
