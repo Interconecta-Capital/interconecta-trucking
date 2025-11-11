@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { User, LogOut, Shield, Menu, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -11,6 +11,7 @@ import { useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { UserProfileDialog } from '@/components/UserProfileDialog';
 
 interface GlobalHeaderProps {
   onOpenSidebar?: () => void;
@@ -22,6 +23,7 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { openViajeWizard } = useViajeWizardModal();
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleNewViaje = () => {
     console.log('[GlobalHeader] 🆕 Iniciando programación de nuevo viaje desde navbar');
@@ -112,7 +114,7 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
                 </p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowProfile(true)}>
                 <User className="mr-2 h-4 w-4" />
                 Perfil
               </DropdownMenuItem>
@@ -125,6 +127,11 @@ export function GlobalHeader({ onOpenSidebar }: GlobalHeaderProps) {
           </DropdownMenu>
         </div>
       </div>
+
+      <UserProfileDialog 
+        open={showProfile} 
+        onOpenChange={setShowProfile} 
+      />
     </header>
   );
 }
