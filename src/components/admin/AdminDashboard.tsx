@@ -4,7 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SystemHealthDashboard } from './SystemHealthDashboard';
 import { PACStatusIndicator } from './PACStatusIndicator';
-import { Activity, Server, Zap, Users, Settings, BarChart3 } from 'lucide-react';
+import { SecurityAuditDashboard } from './SecurityAuditDashboard';
+import { SystemMetricsDashboard } from './SystemMetricsDashboard';
+import { Activity, Server, Zap, Shield, BarChart3 } from 'lucide-react';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -32,13 +34,13 @@ export function AdminDashboard() {
             <Zap className="h-4 w-4" />
             PAC Status
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            User Management
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Security Audit
           </TabsTrigger>
-          <TabsTrigger value="config" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Configuration
+          <TabsTrigger value="metrics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            System Metrics
           </TabsTrigger>
         </TabsList>
 
@@ -57,52 +59,12 @@ export function AdminDashboard() {
           <PACStatusIndicator />
         </TabsContent>
 
-        <TabsContent value="users" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                User Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                User management functionality will be implemented here.
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="security" className="mt-6">
+          <SecurityAuditDashboard />
         </TabsContent>
 
-        <TabsContent value="config" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  System Configuration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  System configuration options will be implemented here.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Performance Tuning
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Performance tuning options will be implemented here.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="metrics" className="mt-6">
+          <SystemMetricsDashboard />
         </TabsContent>
       </Tabs>
     </div>

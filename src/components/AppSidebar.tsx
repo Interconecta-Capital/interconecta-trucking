@@ -149,6 +149,11 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
       return true;
     }
 
+    // La ruta de superuser solo es accesible para superusuarios
+    if (item.href === '/superuser') {
+      return false;
+    }
+
     // Cuentas bloqueadas no pueden acceder a nada
     if (permissions.accessLevel === 'blocked') {
       return false;
@@ -157,6 +162,15 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
     // Todos los demás usuarios (trial, paid, freemium) tienen acceso completo
     return true;
   };
+
+  // Filter items based on access
+  const filteredItems = sidebarItems.filter(item => {
+    // Show superuser link only to superusers
+    if (item.href === '/superuser') {
+      return permissions.accessLevel === 'superuser';
+    }
+    return true;
+  });
 
   const sidebarBody = (
     <div className="flex flex-col h-full">
@@ -181,7 +195,7 @@ export function AppSidebar({ isMobileOpen = false, setIsMobileOpen }: AppSidebar
 
       <nav className="flex-1 px-2 space-y-2 overflow-y-auto">
         {Object.entries(
-          sidebarItems.reduce<Record<SidebarCategory, SidebarItem[]>>((acc, item) => {
+          filteredItems.reduce<Record<SidebarCategory, SidebarItem[]>>((acc, item) => {
             if (!acc[item.category]) acc[item.category] = [];
             acc[item.category].push(item);
             return acc;

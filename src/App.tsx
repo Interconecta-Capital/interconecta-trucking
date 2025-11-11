@@ -42,6 +42,7 @@ import Cotizaciones from "./pages/Cotizaciones"
 import ReportesGenerales from "./pages/ReportesGenerales"
 import Notificaciones from "./pages/Notificaciones"
 import AdminTimbres from "./pages/admin/AdminTimbres"
+import SuperuserManagement from "./pages/SuperuserManagement"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -249,6 +250,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <AdminTimbres />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/superuser" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <SuperuserManagement />
                   </BaseLayout>
                 </AuthGuard>
               } />
