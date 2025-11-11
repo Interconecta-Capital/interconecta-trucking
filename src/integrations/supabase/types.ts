@@ -3240,6 +3240,21 @@ export type Database = {
         }
         Relationships: []
       }
+      schema_version: {
+        Row: {
+          updated_at: string | null
+          version: number
+        }
+        Insert: {
+          updated_at?: string | null
+          version?: number
+        }
+        Update: {
+          updated_at?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       secrets_metadata: {
         Row: {
           activo: boolean | null
@@ -4640,6 +4655,7 @@ export type Database = {
           rfc_titular: string
         }[]
       }
+      get_auth: { Args: never; Returns: Json }
       get_current_user_tenant_id: { Args: never; Returns: string }
       get_documentos_procesados: {
         Args: { user_uuid: string }
@@ -4660,6 +4676,7 @@ export type Database = {
       }
       get_pac_credentials: { Args: never; Returns: Json }
       get_pac_token: { Args: { secret_name?: string }; Returns: string }
+      get_schema_version: { Args: never; Returns: number }
       get_secret: { Args: { secret_name: string }; Returns: string }
       get_user_storage_usage: {
         Args: { user_uuid: string }
@@ -4671,6 +4688,7 @@ export type Database = {
       }
       get_user_tenant_id: { Args: { user_uuid: string }; Returns: string }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      increment_schema_version: { Args: never; Returns: number }
       is_admin_or_superuser: { Args: { _user_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_superuser_optimized: { Args: never; Returns: boolean }
@@ -4697,7 +4715,9 @@ export type Database = {
         Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined
       }
-      restore_rls_policies_from_backup: { Args: never; Returns: string }
+      restore_rls_policies_from_backup:
+        | { Args: never; Returns: string }
+        | { Args: { backup_id: string }; Returns: Json }
       run_automated_tasks: { Args: never; Returns: undefined }
       sanitize_pii_from_logs: { Args: never; Returns: Json }
       send_cleanup_warnings: { Args: never; Returns: undefined }
@@ -4721,16 +4741,26 @@ export type Database = {
         Returns: Json
       }
       validate_rfc_format: { Args: { rfc_input: string }; Returns: boolean }
-      verificar_disponibilidad_recurso: {
-        Args: {
-          p_entidad_id: string
-          p_entidad_tipo: string
-          p_fecha_fin: string
-          p_fecha_inicio: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      verificar_disponibilidad_recurso:
+        | {
+            Args: {
+              fecha_fin: string
+              fecha_inicio: string
+              recurso_id: string
+              recurso_tipo: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_entidad_id: string
+              p_entidad_tipo: string
+              p_fecha_fin: string
+              p_fecha_inicio: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       verificar_eliminacion_completa: {
         Args: { target_user_id: string }
         Returns: Json
