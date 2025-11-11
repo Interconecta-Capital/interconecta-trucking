@@ -194,10 +194,9 @@ export const GDPRRights = () => {
               </div>
               
               <Button
-                variant="destructive"
                 disabled={isDeleting}
                 onClick={() => setDeleteDialogOpen(true)}
-                className="w-full sm:w-auto bg-red-600 text-white hover:bg-white hover:text-red-600 hover:border-red-600 border-2 border-transparent transition-all font-semibold"
+                className="w-full sm:w-auto bg-red-600 text-white hover:bg-white hover:text-red-600 hover:border-red-600 border-2 border-red-600 transition-all font-semibold shadow-sm"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {isDeleting ? 'Procesando...' : 'Eliminar Mi Cuenta'}

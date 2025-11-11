@@ -31,7 +31,7 @@ export const DeleteAccountDialog = ({
   onConfirm,
   isDeleting
 }: DeleteAccountDialogProps) => {
-  const [step, setStep] = useState<'warning' | 'confirmation'>('' as any);
+  const [step, setStep] = useState<'warning' | 'confirmation'>('warning');
   const [password, setPassword] = useState('');
   const [confirmChecked, setConfirmChecked] = useState(false);
   const [error, setError] = useState('');
@@ -39,7 +39,7 @@ export const DeleteAccountDialog = ({
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen && !isDeleting) {
       // Reset state when closing
-      setStep('warning' as any);
+      setStep('warning');
       setPassword('');
       setConfirmChecked(false);
       setError('');
