@@ -258,8 +258,9 @@ export default function Privacy() {
                 Para ejercer tus derechos ARCO o consultas sobre privacidad, contacta a:
               </p>
               <div className="space-y-2 text-muted-foreground">
-                <p><strong>Email:</strong> privacidad@interconecta.com</p>
-                <p><strong>Teléfono:</strong> +52 (55) 1234-5678</p>
+                <p><strong>Nombre:</strong> Alan Soto</p>
+                <p><strong>Email:</strong> arrebolcorporation@gmail.com</p>
+                <p><strong>Teléfono:</strong> +52 55 1968 6023</p>
                 <p><strong>Horario:</strong> Lunes a Viernes, 9:00 AM - 6:00 PM (Hora del Centro de México)</p>
               </div>
             </CardContent>

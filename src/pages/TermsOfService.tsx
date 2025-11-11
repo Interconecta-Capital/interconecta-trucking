@@ -263,9 +263,9 @@ export default function TermsOfService() {
             </CardHeader>
             <CardContent className="space-y-2 text-muted-foreground">
               <p>Para preguntas sobre estos términos:</p>
-              <p><strong>Email:</strong> legal@interconecta.com</p>
-              <p><strong>Teléfono:</strong> +52 (55) 1234-5678</p>
-              <p><strong>Dirección:</strong> [Dirección completa de la empresa]</p>
+              <p><strong>Nombre:</strong> Alan Soto</p>
+              <p><strong>Email:</strong> arrebolcorporation@gmail.com</p>
+              <p><strong>Teléfono:</strong> +52 55 1968 6023</p>
             </CardContent>
           </Card>
         </div>
