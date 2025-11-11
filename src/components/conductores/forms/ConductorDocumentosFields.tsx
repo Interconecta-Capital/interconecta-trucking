@@ -10,16 +10,18 @@ interface ConductorDocumentosFieldsProps {
 }
 
 const TIPOS_DOCUMENTO_CONDUCTOR = [
-  { value: 'licencia_conducir', label: 'Licencia de Conducir', obligatorio: true, vencimiento: 1095 }, // 3 años
-  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio', obligatorio: true, vencimiento: 90 }, // 3 meses
-  { value: 'curp', label: 'CURP', obligatorio: true },
-  { value: 'certificado_medico', label: 'Certificado Médico', obligatorio: true, vencimiento: 365 }, // 1 año
-  { value: 'antecedentes_penales', label: 'Carta de No Antecedentes Penales', obligatorio: false, vencimiento: 180 }, // 6 meses
-  { value: 'identificacion_oficial', label: 'Identificación Oficial (INE/IFE)', obligatorio: true },
+  { value: 'licencia_conducir', label: 'Licencia de Conducir', obligatorio: true, vencimiento: 1095, permitirPosponer: false },
+  { value: 'cdsf', label: 'Certificado de Seguridad Federal (CDSF)', obligatorio: true, vencimiento: 1095, permitirPosponer: false },
+  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio', obligatorio: false, vencimiento: 90, permitirPosponer: true },
+  { value: 'curp', label: 'CURP', obligatorio: false, permitirPosponer: true },
+  { value: 'certificado_medico', label: 'Certificado Médico', obligatorio: false, vencimiento: 365, permitirPosponer: true },
+  { value: 'antecedentes_penales', label: 'Carta de No Antecedentes Penales', obligatorio: false, vencimiento: 180, permitirPosponer: true },
+  { value: 'identificacion_oficial', label: 'Identificación Oficial (INE/IFE)', obligatorio: false, permitirPosponer: true },
 ];
 
 export function ConductorDocumentosFields({ conductorId, onDocumentosChange }: ConductorDocumentosFieldsProps) {
   const [documentos, setDocumentos] = useState<any[]>([]);
+  const [postponedDocs, setPostponedDocs] = useState<Set<string>>(new Set());
   const { cargarDocumentos, subirDocumento, eliminarDocumento } = useDocumentosEntidades();
   const [loading, setLoading] = useState(false);
 
@@ -96,26 +98,59 @@ export function ConductorDocumentosFields({ conductorId, onDocumentosChange }: C
 
         {TIPOS_DOCUMENTO_CONDUCTOR.map((tipo) => {
           const existentes = getDocumentosByTipo(tipo.value);
+          const isPostponed = postponedDocs.has(tipo.value);
+          
           return (
             <div key={tipo.value} className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium">
                   {tipo.label}
-                  {tipo.obligatorio && <span className="text-red-500 ml-1">*</span>}
+                  {tipo.obligatorio && !tipo.permitirPosponer && <span className="text-red-500 ml-1">*</span>}
                 </label>
-                {tipo.vencimiento && (
-                  <span className="text-xs text-muted-foreground">
-                    Vence en {tipo.vencimiento} días
-                  </span>
-                )}
+                <div className="flex items-center gap-4">
+                  {tipo.vencimiento && (
+                    <span className="text-xs text-muted-foreground">
+                      Vence en {tipo.vencimiento} días
+                    </span>
+                  )}
+                  {tipo.permitirPosponer && existentes.length === 0 && (
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isPostponed}
+                        onChange={(e) => {
+                          const newPostponed = new Set(postponedDocs);
+                          if (e.target.checked) {
+                            newPostponed.add(tipo.value);
+                          } else {
+                            newPostponed.delete(tipo.value);
+                          }
+                          setPostponedDocs(newPostponed);
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-gray-600">Subir después</span>
+                    </label>
+                  )}
+                </div>
               </div>
               
-              <SecureFileUpload
-                label=""
-                onFilesChange={(files) => files.length > 0 && handleFileUpload(files[0], tipo.value)}
-                accept=".pdf,.jpg,.jpeg,.png"
-                maxSize={10}
-              />
+              {!isPostponed && existentes.length === 0 && (
+                <SecureFileUpload
+                  label=""
+                  onFilesChange={(files) => files.length > 0 && handleFileUpload(files[0], tipo.value)}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  maxSize={10}
+                />
+              )}
+
+              {isPostponed && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    📌 Este documento será subido posteriormente
+                  </p>
+                </div>
+              )}
 
               {existentes.length > 0 && (
                 <div className="mt-2 space-y-1">

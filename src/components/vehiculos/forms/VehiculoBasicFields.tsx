@@ -109,7 +109,7 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div>
           <Label htmlFor="config_vehicular">Configuración Vehicular</Label>
           <Select 
@@ -127,19 +127,6 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="rendimiento">Rendimiento (km/l)</Label>
-          <Input
-            id="rendimiento"
-            type="number"
-            step="0.1"
-            min="0"
-            value={formData.rendimiento || ''}
-            onChange={(e) => onFieldChange('rendimiento', parseFloat(e.target.value) || '')}
-            placeholder="15.5"
-          />
         </div>
       </div>
     </div>

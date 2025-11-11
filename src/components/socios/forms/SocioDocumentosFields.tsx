@@ -11,15 +11,15 @@ interface SocioDocumentosFieldsProps {
 }
 
 const TIPOS_DOCUMENTO_SOCIO_FISICA = [
+  { value: 'csf', label: 'Constancia de Situación Fiscal (CSF)', obligatorio: true, vencimiento: 365 },
   { value: 'identificacion_oficial', label: 'Identificación Oficial (INE/IFE)', obligatorio: true },
-  { value: 'constancia_fiscal', label: 'Constancia de Situación Fiscal', obligatorio: true, vencimiento: 90 },
   { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: true, vencimiento: 90 },
   { value: 'curp', label: 'CURP', obligatorio: false },
 ];
 
 const TIPOS_DOCUMENTO_SOCIO_MORAL = [
+  { value: 'csf', label: 'Constancia de Situación Fiscal (CSF)', obligatorio: true, vencimiento: 365 },
   { value: 'acta_constitutiva', label: 'Acta Constitutiva', obligatorio: true },
-  { value: 'constancia_fiscal', label: 'Constancia de Situación Fiscal', obligatorio: true, vencimiento: 90 },
   { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: true, vencimiento: 90 },
   { value: 'poder_notarial', label: 'Poder Notarial del Representante Legal', obligatorio: false },
   { value: 'identificacion_representante', label: 'Identificación del Representante Legal', obligatorio: true },

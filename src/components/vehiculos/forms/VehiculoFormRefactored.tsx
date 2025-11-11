@@ -131,6 +131,8 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     return Object.keys(newErrors).length === 0;
   };
 
+  const [savedVehiculoId, setSavedVehiculoId] = useState<string | undefined>(vehiculoId);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -158,7 +160,9 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
       if (vehiculoId) {
         await actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
       } else {
-        await crearVehiculo(vehiculoData);
+        const nuevoVehiculo = await crearVehiculo(vehiculoData);
+        // Guardar el ID del vehículo recién creado para documentos
+        setSavedVehiculoId(nuevoVehiculo.id);
       }
 
       if (onSuccess) {
@@ -220,7 +224,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
 
             <TabsContent value="documentos">
               <VehiculoDocumentosSection
-                vehiculoId={vehiculoId}
+                vehiculoId={savedVehiculoId}
                 onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
               />
             </TabsContent>

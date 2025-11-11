@@ -10,7 +10,7 @@ import { ConductorSCTFields } from './ConductorSCTFields';
 import { ConductorDireccionFields } from './ConductorDireccionFields';
 import { ConductorVehiculoAsignacionFields } from './ConductorVehiculoAsignacionFields';
 import { ConductorDocumentosFields } from './ConductorDocumentosFields';
-import { FormStepper } from './FormStepper';
+import { FormStepper } from './FormStepperResponsive';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -129,7 +129,9 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
         await updateConductor({ id: conductorId, data: submitData });
         toast.success('Conductor actualizado exitosamente');
       } else {
-        await createConductor(submitData);
+        const newConductor = await createConductor(submitData);
+        // Actualizar formData con el ID del nuevo conductor para documentos
+        setFormData(prev => ({ ...prev, id: newConductor.id }));
         toast.success('Conductor creado exitosamente');
       }
       onSuccess?.();
@@ -197,7 +199,7 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       case 5:
         return (
           <ConductorDocumentosFields
-            conductorId={conductorId}
+            conductorId={conductorId || formData.id}
             onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
           />
         );

@@ -94,10 +94,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
       
       await logSecurityEvent('PROFILE_UPDATE_SUCCESS');
       
-      // Recargar la página después de un breve delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // No se necesita reload, el sistema reactivo de Supabase actualizará automáticamente
       
     } catch (error: any) {
       console.error('Error updating profile:', error);

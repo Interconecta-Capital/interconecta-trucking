@@ -15,9 +15,10 @@ import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMes
 import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
+import { DeletedAccountDialog } from '@/components/auth/DeletedAccountDialog';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState as useLocalState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
@@ -235,6 +236,8 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showDeletedDialog, setShowDeletedDialog] = useLocalState(false);
+  const [deletedAccountInfo, setDeletedAccountInfo] = useLocalState<{ email: string; deletedAt?: string } | null>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   
@@ -255,9 +258,14 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
       toast.success('¡Bienvenido de vuelta!');
       navigate('/dashboard');
     } catch (error: any) {
+      // Verificar si es cuenta no confirmada
       const isUnconfirmed = checkIfUserIsUnconfirmed(email, error);
       
       if (!isUnconfirmed) {
+        // Verificar si es cuenta eliminada
+        // Nota: Por ahora solo mostramos el mensaje genérico
+        // La verificación de cuenta eliminada se implementará en el backend
+        
         toast.error(error.message || 'Error al iniciar sesión');
       }
     } finally {
@@ -378,6 +386,18 @@ function LoginForm({ onShowMagicLink, onShowForgotPassword }: LoginFormProps) {
           email={unconfirmedEmail}
           onClose={closeUnconfirmedDialog}
           onVerificationSent={handleVerificationSent}
+        />
+      )}
+      
+      {showDeletedDialog && deletedAccountInfo && (
+        <DeletedAccountDialog
+          open={showDeletedDialog}
+          email={deletedAccountInfo.email}
+          deletedAt={deletedAccountInfo.deletedAt}
+          onClose={() => {
+            setShowDeletedDialog(false);
+            setDeletedAccountInfo(null);
+          }}
         />
       )}
     </>

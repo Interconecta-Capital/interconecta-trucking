@@ -47,6 +47,11 @@ export const useUnconfirmedUserDetection = () => {
           });
           
           setNeedsCompletion(isIncomplete);
+          
+          // Si el perfil está completo y el modal estaba abierto, cerrarlo
+          if (!isIncomplete && needsCompletion) {
+            console.log('✅ Perfil completado exitosamente, modal cerrado');
+          }
         } catch (error) {
           console.error('Error checking profile completion:', error);
         }
@@ -56,7 +61,7 @@ export const useUnconfirmedUserDetection = () => {
     } else {
       setNeedsCompletion(false);
     }
-  }, [user]);
+  }, [user, user?.profile, needsCompletion]);
 
   const checkIfUserIsUnconfirmed = (email: string, error?: any): boolean => {
     // Check if error indicates unconfirmed user

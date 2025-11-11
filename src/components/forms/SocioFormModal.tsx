@@ -40,6 +40,7 @@ interface SocioFormModalProps {
 }
 
 export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }: SocioFormModalProps) {
+  const [savedSocioId, setSavedSocioId] = useState<string | undefined>(socio?.id);
   const form = useForm<SocioFormData>({
     resolver: zodResolver(socioSchema),
     defaultValues: socio ? {
@@ -181,7 +182,7 @@ export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }:
 
       <TabsContent value="documentos" className="mt-4">
         <SocioDocumentosFields 
-          socioId={socio?.id}
+          socioId={savedSocioId}
           tipoPersona={form.watch('tipo_persona')}
           onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
         />

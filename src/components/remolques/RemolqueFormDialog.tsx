@@ -23,6 +23,7 @@ interface RemolqueFormDialogProps {
 
 export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: RemolqueFormDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [savedRemolqueId, setSavedRemolqueId] = useState<string | undefined>(remolque?.id);
   const { user } = useStableAuth();
   const { crearRemolque, actualizarRemolque } = useRemolques();
   const { vehiculos } = useStableVehiculos(user?.id);
@@ -63,7 +64,8 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
         await actualizarRemolque({ id: remolque.id, data: remolqueData });
         toast.success('Remolque actualizado exitosamente');
       } else {
-        await crearRemolque(remolqueData);
+        const nuevoRemolque = await crearRemolque(remolqueData);
+        setSavedRemolqueId(nuevoRemolque.id);
         toast.success('Remolque creado exitosamente');
       }
       
@@ -197,7 +199,7 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
 
       <TabsContent value="documentos" className="mt-4">
         <RemolqueDocumentosFields 
-          remolqueId={remolque?.id}
+          remolqueId={savedRemolqueId}
           onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
         />
       </TabsContent>

@@ -37,7 +37,7 @@ export const useCodigoPostalMexicanoNacional = () => {
     };
   }, []);
 
-  // Función principal de consulta optimizada
+  // Función principal de consulta optimizada con timeout
   const consultarCodigoPostal = useCallback(async (cp: string): Promise<void> => {
     if (!cp || cp.length !== 5 || !/^\d{5}$/.test(cp)) {
       setError('El código postal debe tener 5 dígitos');
@@ -53,8 +53,15 @@ export const useCodigoPostalMexicanoNacional = () => {
     try {
       console.log(`[HOOK_CP_OPT] Consultando CP: ${cp}`);
       
+      // Agregar timeout de 10 segundos
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Tiempo de espera agotado')), 10000)
+      );
+      
+      const searchPromise = codigosPostalesService.buscarDireccionPorCP(cp);
+      
       const { data, error: serviceError, sugerencias: serviceSugerencias } = 
-        await codigosPostalesService.buscarDireccionPorCP(cp);
+        await Promise.race([searchPromise, timeoutPromise]);
 
       if (data && data.colonias.length > 0) {
         const direccionInfo: DireccionInfo = {
@@ -78,12 +85,16 @@ export const useCodigoPostalMexicanoNacional = () => {
         })) || [];
         
         setSugerencias(cpsSimilares);
-        setError(serviceError || 'Código postal no encontrado');
+        setError(serviceError || 'Código postal no encontrado. Puedes llenar los campos manualmente.');
         setDireccionInfo(null);
       }
     } catch (error: any) {
       console.error('[HOOK_CP_OPT] Error:', error);
-      setError('Error al consultar código postal');
+      if (error.message === 'Tiempo de espera agotado') {
+        setError('El servicio está tardando mucho. Puedes llenar los campos manualmente.');
+      } else {
+        setError('Error al consultar código postal. Puedes llenar los campos manualmente.');
+      }
       setDireccionInfo(null);
       setSugerencias([]);
     } finally {
