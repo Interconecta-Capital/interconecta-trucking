@@ -4811,26 +4811,15 @@ export type Database = {
         Returns: Json
       }
       validate_rfc_format: { Args: { rfc_input: string }; Returns: boolean }
-      verificar_disponibilidad_recurso:
-        | {
-            Args: {
-              p_fecha_fin: string
-              p_fecha_inicio: string
-              p_recurso_id: string
-              p_recurso_tipo: string
-            }
-            Returns: boolean
-          }
-        | {
-            Args: {
-              p_entidad_id: string
-              p_entidad_tipo: string
-              p_fecha_fin: string
-              p_fecha_inicio: string
-              p_user_id: string
-            }
-            Returns: Json
-          }
+      verificar_disponibilidad_recurso: {
+        Args: {
+          p_fecha_fin: string
+          p_fecha_inicio: string
+          p_recurso_id: string
+          p_recurso_tipo: string
+        }
+        Returns: boolean
+      }
       verificar_eliminacion_completa: {
         Args: { target_user_id: string }
         Returns: Json
