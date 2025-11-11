@@ -41,7 +41,8 @@ export interface Suscripcion {
   dias_gracia: number;
   ultimo_pago?: string;
   proximo_pago?: string;
-  plan?: PlanSuscripcion;
+  planes_suscripcion?: PlanSuscripcion;
+  plan?: PlanSuscripcion; // Alias para compatibilidad
 }
 
 export interface BloqueoUsuario {
@@ -69,13 +70,20 @@ export const useSuscripcion = () => {
         .from('suscripciones')
         .select(`
           *,
-          plan:planes_suscripcion(*)
+          planes_suscripcion(*)
         `)
         .eq('user_id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data as Suscripcion;
+      
+      // Crear alias para compatibilidad
+      const result = data as Suscripcion;
+      if (result && result.planes_suscripcion) {
+        result.plan = result.planes_suscripcion;
+      }
+      
+      return result;
     },
   });
 
