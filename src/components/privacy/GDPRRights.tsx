@@ -90,7 +90,7 @@ export const GDPRRights = () => {
       if (error) throw error;
 
       toast.success('Tu solicitud de eliminación ha sido procesada. Tu cuenta será eliminada en 30 días.', {
-        description: 'Puedes cancelar esta solicitud contactando con privacy@example.com',
+        description: 'Puedes cancelar esta solicitud contactando con arrebolcorporation@gmail.com',
         duration: 10000,
       });
 
@@ -219,7 +219,7 @@ export const GDPRRights = () => {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Para cancelar la eliminación durante el periodo de gracia, contacta con: 
-                        <strong> privacy@example.com</strong>
+                        <strong> arrebolcorporation@gmail.com</strong>
                       </p>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -249,8 +249,9 @@ export const GDPRRights = () => {
               </p>
               <div className="bg-muted p-3 rounded-md">
                 <p><strong>Responsable de Privacidad:</strong></p>
-                <p>Email: <a href="mailto:privacy@example.com" className="text-primary hover:underline">privacy@example.com</a></p>
-                <p>Teléfono: +52 (55) XXXX-XXXX</p>
+                <p><strong>Nombre:</strong> Alan Soto</p>
+                <p><strong>Email:</strong> <a href="mailto:arrebolcorporation@gmail.com" className="text-primary hover:underline">arrebolcorporation@gmail.com</a></p>
+                <p><strong>Teléfono:</strong> <a href="tel:+525519686023" className="text-primary hover:underline">+52 55 1968 6023</a></p>
                 <p className="text-xs mt-2">
                   Tiempo de respuesta: Inmediato (automatizado) para exportación y eliminación. 
                   Máximo 20 días hábiles para otras solicitudes.
