@@ -5,17 +5,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, Trash2, FileText, Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Componente para gestionar derechos GDPR del usuario
@@ -24,6 +15,8 @@ import {
 export const GDPRRights = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   /**
    * GDPR Art. 20 - Derecho de Portabilidad de Datos
@@ -72,14 +65,24 @@ export const GDPRRights = () => {
    * GDPR Art. 17 - Derecho de Supresión ("Derecho al Olvido")
    * LFPDPPP Art. 26 - Derecho de Cancelación
    */
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (password: string) => {
     setIsDeleting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (!user || !user.email) {
         toast.error('No autenticado');
         return;
+      }
+
+      // Verificar contraseña antes de proceder
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: password,
+      });
+
+      if (signInError) {
+        throw new Error('Contraseña incorrecta');
       }
 
       // Llamar función SQL de eliminación
@@ -89,18 +92,19 @@ export const GDPRRights = () => {
 
       if (error) throw error;
 
-      toast.success('Tu solicitud de eliminación ha sido procesada. Tu cuenta será eliminada en 30 días.', {
-        description: 'Puedes cancelar esta solicitud contactando con arrebolcorporation@gmail.com',
+      toast.success('Tu cuenta ha sido programada para eliminación', {
+        description: 'Tienes 30 días para cancelar contactando a arrebolcorporation@gmail.com',
         duration: 10000,
       });
 
-      // Cerrar sesión después de 3 segundos
-      setTimeout(() => {
-        supabase.auth.signOut();
-      }, 3000);
+      // Cerrar sesión y redirigir
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate('/auth');
+      }, 2000);
     } catch (error: any) {
       console.error('Error al eliminar cuenta:', error);
-      toast.error(`Error al eliminar cuenta: ${error.message}`);
+      throw error;
     } finally {
       setIsDeleting(false);
     }
@@ -189,51 +193,22 @@ export const GDPRRights = () => {
                 </ul>
               </div>
               
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    disabled={isDeleting}
-                    className="w-full sm:w-auto"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {isDeleting ? 'Procesando...' : 'Eliminar Mi Cuenta'}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-                    <AlertDialogDescription className="space-y-3">
-                      <p>
-                        Esta acción <strong>eliminará permanentemente</strong> tu cuenta y todos tus datos personales 
-                        después de un periodo de gracia de 30 días.
-                      </p>
-                      <div className="bg-destructive/10 p-3 rounded-md space-y-2 text-sm">
-                        <p className="font-semibold text-destructive">Consecuencias:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>Perderás acceso a tu cuenta inmediatamente</li>
-                          <li>Tus datos serán anonimizados (no se pueden recuperar)</li>
-                          <li>Cartas Porte emitidas se conservarán (por ley) pero sin tus datos personales</li>
-                          <li>Tienes 30 días para cancelar esta solicitud</li>
-                        </ul>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Para cancelar la eliminación durante el periodo de gracia, contacta con: 
-                        <strong> arrebolcorporation@gmail.com</strong>
-                      </p>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAccount}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Sí, Eliminar Mi Cuenta
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button
+                variant="destructive"
+                disabled={isDeleting}
+                onClick={() => setDeleteDialogOpen(true)}
+                className="w-full sm:w-auto bg-[hsl(0,100%,50%)] hover:bg-background hover:text-[hsl(0,100%,50%)] hover:border-[hsl(0,100%,50%)] border-2 border-transparent transition-all"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? 'Procesando...' : 'Eliminar Mi Cuenta'}
+              </Button>
+
+              <DeleteAccountDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={handleDeleteAccount}
+                isDeleting={isDeleting}
+              />
             </CardContent>
           </Card>
 

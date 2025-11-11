@@ -41,6 +41,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserConsents } from '@/hooks/useUserConsents';
+import { GDPRRights } from '@/components/privacy/GDPRRights';
+import { UserConsentsList } from '@/components/privacy/UserConsentsList';
 import { toast } from 'sonner';
 
 interface UserProfileDialogProps {
@@ -420,71 +422,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
 
           {/* TAB: Consentimientos */}
           <TabsContent value="consents" className="space-y-4 mt-4">
-            <Alert>
-              <FileText className="h-4 w-4" />
-              <AlertDescription>
-                Aquí puedes revisar los consentimientos que has otorgado para el tratamiento de tus datos personales.
-              </AlertDescription>
-            </Alert>
-
-            {consentsLoading ? (
-              <div className="flex justify-center p-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : consents && consents.length > 0 ? (
-              <div className="space-y-3">
-                {consents.map((consent) => (
-                  <Card key={consent.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <div>
-                            <CardTitle className="text-base">
-                              {consent.consent_type === 'privacy_policy' ? 'Política de Privacidad' : 'Términos de Servicio'}
-                            </CardTitle>
-                            <CardDescription>
-                              Versión {consent.version}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          Aceptado
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>Fecha: {new Date(consent.consented_at).toLocaleString('es-MX', { 
-                          dateStyle: 'long', 
-                          timeStyle: 'short' 
-                        })}</span>
-                      </div>
-                      {consent.ip_address && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Globe className="h-4 w-4" />
-                          <span>IP: {consent.ip_address}</span>
-                        </div>
-                      )}
-                      <div className="pt-2">
-                        <Button variant="link" size="sm" className="p-0 h-auto" asChild>
-                          <a href={consent.consent_type === 'privacy_policy' ? '/privacy' : '/terms'} target="_blank">
-                            Ver documento completo →
-                          </a>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  No se encontraron consentimientos registrados.
-                </CardContent>
-              </Card>
-            )}
+            <UserConsentsList />
           </TabsContent>
         </Tabs>
       </DialogContent>
