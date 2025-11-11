@@ -4786,8 +4786,8 @@ export type Database = {
         Returns: undefined
       }
       restore_rls_policies_from_backup:
-        | { Args: never; Returns: string }
         | { Args: { backup_id: string }; Returns: Json }
+        | { Args: never; Returns: undefined }
       run_automated_tasks: { Args: never; Returns: undefined }
       sanitize_pii_from_logs: { Args: never; Returns: Json }
       send_cleanup_warnings: { Args: never; Returns: undefined }
@@ -4814,10 +4814,10 @@ export type Database = {
       verificar_disponibilidad_recurso:
         | {
             Args: {
-              fecha_fin: string
-              fecha_inicio: string
-              recurso_id: string
-              recurso_tipo: string
+              p_fecha_fin: string
+              p_fecha_inicio: string
+              p_recurso_id: string
+              p_recurso_tipo: string
             }
             Returns: boolean
           }
