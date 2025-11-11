@@ -1710,6 +1710,54 @@ export type Database = {
         }
         Relationships: []
       }
+      data_deletion_audit: {
+        Row: {
+          created_at: string
+          deletion_completed_at: string | null
+          deletion_requested_at: string
+          error_message: string | null
+          executed_by: string | null
+          id: string
+          metadata: Json | null
+          records_anonymized: number | null
+          records_deleted: number | null
+          status: string
+          tables_affected: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deletion_completed_at?: string | null
+          deletion_requested_at?: string
+          error_message?: string | null
+          executed_by?: string | null
+          id?: string
+          metadata?: Json | null
+          records_anonymized?: number | null
+          records_deleted?: number | null
+          status?: string
+          tables_affected?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deletion_completed_at?: string | null
+          deletion_requested_at?: string
+          error_message?: string | null
+          executed_by?: string | null
+          id?: string
+          metadata?: Json | null
+          records_anonymized?: number | null
+          records_deleted?: number | null
+          status?: string
+          tables_affected?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documentacion_aduanera: {
         Row: {
           aduana_despacho: string | null
@@ -3835,6 +3883,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_consents: {
+        Row: {
+          consent_type: string
+          consented_at: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          consent_type: string
+          consented_at?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id: string
+          version: string
+        }
+        Update: {
+          consent_type?: string
+          consented_at?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -4437,6 +4521,7 @@ export type Database = {
           total_cotizaciones: number
         }[]
       }
+      anonimizar_usuario: { Args: { target_user_id: string }; Returns: Json }
       assign_missing_trials: { Args: never; Returns: undefined }
       buscar_codigo_postal: {
         Args: { cp_input: string }
@@ -4528,6 +4613,14 @@ export type Database = {
       check_user_access: { Args: { user_uuid: string }; Returns: boolean }
       cleanup_expired_grace_users: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
+      eliminar_datos_usuario: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
+      exportar_datos_usuario: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       generar_hash_ruta: {
         Args: { destino: string; origen: string }
         Returns: string
@@ -4606,6 +4699,7 @@ export type Database = {
       }
       restore_rls_policies_from_backup: { Args: never; Returns: string }
       run_automated_tasks: { Args: never; Returns: undefined }
+      sanitize_pii_from_logs: { Args: never; Returns: Json }
       send_cleanup_warnings: { Args: never; Returns: undefined }
       sugerir_codigos_similares: {
         Args: { cp_input: string }
@@ -4635,6 +4729,10 @@ export type Database = {
           p_fecha_inicio: string
           p_user_id: string
         }
+        Returns: Json
+      }
+      verificar_eliminacion_completa: {
+        Args: { target_user_id: string }
         Returns: Json
       }
     }
