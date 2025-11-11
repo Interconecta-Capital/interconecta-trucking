@@ -216,8 +216,29 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Setters estables para cada sección del formulario
   const setUbicaciones = useCallback((ubicaciones: UbicacionCompleta[]) => {
-    setFormData(prev => ({ ...prev, ubicaciones }));
-  }, []);
+    console.log('📍 Actualizando ubicaciones:', ubicaciones.length);
+    
+    setFormData(prev => {
+      const updated = { ...prev, ubicaciones };
+      
+      // ✅ NUEVO: Guardar automáticamente después de 1 segundo
+      setTimeout(async () => {
+        if (currentCartaPorteId) {
+          try {
+            await CartaPorteLifecycleManager.guardarBorrador(currentCartaPorteId, {
+              datos_formulario: updated,
+              auto_saved: true
+            });
+            console.log('✅ Ubicaciones auto-guardadas');
+          } catch (error) {
+            console.error('❌ Error auto-guardando ubicaciones:', error);
+          }
+        }
+      }, 1000);
+      
+      return updated;
+    });
+  }, [currentCartaPorteId]);
 
   const setMercancias = useCallback((mercancias: MercanciaCompleta[]) => {
     setFormData(prev => ({ ...prev, mercancias }));
@@ -313,11 +334,22 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     
     setIsGuardando(true);
     try {
+      // ✅ NUEVO: Calcular progreso ANTES de guardar
+      const validation = getValidationSummary(formData);
+      
       const datosCompletos = {
         ...formData,
         currentStep,
         xmlGenerado,
-        datosCalculoRuta
+        datosCalculoRuta,
+        // ✅ NUEVO: Incluir metadata de progreso
+        progress: {
+          percentage: validation.completionPercentage,
+          completedSections: validation.completedSections,
+          totalSections: validation.totalSections,
+          sectionStatus: validation.sectionStatus,
+          lastUpdated: new Date().toISOString()
+        }
       };
 
       let savedId: string;
@@ -341,7 +373,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       }
       
       setUltimoGuardado(new Date());
-      toast.success('Borrador guardado correctamente');
+      toast.success(`Borrador guardado (${validation.completionPercentage}% completado)`);
       
       return savedId;
     } catch (error) {
@@ -351,7 +383,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } finally {
       setIsGuardando(false);
     }
-  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando]);
+  }, [formData, currentStep, xmlGenerado, datosCalculoRuta, currentCartaPorteId, isGuardando, getValidationSummary]);
 
   // Guardar como carta porte oficial usando el nuevo sistema
   const handleGuardarCartaPorteOficial = useCallback(async (): Promise<string> => {

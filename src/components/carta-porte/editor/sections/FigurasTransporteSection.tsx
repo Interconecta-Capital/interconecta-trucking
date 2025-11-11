@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, Search, Users } from 'lucide-react';
+import { Plus, Trash2, Search, Users, Building2, Truck } from 'lucide-react';
 import { useConductores } from '@/hooks/useConductores';
+import { useSocios } from '@/hooks/useSocios';
+import { useRemolques } from '@/hooks/useRemolques';
 import { ConductorFormDialog } from '@/components/conductores/ConductorFormDialog';
 
 interface FiguraTransporteSectionProps {
@@ -17,19 +19,37 @@ interface FiguraTransporteSectionProps {
 
 export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSectionProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchTermSocio, setSearchTermSocio] = useState('');
+  const [searchTermRemolque, setSearchTermRemolque] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showConductorSelector, setShowConductorSelector] = useState(false);
+  const [showSocioSelector, setShowSocioSelector] = useState(false);
+  const [showRemolqueSelector, setShowRemolqueSelector] = useState(false);
   
   const { conductores, loading } = useConductores();
+  const { socios, loading: loadingSocios } = useSocios();
+  const { remolques, loading: loadingRemolques } = useRemolques();
 
   // Add safety checks for all array operations
   const safeData = data || [];
   const safeConductores = conductores || [];
+  const safeSocios = socios || [];
+  const safeRemolques = remolques || [];
 
   const filteredConductores = safeConductores.filter(conductor => 
     conductor.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conductor.rfc?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conductor.num_licencia?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredSocios = safeSocios.filter(socio =>
+    socio.nombre_razon_social?.toLowerCase().includes(searchTermSocio.toLowerCase()) ||
+    socio.rfc?.toLowerCase().includes(searchTermSocio.toLowerCase())
+  );
+
+  const filteredRemolques = safeRemolques.filter(remolque =>
+    remolque.placa?.toLowerCase().includes(searchTermRemolque.toLowerCase()) ||
+    remolque.subtipo_rem?.toLowerCase().includes(searchTermRemolque.toLowerCase())
   );
 
   const handleConductorSelect = (conductorId: string) => {
@@ -52,6 +72,36 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
       onChange([...safeData, nuevaFigura]);
       setShowConductorSelector(false);
     }
+  };
+
+  const handleSocioSelect = (socioId: string, tipoFigura: 'Propietario' | 'Arrendador' | 'Notificado' = 'Propietario') => {
+    const socio = safeSocios.find(s => s.id === socioId);
+    if (socio) {
+      const nuevaFigura = {
+        id: crypto.randomUUID(),
+        tipo_figura: tipoFigura,
+        rfc_figura: socio.rfc || '',
+        nombre_figura: socio.nombre_razon_social || '',
+        residencia_fiscal_figura: 'MEX',
+        domicilio: socio.direccion || {
+          pais: 'MEX',
+          codigo_postal: '',
+          estado: '',
+          municipio: '',
+          colonia: '',
+          calle: '',
+          numero_exterior: ''
+        }
+      };
+      
+      onChange([...safeData, nuevaFigura]);
+      setShowSocioSelector(false);
+    }
+  };
+
+  const handleRemolqueInfo = () => {
+    // Los remolques se agregan en la sección de Autotransporte
+    setShowRemolqueSelector(false);
   };
 
   const addFigura = () => {
@@ -109,7 +159,7 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
         <p className="text-gray-600">
           Configure las figuras del transporte (operadores, propietarios, etc.).
         </p>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             onClick={() => setShowConductorSelector(!showConductorSelector)}
@@ -118,6 +168,25 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
             <Search className="h-4 w-4" />
             Buscar Conductor
           </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => setShowSocioSelector(!showSocioSelector)}
+            className="flex items-center gap-2"
+          >
+            <Building2 className="h-4 w-4" />
+            Buscar Socio
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => setShowRemolqueSelector(!showRemolqueSelector)}
+            className="flex items-center gap-2"
+          >
+            <Truck className="h-4 w-4" />
+            Ver Remolques
+          </Button>
+          
           <Button
             variant="outline"
             onClick={() => setShowCreateDialog(true)}
@@ -126,6 +195,7 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
             <Plus className="h-4 w-4" />
             Crear Conductor
           </Button>
+          
           <Button onClick={addFigura} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Agregar Figura Manual
@@ -189,6 +259,124 @@ export function FigurasTransporteSection({ data, onChange }: FiguraTransporteSec
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Selector de Socios */}
+      {showSocioSelector && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-green-500" />
+              Seleccionar Socio Comercial
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por nombre o RFC..."
+                value={searchTermSocio}
+                onChange={(e) => setSearchTermSocio(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {loadingSocios ? (
+              <div className="text-center py-4">Cargando socios...</div>
+            ) : filteredSocios.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                {searchTermSocio ? 'No se encontraron socios' : 'No hay socios registrados'}
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {filteredSocios.map((socio) => (
+                  <div
+                    key={socio.id}
+                    className="p-3 border rounded-lg"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          {socio.nombre_razon_social}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          RFC: {socio.rfc}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 ml-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSocioSelect(socio.id, 'Propietario')}
+                        >
+                          Propietario
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSocioSelect(socio.id, 'Arrendador')}
+                        >
+                          Arrendador
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Información de Remolques */}
+      {showRemolqueSelector && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-purple-500" />
+              Remolques Registrados
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <p className="text-sm text-blue-800">
+                ℹ️ Los remolques se agregan en la sección de <strong>Autotransporte</strong>, no como figuras.
+              </p>
+            </div>
+
+            {loadingRemolques ? (
+              <div className="text-center py-4">Cargando remolques...</div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {safeRemolques.slice(0, 5).map((remolque) => (
+                  <div
+                    key={remolque.id}
+                    className="p-3 border rounded-lg bg-gray-50"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium text-sm">
+                          Placa: {remolque.placa}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {remolque.subtipo_rem || remolque.tipo_remolque}
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {remolque.estado || 'Disponible'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {safeRemolques.length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No hay remolques registrados
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

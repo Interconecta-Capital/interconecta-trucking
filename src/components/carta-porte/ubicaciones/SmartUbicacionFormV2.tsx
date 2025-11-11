@@ -175,7 +175,7 @@ export function SmartUbicacionFormV2({
     
     const { parsedData, camposCompletados } = parseMapboxAddress(addressData);
     
-    // Actualizar todos los campos del domicilio
+    // Actualizar todos los campos del domicilio usando handleFieldChange
     Object.keys(parsedData).forEach(key => {
       if (key === 'coordenadas' && parsedData.coordenadas) {
         handleFieldChange('coordenadas', parsedData.coordenadas);

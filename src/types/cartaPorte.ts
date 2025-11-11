@@ -53,6 +53,15 @@ export interface CartaPorteData {
   tipoCreacion?: 'plantilla' | 'carga' | 'manual';
   cartaPorteId?: string;
   version?: string;
+  
+  // Progress metadata
+  progress?: {
+    percentage: number;
+    completedSections: number;
+    totalSections: number;
+    sectionStatus: Record<string, 'empty' | 'partial' | 'complete'>;
+    lastUpdated: string;
+  };
 }
 
 export interface UbicacionCompleta {

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Check, Loader2, Search } from 'lucide-react';
 import { useMapas } from '@/hooks/useMapas';
 import { GeocodeResult } from '@/services/mapService';
+import { MexicanAddressParser } from '@/services/geo/mexicanAddressParser';
 
 interface AddressAutocompleteProps {
   value: string;
@@ -88,6 +89,32 @@ export function AddressAutocomplete({
     if (newValue.length === 0) {
       setSuggestions([]);
       setShowSuggestions(false);
+      return;
+    }
+
+    // ✅ NUEVO: Detectar si parece dirección completa pegada
+    if (newValue.length > 20 && MexicanAddressParser.looksLikeFullAddress(newValue)) {
+      console.log('🎯 Detectada posible dirección completa, usando parser local');
+      
+      const parsed = MexicanAddressParser.parseAddress(newValue);
+      
+      if (parsed && parsed.confidence !== 'low') {
+        console.log('✅ Dirección parseada localmente:', parsed);
+        
+        // Autocompletar con datos parseados localmente
+        if (onAddressSelect) {
+          onAddressSelect({
+            place_name: newValue,
+            center: null, // Sin coordenadas aún (se geocodificarán después)
+            ...parsed
+          });
+        }
+        
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setIsSearching(false);
+        return;
+      }
     }
   };
 

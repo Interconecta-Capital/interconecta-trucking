@@ -123,8 +123,17 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   ];
 
   const calculateProgress = () => {
+    // ✅ Primero intentar usar progreso persistido
+    if (configuracion.progress?.percentage) {
+      console.log('✅ Usando progreso persistido:', configuracion.progress.percentage);
+      return configuracion.progress.percentage;
+    }
+    
+    // Fallback: calcular en tiempo real
     const completedSections = sections.filter(section => section.isValid).length;
-    return Math.round((completedSections / sections.length) * 100);
+    const calculated = Math.round((completedSections / sections.length) * 100);
+    console.log('📊 Progreso calculado:', calculated);
+    return calculated;
   };
 
   const progress = calculateProgress();
