@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -5,12 +6,12 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6 py-12 text-sm text-gray-400 text-center">
         <p>&copy; 2025 Interconecta. Todos los derechos reservados.</p>
         <div className="mt-4 flex justify-center space-x-6">
-          <a href="#" className="hover:text-white transition-colors">
+          <Link to="/terms" className="hover:text-white transition-colors">
             Términos y Condiciones
-          </a>
-          <a href="#" className="hover:text-white transition-colors">
+          </Link>
+          <Link to="/privacy" className="hover:text-white transition-colors">
             Aviso de Privacidad
-          </a>
+          </Link>
         </div>
       </div>
     </footer>

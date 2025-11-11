@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSecureAuth } from '@/hooks/auth/useSecureAuth';
 import { useAuthValidation } from '@/hooks/auth/useAuthValidation';
@@ -13,6 +14,7 @@ import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMes
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 import { ContextualAlert } from '@/components/ui/contextual-alert';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Trial() {
   const {
@@ -39,6 +41,7 @@ export default function Trial() {
   const [showExistingUserAlert, setShowExistingUserAlert] = useState(false);
   const [existingUserEmail, setExistingUserEmail] = useState('');
   const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   const { secureRegister } = useSecureAuth();
   const { validateRFCFormat, sanitizeInput } = useAuthValidation();
@@ -46,6 +49,11 @@ export default function Trial() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!acceptedTerms) {
+      toast.error('Debes aceptar los términos y condiciones para continuar');
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast.error('Las contraseñas no coinciden');
@@ -80,6 +88,27 @@ export default function Trial() {
       );
       
       if (success) {
+        // Guardar consentimientos
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await (supabase as any).from('user_consents').insert([
+            {
+              user_id: user.id,
+              consent_type: 'privacy_policy',
+              granted: true,
+              granted_at: new Date().toISOString(),
+              version: '1.0'
+            },
+            {
+              user_id: user.id,
+              consent_type: 'terms_of_service',
+              granted: true,
+              granted_at: new Date().toISOString(),
+              version: '1.0'
+            }
+          ]);
+        }
+        
         setShowVerification(true);
       }
     } catch (error: any) {
@@ -324,17 +353,33 @@ export default function Trial() {
                         </div>
                       </div>
                       
+                      <div className="flex items-start space-x-2">
+                        <Checkbox 
+                          id="terms-trial" 
+                          checked={acceptedTerms}
+                          onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                          required
+                          className="mt-1"
+                        />
+                        <label htmlFor="terms-trial" className="text-sm text-gray-70 leading-tight cursor-pointer">
+                          Acepto la{' '}
+                          <Link to="/privacy" target="_blank" className="text-blue-interconecta hover:underline font-medium">
+                            Política de Privacidad
+                          </Link>
+                          {' '}y los{' '}
+                          <Link to="/terms" target="_blank" className="text-blue-interconecta hover:underline font-medium">
+                            Términos de Servicio
+                          </Link>
+                        </label>
+                      </div>
+                      
                       <Button 
                         type="submit" 
                         className="w-full bg-blue-interconecta hover:bg-blue-hover text-pure-white py-3 text-base font-semibold" 
-                        disabled={loading || !rfcValidation.isValid}
+                        disabled={loading || !rfcValidation.isValid || !acceptedTerms}
                       >
                         {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
                       </Button>
-                      
-                      <p className="text-xs text-gray-60 text-center">
-                        Al registrarte, aceptas nuestros términos de servicio y política de privacidad
-                      </p>
                     </form>
                   </div>
                 </CardContent>

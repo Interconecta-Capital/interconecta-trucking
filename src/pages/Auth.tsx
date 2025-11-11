@@ -6,6 +6,7 @@ import { MobileAuthInput } from '@/components/auth/MobileAuthInput';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
@@ -16,6 +17,7 @@ import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 import { useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -395,11 +397,17 @@ function RegisterForm() {
   const [showVerification, setShowVerification] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!acceptedTerms) {
+      toast.error('Debes aceptar los términos y condiciones para continuar');
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast.error('Las contraseñas no coinciden');
@@ -425,6 +433,27 @@ function RegisterForm() {
         setShowVerification(true);
         toast.success('¡Cuenta creada! Revisa tu correo para verificar tu cuenta.');
       } else {
+        // Guardar consentimientos
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await (supabase as any).from('user_consents').insert([
+            {
+              user_id: user.id,
+              consent_type: 'privacy_policy',
+              granted: true,
+              granted_at: new Date().toISOString(),
+              version: '1.0'
+            },
+            {
+              user_id: user.id,
+              consent_type: 'terms_of_service',
+              granted: true,
+              granted_at: new Date().toISOString(),
+              version: '1.0'
+            }
+          ]);
+        }
+        
         toast.success('¡Cuenta creada exitosamente! Bienvenido a Interconecta Trucking');
         navigate('/dashboard');
       }
@@ -576,10 +605,30 @@ function RegisterForm() {
           </div>
         </div>
         
+        <div className="flex items-start space-x-2">
+          <Checkbox 
+            id="terms" 
+            checked={acceptedTerms}
+            onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+            required
+            className="mt-1"
+          />
+          <label htmlFor="terms" className="text-sm text-gray-300 leading-tight cursor-pointer">
+            Acepto la{' '}
+            <Link to="/privacy" target="_blank" className="text-blue-400 hover:underline">
+              Política de Privacidad
+            </Link>
+            {' '}y los{' '}
+            <Link to="/terms" target="_blank" className="text-blue-400 hover:underline">
+              Términos de Servicio
+            </Link>
+          </label>
+        </div>
+        
         <Button 
           type="submit" 
           className="btn-primary w-full rounded-full font-semibold min-h-[48px]" 
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
         >
           {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
         </Button>

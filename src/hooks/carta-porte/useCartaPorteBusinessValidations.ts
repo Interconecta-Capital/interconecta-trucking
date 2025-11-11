@@ -3,6 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 
 // ✅ ISO 27001 A.10.1 - Using centralized Supabase client
 
+// Tipos explícitos para consultas de Supabase
+// Evita inferencia excesiva de tipos complejos
+type CartaPorteIdOnly = {
+  id: string;
+};
+
+type SocioBasic = {
+  id: string;
+  nombre_razon_social: string | null;
+};
+
 interface BusinessValidationResult {
   isValid: boolean;
   errors: Array<{
@@ -31,8 +42,7 @@ export const useCartaPorteBusinessValidations = () => {
       .from('cartas_porte')
       .select('id')
       .in('estado', ['borrador', 'en_transito', 'pendiente'])
-      .gte('fecha_llegada_estimada', fechaSalida)
-      .returns<CartaPorteIdOnly[]>();
+      .gte('fecha_llegada_estimada', fechaSalida) as { data: CartaPorteIdOnly[] | null; error: any };
 
       if (error) throw error;
 
@@ -65,8 +75,7 @@ export const useCartaPorteBusinessValidations = () => {
       .from('cartas_porte')
       .select('id')
       .in('estado', ['borrador', 'en_transito', 'pendiente'])
-      .gte('fecha_llegada_estimada', fechaSalida)
-      .returns<CartaPorteIdOnly[]>();
+      .gte('fecha_llegada_estimada', fechaSalida) as { data: CartaPorteIdOnly[] | null; error: any };
 
       if (error) throw error;
 
@@ -99,7 +108,7 @@ export const useCartaPorteBusinessValidations = () => {
       .select('id, nombre_razon_social')
       .eq('rfc', rfc)
       .eq('activo', true)
-      .maybeSingle<SocioBasic>();
+      .maybeSingle() as { data: SocioBasic | null; error: any };
 
       if (error || !data) {
         return {

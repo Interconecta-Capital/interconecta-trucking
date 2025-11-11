@@ -16,6 +16,8 @@ import { GlobalUpgradeModalProvider } from './components/common/GlobalUpgradeMod
 // Páginas públicas
 import Index from "./pages/Index"
 import Auth from "./pages/Auth"
+import Privacy from "./pages/Privacy"
+import TermsOfService from "./pages/TermsOfService"
 
 // Páginas protegidas
 import Dashboard from "./pages/Dashboard"
@@ -65,6 +67,10 @@ const App = () => (
               
               {/* Página de autenticación */}
               <Route path="/auth" element={<Auth />} />
+              
+              {/* Páginas públicas de información */}
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<TermsOfService />} />
               
               {/* Rutas protegidas - requieren autenticación */}
               <Route path="/dashboard" element={
