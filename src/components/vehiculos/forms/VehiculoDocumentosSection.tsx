@@ -11,18 +11,19 @@ interface VehiculoDocumentosSectionProps {
 }
 
 const TIPOS_DOCUMENTO_VEHICULO = [
-  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365 },
-  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: true, vencimiento: 365 },
-  { value: 'permiso_sct', label: 'Permiso SCT', obligatorio: true, vencimiento: 1095 }, // 3 años
-  { value: 'verificacion_vehicular', label: 'Verificación Vehicular', obligatorio: false, vencimiento: 180 },
-  { value: 'factura_vehiculo', label: 'Factura del Vehículo', obligatorio: false },
-  { value: 'certificado_peso', label: 'Certificado de Peso y Dimensiones', obligatorio: false, vencimiento: 365 },
+  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365, permitirPosponer: false },
+  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: true, vencimiento: 365, permitirPosponer: true },
+  { value: 'permiso_sct', label: 'Permiso SCT', obligatorio: true, vencimiento: 1095, permitirPosponer: true },
+  { value: 'verificacion_vehicular', label: 'Verificación Vehicular', obligatorio: false, vencimiento: 180, permitirPosponer: true },
+  { value: 'factura_vehiculo', label: 'Factura del Vehículo', obligatorio: false, permitirPosponer: true },
+  { value: 'certificado_peso', label: 'Certificado de Peso y Dimensiones', obligatorio: false, vencimiento: 365, permitirPosponer: true },
 ];
 
 export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: VehiculoDocumentosSectionProps) {
   const [documentos, setDocumentos] = useState<any[]>([]);
   const { cargarDocumentos, subirDocumento, eliminarDocumento } = useDocumentosEntidades();
   const [loading, setLoading] = useState(false);
+  const [postponedDocs, setPostponedDocs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (vehiculoId) {
@@ -142,6 +143,34 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
                   accept=".pdf,.jpg,.jpeg,.png"
                   maxSize={10}
                 />
+
+                {tipo.permitirPosponer && existentes.length === 0 && vehiculoId && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
+                    <input
+                      type="checkbox"
+                      checked={postponedDocs.has(tipo.value)}
+                      onChange={(e) => {
+                        const newPostponed = new Set(postponedDocs);
+                        if (e.target.checked) {
+                          newPostponed.add(tipo.value);
+                        } else {
+                          newPostponed.delete(tipo.value);
+                        }
+                        setPostponedDocs(newPostponed);
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-muted-foreground">Subir después</span>
+                  </label>
+                )}
+
+                {postponedDocs.has(tipo.value) && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mt-2">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      📌 Este documento será subido posteriormente
+                    </p>
+                  </div>
+                )}
 
                 {existentes.length > 0 && (
                   <div className="mt-2 space-y-1">

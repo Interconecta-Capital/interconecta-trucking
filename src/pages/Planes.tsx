@@ -8,6 +8,7 @@ import { PlanSummaryCard } from '@/components/suscripcion/PlanSummaryCard';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
 import { PlanesCard } from '@/components/suscripcion/PlanesCard';
+import { PlanCardDetallado } from '@/components/suscripcion/PlanCardDetallado';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
@@ -213,14 +214,22 @@ export default function Planes() {
           </TabsContent>
 
           <TabsContent value="cambiar" className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {planes.map((plan) => (
-                <PlanesCard
+                <PlanCardDetallado
                   key={plan.id}
                   plan={plan}
                   isCurrentPlan={plan.nombre === permissions.planInfo.name}
                   onSelectPlan={cambiarPlan}
                   isChanging={isChangingPlan}
+                  realCounts={realCounts ? {
+                    conductores: realCounts.conductores || 0,
+                    vehiculos: realCounts.vehiculos || 0,
+                    socios: realCounts.socios || 0,
+                    remolques: realCounts.remolques || 0,
+                    cartas_porte: realCounts.cartas_porte || 0,
+                    viajes: realCounts.viajes || 0,
+                  } : undefined}
                 />
               ))}
             </div>

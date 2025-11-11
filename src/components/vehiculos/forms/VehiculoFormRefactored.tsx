@@ -131,6 +131,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     return Object.keys(newErrors).length === 0;
   };
 
+  const [activeTab, setActiveTab] = useState('basicos');
   const [savedVehiculoId, setSavedVehiculoId] = useState<string | undefined>(vehiculoId);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,14 +158,23 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         activo: true
       };
 
-      if (vehiculoId) {
-        await actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
-      } else {
-        const nuevoVehiculo = await crearVehiculo(vehiculoData);
-        // Guardar el ID del vehículo recién creado para documentos
-        setSavedVehiculoId(nuevoVehiculo.id);
+      // Si no estamos en la tab de documentos, guardar y cambiar a documentos
+      if (activeTab !== 'documentos') {
+        if (vehiculoId) {
+          await actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
+          toast.success('Vehículo actualizado');
+        } else {
+          const nuevoVehiculo = await crearVehiculo(vehiculoData);
+          // Guardar el ID del vehículo recién creado para documentos
+          setSavedVehiculoId(nuevoVehiculo.id);
+          toast.success('Vehículo creado. Ahora puedes subir documentos.');
+        }
+        setActiveTab('documentos');
+        return;
       }
-
+      
+      // Si ya estamos en documentos, cerrar
+      toast.success('Vehículo guardado exitosamente');
       if (onSuccess) {
         onSuccess();
       }
@@ -183,7 +193,7 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="datos" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="datos">Datos Básicos</TabsTrigger>
             <TabsTrigger value="permisos">Permisos SCT</TabsTrigger>

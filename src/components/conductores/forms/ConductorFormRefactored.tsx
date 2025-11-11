@@ -103,8 +103,25 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
     return true;
   };
 
-  const handleNext = () => {
-    if (validateCurrentStep() && currentStep < steps.length - 1) {
+  const handleNext = async () => {
+    if (!validateCurrentStep()) return;
+    
+    // Si estamos en el paso de asignación (paso 4) y no tenemos ID, guardar conductor
+    if (currentStep === 4 && !formData.id && !conductorId) {
+      try {
+        const nuevoId = await onSubmit(formData);
+        // No cerrar el formulario, solo avanzar al paso de documentos
+        if (currentStep < steps.length - 1) {
+          setCurrentStep(currentStep + 1);
+        }
+        return;
+      } catch (error) {
+        // Error ya manejado en onSubmit
+        return;
+      }
+    }
+    
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -115,28 +132,33 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
     }
   };
 
-  const onSubmit = async () => {
-    if (!validateCurrentStep()) return;
-
+  const onSubmit = async (dataToSave?: any) => {
+    const data = dataToSave || formData;
+    
     setLoading(true);
     try {
       // Prepare data for submission (excluding preview fields)
-      const submitData = { ...formData };
+      const submitData = { ...data };
       delete submitData.foto_preview;
       delete submitData.foto_file;
 
+      let conductorIdResult = conductorId;
+      
       if (conductorId) {
         await updateConductor({ id: conductorId, data: submitData });
         toast.success('Conductor actualizado exitosamente');
       } else {
         const newConductor = await createConductor(submitData);
+        conductorIdResult = newConductor.id;
         // Actualizar formData con el ID del nuevo conductor para documentos
         setFormData(prev => ({ ...prev, id: newConductor.id }));
         toast.success('Conductor creado exitosamente');
       }
-      onSuccess?.();
+      
+      return conductorIdResult;
     } catch (error: any) {
       toast.error('Error al guardar conductor: ' + error.message);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -220,7 +242,17 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={async (e) => {
+        e.preventDefault();
+        if (currentStep < steps.length - 1) {
+          await handleNext();
+        } else {
+          // Si ya estamos en el último paso, solo cerrar
+          if (formData.id || conductorId) {
+            onSuccess?.();
+          }
+        }
+      }} className="space-y-6">
         <div className="min-h-[400px]">
           {renderStepContent()}
         </div>

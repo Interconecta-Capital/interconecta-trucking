@@ -10,17 +10,18 @@ interface RemolqueDocumentosFieldsProps {
 }
 
 const TIPOS_DOCUMENTO_REMOLQUE = [
-  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365 },
-  { value: 'certificado_capacidad', label: 'Certificado de Capacidad de Carga', obligatorio: true, vencimiento: 365 },
-  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: false, vencimiento: 365 },
-  { value: 'inspeccion_tecnica', label: 'Inspección Técnica', obligatorio: false, vencimiento: 180 },
-  { value: 'factura_remolque', label: 'Factura del Remolque', obligatorio: false },
+  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365, permitirPosponer: false },
+  { value: 'certificado_capacidad', label: 'Certificado de Capacidad de Carga', obligatorio: true, vencimiento: 365, permitirPosponer: true },
+  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: false, vencimiento: 365, permitirPosponer: true },
+  { value: 'inspeccion_tecnica', label: 'Inspección Técnica', obligatorio: false, vencimiento: 180, permitirPosponer: true },
+  { value: 'factura_remolque', label: 'Factura del Remolque', obligatorio: false, permitirPosponer: true },
 ];
 
 export function RemolqueDocumentosFields({ remolqueId, onDocumentosChange }: RemolqueDocumentosFieldsProps) {
   const [documentos, setDocumentos] = useState<any[]>([]);
   const { cargarDocumentos, subirDocumento, eliminarDocumento } = useDocumentosEntidades();
   const [loading, setLoading] = useState(false);
+  const [postponedDocs, setPostponedDocs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (remolqueId) {
@@ -117,6 +118,34 @@ export function RemolqueDocumentosFields({ remolqueId, onDocumentosChange }: Rem
                   accept=".pdf,.jpg,.jpeg,.png"
                   maxSize={10}
                 />
+
+                {tipo.permitirPosponer && existentes.length === 0 && remolqueId && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
+                    <input
+                      type="checkbox"
+                      checked={postponedDocs.has(tipo.value)}
+                      onChange={(e) => {
+                        const newPostponed = new Set(postponedDocs);
+                        if (e.target.checked) {
+                          newPostponed.add(tipo.value);
+                        } else {
+                          newPostponed.delete(tipo.value);
+                        }
+                        setPostponedDocs(newPostponed);
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-muted-foreground">Subir después</span>
+                  </label>
+                )}
+
+                {postponedDocs.has(tipo.value) && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mt-2">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      📌 Este documento será subido posteriormente
+                    </p>
+                  </div>
+                )}
 
                 {existentes.length > 0 && (
                   <div className="mt-2 space-y-1">

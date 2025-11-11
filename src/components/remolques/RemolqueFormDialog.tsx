@@ -60,18 +60,23 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
         autotransporte_id: data.autotransporte_id || undefined
       };
 
-      if (remolque?.id) {
-        await actualizarRemolque({ id: remolque.id, data: remolqueData });
-        toast.success('Remolque actualizado exitosamente');
-      } else {
-        const nuevoRemolque = await crearRemolque(remolqueData);
-        setSavedRemolqueId(nuevoRemolque.id);
-        toast.success('Remolque creado exitosamente');
-      }
+      let nuevoId = remolque?.id || savedRemolqueId;
       
-      reset();
-      onOpenChange(false);
-      onSuccess?.();
+      if (!nuevoId) {
+        // Crear remolque y obtener ID
+        const nuevoRemolque = await crearRemolque(remolqueData);
+        nuevoId = nuevoRemolque.id;
+        setSavedRemolqueId(nuevoId);
+        toast.success('Remolque creado. Ahora puedes subir documentos.');
+        // NO cerrar el diálogo para permitir subir documentos
+        return;
+      } else {
+        await actualizarRemolque({ id: nuevoId, data: remolqueData });
+        toast.success('Remolque actualizado exitosamente');
+        reset();
+        onOpenChange(false);
+        onSuccess?.();
+      }
     } catch (error: any) {
       toast.error('Error al guardar remolque: ' + error.message);
     } finally {

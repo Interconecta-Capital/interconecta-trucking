@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocioDocumentosFields } from '@/components/socios/forms/SocioDocumentosFields';
+import { SocioDireccionFields } from '@/components/socios/forms/SocioDireccionFields';
 import { toast } from 'sonner';
 import { Plus, Building } from 'lucide-react';
 
@@ -41,6 +42,7 @@ interface SocioFormModalProps {
 
 export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }: SocioFormModalProps) {
   const [savedSocioId, setSavedSocioId] = useState<string | undefined>(socio?.id);
+  const [direccion, setDireccion] = useState<any>({});
   const form = useForm<SocioFormData>({
     resolver: zodResolver(socioSchema),
     defaultValues: socio ? {
@@ -81,8 +83,9 @@ export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }:
         </DialogHeader>
 
         <Tabs defaultValue="datos" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="datos">Datos Básicos</TabsTrigger>
+            <TabsTrigger value="direccion">Dirección</TabsTrigger>
             <TabsTrigger value="documentos">Documentos</TabsTrigger>
           </TabsList>
 
@@ -178,6 +181,14 @@ export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }:
             </Button>
           </div>
         </form>
+      </TabsContent>
+
+      <TabsContent value="direccion" className="mt-4">
+        <SocioDireccionFields
+          direccion={direccion}
+          onChange={setDireccion}
+          disabled={loading}
+        />
       </TabsContent>
 
       <TabsContent value="documentos" className="mt-4">
