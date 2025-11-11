@@ -88,23 +88,31 @@ export default function Trial() {
       );
       
       if (success) {
-        // Guardar consentimientos
+        // Guardar consentimientos con IP y User Agent
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          const { getUserIP, getUserAgent } = await import('@/utils/getUserIP');
+          const ipAddress = await getUserIP();
+          const userAgent = getUserAgent();
+          
           await (supabase as any).from('user_consents').insert([
             {
               user_id: user.id,
               consent_type: 'privacy_policy',
               granted: true,
               granted_at: new Date().toISOString(),
-              version: '1.0'
+              version: '1.0',
+              ip_address: ipAddress,
+              user_agent: userAgent
             },
             {
               user_id: user.id,
               consent_type: 'terms_of_service',
               granted: true,
               granted_at: new Date().toISOString(),
-              version: '1.0'
+              version: '1.0',
+              ip_address: ipAddress,
+              user_agent: userAgent
             }
           ]);
         }

@@ -197,7 +197,7 @@ export const GDPRRights = () => {
                 variant="destructive"
                 disabled={isDeleting}
                 onClick={() => setDeleteDialogOpen(true)}
-                className="w-full sm:w-auto bg-[hsl(0,100%,50%)] hover:bg-background hover:text-[hsl(0,100%,50%)] hover:border-[hsl(0,100%,50%)] border-2 border-transparent transition-all"
+                className="w-full sm:w-auto bg-red-600 text-white hover:bg-white hover:text-red-600 hover:border-red-600 border-2 border-transparent transition-all font-semibold"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {isDeleting ? 'Procesando...' : 'Eliminar Mi Cuenta'}
