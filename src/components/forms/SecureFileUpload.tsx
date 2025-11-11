@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, File, X, Eye, AlertTriangle, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { DocumentValidationService } from '@/services/storage/DocumentValidationService';
 
 interface SecureFileUploadProps {
   label: string;
@@ -16,6 +17,7 @@ interface SecureFileUploadProps {
   maxSize?: number; // in MB
   description?: string;
   allowedTypes?: string[];
+  documentType?: string; // Tipo de documento para validación centralizada
 }
 
 export function SecureFileUpload({ 
@@ -25,7 +27,8 @@ export function SecureFileUpload({
   onFilesChange,
   maxSize = 5,
   description,
-  allowedTypes = []
+  allowedTypes = [],
+  documentType
 }: SecureFileUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -33,6 +36,16 @@ export function SecureFileUpload({
 
   // Security validation for files
   const validateFileSecurity = (file: File): { isValid: boolean; warnings: string[] } => {
+    // Si se proporciona documentType, usar validación centralizada
+    if (documentType) {
+      const result = DocumentValidationService.validateFile(file, documentType);
+      return { 
+        isValid: result.valid, 
+        warnings: result.errors 
+      };
+    }
+
+    // Fallback a validación original
     const warnings: string[] = [];
     let isValid = true;
 

@@ -1256,6 +1256,9 @@ export type Database = {
           email: string | null
           estado: string
           fecha_proxima_disponibilidad: string | null
+          foto_licencia_encrypted: string | null
+          foto_licencia_encrypted_at: string | null
+          foto_licencia_url: string | null
           historial_performance: Json | null
           id: string
           motivo_no_disponible: string | null
@@ -1290,6 +1293,9 @@ export type Database = {
           email?: string | null
           estado?: string
           fecha_proxima_disponibilidad?: string | null
+          foto_licencia_encrypted?: string | null
+          foto_licencia_encrypted_at?: string | null
+          foto_licencia_url?: string | null
           historial_performance?: Json | null
           id?: string
           motivo_no_disponible?: string | null
@@ -1324,6 +1330,9 @@ export type Database = {
           email?: string | null
           estado?: string
           fecha_proxima_disponibilidad?: string | null
+          foto_licencia_encrypted?: string | null
+          foto_licencia_encrypted_at?: string | null
+          foto_licencia_url?: string | null
           historial_performance?: Json | null
           id?: string
           motivo_no_disponible?: string | null
@@ -2957,22 +2966,34 @@ export type Database = {
           autotransporte_id: string | null
           created_at: string | null
           id: string
+          permiso_sct_encrypted: string | null
+          permiso_sct_encrypted_at: string | null
           placa: string | null
           subtipo_rem: string | null
+          tarjeta_circulacion_encrypted: string | null
+          tarjeta_circulacion_encrypted_at: string | null
         }
         Insert: {
           autotransporte_id?: string | null
           created_at?: string | null
           id?: string
+          permiso_sct_encrypted?: string | null
+          permiso_sct_encrypted_at?: string | null
           placa?: string | null
           subtipo_rem?: string | null
+          tarjeta_circulacion_encrypted?: string | null
+          tarjeta_circulacion_encrypted_at?: string | null
         }
         Update: {
           autotransporte_id?: string | null
           created_at?: string | null
           id?: string
+          permiso_sct_encrypted?: string | null
+          permiso_sct_encrypted_at?: string | null
           placa?: string | null
           subtipo_rem?: string | null
+          tarjeta_circulacion_encrypted?: string | null
+          tarjeta_circulacion_encrypted_at?: string | null
         }
         Relationships: [
           {
@@ -3329,12 +3350,16 @@ export type Database = {
           activo: boolean | null
           calificacion_promedio: number | null
           conductores_asignados: number | null
+          constancia_fiscal_encrypted: string | null
+          constancia_fiscal_encrypted_at: string | null
           created_at: string | null
           direccion: Json | null
           direccion_fiscal: Json | null
           email: string | null
           estado: string
           id: string
+          identificacion_encrypted: string | null
+          identificacion_encrypted_at: string | null
           ingresos_mes_actual: number | null
           ingresos_totales: number | null
           nombre_razon_social: string
@@ -3355,12 +3380,16 @@ export type Database = {
           activo?: boolean | null
           calificacion_promedio?: number | null
           conductores_asignados?: number | null
+          constancia_fiscal_encrypted?: string | null
+          constancia_fiscal_encrypted_at?: string | null
           created_at?: string | null
           direccion?: Json | null
           direccion_fiscal?: Json | null
           email?: string | null
           estado?: string
           id?: string
+          identificacion_encrypted?: string | null
+          identificacion_encrypted_at?: string | null
           ingresos_mes_actual?: number | null
           ingresos_totales?: number | null
           nombre_razon_social: string
@@ -3381,12 +3410,16 @@ export type Database = {
           activo?: boolean | null
           calificacion_promedio?: number | null
           conductores_asignados?: number | null
+          constancia_fiscal_encrypted?: string | null
+          constancia_fiscal_encrypted_at?: string | null
           created_at?: string | null
           direccion?: Json | null
           direccion_fiscal?: Json | null
           email?: string | null
           estado?: string
           id?: string
+          identificacion_encrypted?: string | null
+          identificacion_encrypted_at?: string | null
           ingresos_mes_actual?: number | null
           ingresos_totales?: number | null
           nombre_razon_social?: string
@@ -4180,7 +4213,11 @@ export type Database = {
           poliza_med_ambiente: string | null
           poliza_resp_civil: string | null
           poliza_seguro: string | null
+          poliza_seguro_encrypted: string | null
+          poliza_seguro_encrypted_at: string | null
           rendimiento: number | null
+          tarjeta_circulacion_encrypted: string | null
+          tarjeta_circulacion_encrypted_at: string | null
           tipo_carroceria: string | null
           tipo_combustible: string | null
           ubicacion_actual: string | null
@@ -4190,6 +4227,8 @@ export type Database = {
           updated_at: string | null
           user_id: string
           valor_vehiculo: number | null
+          verificacion_encrypted: string | null
+          verificacion_encrypted_at: string | null
           verificacion_vigencia: string | null
           viaje_actual_id: string | null
           vigencia_permiso: string | null
@@ -4233,7 +4272,11 @@ export type Database = {
           poliza_med_ambiente?: string | null
           poliza_resp_civil?: string | null
           poliza_seguro?: string | null
+          poliza_seguro_encrypted?: string | null
+          poliza_seguro_encrypted_at?: string | null
           rendimiento?: number | null
+          tarjeta_circulacion_encrypted?: string | null
+          tarjeta_circulacion_encrypted_at?: string | null
           tipo_carroceria?: string | null
           tipo_combustible?: string | null
           ubicacion_actual?: string | null
@@ -4243,6 +4286,8 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           valor_vehiculo?: number | null
+          verificacion_encrypted?: string | null
+          verificacion_encrypted_at?: string | null
           verificacion_vigencia?: string | null
           viaje_actual_id?: string | null
           vigencia_permiso?: string | null
@@ -4286,7 +4331,11 @@ export type Database = {
           poliza_med_ambiente?: string | null
           poliza_resp_civil?: string | null
           poliza_seguro?: string | null
+          poliza_seguro_encrypted?: string | null
+          poliza_seguro_encrypted_at?: string | null
           rendimiento?: number | null
+          tarjeta_circulacion_encrypted?: string | null
+          tarjeta_circulacion_encrypted_at?: string | null
           tipo_carroceria?: string | null
           tipo_combustible?: string | null
           ubicacion_actual?: string | null
@@ -4296,6 +4345,8 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           valor_vehiculo?: number | null
+          verificacion_encrypted?: string | null
+          verificacion_encrypted_at?: string | null
           verificacion_vigencia?: string | null
           viaje_actual_id?: string | null
           vigencia_permiso?: string | null
@@ -4628,9 +4679,22 @@ export type Database = {
       check_user_access: { Args: { user_uuid: string }; Returns: boolean }
       cleanup_expired_grace_users: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
+      decrypt_document: {
+        Args: { column_name: string; record_id: string; table_name: string }
+        Returns: string
+      }
       eliminar_datos_usuario: {
         Args: { target_user_id: string }
         Returns: Json
+      }
+      encrypt_document: {
+        Args: {
+          column_name: string
+          document_data: string
+          record_id: string
+          table_name: string
+        }
+        Returns: boolean
       }
       exportar_datos_usuario: {
         Args: { target_user_id: string }
