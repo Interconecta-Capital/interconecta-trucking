@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, ReactNode, useState } from 'react
 import { useAdvancedRateLimit } from '@/hooks/useAdvancedRateLimit';
 import { useSecureAuth } from '@/hooks/auth/useSecureAuth';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SecurityContextType {
   validateRFC: (rfc: string) => { isValid: boolean; errors: string[] };
@@ -171,13 +172,32 @@ export function EnhancedSecurityProvider({ children }: EnhancedSecurityProviderP
   };
 
   const validateSession = async (): Promise<boolean> => {
+    // ✅ SECURE: Server-side session validation
     try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (!token) return false;
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        await logSecurityEvent('session_validation_failed', { 
+          reason: error?.message || 'no_session' 
+        });
+        return false;
+      }
 
-      // Additional session validation logic here
+      // Verificar que la sesión no esté cerca de expirar
+      if (session.expires_at) {
+        const expiresAt = new Date(session.expires_at * 1000);
+        const now = new Date();
+        const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 60000;
+
+        if (minutesUntilExpiry < 5) {
+          console.warn('[EnhancedSecurity] Session expiring soon, refreshing...');
+          await supabase.auth.refreshSession();
+        }
+      }
+
       return true;
-    } catch {
+    } catch (error) {
+      console.error('[EnhancedSecurity] Session validation error:', error);
       return false;
     }
   };

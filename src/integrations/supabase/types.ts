@@ -4675,7 +4675,6 @@ export type Database = {
         Returns: boolean
       }
       check_subscription_expiry: { Args: never; Returns: undefined }
-      check_superuser_safe_v2: { Args: { user_uuid: string }; Returns: boolean }
       check_user_access: { Args: { user_uuid: string }; Returns: boolean }
       cleanup_expired_grace_users: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
@@ -4764,10 +4763,7 @@ export type Database = {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       increment_schema_version: { Args: never; Returns: number }
       is_admin_or_superuser: { Args: { _user_id: string }; Returns: boolean }
-      is_admin_user: { Args: never; Returns: boolean }
-      is_superuser_optimized: { Args: never; Returns: boolean }
       is_superuser_secure: { Args: { _user_id: string }; Returns: boolean }
-      is_superuser_simple: { Args: { user_uuid: string }; Returns: boolean }
       log_security_event: {
         Args: {
           p_event_data?: Json

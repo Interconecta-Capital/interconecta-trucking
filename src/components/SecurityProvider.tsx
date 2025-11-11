@@ -2,6 +2,7 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useSecurityValidation } from '@/hooks/useSecurityValidation';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SecurityContextType {
   validateRFC: (rfc: string) => { isValid: boolean; errors: string[] };
@@ -31,11 +32,16 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
   };
 
   const validateSession = async () => {
-    // Basic session validation without depending on useAuth
+    // ✅ SECURE: Server-side session validation
     try {
-      const token = localStorage.getItem('supabase.auth.token');
-      return !!token;
-    } catch {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('[SecurityProvider] Session validation error:', error);
+        return false;
+      }
+      return !!session && !!session.user;
+    } catch (error) {
+      console.error('[SecurityProvider] Session validation failed:', error);
       return false;
     }
   };
