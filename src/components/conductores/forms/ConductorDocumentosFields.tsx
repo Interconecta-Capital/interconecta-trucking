@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SecureFileUpload } from '@/components/security/SecureFileUpload';
+import { SecureFileUpload } from '@/components/forms/SecureFileUpload';
 import { FileText, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
@@ -111,10 +111,10 @@ export function ConductorDocumentosFields({ conductorId, onDocumentosChange }: C
               </div>
               
               <SecureFileUpload
-                onFileSelect={(file) => handleFileUpload(file, tipo.value)}
-                disabled={!conductorId || loading}
+                label=""
+                onFilesChange={(files) => files.length > 0 && handleFileUpload(files[0], tipo.value)}
                 accept=".pdf,.jpg,.jpeg,.png"
-                maxSize={10 * 1024 * 1024} // 10MB
+                maxSize={10}
               />
 
               {existentes.length > 0 && (

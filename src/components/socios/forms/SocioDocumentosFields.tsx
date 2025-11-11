@@ -1,40 +1,48 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SecureFileUpload } from '@/components/forms/SecureFileUpload';
-import { FileText, Upload, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Building } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface VehiculoDocumentosSectionProps {
-  vehiculoId?: string;
+interface SocioDocumentosFieldsProps {
+  socioId?: string;
+  tipoPersona?: 'fisica' | 'moral';
   onDocumentosChange?: (documentos: any[]) => void;
 }
 
-const TIPOS_DOCUMENTO_VEHICULO = [
-  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365 },
-  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: true, vencimiento: 365 },
-  { value: 'permiso_sct', label: 'Permiso SCT', obligatorio: true, vencimiento: 1095 }, // 3 años
-  { value: 'verificacion_vehicular', label: 'Verificación Vehicular', obligatorio: false, vencimiento: 180 },
-  { value: 'factura_vehiculo', label: 'Factura del Vehículo', obligatorio: false },
-  { value: 'certificado_peso', label: 'Certificado de Peso y Dimensiones', obligatorio: false, vencimiento: 365 },
+const TIPOS_DOCUMENTO_SOCIO_FISICA = [
+  { value: 'identificacion_oficial', label: 'Identificación Oficial (INE/IFE)', obligatorio: true },
+  { value: 'constancia_fiscal', label: 'Constancia de Situación Fiscal', obligatorio: true, vencimiento: 90 },
+  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: true, vencimiento: 90 },
+  { value: 'curp', label: 'CURP', obligatorio: false },
 ];
 
-export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: VehiculoDocumentosSectionProps) {
+const TIPOS_DOCUMENTO_SOCIO_MORAL = [
+  { value: 'acta_constitutiva', label: 'Acta Constitutiva', obligatorio: true },
+  { value: 'constancia_fiscal', label: 'Constancia de Situación Fiscal', obligatorio: true, vencimiento: 90 },
+  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: true, vencimiento: 90 },
+  { value: 'poder_notarial', label: 'Poder Notarial del Representante Legal', obligatorio: false },
+  { value: 'identificacion_representante', label: 'Identificación del Representante Legal', obligatorio: true },
+];
+
+export function SocioDocumentosFields({ socioId, tipoPersona = 'moral', onDocumentosChange }: SocioDocumentosFieldsProps) {
   const [documentos, setDocumentos] = useState<any[]>([]);
   const { cargarDocumentos, subirDocumento, eliminarDocumento } = useDocumentosEntidades();
   const [loading, setLoading] = useState(false);
 
+  const tiposDocumento = tipoPersona === 'fisica' ? TIPOS_DOCUMENTO_SOCIO_FISICA : TIPOS_DOCUMENTO_SOCIO_MORAL;
+
   useEffect(() => {
-    if (vehiculoId) {
+    if (socioId) {
       loadDocumentos();
     }
-  }, [vehiculoId]);
+  }, [socioId]);
 
   const loadDocumentos = async () => {
-    if (!vehiculoId) return;
+    if (!socioId) return;
     setLoading(true);
     try {
-      const docs = await cargarDocumentos('vehiculo', vehiculoId);
+      const docs = await cargarDocumentos('socio', socioId);
       setDocumentos(docs);
       onDocumentosChange?.(docs);
     } catch (error) {
@@ -45,18 +53,18 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
   };
 
   const handleFileUpload = async (file: File, tipoDocumento: string) => {
-    if (!vehiculoId) {
-      console.warn('No se puede subir documento sin ID de vehículo');
+    if (!socioId) {
+      console.warn('No se puede subir documento sin ID de socio');
       return;
     }
 
-    const docConfig = TIPOS_DOCUMENTO_VEHICULO.find(t => t.value === tipoDocumento);
+    const docConfig = tiposDocumento.find(t => t.value === tipoDocumento);
     const fechaVencimiento = docConfig?.vencimiento 
       ? new Date(Date.now() + docConfig.vencimiento * 24 * 60 * 60 * 1000).toISOString()
       : undefined;
 
     try {
-      await subirDocumento(file, 'vehiculo', vehiculoId, tipoDocumento, fechaVencimiento);
+      await subirDocumento(file, 'socio', socioId, tipoDocumento, fechaVencimiento);
       await loadDocumentos();
     } catch (error) {
       console.error('Error subiendo documento:', error);
@@ -76,7 +84,7 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
     return documentos.filter(doc => doc.tipo_documento === tipoDocumento);
   };
 
-  const documentosObligatoriosFaltantes = TIPOS_DOCUMENTO_VEHICULO
+  const documentosObligatoriosFaltantes = tiposDocumento
     .filter(tipo => tipo.obligatorio)
     .filter(tipo => getDocumentosByTipo(tipo.value).length === 0);
 
@@ -84,36 +92,34 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Documentos del Vehículo
+          <Building className="h-5 w-5" />
+          Documentos del Socio ({tipoPersona === 'fisica' ? 'Persona Física' : 'Persona Moral'})
         </CardTitle>
         <CardDescription>
-          Documentación legal y técnica del vehículo. Los documentos obligatorios son requeridos para operar.
+          Documentación legal y fiscal requerida. Los documentos marcados con * son obligatorios.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!vehiculoId && (
-          <Alert>
-            <Upload className="h-4 w-4" />
-            <AlertDescription>
-              Primero guarda los datos básicos del vehículo para poder subir documentos.
-            </AlertDescription>
-          </Alert>
+        {!socioId && (
+          <div className="bg-muted/50 border border-muted rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-2">
+            <Upload className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <p>Primero guarda los datos básicos del socio para poder subir documentos.</p>
+          </div>
         )}
 
-        {vehiculoId && documentosObligatoriosFaltantes.length > 0 && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Faltan {documentosObligatoriosFaltantes.length} documento(s) obligatorio(s): {
-                documentosObligatoriosFaltantes.map(d => d.label).join(', ')
-              }
-            </AlertDescription>
-          </Alert>
+        {socioId && documentosObligatoriosFaltantes.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-900">
+            <p className="font-medium">Documentos obligatorios faltantes ({documentosObligatoriosFaltantes.length}):</p>
+            <ul className="list-disc list-inside mt-1">
+              {documentosObligatoriosFaltantes.map(doc => (
+                <li key={doc.value}>{doc.label}</li>
+              ))}
+            </ul>
+          </div>
         )}
 
         <div className="grid gap-4">
-          {TIPOS_DOCUMENTO_VEHICULO.map((tipo) => {
+          {tiposDocumento.map((tipo) => {
             const existentes = getDocumentosByTipo(tipo.value);
             const tieneDocumento = existentes.length > 0;
             
@@ -131,7 +137,7 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
                   </label>
                   {tipo.vencimiento && (
                     <span className="text-xs text-muted-foreground">
-                      Vigencia: {Math.floor(tipo.vencimiento / 30)} meses
+                      Vigencia: {tipo.vencimiento} días
                     </span>
                   )}
                 </div>

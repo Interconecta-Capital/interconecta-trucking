@@ -120,10 +120,10 @@ export const useSecurePasswordReset = () => {
   };
 
   const validatePasswordStrength = (password: string): { isValid: boolean; message?: string } => {
-    if (!password || password.length < 8) {
+    if (!password || password.length < 12) {
       return {
         isValid: false,
-        message: 'La contraseña debe tener al menos 8 caracteres.'
+        message: 'La contraseña debe tener al menos 12 caracteres.'
       };
     }
 

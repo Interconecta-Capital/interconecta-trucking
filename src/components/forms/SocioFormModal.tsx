@@ -9,12 +9,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SocioDocumentosFields } from '@/components/socios/forms/SocioDocumentosFields';
 import { toast } from 'sonner';
 import { Plus, Building } from 'lucide-react';
 
@@ -67,7 +68,7 @@ export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building className="h-5 w-5" />
@@ -78,7 +79,14 @@ export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }:
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <Tabs defaultValue="datos" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="datos">Datos Básicos</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="datos">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="nombre_razon_social">Nombre / Razón Social *</Label>
             <Input
@@ -169,6 +177,16 @@ export function SocioFormModal({ open, onOpenChange, onSubmit, socio, loading }:
             </Button>
           </div>
         </form>
+      </TabsContent>
+
+      <TabsContent value="documentos" className="mt-4">
+        <SocioDocumentosFields 
+          socioId={socio?.id}
+          tipoPersona={form.watch('tipo_persona')}
+          onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
+        />
+      </TabsContent>
+    </Tabs>
       </DialogContent>
     </Dialog>
   );

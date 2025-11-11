@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRemolques } from '@/hooks/useRemolques';
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
 import { useStableAuth } from '@/hooks/useStableAuth';
+import { RemolqueDocumentosFields } from '@/components/remolques/forms/RemolqueDocumentosFields';
 import { toast } from 'sonner';
 import { Truck } from 'lucide-react';
 
@@ -77,7 +79,7 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5" />
@@ -85,7 +87,14 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Tabs defaultValue="datos" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="datos">Datos Básicos</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="datos">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="placa">Placa *</Label>
             <Input
@@ -184,6 +193,15 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
             </Button>
           </div>
         </form>
+      </TabsContent>
+
+      <TabsContent value="documentos" className="mt-4">
+        <RemolqueDocumentosFields 
+          remolqueId={remolque?.id}
+          onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
+        />
+      </TabsContent>
+    </Tabs>
       </DialogContent>
     </Dialog>
   );

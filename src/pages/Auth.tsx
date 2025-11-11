@@ -15,6 +15,7 @@ import { EmailVerificationMessage } from '@/components/auth/EmailVerificationMes
 import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { UnconfirmedUserDialog } from '@/components/auth/UnconfirmedUserDialog';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { useUnconfirmedUserDetection } from '@/hooks/useUnconfirmedUserDetection';
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -567,7 +568,7 @@ function RegisterForm() {
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
               required
-              minLength={6}
+              minLength={12}
               className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10"
             />
             <Button
@@ -584,6 +585,7 @@ function RegisterForm() {
               )}
             </Button>
           </div>
+          <PasswordStrengthMeter password={formData.password} showRequirements />
         </div>
         
         <div className="space-y-2">

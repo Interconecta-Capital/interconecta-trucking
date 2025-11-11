@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useVehiculos } from '@/hooks/useVehiculos';
 import { VehiculoBasicFields } from './VehiculoBasicFields';
 import { VehiculoSegurosFields } from './VehiculoSegurosFields';
 import { VehiculoPermisosSCTFields } from './VehiculoPermisosSCTFields';
 import { VehiculoEspecificacionesFields } from './VehiculoEspecificacionesFields';
+import { VehiculoDocumentosSection } from './VehiculoDocumentosSection';
 import { Truck } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -177,39 +179,64 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <VehiculoBasicFields
-            formData={formData}
-            onFieldChange={handleFieldChange}
-            errors={errors}
-          />
+        <Tabs defaultValue="datos" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="datos">Datos Básicos</TabsTrigger>
+            <TabsTrigger value="permisos">Permisos SCT</TabsTrigger>
+            <TabsTrigger value="seguros">Seguros</TabsTrigger>
+            <TabsTrigger value="especificaciones">Especificaciones</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          </TabsList>
 
-          <VehiculoPermisosSCTFields
-            formData={formData}
-            onFieldChange={handleFieldChange}
-          />
+          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+            <TabsContent value="datos">
+              <VehiculoBasicFields
+                formData={formData}
+                onFieldChange={handleFieldChange}
+                errors={errors}
+              />
+            </TabsContent>
 
-          <VehiculoSegurosFields
-            formData={formData}
-            onFieldChange={handleFieldChange}
-          />
+            <TabsContent value="permisos">
+              <VehiculoPermisosSCTFields
+                formData={formData}
+                onFieldChange={handleFieldChange}
+              />
+            </TabsContent>
 
-          <VehiculoEspecificacionesFields
-            formData={formData}
-            onFieldChange={handleFieldChange}
-          />
+            <TabsContent value="seguros">
+              <VehiculoSegurosFields
+                formData={formData}
+                onFieldChange={handleFieldChange}
+              />
+            </TabsContent>
 
-          <div className="flex gap-2 pt-4">
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancelar
+            <TabsContent value="especificaciones">
+              <VehiculoEspecificacionesFields
+                formData={formData}
+                onFieldChange={handleFieldChange}
+              />
+            </TabsContent>
+
+            <TabsContent value="documentos">
+              <VehiculoDocumentosSection
+                vehiculoId={vehiculoId}
+                onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
+              />
+            </TabsContent>
+
+            <div className="flex gap-2 pt-4">
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancelar
+                </Button>
+              )}
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Guardando...' : (vehiculoId ? 'Actualizar' : 'Crear')}
               </Button>
-            )}
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Guardando...' : (vehiculoId ? 'Actualizar' : 'Crear')}
-            </Button>
-          </div>
-        </form>
+            </div>
+          </form>
+        </Tabs>
       </CardContent>
     </Card>
   );

@@ -26,11 +26,10 @@ export const useDisponibilidad = () => {
       });
 
       const { data, error } = await supabase.rpc('verificar_disponibilidad_recurso', {
-        p_entidad_tipo: entidadTipo,
-        p_entidad_id: entidadId,
+        p_recurso_tipo: entidadTipo,
+        p_recurso_id: entidadId,
         p_fecha_inicio: fechaInicio,
-        p_fecha_fin: fechaFin,
-        p_user_id: user.id
+        p_fecha_fin: fechaFin
       });
 
       if (error) {

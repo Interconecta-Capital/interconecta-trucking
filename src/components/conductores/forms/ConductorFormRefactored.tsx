@@ -9,6 +9,7 @@ import { ConductorLicenciaFields } from './ConductorLicenciaFields';
 import { ConductorSCTFields } from './ConductorSCTFields';
 import { ConductorDireccionFields } from './ConductorDireccionFields';
 import { ConductorVehiculoAsignacionFields } from './ConductorVehiculoAsignacionFields';
+import { ConductorDocumentosFields } from './ConductorDocumentosFields';
 import { FormStepper } from './FormStepper';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -63,6 +64,11 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
       id: 'vehiculo',
       title: 'Asignación',
       description: 'Vehículo y remolque asignado'
+    },
+    {
+      id: 'documentos',
+      title: 'Documentos',
+      description: 'Documentos requeridos del conductor'
     }
   ];
 
@@ -186,6 +192,13 @@ export function ConductorFormRefactored({ conductorId, onSuccess, onCancel }: Co
           <ConductorVehiculoAsignacionFields
             formData={formData}
             onFieldChange={handleFieldChange}
+          />
+        );
+      case 5:
+        return (
+          <ConductorDocumentosFields
+            conductorId={conductorId}
+            onDocumentosChange={(docs) => console.log('Documentos actualizados:', docs)}
           />
         );
       default:

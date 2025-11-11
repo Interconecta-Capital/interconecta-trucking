@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSecurePasswordReset } from '@/hooks/auth/useSecurePasswordReset';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { toast } from 'sonner';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -131,9 +132,9 @@ export default function ResetPassword() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={8}
+                    minLength={12}
                     className="border-interconecta-border-subtle pr-10"
-                    placeholder="Mínimo 8 caracteres con mayúsculas, minúsculas, números y símbolos"
+                    placeholder="Mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos"
                   />
                   <Button
                     type="button"
@@ -149,6 +150,7 @@ export default function ResetPassword() {
                     )}
                   </Button>
                 </div>
+                <PasswordStrengthMeter password={password} showRequirements />
               </div>
               
               <div className="space-y-2">

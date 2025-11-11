@@ -1,0 +1,143 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SecureFileUpload } from '@/components/forms/SecureFileUpload';
+import { FileText, Upload, Truck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useDocumentosEntidades } from '@/hooks/useDocumentosEntidades';
+
+interface RemolqueDocumentosFieldsProps {
+  remolqueId?: string;
+  onDocumentosChange?: (documentos: any[]) => void;
+}
+
+const TIPOS_DOCUMENTO_REMOLQUE = [
+  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365 },
+  { value: 'certificado_capacidad', label: 'Certificado de Capacidad de Carga', obligatorio: true, vencimiento: 365 },
+  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: false, vencimiento: 365 },
+  { value: 'inspeccion_tecnica', label: 'Inspección Técnica', obligatorio: false, vencimiento: 180 },
+  { value: 'factura_remolque', label: 'Factura del Remolque', obligatorio: false },
+];
+
+export function RemolqueDocumentosFields({ remolqueId, onDocumentosChange }: RemolqueDocumentosFieldsProps) {
+  const [documentos, setDocumentos] = useState<any[]>([]);
+  const { cargarDocumentos, subirDocumento, eliminarDocumento } = useDocumentosEntidades();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (remolqueId) {
+      loadDocumentos();
+    }
+  }, [remolqueId]);
+
+  const loadDocumentos = async () => {
+    if (!remolqueId) return;
+    setLoading(true);
+    try {
+      const docs = await cargarDocumentos('remolque', remolqueId);
+      setDocumentos(docs);
+      onDocumentosChange?.(docs);
+    } catch (error) {
+      console.error('Error cargando documentos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File, tipoDocumento: string) => {
+    if (!remolqueId) {
+      console.warn('No se puede subir documento sin ID de remolque');
+      return;
+    }
+
+    const docConfig = TIPOS_DOCUMENTO_REMOLQUE.find(t => t.value === tipoDocumento);
+    const fechaVencimiento = docConfig?.vencimiento 
+      ? new Date(Date.now() + docConfig.vencimiento * 24 * 60 * 60 * 1000).toISOString()
+      : undefined;
+
+    try {
+      await subirDocumento(file, 'remolque', remolqueId, tipoDocumento, fechaVencimiento);
+      await loadDocumentos();
+    } catch (error) {
+      console.error('Error subiendo documento:', error);
+    }
+  };
+
+  const handleDeleteDocumento = async (documentoId: string) => {
+    try {
+      await eliminarDocumento(documentoId);
+      await loadDocumentos();
+    } catch (error) {
+      console.error('Error eliminando documento:', error);
+    }
+  };
+
+  const getDocumentosByTipo = (tipoDocumento: string) => {
+    return documentos.filter(doc => doc.tipo_documento === tipoDocumento);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Truck className="h-5 w-5" />
+          Documentos del Remolque
+        </CardTitle>
+        <CardDescription>
+          Documentación legal del remolque. Los documentos obligatorios son requeridos para operar.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!remolqueId && (
+          <div className="bg-muted/50 border border-muted rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-2">
+            <Upload className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <p>Primero guarda los datos básicos del remolque para poder subir documentos.</p>
+          </div>
+        )}
+
+        <div className="grid gap-4">
+          {TIPOS_DOCUMENTO_REMOLQUE.map((tipo) => {
+            const existentes = getDocumentosByTipo(tipo.value);
+            
+            return (
+              <div key={tipo.value} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">
+                    {tipo.label}
+                    {tipo.obligatorio && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  {tipo.vencimiento && (
+                    <span className="text-xs text-muted-foreground">
+                      Vigencia: {Math.floor(tipo.vencimiento / 30)} meses
+                    </span>
+                  )}
+                </div>
+                
+                <SecureFileUpload
+                  label=""
+                  onFilesChange={(files) => files.length > 0 && handleFileUpload(files[0], tipo.value)}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  maxSize={10}
+                />
+
+                {existentes.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {existentes.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between text-xs bg-muted/30 p-2 rounded">
+                        <span className="truncate">{doc.nombre_archivo}</span>
+                        <button
+                          onClick={() => handleDeleteDocumento(doc.id)}
+                          className="text-red-500 hover:text-red-700 ml-2"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
