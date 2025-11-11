@@ -121,7 +121,7 @@ export class DocumentMigrationService {
         record_id: recordId,
         column_name: columnName,
         document_data: base64Data
-      });
+      }) as { data: any; error: any };
 
       if (encryptError) {
         // Limpiar archivo subido si falla el cifrado
@@ -144,15 +144,14 @@ export class DocumentMigrationService {
           file_size: file.size,
           file_type: file.type,
           storage_path: filePath
-        },
-        severity: 'info'
+        }
       });
 
       return {
         success: true,
         recordId,
         columnName,
-        checksum: encryptData?.checksum
+        checksum: encryptData?.checksum || 'unknown'
       };
     } catch (error) {
       console.error('Error en migración:', error);
@@ -176,9 +175,9 @@ export class DocumentMigrationService {
       // Obtener lista de documentos pendientes de migración
       const { data: documents, error } = await supabase.rpc('get_documents_for_migration', {
         p_table_name: tableName
-      });
+      }) as { data: any[] | null; error: any };
 
-      if (error || !documents) {
+      if (error || !documents || !Array.isArray(documents)) {
         return {
           total: 0,
           successful: 0,
@@ -254,7 +253,7 @@ export class DocumentMigrationService {
         p_table_name: tableName,
         p_record_id: recordId,
         p_column_name: columnName
-      });
+      }) as { data: any; error: any };
 
       if (error) {
         return {
@@ -264,9 +263,10 @@ export class DocumentMigrationService {
         };
       }
 
+      const result = data as { valid?: boolean; can_decrypt?: boolean } | null;
       return {
-        isValid: data?.valid || false,
-        canDecrypt: data?.can_decrypt || false
+        isValid: result?.valid || false,
+        canDecrypt: result?.can_decrypt || false
       };
     } catch (error) {
       return {
@@ -282,7 +282,7 @@ export class DocumentMigrationService {
    */
   static async getMigrationStats(): Promise<MigrationStats> {
     try {
-      const { data, error } = await supabase.rpc('get_encryption_stats');
+      const { data, error } = await supabase.rpc('get_encryption_stats') as { data: any; error: any };
 
       if (error || !data) {
         return {
@@ -293,7 +293,14 @@ export class DocumentMigrationService {
         };
       }
 
-      return data as MigrationStats;
+      // Parsear el resultado JSONB
+      const stats = typeof data === 'string' ? JSON.parse(data) : data;
+      return {
+        conductores: stats.conductores || { total: 0, encrypted: 0 },
+        vehiculos: stats.vehiculos || { total: 0, encrypted: 0 },
+        remolques: stats.remolques || { total: 0, encrypted: 0 },
+        socios: stats.socios || { total: 0, encrypted: 0 }
+      };
     } catch (error) {
       console.error('Error obteniendo stats:', error);
       return {

@@ -21,6 +21,12 @@ interface RecentAccess {
   ip_address: string | null;
 }
 
+interface EventData {
+  table_name?: string;
+  column_name?: string;
+  [key: string]: any;
+}
+
 export function EncryptionStatusDashboard() {
   const [stats, setStats] = useState<EncryptionStats | null>(null);
   const [recentAccesses, setRecentAccesses] = useState<RecentAccess[]>([]);
@@ -49,34 +55,42 @@ export function EncryptionStatusDashboard() {
 
   const loadEncryptionStats = async () => {
     try {
+      // Cast to any to avoid type inference issues
+      const supabaseAny = supabase as any;
+
       // Obtener estadísticas de conductores
-      const { data: conductoresData } = await supabase
+      const conductoresRes = await supabaseAny
         .from('conductores')
         .select('id, foto_licencia_encrypted, foto_identificacion_encrypted')
         .eq('activo', true);
 
       // Obtener estadísticas de vehículos
-      const { data: vehiculosData } = await supabase
+      const vehiculosRes = await supabaseAny
         .from('vehiculos')
         .select('id, tarjeta_circulacion_encrypted, poliza_seguro_encrypted')
         .eq('activo', true);
 
       // Obtener estadísticas de remolques
-      const { data: remolquesData } = await supabase
+      const remolquesRes = await supabaseAny
         .from('remolques')
         .select('id, tarjeta_circulacion_encrypted')
         .eq('activo', true);
 
       // Obtener estadísticas de socios
-      const { data: sociosData } = await supabase
+      const sociosRes = await supabaseAny
         .from('socios')
         .select('id, constancia_fiscal_encrypted, identificacion_encrypted')
         .eq('activo', true);
 
-      const conductoresStats = calculateStats(conductoresData || [], ['foto_licencia_encrypted', 'foto_identificacion_encrypted']);
-      const vehiculosStats = calculateStats(vehiculosData || [], ['tarjeta_circulacion_encrypted', 'poliza_seguro_encrypted']);
-      const remolquesStats = calculateStats(remolquesData || [], ['tarjeta_circulacion_encrypted']);
-      const sociosStats = calculateStats(sociosData || [], ['constancia_fiscal_encrypted', 'identificacion_encrypted']);
+      const cData = conductoresRes.data as any[] || [];
+      const vData = vehiculosRes.data as any[] || [];
+      const rData = remolquesRes.data as any[] || [];
+      const sData = sociosRes.data as any[] || [];
+
+      const conductoresStats = calculateStats(cData, ['foto_licencia_encrypted', 'foto_identificacion_encrypted']);
+      const vehiculosStats = calculateStats(vData, ['tarjeta_circulacion_encrypted', 'poliza_seguro_encrypted']);
+      const remolquesStats = calculateStats(rData, ['tarjeta_circulacion_encrypted']);
+      const sociosStats = calculateStats(sData, ['constancia_fiscal_encrypted', 'identificacion_encrypted']);
 
       setStats({
         conductores: conductoresStats,
@@ -91,17 +105,21 @@ export function EncryptionStatusDashboard() {
     }
   };
 
-  const calculateStats = (data: any[], columns: string[]) => {
+  const calculateStats = (data: any[], columns: string[]): {
+    total: number;
+    encrypted: number;
+    documents: Array<{ column: string; encrypted: number; total: number }>;
+  } => {
     const total = data.length * columns.length;
     let encrypted = 0;
-    const documents = columns.map(col => ({
+    const documents: Array<{ column: string; encrypted: number; total: number }> = columns.map(col => ({
       column: col,
       encrypted: 0,
       total: data.length
     }));
 
-    data.forEach(record => {
-      columns.forEach((col, idx) => {
+    data.forEach((record: any) => {
+      columns.forEach((col: string, idx: number) => {
         if (record[col] !== null && record[col] !== undefined) {
           encrypted++;
           documents[idx].encrypted++;
@@ -122,13 +140,16 @@ export function EncryptionStatusDashboard() {
         .limit(10);
 
       if (data) {
-        const accesses: RecentAccess[] = data.map(log => ({
-          user_id: log.user_id || 'Sistema',
-          table_name: (log.event_data as any)?.table_name || 'N/A',
-          column_name: (log.event_data as any)?.column_name || 'N/A',
-          created_at: log.created_at,
-          ip_address: log.ip_address
-        }));
+        const accesses: RecentAccess[] = data.map(log => {
+          const eventData = log.event_data as EventData | null;
+          return {
+            user_id: log.user_id || 'Sistema',
+            table_name: eventData?.table_name || 'N/A',
+            column_name: eventData?.column_name || 'N/A',
+            created_at: log.created_at,
+            ip_address: log.ip_address as string | null
+          };
+        });
         setRecentAccesses(accesses);
       }
     } catch (error) {

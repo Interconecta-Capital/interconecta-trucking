@@ -4738,6 +4738,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_documents_for_migration: {
+        Args: { p_table_name: string }
+        Returns: {
+          column_name: string
+          is_encrypted: boolean
+          record_id: string
+          url_value: string
+        }[]
+      }
+      get_encryption_stats: { Args: never; Returns: Json }
       get_pac_credentials: { Args: never; Returns: Json }
       get_pac_token: { Args: { secret_name?: string }; Returns: string }
       get_schema_version: { Args: never; Returns: number }
@@ -4827,6 +4837,14 @@ export type Database = {
           }
       verificar_eliminacion_completa: {
         Args: { target_user_id: string }
+        Returns: Json
+      }
+      verify_document_integrity: {
+        Args: {
+          p_column_name: string
+          p_record_id: string
+          p_table_name: string
+        }
         Returns: Json
       }
     }

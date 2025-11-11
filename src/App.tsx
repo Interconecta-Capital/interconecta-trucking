@@ -43,6 +43,7 @@ import ReportesGenerales from "./pages/ReportesGenerales"
 import Notificaciones from "./pages/Notificaciones"
 import AdminTimbres from "./pages/admin/AdminTimbres"
 import SuperuserManagement from "./pages/SuperuserManagement"
+import EncryptionManagement from "./pages/EncryptionManagement"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -258,6 +259,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <SuperuserManagement />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/administracion/cifrado" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <EncryptionManagement />
                   </BaseLayout>
                 </AuthGuard>
               } />
