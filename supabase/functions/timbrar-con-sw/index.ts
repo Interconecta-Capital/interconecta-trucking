@@ -28,20 +28,22 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 2. Obtener datos del request
-    const { cartaPorteData, cartaPorteId, ambiente = 'sandbox' } = await req.json();
+    // 2. Obtener datos del request (Carta Porte o Factura)
+    const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente = 'sandbox' } = await req.json();
 
-    if (!cartaPorteData || !cartaPorteId) {
+    if (!cartaPorteData && !facturaData) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Faltan datos requeridos: cartaPorteData y cartaPorteId' 
+        error: 'Faltan datos requeridos: cartaPorteData o facturaData' 
       }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
-    console.log(`🚀 Timbrando CP ${cartaPorteId} para usuario ${user.id} en ${ambiente}`);
+    const documentoId = cartaPorteId || facturaId;
+    const tipoDocumento = cartaPorteData ? 'Carta Porte' : 'Factura';
+    console.log(`🚀 Timbrando ${tipoDocumento} ${documentoId} para usuario ${user.id} en ${ambiente}`);
 
     // 3. Obtener credenciales de SW
     const swToken = Deno.env.get('SW_TOKEN');
@@ -54,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // 4. Construir el CFDI JSON según formato de SW
-    const cfdiJson = construirCFDIJson(cartaPorteData);
+    const cfdiJson = construirCFDIJson(cartaPorteData || facturaData);
 
     console.log('📦 Enviando CFDI a SW:', JSON.stringify(cfdiJson).substring(0, 500));
 
@@ -139,25 +141,47 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // 10. Actualizar registro en BD
-    const { error: updateError } = await supabaseClient
-      .from('cartas_porte')
-      .update({
-        uuid_fiscal: timbradoData.uuid,
-        xml_generado: timbradoData.xmlTimbrado,
-        fecha_timbrado: timbradoData.fechaTimbrado,
-        status: 'timbrado',
-        pac_proveedor: 'SW/Conectia',
-        cadena_original: timbradoData.cadenaOriginal,
-        sello_digital: timbradoData.selloDigital,
-        no_certificado: timbradoData.noCertificadoCFDI,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', cartaPorteId)
-      .eq('user_id', user.id);
+    // 10. Actualizar registro en BD (Carta Porte o Factura)
+    if (cartaPorteId) {
+      const { error: updateError } = await supabaseClient
+        .from('cartas_porte')
+        .update({
+          uuid_fiscal: timbradoData.uuid,
+          xml_generado: timbradoData.xmlTimbrado,
+          fecha_timbrado: timbradoData.fechaTimbrado,
+          status: 'timbrado',
+          pac_proveedor: 'SW/Conectia',
+          cadena_original: timbradoData.cadenaOriginal,
+          sello_digital: timbradoData.selloDigital,
+          no_certificado: timbradoData.noCertificadoCFDI,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', cartaPorteId)
+        .eq('user_id', user.id);
 
-    if (updateError) {
-      console.error('⚠️ Error actualizando BD:', updateError);
+      if (updateError) {
+        console.error('⚠️ Error actualizando Carta Porte:', updateError);
+      }
+    } else if (facturaId) {
+      const { error: updateError } = await supabaseClient
+        .from('facturas')
+        .update({
+          uuid_fiscal: timbradoData.uuid,
+          xml_generado: timbradoData.xmlTimbrado,
+          fecha_timbrado: timbradoData.fechaTimbrado,
+          status: 'timbrado',
+          cadena_original: timbradoData.cadenaOriginal,
+          sello_digital: timbradoData.selloDigital,
+          sello_sat: timbradoData.selloSAT,
+          certificado_sat: timbradoData.noCertificadoSAT,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', facturaId)
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('⚠️ Error actualizando Factura:', updateError);
+      }
     }
 
     return new Response(JSON.stringify({ 

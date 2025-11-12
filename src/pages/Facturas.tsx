@@ -42,14 +42,14 @@ export default function Facturas() {
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
 
-  // TODO: Descomentar después de ejecutar las migraciones SQL
-  const { data: facturas, isLoading } = useQuery({
+  const { data: facturas, isLoading, refetch } = useQuery({
     queryKey: ['facturas', filtroTipo, filtroStatus],
     queryFn: async () => {
-      // Temporal: devolver array vacío hasta que se cree la tabla facturas
+      // ⏳ TEMPORAL: Comentado hasta que se ejecuten las migraciones SQL
+      // La tabla 'facturas' aún no existe en la base de datos
       return [] as Factura[];
       
-      /* DESCOMENTAR DESPUÉS DE EJECUTAR MIGRACIONES:
+      /* DESCOMENTAR DESPUÉS DE EJECUTAR docs/IMPLEMENTACION_COMPLETA.md:
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('No autenticado');
 

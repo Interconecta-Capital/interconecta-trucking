@@ -100,6 +100,11 @@ export default function FacturaEditor() {
   };
 
   const guardarBorrador = async () => {
+    // ⏳ TEMPORAL: Comentado hasta que se ejecuten las migraciones SQL
+    toast.info('Ejecuta las migraciones SQL primero. Ver docs/IMPLEMENTACION_COMPLETA.md');
+    return;
+    
+    /* DESCOMENTAR DESPUÉS DE EJECUTAR MIGRACIONES:
     setLoading(true);
     try {
       const { data: user } = await supabase.auth.getUser();
@@ -107,10 +112,6 @@ export default function FacturaEditor() {
 
       const totales = calcularTotales();
 
-      // TODO: Descomentar después de ejecutar las migraciones SQL
-      toast.info('Tabla facturas aún no creada. Ejecuta las migraciones SQL primero.');
-      
-      /* DESCOMENTAR DESPUÉS DE EJECUTAR MIGRACIONES:
       const { error } = await supabase.from('facturas').insert({
         user_id: user.user.id,
         tipo_comprobante: tipoComprobante,
@@ -123,6 +124,7 @@ export default function FacturaEditor() {
         status: 'draft',
         tiene_carta_porte: !!cartaPorteVinculada,
         carta_porte_id: cartaPorteVinculada,
+        uso_cfdi: usoCFDI,
         fecha_expedicion: new Date().toISOString()
       });
 
@@ -130,17 +132,18 @@ export default function FacturaEditor() {
 
       toast.success('Factura guardada como borrador');
       navigate('/administracion/fiscal');
-      */
     } catch (error) {
       console.error('Error guardando factura:', error);
       toast.error('Error al guardar factura');
     } finally {
       setLoading(false);
     }
+    */
   };
 
   const timbrarFactura = async () => {
-    toast.info('Función de timbrado pendiente de implementación');
+    // ⏳ TEMPORAL: Comentado hasta que se ejecuten las migraciones SQL
+    toast.info('Ejecuta las migraciones SQL primero. Ver docs/IMPLEMENTACION_COMPLETA.md');
   };
 
   const totales = calcularTotales();
