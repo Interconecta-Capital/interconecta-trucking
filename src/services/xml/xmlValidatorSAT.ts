@@ -93,12 +93,15 @@ export class XMLValidatorSAT {
     // Validación de ubicaciones
     const ubicaciones = data.ubicaciones || [];
     
-    console.log('🔍 [VALIDACION] Validando ubicaciones:', {
+    console.log('🔍 [VALIDACION-CRÍTICA] Validando ubicaciones:', {
       total: ubicaciones.length,
       ubicaciones: ubicaciones.map(u => ({
-        tipo: this.getFieldValue(u, 'tipo_ubicacion', 'tipoUbicacion'),
-        rfc: this.getFieldValue(u, 'rfc', 'rfcRemitenteDestinatario'),
-        cp: this.getFieldValue(u.domicilio, 'codigo_postal', 'codigoPostal')
+        tipoRaw: u,
+        tipo_snake: (u as any).tipo_ubicacion,
+        tipo_camel: (u as any).tipoUbicacion,
+        tipo_getField: this.getFieldValue(u, 'tipo_ubicacion', 'tipoUbicacion'),
+        rfc: this.getFieldValue(u, 'rfc', 'rfcRemitenteDestinatario', 'rfc_remitente_destinatario'),
+        distancia: this.getFieldValue(u, 'distancia_recorrida', 'distanciaRecorrida')
       }))
     });
     

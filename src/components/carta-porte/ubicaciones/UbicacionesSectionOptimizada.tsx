@@ -270,39 +270,60 @@ export function UbicacionesSectionOptimizada({
 
   // Manejo optimizado de cálculo de distancia usando el nuevo componente
   const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
-    // ✅ FASE 6: Logging exhaustivo
-    console.log('📏 [DEBUG] Distancia calculada en UbicacionesSectionOptimizada:', {
+    console.log('📏 [CRÍTICO] Distancia calculada, actualizando INMEDIATAMENTE ubicaciones:', {
       distancia,
       tiempo,
-      distanciaActual: distanciaTotal,
-      ubicacionesActuales: ubicaciones.length,
-      destino: ubicaciones.find(u => u.tipoUbicacion === 'Destino' || (u as any).tipo_ubicacion === 'Destino')
+      ubicacionesActuales: ubicaciones.length
     });
     
     try {
-      if (distanciaTotal !== distancia || tiempoEstimado !== tiempo) {
-        setDistanciaTotal(distancia);
-        setTiempoEstimado(tiempo);
-        setRouteData({
-          distance_km: distancia,
-          duration_minutes: tiempo,
-          google_data: routeGeometry?.google_data
-        });
-        
-        if (onDistanceCalculated) {
-          onDistanceCalculated({
-            distanciaTotal: distancia,
-            tiempoEstimado: tiempo
-          });
+      // ✅ ACTUALIZAR UBICACIONES INMEDIATAMENTE
+      const ubicacionesActualizadas = ubicaciones.map(ub => {
+        if (ub.tipoUbicacion === 'Destino') {
+          console.log('✅ [CRÍTICO] Actualizando destino con distancia:', distancia);
+          return {
+            ...ub,
+            distanciaRecorrida: distancia,
+            distancia_recorrida: distancia,
+            tipo_ubicacion: 'Destino', // Asegurar snake_case
+            tipoUbicacion: 'Destino'
+          };
         }
-        
-        console.log('✅ Distancia y ruta procesadas exitosamente');
-        
-        toast({
-          title: "Ruta calculada exitosamente",
-          description: `Distancia: ${distancia} km. Tiempo: ${Math.round(tiempo / 60)}h ${tiempo % 60}m`,
+        // Asegurar que todas tengan ambos formatos
+        return {
+          ...ub,
+          tipo_ubicacion: ub.tipoUbicacion,
+          tipoUbicacion: ub.tipoUbicacion
+        };
+      });
+      
+      console.log('✅ [CRÍTICO] Ubicaciones actualizadas:', ubicacionesActualizadas);
+      
+      // ✅ GUARDAR INMEDIATAMENTE con onChange
+      onChange(ubicacionesActualizadas);
+      
+      setDistanciaTotal(distancia);
+      setTiempoEstimado(tiempo);
+      setRouteData({
+        distance_km: distancia,
+        duration_minutes: tiempo,
+        google_data: routeGeometry?.google_data
+      });
+      
+      // ✅ Notificar al padre
+      if (onDistanceCalculated) {
+        onDistanceCalculated({
+          distanciaTotal: distancia,
+          tiempoEstimado: tiempo
         });
       }
+      
+      console.log('✅ [CRÍTICO] Proceso completo de actualización de distancia');
+      
+      toast({
+        title: "Ruta calculada y guardada",
+        description: `Distancia: ${distancia.toFixed(2)} km guardada en el destino`,
+      });
     } catch (error) {
       console.error('❌ Error procesando cálculo de distancia:', error);
       toast({

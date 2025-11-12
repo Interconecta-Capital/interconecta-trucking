@@ -11,17 +11,69 @@ export class BorradorService {
   private static intervalId: NodeJS.Timeout | null = null;
   private static isAutoSaving = false;
 
+  // ✅ CRÍTICO: Normalizar ubicaciones para que tengan AMBOS formatos
+  private static normalizarUbicaciones(ubicaciones: any[]): any[] {
+    if (!ubicaciones) return [];
+    
+    return ubicaciones.map(ub => ({
+      ...ub,
+      // Asegurar ambos formatos para TODOS los campos
+      tipo_ubicacion: ub.tipo_ubicacion || ub.tipoUbicacion,
+      tipoUbicacion: ub.tipoUbicacion || ub.tipo_ubicacion,
+      id_ubicacion: ub.id_ubicacion || ub.idUbicacion,
+      idUbicacion: ub.idUbicacion || ub.id_ubicacion,
+      distancia_recorrida: ub.distancia_recorrida || ub.distanciaRecorrida || 0,
+      distanciaRecorrida: ub.distanciaRecorrida || ub.distancia_recorrida || 0,
+      rfc_remitente_destinatario: ub.rfc_remitente_destinatario || ub.rfcRemitenteDestinatario,
+      rfcRemitenteDestinatario: ub.rfcRemitenteDestinatario || ub.rfc_remitente_destinatario,
+      nombre_remitente_destinatario: ub.nombre_remitente_destinatario || ub.nombreRemitenteDestinatario,
+      nombreRemitenteDestinatario: ub.nombreRemitenteDestinatario || ub.nombre_remitente_destinatario,
+      fecha_hora_salida_llegada: ub.fecha_hora_salida_llegada || ub.fechaHoraSalidaLlegada,
+      fechaHoraSalidaLlegada: ub.fechaHoraSalidaLlegada || ub.fecha_hora_salida_llegada,
+      // Normalizar domicilio
+      domicilio: ub.domicilio ? {
+        ...ub.domicilio,
+        codigo_postal: ub.domicilio.codigo_postal || ub.domicilio.codigoPostal,
+        codigoPostal: ub.domicilio.codigoPostal || ub.domicilio.codigo_postal,
+        num_exterior: ub.domicilio.num_exterior || ub.domicilio.numExterior,
+        numExterior: ub.domicilio.numExterior || ub.domicilio.num_exterior,
+        num_interior: ub.domicilio.num_interior || ub.domicilio.numInterior,
+        numInterior: ub.domicilio.numInterior || ub.domicilio.num_interior
+      } : ub.domicilio
+    }));
+  }
+
+  // ✅ CRÍTICO: Normalizar datos completos antes de guardar
+  private static normalizarDatos(datos: any): any {
+    return {
+      ...datos,
+      ubicaciones: this.normalizarUbicaciones(datos.ubicaciones || [])
+    };
+  }
+
   // Guardar borrador en Supabase y localStorage como respaldo
   static async guardarBorrador(datos: any, cartaPorteId?: string): Promise<string | null> {
     try {
       const now = new Date().toISOString();
+      
+      // ✅ NORMALIZAR DATOS ANTES DE GUARDAR
+      const datosNormalizados = this.normalizarDatos(datos);
+      
+      console.log('💾 [CRÍTICO] Guardando con ubicaciones normalizadas:', {
+        ubicaciones: datosNormalizados.ubicaciones.map((u: any) => ({
+          tipo_snake: u.tipo_ubicacion,
+          tipo_camel: u.tipoUbicacion,
+          distancia_snake: u.distancia_recorrida,
+          distancia_camel: u.distanciaRecorrida
+        }))
+      });
       
       // Si tenemos un ID, actualizar; si no, crear nuevo
       if (cartaPorteId) {
         const { error } = await supabase
           .from('cartas_porte')
           .update({
-            datos_formulario: datos,
+            datos_formulario: datosNormalizados,
             status: 'borrador',
             updated_at: now,
             // Extraer campos principales para búsqueda
@@ -41,7 +93,7 @@ export class BorradorService {
         const { data: newCarta, error } = await supabase
           .from('cartas_porte')
           .insert({
-            datos_formulario: datos,
+            datos_formulario: datosNormalizados,
             status: 'borrador',
             created_at: now,
             updated_at: now,

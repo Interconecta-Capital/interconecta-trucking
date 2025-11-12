@@ -2,7 +2,7 @@
 import { Ubicacion } from '@/types/ubicaciones';
 
 export const calcularDistanciaTotal = (ubicaciones: Ubicacion[]): number => {
-  // ✅ FASE 1: SOLO buscar en el destino, en AMBOS formatos
+  // ✅ CRÍTICO: SOLO buscar en el destino, en AMBOS formatos Y ambos nombres de campo
   const destino = ubicaciones.find(u => 
     u.tipoUbicacion === 'Destino' || 
     (u as any).tipo_ubicacion === 'Destino'
@@ -13,14 +13,16 @@ export const calcularDistanciaTotal = (ubicaciones: Ubicacion[]): number => {
     return 0;
   }
   
-  // ✅ Buscar en AMBOS formatos
-  const distancia = destino.distanciaRecorrida || 
-                    (destino as any).distancia_recorrida || 
+  // ✅ Buscar en TODOS los posibles campos de distancia
+  const distancia = (destino as any).distanciaRecorrida || 
+                    (destino as any).distancia_recorrida ||
+                    destino.distanciaRecorrida ||
                     0;
   
-  console.log('📊 calcularDistanciaTotal:', {
+  console.log('📊 [CRÍTICO] calcularDistanciaTotal:', {
     distancia,
-    destino: destino.idUbicacion || (destino as any).id_ubicacion
+    destino: destino.idUbicacion || (destino as any).id_ubicacion,
+    destinoCompleto: destino
   });
   
   return distancia;
