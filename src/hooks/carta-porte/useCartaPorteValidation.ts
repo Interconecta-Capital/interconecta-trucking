@@ -72,22 +72,22 @@ export const useCartaPorteValidation = () => {
         if (!hasOrigen) missingFields.ubicaciones.push('Ubicación de Origen');
         if (!hasDestino) missingFields.ubicaciones.push('Ubicación de Destino');
         
-        // Validar distancia en destino
+        // Validar distancia recorrida
         const destino = ubicaciones.find(u => 
           u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
         );
         
-        const tieneDistancia = destino && (
-          (destino.distancia_recorrida && destino.distancia_recorrida > 0) || 
-          ((destino as any).distanciaRecorrida && (destino as any).distanciaRecorrida > 0) ||
-          ((destino as any).distancia && (destino as any).distancia > 0) ||
-          (formData.datosCalculoRuta?.distanciaTotal && formData.datosCalculoRuta.distanciaTotal > 0)
-        );
+        // Buscar distancia en TODOS los formatos posibles
+        const distancia = destino?.distancia_recorrida || 
+                          (destino as any)?.distanciaRecorrida || 
+                          (destino as any)?.distancia ||
+                          formData.datosCalculoRuta?.distanciaTotal ||
+                          0;
         
-        console.log('🔍 [VALIDACION] Destino con distancia:', { destino, tieneDistancia });
+        console.log('🔍 [VALIDACION] Distancia encontrada:', distancia);
         
-        if (!tieneDistancia) {
-          missingFields.ubicaciones.push('Se recomienda especificar la distancia recorrida en el Destino');
+        if (distancia === 0) {
+          missingFields.ubicaciones.push('Calcular distancia haciendo clic en "Calcular Ruta con Google Maps"');
         }
         
       // Validar domicilios completos

@@ -8,13 +8,11 @@ import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
 import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
-import { DistanceMetricsPanel } from './DistanceMetricsPanel';
-import { OptimizedAutoRouteCalculator } from './OptimizedAutoRouteCalculator';
+import { RouteCalculatorSimple } from './RouteCalculatorSimple';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { RutasFrecuentesSelector } from '../rutas/RutasFrecuentesSelector';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
-import { useSimplifiedRouteCalculation } from '@/hooks/useSimplifiedRouteCalculation';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 
@@ -51,7 +49,6 @@ export function UbicacionesSectionOptimizada({
   
   const { toast } = useToast();
   const { createViaje, isCreating } = useViajeCreation();
-  const { calculateAndPersist, isCalculating: isCalculatingRoute } = useSimplifiedRouteCalculation();
   
   const {
     ubicaciones,
@@ -272,78 +269,10 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo simplificado de cálculo de distancia
-  const handleManualRecalculation = async () => {
-    console.log('🔄 Recalculando ruta manualmente con Google Maps');
-    
-    try {
-      const result = await calculateAndPersist(ubicaciones);
-      
-      if (result) {
-        console.log('✅ Ruta calculada exitosamente:', result);
-        
-        // Actualizar ubicaciones con la distancia
-        const ubicacionesActualizadas = ubicaciones.map(ub => {
-          if (ub.tipoUbicacion === 'Destino') {
-            return {
-              ...ub,
-              distanciaRecorrida: result.distancia,
-              distancia_recorrida: result.distancia
-            };
-          }
-          return ub;
-        });
-        
-        setDistanciaTotal(result.distancia);
-        setTiempoEstimado(result.tiempo);
-        setRouteData(result.geometry);
-        onChange(ubicacionesActualizadas);
-        
-        if (onDistanceCalculated) {
-          onDistanceCalculated({
-            distanciaTotal: result.distancia,
-            tiempoEstimado: result.tiempo
-          });
-        }
-        
-        sonnerToast.success(`Ruta calculada: ${result.distancia.toFixed(2)} km`);
-      }
-    } catch (error) {
-      console.error('❌ Error en recálculo:', error);
-      sonnerToast.error('Error al calcular la ruta');
-    }
-  };
-
-  const handleManualDistanceEdit = (distancia: number) => {
-    console.log('✏️ Editando distancia manualmente:', distancia);
-    
-    const ubicacionesActualizadas = ubicaciones.map(ub => {
-      if (ub.tipoUbicacion === 'Destino') {
-        return {
-          ...ub,
-          distanciaRecorrida: distancia,
-          distancia_recorrida: distancia
-        };
-      }
-      return ub;
-    });
-    
-    setDistanciaTotal(distancia);
-    onChange(ubicacionesActualizadas);
-    
-    if (onDistanceCalculated) {
-      onDistanceCalculated({
-        distanciaTotal: distancia,
-        tiempoEstimado
-      });
-    }
-    
-    sonnerToast.success('Distancia actualizada manualmente');
-  };
-
-  const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
+  const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
     console.log('📏 Distancia calculada automáticamente:', { distancia, tiempo });
     
+    // Actualizar SOLO el destino con la distancia
     const ubicacionesActualizadas = ubicaciones.map(ub => {
       if (ub.tipoUbicacion === 'Destino') {
         return {
@@ -355,17 +284,23 @@ export function UbicacionesSectionOptimizada({
       return ub;
     });
     
+    // Actualizar estados locales
     setDistanciaTotal(distancia);
     setTiempoEstimado(tiempo);
-    setRouteData(routeGeometry);
+    
+    // Guardar inmediatamente
     onChange(ubicacionesActualizadas);
     
+    // Notificar al padre si existe callback
     if (onDistanceCalculated) {
       onDistanceCalculated({
         distanciaTotal: distancia,
         tiempoEstimado: tiempo
       });
     }
+    
+    // Confirmar al usuario
+    sonnerToast.success(`✓ Distancia guardada: ${distancia.toFixed(2)} km`);
   };
 
   const handleSaveToFavorites = (ubicacion: any) => {
@@ -486,24 +421,11 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* Panel de métricas de ruta */}
+      {/* Calculadora de rutas Google Maps */}
       {canCalculateDistances && (
-        <DistanceMetricsPanel
-          distanciaTotal={distanciaTotal}
-          tiempoEstimado={tiempoEstimado}
-          isCalculating={isCalculatingRoute}
-          onRecalcular={handleManualRecalculation}
-          onManualEdit={handleManualDistanceEdit}
-        />
-      )}
-
-      {/* Calculadora de rutas con mapa */}
-      {canCalculateDistances && distanciaTotal > 0 && (
-        <OptimizedAutoRouteCalculator
+        <RouteCalculatorSimple
           ubicaciones={ubicaciones}
           onDistanceCalculated={handleDistanceCalculated}
-          distanciaTotal={distanciaTotal}
-          tiempoEstimado={tiempoEstimado}
         />
       )}
 
