@@ -88,11 +88,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setIdCCP(newIdCCP);
       console.log('[CartaPorteForm] IdCCP generado automáticamente:', newIdCCP);
       
-      // FASE 4: Guardar IdCCP inmediatamente en formData
+      // ✅ FASE 2: Guardar idCCP correctamente (NO como cartaPorteId)
       setFormData(prev => ({
         ...prev,
-        cartaPorteId: newIdCCP
+        idCCP: newIdCCP
       }));
+      console.log('✅ [FASE 2] idCCP asignado correctamente:', newIdCCP);
     }
   }, [currentCartaPorteId, idCCP]);
 
@@ -216,20 +217,35 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Setters estables para cada sección del formulario
   const setUbicaciones = useCallback((ubicaciones: UbicacionCompleta[]) => {
-    console.log('📍 Actualizando ubicaciones:', ubicaciones.length);
+    console.log('📍 [FASE 4] Actualizando ubicaciones:', ubicaciones.length);
     
     setFormData(prev => {
       const updated = { ...prev, ubicaciones };
       
-      // ✅ NUEVO: Guardar automáticamente después de 1 segundo
+      // ✅ FASE 4: Guardar automáticamente Y recalcular validación
       setTimeout(async () => {
         if (currentCartaPorteId) {
           try {
+            // Recalcular validación con los nuevos datos
+            const validation = getValidationSummary(updated);
+            
+            const datosConProgreso = {
+              ...updated,
+              progress: {
+                percentage: validation.completionPercentage,
+                completedSections: validation.completedSections,
+                totalSections: validation.totalSections,
+                sectionStatus: validation.sectionStatus,
+                lastUpdated: new Date().toISOString()
+              }
+            };
+            
             await CartaPorteLifecycleManager.guardarBorrador(currentCartaPorteId, {
-              datos_formulario: updated,
+              datos_formulario: datosConProgreso,
               auto_saved: true
             });
-            console.log('✅ Ubicaciones auto-guardadas');
+            
+            console.log('✅ [FASE 4] Ubicaciones auto-guardadas con progreso:', validation.completionPercentage + '%');
           } catch (error) {
             console.error('❌ Error auto-guardando ubicaciones:', error);
           }
@@ -238,7 +254,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       
       return updated;
     });
-  }, [currentCartaPorteId]);
+  }, [currentCartaPorteId, getValidationSummary]);
 
   const setMercancias = useCallback((mercancias: MercanciaCompleta[]) => {
     setFormData(prev => ({ ...prev, mercancias }));

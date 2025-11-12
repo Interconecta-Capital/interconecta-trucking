@@ -178,8 +178,11 @@ export function UbicacionesSectionOptimizada({
   };
 
   const handleGuardarUbicacion = (ubicacionData: any) => {
-    console.log('💾 === GUARDANDO UBICACIÓN (ESTABLE) ===');
-    console.log('📍 Datos recibidos:', ubicacionData);
+    console.log('💾 === [FASE 5 DEBUG] GUARDANDO UBICACIÓN ===');
+    console.log('📍 Datos completos recibidos:', JSON.stringify(ubicacionData, null, 2));
+    console.log('📍 Domicilio recibido:', ubicacionData.domicilio);
+    console.log('📍 Código postal:', ubicacionData.domicilio?.codigo_postal);
+    console.log('📍 Coordenadas:', ubicacionData.coordenadas);
     
     try {
       // Validar datos básicos
@@ -198,6 +201,7 @@ export function UbicacionesSectionOptimizada({
       }
       
       if (!ubicacionData.domicilio?.codigoPostal) {
+        console.log('❌ [FASE 5 DEBUG] Código postal faltante en:', ubicacionData.domicilio);
         errores.push('El código postal es requerido');
       }
       
@@ -218,14 +222,16 @@ export function UbicacionesSectionOptimizada({
 
       // Guardar la ubicación
       if (editingIndex !== null) {
-        console.log('✏️ Actualizando ubicación en índice:', editingIndex);
+        console.log('✏️ [FASE 5 DEBUG] Actualizando ubicación en índice:', editingIndex);
+        console.log('✏️ Ubicación que se guardará:', JSON.stringify(ubicacionData, null, 2));
         actualizarUbicacion(editingIndex, ubicacionData);
         toast({
           title: "Ubicación actualizada",
           description: "La ubicación ha sido actualizada correctamente.",
         });
       } else {
-        console.log('➕ Agregando nueva ubicación');
+        console.log('➕ [FASE 5 DEBUG] Agregando nueva ubicación');
+        console.log('➕ Datos completos a guardar:', JSON.stringify(ubicacionData, null, 2));
         agregarUbicacion(ubicacionData);
         toast({
           title: "Ubicación agregada",
@@ -238,7 +244,8 @@ export function UbicacionesSectionOptimizada({
       setEditingIndex(null);
       setFormErrors([]);
       
-      console.log('✅ Ubicación guardada exitosamente');
+      console.log('✅ [FASE 5 DEBUG] Ubicación guardada exitosamente');
+      console.log('✅ Estado final de ubicaciones:', ubicaciones.length + 1);
       
     } catch (error) {
       console.error('❌ Error al guardar ubicación:', error);
