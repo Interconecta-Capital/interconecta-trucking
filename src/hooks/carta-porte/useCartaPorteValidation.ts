@@ -62,22 +62,32 @@ export const useCartaPorteValidation = () => {
         missingFields.ubicaciones.push('Agregar al menos una ubicación de origen');
         missingFields.ubicaciones.push('Agregar al menos una ubicación de destino');
       } else {
-        const hasOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
-        const hasDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
+        const hasOrigen = ubicaciones.some(u => 
+          u.tipo_ubicacion === 'Origen' || (u as any).tipoUbicacion === 'Origen'
+        );
+        const hasDestino = ubicaciones.some(u => 
+          u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
+        );
         
         if (!hasOrigen) missingFields.ubicaciones.push('Ubicación de Origen');
         if (!hasDestino) missingFields.ubicaciones.push('Ubicación de Destino');
         
-        // ✅ FASE 5: Validar distancia en destino
-        const destino = ubicaciones.find(u => u.tipo_ubicacion === 'Destino');
-        const tieneDistancia = destino && (
-          destino.distancia_recorrida > 0 || 
-          (destino as any).distanciaRecorrida > 0 ||
-          formData.datosCalculoRuta?.distanciaTotal > 0
+        // Validar distancia en destino
+        const destino = ubicaciones.find(u => 
+          u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
         );
         
+        const tieneDistancia = destino && (
+          (destino.distancia_recorrida && destino.distancia_recorrida > 0) || 
+          ((destino as any).distanciaRecorrida && (destino as any).distanciaRecorrida > 0) ||
+          ((destino as any).distancia && (destino as any).distancia > 0) ||
+          (formData.datosCalculoRuta?.distanciaTotal && formData.datosCalculoRuta.distanciaTotal > 0)
+        );
+        
+        console.log('🔍 [VALIDACION] Destino con distancia:', { destino, tieneDistancia });
+        
         if (!tieneDistancia) {
-          missingFields.ubicaciones.push('Distancia recorrida en el Destino');
+          missingFields.ubicaciones.push('Se recomienda especificar la distancia recorrida en el Destino');
         }
         
       // Validar domicilios completos

@@ -2,30 +2,33 @@
 import { Ubicacion } from '@/types/ubicaciones';
 
 export const calcularDistanciaTotal = (ubicaciones: Ubicacion[]): number => {
-  // ✅ CRÍTICO: SOLO buscar en el destino, en AMBOS formatos Y ambos nombres de campo
-  const destino = ubicaciones.find(u => 
-    u.tipoUbicacion === 'Destino' || 
-    (u as any).tipo_ubicacion === 'Destino'
-  );
+  console.log('📊 [DISTANCIA] Calculando distancia total');
+  console.log('📊 [DISTANCIA] Ubicaciones recibidas:', JSON.stringify(ubicaciones, null, 2));
+  
+  // Buscar el destino
+  const destino = ubicaciones.find(u => {
+    const tipo = u.tipoUbicacion || (u as any).tipo_ubicacion;
+    return tipo === 'Destino';
+  });
   
   if (!destino) {
-    console.log('📊 calcularDistanciaTotal: No hay destino');
+    console.warn('⚠️ [DISTANCIA] No se encontró destino');
     return 0;
   }
   
-  // ✅ Buscar en TODOS los posibles campos de distancia
-  const distancia = (destino as any).distanciaRecorrida || 
-                    (destino as any).distancia_recorrida ||
-                    destino.distanciaRecorrida ||
-                    0;
+  console.log('📍 [DISTANCIA] Destino encontrado:', destino);
   
-  console.log('📊 [CRÍTICO] calcularDistanciaTotal:', {
-    distancia,
-    destino: destino.idUbicacion || (destino as any).id_ubicacion,
-    destinoCompleto: destino
-  });
+  // Buscar distancia en TODOS los posibles campos
+  const distancia = 
+    destino.distanciaRecorrida ||
+    (destino as any).distancia_recorrida ||
+    (destino as any).distancia ||
+    (destino as any).distance ||
+    0;
   
-  return distancia;
+  console.log('✅ [DISTANCIA] Distancia extraída:', distancia);
+  
+  return Number(distancia) || 0;
 };
 
 export const validarSecuenciaUbicaciones = (ubicaciones: Ubicacion[]) => {

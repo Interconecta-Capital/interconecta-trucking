@@ -1,15 +1,14 @@
 
 import { useState, useCallback } from 'react';
-import { useMapas } from './useMapas';
 import { useGoogleMapsAPI } from './useGoogleMapsAPI';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RouteResult {
   success: boolean;
   distance_km: number;
   duration_minutes: number;
   google_data?: any;
-  mapbox_data?: any;
-  source: 'google' | 'mapbox' | 'estimation';
+  source: 'google' | 'estimation';
 }
 
 export const useHybridRouteCalculation = () => {
@@ -17,7 +16,6 @@ export const useHybridRouteCalculation = () => {
   const [routeData, setRouteData] = useState<RouteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const { calcularRuta: mapboxRoute } = useMapas();
   const { isLoaded: isGoogleLoaded } = useGoogleMapsAPI();
 
   const calculateRoute = useCallback(async (
@@ -29,88 +27,40 @@ export const useHybridRouteCalculation = () => {
     setError(null);
 
     try {
-      console.log('🚀 Starting hybrid route calculation');
+      console.log('🚀 Starting Google Maps route calculation');
       
-      // Try Google Maps first if available
-      if (isGoogleLoaded && window.google?.maps?.DirectionsService) {
-        try {
-          console.log('📍 Attempting Google Maps calculation...');
-          
-          const directionsService = new window.google.maps.DirectionsService();
-          
-          const wayPointsFormatted = waypoints.map(point => ({
-            location: new window.google.maps.LatLng(point.lat, point.lng),
-            stopover: true
-          }));
+      // Try Google Directions Edge Function
+      try {
+        console.log('📍 Calling Google Directions Edge Function...');
+        
+        const { data, error: functionError } = await supabase.functions.invoke('google-directions', {
+          body: {
+            origin,
+            destination,
+            waypoints: waypoints.length > 0 ? waypoints : undefined
+          }
+        });
 
-          const request = {
-            origin: new window.google.maps.LatLng(origin.lat, origin.lng),
-            destination: new window.google.maps.LatLng(destination.lat, destination.lng),
-            waypoints: wayPointsFormatted,
-            travelMode: window.google.maps.TravelMode.DRIVING,
-            unitSystem: window.google.maps.UnitSystem.METRIC,
-            optimizeWaypoints: true
+        if (functionError) {
+          console.error('❌ Edge Function error:', functionError);
+          throw new Error(functionError.message);
+        }
+
+        if (data && data.success) {
+          const routeResult: RouteResult = {
+            success: true,
+            distance_km: data.distance_km,
+            duration_minutes: data.duration_minutes,
+            google_data: data.google_data,
+            source: 'google'
           };
 
-          const result = await new Promise<any>((resolve, reject) => {
-            directionsService.route(request, (response, status) => {
-              if (status === 'OK') {
-                resolve(response);
-              } else {
-                reject(new Error(`Google Directions error: ${status}`));
-              }
-            });
-          });
-
-          if (result && result.routes[0]) {
-            const route = result.routes[0];
-            let totalDistance = 0;
-            let totalDuration = 0;
-
-            route.legs.forEach((leg: any) => {
-              totalDistance += leg.distance.value;
-              totalDuration += leg.duration.value;
-            });
-
-            const routeResult: RouteResult = {
-              success: true,
-              distance_km: Math.round(totalDistance / 1000 * 100) / 100,
-              duration_minutes: Math.round(totalDuration / 60),
-              google_data: {
-                polyline: route.overview_polyline.points,
-                bounds: route.bounds,
-                legs: route.legs
-              },
-              source: 'google'
-            };
-
-            console.log('✅ Google Maps calculation successful:', routeResult);
-            setRouteData(routeResult);
-            return routeResult;
-          }
-        } catch (googleError) {
-          console.warn('⚠️ Google Maps calculation failed, falling back to Mapbox:', googleError);
+          console.log('✅ Google Maps calculation successful:', routeResult);
+          setRouteData(routeResult);
+          return routeResult;
         }
-      }
-
-      // Fallback to Mapbox
-      console.log('📍 Attempting Mapbox calculation...');
-      
-      const allPoints = [origin, ...waypoints, destination];
-      const mapboxResult = await mapboxRoute(allPoints);
-      
-      if (mapboxResult) {
-        const routeResult: RouteResult = {
-          success: true,
-          distance_km: mapboxResult.distance,
-          duration_minutes: mapboxResult.duration,
-          mapbox_data: mapboxResult.geometry,
-          source: 'mapbox'
-        };
-
-        console.log('✅ Mapbox calculation successful:', routeResult);
-        setRouteData(routeResult);
-        return routeResult;
+      } catch (googleError) {
+        console.warn('⚠️ Google Maps calculation failed, using estimation:', googleError);
       }
 
       // Final fallback: estimation
@@ -138,7 +88,7 @@ export const useHybridRouteCalculation = () => {
     } finally {
       setIsCalculating(false);
     }
-  }, [isGoogleLoaded, mapboxRoute]);
+  }, [isGoogleLoaded]);
 
   // Haversine distance formula for estimation
   const calculateHaversineDistance = (point1: { lat: number; lng: number }, point2: { lat: number; lng: number }) => {

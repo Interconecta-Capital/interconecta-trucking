@@ -283,7 +283,7 @@ export function OptimizedAutoRouteCalculator({
           )}
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Cálculos: Mapbox • Visualización: Google Maps • Geocodificación: México DB
+          Sistema completo con Google Maps API
         </p>
       </CardHeader>
       

@@ -8,12 +8,15 @@ import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
 import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
+import { DistanceMetricsPanel } from './DistanceMetricsPanel';
 import { OptimizedAutoRouteCalculator } from './OptimizedAutoRouteCalculator';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
 import { RutasFrecuentesSelector } from '../rutas/RutasFrecuentesSelector';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
+import { useSimplifiedRouteCalculation } from '@/hooks/useSimplifiedRouteCalculation';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 interface UbicacionesSectionOptimizadaProps {
   data: any[];
@@ -48,6 +51,7 @@ export function UbicacionesSectionOptimizada({
   
   const { toast } = useToast();
   const { createViaje, isCreating } = useViajeCreation();
+  const { calculateAndPersist, isCalculating: isCalculatingRoute } = useSimplifiedRouteCalculation();
   
   const {
     ubicaciones,
@@ -268,68 +272,98 @@ export function UbicacionesSectionOptimizada({
     setFormErrors([]);
   };
 
-  // Manejo optimizado de cálculo de distancia usando el nuevo componente
-  const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
-    console.log('📏 [CRÍTICO] Distancia calculada, actualizando INMEDIATAMENTE ubicaciones:', {
-      distancia,
-      tiempo,
-      ubicacionesActuales: ubicaciones.length
-    });
+  // Manejo simplificado de cálculo de distancia
+  const handleManualRecalculation = async () => {
+    console.log('🔄 Recalculando ruta manualmente con Google Maps');
     
     try {
-      // ✅ ACTUALIZAR UBICACIONES INMEDIATAMENTE
-      const ubicacionesActualizadas = ubicaciones.map(ub => {
-        if (ub.tipoUbicacion === 'Destino') {
-          console.log('✅ [CRÍTICO] Actualizando destino con distancia:', distancia);
-          return {
-            ...ub,
-            distanciaRecorrida: distancia,
-            distancia_recorrida: distancia,
-            tipo_ubicacion: 'Destino', // Asegurar snake_case
-            tipoUbicacion: 'Destino'
-          };
+      const result = await calculateAndPersist(ubicaciones);
+      
+      if (result) {
+        console.log('✅ Ruta calculada exitosamente:', result);
+        
+        // Actualizar ubicaciones con la distancia
+        const ubicacionesActualizadas = ubicaciones.map(ub => {
+          if (ub.tipoUbicacion === 'Destino') {
+            return {
+              ...ub,
+              distanciaRecorrida: result.distancia,
+              distancia_recorrida: result.distancia
+            };
+          }
+          return ub;
+        });
+        
+        setDistanciaTotal(result.distancia);
+        setTiempoEstimado(result.tiempo);
+        setRouteData(result.geometry);
+        onChange(ubicacionesActualizadas);
+        
+        if (onDistanceCalculated) {
+          onDistanceCalculated({
+            distanciaTotal: result.distancia,
+            tiempoEstimado: result.tiempo
+          });
         }
-        // Asegurar que todas tengan ambos formatos
+        
+        sonnerToast.success(`Ruta calculada: ${result.distancia.toFixed(2)} km`);
+      }
+    } catch (error) {
+      console.error('❌ Error en recálculo:', error);
+      sonnerToast.error('Error al calcular la ruta');
+    }
+  };
+
+  const handleManualDistanceEdit = (distancia: number) => {
+    console.log('✏️ Editando distancia manualmente:', distancia);
+    
+    const ubicacionesActualizadas = ubicaciones.map(ub => {
+      if (ub.tipoUbicacion === 'Destino') {
         return {
           ...ub,
-          tipo_ubicacion: ub.tipoUbicacion,
-          tipoUbicacion: ub.tipoUbicacion
+          distanciaRecorrida: distancia,
+          distancia_recorrida: distancia
         };
-      });
-      
-      console.log('✅ [CRÍTICO] Ubicaciones actualizadas:', ubicacionesActualizadas);
-      
-      // ✅ GUARDAR INMEDIATAMENTE con onChange
-      onChange(ubicacionesActualizadas);
-      
-      setDistanciaTotal(distancia);
-      setTiempoEstimado(tiempo);
-      setRouteData({
-        distance_km: distancia,
-        duration_minutes: tiempo,
-        google_data: routeGeometry?.google_data
-      });
-      
-      // ✅ Notificar al padre
-      if (onDistanceCalculated) {
-        onDistanceCalculated({
-          distanciaTotal: distancia,
-          tiempoEstimado: tiempo
-        });
       }
-      
-      console.log('✅ [CRÍTICO] Proceso completo de actualización de distancia');
-      
-      toast({
-        title: "Ruta calculada y guardada",
-        description: `Distancia: ${distancia.toFixed(2)} km guardada en el destino`,
+      return ub;
+    });
+    
+    setDistanciaTotal(distancia);
+    onChange(ubicacionesActualizadas);
+    
+    if (onDistanceCalculated) {
+      onDistanceCalculated({
+        distanciaTotal: distancia,
+        tiempoEstimado
       });
-    } catch (error) {
-      console.error('❌ Error procesando cálculo de distancia:', error);
-      toast({
-        title: "Error",
-        description: "Error al procesar el cálculo de distancia.",
-        variant: "destructive"
+    }
+    
+    sonnerToast.success('Distancia actualizada manualmente');
+  };
+
+  const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
+    console.log('📏 Distancia calculada automáticamente:', { distancia, tiempo });
+    
+    const ubicacionesActualizadas = ubicaciones.map(ub => {
+      if (ub.tipoUbicacion === 'Destino') {
+        return {
+          ...ub,
+          distanciaRecorrida: distancia,
+          distancia_recorrida: distancia
+        };
+      }
+      return ub;
+    });
+    
+    setDistanciaTotal(distancia);
+    setTiempoEstimado(tiempo);
+    setRouteData(routeGeometry);
+    onChange(ubicacionesActualizadas);
+    
+    if (onDistanceCalculated) {
+      onDistanceCalculated({
+        distanciaTotal: distancia,
+        tiempoEstimado: tiempo
       });
     }
   };
@@ -452,64 +486,33 @@ export function UbicacionesSectionOptimizada({
         distanciaTotal={distanciaCalculada}
       />
 
-      {/* ÚNICO Calculadora híbrida estabilizada de rutas con mapa integrado */}
+      {/* Panel de métricas de ruta */}
       {canCalculateDistances && (
-        <>
-          <OptimizedAutoRouteCalculator
-            ubicaciones={ubicaciones}
-            onDistanceCalculated={handleDistanceCalculated}
-            distanciaTotal={distanciaTotal}
-            tiempoEstimado={tiempoEstimado}
-          />
+        <DistanceMetricsPanel
+          distanciaTotal={distanciaTotal}
+          tiempoEstimado={tiempoEstimado}
+          isCalculating={isCalculatingRoute}
+          onRecalcular={handleManualRecalculation}
+          onManualEdit={handleManualDistanceEdit}
+        />
+      )}
 
-          {/* ✅ FASE 3: Resumen de distancia calculada automáticamente */}
-          {distanciaTotal > 0 && (
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">
-                      Distancia Total Calculada
-                    </p>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {distanciaTotal.toFixed(2)} km
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">
-                      Tiempo Estimado
-                    </p>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {Math.round(tiempoEstimado / 60)} hrs {tiempoEstimado % 60} min
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  ✅ Cálculo automático usando Mapbox
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </>
+      {/* Calculadora de rutas con mapa */}
+      {canCalculateDistances && distanciaTotal > 0 && (
+        <OptimizedAutoRouteCalculator
+          ubicaciones={ubicaciones}
+          onDistanceCalculated={handleDistanceCalculated}
+          distanciaTotal={distanciaTotal}
+          tiempoEstimado={tiempoEstimado}
+        />
       )}
 
       <CardContent className="bg-white">
         <UbicacionesList
           ubicaciones={ubicaciones}
-          distanciaTotal={distanciaTotal}
           onEditarUbicacion={handleEditarUbicacion}
           onEliminarUbicacion={handleEliminarUbicacion}
           onAgregarUbicacion={handleAgregarUbicacion}
-          onDistanciaChange={(index, distancia) => {
-            console.log('📝 Actualizando distancia manual en ubicación:', { index, distancia });
-            const updatedUbicaciones = [...ubicaciones];
-            updatedUbicaciones[index] = {
-              ...updatedUbicaciones[index],
-              distanciaRecorrida: distancia,
-              distancia_recorrida: distancia
-            } as any;
-            onChange(updatedUbicaciones);
-          }}
         />
 
         <UbicacionesNavigation

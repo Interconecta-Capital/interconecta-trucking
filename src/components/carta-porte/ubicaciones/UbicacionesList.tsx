@@ -4,24 +4,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Plus, MapPin } from 'lucide-react';
-import { UbicacionDistanciaDisplay } from './UbicacionDistanciaDisplay';
 
 interface UbicacionesListProps {
   ubicaciones: any[];
-  distanciaTotal?: number;
   onEditarUbicacion: (index: number) => void;
   onEliminarUbicacion: (index: number) => void;
   onAgregarUbicacion: () => void;
-  onDistanciaChange?: (index: number, distancia: number) => void;
 }
 
 export function UbicacionesList({
   ubicaciones,
-  distanciaTotal,
   onEditarUbicacion,
   onEliminarUbicacion,
-  onAgregarUbicacion,
-  onDistanciaChange
+  onAgregarUbicacion
 }: UbicacionesListProps) {
   const getTipoColor = (tipo: string) => {
     switch (tipo) {
@@ -96,22 +91,11 @@ export function UbicacionesList({
                   </p>
                 )}
 
-                {ubicacion.distanciaRecorrida > 0 && (
-                  <p className="text-sm text-green-600 mt-1">
-                    Distancia: {ubicacion.distanciaRecorrida} km
+                {ubicacion.coordenadas && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    📍 {ubicacion.coordenadas.latitud.toFixed(4)}, {ubicacion.coordenadas.longitud.toFixed(4)}
                   </p>
                 )}
-
-                {/* ✅ FASE 4: Mostrar componente visual de distancia y coordenadas */}
-                <UbicacionDistanciaDisplay 
-                  ubicacion={ubicacion}
-                  distanciaTotal={distanciaTotal}
-                  onDistanciaChange={(distancia) => {
-                    if (onDistanciaChange) {
-                      onDistanciaChange(index, distancia);
-                    }
-                  }}
-                />
               </div>
               
               <div className="flex space-x-2">
