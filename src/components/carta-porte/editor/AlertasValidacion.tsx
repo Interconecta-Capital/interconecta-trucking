@@ -135,7 +135,7 @@ export function AlertasValidacion({
     });
   }
 
-  // Validar figuras de transporte
+  // ✅ FASE 4: Validar figuras de transporte (solo licencia en operadores)
   if (!figuras || figuras.length === 0) {
     alertas.push({
       tipo: 'warning',
@@ -144,10 +144,13 @@ export function AlertasValidacion({
     });
   } else {
     figuras.forEach((fig, index) => {
-      if (!fig.num_licencia && !fig.numLicencia) {
+      // Solo pedir licencia si es operador (tipo '01')
+      const esOperador = fig.tipo_figura === '01' || fig.tipoFigura === '01';
+      
+      if (esOperador && !fig.num_licencia && !fig.numLicencia) {
         alertas.push({
           tipo: 'warning',
-          mensaje: `Falta número de licencia en figura ${index + 1}`,
+          mensaje: `Falta número de licencia en operador (figura ${index + 1})`,
           seccion: 'Figuras'
         });
       }

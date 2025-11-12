@@ -194,14 +194,18 @@ export class XMLValidatorSAT31 {
         });
       }
 
-      // Distancia en destino
-      if (ubicacion.tipo_ubicacion === 'Destino' && (!ubicacion.distancia_recorrida || ubicacion.distancia_recorrida <= 0)) {
-        errors.push({
-          field: `ubicaciones[${index}].distanciaRecorrida`,
-          code: 'MISSING_DISTANCIA',
-          message: 'Distancia recorrida obligatoria en destino',
-          severity: 'error'
-        });
+      // ✅ FASE 3: Distancia en destino - ahora es WARNING, no error
+      if (ubicacion.tipo_ubicacion === 'Destino') {
+        const distancia = ubicacion.distancia_recorrida || (ubicacion as any).distanciaRecorrida;
+        
+        if (!distancia || distancia <= 0) {
+          warnings.push({
+            field: `ubicaciones[${index}].distanciaRecorrida`,
+            code: 'MISSING_DISTANCIA',
+            message: 'Se recomienda calcular la distancia usando el mapa',
+            severity: 'warning'
+          });
+        }
       }
     });
   }
