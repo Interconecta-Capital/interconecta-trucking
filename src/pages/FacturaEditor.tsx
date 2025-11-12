@@ -100,11 +100,6 @@ export default function FacturaEditor() {
   };
 
   const guardarBorrador = async () => {
-    // ⏳ TEMPORAL: Comentado hasta que se ejecuten las migraciones SQL
-    toast.info('Ejecuta las migraciones SQL primero. Ver docs/IMPLEMENTACION_COMPLETA.md');
-    return;
-    
-    /* DESCOMENTAR DESPUÉS DE EJECUTAR MIGRACIONES:
     setLoading(true);
     try {
       const { data: user } = await supabase.auth.getUser();
@@ -138,12 +133,87 @@ export default function FacturaEditor() {
     } finally {
       setLoading(false);
     }
-    */
   };
 
   const timbrarFactura = async () => {
-    // ⏳ TEMPORAL: Comentado hasta que se ejecuten las migraciones SQL
-    toast.info('Ejecuta las migraciones SQL primero. Ver docs/IMPLEMENTACION_COMPLETA.md');
+    setLoading(true);
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('No autenticado');
+
+      if (conceptos.length === 0) {
+        toast.error('Debes agregar al menos un concepto');
+        return;
+      }
+
+      // 1. Guardar borrador primero si no existe ID
+      let facturaId = id;
+      if (!facturaId) {
+        const totales = calcularTotales();
+        const { data: nuevaFactura, error: insertError } = await supabase
+          .from('facturas')
+          .insert({
+            user_id: user.user.id,
+            tipo_comprobante: tipoComprobante,
+            rfc_emisor: rfcEmisor,
+            nombre_emisor: nombreEmisor,
+            rfc_receptor: rfcReceptor,
+            nombre_receptor: nombreReceptor,
+            subtotal: totales.subtotal,
+            total: totales.total,
+            status: 'draft',
+            uso_cfdi: usoCFDI,
+            fecha_expedicion: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        facturaId = nuevaFactura.id;
+      }
+
+      // 2. Preparar datos para timbrado
+      const facturaData = {
+        rfcEmisor,
+        nombreEmisor,
+        rfcReceptor,
+        nombreReceptor,
+        tipoCfdi: tipoComprobante === 'I' ? 'Ingreso' : 'Traslado',
+        usoCfdi: usoCFDI,
+        conceptos: conceptos.map(c => ({
+          clave_prod_serv: c.clave_prod_serv,
+          cantidad: c.cantidad,
+          clave_unidad: c.clave_unidad,
+          descripcion: c.descripcion,
+          valor_unitario: c.valor_unitario,
+          importe: c.importe
+        }))
+      };
+
+      // 3. Llamar edge function para timbrar
+      const { data: result, error: timbradoError } = await supabase.functions.invoke(
+        'timbrar-con-sw',
+        {
+          body: {
+            facturaData,
+            facturaId,
+            ambiente: 'sandbox'
+          }
+        }
+      );
+
+      if (timbradoError || !result.success) {
+        throw new Error(result?.error || 'Error al timbrar');
+      }
+
+      toast.success(`Factura timbrada exitosamente. UUID: ${result.uuid}`);
+      navigate('/administracion/fiscal');
+    } catch (error) {
+      console.error('Error timbrando factura:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al timbrar');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const totales = calcularTotales();

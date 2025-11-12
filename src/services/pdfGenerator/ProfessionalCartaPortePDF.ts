@@ -39,7 +39,11 @@ export class ProfessionalCartaPortePDF {
     this.pageHeight = this.pdf.internal.pageSize.height;
   }
 
-  async generatePDF(cartaPorteData: CartaPorteData, datosRuta?: { distanciaTotal?: number; tiempoEstimado?: number }): Promise<ProfessionalPDFResult> {
+  async generatePDF(
+    cartaPorteData: CartaPorteData, 
+    datosRuta?: { distanciaTotal?: number; tiempoEstimado?: number },
+    qrCodeBase64?: string
+  ): Promise<ProfessionalPDFResult> {
     try {
       this.currentY = 30;
       
@@ -63,6 +67,9 @@ export class ProfessionalCartaPortePDF {
       
       // Footer fiscal
       this.drawFooterFiscal(cartaPorteData);
+      
+      // QR Code real del SAT
+      await this.drawQRCode(qrCodeBase64);
       
       // Copyright
       this.drawCopyright();
@@ -436,20 +443,9 @@ export class ProfessionalCartaPortePDF {
     this.pdf.line(this.margin, this.currentY, this.pageWidth - this.margin, this.currentY);
     this.currentY += 15;
     
-    // QR Code placeholder (izquierda)
-    const qrSize = 30;
-    this.pdf.setDrawColor(this.colors.gray200);
-    this.pdf.setFillColor(255, 255, 255);
-    this.pdf.rect(this.margin, this.currentY, qrSize, qrSize, 'FD');
-    
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(8);
-    this.pdf.setTextColor(this.colors.gray400);
-    this.pdf.text('QR SAT', this.margin + qrSize/2, this.currentY + qrSize/2, { align: 'center' });
-    
-    // Sellos digitales (derecha)
-    const sellosX = this.margin + qrSize + 10;
-    const sellosWidth = this.pageWidth - sellosX - this.margin;
+    // Sellos digitales
+    const sellosX = this.margin;
+    const sellosWidth = this.pageWidth - (this.margin * 2);
     
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setFontSize(9);
@@ -500,6 +496,36 @@ export class ProfessionalCartaPortePDF {
     this.pdf.setTextColor(this.colors.gray400);
     const copyright = `Este documento es una representación impresa de un CFDI. © ${new Date().getFullYear()} Interconecta.`;
     this.pdf.text(copyright, this.pageWidth / 2, this.currentY, { align: 'center' });
+  }
+
+  private async drawQRCode(qrCodeBase64?: string) {
+    if (!qrCodeBase64) {
+      console.warn('⚠️ No hay QR Code para mostrar');
+      return;
+    }
+
+    try {
+      // Convertir base64 a data URL
+      const qrDataUrl = qrCodeBase64.startsWith('data:') 
+        ? qrCodeBase64 
+        : `data:image/png;base64,${qrCodeBase64}`;
+      
+      // Posición del QR (esquina inferior derecha)
+      const qrSize = 40; // mm
+      const qrX = this.pageWidth - this.margin - qrSize;
+      const qrY = this.pageHeight - this.margin - qrSize - 15;
+
+      this.pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+      // Texto descriptivo
+      this.pdf.setFontSize(8);
+      this.pdf.setTextColor(this.colors.gray500);
+      this.pdf.text('Código QR SAT', qrX + qrSize / 2, qrY + qrSize + 5, { align: 'center' });
+      
+      console.log('✅ QR Code agregado al PDF exitosamente');
+    } catch (error) {
+      console.error('❌ Error agregando QR code al PDF:', error);
+    }
   }
 
   private drawSectionTitle(title: string, x?: number, y?: number) {
