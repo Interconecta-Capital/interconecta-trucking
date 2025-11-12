@@ -10,6 +10,8 @@ import { Ubicacion, UbicacionFrecuente } from '@/types/ubicaciones';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import { FechaHoraFields } from './FechaHoraFields';
 import { useUbicacionForm } from '@/hooks/useUbicacionForm';
+import { useAccurateGeocodingMexico } from '@/hooks/useAccurateGeocodingMexico';
+import { normalizeDomicilio } from '@/utils/domicilioNormalizer';
 
 interface SmartUbicacionFormV2Props {
   ubicacion?: any;
@@ -41,6 +43,9 @@ export function SmartUbicacionFormV2({
     cargarUbicacionFrecuente,
     isFormValid
   } = useUbicacionForm(ubicacion, generarId);
+
+  // ✅ FASE 4: Hook para geocodificación
+  const { geocodeByCodigoPostal } = useAccurateGeocodingMexico();
 
   const [modoManual, setModoManual] = useState(false);
   const [searchAddress, setSearchAddress] = useState('');
@@ -280,8 +285,37 @@ export function SmartUbicacionFormV2({
     console.log('📍 Datos del formulario:', formData);
     
     if (validateForm()) {
-      console.log('✅ Formulario válido, enviando...');
-      onSave(formData);
+      console.log('✅ Formulario válido, procesando...');
+      
+      // ✅ FASE 4: Geocodificar si no tiene coordenadas
+      let coordenadasFinales = formData.coordenadas;
+      
+      if (!coordenadasFinales && formData.domicilio.codigoPostal) {
+        console.log('📍 FASE 4: Geocodificando ubicación manual...');
+        const coords = geocodeByCodigoPostal(formData.domicilio.codigoPostal);
+        
+        if (coords) {
+          coordenadasFinales = {
+            latitud: coords.lat,
+            longitud: coords.lng
+          };
+          console.log('✅ Coordenadas obtenidas:', coordenadasFinales);
+        } else {
+          console.warn('⚠️ No se pudieron obtener coordenadas, guardando sin ellas');
+        }
+      }
+      
+      // ✅ FASE 3: Normalizar domicilio para asegurar compatibilidad
+      const domicilioNormalizado = normalizeDomicilio(formData.domicilio);
+      
+      const ubicacionCompleta = {
+        ...formData,
+        coordenadas: coordenadasFinales,
+        domicilio: domicilioNormalizado
+      };
+      
+      console.log('✅ Ubicación completa a guardar:', ubicacionCompleta);
+      onSave(ubicacionCompleta);
     } else {
       console.log('❌ Formulario inválido, no se enviará');
     }

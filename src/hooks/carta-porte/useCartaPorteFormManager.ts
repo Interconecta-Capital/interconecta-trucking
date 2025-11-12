@@ -361,7 +361,15 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     setCurrentStep(0);
     setCurrentCartaPorteId(null);
     setBorradorCargado(false);
+    setIdCCP(''); // ✅ FASE 2: Limpiar idCCP
     clearSessionData();
+    
+    // ✅ FASE 2: Limpiar cache
+    try {
+      localStorage.removeItem('ubicaciones_frecuentes_cache');
+    } catch (e) {
+      console.warn('⚠️ Error limpiando cache:', e);
+    }
   }, [rejectBorrador, clearSessionData]);
   
   // Guardar como borrador usando el nuevo sistema
@@ -505,23 +513,49 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   // Limpiar borrador
   const handleLimpiarBorrador = useCallback(async () => {
     try {
+      console.log('🧹 Limpiando borrador completo...');
+      
       if (currentCartaPorteId) {
+        // ✅ FASE 2: Eliminar borrador de BD
         await CartaPorteLifecycleManager.eliminarBorrador(currentCartaPorteId);
+        console.log('✅ Borrador eliminado de BD');
       }
       
+      // ✅ FASE 2: Resetear TODOS los estados locales
       setFormData(initialCartaPorteData);
       setCurrentStep(0);
       setCurrentCartaPorteId(null);
       setBorradorCargado(false);
       setUltimoGuardado(null);
+      setIdCCP(''); // ✅ Limpiar idCCP
+      
+      // ✅ Limpiar sessionStorage
       clearSessionData();
       
-      toast.success('Borrador eliminado correctamente');
+      // ✅ FASE 2: Limpiar localStorage (ubicaciones frecuentes)
+      try {
+        localStorage.removeItem('ubicaciones_frecuentes_cache');
+        localStorage.removeItem('carta_porte_borrador');
+        if (currentCartaPorteId) {
+          localStorage.removeItem(`carta-porte-session-data-${currentCartaPorteId}`);
+        }
+        console.log('✅ Cache de ubicaciones limpiado');
+      } catch (e) {
+        console.warn('⚠️ Error limpiando localStorage:', e);
+      }
+      
+      toast.success('Borrador eliminado completamente');
+      
+      // ✅ FASE 2: Redirigir a lista para evitar estado residual
+      setTimeout(() => {
+        navigate('/borradores', { replace: true });
+      }, 500);
+      
     } catch (error) {
-      console.error('Error limpiando borrador:', error);
+      console.error('❌ Error limpiando borrador:', error);
       toast.error('Error al eliminar el borrador');
     }
-  }, [currentCartaPorteId, clearSessionData]);
+  }, [currentCartaPorteId, clearSessionData, navigate]);
 
   // Actualizar último guardado cuando hay auto-save
   useEffect(() => {

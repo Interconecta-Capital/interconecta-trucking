@@ -66,10 +66,23 @@ export function DireccionCompletaForm({
   };
 
   const handleFieldChange = (field: keyof DireccionData, fieldValue: string) => {
-    onChange({
+    const updated: any = {
       ...value,
       [field]: fieldValue
-    });
+    };
+    
+    // ✅ FASE 3: Siempre incluir snake_case para compatibilidad con BD
+    if (field === 'codigoPostal') {
+      updated.codigo_postal = fieldValue;
+    }
+    if (field === 'numExterior') {
+      updated.num_exterior = fieldValue;
+    }
+    if (field === 'numInterior') {
+      updated.num_interior = fieldValue;
+    }
+    
+    onChange(updated);
   };
 
   const content = (

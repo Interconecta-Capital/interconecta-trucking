@@ -254,14 +254,28 @@ export function StableGoogleMap({
   };
 
   const getCoordinatesForUbicacion = (ubicacion: any) => {
+    // ✅ FASE 1: Soportar MÚLTIPLES formatos de coordenadas
     if (ubicacion.coordenadas) {
-      return {
-        lat: ubicacion.coordenadas.latitud,
-        lng: ubicacion.coordenadas.longitud
-      };
+      // Formato 1: {latitud, longitud} (legacy)
+      if (ubicacion.coordenadas.latitud && ubicacion.coordenadas.longitud) {
+        return {
+          lat: ubicacion.coordenadas.latitud,
+          lng: ubicacion.coordenadas.longitud
+        };
+      }
+      // Formato 2: {lat, lng} (Mapbox/Google)
+      if (ubicacion.coordenadas.lat && ubicacion.coordenadas.lng) {
+        return {
+          lat: ubicacion.coordenadas.lat,
+          lng: ubicacion.coordenadas.lng
+        };
+      }
     }
 
-    // Fallback coordinates by postal code
+    // ✅ Fallback: geocodificar por código postal (snake_case y camelCase)
+    const codigoPostal = ubicacion.domicilio?.codigo_postal || ubicacion.domicilio?.codigoPostal;
+    
+    // Fallback coordinates by postal code - AMPLIADO
     const cpMap: { [key: string]: { lat: number; lng: number } } = {
       '01000': { lat: 19.4326, lng: -99.1332 },
       '03100': { lat: 19.3927, lng: -99.1588 },
@@ -269,9 +283,21 @@ export function StableGoogleMap({
       '11000': { lat: 19.4069, lng: -99.1716 },
       '62577': { lat: 18.8711, lng: -99.2211 },
       '22000': { lat: 32.5149, lng: -117.0382 },
+      '44100': { lat: 20.6597, lng: -103.3496 }, // Guadalajara
+      '64000': { lat: 25.6866, lng: -100.3161 }, // Monterrey
+      '20000': { lat: 20.5230, lng: -97.4608 },  // Veracruz
+      '80000': { lat: 25.7903, lng: -108.9850 }, // Sinaloa
+      '37000': { lat: 21.1190, lng: -101.6854 }, // León
     };
 
-    return cpMap[ubicacion.domicilio?.codigoPostal] || { lat: 19.4326, lng: -99.1332 };
+    if (codigoPostal && cpMap[codigoPostal]) {
+      console.log(`📍 Usando coordenadas de fallback para CP: ${codigoPostal}`);
+      return cpMap[codigoPostal];
+    }
+
+    // ✅ Último fallback: Centro de México
+    console.warn('⚠️ No se encontraron coordenadas, usando centro de México');
+    return { lat: 19.4326, lng: -99.1332 };
   };
 
   const getMarkerIcon = (tipo: string) => {
