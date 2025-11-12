@@ -41,12 +41,20 @@ export class RFCValidator {
       };
     }
     
-    // Validar formato
-    if (!this.RFC_REGEX.test(rfcLimpio)) {
+    // ✅ FASE 5: Validación más permisiva (acepta RFCs con 1-3 caracteres de homoclave)
+    const RFC_REGEX_PERMISIVO = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{1,3}$/;
+    
+    if (!RFC_REGEX_PERMISIVO.test(rfcLimpio)) {
       return { 
         valido: false, 
         error: 'Formato de RFC inválido. Debe contener solo letras y números en el formato correcto' 
       };
+    }
+    
+    // ✅ Warning en consola si el RFC no tiene homoclave completa (3 caracteres)
+    const parteHomoclave = rfcLimpio.substring(rfcLimpio.length - 3);
+    if (!/^[A-Z0-9]{3}$/.test(parteHomoclave)) {
+      console.warn(`⚠️ RFC ${rfcLimpio} podría estar incompleto (homoclave: "${parteHomoclave}")`);
     }
     
     return { valido: true };

@@ -228,6 +228,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   };
 
   const renderActiveSection = () => {
+    /* ⚠️ FASE 4: Vista Previa deshabilitada temporalmente
     // Special case for preview
     if (activeSection === 'preview') {
       return (
@@ -239,6 +240,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
         />
       );
     }
+    */
 
     // Special case for GeneracionSection which has different props
     if (activeSection === 'generacion') {
@@ -352,6 +354,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                 </Button>
               )}
 
+              {/* ⚠️ FASE 4: Vista Previa deshabilitada temporalmente
               {progress > 70 && (
                 <Button
                   variant="default"
@@ -362,6 +365,7 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                   Vista Previa Completa
                 </Button>
               )}
+              */}
 
               <Button
                 onClick={handleSaveAndExit}

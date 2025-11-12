@@ -155,15 +155,17 @@ export class XMLValidatorSAT31 {
 
     // Validar cada ubicación
     data.ubicaciones.forEach((ubicacion, index) => {
-      // Código postal obligatorio
-      if (!ubicacion.domicilio?.codigo_postal) {
+      // ✅ FASE 1: Código postal obligatorio - buscar primero en campo directo, luego en domicilio
+      const codigoPostal = ubicacion.codigo_postal || ubicacion.domicilio?.codigo_postal;
+      
+      if (!codigoPostal) {
         errors.push({
           field: `ubicaciones[${index}].codigoPostal`,
           code: 'MISSING_CP',
           message: `Código postal obligatorio en ubicación ${index + 1}`,
           severity: 'error'
         });
-      } else if (!this.validateCodigoPostal(ubicacion.domicilio.codigo_postal)) {
+      } else if (!this.validateCodigoPostal(codigoPostal)) {
         errors.push({
           field: `ubicaciones[${index}].codigoPostal`,
           code: 'INVALID_CP',

@@ -53,6 +53,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null);
   const [isGuardando, setIsGuardando] = useState(false);
   const [idCCP, setIdCCP] = useState<string>('');
+  // ✅ FASE 2: Flag para deshabilitar auto-save durante limpieza
+  const [isClearing, setIsClearing] = useState(false);
   
   // Estados para datos persistidos
   const {
@@ -75,7 +77,8 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     },
     currentCartaPorteId: currentCartaPorteId || undefined,
     onCartaPorteIdChange: (id) => setCurrentCartaPorteId(id),
-    enabled: true
+    // ✅ FASE 2: Deshabilitar auto-save durante limpieza
+    enabled: true && !isClearing
   });
 
   // Recuperación de borrador
@@ -234,7 +237,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     console.log('📍 [FASE 4] Actualizando ubicaciones:', ubicaciones.length);
     
     setFormData(prev => {
-      const updated = { ...prev, ubicaciones };
+      // ✅ FASE 3: Limpiar datosCalculoRuta para forzar recálculo
+      const updated = { 
+        ...prev, 
+        ubicaciones,
+        datosCalculoRuta: undefined // ✅ Resetear para que se recalcule
+      };
       
       // ✅ FASE 4: Guardar automáticamente Y recalcular validación
       setTimeout(async () => {
@@ -316,12 +324,30 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       calculadoEn: new Date().toISOString()
     };
     
-    saveRouteData(newDatosRuta);
-    
+    // ✅ FASE 3: Actualizar INMEDIATAMENTE sin esperar auto-save
     setFormData(prev => ({
       ...prev,
       datosCalculoRuta: newDatosRuta
     }));
+    
+    saveRouteData(newDatosRuta);
+    
+    // ✅ FASE 3: Actualizar distancia en ubicación destino
+    if (datos.distanciaTotal) {
+      setFormData(prev => ({
+        ...prev,
+        ubicaciones: prev.ubicaciones.map(ub => {
+          if (ub.tipo_ubicacion === 'Destino') {
+            return {
+              ...ub,
+              distancia_recorrida: datos.distanciaTotal,
+              distanciaRecorrida: datos.distanciaTotal
+            };
+          }
+          return ub;
+        })
+      }));
+    }
     
     setTimeout(() => handleGuardarCartaPorteOficial(), 100);
   }, [saveRouteData]);
@@ -515,44 +541,61 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     try {
       console.log('🧹 Limpiando borrador completo...');
       
+      // ✅ FASE 2: Deshabilitar auto-save primero
+      setIsClearing(true);
+      
       if (currentCartaPorteId) {
-        // ✅ FASE 2: Eliminar borrador de BD
         await CartaPorteLifecycleManager.eliminarBorrador(currentCartaPorteId);
         console.log('✅ Borrador eliminado de BD');
       }
       
-      // ✅ FASE 2: Resetear TODOS los estados locales
+      // Resetear TODOS los estados locales
       setFormData(initialCartaPorteData);
       setCurrentStep(0);
       setCurrentCartaPorteId(null);
       setBorradorCargado(false);
       setUltimoGuardado(null);
-      setIdCCP(''); // ✅ Limpiar idCCP
+      setIdCCP('');
       
-      // ✅ Limpiar sessionStorage
+      // Limpiar sessionStorage
       clearSessionData();
       
-      // ✅ FASE 2: Limpiar localStorage (ubicaciones frecuentes)
+      // ✅ FASE 2: Limpiar TODOS los datos residuales
       try {
         localStorage.removeItem('ubicaciones_frecuentes_cache');
         localStorage.removeItem('carta_porte_borrador');
-        if (currentCartaPorteId) {
-          localStorage.removeItem(`carta-porte-session-data-${currentCartaPorteId}`);
-        }
-        console.log('✅ Cache de ubicaciones limpiado');
+        localStorage.removeItem('carta-porte-last-calculation');
+        
+        // Limpiar TODOS los items que empiecen con "carta-porte-" o "carta_porte_"
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('carta-porte-') || key.startsWith('carta_porte_')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Limpiar sessionStorage también
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.startsWith('carta-porte-') || key.startsWith('carta_porte_')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+        
+        console.log('✅ Cache completo limpiado');
       } catch (e) {
-        console.warn('⚠️ Error limpiando localStorage:', e);
+        console.warn('⚠️ Error limpiando storage:', e);
       }
       
       toast.success('Borrador eliminado completamente');
       
-      // ✅ FASE 2: Redirigir a lista para evitar estado residual
+      // ✅ FASE 2: ESPERAR antes de redirigir para asegurar limpieza
       setTimeout(() => {
+        setIsClearing(false);
         navigate('/borradores', { replace: true });
-      }, 500);
+      }, 800); // Aumentar delay
       
     } catch (error) {
       console.error('❌ Error limpiando borrador:', error);
+      setIsClearing(false);
       toast.error('Error al eliminar el borrador');
     }
   }, [currentCartaPorteId, clearSessionData, navigate]);

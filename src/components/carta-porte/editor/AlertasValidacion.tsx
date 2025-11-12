@@ -59,7 +59,8 @@ export function AlertasValidacion({
 
     // Validar códigos postales
     ubicaciones.forEach((ub, index) => {
-      const cp = ub.domicilio?.codigo_postal || ub.codigoPostal;
+      // ✅ FASE 1: Buscar en ambos formatos del domicilio
+      const cp = ub.domicilio?.codigo_postal || ub.domicilio?.codigoPostal;
       if (!cp) {
         alertas.push({
           tipo: 'error',
