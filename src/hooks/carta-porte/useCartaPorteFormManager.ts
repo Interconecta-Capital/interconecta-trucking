@@ -234,7 +234,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   // Setters estables para cada sección del formulario
   const setUbicaciones = useCallback((ubicaciones: UbicacionCompleta[]) => {
-    console.log('📍 [FASE 4] Actualizando ubicaciones:', ubicaciones.length);
+    console.log('📍 [DEBUG] setUbicaciones llamado con:', {
+      count: ubicaciones.length,
+      ubicaciones: ubicaciones.map(u => ({
+        tipo: u.tipo_ubicacion || (u as any).tipoUbicacion,
+        distancia: u.distancia_recorrida || (u as any).distanciaRecorrida,
+        coordenadas: u.coordenadas
+      }))
+    });
     
     setFormData(prev => {
       // ✅ FASE 3: Limpiar datosCalculoRuta para forzar recálculo
@@ -318,36 +325,54 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     distanciaTotal?: number;
     tiempoEstimado?: number;
   }) => {
-    console.log('🗺️ Actualizando cálculo de ruta:', datos);
-    const newDatosRuta = {
+    console.log('🗺️ [DISTANCIA] Actualizando cálculo de ruta:', datos);
+    
+    // ✅ FASE 3: Una sola operación atómica que actualiza TODO
+    setFormData(prev => {
+      const newDatosRuta = {
+        ...datos,
+        calculadoEn: new Date().toISOString()
+      };
+      
+      // ✅ Actualizar ubicaciones con distancia en UNA SOLA operación
+      const ubicacionesActualizadas = datos.distanciaTotal 
+        ? prev.ubicaciones.map(ub => {
+            const tipoUbicacion = ub.tipo_ubicacion || (ub as any).tipoUbicacion;
+            if (tipoUbicacion === 'Destino') {
+              console.log('✅ [DISTANCIA] Actualizando destino con:', datos.distanciaTotal);
+              return {
+                ...ub,
+                distancia_recorrida: datos.distanciaTotal,
+                distanciaRecorrida: datos.distanciaTotal,
+                // ✅ Timestamp para debugging
+                distancia_actualizada_en: new Date().toISOString()
+              } as any;
+            }
+            return ub;
+          })
+        : prev.ubicaciones;
+      
+      const newFormData = {
+        ...prev,
+        datosCalculoRuta: newDatosRuta,
+        ubicaciones: ubicacionesActualizadas
+      };
+      
+      console.log('✅ [DISTANCIA] FormData actualizado:', {
+        distancia: datos.distanciaTotal,
+        ubicaciones: ubicacionesActualizadas.length,
+        destinoConDistancia: ubicacionesActualizadas.find(u => 
+          (u.tipo_ubicacion || (u as any).tipoUbicacion) === 'Destino'
+        )?.distancia_recorrida
+      });
+      
+      return newFormData;
+    });
+    
+    saveRouteData({
       ...datos,
       calculadoEn: new Date().toISOString()
-    };
-    
-    // ✅ FASE 3: Actualizar INMEDIATAMENTE sin esperar auto-save
-    setFormData(prev => ({
-      ...prev,
-      datosCalculoRuta: newDatosRuta
-    }));
-    
-    saveRouteData(newDatosRuta);
-    
-    // ✅ FASE 3: Actualizar distancia en ubicación destino
-    if (datos.distanciaTotal) {
-      setFormData(prev => ({
-        ...prev,
-        ubicaciones: prev.ubicaciones.map(ub => {
-          if (ub.tipo_ubicacion === 'Destino') {
-            return {
-              ...ub,
-              distancia_recorrida: datos.distanciaTotal,
-              distanciaRecorrida: datos.distanciaTotal
-            };
-          }
-          return ub;
-        })
-      }));
-    }
+    });
     
     setTimeout(() => handleGuardarCartaPorteOficial(), 100);
   }, [saveRouteData]);

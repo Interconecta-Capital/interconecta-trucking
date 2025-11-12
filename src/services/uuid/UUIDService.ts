@@ -3,10 +3,21 @@ export class UUIDService {
   static generateValidIdCCP(): string {
     // FASE 4: Generar IdCCP válido para SAT v3.1
     // Formato: 32 caracteres alfanuméricos en mayúsculas (UUID sin guiones)
-    const uuid = crypto.randomUUID(); // Ej: "550e8400-e29b-41d4-a716-446655440000"
-    const idCCP = uuid.replace(/-/g, '').toUpperCase(); // "550E8400E29B41D4A716446655440000"
+    const uuidOriginal = crypto.randomUUID(); // Ej: "550e8400-e29b-41d4-a716-446655440000"
+    const idCCP = uuidOriginal.replace(/-/g, '').toUpperCase(); // "550E8400E29B41D4A716446655440000"
     
-    console.log('🆔 IdCCP generado:', idCCP, `(${idCCP.length} caracteres)`);
+    // ✅ FASE 6: Logging detallado para debugging
+    console.log('🆔 [UUID] Generado:', {
+      original: uuidOriginal,
+      sin_guiones: idCCP,
+      length: idCCP.length,
+      es_valido: idCCP.length === 32
+    });
+    
+    // Validar longitud
+    if (idCCP.length !== 32) {
+      console.error('❌ [UUID] Error: longitud incorrecta:', idCCP.length);
+    }
     
     return idCCP; // Retorna exactamente 32 caracteres
   }

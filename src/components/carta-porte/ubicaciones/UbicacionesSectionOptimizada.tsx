@@ -468,6 +468,7 @@ export function UbicacionesSectionOptimizada({
       <CardContent className="bg-white">
         <UbicacionesList
           ubicaciones={ubicaciones}
+          distanciaTotal={distanciaTotal}
           onEditarUbicacion={handleEditarUbicacion}
           onEliminarUbicacion={handleEliminarUbicacion}
           onAgregarUbicacion={handleAgregarUbicacion}

@@ -4,9 +4,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Plus, MapPin } from 'lucide-react';
+import { UbicacionDistanciaDisplay } from './UbicacionDistanciaDisplay';
 
 interface UbicacionesListProps {
   ubicaciones: any[];
+  distanciaTotal?: number;
   onEditarUbicacion: (index: number) => void;
   onEliminarUbicacion: (index: number) => void;
   onAgregarUbicacion: () => void;
@@ -14,6 +16,7 @@ interface UbicacionesListProps {
 
 export function UbicacionesList({
   ubicaciones,
+  distanciaTotal,
   onEditarUbicacion,
   onEliminarUbicacion,
   onAgregarUbicacion,
@@ -96,6 +99,12 @@ export function UbicacionesList({
                     Distancia: {ubicacion.distanciaRecorrida} km
                   </p>
                 )}
+
+                {/* ✅ FASE 4: Mostrar componente visual de distancia y coordenadas */}
+                <UbicacionDistanciaDisplay 
+                  ubicacion={ubicacion}
+                  distanciaTotal={distanciaTotal}
+                />
               </div>
               
               <div className="flex space-x-2">

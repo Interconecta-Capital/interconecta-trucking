@@ -25,20 +25,53 @@ export class XMLComplementoBuilder {
   </cfdi:Complemento>`;
   }
 
+  // ✅ FASE 1: Helper para buscar campos en ambos formatos (snake_case y camelCase)
+  private static getFieldValue(obj: any, ...fieldNames: string[]): any {
+    for (const fieldName of fieldNames) {
+      if (obj?.[fieldName] !== undefined && obj[fieldName] !== null && obj[fieldName] !== '') {
+        return obj[fieldName];
+      }
+    }
+    return undefined;
+  }
+
   private static construirUbicaciones(data: CartaPorteData): string {
     if (!data.ubicaciones || data.ubicaciones.length === 0) {
       return '';
     }
 
     const alias = 'cartaporte31';
+    
+    console.log('📄 [XML] Construyendo ubicaciones XML:', {
+      total: data.ubicaciones.length,
+      ubicaciones: data.ubicaciones.map(u => ({
+        tipo: this.getFieldValue(u, 'tipo_ubicacion', 'tipoUbicacion'),
+        distancia: this.getFieldValue(u, 'distancia_recorrida', 'distanciaRecorrida')
+      }))
+    });
+    
     const ubicacionesXML = data.ubicaciones.map(ubicacion => {
+      // ✅ FASE 1: Buscar en ambos formatos
+      const tipoUbicacion = this.getFieldValue(ubicacion, 'tipo_ubicacion', 'tipoUbicacion');
+      const idUbicacion = this.getFieldValue(ubicacion, 'id_ubicacion', 'idUbicacion', 'id');
+      const rfc = this.getFieldValue(ubicacion, 'rfc', 'rfcRemitenteDestinatario', 'rfc_remitente_destinatario');
+      const nombre = this.getFieldValue(ubicacion, 'nombre', 'nombreRemitenteDestinatario', 'nombre_remitente_destinatario');
+      const fechaHora = this.getFieldValue(ubicacion, 'fecha_llegada_salida', 'fechaHoraSalidaLlegada', 'fecha_hora_salida_llegada');
+      const distancia = this.getFieldValue(ubicacion, 'distancia_recorrida', 'distanciaRecorrida');
+      
+      console.log('📍 [XML] Ubicación procesada:', {
+        tipo: tipoUbicacion,
+        id: idUbicacion,
+        distancia: distancia
+      });
+      
       return `<${alias}:Ubicacion
-        TipoUbicacion="${ubicacion.tipo_ubicacion}"
-        IDUbicacion="${ubicacion.id_ubicacion || ubicacion.id}"
-        RFCRemitenteDestinatario="${ubicacion.rfc}"
-        NombreRemitenteDestinatario="${ubicacion.nombre}"
-        FechaHoraSalidaLlegada="${ubicacion.fecha_llegada_salida}"
-        ${ubicacion.distancia_recorrida ? `DistanciaRecorrida="${ubicacion.distancia_recorrida}"` : ''}>
+        TipoUbicacion="${tipoUbicacion}"
+        IDUbicacion="${idUbicacion}"
+        RFCRemitenteDestinatario="${rfc}"
+        NombreRemitenteDestinatario="${nombre}"
+        FechaHoraSalidaLlegada="${fechaHora}"
+        ${distancia ? `DistanciaRecorrida="${distancia}"` : ''}>
         
         ${this.construirDomicilio(ubicacion.domicilio, alias)}
         
@@ -53,14 +86,23 @@ export class XMLComplementoBuilder {
   private static construirDomicilio(domicilio: any, alias: string): string {
     if (!domicilio) return '';
 
+    // ✅ FASE 1: Buscar en ambos formatos
+    const codigoPostal = this.getFieldValue(domicilio, 'codigo_postal', 'codigoPostal');
+    const estado = this.getFieldValue(domicilio, 'estado');
+    const pais = this.getFieldValue(domicilio, 'pais') || 'MEX';
+    const municipio = this.getFieldValue(domicilio, 'municipio');
+    const colonia = this.getFieldValue(domicilio, 'colonia');
+    const calle = this.getFieldValue(domicilio, 'calle');
+    const numeroExterior = this.getFieldValue(domicilio, 'numero_exterior', 'numExterior');
+
     return `<${alias}:Domicilio
-      CodigoPostal="${domicilio.codigo_postal || ''}"
-      ${domicilio.estado ? `Estado="${domicilio.estado}"` : ''}
-      ${domicilio.pais ? `Pais="${domicilio.pais}"` : 'Pais="MEX"'}
-      ${domicilio.municipio ? `Municipio="${domicilio.municipio}"` : ''}
-      ${domicilio.colonia ? `Colonia="${domicilio.colonia}"` : ''}
-      ${domicilio.calle ? `Calle="${domicilio.calle}"` : ''}
-      ${domicilio.numero_exterior ? `NumeroExterior="${domicilio.numero_exterior}"` : ''} />`;
+      CodigoPostal="${codigoPostal || ''}"
+      ${estado ? `Estado="${estado}"` : ''}
+      ${pais ? `Pais="${pais}"` : ''}
+      ${municipio ? `Municipio="${municipio}"` : ''}
+      ${colonia ? `Colonia="${colonia}"` : ''}
+      ${calle ? `Calle="${calle}"` : ''}
+      ${numeroExterior ? `NumeroExterior="${numeroExterior}"` : ''} />`;
   }
 
   private static construirMercancias(data: CartaPorteData): string {

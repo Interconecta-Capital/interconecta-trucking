@@ -16,6 +16,16 @@ export interface ValidationResult {
 }
 
 export class XMLValidatorSAT {
+  // ✅ FASE 2: Helper para buscar campos en ambos formatos
+  private static getFieldValue(obj: any, ...fieldNames: string[]): any {
+    for (const fieldName of fieldNames) {
+      if (obj?.[fieldName] !== undefined && obj[fieldName] !== null && obj[fieldName] !== '') {
+        return obj[fieldName];
+      }
+    }
+    return undefined;
+  }
+
   // Validaciones específicas del SAT para Carta Porte 3.1
   static validateCartaPorteCompliance(data: CartaPorteData): ValidationResult {
     const errors: string[] = [];
@@ -82,6 +92,16 @@ export class XMLValidatorSAT {
 
     // Validación de ubicaciones
     const ubicaciones = data.ubicaciones || [];
+    
+    console.log('🔍 [VALIDACION] Validando ubicaciones:', {
+      total: ubicaciones.length,
+      ubicaciones: ubicaciones.map(u => ({
+        tipo: this.getFieldValue(u, 'tipo_ubicacion', 'tipoUbicacion'),
+        rfc: this.getFieldValue(u, 'rfc', 'rfcRemitenteDestinatario'),
+        cp: this.getFieldValue(u.domicilio, 'codigo_postal', 'codigoPostal')
+      }))
+    });
+    
     if (ubicaciones.length < 2) {
       errors.push('Debe especificar al menos una ubicación de origen y una de destino');
       details.push({
@@ -91,8 +111,16 @@ export class XMLValidatorSAT {
         severity: 'error'
       });
     } else {
-      const tieneOrigen = ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
-      const tieneDestino = ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
+      // ✅ FASE 2: Buscar en ambos formatos
+      const tieneOrigen = ubicaciones.some(u => {
+        const tipo = this.getFieldValue(u, 'tipo_ubicacion', 'tipoUbicacion');
+        return tipo === 'Origen';
+      });
+      
+      const tieneDestino = ubicaciones.some(u => {
+        const tipo = this.getFieldValue(u, 'tipo_ubicacion', 'tipoUbicacion');
+        return tipo === 'Destino';
+      });
       
       if (!tieneOrigen) {
         errors.push('Debe especificar al menos una ubicación de origen');
@@ -114,9 +142,10 @@ export class XMLValidatorSAT {
         });
       }
 
-      // Validar códigos postales
+      // Validar códigos postales - ✅ FASE 2: Buscar en ambos formatos
       ubicaciones.forEach((ub, index) => {
-        if (!ub.domicilio?.codigo_postal || !this.validarCodigoPostal(ub.domicilio.codigo_postal)) {
+        const codigoPostal = this.getFieldValue(ub.domicilio, 'codigo_postal', 'codigoPostal');
+        if (!codigoPostal || !this.validarCodigoPostal(codigoPostal)) {
           warnings.push(`Código postal inválido en ubicación ${index + 1}`);
           details.push({
             field: `ubicaciones[${index}].codigoPostal`,
