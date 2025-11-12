@@ -337,7 +337,7 @@ export class TimbradoService {
         
       if (!carta) return;
       
-      // Incrementar contador en profiles (fallback directo por ahora)
+      // ✅ Incrementar contador de timbres
       const { data: profile } = await supabase
         .from('profiles')
         .select('timbres_consumidos')

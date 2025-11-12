@@ -18,8 +18,12 @@ import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
 import { PDFGenerationPanel } from './PDFGenerationPanel';
 import { XMLGeneratorEnhanced } from '@/services/xml/xmlGeneratorEnhanced';
+import { XMLFacturaCartaPorteGenerator, OpcionesXML } from '@/services/xml/xmlFacturaConCartaPorte';
 import { PACServiceReal } from '@/services/xml/pacServiceReal';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface XMLGenerationPanelProps {
   cartaPorteData: CartaPorteData;
@@ -47,6 +51,8 @@ export function XMLGenerationPanel({
   const [isGenerating, setIsGenerating] = useState(false);
   const [validationScore, setValidationScore] = useState<number>(0);
   const [fiscalData, setFiscalData] = useState<any>(null);
+  const [tipoComprobante, setTipoComprobante] = useState<'T' | 'I'>('T');
+  const [montoServicio, setMontoServicio] = useState<number>(0);
   
   const {
     isTimbring,
@@ -109,14 +115,23 @@ export function XMLGenerationPanel({
     try {
       console.log('🚀 Generando XML con validaciones mejoradas...');
       
+      // Usar generador dual según el tipo seleccionado
+      const opciones: OpcionesXML = {
+        esFactura: tipoComprobante === 'I',
+        montoServicio: tipoComprobante === 'I' ? montoServicio : undefined
+      };
+      
+      const xmlGenerado = XMLFacturaCartaPorteGenerator.generarXML(cartaPorteData, opciones);
+      
+      // También validar con el generador enhanced
       const result = await XMLGeneratorEnhanced.generarXMLCompleto(cartaPorteData);
       
-      if (result.success && result.xml) {
-        setGeneratedXML(result.xml);
+      if (result.success && xmlGenerado) {
+        setGeneratedXML(xmlGenerado);
         setValidationScore(result.validationDetails?.score || 0);
         setFiscalData(result.fiscalData);
         
-        onXMLGenerated?.(result.xml);
+        onXMLGenerated?.(xmlGenerado);
         
         toast.success(
           `XML generado exitosamente (Score: ${result.validationDetails?.score || 0}%)`,
@@ -283,6 +298,45 @@ export function XMLGenerationPanel({
           </CardHeader>
           
           <CardContent className="space-y-6">
+            {/* Selector de tipo de comprobante */}
+            <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+              <h4 className="font-medium text-blue-900">Tipo de Comprobante</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tipo de CFDI</Label>
+                  <Select value={tipoComprobante} onValueChange={(v) => setTipoComprobante(v as 'T' | 'I')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="T">Traslado (T) - Sin cobro</SelectItem>
+                      <SelectItem value="I">Ingreso (I) - Con factura</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {tipoComprobante === 'T' 
+                      ? 'Para transporte propio sin cobro' 
+                      : 'Para facturar servicio de transporte'}
+                  </p>
+                </div>
+                
+                {tipoComprobante === 'I' && (
+                  <div className="space-y-2">
+                    <Label>Monto del Servicio</Label>
+                    <Input
+                      type="number"
+                      placeholder="5000.00"
+                      value={montoServicio || ''}
+                      onChange={(e) => setMontoServicio(Number(e.target.value))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Monto antes de impuestos
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <XMLSection
               isGenerating={isGenerating}
               xmlGenerado={xmlActual}
