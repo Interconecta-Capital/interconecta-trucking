@@ -3,22 +3,16 @@ import React from 'react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MapPin, Navigation, Map } from 'lucide-react';
+import { Plus, MapPin } from 'lucide-react';
 
 interface UbicacionesHeaderProps {
   ubicacionesCount: number;
-  canCalculateDistances: boolean;
   onAgregarUbicacion: () => void;
-  onCalcularDistancias: () => void;
-  onCalcularRuta: () => void;
 }
 
 export function UbicacionesHeader({
   ubicacionesCount,
-  canCalculateDistances,
   onAgregarUbicacion,
-  onCalcularDistancias,
-  onCalcularRuta,
 }: UbicacionesHeaderProps) {
   return (
     <CardHeader>
@@ -34,30 +28,6 @@ export function UbicacionesHeader({
         </CardTitle>
         
         <div className="flex space-x-2">
-          {canCalculateDistances && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onCalcularDistancias}
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                Calcular Distancias
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onCalcularRuta}
-              >
-                <Map className="h-4 w-4 mr-2" />
-                Ver Ruta
-              </Button>
-            </>
-          )}
-          
           <Button
             type="button"
             onClick={onAgregarUbicacion}

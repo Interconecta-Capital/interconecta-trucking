@@ -97,6 +97,14 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     }
   }, [currentCartaPorteId, idCCP]);
 
+  // ✅ FASE 2: Restaurar IdCCP cuando se carga un borrador existente
+  useEffect(() => {
+    if (formData.idCCP && formData.idCCP !== idCCP) {
+      console.log('🔄 [FASE 2] Restaurando idCCP desde borrador cargado:', formData.idCCP);
+      setIdCCP(formData.idCCP);
+    }
+  }, [formData.idCCP]);
+
   // El resumen de validación
   const validationSummary = getValidationSummary(formData);
 
@@ -170,6 +178,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         }
         
         setFormData(savedData);
+
+        // ✅ FASE 2: Restaurar idCCP desde el borrador
+        if (savedData.idCCP) {
+          console.log('✅ [FASE 2] Restaurando idCCP desde borrador:', savedData.idCCP);
+          setIdCCP(savedData.idCCP);
+        }
 
         // Persistir datos en sesión
         if (savedData.xmlGenerado) {
@@ -319,6 +333,12 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
       setFormData(data);
       setCurrentCartaPorteId(id);
       setBorradorCargado(true);
+      
+      // ✅ FASE 2: Restaurar idCCP cuando se acepta borrador de recuperación
+      if (data.idCCP) {
+        console.log('✅ [FASE 2] Restaurando idCCP desde borrador de recuperación:', data.idCCP);
+        setIdCCP(data.idCCP);
+      }
       
       if (data.xmlGenerado) {
         saveXML(data.xmlGenerado);

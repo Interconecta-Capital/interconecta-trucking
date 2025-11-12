@@ -68,18 +68,23 @@ export const useCartaPorteValidation = () => {
         if (!hasOrigen) missingFields.ubicaciones.push('Ubicación de Origen');
         if (!hasDestino) missingFields.ubicaciones.push('Ubicación de Destino');
         
-        // Validar domicilios completos
-        ubicaciones.forEach((ub, index) => {
-          if (!ub.domicilio?.codigo_postal) {
-            missingFields.ubicaciones.push(`Código postal en ubicación ${index + 1}`);
-          }
-          if (!ub.domicilio?.calle) {
-            missingFields.ubicaciones.push(`Calle en ubicación ${index + 1}`);
-          }
-          if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso') {
-            missingFields.ubicaciones.push(`RFC en ubicación ${index + 1}`);
-          }
-        });
+      // Validar domicilios completos
+      ubicaciones.forEach((ub, index) => {
+        // ✅ FASE 1: Soportar AMBOS formatos (snake_case Y camelCase) con type assertion
+        const domicilio = ub.domicilio as any;
+        const codigoPostal = domicilio?.codigo_postal || domicilio?.codigoPostal;
+        const calle = ub.domicilio?.calle;
+        
+        if (!codigoPostal) {
+          missingFields.ubicaciones.push(`Código postal obligatorio en ubicación ${index + 1}`);
+        }
+        if (!calle) {
+          missingFields.ubicaciones.push(`Calle en ubicación ${index + 1}`);
+        }
+        if (!ub.rfc_remitente_destinatario && ub.tipo_ubicacion !== 'Paso') {
+          missingFields.ubicaciones.push(`RFC en ubicación ${index + 1}`);
+        }
+      });
         
         ubicacionesStatus = missingFields.ubicaciones.length === 0 ? 'complete' : 'incomplete';
       }

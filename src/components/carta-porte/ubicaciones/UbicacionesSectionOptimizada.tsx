@@ -384,10 +384,7 @@ export function UbicacionesSectionOptimizada({
     <div className="space-y-6 bg-white">
       <UbicacionesHeader
         ubicacionesCount={ubicaciones.length}
-        canCalculateDistances={canCalculateDistances}
         onAgregarUbicacion={handleAgregarUbicacion}
-        onCalcularDistancias={() => {}}
-        onCalcularRuta={() => {}}
       />
 
       <UbicacionesValidation
@@ -397,12 +394,43 @@ export function UbicacionesSectionOptimizada({
 
       {/* ÚNICO Calculadora híbrida estabilizada de rutas con mapa integrado */}
       {canCalculateDistances && (
-        <OptimizedAutoRouteCalculator
-          ubicaciones={ubicaciones}
-          onDistanceCalculated={handleDistanceCalculated}
-          distanciaTotal={distanciaTotal}
-          tiempoEstimado={tiempoEstimado}
-        />
+        <>
+          <OptimizedAutoRouteCalculator
+            ubicaciones={ubicaciones}
+            onDistanceCalculated={handleDistanceCalculated}
+            distanciaTotal={distanciaTotal}
+            tiempoEstimado={tiempoEstimado}
+          />
+
+          {/* ✅ FASE 3: Resumen de distancia calculada automáticamente */}
+          {distanciaTotal > 0 && (
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Distancia Total Calculada
+                    </p>
+                    <p className="text-2xl font-bold text-blue-700">
+                      {distanciaTotal.toFixed(2)} km
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Tiempo Estimado
+                    </p>
+                    <p className="text-2xl font-bold text-blue-700">
+                      {Math.round(tiempoEstimado / 60)} hrs {tiempoEstimado % 60} min
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  ✅ Cálculo automático usando Mapbox
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       <CardContent className="bg-white">
