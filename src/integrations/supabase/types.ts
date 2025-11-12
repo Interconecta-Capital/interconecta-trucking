@@ -2797,6 +2797,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          cartas_porte_creadas: number | null
           configuracion_calendario: Json | null
           configuracion_costos: Json | null
           created_at: string | null
@@ -2808,12 +2809,14 @@ export type Database = {
           plan_type: string | null
           rfc: string | null
           telefono: string | null
+          timbres_consumidos: number | null
           timezone: string | null
           trial_end_date: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          cartas_porte_creadas?: number | null
           configuracion_calendario?: Json | null
           configuracion_costos?: Json | null
           created_at?: string | null
@@ -2825,12 +2828,14 @@ export type Database = {
           plan_type?: string | null
           rfc?: string | null
           telefono?: string | null
+          timbres_consumidos?: number | null
           timezone?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          cartas_porte_creadas?: number | null
           configuracion_calendario?: Json | null
           configuracion_costos?: Json | null
           created_at?: string | null
@@ -2842,6 +2847,7 @@ export type Database = {
           plan_type?: string | null
           rfc?: string | null
           telefono?: string | null
+          timbres_consumidos?: number | null
           timezone?: string | null
           trial_end_date?: string | null
           updated_at?: string | null

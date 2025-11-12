@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, FileText, Filter, Search, Edit, Trash2, Download, Copy, Eye } from 'lucide-react';
+import { Plus, FileText, Filter, Search, Edit, Trash2, Download, Copy, Eye, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,7 @@ import { PlanNotifications } from '@/components/common/PlanNotifications';
 import { toast } from 'sonner';
 import { UUIDService } from '@/services/uuid/UUIDService';
 import { useFAB } from '@/contexts/FABContext';
+import { CartaPorteMetrics } from '@/components/carta-porte/CartaPorteMetrics';
 
 type DocumentStatus = 'draft' | 'active' | 'timbrado' | 'cancelado';
 
@@ -246,19 +247,32 @@ export default function CartasPorteUnified() {
         {/* Notificaciones de plan */}
         <PlanNotifications />
 
+        {/* Métricas de Cartas Porte */}
+        <CartaPorteMetrics />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FileText className="h-6 w-6 text-blue-600" />
             <h1 className="text-3xl font-bold">Cartas Porte</h1>
           </div>
-          <div className="desktop-new-button">
-            <ProtectedActions
-              action="create"
-              resource="cartas_porte"
-              onAction={handleNewDocument}
-              buttonText="Nueva Carta Porte"
-            />
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/historial-viajes')}
+              className="flex items-center gap-2"
+            >
+              <History className="h-4 w-4" />
+              Historial Completo
+            </Button>
+            <div className="desktop-new-button">
+              <ProtectedActions
+                action="create"
+                resource="cartas_porte"
+                onAction={handleNewDocument}
+                buttonText="Nueva Carta Porte"
+              />
+            </div>
           </div>
         </div>
 

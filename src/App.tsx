@@ -44,6 +44,7 @@ import Notificaciones from "./pages/Notificaciones"
 import AdminTimbres from "./pages/admin/AdminTimbres"
 import SuperuserManagement from "./pages/SuperuserManagement"
 import EncryptionManagement from "./pages/EncryptionManagement"
+import HistorialViajes from "./pages/HistorialViajes"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -145,6 +146,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <Cotizaciones />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/historial-viajes" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <HistorialViajes />
                   </BaseLayout>
                 </AuthGuard>
               } />
