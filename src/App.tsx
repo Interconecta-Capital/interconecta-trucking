@@ -46,6 +46,8 @@ import SuperuserManagement from "./pages/SuperuserManagement"
 import EncryptionManagement from "./pages/EncryptionManagement"
 import HistorialViajes from "./pages/HistorialViajes"
 import AdministracionFiscal from "./pages/AdministracionFiscal"
+import FacturaEditor from "./pages/FacturaEditor"
+import Facturas from "./pages/Facturas"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -285,6 +287,22 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <AdministracionFiscal />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/administracion/fiscal/facturas/nuevo" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <FacturaEditor />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/administracion/fiscal/facturas/:id" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <FacturaEditor />
                   </BaseLayout>
                 </AuthGuard>
               } />

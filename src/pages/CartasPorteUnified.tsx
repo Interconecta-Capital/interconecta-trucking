@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, FileText, Filter, Search, Edit, Trash2, Download, Copy, Eye, History } from 'lucide-react';
+import { Plus, FileText, Filter, Search, Edit, Trash2, Download, Copy, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -257,14 +257,6 @@ export default function CartasPorteUnified() {
             <h1 className="text-3xl font-bold">Cartas Porte</h1>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/historial-viajes')}
-              className="flex items-center gap-2"
-            >
-              <History className="h-4 w-4" />
-              Historial Completo
-            </Button>
             <div className="desktop-new-button">
               <ProtectedActions
                 action="create"

@@ -181,11 +181,17 @@ export class CartaPorteLifecycleManager {
       // 3. Generar IdCCP único
       const idCCP = await this.generarIdCCPUnico();
 
-      // 4. Extraer datos principales del formulario
+      // 4. Extraer datos principales del formulario (buscar en ambas ubicaciones)
       const datosFormulario = borrador.datos_formulario;
       const configuracion = datosFormulario.configuracion || {};
       const emisor = configuracion.emisor || {};
       const receptor = configuracion.receptor || {};
+
+      // Buscar en raíz primero, luego en configuracion
+      const rfcEmisor = datosFormulario.rfcEmisor || emisor.rfc || '';
+      const nombreEmisor = datosFormulario.nombreEmisor || emisor.nombre || '';
+      const rfcReceptor = datosFormulario.rfcReceptor || receptor.rfc || '';
+      const nombreReceptor = datosFormulario.nombreReceptor || receptor.nombre || '';
 
       // 5. Crear la carta porte
       const { data, error } = await supabase
@@ -199,10 +205,10 @@ export class CartaPorteLifecycleManager {
           datos_formulario: datosFormulario,
           
           // Campos sincronizados para búsqueda
-          rfc_emisor: emisor.rfc || '',
-          nombre_emisor: emisor.nombre || '',
-          rfc_receptor: receptor.rfc || '',
-          nombre_receptor: receptor.nombre || '',
+          rfc_emisor: rfcEmisor,
+          nombre_emisor: nombreEmisor,
+          rfc_receptor: rfcReceptor,
+          nombre_receptor: nombreReceptor,
           tipo_cfdi: datosFormulario.tipoCfdi || 'Traslado',
           transporte_internacional: datosFormulario.transporteInternacional || false,
           registro_istmo: datosFormulario.registroIstmo || false,
@@ -278,24 +284,32 @@ export class CartaPorteLifecycleManager {
     const errores: string[] = [];
 
     try {
-      // Validaciones básicas requeridas
+      // Buscar en ambas ubicaciones (raíz y configuracion)
       const configuracion = datosFormulario.configuracion || {};
       const emisor = configuracion.emisor || {};
       const receptor = configuracion.receptor || {};
+      
+      // Extraer RFC y nombre del emisor (buscar en raíz primero, luego en configuracion)
+      const rfcEmisor = datosFormulario.rfcEmisor || emisor.rfc;
+      const nombreEmisor = datosFormulario.nombreEmisor || emisor.nombre;
+      
+      // Extraer RFC y nombre del receptor
+      const rfcReceptor = datosFormulario.rfcReceptor || receptor.rfc;
+      const nombreReceptor = datosFormulario.nombreReceptor || receptor.nombre;
 
-      if (!emisor.rfc) {
+      if (!rfcEmisor) {
         errores.push('RFC del emisor es requerido');
       }
 
-      if (!emisor.nombre) {
+      if (!nombreEmisor) {
         errores.push('Nombre del emisor es requerido');
       }
 
-      if (!receptor.rfc) {
+      if (!rfcReceptor) {
         errores.push('RFC del receptor es requerido');
       }
 
-      if (!receptor.nombre) {
+      if (!nombreReceptor) {
         errores.push('Nombre del receptor es requerido');
       }
 

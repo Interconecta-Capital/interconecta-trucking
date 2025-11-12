@@ -1,5 +1,5 @@
 
-import { HomeIcon, TruckIcon, Users, FileText, Calendar, Settings, CreditCard, Wrench, Calculator } from "lucide-react";
+import { HomeIcon, TruckIcon, Users, FileText, Calendar, Settings, CreditCard, Wrench, Calculator, Receipt } from "lucide-react";
 
 export const navItems = [
   {
@@ -41,6 +41,11 @@ export const navItems = [
     title: "Planes",
     to: "/planes",
     icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    title: "Administración Fiscal",
+    to: "/administracion/fiscal",
+    icon: <Receipt className="h-4 w-4" />,
   },
   {
     title: "Administración",
