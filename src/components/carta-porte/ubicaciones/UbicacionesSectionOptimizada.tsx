@@ -22,7 +22,7 @@ interface UbicacionesSectionOptimizadaProps {
   onNext: () => void;
   onPrev: () => void;
   cartaPorteId?: string;
-  onDistanceCalculated?: (datos: { distanciaTotal?: number; tiempoEstimado?: number }) => void;
+  onDistanceCalculated?: (datos: { distanciaTotal?: number; tiempoEstimado?: number; forceValidation?: boolean }) => void;
 }
 
 export function UbicacionesSectionOptimizada({ 
@@ -270,11 +270,12 @@ export function UbicacionesSectionOptimizada({
   };
 
   const handleDistanceCalculated = async (distancia: number, tiempo: number) => {
-    console.log('📏 Distancia calculada automáticamente:', { distancia, tiempo });
+    console.log('📏 Distancia recibida:', { distancia, tiempo });
     
     // Actualizar SOLO el destino con la distancia
     const ubicacionesActualizadas = ubicaciones.map(ub => {
       if (ub.tipoUbicacion === 'Destino') {
+        console.log('✅ Actualizando destino con distancia:', distancia);
         return {
           ...ub,
           distanciaRecorrida: distancia,
@@ -284,23 +285,29 @@ export function UbicacionesSectionOptimizada({
       return ub;
     });
     
-    // Actualizar estados locales
+    // Actualizar estados locales PRIMERO
     setDistanciaTotal(distancia);
     setTiempoEstimado(tiempo);
+    
+    // Actualizar ubicaciones y forzar re-render
+    setUbicaciones(ubicacionesActualizadas);
     
     // Guardar inmediatamente
     onChange(ubicacionesActualizadas);
     
-    // Notificar al padre si existe callback
+    // Notificar al padre con flag de forzar validación
     if (onDistanceCalculated) {
       onDistanceCalculated({
         distanciaTotal: distancia,
-        tiempoEstimado: tiempo
+        tiempoEstimado: tiempo,
+        forceValidation: true
       });
     }
     
     // Confirmar al usuario
     sonnerToast.success(`✓ Distancia guardada: ${distancia.toFixed(2)} km`);
+    
+    console.log('✅ Distancia persistida correctamente');
   };
 
   const handleSaveToFavorites = (ubicacion: any) => {
@@ -356,7 +363,8 @@ export function UbicacionesSectionOptimizada({
   };
 
   const validacion = validarSecuenciaUbicaciones();
-  const distanciaCalculada = calcularDistanciaTotal();
+  // Priorizar distanciaTotal (estado local actualizado) sobre calcularDistanciaTotal (de BD)
+  const distanciaDisplay = distanciaTotal > 0 ? distanciaTotal : calcularDistanciaTotal();
   const canCalculateDistances = ubicaciones.length >= 2;
   const canContinue = ubicaciones.length > 0 && validacion.esValido;
 
@@ -418,7 +426,7 @@ export function UbicacionesSectionOptimizada({
 
       <UbicacionesValidation
         validacion={validacion}
-        distanciaTotal={distanciaCalculada}
+        distanciaTotal={distanciaDisplay}
       />
 
       {/* Calculadora de rutas Google Maps */}

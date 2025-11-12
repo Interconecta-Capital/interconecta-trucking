@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Route, Clock, Loader2, CheckCircle, AlertTriangle, Navigation } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Route, Clock, Loader2, CheckCircle, AlertTriangle, Navigation, Edit2, Check, X } from 'lucide-react';
 import { useRutasPrecisas } from '@/hooks/useRutasPrecisas';
 import { GoogleMapVisualization } from './GoogleMapVisualization';
 import { toast } from 'sonner';
@@ -16,6 +17,8 @@ interface RouteCalculatorSimpleProps {
 
 export function RouteCalculatorSimple({ ubicaciones, onDistanceCalculated }: RouteCalculatorSimpleProps) {
   const [showMap, setShowMap] = useState(false);
+  const [isEditingDistance, setIsEditingDistance] = useState(false);
+  const [editedDistance, setEditedDistance] = useState<number>(0);
   
   const {
     calculandoRuta,
@@ -79,6 +82,20 @@ export function RouteCalculatorSimple({ ubicaciones, onDistanceCalculated }: Rou
     }
   };
 
+  const handleSaveDistance = () => {
+    if (editedDistance <= 0) {
+      toast.error('La distancia debe ser mayor a 0');
+      return;
+    }
+
+    if (onDistanceCalculated) {
+      onDistanceCalculated(editedDistance, rutaActual?.tiempoEstimadoMinutos || 0);
+    }
+
+    setIsEditingDistance(false);
+    toast.success(`Distancia actualizada: ${editedDistance.toFixed(2)} km`);
+  };
+
   const formatTiempo = (minutos: number): string => {
     const horas = Math.floor(minutos / 60);
     const mins = minutos % 60;
@@ -137,9 +154,49 @@ export function RouteCalculatorSimple({ ubicaciones, onDistanceCalculated }: Rou
                   <Route className="h-4 w-4" />
                   Distancia Total
                 </div>
-                <div className="text-2xl font-bold text-foreground">
-                  {rutaActual.distanciaKm.toFixed(2)} km
-                </div>
+                {!isEditingDistance ? (
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl font-bold text-foreground">
+                      {rutaActual.distanciaKm.toFixed(2)} km
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditedDistance(rutaActual.distanciaKm);
+                        setIsEditingDistance(true);
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editedDistance}
+                      onChange={(e) => setEditedDistance(Number(e.target.value))}
+                      className="text-lg font-bold h-10"
+                    />
+                    <Button 
+                      onClick={handleSaveDistance} 
+                      size="sm" 
+                      className="bg-green-500 hover:bg-green-600 h-8 w-8 p-0"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      onClick={() => setIsEditingDistance(false)} 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
               
               <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">

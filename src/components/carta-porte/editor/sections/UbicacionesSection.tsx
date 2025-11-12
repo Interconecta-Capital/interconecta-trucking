@@ -5,38 +5,46 @@ import { UbicacionesSectionOptimizada } from '../../ubicaciones/UbicacionesSecti
 interface UbicacionesSectionProps {
   data: any[];
   onChange: (data: any[]) => void;
+  onValidationChange?: () => void;
 }
 
-export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) {
+export function UbicacionesSection({ data, onChange, onValidationChange }: UbicacionesSectionProps) {
   const [distanciaTotal, setDistanciaTotal] = useState<number>(0);
   const [tiempoEstimado, setTiempoEstimado] = useState<number>(0);
 
   // Manejar cálculo de distancia desde la sección optimizada
-  const handleDistanceCalculated = (distancia: number, tiempo: number) => {
-    // ✅ FASE 6: Logging exhaustivo
-    console.log('✅ [DEBUG] Distancia recibida en UbicacionesSection:', { 
-      distancia, 
-      tiempo,
-      dataActual: data.length,
-      destino: data.find(u => u.tipoUbicacion === 'Destino' || (u as any).tipo_ubicacion === 'Destino')
-    });
+  const handleDistanceCalculated = (datos: { distanciaTotal?: number; tiempoEstimado?: number; forceValidation?: boolean }) => {
+    console.log('✅ [UbicacionesSection] Distancia recibida:', datos);
     
-    setDistanciaTotal(distancia);
-    setTiempoEstimado(tiempo);
+    if (datos.distanciaTotal !== undefined) {
+      setDistanciaTotal(datos.distanciaTotal);
+    }
+    if (datos.tiempoEstimado !== undefined) {
+      setTiempoEstimado(datos.tiempoEstimado);
+    }
 
-    // Actualizar el destino con la distancia calculada en km
-    const updatedData = data.map(ubicacion => {
-      if (ubicacion.tipoUbicacion === 'Destino') {
-        return {
-          ...ubicacion,
-          distancia_recorrida: distancia, // Guardar en km
-          distanciaRecorrida: distancia
-        };
+    // Actualizar el destino con la distancia calculada
+    if (datos.distanciaTotal !== undefined) {
+      const updatedData = data.map(ubicacion => {
+        if (ubicacion.tipoUbicacion === 'Destino' || ubicacion.tipo_ubicacion === 'Destino') {
+          return {
+            ...ubicacion,
+            distancia_recorrida: datos.distanciaTotal,
+            distanciaRecorrida: datos.distanciaTotal
+          };
+        }
+        return ubicacion;
+      });
+
+      onChange(updatedData);
+      
+      // Forzar recálculo de validación si se solicita
+      if (datos.forceValidation && onValidationChange) {
+        setTimeout(() => {
+          onValidationChange();
+        }, 100);
       }
-      return ubicacion;
-    });
-
-    onChange(updatedData);
+    }
   };
 
   return (
@@ -48,11 +56,7 @@ export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) 
         onNext={() => {}}
         onPrev={() => {}}
         cartaPorteId={undefined}
-        onDistanceCalculated={(datos) => {
-          if (datos.distanciaTotal && datos.tiempoEstimado) {
-            handleDistanceCalculated(datos.distanciaTotal, datos.tiempoEstimado);
-          }
-        }}
+        onDistanceCalculated={handleDistanceCalculated}
       />
     </div>
   );

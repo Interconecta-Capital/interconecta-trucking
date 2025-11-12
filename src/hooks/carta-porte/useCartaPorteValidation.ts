@@ -84,7 +84,12 @@ export const useCartaPorteValidation = () => {
                           formData.datosCalculoRuta?.distanciaTotal ||
                           0;
         
-        console.log('🔍 [VALIDACION] Distancia encontrada:', distancia);
+        console.log('🔍 [VALIDACION] === ANÁLISIS DE DISTANCIA ===');
+        console.log('🔍 [VALIDACION] Destino completo:', JSON.stringify(destino, null, 2));
+        console.log('🔍 [VALIDACION] distancia_recorrida:', destino?.distancia_recorrida);
+        console.log('🔍 [VALIDACION] distanciaRecorrida:', (destino as any)?.distanciaRecorrida);
+        console.log('🔍 [VALIDACION] datosCalculoRuta:', formData.datosCalculoRuta);
+        console.log('🔍 [VALIDACION] Distancia final encontrada:', distancia);
         
         if (distancia === 0) {
           missingFields.ubicaciones.push('Calcular distancia haciendo clic en "Calcular Ruta con Google Maps"');
