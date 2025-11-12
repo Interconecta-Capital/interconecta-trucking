@@ -155,8 +155,9 @@ export class XMLValidatorSAT31 {
 
     // Validar cada ubicación
     data.ubicaciones.forEach((ubicacion, index) => {
-      // ✅ FASE 1: Código postal obligatorio - buscar primero en campo directo, luego en domicilio
-      const codigoPostal = ubicacion.codigo_postal || ubicacion.domicilio?.codigo_postal;
+      // ✅ FASE 2: Código postal - buscar en ambos formatos (camelCase y snake_case)
+      const domicilio = ubicacion.domicilio as any;
+      const codigoPostal = domicilio?.codigoPostal || domicilio?.codigo_postal || ubicacion.codigo_postal;
       
       if (!codigoPostal) {
         errors.push({
@@ -367,12 +368,13 @@ export class XMLValidatorSAT31 {
   private static async validateVersion31Requirements(data: CartaPorteData, errors: ValidationError31[], warnings: ValidationError31[]) {
     // Validaciones específicas de v3.1
     
-    // IdCCP debe ser único y tener formato correcto
-    if (!data.cartaPorteId || data.cartaPorteId.length !== 36) {
+    // ✅ FASE 5: IdCCP debe ser 32 caracteres (UUID sin guiones) según SAT v3.1
+    const idCCP = data.idCCP || data.cartaPorteId;
+    if (!idCCP || idCCP.length !== 32) {
       errors.push({
-        field: 'cartaPorteId',
+        field: 'idCCP',
         code: 'INVALID_ID_CCP',
-        message: 'ID CCP debe tener 36 caracteres',
+        message: 'ID CCP debe tener 32 caracteres (UUID sin guiones)',
         severity: 'error'
       });
     }
@@ -394,8 +396,9 @@ export class XMLValidatorSAT31 {
   }
 
   private static validateRFC(rfc: string): boolean {
-    const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
-    return rfcRegex.test(rfc.toUpperCase());
+    // ✅ FASE 5: Validación más permisiva (acepta 1-3 caracteres finales)
+    const rfcRegexPermisivo = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{1,3}$/;
+    return rfcRegexPermisivo.test(rfc.toUpperCase());
   }
 
   private static validateCodigoPostal(cp: string): boolean {

@@ -32,8 +32,8 @@ export const useCartaPorteAutoSave = ({
     const currentDataString = JSON.stringify(formData);
     if (currentDataString === lastDataRef.current || !formData) return;
     
-    // Verificar que hay datos significativos
-    const hasSignificantData = !!(
+    // ✅ FASE 1: Validar que hay datos reales antes de guardar
+    const tieneContenidoReal = (
       formData.rfcEmisor || 
       formData.rfcReceptor || 
       (formData.ubicaciones && formData.ubicaciones.length > 0) ||
@@ -42,7 +42,10 @@ export const useCartaPorteAutoSave = ({
       (formData.figuras && formData.figuras.length > 0)
     );
     
-    if (!hasSignificantData) return;
+    if (!tieneContenidoReal) {
+      console.warn('⚠️ Auto-save cancelado: no hay contenido real para guardar');
+      return;
+    }
     
     // ✅ FASE 6: Log para debugging
     console.log('💾 Auto-save ejecutándose:', {

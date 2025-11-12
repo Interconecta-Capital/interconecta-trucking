@@ -309,7 +309,12 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                     {documentId ? 'Editar Carta Porte' : 'Nueva Carta Porte'}
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-gray-60">
-                    <span>IdCCP: {UUIDService.formatIdCCPForDisplay(idCCP || configuracion.idCCP || 'Sin generar')}</span>
+                    <span className="text-gray-60">
+                      IdCCP: {' '}
+                      <strong className={idCCP && idCCP !== 'Sin generar' ? 'text-green-600' : 'text-gray-400'}>
+                        {idCCP && idCCP !== 'Sin generar' ? UUIDService.formatIdCCPForDisplay(idCCP) : '🔄 Generando...'}
+                      </strong>
+                    </span>
                     <Badge variant={documentStatus.variant} className="bg-gray-05 text-gray-70 border-gray-20">
                       {documentStatus.label}
                     </Badge>
