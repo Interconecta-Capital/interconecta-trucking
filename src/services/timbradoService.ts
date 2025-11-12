@@ -293,23 +293,90 @@ export class TimbradoService {
    */
   private static async guardarDatosTimbrado(cartaPorteId: string, datos: any) {
     try {
-      const { error } = await supabase
+      console.log('💾 Guardando datos de timbrado para Carta Porte:', cartaPorteId);
+      
+      // 1. Actualizar cartas_porte con datos de timbrado
+      const { error: updateError } = await supabase
         .from('cartas_porte')
         .update({
-          uuid_fiscal: datos.uuid,
-          xml_generado: datos.xml_timbrado,
-          fecha_timbrado: datos.fecha_timbrado,
           status: 'timbrado',
+          uuid_fiscal: datos.uuid,
+          fecha_timbrado: datos.fecha_timbrado,
+          xml_generado: datos.xml_timbrado,
           updated_at: new Date().toISOString()
         })
         .eq('id', cartaPorteId);
-
-      if (error) {
-        console.error('Error guardando datos de timbrado:', error);
-        throw error;
-      }
+        
+      if (updateError) throw updateError;
+      
+      // 2. Incrementar contador de timbres consumidos
+      await this.incrementarContadorTimbres(cartaPorteId);
+      
+      // 3. Guardar XML timbrado en Storage
+      await this.guardarXMLEnStorage(cartaPorteId, datos.xml_timbrado);
+      
+      console.log('✅ Datos de timbrado guardados exitosamente');
+      
     } catch (error) {
-      console.error('Error en guardarDatosTimbrado:', error);
+      console.error('❌ Error guardando datos de timbrado:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Incrementa el contador de timbres consumidos
+   */
+  private static async incrementarContadorTimbres(cartaPorteId: string) {
+    try {
+      // Obtener user_id de la carta porte
+      const { data: carta } = await supabase
+        .from('cartas_porte')
+        .select('usuario_id')
+        .eq('id', cartaPorteId)
+        .single();
+        
+      if (!carta) return;
+      
+      // Incrementar contador en profiles (fallback directo por ahora)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('timbres_consumidos')
+        .eq('id', carta.usuario_id)
+        .single();
+        
+      await supabase
+        .from('profiles')
+        .update({ 
+          timbres_consumidos: (profile?.timbres_consumidos || 0) + 1
+        })
+        .eq('id', carta.usuario_id);
+      
+      console.log('✅ Contador de timbres incrementado');
+      
+    } catch (error) {
+      console.error('❌ Error incrementando contador de timbres:', error);
+    }
+  }
+
+  /**
+   * Guarda XML timbrado en Storage
+   */
+  private static async guardarXMLEnStorage(cartaPorteId: string, xmlContent: string) {
+    try {
+      const fileName = `cartas-porte/timbrados/${cartaPorteId}.xml`;
+      
+      const { error } = await supabase.storage
+        .from('documentos')
+        .upload(fileName, new Blob([xmlContent], { type: 'application/xml' }), {
+          upsert: true
+        });
+        
+      if (error) throw error;
+      
+      console.log('✅ XML guardado en Storage');
+      
+    } catch (error) {
+      console.error('❌ Error guardando XML en Storage:', error);
     }
   }
 

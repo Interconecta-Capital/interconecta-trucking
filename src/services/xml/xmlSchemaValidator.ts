@@ -349,6 +349,80 @@ export class XMLSchemaValidator {
   }
 
   /**
+   * Valida específicamente el TipoDeComprobante
+   */
+  static validarTipoComprobante(xmlString: string): {
+    valido: boolean;
+    tipo: string;
+    errores: string[];
+    advertencias: string[];
+  } {
+    const errores: string[] = [];
+    const advertencias: string[] = [];
+    
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+    const comprobante = xmlDoc.getElementsByTagName('cfdi:Comprobante')[0];
+    
+    if (!comprobante) {
+      return {
+        valido: false,
+        tipo: '',
+        errores: ['No se encontró el nodo cfdi:Comprobante'],
+        advertencias: []
+      };
+    }
+    
+    const tipoComprobante = comprobante.getAttribute('TipoDeComprobante') || '';
+    const total = parseFloat(comprobante.getAttribute('Total') || '0');
+    const subtotal = parseFloat(comprobante.getAttribute('SubTotal') || '0');
+    
+    // Validar tipo I (Factura/Ingreso)
+    if (tipoComprobante === 'I') {
+      if (total === 0) {
+        errores.push('Factura (tipo I) debe tener Total > 0');
+      }
+      if (subtotal === 0) {
+        errores.push('Factura (tipo I) debe tener SubTotal > 0');
+      }
+      
+      // Verificar que tenga impuestos
+      const impuestos = xmlDoc.getElementsByTagName('cfdi:Impuestos');
+      if (impuestos.length === 0) {
+        advertencias.push('Factura (tipo I) generalmente debe incluir nodo de Impuestos');
+      }
+    }
+    
+    // Validar tipo T (Traslado)
+    if (tipoComprobante === 'T') {
+      if (total !== 0) {
+        errores.push('Traslado (tipo T) debe tener Total = 0');
+      }
+      if (subtotal !== 0) {
+        errores.push('Traslado (tipo T) debe tener SubTotal = 0');
+      }
+      
+      const moneda = comprobante.getAttribute('Moneda');
+      if (moneda !== 'XXX') {
+        advertencias.push('Traslado (tipo T) debe usar Moneda="XXX"');
+      }
+    }
+    
+    // Validar que exista complemento Carta Porte
+    const cartaPorte = xmlDoc.getElementsByTagName('cartaporte31:CartaPorte')[0];
+    if (!cartaPorte) {
+      errores.push('Debe incluir complemento cartaporte31:CartaPorte');
+    }
+    
+    return {
+      valido: errores.length === 0,
+      tipo: tipoComprobante,
+      errores,
+      advertencias
+    };
+  }
+
+  /**
    * Obtiene el historial de validaciones de una carta porte
    */
   static async obtenerHistorialValidaciones(cartaPorteId: string) {

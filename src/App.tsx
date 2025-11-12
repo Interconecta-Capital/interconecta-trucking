@@ -45,6 +45,7 @@ import AdminTimbres from "./pages/admin/AdminTimbres"
 import SuperuserManagement from "./pages/SuperuserManagement"
 import EncryptionManagement from "./pages/EncryptionManagement"
 import HistorialViajes from "./pages/HistorialViajes"
+import AdministracionFiscal from "./pages/AdministracionFiscal"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -276,6 +277,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <EncryptionManagement />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/administracion/fiscal" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <AdministracionFiscal />
                   </BaseLayout>
                 </AuthGuard>
               } />

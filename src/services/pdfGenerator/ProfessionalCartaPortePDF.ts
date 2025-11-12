@@ -68,6 +68,13 @@ export class ProfessionalCartaPortePDF {
       this.drawCopyright();
 
       const pdfBlob = this.pdf.output('blob');
+      
+      // ✅ VALIDAR TAMAÑO DEL BLOB
+      console.log('📄 PDF Blob size:', pdfBlob.size, 'bytes');
+      if (pdfBlob.size < 1000) {
+        throw new Error('PDF generado está vacío o incompleto');
+      }
+      
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
       return {
@@ -142,11 +149,24 @@ export class ProfessionalCartaPortePDF {
     const colWidth = (this.pageWidth - (this.margin * 2)) / 2;
     const rowHeight = boxHeight / 2;
     
+    const dataAny = data as any;
     const fiscalData = [
-      { label: 'FOLIO FISCAL (UUID)', value: data.xmlGenerado ? 'Pendiente de timbrado' : 'Pendiente de timbrado' },
-      { label: 'ID CARTA PORTE (IdCCP)', value: data.cartaPorteId || `CCP-${Date.now().toString().slice(-8)}` },
-      { label: 'No. Certificado Emisor', value: '30001000000400002434' },
-      { label: 'No. Certificado SAT', value: '30001000000500001234' }
+      { 
+        label: 'FOLIO FISCAL (UUID)', 
+        value: dataAny.uuid_fiscal || 'Pendiente de timbrado' 
+      },
+      { 
+        label: 'ID CARTA PORTE (IdCCP)', 
+        value: dataAny.cartaPorteId || `CCP-${Date.now().toString().slice(-8)}` 
+      },
+      { 
+        label: 'No. Certificado Emisor', 
+        value: dataAny.certificado?.numeroCertificado || '30001000000400002434' 
+      },
+      { 
+        label: 'No. Certificado SAT', 
+        value: dataAny.certificadoSAT || '30001000000500001234' 
+      }
     ];
     
     fiscalData.forEach((item, index) => {

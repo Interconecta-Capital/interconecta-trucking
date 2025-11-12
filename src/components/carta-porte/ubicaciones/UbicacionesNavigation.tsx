@@ -10,15 +10,7 @@ interface UbicacionesNavigationProps {
 
 export function UbicacionesNavigation({ onPrev, onNext, canContinue }: UbicacionesNavigationProps) {
   return (
-    <div className="flex justify-between pt-6">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={onPrev}
-      >
-        Anterior
-      </Button>
-      
+    <div className="flex justify-end pt-6">
       <Button
         type="button"
         onClick={onNext}
