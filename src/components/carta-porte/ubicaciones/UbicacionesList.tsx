@@ -12,6 +12,7 @@ interface UbicacionesListProps {
   onEditarUbicacion: (index: number) => void;
   onEliminarUbicacion: (index: number) => void;
   onAgregarUbicacion: () => void;
+  onDistanciaChange?: (index: number, distancia: number) => void;
 }
 
 export function UbicacionesList({
@@ -20,6 +21,7 @@ export function UbicacionesList({
   onEditarUbicacion,
   onEliminarUbicacion,
   onAgregarUbicacion,
+  onDistanciaChange
 }: UbicacionesListProps) {
   const getTipoColor = (tipo: string) => {
     switch (tipo) {
@@ -104,6 +106,11 @@ export function UbicacionesList({
                 <UbicacionDistanciaDisplay 
                   ubicacion={ubicacion}
                   distanciaTotal={distanciaTotal}
+                  onDistanciaChange={(distancia) => {
+                    if (onDistanciaChange) {
+                      onDistanciaChange(index, distancia);
+                    }
+                  }}
                 />
               </div>
               

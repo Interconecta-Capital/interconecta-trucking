@@ -47,11 +47,17 @@ export const useCartaPorteAutoSave = ({
       return;
     }
     
-    // ✅ FASE 6: Log para debugging
-    console.log('💾 Auto-save ejecutándose:', {
+    // ✅ FASE 6: Log detallado para debugging
+    console.log('💾 [DEBUG] Auto-save ejecutándose:', {
       cartaPorteId: currentCartaPorteId,
       timestamp: new Date().toISOString(),
       ubicaciones: formData.ubicaciones?.length || 0,
+      destino: formData.ubicaciones?.find(u => 
+        u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
+      ),
+      distanciaEnDestino: formData.ubicaciones?.find(u => 
+        u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
+      )?.distancia_recorrida,
       mercancias: formData.mercancias?.length || 0,
       rfcEmisor: formData.rfcEmisor || 'vacío',
       rfcReceptor: formData.rfcReceptor || 'vacío'

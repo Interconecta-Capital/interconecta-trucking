@@ -68,6 +68,18 @@ export const useCartaPorteValidation = () => {
         if (!hasOrigen) missingFields.ubicaciones.push('Ubicación de Origen');
         if (!hasDestino) missingFields.ubicaciones.push('Ubicación de Destino');
         
+        // ✅ FASE 5: Validar distancia en destino
+        const destino = ubicaciones.find(u => u.tipo_ubicacion === 'Destino');
+        const tieneDistancia = destino && (
+          destino.distancia_recorrida > 0 || 
+          (destino as any).distanciaRecorrida > 0 ||
+          formData.datosCalculoRuta?.distanciaTotal > 0
+        );
+        
+        if (!tieneDistancia) {
+          missingFields.ubicaciones.push('Distancia recorrida en el Destino');
+        }
+        
       // Validar domicilios completos
       ubicaciones.forEach((ub, index) => {
         // ✅ FASE 1: Soportar AMBOS formatos (snake_case Y camelCase) con type assertion

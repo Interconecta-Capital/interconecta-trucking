@@ -13,7 +13,13 @@ export function UbicacionesSection({ data, onChange }: UbicacionesSectionProps) 
 
   // Manejar cálculo de distancia desde la sección optimizada
   const handleDistanceCalculated = (distancia: number, tiempo: number) => {
-    console.log('✅ Distancia calculada en UbicacionesSection:', { distancia, tiempo });
+    // ✅ FASE 6: Logging exhaustivo
+    console.log('✅ [DEBUG] Distancia recibida en UbicacionesSection:', { 
+      distancia, 
+      tiempo,
+      dataActual: data.length,
+      destino: data.find(u => u.tipoUbicacion === 'Destino' || (u as any).tipo_ubicacion === 'Destino')
+    });
     
     setDistanciaTotal(distancia);
     setTiempoEstimado(tiempo);

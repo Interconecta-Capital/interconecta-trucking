@@ -1,14 +1,17 @@
 import { MapPin, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { DistanciaEditableInput } from './DistanciaEditableInput';
 
 interface UbicacionDistanciaDisplayProps {
   ubicacion: any;
   distanciaTotal?: number;
+  onDistanciaChange?: (distancia: number) => void;
 }
 
 export function UbicacionDistanciaDisplay({ 
   ubicacion, 
-  distanciaTotal 
+  distanciaTotal,
+  onDistanciaChange
 }: UbicacionDistanciaDisplayProps) {
   const tipoUbicacion = ubicacion.tipo_ubicacion || ubicacion.tipoUbicacion;
   const coordenadas = ubicacion.coordenadas;
@@ -30,23 +33,20 @@ export function UbicacionDistanciaDisplay({
         </div>
       )}
       
-      {/* Distancia */}
+      {/* Distancia - FASE 4: Campo editable */}
       <div className="flex items-center gap-2 text-sm">
         <Navigation className="h-4 w-4 text-green-600" />
         <span className="font-medium text-blue-900">Distancia:</span>
-        {distancia > 0 ? (
-          <Badge className="bg-green-100 text-green-800">
-            ✅ {distancia.toFixed(2)} km
-          </Badge>
-        ) : distanciaTotal > 0 ? (
-          <Badge className="bg-yellow-100 text-yellow-800">
-            ⚠️ {distanciaTotal.toFixed(2)} km (calculada, no guardada)
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-gray-600">
-            ⚠️ Sin calcular
-          </Badge>
-        )}
+        <DistanciaEditableInput
+          distanciaCalculada={distanciaTotal || 0}
+          distanciaGuardada={distancia}
+          onSave={(nuevaDistancia) => {
+            console.log('💾 Guardando distancia manual:', nuevaDistancia);
+            if (onDistanciaChange) {
+              onDistanciaChange(nuevaDistancia);
+            }
+          }}
+        />
       </div>
       
       {/* Mensaje de ayuda */}

@@ -130,12 +130,40 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
 
   const loadCartaPorteData = useCallback(async (id: string) => {
     try {
-      console.log('🔄 Cargando datos:', id);
+      console.log('🔄 Cargando datos desde Supabase:', id);
+      
+      // ✅ FASE 3: Limpiar localStorage ANTES de cargar
+      console.log('🧹 Limpiando localStorage antes de cargar...');
+      try {
+        localStorage.removeItem('carta-porte-ubicaciones');
+        localStorage.removeItem('ubicaciones_frecuentes_cache');
+        localStorage.removeItem('carta-porte-last-calculation');
+        
+        // Limpiar TODOS los items relacionados
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('carta-porte-') || key.startsWith('carta_porte_')) {
+            console.log('🗑️ Eliminando:', key);
+            localStorage.removeItem(key);
+          }
+        });
+        console.log('✅ localStorage limpiado');
+      } catch (cleanError) {
+        console.warn('⚠️ Error limpiando localStorage:', cleanError);
+      }
       
       // Primero intentar cargar como borrador
       const borrador = await CartaPorteLifecycleManager.cargarBorrador(id);
       if (borrador) {
-        console.log('✅ Borrador cargado:', borrador.id);
+        console.log('✅ Borrador cargado desde Supabase:', borrador.id);
+        console.log('📊 Datos cargados:', {
+          ubicaciones: borrador.datos_formulario?.ubicaciones?.length || 0,
+          destino: borrador.datos_formulario?.ubicaciones?.find(u => 
+            u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
+          ),
+          distanciaEnDestino: borrador.datos_formulario?.ubicaciones?.find(u => 
+            u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
+          )?.distancia_recorrida
+        });
         
         let savedData = {
           ...borrador.datos_formulario,
@@ -327,14 +355,13 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   }) => {
     console.log('🗺️ [DISTANCIA] Actualizando cálculo de ruta:', datos);
     
-    // ✅ FASE 3: Una sola operación atómica que actualiza TODO
     setFormData(prev => {
       const newDatosRuta = {
         ...datos,
         calculadoEn: new Date().toISOString()
       };
       
-      // ✅ Actualizar ubicaciones con distancia en UNA SOLA operación
+      // ✅ ACTUALIZAR TODO EN UNA SOLA OPERACIÓN ATÓMICA
       const ubicacionesActualizadas = datos.distanciaTotal 
         ? prev.ubicaciones.map(ub => {
             const tipoUbicacion = ub.tipo_ubicacion || (ub as any).tipoUbicacion;
@@ -344,7 +371,6 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
                 ...ub,
                 distancia_recorrida: datos.distanciaTotal,
                 distanciaRecorrida: datos.distanciaTotal,
-                // ✅ Timestamp para debugging
                 distancia_actualizada_en: new Date().toISOString()
               } as any;
             }
@@ -366,6 +392,23 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
         )?.distancia_recorrida
       });
       
+      // ✅ FASE 2: Forzar guardado inmediato después de actualizar distancia
+      if (datos.distanciaTotal && currentCartaPorteId) {
+        setTimeout(async () => {
+          try {
+            console.log('💾 [DISTANCIA] Forzando guardado inmediato...');
+            await CartaPorteLifecycleManager.guardarBorrador(currentCartaPorteId, {
+              datos_formulario: newFormData,
+              auto_saved: true
+            });
+            console.log('✅ [DISTANCIA] Guardado forzado exitoso');
+            toast.success('Distancia guardada correctamente');
+          } catch (error) {
+            console.error('❌ [DISTANCIA] Error guardando:', error);
+          }
+        }, 500);
+      }
+      
       return newFormData;
     });
     
@@ -375,7 +418,7 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     });
     
     setTimeout(() => handleGuardarCartaPorteOficial(), 100);
-  }, [saveRouteData]);
+  }, [saveRouteData, currentCartaPorteId]);
 
   // Manejar aceptación de borrador
   const handleAcceptBorrador = useCallback(() => {

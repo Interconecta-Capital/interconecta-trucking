@@ -270,7 +270,14 @@ export function UbicacionesSectionOptimizada({
 
   // Manejo optimizado de cálculo de distancia usando el nuevo componente
   const handleDistanceCalculated = async (distancia: number, tiempo: number, routeGeometry: any) => {
-    console.log('📏 Distancia calculada con sistema estabilizado:', { distancia, tiempo });
+    // ✅ FASE 6: Logging exhaustivo
+    console.log('📏 [DEBUG] Distancia calculada en UbicacionesSectionOptimizada:', {
+      distancia,
+      tiempo,
+      distanciaActual: distanciaTotal,
+      ubicacionesActuales: ubicaciones.length,
+      destino: ubicaciones.find(u => u.tipoUbicacion === 'Destino' || (u as any).tipo_ubicacion === 'Destino')
+    });
     
     try {
       if (distanciaTotal !== distancia || tiempoEstimado !== tiempo) {
@@ -472,6 +479,16 @@ export function UbicacionesSectionOptimizada({
           onEditarUbicacion={handleEditarUbicacion}
           onEliminarUbicacion={handleEliminarUbicacion}
           onAgregarUbicacion={handleAgregarUbicacion}
+          onDistanciaChange={(index, distancia) => {
+            console.log('📝 Actualizando distancia manual en ubicación:', { index, distancia });
+            const updatedUbicaciones = [...ubicaciones];
+            updatedUbicaciones[index] = {
+              ...updatedUbicaciones[index],
+              distanciaRecorrida: distancia,
+              distancia_recorrida: distancia
+            } as any;
+            onChange(updatedUbicaciones);
+          }}
         />
 
         <UbicacionesNavigation
