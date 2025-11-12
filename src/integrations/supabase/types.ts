@@ -3261,6 +3261,48 @@ export type Database = {
         }
         Relationships: []
       }
+      rutas_frecuentes: {
+        Row: {
+          created_at: string | null
+          descripcion: string | null
+          distancia_km: number | null
+          id: string
+          nombre_ruta: string
+          tiempo_estimado_minutos: number | null
+          ubicacion_destino: Json
+          ubicacion_origen: Json
+          updated_at: string | null
+          uso_count: number | null
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descripcion?: string | null
+          distancia_km?: number | null
+          id?: string
+          nombre_ruta: string
+          tiempo_estimado_minutos?: number | null
+          ubicacion_destino: Json
+          ubicacion_origen: Json
+          updated_at?: string | null
+          uso_count?: number | null
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descripcion?: string | null
+          distancia_km?: number | null
+          id?: string
+          nombre_ruta?: string
+          tiempo_estimado_minutos?: number | null
+          ubicacion_destino?: Json
+          ubicacion_origen?: Json
+          updated_at?: string | null
+          uso_count?: number | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       schema_version: {
         Row: {
           updated_at: string | null

@@ -32,12 +32,13 @@ import { AutotransporteSection } from './sections/AutotransporteSection';
 import { FigurasTransporteSection } from './sections/FigurasTransporteSection';
 import { GeneracionSection } from './sections/GeneracionSection';
 import { AlertasValidacion } from './AlertasValidacion';
+import { CartaPortePreviewFull } from '../preview/CartaPortePreviewFull';
 
 interface ModernCartaPorteEditorProps {
   documentId?: string;
 }
 
-type SectionKey = 'configuracion' | 'ubicaciones' | 'mercancias' | 'autotransporte' | 'figuras' | 'generacion';
+type SectionKey = 'configuracion' | 'ubicaciones' | 'mercancias' | 'autotransporte' | 'figuras' | 'generacion' | 'preview';
 
 export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorProps) {
   const navigate = useNavigate();
@@ -227,6 +228,18 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   };
 
   const renderActiveSection = () => {
+    // Special case for preview
+    if (activeSection === 'preview') {
+      return (
+        <CartaPortePreviewFull
+          cartaPorteData={cartaPorteData}
+          onVolver={() => setActiveSection('configuracion')}
+          onGenerarXML={() => setActiveSection('generacion')}
+          onEditarSeccion={(seccion) => setActiveSection(seccion as SectionKey)}
+        />
+      );
+    }
+
     // Special case for GeneracionSection which has different props
     if (activeSection === 'generacion') {
       return (
@@ -336,6 +349,17 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
                 >
                   <Eye className="h-4 w-4" />
                   Activar Documento
+                </Button>
+              )}
+
+              {progress > 70 && (
+                <Button
+                  variant="default"
+                  onClick={() => setActiveSection('preview')}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  Vista Previa Completa
                 </Button>
               )}
 

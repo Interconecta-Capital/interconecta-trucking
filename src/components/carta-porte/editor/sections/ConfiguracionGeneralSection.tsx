@@ -1,14 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Upload, Users } from 'lucide-react';
+import { Upload, Building, FileText } from 'lucide-react';
 import { DocumentUploadDialog } from '../../mercancias/DocumentUploadDialog';
-import { useState } from 'react';
+import { FormFieldWithHelp } from '@/components/ui/FormFieldWithHelp';
+import { FIELD_HELP_TEXTS } from '@/config/fieldHelpTexts';
 
 interface ConfiguracionGeneralSectionProps {
   data: any;
@@ -51,24 +52,30 @@ export function ConfiguracionGeneralSection({ data, onChange }: ConfiguracionGen
           <CardTitle>Información del Emisor</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="rfcEmisor">RFC Emisor *</Label>
-            <Input
-              id="rfcEmisor"
-              value={data?.rfcEmisor || ''}
-              onChange={(e) => handleFieldChange('rfcEmisor', e.target.value)}
-              placeholder="RFC del emisor"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nombreEmisor">Nombre / Razón Social *</Label>
-            <Input
-              id="nombreEmisor"
-              value={data?.nombreEmisor || ''}
-              onChange={(e) => handleFieldChange('nombreEmisor', e.target.value)}
-              placeholder="Nombre o razón social del emisor"
-            />
-          </div>
+          <FormFieldWithHelp
+            label="RFC Emisor"
+            value={data?.rfcEmisor || ''}
+            onChange={(value) => handleFieldChange('rfcEmisor', value)}
+            placeholder="RFC del emisor"
+            helpText={FIELD_HELP_TEXTS.rfcEmisor.help}
+            example={FIELD_HELP_TEXTS.rfcEmisor.example}
+            required
+            icon={<Building className="h-4 w-4" />}
+            validationRule={(val) => ({
+              valid: !val || /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(val),
+              message: "El RFC debe tener formato válido (12-13 caracteres)"
+            })}
+          />
+          <FormFieldWithHelp
+            label="Nombre / Razón Social"
+            value={data?.nombreEmisor || ''}
+            onChange={(value) => handleFieldChange('nombreEmisor', value)}
+            placeholder="Nombre o razón social del emisor"
+            helpText={FIELD_HELP_TEXTS.nombreEmisor.help}
+            example={FIELD_HELP_TEXTS.nombreEmisor.example}
+            required
+            icon={<Building className="h-4 w-4" />}
+          />
           <div className="space-y-2">
             <Label htmlFor="regimenFiscalEmisor">Régimen Fiscal</Label>
             <Select
@@ -95,24 +102,29 @@ export function ConfiguracionGeneralSection({ data, onChange }: ConfiguracionGen
           <CardTitle>Información del Receptor</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="rfcReceptor">RFC Receptor *</Label>
-            <Input
-              id="rfcReceptor"
-              value={data?.rfcReceptor || ''}
-              onChange={(e) => handleFieldChange('rfcReceptor', e.target.value)}
-              placeholder="RFC del receptor"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nombreReceptor">Nombre / Razón Social *</Label>
-            <Input
-              id="nombreReceptor"
-              value={data?.nombreReceptor || ''}
-              onChange={(e) => handleFieldChange('nombreReceptor', e.target.value)}
-              placeholder="Nombre o razón social del receptor"
-            />
-          </div>
+          <FormFieldWithHelp
+            label="RFC Receptor"
+            value={data?.rfcReceptor || ''}
+            onChange={(value) => handleFieldChange('rfcReceptor', value)}
+            placeholder="RFC del receptor"
+            helpText={FIELD_HELP_TEXTS.rfcReceptor.help}
+            example={FIELD_HELP_TEXTS.rfcReceptor.example}
+            required
+            icon={<Building className="h-4 w-4" />}
+            validationRule={(val) => ({
+              valid: !val || /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(val),
+              message: "El RFC debe tener formato válido (12-13 caracteres)"
+            })}
+          />
+          <FormFieldWithHelp
+            label="Nombre / Razón Social"
+            value={data?.nombreReceptor || ''}
+            onChange={(value) => handleFieldChange('nombreReceptor', value)}
+            placeholder="Nombre o razón social del receptor"
+            helpText={FIELD_HELP_TEXTS.nombreReceptor.help}
+            required
+            icon={<Building className="h-4 w-4" />}
+          />
           <div className="space-y-2">
             <Label htmlFor="usoCfdi">Uso de CFDI</Label>
             <Select

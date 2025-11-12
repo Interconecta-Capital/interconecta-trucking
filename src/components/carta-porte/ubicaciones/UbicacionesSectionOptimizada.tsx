@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Zap } from 'lucide-react';
 import { UbicacionesHeader } from './UbicacionesHeader';
 import { UbicacionesList } from './UbicacionesList';
 import { UbicacionesValidation } from './UbicacionesValidation';
@@ -8,6 +10,7 @@ import { UbicacionesNavigation } from './UbicacionesNavigation';
 import { UbicacionesFormSection } from './UbicacionesFormSection';
 import { OptimizedAutoRouteCalculator } from './OptimizedAutoRouteCalculator';
 import { ViajeConfirmationModal } from './ViajeConfirmationModal';
+import { RutasFrecuentesSelector } from '../rutas/RutasFrecuentesSelector';
 import { useUbicaciones } from '@/hooks/useUbicaciones';
 import { useViajeCreation } from '@/hooks/useViajeCreation';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +40,7 @@ export function UbicacionesSectionOptimizada({
   const [showViajeModal, setShowViajeModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [routeData, setRouteData] = useState<any>(null);
+  const [showRutasDialog, setShowRutasDialog] = useState(false);
   
   // Referencias para evitar loops infinitos
   const lastOnChangeRef = useRef<string>('');
@@ -309,6 +313,24 @@ export function UbicacionesSectionOptimizada({
     });
   };
 
+  const handleAplicarRutaFrecuente = (origen: any, destino: any) => {
+    // Limpiar ubicaciones actuales
+    setUbicaciones([]);
+    
+    // Agregar origen y destino
+    setTimeout(() => {
+      const ubicacionesNuevas = [
+        { ...origen, id: generarIdUbicacion('Origen') },
+        { ...destino, id: generarIdUbicacion('Destino') }
+      ];
+      setUbicaciones(ubicacionesNuevas);
+      toast({
+        title: "Ruta aplicada",
+        description: "✅ Ruta aplicada. Puedes agregar más ubicaciones si necesitas."
+      });
+    }, 100);
+  };
+
   // Manejar el click en "Continuar"
   const handleContinueClick = () => {
     if (canContinue && ubicaciones.length > 0) {
@@ -382,10 +404,20 @@ export function UbicacionesSectionOptimizada({
 
   return (
     <div className="space-y-6 bg-white">
-      <UbicacionesHeader
-        ubicacionesCount={ubicaciones.length}
-        onAgregarUbicacion={handleAgregarUbicacion}
-      />
+      <div className="flex items-center justify-between">
+        <UbicacionesHeader
+          ubicacionesCount={ubicaciones.length}
+          onAgregarUbicacion={handleAgregarUbicacion}
+        />
+        <Button
+          variant="outline"
+          onClick={() => setShowRutasDialog(true)}
+          className="flex items-center gap-2 border-primary text-primary hover:bg-primary/10"
+        >
+          <Zap className="h-4 w-4" />
+          Rutas Frecuentes
+        </Button>
+      </div>
 
       <UbicacionesValidation
         validacion={validacion}
@@ -457,6 +489,16 @@ export function UbicacionesSectionOptimizada({
         ubicaciones={ubicaciones}
         distanciaTotal={distanciaTotal}
         tiempoEstimado={tiempoEstimado}
+      />
+
+      {/* Modal de rutas frecuentes */}
+      <RutasFrecuentesSelector
+        open={showRutasDialog}
+        onOpenChange={setShowRutasDialog}
+        onAplicarRuta={handleAplicarRutaFrecuente}
+        ubicacionesActuales={ubicaciones}
+        distanciaActual={distanciaTotal}
+        tiempoActual={tiempoEstimado}
       />
     </div>
   );

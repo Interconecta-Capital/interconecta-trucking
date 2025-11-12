@@ -208,3 +208,18 @@ export interface PlantillaData {
   created_at: string;
   updated_at: string;
 }
+
+// Export RutaFrecuente for the rutas frecuentes components
+export interface RutaFrecuente {
+  id: string;
+  usuario_id: string;
+  nombre_ruta: string;
+  descripcion?: string;
+  ubicacion_origen: UbicacionCompleta;
+  ubicacion_destino: UbicacionCompleta;
+  distancia_km?: number;
+  tiempo_estimado_minutos?: number;
+  uso_count: number;
+  created_at: string;
+  updated_at: string;
+}
