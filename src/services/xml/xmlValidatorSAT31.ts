@@ -132,8 +132,22 @@ export class XMLValidatorSAT31 {
       return;
     }
 
-    const tieneOrigen = data.ubicaciones.some(u => u.tipo_ubicacion === 'Origen');
-    const tieneDestino = data.ubicaciones.some(u => u.tipo_ubicacion === 'Destino');
+    // Buscar en ambos formatos (camelCase y snake_case)
+    const tieneOrigen = data.ubicaciones.some(u => 
+      u.tipo_ubicacion === 'Origen' || (u as any).tipoUbicacion === 'Origen'
+    );
+    const tieneDestino = data.ubicaciones.some(u => 
+      u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
+    );
+
+    console.log('🔍 [VALIDACIÓN XML] Buscando origen/destino en:', 
+      data.ubicaciones.map(u => ({ 
+        tipo: u.tipo_ubicacion || (u as any).tipoUbicacion,
+        id: (u as any).idUbicacion 
+      }))
+    );
+    console.log('✅ Tiene origen:', tieneOrigen);
+    console.log('✅ Tiene destino:', tieneDestino);
 
     if (!tieneOrigen) {
       errors.push({
@@ -195,7 +209,8 @@ export class XMLValidatorSAT31 {
       }
 
       // ✅ FASE 3: Distancia en destino - ahora es WARNING, no error
-      if (ubicacion.tipo_ubicacion === 'Destino') {
+      const tipoUbicacion = ubicacion.tipo_ubicacion || (ubicacion as any).tipoUbicacion;
+      if (tipoUbicacion === 'Destino') {
         const distancia = ubicacion.distancia_recorrida || (ubicacion as any).distanciaRecorrida;
         
         if (!distancia || distancia <= 0) {

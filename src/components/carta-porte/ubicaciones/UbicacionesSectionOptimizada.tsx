@@ -338,7 +338,7 @@ export function UbicacionesSectionOptimizada({
   // Manejar el click en "Continuar"
   const handleContinueClick = () => {
     if (canContinue && ubicaciones.length > 0) {
-      setShowViajeModal(true);
+      onNext();
     }
   };
 
@@ -453,15 +453,6 @@ export function UbicacionesSectionOptimizada({
       </CardContent>
 
       {/* Modal de confirmación de viaje */}
-      <ViajeConfirmationModal
-        isOpen={showViajeModal}
-        onClose={() => setShowViajeModal(false)}
-        onConfirmSaveTrip={handleConfirmSaveTrip}
-        onConfirmContinue={handleConfirmContinue}
-        ubicaciones={ubicaciones}
-        distanciaTotal={distanciaTotal}
-        tiempoEstimado={tiempoEstimado}
-      />
 
       {/* Modal de rutas frecuentes */}
       <RutasFrecuentesSelector
