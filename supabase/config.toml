@@ -32,3 +32,12 @@ verify_jwt = false
 
 [functions.validate-csrf]
 verify_jwt = true
+
+[functions.timbrar-con-sw]
+verify_jwt = true
+
+[functions.consultar-rfc-sat]
+verify_jwt = true
+
+[functions.generar-pdf-factura]
+verify_jwt = true

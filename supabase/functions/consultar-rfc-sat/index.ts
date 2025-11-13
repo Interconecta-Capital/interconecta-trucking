@@ -1,0 +1,104 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const { rfc } = await req.json();
+
+    if (!rfc) {
+      return new Response(
+        JSON.stringify({ error: 'RFC es requerido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Autenticar usuario
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'No autenticado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[consultar-rfc-sat] Consultando RFC: ${rfc}`);
+
+    // Obtener credenciales SW desde Vault
+    const swToken = Deno.env.get('SW_TOKEN');
+    const swUrl = Deno.env.get('SW_SANDBOX_URL') || 'https://services.test.sw.com.mx';
+
+    if (!swToken) {
+      throw new Error('SW_TOKEN no configurado');
+    }
+
+    // Consultar RFC en el API de SW (que consulta al SAT)
+    const response = await fetch(`${swUrl}/api/v3/taxpayer/rfc/${rfc}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${swToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[consultar-rfc-sat] Error del PAC:', errorText);
+      
+      if (response.status === 404) {
+        return new Response(
+          JSON.stringify({
+            encontrado: false,
+            mensaje: 'RFC no encontrado en el padrón del SAT'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      throw new Error(`Error consultando RFC: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[consultar-rfc-sat] Respuesta del PAC:', data);
+
+    return new Response(
+      JSON.stringify({
+        encontrado: true,
+        rfc: data.rfc,
+        razonSocial: data.razonSocial || data.nombre,
+        situacion: data.situacion || 'Activo',
+        mensaje: 'RFC validado correctamente'
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('[consultar-rfc-sat] Error:', error);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'Error interno del servidor',
+        encontrado: false 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
