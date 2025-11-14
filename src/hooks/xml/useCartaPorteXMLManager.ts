@@ -117,8 +117,19 @@ export function useCartaPorteXMLManager(userId?: string) {
           description: validacionCertificado.error
         });
       }
+      // Llamar directamente al adaptador de Supabase con datos completos de Carta Porte
+      const { SupabaseFunctionsAdapter } = await import('@/services/api/supabaseFunctionsAdapter');
       
-      const resultado = await PACServiceReal.timbrarCartaPorte(xmlParaTimbrar, 'sandbox');
+      // Obtener o generar cartaPorteId
+      const cartaPorteId = cartaPorteData.id || crypto.randomUUID();
+      
+      console.log(`🔄 Timbrando Carta Porte ${cartaPorteId} con Conectia...`);
+      
+      const resultado = await SupabaseFunctionsAdapter.timbrarCartaPorte(
+        cartaPorteData,
+        cartaPorteId, 
+        'sandbox'
+      );
       
       if (resultado.success) {
         setXMLTimbrado(resultado.xmlTimbrado || null);

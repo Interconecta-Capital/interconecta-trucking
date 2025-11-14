@@ -32,10 +32,10 @@ export interface PACConfig {
 export class PACServiceReal {
   private static readonly PAC_CONFIGS: PACConfig[] = [
     {
-      name: 'FISCAL API',
-      type: 'fiscal_api',
-      sandboxUrl: 'https://sandbox.fiscalapi.com/v1/cfdi/stamp',
-      productionUrl: 'https://api.fiscalapi.com/v1/cfdi/stamp',
+      name: 'Conectia (SmartWeb)',
+      type: 'fiscal_api', // Mantener tipo por compatibilidad
+      sandboxUrl: 'https://services.test.sw.com.mx',
+      productionUrl: 'https://services.sw.com.mx',
       active: true,
       priority: 1
     }
@@ -55,43 +55,13 @@ export class PACServiceReal {
     console.log(`🔄 Iniciando timbrado PAC en ambiente: ${environment}`);
 
     try {
-      // Importar adaptador dinámicamente para evitar problemas de carga
-      const { SupabaseFunctionsAdapter } = await import('@/services/api/supabaseFunctionsAdapter');
+      // NOTA: Esta función legacy requiere cartaPorteData completo
+      // El nuevo flujo usa timbrar-con-sw directamente desde los componentes
+      console.warn('⚠️ PACServiceReal.timbrarCartaPorte() es legacy - use el flujo directo con useCartaPorteXMLManager');
       
-      // Llamar al edge function de timbrado a través del adaptador
-      const result = await SupabaseFunctionsAdapter.timbrarCartaPorte(xml, environment);
-
-      console.log('📥 Respuesta servicio timbrado:', result);
-      
-      if (!result.success) {
-        return {
-          success: false,
-          error: result.error || 'Error en servicio de timbrado'
-        };
-      }
-
-      // Validar estructura de respuesta exitosa
-      if (!result.uuid || !result.xmlTimbrado) {
-        return {
-          success: false,
-          error: 'Respuesta incompleta del servicio de timbrado'
-        };
-      }
-
-      console.log(`✅ Timbrado PAC exitoso - UUID: ${result.uuid}`);
-
       return {
-        success: true,
-        uuid: result.uuid,
-        xmlTimbrado: result.xmlTimbrado,
-        qrCode: result.qrCode,
-        cadenaOriginal: result.cadenaOriginal,
-        selloDigital: result.selloDigital,
-        folio: result.folio,
-        fechaTimbrado: result.fechaTimbrado,
-        certificadoSAT: result.certificadoSAT,
-        ambiente: result.ambiente,
-        pac: result.pac || 'FISCAL_API'
+        success: false,
+        error: 'Esta función requiere datos completos de Carta Porte. Use useCartaPorteXMLManager.timbrarCartaPorte() desde el componente.'
       };
 
     } catch (error) {

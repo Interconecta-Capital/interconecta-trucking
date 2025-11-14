@@ -16,14 +16,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const fiscalApiKey = Deno.env.get('FISCAL_API_KEY');
+    // Obtener credenciales de Conectia (SmartWeb)
+    const swToken = Deno.env.get('SW_TOKEN');
+    const swSandboxUrl = Deno.env.get('SW_SANDBOX_URL');
+    const swProductionUrl = Deno.env.get('SW_PRODUCTION_URL');
 
-    if (!fiscalApiKey) {
-      console.error('FISCAL_API_KEY no configurado');
+    if (!swToken || !swSandboxUrl || !swProductionUrl) {
+      console.error('Credenciales de Conectia (SW) no configuradas');
       return new Response(
         JSON.stringify({
           success: false,
-          message: 'Configuración de PAC incompleta'
+          message: 'Configuración de PAC Conectia incompleta. Verifique SW_TOKEN, SW_SANDBOX_URL y SW_PRODUCTION_URL'
         }),
         {
           status: 500,
@@ -34,26 +37,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { ambiente }: ValidacionRequest = await req.json();
 
-    console.log(`🔍 Validando conexión PAC en ambiente: ${ambiente}`);
+    console.log(`🔍 Validando conexión con Conectia (SmartWeb) en ambiente: ${ambiente}`);
 
-    const apiUrl = ambiente === 'sandbox' 
-      ? 'https://sandbox.fiscalapi.com/v1/health'
-      : 'https://api.fiscalapi.com/v1/health';
+    const swUrl = ambiente === 'production' ? swProductionUrl : swSandboxUrl;
+    const healthEndpoint = `${swUrl}/ping`;
 
-    // Verificar conectividad con FISCAL API
-    const fiscalResponse = await fetch(apiUrl, {
+    // Verificar conectividad con Conectia API
+    const swResponse = await fetch(healthEndpoint, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${fiscalApiKey}`,
-        'Accept': 'application/json',
+        'Authorization': `Bearer ${swToken}`,
+        'Content-Type': 'application/json',
       },
     });
 
-    if (!fiscalResponse.ok) {
+    if (!swResponse.ok) {
+      console.error(`❌ Error de conexión con Conectia: HTTP ${swResponse.status}`);
       return new Response(
         JSON.stringify({
           success: false,
-          message: `Error de conexión PAC: HTTP ${fiscalResponse.status}`
+          message: `Error de conexión PAC Conectia: HTTP ${swResponse.status}`
         }),
         {
           status: 400,
@@ -62,18 +65,27 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const healthData = await fiscalResponse.json();
+    const responseText = await swResponse.text();
+    console.log('✅ Respuesta de Conectia:', responseText);
 
-    console.log('✅ Conexión PAC válida');
+    let healthData;
+    try {
+      healthData = responseText ? JSON.parse(responseText) : { status: 'ok' };
+    } catch {
+      healthData = { status: 'ok', response: responseText };
+    }
+
+    console.log('✅ Conexión con Conectia (SmartWeb) válida');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Conexión PAC verificada exitosamente',
+        message: 'Conexión PAC Conectia verificada exitosamente',
         data: {
-          pac: 'FISCAL_API',
+          pac: 'Conectia (SmartWeb)',
           ambiente,
           status: 'online',
+          url: swUrl,
           timestamp: new Date().toISOString(),
           ...healthData
         }
