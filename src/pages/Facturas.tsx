@@ -116,11 +116,6 @@ export default function Facturas() {
   const { data: facturas, isLoading, refetch } = useQuery({
     queryKey: ['facturas', filtroTipo, filtroStatus],
     queryFn: async () => {
-      // Temporalmente retornar array vacío hasta regenerar tipos
-      toast.info('Por favor, regenera los tipos de TypeScript primero');
-      return [] as Factura[];
-
-      /* DESCOMENTAR DESPUÉS DE REGENERAR TIPOS:
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('No autenticado');
 
@@ -141,7 +136,6 @@ export default function Facturas() {
       const { data, error } = await query;
       if (error) throw error;
       return data as Factura[];
-      */
     }
   });
 

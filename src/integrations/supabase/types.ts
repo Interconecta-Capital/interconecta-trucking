@@ -419,6 +419,7 @@ export type Database = {
           entrada_salida_merc: string | null
           es_plantilla: boolean | null
           estatus_cancelacion: string | null
+          factura_id: string | null
           fecha_cancelacion: string | null
           fecha_timbrado: string | null
           folio: string | null
@@ -467,6 +468,7 @@ export type Database = {
           entrada_salida_merc?: string | null
           es_plantilla?: boolean | null
           estatus_cancelacion?: string | null
+          factura_id?: string | null
           fecha_cancelacion?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
@@ -515,6 +517,7 @@ export type Database = {
           entrada_salida_merc?: string | null
           es_plantilla?: boolean | null
           estatus_cancelacion?: string | null
+          factura_id?: string | null
           fecha_cancelacion?: string | null
           fecha_timbrado?: string | null
           folio?: string | null
@@ -557,6 +560,13 @@ export type Database = {
             columns: ["borrador_origen_id"]
             isOneToOne: false
             referencedRelation: "borradores_carta_porte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cartas_porte_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
             referencedColumns: ["id"]
           },
           {
@@ -2042,6 +2052,143 @@ export type Database = {
             columns: ["viaje_id"]
             isOneToOne: false
             referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facturas: {
+        Row: {
+          cadena_original: string | null
+          carta_porte_id: string | null
+          certificado_sat: string | null
+          created_at: string | null
+          descuento: number | null
+          domicilio_fiscal_receptor: string | null
+          fecha_cancelacion: string | null
+          fecha_expedicion: string
+          fecha_timbrado: string | null
+          folio: string | null
+          id: string
+          metadata: Json | null
+          moneda: string | null
+          motivo_cancelacion: string | null
+          nombre_emisor: string
+          nombre_receptor: string
+          notas: string | null
+          pdf_url: string | null
+          regimen_fiscal_emisor: string | null
+          regimen_fiscal_receptor: string | null
+          rfc_emisor: string
+          rfc_receptor: string
+          sello_digital: string | null
+          sello_sat: string | null
+          serie: string | null
+          status: string | null
+          subtotal: number
+          tiene_carta_porte: boolean | null
+          tiene_pago: boolean | null
+          tipo_cambio: number | null
+          tipo_comprobante: string | null
+          total: number
+          total_impuestos_retenidos: number | null
+          total_impuestos_trasladados: number | null
+          updated_at: string | null
+          user_id: string
+          uso_cfdi: string | null
+          uuid_fiscal: string | null
+          xml_generado: string | null
+          xml_url: string | null
+        }
+        Insert: {
+          cadena_original?: string | null
+          carta_porte_id?: string | null
+          certificado_sat?: string | null
+          created_at?: string | null
+          descuento?: number | null
+          domicilio_fiscal_receptor?: string | null
+          fecha_cancelacion?: string | null
+          fecha_expedicion?: string
+          fecha_timbrado?: string | null
+          folio?: string | null
+          id?: string
+          metadata?: Json | null
+          moneda?: string | null
+          motivo_cancelacion?: string | null
+          nombre_emisor: string
+          nombre_receptor: string
+          notas?: string | null
+          pdf_url?: string | null
+          regimen_fiscal_emisor?: string | null
+          regimen_fiscal_receptor?: string | null
+          rfc_emisor: string
+          rfc_receptor: string
+          sello_digital?: string | null
+          sello_sat?: string | null
+          serie?: string | null
+          status?: string | null
+          subtotal?: number
+          tiene_carta_porte?: boolean | null
+          tiene_pago?: boolean | null
+          tipo_cambio?: number | null
+          tipo_comprobante?: string | null
+          total?: number
+          total_impuestos_retenidos?: number | null
+          total_impuestos_trasladados?: number | null
+          updated_at?: string | null
+          user_id: string
+          uso_cfdi?: string | null
+          uuid_fiscal?: string | null
+          xml_generado?: string | null
+          xml_url?: string | null
+        }
+        Update: {
+          cadena_original?: string | null
+          carta_porte_id?: string | null
+          certificado_sat?: string | null
+          created_at?: string | null
+          descuento?: number | null
+          domicilio_fiscal_receptor?: string | null
+          fecha_cancelacion?: string | null
+          fecha_expedicion?: string
+          fecha_timbrado?: string | null
+          folio?: string | null
+          id?: string
+          metadata?: Json | null
+          moneda?: string | null
+          motivo_cancelacion?: string | null
+          nombre_emisor?: string
+          nombre_receptor?: string
+          notas?: string | null
+          pdf_url?: string | null
+          regimen_fiscal_emisor?: string | null
+          regimen_fiscal_receptor?: string | null
+          rfc_emisor?: string
+          rfc_receptor?: string
+          sello_digital?: string | null
+          sello_sat?: string | null
+          serie?: string | null
+          status?: string | null
+          subtotal?: number
+          tiene_carta_porte?: boolean | null
+          tiene_pago?: boolean | null
+          tipo_cambio?: number | null
+          tipo_comprobante?: string | null
+          total?: number
+          total_impuestos_retenidos?: number | null
+          total_impuestos_trasladados?: number | null
+          updated_at?: string | null
+          user_id?: string
+          uso_cfdi?: string | null
+          uuid_fiscal?: string | null
+          xml_generado?: string | null
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_carta_porte_id_fkey"
+            columns: ["carta_porte_id"]
+            isOneToOne: false
+            referencedRelation: "cartas_porte"
             referencedColumns: ["id"]
           },
         ]
@@ -4621,6 +4768,18 @@ export type Database = {
         }
         Relationships: []
       }
+      facturas_stats: {
+        Row: {
+          egresos_totales: number | null
+          facturas_canceladas: number | null
+          facturas_timbradas: number | null
+          ingresos_totales: number | null
+          total_facturas: number | null
+          ultima_factura: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_rotate_pac_token: { Args: { new_token: string }; Returns: boolean }
@@ -4726,6 +4885,10 @@ export type Database = {
       check_user_access: { Args: { user_uuid: string }; Returns: boolean }
       cleanup_expired_grace_users: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
+      decrypt_conductor_photo: {
+        Args: { conductor_id: string }
+        Returns: string
+      }
       decrypt_document: {
         Args: { column_name: string; record_id: string; table_name: string }
         Returns: string
@@ -4733,6 +4896,10 @@ export type Database = {
       eliminar_datos_usuario: {
         Args: { target_user_id: string }
         Returns: Json
+      }
+      encrypt_conductor_photo: {
+        Args: { conductor_id: string; photo_data: string }
+        Returns: boolean
       }
       encrypt_document: {
         Args: {
@@ -4795,6 +4962,7 @@ export type Database = {
         }[]
       }
       get_encryption_stats: { Args: never; Returns: Json }
+      get_facturas_resumen: { Args: { p_user_id: string }; Returns: Json }
       get_pac_credentials: { Args: never; Returns: Json }
       get_pac_token: { Args: { secret_name?: string }; Returns: string }
       get_schema_version: { Args: never; Returns: number }
@@ -4822,6 +4990,8 @@ export type Database = {
         }
         Returns: string
       }
+      mi_funcion_que_necesita_pac: { Args: never; Returns: undefined }
+      migrate_photos_to_encrypted: { Args: never; Returns: Json }
       poblar_datos_viajes_existentes: { Args: never; Returns: string }
       poblar_datos_viajes_existentes_mejorado: { Args: never; Returns: string }
       process_expired_trials: { Args: never; Returns: undefined }
