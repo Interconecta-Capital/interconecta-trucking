@@ -8,26 +8,27 @@ export class SupabaseFunctionsAdapter {
   /**
    * Timbrar Carta Porte usando edge function
    */
-  static async timbrarCartaPorte(xml: string, ambiente: 'sandbox' | 'production'): Promise<any> {
+  static async timbrarCartaPorte(cartaPorteData: any, cartaPorteId: string, ambiente: 'sandbox' | 'production'): Promise<any> {
     try {
-      console.log('📡 Llamando a edge function: timbrar-carta-porte');
+      console.log('📡 Llamando a edge function: timbrar-con-sw (Conectia)');
       
-      const { data, error } = await supabase.functions.invoke('timbrar-carta-porte', {
+      const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
         body: {
-          xml,
-          ambiente,
-          tipo_documento: 'carta_porte'
+          cartaPorteData,
+          cartaPorteId,
+          ambiente
         }
       });
 
       if (error) {
-        console.error('❌ Error en edge function:', error);
-        throw new Error(error.message || 'Error llamando a función de timbrado');
+        console.error('❌ Error en edge function Conectia:', error);
+        throw new Error(error.message || 'Error llamando a función de timbrado Conectia');
       }
 
+      console.log('✅ Respuesta de Conectia recibida:', data);
       return data;
     } catch (error) {
-      console.error('💥 Error en timbrado:', error);
+      console.error('💥 Error en timbrado con Conectia:', error);
       throw error;
     }
   }
