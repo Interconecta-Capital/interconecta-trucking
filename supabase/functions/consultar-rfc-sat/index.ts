@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { ConsultarRFCSATSchema, createValidationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,14 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    const { rfc } = await req.json();
-
-    if (!rfc) {
-      return new Response(
-        JSON.stringify({ error: 'RFC es requerido' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const requestBody = await req.json();
+    
+    // 🔐 VALIDACIÓN CON ZOD
+    const validationResult = ConsultarRFCSATSchema.safeParse(requestBody);
+    if (!validationResult.success) {
+      return createValidationErrorResponse(validationResult.error, corsHeaders);
     }
+
+    const { rfc } = validationResult.data;
 
     // Autenticar usuario
     const supabaseClient = createClient(

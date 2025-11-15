@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { CancelarCFDISchema, createValidationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,13 +26,15 @@ serve(async (req) => {
       });
     }
 
-    const { uuid, rfc, motivo, folioSustitucion, ambiente = 'sandbox' } = await req.json();
-
-    if (!uuid || !rfc || !motivo) {
-      return new Response(JSON.stringify({ error: 'Faltan datos requeridos' }), { 
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
+    const requestBody = await req.json();
+    
+    // 🔐 VALIDACIÓN CON ZOD
+    const validationResult = CancelarCFDISchema.safeParse(requestBody);
+    if (!validationResult.success) {
+      return createValidationErrorResponse(validationResult.error, corsHeaders);
     }
+
+    const { uuid, rfc, motivo, folioSustitucion, ambiente } = validationResult.data;
 
     console.log(`📤 Cancelando CFDI ${uuid} para RFC ${rfc}`);
 
