@@ -3165,6 +3165,7 @@ export type Database = {
           id: string
           placa: string
           subtipo_rem: string
+          user_id: string | null
         }
         Insert: {
           autotransporte_id?: string | null
@@ -3172,6 +3173,7 @@ export type Database = {
           id?: string
           placa: string
           subtipo_rem: string
+          user_id?: string | null
         }
         Update: {
           autotransporte_id?: string | null
@@ -3179,6 +3181,7 @@ export type Database = {
           id?: string
           placa?: string
           subtipo_rem?: string
+          user_id?: string | null
         }
         Relationships: [
           {

@@ -52,20 +52,48 @@ serve(async (req) => {
     const password = formData.get('password') as string;
     const nombreCertificado = formData.get('nombre_certificado') as string;
 
-    if (!cerFile || !keyFile || !password || !nombreCertificado) {
-      return new Response(
-        JSON.stringify({ error: 'Faltan archivos o datos requeridos' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // 🔐 VALIDACIÓN MANUAL DE FORMDATA
+    const validationErrors: string[] = [];
+    
+    if (!cerFile) validationErrors.push('Archivo .cer es requerido');
+    if (!keyFile) validationErrors.push('Archivo .key es requerido');
+    if (!password) validationErrors.push('Contraseña es requerida');
+    if (!nombreCertificado) validationErrors.push('Nombre del certificado es requerido');
+    
+    if (password && (password.length < 4 || password.length > 50)) {
+      validationErrors.push('La contraseña debe tener entre 4 y 50 caracteres');
+    }
+    
+    if (nombreCertificado && (nombreCertificado.length < 1 || nombreCertificado.length > 255)) {
+      validationErrors.push('El nombre del certificado debe tener entre 1 y 255 caracteres');
+    }
+    
+    // Validar extensiones
+    if (cerFile && !cerFile.name.toLowerCase().endsWith('.cer')) {
+      validationErrors.push('El archivo debe tener extensión .cer');
+    }
+    
+    if (keyFile && !keyFile.name.toLowerCase().endsWith('.key')) {
+      validationErrors.push('El archivo debe tener extensión .key');
+    }
+    
+    // Validar tamaños de archivo (máximo 5MB cada uno)
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    if (cerFile && cerFile.size > maxFileSize) {
+      validationErrors.push('El archivo .cer es demasiado grande (máximo 5MB)');
+    }
+    
+    if (keyFile && keyFile.size > maxFileSize) {
+      validationErrors.push('El archivo .key es demasiado grande (máximo 5MB)');
     }
 
-    console.log('Procesando certificado para usuario:', user.id);
-    console.log('Nombre del certificado:', nombreCertificado);
-
-    // Validar extensiones
-    if (!cerFile.name.toLowerCase().endsWith('.cer') || !keyFile.name.toLowerCase().endsWith('.key')) {
+    if (validationErrors.length > 0) {
+      console.error('❌ Errores de validación:', validationErrors);
       return new Response(
-        JSON.stringify({ error: 'Extensiones de archivo inválidas' }),
+        JSON.stringify({ 
+          error: 'Datos inválidos', 
+          validationErrors 
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

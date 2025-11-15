@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { TimbrarCartaPorteSchema, createValidationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,8 +29,16 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 2. Obtener datos del request (Carta Porte o Factura)
-    const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente = 'sandbox' } = await req.json();
+    // 2. Obtener y validar datos del request
+    const requestBody = await req.json();
+    
+    // 🔐 VALIDACIÓN CON ZOD
+    const validationResult = TimbrarCartaPorteSchema.safeParse(requestBody);
+    if (!validationResult.success) {
+      return createValidationErrorResponse(validationResult.error, corsHeaders);
+    }
+
+    const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente } = validationResult.data;
 
     if (!cartaPorteData && !facturaData) {
       return new Response(JSON.stringify({ 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { GenerarPDFFacturaSchema, createValidationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,14 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    const { facturaId } = await req.json();
-
-    if (!facturaId) {
-      return new Response(
-        JSON.stringify({ error: 'facturaId es requerido' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const requestBody = await req.json();
+    
+    // 🔐 VALIDACIÓN CON ZOD
+    const validationResult = GenerarPDFFacturaSchema.safeParse(requestBody);
+    if (!validationResult.success) {
+      return createValidationErrorResponse(validationResult.error, corsHeaders);
     }
+
+    const { facturaId } = validationResult.data;
 
     // Autenticar usuario
     const supabaseClient = createClient(
