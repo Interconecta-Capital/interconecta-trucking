@@ -4979,6 +4979,7 @@ export type Database = {
         }[]
       }
       get_user_tenant_id: { Args: { user_uuid: string }; Returns: string }
+      has_admin_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       increment_schema_version: { Args: never; Returns: number }
       is_admin_or_superuser: { Args: { _user_id: string }; Returns: boolean }
@@ -5022,6 +5023,10 @@ export type Database = {
       update_user_storage_usage: {
         Args: { bytes_delta: number; files_delta?: number; user_uuid: string }
         Returns: undefined
+      }
+      user_has_tenant_access: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
       }
       validate_carta_porte_v31: {
         Args: { carta_porte_data: Json }
