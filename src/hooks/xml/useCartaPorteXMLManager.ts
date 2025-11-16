@@ -73,6 +73,16 @@ export function useCartaPorteXMLManager(userId?: string) {
   };
 
   const timbrarCartaPorte = async (cartaPorteData: CartaPorteData): Promise<TimbradoResult> => {
+    console.log('🚀 [TIMBRADO] === INICIO ===');
+    console.log('📋 [TIMBRADO] Datos de entrada:', {
+      rfcEmisor: cartaPorteData.rfcEmisor,
+      rfcReceptor: cartaPorteData.rfcReceptor,
+      ubicaciones: cartaPorteData.ubicaciones?.length,
+      mercancias: cartaPorteData.mercancias?.length,
+      autotransporte: !!cartaPorteData.autotransporte?.placa_vm,
+      figuras: cartaPorteData.figuras?.length
+    });
+
     const xmlParaTimbrar = xmlGenerado;
     
     if (!xmlParaTimbrar) {
@@ -80,13 +90,16 @@ export function useCartaPorteXMLManager(userId?: string) {
         success: false,
         error: 'No hay XML generado para timbrar'
       };
+      console.error('❌ [TIMBRADO] Error:', errorResult.error);
       toast.error('Error', { description: errorResult.error });
       return errorResult;
     }
 
+    console.log('✅ [TIMBRADO] XML disponible, longitud:', xmlParaTimbrar.length);
+
     setIsTimbring(true);
     try {
-      console.log('🔄 Iniciando proceso de timbrado PAC...');
+      console.log('🔄 [TIMBRADO] Iniciando proceso de timbrado PAC...');
 
       // Validar certificado CSD antes de timbrar
       if (!userId) {

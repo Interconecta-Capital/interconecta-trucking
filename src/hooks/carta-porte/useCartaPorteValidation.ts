@@ -91,8 +91,10 @@ export const useCartaPorteValidation = () => {
         console.log('🔍 [VALIDACION] datosCalculoRuta:', formData.datosCalculoRuta);
         console.log('🔍 [VALIDACION] Distancia final encontrada:', distancia);
         
+        // ⚠️ CAMBIO CRÍTICO: Permitir avanzar sin distancia (opcional)
         if (distancia === 0) {
-          missingFields.ubicaciones.push('Calcular distancia haciendo clic en "Calcular Ruta con Google Maps"');
+          console.warn('⚠️ [VALIDACION] Distancia no calculada - se usará 0 km en el XML');
+          // NO agregar a missingFields - permitir continuar sin bloquear
         }
         
       // Validar domicilios completos

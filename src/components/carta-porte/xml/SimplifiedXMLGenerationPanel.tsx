@@ -15,6 +15,7 @@ import { TimbradoSection } from './sections/TimbradoSection';
 import { TimbradoAutomaticoSection } from './sections/TimbradoAutomaticoSection';
 import { TrackingSection } from '../tracking/TrackingSection';
 import { XMLPreviewSection } from './sections/XMLPreviewSection';
+import { toast } from 'sonner';
 
 interface SimplifiedXMLGenerationPanelProps {
   cartaPorteData: CartaPorteData;
@@ -103,11 +104,40 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleTimbrar = async () => {
+    console.log('🎯 [TIMBRAR] Iniciando proceso...');
+    
     if (!cartaPorteId) {
-      console.error('ID de carta porte requerido para timbrado');
+      console.error('❌ [TIMBRAR] ID de carta porte requerido');
+      toast.error('Error: ID de carta porte requerido');
       return;
     }
+
+    // Validar datos completos ANTES de timbrar
+    const { validarCartaPorteCompleta } = await import('@/utils/validaciones/validarCartaPorteCompleta');
+    const validacion = validarCartaPorteCompleta(cartaPorteData);
     
+    if (!validacion.esValido) {
+      console.error('❌ [TIMBRAR] Validación falló:', validacion.errores);
+      toast.error('Carta Porte incompleta', {
+        description: validacion.errores.slice(0, 3).join(', ')
+      });
+      return;
+    }
+
+    if (validacion.advertencias.length > 0) {
+      console.warn('⚠️ [TIMBRAR] Advertencias:', validacion.advertencias);
+      validacion.advertencias.forEach(adv => {
+        toast.warning('Advertencia', { description: adv });
+      });
+    }
+
+    if (!xmlActual) {
+      console.error('❌ [TIMBRAR] No hay XML generado');
+      toast.error('Debe generar el XML primero');
+      return;
+    }
+
+    console.log('✅ [TIMBRAR] Validaciones pasadas, iniciando timbrado...');
     const resultado = await timbrarCartaPorte(cartaPorteData);
     if (resultado.success && onTimbrado) {
       onTimbrado(resultado);
@@ -127,11 +157,45 @@ export function SimplifiedXMLGenerationPanel({
   };
 
   const handleGenerarPDF = async () => {
-    const resultado = await generateCompletePDF(cartaPorteData, datosCalculoRuta);
-    if (resultado) {
-      // Persistir PDF inmediatamente
-      savePDF(resultado.url, resultado.blob);
-      console.log(`PDF completo generado y persistido: ${resultado.pages} páginas`);
+    console.log('📄 [PDF] === INICIO GENERACIÓN ===');
+    console.log('📄 [PDF] Datos de entrada:', {
+      rfcEmisor: cartaPorteData.rfcEmisor,
+      rfcReceptor: cartaPorteData.rfcReceptor,
+      ubicaciones: cartaPorteData.ubicaciones?.length,
+      mercancias: cartaPorteData.mercancias?.length,
+      distanciaTotal: datosCalculoRuta?.distanciaTotal,
+      placa: cartaPorteData.autotransporte?.placa_vm
+    });
+
+    try {
+      const resultado = await generateCompletePDF(cartaPorteData, datosCalculoRuta || undefined);
+      
+      if (resultado && resultado.url) {
+        console.log('✅ [PDF] Generado exitosamente:', {
+          pages: resultado.pages,
+          url: resultado.url?.substring(0, 50) + '...'
+        });
+        
+        // Persistir PDF
+        savePDF(resultado.url, resultado.blob);
+        
+        // Descargar automáticamente
+        const a = document.createElement('a');
+        a.href = resultado.url;
+        a.download = `carta-porte-${cartaPorteId || Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        toast.success(`PDF generado: ${resultado.pages} páginas`);
+      } else {
+        throw new Error('PDF no generado correctamente');
+      }
+    } catch (error) {
+      console.error('❌ [PDF] Error:', error);
+      toast.error('Error al generar PDF', {
+        description: error instanceof Error ? error.message : 'Error desconocido'
+      });
     }
   };
 

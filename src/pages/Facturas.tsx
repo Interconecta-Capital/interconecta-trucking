@@ -18,6 +18,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { FacturaViewer } from '@/components/facturacion/FacturaViewer';
 
 interface Factura {
   id: string;
@@ -45,6 +46,7 @@ export default function Facturas() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
 
   const handleDescargarPDF = async (factura: Factura) => {
     try {
@@ -270,8 +272,12 @@ export default function Facturas() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/administracion/fiscal/facturas/${factura.id}`)}>
+                       <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => setFacturaSeleccionada(factura)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         {factura.status === 'timbrado' && (
@@ -298,6 +304,16 @@ export default function Facturas() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Modal del Visualizador de Facturas */}
+      {facturaSeleccionada && (
+        <FacturaViewer
+          factura={facturaSeleccionada}
+          onClose={() => setFacturaSeleccionada(null)}
+          onDescargarPDF={() => handleDescargarPDF(facturaSeleccionada)}
+          onDescargarXML={() => handleDescargarXML(facturaSeleccionada)}
+        />
+      )}
     </div>
   );
 }
