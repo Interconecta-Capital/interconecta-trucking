@@ -89,6 +89,12 @@ const sidebarItems: SidebarItem[] = [
     category: 'RECURSOS',
   },
   {
+    title: 'Facturas',
+    href: '/facturas',
+    icon: FileText,
+    category: 'ADMINISTRACIÓN FISCAL',
+  },
+  {
     title: 'Carta Porte',
     href: '/cartas-porte',
     icon: FileText,
