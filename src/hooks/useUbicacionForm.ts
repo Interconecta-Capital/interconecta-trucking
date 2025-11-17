@@ -16,6 +16,8 @@ export const useUbicacionForm = (initialData?: Partial<Ubicacion>, generarId?: (
     tipoUbicacion: initialData?.tipoUbicacion || '', // Vacío por defecto
     rfcRemitenteDestinatario: initialData?.rfcRemitenteDestinatario || '',
     nombreRemitenteDestinatario: initialData?.nombreRemitenteDestinatario || '',
+    numRegIdTrib: initialData?.numRegIdTrib || '',
+    residenciaFiscal: initialData?.residenciaFiscal || 'MEX',
     fechaHoraSalidaLlegada: initialData?.fechaHoraSalidaLlegada || '',
     distanciaRecorrida: initialData?.distanciaRecorrida || 0,
     ordenSecuencia: initialData?.ordenSecuencia || 1,

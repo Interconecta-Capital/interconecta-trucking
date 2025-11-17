@@ -198,11 +198,6 @@ export default function FacturaEditor() {
   };
 
   const timbrarFactura = async () => {
-    // Temporalmente comentado hasta que se regeneren los tipos
-    toast.info('Por favor, regenera los tipos de TypeScript primero');
-    return;
-    
-    /* DESCOMENTAR DESPUÉS DE REGENERAR TIPOS:
     setLoading(true);
     try {
       const { data: user } = await supabase.auth.getUser();
@@ -265,6 +260,8 @@ export default function FacturaEditor() {
         }))
       };
 
+      console.log('🚀 [TIMBRADO FACTURA] Iniciando timbrado...', { facturaId, ambiente: 'sandbox' });
+
       // 3. Llamar edge function para timbrar
       const { data: result, error: timbradoError } = await supabase.functions.invoke(
         'timbrar-con-sw',
@@ -277,19 +274,32 @@ export default function FacturaEditor() {
         }
       );
 
-      if (timbradoError || !result.success) {
+      if (timbradoError || !result?.success) {
+        console.error('❌ [TIMBRADO FACTURA] Error:', timbradoError || result?.error);
         throw new Error(result?.error || 'Error al timbrar');
       }
 
+      console.log('✅ [TIMBRADO FACTURA] Exitoso. UUID:', result.uuid);
+      
+      // 4. Actualizar estado en BD
+      await supabase
+        .from('facturas')
+        .update({
+          status: 'timbrado',
+          uuid: result.uuid,
+          fecha_timbrado: new Date().toISOString(),
+          xml_timbrado: result.xml
+        })
+        .eq('id', facturaId);
+
       toast.success(`Factura timbrada exitosamente. UUID: ${result.uuid}`);
-      navigate('/administracion/fiscal');
+      navigate('/facturas');
     } catch (error) {
-      console.error('Error timbrando factura:', error);
+      console.error('💥 [TIMBRADO FACTURA] Excepción:', error);
       toast.error(error instanceof Error ? error.message : 'Error al timbrar');
     } finally {
       setLoading(false);
     }
-    */
   };
 
   const totales = calcularTotales();

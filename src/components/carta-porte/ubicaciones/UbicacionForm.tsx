@@ -181,6 +181,45 @@ export function UbicacionForm({
             </div>
           </div>
 
+          {/* Campos SAT adicionales para extranjeros */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="residenciaFiscal">Residencia Fiscal</Label>
+              <Select
+                value={formData.residenciaFiscal || 'MEX'}
+                onValueChange={(value) => handleFieldChange('residenciaFiscal', value)}
+              >
+                <SelectTrigger id="residenciaFiscal">
+                  <SelectValue placeholder="Selecciona país" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MEX">México</SelectItem>
+                  <SelectItem value="USA">Estados Unidos</SelectItem>
+                  <SelectItem value="CAN">Canadá</SelectItem>
+                  <SelectItem value="OTHER">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Para extranjeros, seleccionar el país de residencia fiscal
+              </p>
+            </div>
+
+            {formData.residenciaFiscal && formData.residenciaFiscal !== 'MEX' && (
+              <div>
+                <Label htmlFor="numRegIdTrib">Núm. Registro ID Tributaria</Label>
+                <Input
+                  id="numRegIdTrib"
+                  value={formData.numRegIdTrib || ''}
+                  onChange={(e) => handleFieldChange('numRegIdTrib', e.target.value)}
+                  placeholder="Número de identificación tributaria"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Requerido para residentes fiscales extranjeros
+                </p>
+              </div>
+            )}
+          </div>
+
           <div>
             <Label className="flex items-center gap-2 mb-4">
               <MapPin className="h-4 w-4" />
