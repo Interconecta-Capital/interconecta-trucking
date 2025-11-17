@@ -18,6 +18,7 @@ import { ViajeWizardMision } from './wizard/ViajeWizardMision';
 import { ViajeWizardRuta } from './wizard/ViajeWizardRuta';
 import { ViajeWizardActivos } from './wizard/ViajeWizardActivos';
 import { ViajeWizardResumen } from './wizard/ViajeWizardResumen';
+import { ViajeWizardFactura } from './wizard/ViajeWizardFactura';
 import { WizardTutorial } from '@/components/onboarding/WizardTutorial';
 import { toast } from 'sonner';
 import { useViajes } from '@/hooks/useViajes';
@@ -63,6 +64,18 @@ export interface ViajeWizardData {
   fechaFin?: string;
   // FASE 2: Figuras auto-pobladas
   figuras?: any[];
+  // Paso D: Factura (si aplica)
+  facturaData?: {
+    serie?: string;
+    folio?: string;
+    formaPago?: string;
+    metodoPago?: string;
+    usoCfdi?: string;
+    subtotal?: number;
+    iva?: number;
+    total?: number;
+    observaciones?: string;
+  };
   // Estado general
   currentStep: number;
   isValid: boolean;
@@ -97,6 +110,12 @@ const STEPS = [
   },
   {
     id: 5,
+    title: 'Datos Fiscales',
+    subtitle: 'Facturación (si aplica)',
+    icon: FileText
+  },
+  {
+    id: 6,
     title: 'Confirmar y Despachar',
     subtitle: 'Resumen y emisión de documentos',
     icon: Route
@@ -644,6 +663,8 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       case 4:
         return <ViajeWizardValidacionesEnhanced data={data} updateData={updateData} onNext={handleNext} onPrev={handlePrevious} />;
       case 5:
+        return <ViajeWizardFactura data={data} onChange={updateData} />;
+      case 6:
         return <ViajeWizardResumen data={data} onConfirm={handleConfirmarViaje} />;
       default:
         return null;
