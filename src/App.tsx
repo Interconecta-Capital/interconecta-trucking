@@ -291,6 +291,14 @@ const App = () => (
                 </AuthGuard>
               } />
 
+              <Route path="/facturas" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <Facturas />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
               <Route path="/administracion/fiscal/facturas/nuevo" element={
                 <AuthGuard>
                   <BaseLayout>
