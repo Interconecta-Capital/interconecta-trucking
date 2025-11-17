@@ -5,6 +5,8 @@ export interface Ubicacion {
   tipoUbicacion: 'Origen' | 'Destino' | 'Paso Intermedio' | ''; // Permitir string vacío
   rfcRemitenteDestinatario?: string;
   nombreRemitenteDestinatario?: string;
+  numRegIdTrib?: string; // SAT: Número de registro de identidad tributaria (para extranjeros)
+  residenciaFiscal?: string; // SAT: País de residencia fiscal (clave país)
   fechaHoraSalidaLlegada?: string;
   distanciaRecorrida?: number;
   ordenSecuencia?: number;

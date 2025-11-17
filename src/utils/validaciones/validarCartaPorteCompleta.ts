@@ -49,6 +49,50 @@ export function validarCartaPorteCompleta(cartaPorteData: CartaPorteData): Valid
       errores.push('Se requiere una ubicación de Destino');
     }
 
+    // Validar campos SAT requeridos en ubicaciones
+    ubicaciones.forEach((ubicacion, index) => {
+      const tipoUbic = ubicacion.tipo_ubicacion || (ubicacion as any).tipoUbicacion;
+      const nombreUbic = tipoUbic || `Ubicación ${index + 1}`;
+
+      // RFC o NumRegIdTrib requerido
+      const rfc = ubicacion.rfc_remitente_destinatario || (ubicacion as any).rfcRemitenteDestinatario;
+      const numRegIdTrib = (ubicacion as any).numRegIdTrib;
+      if (!rfc && !numRegIdTrib) {
+        errores.push(`${nombreUbic}: RFC o Núm. Reg. ID Tributaria requerido`);
+      }
+
+      // Nombre requerido
+      const nombre = ubicacion.nombre_remitente_destinatario || (ubicacion as any).nombreRemitenteDestinatario;
+      if (!nombre) {
+        errores.push(`${nombreUbic}: Nombre del remitente/destinatario requerido`);
+      }
+
+      // Domicilio completo requerido
+      const domicilio = ubicacion.domicilio || (ubicacion as any).domicilio;
+      if (!domicilio) {
+        errores.push(`${nombreUbic}: Domicilio requerido`);
+      } else {
+        if (!domicilio.codigoPostal || !(domicilio as any).codigo_postal) {
+          errores.push(`${nombreUbic}: Código Postal requerido`);
+        }
+        if (!domicilio.estado) {
+          errores.push(`${nombreUbic}: Estado requerido`);
+        }
+        if (!domicilio.municipio) {
+          errores.push(`${nombreUbic}: Municipio requerido`);
+        }
+        if (!domicilio.calle) {
+          errores.push(`${nombreUbic}: Calle requerida`);
+        }
+      }
+
+      // Fecha/Hora requerida
+      const fechaHora = ubicacion.fecha_hora_salida_llegada || (ubicacion as any).fechaHoraSalidaLlegada;
+      if (!fechaHora) {
+        advertencias.push(`${nombreUbic}: Fecha/hora de salida/llegada no especificada`);
+      }
+    });
+
     // Validar distancia (advertencia, no error)
     const destino = ubicaciones.find(u => 
       u.tipo_ubicacion === 'Destino' || (u as any).tipoUbicacion === 'Destino'
@@ -68,17 +112,53 @@ export function validarCartaPorteCompleta(cartaPorteData: CartaPorteData): Valid
   if (mercancias.length === 0) {
     errores.push('Se requiere al menos una mercancía');
   } else {
+    let pesoTotalMercancias = 0;
+
     mercancias.forEach((mercancia, index) => {
       if (!mercancia.descripcion) {
         errores.push(`Mercancía ${index + 1}: Descripción requerida`);
       }
       if (!mercancia.peso_kg || mercancia.peso_kg <= 0) {
         errores.push(`Mercancía ${index + 1}: Peso en Kg requerido`);
+      } else {
+        pesoTotalMercancias += mercancia.peso_kg;
       }
       if (!mercancia.bienes_transp) {
         errores.push(`Mercancía ${index + 1}: Clave de Producto/Servicio requerida`);
       }
+      if (!mercancia.cantidad || mercancia.cantidad <= 0) {
+        errores.push(`Mercancía ${index + 1}: Cantidad requerida`);
+      }
+      if (!mercancia.clave_unidad) {
+        errores.push(`Mercancía ${index + 1}: Clave de Unidad requerida`);
+      }
+
+      // Validar material peligroso si aplica
+      const materialPeligroso = (mercancia as any).materialPeligroso || (mercancia as any).material_peligroso;
+      if (materialPeligroso === 'Sí' || materialPeligroso === true) {
+        if (!mercancia.cve_material_peligroso && !(mercancia as any).cveMaterialPeligroso) {
+          errores.push(`Mercancía ${index + 1}: Clave de Material Peligroso requerida`);
+        }
+      }
     });
+
+    // Validar peso total vs capacidad vehicular
+    if (cartaPorteData.autotransporte?.peso_bruto_vehicular) {
+      const capacidadVehicular = cartaPorteData.autotransporte.peso_bruto_vehicular;
+      if (pesoTotalMercancias > capacidadVehicular) {
+        errores.push(
+          `Peso total de mercancías (${pesoTotalMercancias} kg) excede la capacidad del vehículo (${capacidadVehicular} kg)`
+        );
+      }
+      
+      // Advertencia si la carga es muy baja
+      const porcentajeCarga = (pesoTotalMercancias / capacidadVehicular) * 100;
+      if (porcentajeCarga < 10) {
+        advertencias.push(
+          `Carga muy baja: ${porcentajeCarga.toFixed(1)}% de la capacidad vehicular`
+        );
+      }
+    }
   }
 
   // 4. AUTOTRANSPORTE (CRÍTICO)
@@ -94,6 +174,28 @@ export function validarCartaPorteCompleta(cartaPorteData: CartaPorteData): Valid
     if (!cartaPorteData.autotransporte.peso_bruto_vehicular || 
         cartaPorteData.autotransporte.peso_bruto_vehicular <= 0) {
       errores.push('Peso bruto vehicular requerido');
+    }
+    if (!cartaPorteData.autotransporte.anio_modelo_vm) {
+      advertencias.push('Año del modelo del vehículo no especificado');
+    }
+    if (!cartaPorteData.autotransporte.perm_sct) {
+      errores.push('Permiso SCT requerido');
+    }
+    if (!cartaPorteData.autotransporte.num_permiso_sct) {
+      errores.push('Número de Permiso SCT requerido');
+    }
+
+    // Validar seguros
+    const tieneSeguroRC = cartaPorteData.autotransporte.asegura_resp_civil;
+    const tienePolizaRC = cartaPorteData.autotransporte.poliza_resp_civil;
+    if (!tieneSeguroRC || !tienePolizaRC) {
+      advertencias.push('Seguro de Responsabilidad Civil no completo');
+    }
+
+    const tieneSeguroMA = cartaPorteData.autotransporte.asegura_med_ambiente;
+    const tienePolizaMA = cartaPorteData.autotransporte.poliza_med_ambiente;
+    if (!tieneSeguroMA || !tienePolizaMA) {
+      advertencias.push('Seguro de Medio Ambiente no completo');
     }
   }
 
