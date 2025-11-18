@@ -2096,6 +2096,7 @@ export type Database = {
           user_id: string
           uso_cfdi: string | null
           uuid_fiscal: string | null
+          viaje_id: string | null
           xml_generado: string | null
           xml_url: string | null
         }
@@ -2138,6 +2139,7 @@ export type Database = {
           user_id: string
           uso_cfdi?: string | null
           uuid_fiscal?: string | null
+          viaje_id?: string | null
           xml_generado?: string | null
           xml_url?: string | null
         }
@@ -2180,6 +2182,7 @@ export type Database = {
           user_id?: string
           uso_cfdi?: string | null
           uuid_fiscal?: string | null
+          viaje_id?: string | null
           xml_generado?: string | null
           xml_url?: string | null
         }
@@ -2189,6 +2192,13 @@ export type Database = {
             columns: ["carta_porte_id"]
             isOneToOne: false
             referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
             referencedColumns: ["id"]
           },
         ]
@@ -4608,6 +4618,7 @@ export type Database = {
           destino: string
           distancia_km: number | null
           estado: string
+          factura_id: string | null
           fecha_fin_programada: string
           fecha_fin_real: string | null
           fecha_inicio_programada: string
@@ -4642,6 +4653,7 @@ export type Database = {
           destino: string
           distancia_km?: number | null
           estado?: string
+          factura_id?: string | null
           fecha_fin_programada: string
           fecha_fin_real?: string | null
           fecha_inicio_programada: string
@@ -4676,6 +4688,7 @@ export type Database = {
           destino?: string
           distancia_km?: number | null
           estado?: string
+          factura_id?: string | null
           fecha_fin_programada?: string
           fecha_fin_real?: string | null
           fecha_inicio_programada?: string
@@ -4726,6 +4739,13 @@ export type Database = {
             columns: ["vehiculo_id"]
             isOneToOne: false
             referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viajes_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
             referencedColumns: ["id"]
           },
         ]
@@ -4979,6 +4999,17 @@ export type Database = {
         }[]
       }
       get_user_tenant_id: { Args: { user_uuid: string }; Returns: string }
+      get_viaje_completo: {
+        Args: { p_viaje_id: string }
+        Returns: {
+          carta_porte_data: Json
+          conductor_data: Json
+          factura_data: Json
+          socio_data: Json
+          vehiculo_data: Json
+          viaje_data: Json
+        }[]
+      }
       has_admin_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       increment_schema_version: { Args: never; Returns: number }

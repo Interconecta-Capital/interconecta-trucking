@@ -45,6 +45,12 @@ export interface ViajeWizardData {
   distanciaRecorrida?: number;
   distanciaTotal?: number;
   tiempoEstimado?: number;
+  // Ubicaciones (CartaPorte)
+  ubicaciones?: Array<{
+    tipoUbicacion: string;
+    fechaHoraSalidaLlegada?: string;
+    domicilio?: any;
+  }>;
   // Paradas autorizadas
   tieneParadasAutorizadas?: boolean;
   paradasAutorizadas?: Array<{
@@ -59,11 +65,22 @@ export interface ViajeWizardData {
   vehiculo?: any;
   conductor?: any;
   remolque?: any;
+  socio?: any;
   // Fechas del viaje
   fechaInicio?: string;
   fechaFin?: string;
   // FASE 2: Figuras auto-pobladas
   figuras?: any[];
+  // Costos del viaje
+  costos?: {
+    costo_total_estimado?: number;
+    combustible_estimado?: number;
+    peajes_estimados?: number;
+    casetas_estimadas?: number;
+    mantenimiento_estimado?: number;
+    salario_conductor_estimado?: number;
+    otros_costos_estimados?: number;
+  };
   // Paso D: Factura (si aplica)
   facturaData?: {
     serie?: string;
@@ -408,7 +425,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
 
     try {
       setIsGeneratingDocuments(true);
-      console.group('🚛 [ViajeWizard] Iniciando proceso de confirmación');
+      console.group('🚛 [ViajeWizard] Iniciando proceso de confirmación con ORQUESTADOR');
       console.log('Datos del wizard:', data);
 
       // FASE 3: VALIDACIÓN PRE-CREACIÓN - Verificar ubicaciones con coordenadas
@@ -467,8 +484,6 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
         console.log('✅ Conductor disponible para el viaje');
       }
 
-      let nuevoViaje;
-      
       // Mark first trip as created in onboarding
       const onboardingProgress = localStorage.getItem('onboarding_progress');
       let shouldShowCelebration = false;
@@ -489,58 +504,57 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
         }
       }
 
-      // Si es un borrador existente, convertirlo a viaje
-      if (currentDraftId) {
-        console.log('📝 Convirtiendo borrador a viaje programado...');
-        nuevoViaje = await new Promise<any>((resolve, reject) => {
-          convertirBorradorAViaje(currentDraftId, {
-            onSuccess: (viaje) => {
-              console.log('✅ Borrador convertido con ID:', viaje.id);
-              resolve(viaje);
-            },
-            onError: (error) => {
-              console.error('❌ Error convirtiendo borrador:', error);
-              reject(error);
-            }
-          });
-        });
-      } else {
-        // Crear nuevo viaje
-        console.log('📝 Creando nuevo viaje...');
-        nuevoViaje = await new Promise<any>((resolve, reject) => {
-          crearViaje(data, {
-            onSuccess: (viaje) => {
-              console.log('✅ Viaje creado con ID:', viaje.id);
-              resolve(viaje);
-            },
-            onError: (error) => {
-              console.error('❌ Error creando viaje:', error);
-              reject(error);
-            }
-          });
+      // ✅ USAR ORQUESTADOR PARA CREAR TODO
+      console.log('🎬 Usando ViajeOrchestrationService...');
+      const { ViajeOrchestrationService } = await import('@/services/viajes/ViajeOrchestrationService');
+      const resultado = await ViajeOrchestrationService.crearViajeCompleto(data);
+      
+      console.log('✅ Viaje completo creado:', resultado);
+
+      // Marcar como confirmado
+      setViajeConfirmado(true);
+      setIsGeneratingDocuments(false);
+      setShowValidacionPreViaje(false);
+      
+      // Mostrar éxito
+      toast.success('¡Viaje creado exitosamente!', {
+        description: `Viaje, ${resultado.factura_id ? 'factura y ' : ''}carta porte creados`,
+        duration: 5000,
+      });
+
+      if (shouldShowCelebration) {
+        toast.success('🎉 ¡Primer viaje completado!', {
+          description: 'Has completado tu primer viaje en ProTransporte',
+          duration: 6000
         });
       }
-
-      // Marcar como confirmado para prevenir duplicados
-      setViajeConfirmado(true);
-      console.log('✅ Viaje confirmado');
-
-      // 2. Generar borrador de Carta Porte desde el viaje
-      console.log('📄 Generando borrador de Carta Porte...');
+      
+      // Navegar a la vista del viaje
+      setTimeout(() => {
+        navigate(`/viajes/${resultado.viaje_id}`);
+        if (onComplete) {
+          onComplete();
+        }
+      }, 1000);
+      
       console.groupEnd();
       
-      let borradorId: string | null = null;
+    } catch (error: any) {
+      console.error('❌ Error en creación de viaje completo:', error);
+      console.groupEnd();
       
-      try {
-        const resultado = await ViajeCartaPorteService.crearBorradorDesdeViaje(
-          nuevoViaje.id,
-          data
-        );
+      setIsGeneratingDocuments(false);
+      setShowValidacionPreViaje(false);
+      setViajeConfirmado(false);
+      
+      toast.error('Error al crear viaje', {
+        description: error.message || 'Ocurrió un error inesperado',
+        duration: 8000
+      });
+    }
+  };
 
-        console.log('✅ Borrador creado exitosamente:', resultado.borrador_id);
-        borradorId = resultado.borrador_id;
-        
-      } catch (errorBorrador) {
+  const handleCancelarValidacion = () => {
         console.error('❌ Error creando borrador de Carta Porte:', errorBorrador);
         
         // El viaje YA se creó, solo falló el borrador - NO es un error fatal

@@ -48,6 +48,7 @@ import HistorialViajes from "./pages/HistorialViajes"
 import AdministracionFiscal from "./pages/AdministracionFiscal"
 import FacturaEditor from "./pages/FacturaEditor"
 import Facturas from "./pages/Facturas"
+import ViajeDetalle from "./pages/ViajeDetalle"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -214,6 +215,15 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <ViajeWizard />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              {/* Vista detalle de viaje */}
+              <Route path="/viajes/:id" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <ViajeDetalle />
                   </BaseLayout>
                 </AuthGuard>
               } />

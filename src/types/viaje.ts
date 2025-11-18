@@ -3,6 +3,7 @@
 export interface Viaje {
   id: string;
   carta_porte_id: string;
+  factura_id?: string; // 🔥 NUEVO: Relación con factura
   origen: string;
   destino: string;
   conductor_id?: string;
