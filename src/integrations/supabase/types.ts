@@ -4803,6 +4803,24 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_viajes_dashboard: {
+        Row: {
+          conductores_activos: number | null
+          costos_totales: number | null
+          ingresos_totales: number | null
+          margen_total: number | null
+          ultima_actualizacion: string | null
+          user_id: string | null
+          vehiculos_activos: number | null
+          viajes_cancelados: number | null
+          viajes_completados: number | null
+          viajes_en_transito: number | null
+          viajes_hoy: number | null
+          viajes_mes: number | null
+          viajes_programados: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_rotate_pac_token: { Args: { new_token: string }; Returns: boolean }
@@ -5010,6 +5028,10 @@ export type Database = {
           viaje_data: Json
         }[]
       }
+      get_viaje_completo_optimizado: {
+        Args: { p_viaje_id: string }
+        Returns: Json
+      }
       has_admin_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       increment_schema_version: { Args: never; Returns: number }
@@ -5038,6 +5060,7 @@ export type Database = {
         Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined
       }
+      refresh_viajes_dashboard: { Args: never; Returns: undefined }
       restore_rls_policies_from_backup:
         | { Args: { backup_id: string }; Returns: Json }
         | { Args: never; Returns: undefined }

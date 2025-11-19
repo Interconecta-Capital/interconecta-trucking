@@ -56,15 +56,15 @@ export class ViajeOrchestrationService {
       const borradorCP = await this.crearBorradorCartaPorte(viaje.id, wizardData, facturaId);
       console.log('✅ [ORCHESTRATOR] Borrador CP creado:', borradorCP.id);
       
-      // ========== PASO 4: VINCULAR TODO EN TRACKING_DATA ==========
+      // ========== PASO 4: VINCULAR TODO EN TRACKING_DATA (OPTIMIZADO - sin wizard_data) ==========
       await this.actualizarTrackingData(viaje.id, {
         viaje_id: viaje.id,
         factura_id: facturaId,
         borrador_carta_porte_id: borradorCP.id,
         tipo_servicio: wizardData.tipoServicio,
         flujo_completo_creado: true,
-        fecha_creacion: new Date().toISOString(),
-        wizard_data: wizardData
+        fecha_creacion: new Date().toISOString()
+        // ⚡ OPTIMIZACIÓN: Eliminado wizard_data para reducir tamaño de BD
       });
       
       console.log('🎉 [ORCHESTRATOR] Viaje completo creado exitosamente');

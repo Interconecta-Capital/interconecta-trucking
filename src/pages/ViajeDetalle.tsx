@@ -66,28 +66,22 @@ export default function ViajeDetalle() {
     try {
       setLoading(true);
       
-      // Cargar viaje con todas sus relaciones
-      const { data: viajeData, error: viajeError } = await supabase
-        .from('viajes')
-        .select(`
-          *,
-          facturas (*),
-          cartas_porte (*),
-          conductores (*),
-          vehiculos (*),
-          socios (*)
-        `)
-        .eq('id', id)
-        .single();
+      // ⚡ OPTIMIZACIÓN: Usar función RPC para una sola consulta
+      const { data: result, error } = await supabase
+        .rpc('get_viaje_completo_optimizado', { p_viaje_id: id });
 
-      if (viajeError) throw viajeError;
+      if (error) throw error;
+      if (!result) throw new Error('Viaje no encontrado');
 
-      setViaje(viajeData as any);
-      setFactura(viajeData.facturas?.[0] || null);
-      setCartaPorte(viajeData.cartas_porte?.[0] || null);
-      setConductor(viajeData.conductores || null);
-      setVehiculo(viajeData.vehiculos || null);
-      setSocio(viajeData.socios || null);
+      // Parsear el resultado JSONB
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+      
+      setViaje(parsed.viaje);
+      setFactura(parsed.factura || null);
+      setCartaPorte(parsed.carta_porte || null);
+      setConductor(parsed.conductor || null);
+      setVehiculo(parsed.vehiculo || null);
+      setSocio(parsed.socio || null);
       
     } catch (error) {
       console.error('Error cargando viaje:', error);
