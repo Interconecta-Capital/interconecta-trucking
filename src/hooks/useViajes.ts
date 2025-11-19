@@ -54,19 +54,22 @@ export const useViajes = () => {
   const [isCreatingViaje, setIsCreatingViaje] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
-  // Obtener todos los viajes (excluyendo borradores)
+  // ⚡ OPTIMIZACIÓN: Query con paginación y filtros en servidor
   const { data: viajes = [], isLoading } = useQuery({
     queryKey: ['viajes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('viajes')
-        .select('*')
-        .neq('estado', 'borrador') // Excluir borradores de la lista principal
-        .order('created_at', { ascending: false });
+        .select('id, origen, destino, estado, fecha_inicio_programada, conductor_id, vehiculo_id, precio_cobrado, created_at, user_id')
+        .neq('estado', 'borrador')
+        .order('created_at', { ascending: false })
+        .limit(50); // Paginación: solo primeros 50
 
       if (error) throw error;
       return data as Viaje[];
-    }
+    },
+    staleTime: 30000, // Cache por 30 segundos
+    gcTime: 5 * 60 * 1000 // Mantener en cache 5 minutos
   });
 
   // Obtener borrador activo del usuario

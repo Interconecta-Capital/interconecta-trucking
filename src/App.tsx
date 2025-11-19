@@ -49,6 +49,7 @@ import AdministracionFiscal from "./pages/AdministracionFiscal"
 import FacturaEditor from "./pages/FacturaEditor"
 import Facturas from "./pages/Facturas"
 import ViajeDetalle from "./pages/ViajeDetalle"
+import DocumentosFiscales from "./pages/DocumentosFiscales"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -289,6 +290,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <EncryptionManagement />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/documentos-fiscales" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <DocumentosFiscales />
                   </BaseLayout>
                 </AuthGuard>
               } />
