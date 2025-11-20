@@ -1,7 +1,6 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 import { useUnifiedAuth } from './useUnifiedAuth';
-import { useAuthState } from './auth/useAuthState';
 import { useAuthActions } from './auth/useAuthActions';
 
 interface AuthContextType {
@@ -21,24 +20,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Use the optimized auth state
-  const { user: basicUser, session, loading, initialized } = useUnifiedAuth();
+  // ✅ SOLUCIÓN CRÍTICA: Usar SOLO useUnifiedAuth para evitar queries adicionales que causan logout
+  const { user, session, loading, initialized, signOut: unifiedSignOut } = useUnifiedAuth();
   
-  // Use the extended auth state for compatibility
-  const { user: extendedUser } = useAuthState();
-  
-  // Use auth actions
+  // ✅ Usar useAuthActions SOLO para acciones, no para estado
   const {
     signIn,
     signUp,
     signInWithGoogle,
     resendConfirmation,
     updateProfile,
-    signOut: authSignOut
   } = useAuthActions();
-
-  // Use the extended user if available, fallback to basic user
-  const user = extendedUser || basicUser;
 
   const hasAccess = (resource: string) => {
     // Simple access control - can be enhanced later
@@ -47,10 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await authSignOut();
+      await unifiedSignOut();
     } catch (error) {
       console.error('Sign out error:', error);
-      // Fallback: force redirect
       window.location.href = '/auth';
     }
   };

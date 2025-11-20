@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useUnifiedAuth } from './useUnifiedAuth';
 import { toast } from 'sonner';
 import { VehicleValidator } from '@/utils/vehicleValidation';
 
@@ -47,7 +47,7 @@ export interface Vehiculo {
 }
 
 export const useVehiculos = () => {
-  const { user } = useAuth();
+  const { user } = useUnifiedAuth(); // ✅ Directo desde UnifiedAuth, sin provider adicional
   const queryClient = useQueryClient();
 
   const { data: vehiculos = [], isLoading: loading } = useQuery({
@@ -68,6 +68,9 @@ export const useVehiculos = () => {
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    // ✅ Retry con backoff exponencial para evitar fallos transitorios
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const createMutation = useMutation({
