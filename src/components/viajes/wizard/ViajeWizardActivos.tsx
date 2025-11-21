@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Truck, User, Package, AlertTriangle, CheckCircle, Link2, Settings, Clock } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
-import { useVehiculos } from '@/hooks/useVehiculos';
-import { useConductores } from '@/hooks/useConductores';
-import { useRemolques } from '@/hooks/useRemolques';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { useDisponibilidad } from '@/hooks/useDisponibilidad';
 import { ValidadorDisponibilidad } from '../ValidadorDisponibilidad';
 import { ConflictoDisponibilidad } from '@/types/viaje';
@@ -30,9 +30,45 @@ interface VehiculoRemolque {
 }
 
 export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps) {
-  const { vehiculos, loading: loadingVehiculos } = useVehiculos();
-  const { conductores, loading: loadingConductores } = useConductores();
-  const { remolques, loading: loadingRemolques } = useRemolques();
+  const { user } = useUnifiedAuth();
+  
+  // ✅ FASE 3: Una sola llamada RPC optimizada reemplaza 3 queries HTTP
+  const { data: recursos, isLoading: loadingRecursos } = useQuery({
+    queryKey: ['recursos-viaje-wizard', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase.rpc('get_recursos_viaje_wizard', {
+        p_user_id: user.id
+      });
+      
+      if (error) {
+        console.error('Error fetching recursos:', error);
+        throw error;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // Cache 5 minutos
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+  });
+
+  // Extraer datos del resultado RPC con type assertion
+  const vehiculos = (Array.isArray(recursos?.[0]?.vehiculos_disponibles) 
+    ? recursos[0].vehiculos_disponibles 
+    : []) as any[];
+  const conductores = (Array.isArray(recursos?.[0]?.conductores_disponibles)
+    ? recursos[0].conductores_disponibles
+    : []) as any[];
+  const remolques = (Array.isArray(recursos?.[0]?.remolques_disponibles)
+    ? recursos[0].remolques_disponibles
+    : []) as any[];
+  
+  // Estados de loading unificados
+  const loadingVehiculos = loadingRecursos;
+  const loadingConductores = loadingRecursos;
+  const loadingRemolques = loadingRecursos;
   
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(data.vehiculo);
   const [selectedConductor, setSelectedConductor] = useState<any>(data.conductor);
