@@ -5006,6 +5006,14 @@ export type Database = {
       get_facturas_resumen: { Args: { p_user_id: string }; Returns: Json }
       get_pac_credentials: { Args: never; Returns: Json }
       get_pac_token: { Args: { secret_name?: string }; Returns: string }
+      get_recursos_viaje_wizard: {
+        Args: { p_user_id: string }
+        Returns: {
+          conductores_disponibles: Json
+          remolques_disponibles: Json
+          vehiculos_disponibles: Json
+        }[]
+      }
       get_schema_version: { Args: never; Returns: number }
       get_secret: { Args: { secret_name: string }; Returns: string }
       get_user_storage_usage: {
