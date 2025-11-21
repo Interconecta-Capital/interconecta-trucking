@@ -3126,8 +3126,11 @@ export type Database = {
       }
       remolques: {
         Row: {
+          activo: boolean | null
           autotransporte_id: string | null
+          capacidad_carga: number | null
           created_at: string | null
+          estado: string | null
           id: string
           permiso_sct_encrypted: string | null
           permiso_sct_encrypted_at: string | null
@@ -3135,10 +3138,17 @@ export type Database = {
           subtipo_rem: string | null
           tarjeta_circulacion_encrypted: string | null
           tarjeta_circulacion_encrypted_at: string | null
+          tipo_remolque: string | null
+          updated_at: string | null
+          user_id: string | null
+          viaje_actual_id: string | null
         }
         Insert: {
+          activo?: boolean | null
           autotransporte_id?: string | null
+          capacidad_carga?: number | null
           created_at?: string | null
+          estado?: string | null
           id?: string
           permiso_sct_encrypted?: string | null
           permiso_sct_encrypted_at?: string | null
@@ -3146,10 +3156,17 @@ export type Database = {
           subtipo_rem?: string | null
           tarjeta_circulacion_encrypted?: string | null
           tarjeta_circulacion_encrypted_at?: string | null
+          tipo_remolque?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          viaje_actual_id?: string | null
         }
         Update: {
+          activo?: boolean | null
           autotransporte_id?: string | null
+          capacidad_carga?: number | null
           created_at?: string | null
+          estado?: string | null
           id?: string
           permiso_sct_encrypted?: string | null
           permiso_sct_encrypted_at?: string | null
@@ -3157,6 +3174,10 @@ export type Database = {
           subtipo_rem?: string | null
           tarjeta_circulacion_encrypted?: string | null
           tarjeta_circulacion_encrypted_at?: string | null
+          tipo_remolque?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          viaje_actual_id?: string | null
         }
         Relationships: [
           {
