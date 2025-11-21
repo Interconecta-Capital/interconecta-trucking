@@ -37,7 +37,7 @@ export const useRemolques = () => {
       const { data, error } = await supabase
         .from('remolques')
         .select('*')
-        // ⚠️ PENDIENTE: Agregar .eq('user_id', user.id) después de migración SQL
+        .eq('user_id', user.id) // ✅ FILTRO DE SEGURIDAD: Solo remolques del usuario autenticado
         .order('created_at', { ascending: false });
 
       if (error) {
