@@ -88,19 +88,13 @@ export function FormularioDomicilioUnificado({
     }
   }, [direccionInfo, isLoading, error, onDomicilioChange]);
 
-  // Manejar error
+  // Manejar error - solo log, NO limpiar campos
   React.useEffect(() => {
     if (error) {
       console.log('[FORM_DOMICILIO] Error:', error);
-      
-      // Limpiar campos al fallar
-      setColoniaSeleccionada('');
-      onDomicilioChange('estado', '');
-      onDomicilioChange('municipio', '');
-      onDomicilioChange('localidad', '');
-      onDomicilioChange('colonia', '');
+      // No limpiar campos - permitir que usuario los llene manualmente
     }
-  }, [error, onDomicilioChange]);
+  }, [error]);
 
   const handleCPChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '').slice(0, 5);
@@ -249,7 +243,8 @@ export function FormularioDomicilioUnificado({
             onChange={(e) => onDomicilioChange('estado', e.target.value)}
             placeholder={status === 'initial' ? 'Se autocompleta con el C.P.' : 'Estado'}
             className="bg-white border-gray-100 text-gray-900 shadow-sm pr-10"
-            readOnly
+            readOnly={status === 'loading' || status === 'success'}
+            disabled={readonly}
           />
           {status === 'loading' && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-blue-600" />
@@ -263,7 +258,8 @@ export function FormularioDomicilioUnificado({
             onChange={(e) => onDomicilioChange('municipio', e.target.value)}
             placeholder={status === 'initial' ? 'Se autocompleta con el C.P.' : 'Municipio'}
             className="bg-white border-gray-100 text-gray-900 shadow-sm pr-10"
-            readOnly
+            readOnly={status === 'loading' || status === 'success'}
+            disabled={readonly}
           />
           {status === 'loading' && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-blue-600" />
@@ -296,15 +292,15 @@ export function FormularioDomicilioUnificado({
             )}
           </Label>
 
-          <Select
-            value={coloniaSeleccionada}
-            onValueChange={handleColoniaChange}
-            disabled={readonly || !direccionInfo}
-          >
-            <SelectTrigger className="bg-white border-gray-100 text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm">
-              <SelectValue placeholder={direccionInfo ? 'Selecciona una colonia' : 'Se autocompleta con el C.P.'} />
-            </SelectTrigger>
-            {direccionInfo && (
+          {direccionInfo ? (
+            <Select
+              value={coloniaSeleccionada}
+              onValueChange={handleColoniaChange}
+              disabled={readonly || (status === 'loading')}
+            >
+              <SelectTrigger className="bg-white border-gray-100 text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm">
+                <SelectValue placeholder="Selecciona una colonia" />
+              </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50 max-h-60">
                 {direccionInfo.colonias.map((coloniaObj, index) => (
                   <SelectItem
@@ -323,8 +319,20 @@ export function FormularioDomicilioUnificado({
                   </SelectItem>
                 ))}
               </SelectContent>
-            )}
-          </Select>
+            </Select>
+          ) : (
+            <Input
+              value={domicilio.colonia}
+              onChange={(e) => {
+                const value = e.target.value;
+                setColoniaSeleccionada(value);
+                onDomicilioChange('colonia', value);
+              }}
+              placeholder={status === 'error' ? 'Escribe manualmente' : 'Se autocompleta con el C.P.'}
+              disabled={readonly || status === 'loading'}
+              className="bg-white border-gray-100 text-gray-900 focus:border-gray-400 focus:ring-gray-400/10 shadow-sm"
+            />
+          )}
         </div>
       </div>
 
