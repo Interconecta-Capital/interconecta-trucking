@@ -342,7 +342,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
   };
 
   const handleNext = () => {
-    if (canAdvance() && data.currentStep < 5) {
+    if (canAdvance() && data.currentStep < 6) {
       updateData({ currentStep: data.currentStep + 1 });
     }
   };
@@ -785,7 +785,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
           </Card>
 
           {/* Navigation Buttons - Solo mostrar si no es el paso de validaciones */}
-          {data.currentStep !== 4 && data.currentStep !== 5 && (
+          {data.currentStep !== 4 && (
             <div className="flex justify-between mt-8 pt-6 border-t mobile-action-row gap-4">
               <div className="flex items-center gap-3 mobile-secondary-group flex-wrap">
                 <Button

@@ -41,11 +41,27 @@ export const ValidadorDisponibilidad = ({
 
     if (recursos.length === 0) return;
 
+    console.log('🔍 [ValidadorDisponibilidad] Validando recursos:', {
+      recursos,
+      fechaInicio,
+      fechaFin
+    });
+
     const resultado = await verificarMultipleDisponibilidad(recursos, fechaInicio, fechaFin);
+    
+    console.log('📊 [ValidadorDisponibilidad] Resultado de validación:', resultado);
     
     if (resultado) {
       setValidaciones(resultado.resultados);
       onValidacionCompleta?.(resultado.disponible, resultado.conflictos);
+      
+      console.log('✅ [ValidadorDisponibilidad] Validaciones actualizadas:', {
+        validaciones: resultado.resultados,
+        disponible: resultado.disponible,
+        conflictos: resultado.conflictos
+      });
+    } else {
+      console.warn('⚠️ [ValidadorDisponibilidad] No se recibió resultado');
     }
   };
 
@@ -140,8 +156,8 @@ export const ValidadorDisponibilidad = ({
                   )}
                   <span className="font-medium capitalize">{validacion.tipo}</span>
                 </div>
-                <Badge className={getEstadoColor(validacion.validacion?.estado_actual || '')}>
-                  {validacion.validacion?.estado_actual || 'Desconocido'}
+                <Badge className={getEstadoColor(validacion.validacion?.estado_actual || 'disponible')}>
+                  {validacion.validacion?.estado_actual || 'Disponible'}
                 </Badge>
               </div>
 
