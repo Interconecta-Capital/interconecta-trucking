@@ -5061,6 +5061,7 @@ export type Database = {
         Args: { p_viaje_id: string }
         Returns: Json
       }
+      get_viaje_con_relaciones: { Args: { p_viaje_id: string }; Returns: Json }
       has_admin_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       increment_schema_version: { Args: never; Returns: number }

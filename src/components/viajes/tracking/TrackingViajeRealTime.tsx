@@ -1,422 +1,265 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { MapPin, Navigation, Clock, Route as RouteIcon, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  MapPin, 
-  Navigation, 
-  Clock, 
-  Route, 
-  Truck,
-  User,
-  Package,
-  AlertTriangle,
-  CheckCircle,
-  Maximize2,
-  ExternalLink
-} from 'lucide-react';
-import { Viaje, EventoViaje, useViajesEstados } from '@/hooks/useViajesEstados';
-import { GoogleMapVisualization } from '@/components/carta-porte/ubicaciones/GoogleMapVisualization';
-import { TrackingMapaMejorado } from './TrackingMapaMejorado';
-import { Ubicacion } from '@/types/ubicaciones';
+import { Button } from '@/components/ui/button';
 
 interface TrackingViajeRealTimeProps {
-  viaje: Viaje;
-  isFullscreen?: boolean;
-  onToggleFullscreen?: () => void;
+  viaje: any; // Viaje completo con tracking_data desde la función RPC
 }
 
-export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({
-  viaje,
-  isFullscreen = false,
-  onToggleFullscreen
-}) => {
-  const [eventos, setEventos] = useState<EventoViaje[]>([]);
-  const [trackingData, setTrackingData] = useState<any>(null);
-  const [progreso, setProgreso] = useState(0);
-
-  const { obtenerEventosViaje } = useViajesEstados();
-
-  useEffect(() => {
-    cargarEventosViaje();
-    calcularProgreso();
-    
-    // Actualizar progreso cuando cambie el estado del viaje
-    calcularProgreso();
-  }, [viaje.id, viaje.estado]);
-
-  const cargarEventosViaje = async () => {
-    try {
-      const eventosData = await obtenerEventosViaje(viaje.id);
-      setEventos(eventosData);
-    } catch (error) {
-      console.error('Error cargando eventos:', error);
-    }
-  };
-
-  const calcularProgreso = () => {
-    switch (viaje.estado) {
-      case 'programado':
-        setProgreso(10);
-        break;
-      case 'en_transito':
-        // Calcular progreso basado en tiempo transcurrido
-        if (viaje.fecha_inicio_real && viaje.fecha_fin_programada) {
-          const inicio = new Date(viaje.fecha_inicio_real).getTime();
-          const fin = new Date(viaje.fecha_fin_programada).getTime();
-          const ahora = new Date().getTime();
-          const tiempoTotal = fin - inicio;
-          const tiempoTranscurrido = ahora - inicio;
-          const progresoCalculado = Math.min(Math.max((tiempoTranscurrido / tiempoTotal) * 100, 20), 95);
-          setProgreso(progresoCalculado);
-        } else {
-          setProgreso(50);
-        }
-        break;
-      case 'completado':
-        setProgreso(100);
-        break;
-      case 'cancelado':
-        setProgreso(0);
-        break;
-      case 'retrasado':
-        setProgreso(35);
-        break;
-      default:
-        setProgreso(0);
-    }
-  };
-
-  const actualizarTrackingSimulado = () => {
-    // Simular datos de tracking en tiempo real
-    const datosSimulados = {
-      ubicacionActual: generateRandomLocation(),
-      velocidad: Math.floor(Math.random() * 40) + 60, // 60-100 km/h
-      ultimaActualizacion: new Date().toLocaleTimeString(),
-      coordenadas: {
-        lat: 19.4326 + (Math.random() - 0.5) * 0.1,
-        lng: -99.1332 + (Math.random() - 0.5) * 0.1
-      },
-      tiempoEstimadoLlegada: calcularETA()
-    };
-    
-    setTrackingData(datosSimulados);
-  };
-
-  const generateRandomLocation = () => {
-    const ubicaciones = [
-      "Carretera México-Guadalajara, Km 125",
-      "Autopista Siglo XXI, Km 89",
-      "Carretera Federal 15, Km 234",
-      "Libramiento Sur, Morelia",
-      "Caseta de peaje Irapuato"
-    ];
-    return ubicaciones[Math.floor(Math.random() * ubicaciones.length)];
-  };
-
-  const calcularETA = () => {
-    if (viaje.fecha_fin_programada) {
-      const eta = new Date(viaje.fecha_fin_programada);
-      // Agregar variación aleatoria de ±2 horas
-      eta.setHours(eta.getHours() + (Math.random() - 0.5) * 4);
-      return eta.toLocaleString();
-    }
-    return 'No calculado';
-  };
-
-  const getStatusColor = () => {
-    switch (viaje.estado) {
-      case 'en_transito': return 'bg-green-500';
-      case 'retrasado': return 'bg-orange-500';
-      case 'completado': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (viaje.estado) {
-      case 'en_transito': return <Truck className="h-5 w-5" />;
-      case 'retrasado': return <AlertTriangle className="h-5 w-5" />;
-      case 'completado': return <CheckCircle className="h-5 w-5" />;
-      default: return <Clock className="h-5 w-5" />;
-    }
-  };
-
-  // Extraer datos reales del tracking_data del viaje
-  const trackingRealData = viaje.tracking_data || {};
-  const origenData = trackingRealData.origen || {};
-  const destinoData = trackingRealData.destino || {};
+export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ viaje }) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<any>(null);
+  const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
+  const [rutaInfo, setRutaInfo] = useState<any>(null);
+  const [loadingMap, setLoadingMap] = useState(true);
   
-  // Generar enlace de Google Maps
-  const generateGoogleMapsLink = () => {
-    const origenDir = origenData.direccion || viaje.origen;
-    const destinoDir = destinoData.direccion || viaje.destino;
-    if (!origenDir || !destinoDir) return null;
-    const baseUrl = 'https://www.google.com/maps/dir/';
-    const origenEncoded = encodeURIComponent(origenDir);
-    const destinoEncoded = encodeURIComponent(destinoDir);
-    return `${baseUrl}${origenEncoded}/${destinoEncoded}`;
-  };
-
-  const googleMapsUrl = generateGoogleMapsLink();
-
-  // Fix the ubicaciones type to match Ubicacion interface with real data
-  const ubicacionesParaMapa: Ubicacion[] = [
-    {
-      id: 'origen',
-      idUbicacion: 'origen-001',
-      tipoUbicacion: 'Origen',
-      nombreRemitenteDestinatario: 'Origen',
-      domicilio: { 
-        calle: origenData.direccion || viaje.origen || 'Origen no especificado',
-        pais: 'MEX',
-        codigoPostal: origenData.codigoPostal || '01000',
-        estado: origenData.estado || 'CDMX',
-        municipio: origenData.municipio || 'Miguel Hidalgo',
-        colonia: origenData.colonia || 'Centro'
-      },
-      coordenadas: { 
-        latitud: origenData.coordenadas?.latitud || 19.4326, 
-        longitud: origenData.coordenadas?.longitud || -99.1332 
-      }
-    },
-    // Agregar paradas autorizadas al mapa
-    ...(trackingRealData.paradasAutorizadas || []).map((parada: any, index: number) => ({
-      id: parada.id || `parada-${index}`,
-      idUbicacion: `parada-${index + 1}`,
-      tipoUbicacion: 'Paso Intermedio',
-      nombreRemitenteDestinatario: parada.nombre || `Parada ${index + 1}`,
-      domicilio: { 
-        calle: parada.direccion || 'Parada autorizada',
-        pais: 'MEX',
-        codigoPostal: parada.codigoPostal || '50000',
-        estado: 'MEX',
-        municipio: 'Ubicación intermedia',
-        colonia: 'Centro'
-      },
-      coordenadas: { 
-        latitud: parada.coordenadas?.latitud || 19.5, 
-        longitud: parada.coordenadas?.longitud || -100.0 
-      }
-    })),
-    {
-      id: 'destino',
-      idUbicacion: 'destino-001',
-      tipoUbicacion: 'Destino',
-      nombreRemitenteDestinatario: 'Destino',
-      domicilio: { 
-        calle: destinoData.direccion || viaje.destino || 'Destino no especificado',
-        pais: 'MEX',
-        codigoPostal: destinoData.codigoPostal || '44100',
-        estado: destinoData.estado || 'JAL',
-        municipio: destinoData.municipio || 'Guadalajara',
-        colonia: destinoData.colonia || 'Centro'
-      },
-      coordenadas: { 
-        latitud: destinoData.coordenadas?.latitud || 19.6924, 
-        longitud: destinoData.coordenadas?.longitud || -101.2055 
-      }
+  // Obtener datos de tracking_data
+  const viajeData = viaje.viaje || viaje;
+  const trackingData = viajeData.tracking_data || {};
+  const ubicacionOrigen = trackingData.ubicaciones?.origen;
+  const ubicacionDestino = trackingData.ubicaciones?.destino;
+  
+  // Inicializar mapa
+  useEffect(() => {
+    if (!mapRef.current || map || !(window as any).google) return;
+    
+    if (!ubicacionOrigen?.coordenadas || !ubicacionDestino?.coordenadas) {
+      console.warn('No hay coordenadas para mostrar el mapa');
+      setLoadingMap(false);
+      return;
     }
-  ];
-
-  // Si hay tracking data, agregar ubicación actual
-  if (trackingData?.coordenadas) {
-    ubicacionesParaMapa.push({
-      id: 'actual',
-      idUbicacion: 'actual-001',
-      tipoUbicacion: 'Paso Intermedio',
-      nombreRemitenteDestinatario: 'Posición actual',
-      domicilio: { 
-        calle: trackingData.ubicacionActual || 'En tránsito',
-        pais: 'MEX',
-        codigoPostal: '50000',
-        estado: 'MEX',
-        municipio: 'Toluca',
-        colonia: 'Centro'
-      },
-      coordenadas: { 
-        latitud: trackingData.coordenadas.lat, 
-        longitud: trackingData.coordenadas.lng 
+    
+    const centerLat = (ubicacionOrigen.coordenadas.lat + ubicacionDestino.coordenadas.lat) / 2;
+    const centerLng = (ubicacionOrigen.coordenadas.lng + ubicacionDestino.coordenadas.lng) / 2;
+    
+    const googleMap = new (window as any).google.maps.Map(mapRef.current, {
+      center: { lat: centerLat, lng: centerLng },
+      zoom: 6,
+      mapTypeControl: true,
+      streetViewControl: false,
+      fullscreenControl: true
+    });
+    
+    setMap(googleMap);
+    
+    const renderer = new (window as any).google.maps.DirectionsRenderer({
+      map: googleMap,
+      suppressMarkers: false,
+      polylineOptions: {
+        strokeColor: '#2563eb',
+        strokeWeight: 5,
+        strokeOpacity: 0.8
       }
     });
-  }
-
-  return (
-    <div className={`space-y-6 ${isFullscreen ? 'fixed inset-4 z-50 bg-white p-6 overflow-y-auto' : ''}`}>
-      {/* Header con estado */}
+    
+    setDirectionsRenderer(renderer);
+    setLoadingMap(false);
+  }, [mapRef.current, ubicacionOrigen, ubicacionDestino]);
+  
+  // Calcular ruta
+  useEffect(() => {
+    if (!map || !directionsRenderer || !(window as any).google) return;
+    if (!ubicacionOrigen?.coordenadas || !ubicacionDestino?.coordenadas) return;
+    
+    const directionsService = new (window as any).google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin: { lat: ubicacionOrigen.coordenadas.lat, lng: ubicacionOrigen.coordenadas.lng },
+        destination: { lat: ubicacionDestino.coordenadas.lat, lng: ubicacionDestino.coordenadas.lng },
+        travelMode: (window as any).google.maps.TravelMode.DRIVING,
+        provideRouteAlternatives: true
+      },
+      (result, status) => {
+        if (status === 'OK' && result) {
+          directionsRenderer.setDirections(result);
+          const route = result.routes[0];
+          const leg = route.legs[0];
+          
+          setRutaInfo({
+            distancia: leg.distance?.text,
+            distanciaMetros: leg.distance?.value,
+            duracion: leg.duration?.text,
+            duracionSegundos: leg.duration?.value,
+            pasos: leg.steps.map(step => ({
+              instruccion: step.instructions,
+              distancia: step.distance?.text,
+              duracion: step.duration?.text
+            }))
+          });
+        }
+      }
+    );
+  }, [map, directionsRenderer, ubicacionOrigen, ubicacionDestino]);
+  
+  if (!ubicacionOrigen?.coordenadas || !ubicacionDestino?.coordenadas) {
+    return (
       <Card>
-        <CardHeader className="pb-3">
+        <CardContent className="p-8 text-center">
+          <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No hay coordenadas disponibles para mostrar el tracking</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return (
+    <div className="space-y-6">
+      {/* Información de la Ruta */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <RouteIcon className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Distancia</p>
+                <p className="text-lg font-semibold">
+                  {rutaInfo?.distancia || `${viajeData.distancia_km || 0} km`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Clock className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Tiempo Estimado</p>
+                <p className="text-lg font-semibold">
+                  {rutaInfo?.duracion || `${viajeData.tiempo_estimado_horas || 0}h`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Navigation className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Estado</p>
+                <Badge className={
+                  viajeData.estado === 'en_transito' ? 'bg-green-100 text-green-800' :
+                  viajeData.estado === 'programado' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-800'
+                }>
+                  {viajeData.estado === 'en_transito' ? 'En Tránsito' :
+                   viajeData.estado === 'programado' ? 'Programado' :
+                   viajeData.estado}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Mapa */}
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
-              {getStatusIcon()}
-              Tracking - {viaje.carta_porte_id}
-              <Badge className={`${getStatusColor()} text-white`}>
-                {viaje.estado.replace('_', ' ').toUpperCase()}
-              </Badge>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Visualización de Ruta
             </CardTitle>
-            {onToggleFullscreen && (
-              <Button variant="outline" size="sm" onClick={onToggleFullscreen}>
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            )}
+            <Button size="sm" variant="outline" onClick={() => {
+              const url = `https://www.google.com/maps/dir/${ubicacionOrigen?.coordenadas?.lat},${ubicacionOrigen?.coordenadas?.lng}/${ubicacionDestino?.coordenadas?.lat},${ubicacionDestino?.coordenadas?.lng}`;
+              window.open(url, '_blank');
+            }}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Abrir en Google Maps
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Barra de progreso */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Progreso del viaje</span>
-                <span className="text-sm text-muted-foreground">{Math.round(progreso)}%</span>
-              </div>
-              <Progress value={progreso} className="w-full" />
-            </div>
-
-            {/* Información de ruta */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                 <div className="flex items-center gap-2">
-                   <MapPin className="h-4 w-4 text-green-600" />
-                   <span className="font-medium">Origen:</span>
-                   <span className="text-sm">{origenData.direccion || viaje.origen || 'No especificado'}</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <MapPin className="h-4 w-4 text-red-600" />
-                   <span className="font-medium">Destino:</span>
-                   <span className="text-sm">{destinoData.direccion || viaje.destino || 'No especificado'}</span>
-                 </div>
-                 {trackingData && (
-                   <div className="flex items-center gap-2">
-                     <Navigation className="h-4 w-4 text-blue-600" />
-                     <span className="font-medium">Ubicación actual:</span>
-                     <span className="text-sm">{trackingData.ubicacionActual}</span>
-                   </div>
-                  )}
-                </div>
-
-              <div className="space-y-2">
-                {trackingData && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <Route className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">Velocidad:</span>
-                      <span className="text-sm">{trackingData.velocidad} km/h</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-orange-600" />
-                      <span className="font-medium">ETA:</span>
-                      <span className="text-sm">{trackingData.tiempoEstimadoLlegada}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium">Última actualización:</span>
-                      <span className="text-sm">{trackingData.ultimaActualizacion}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+          <div ref={mapRef} style={{ width: '100%', height: '500px' }} className="rounded-lg border" />
         </CardContent>
       </Card>
-
-      {/* Mapa mejorado en tiempo real */}
-      <TrackingMapaMejorado 
-        viaje={viaje}
-        ubicacionActual={trackingData?.coordenadas}
-        enTiempoReal={viaje.estado === 'en_transito'}
-        isFullscreen={isFullscreen}
-      />
-
-      {/* Detalles del viaje */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Información del transporte */}
+      
+      {/* Instrucciones de Ruta */}
+      {rutaInfo?.pasos && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
-              Información del Transporte
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {viaje.vehiculo_id && (
-              <div>
-                <span className="font-medium">Vehículo:</span>
-                <p className="text-sm text-muted-foreground">ID: {viaje.vehiculo_id}</p>
-              </div>
-            )}
-            {viaje.conductor_id && (
-              <div>
-                <span className="font-medium">Conductor:</span>
-                <p className="text-sm text-muted-foreground">ID: {viaje.conductor_id}</p>
-              </div>
-            )}
-            <div>
-              <span className="font-medium">Fecha inicio programada:</span>
-              <p className="text-sm text-muted-foreground">
-                {new Date(viaje.fecha_inicio_programada).toLocaleString()}
-              </p>
-            </div>
-            {viaje.fecha_inicio_real && (
-              <div>
-                <span className="font-medium">Fecha inicio real:</span>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(viaje.fecha_inicio_real).toLocaleString()}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Eventos recientes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Eventos Recientes
-            </CardTitle>
+            <CardTitle>Instrucciones de Ruta ({rutaInfo.pasos.length} pasos)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-              {eventos.slice(0, 5).map((evento) => (
-                <div key={evento.id} className="flex items-start gap-3 p-2 border rounded">
-                  <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {rutaInfo.pasos.map((paso: any, index: number) => (
+                <div key={index} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
+                    {index + 1}
+                  </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{evento.descripcion}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(evento.timestamp).toLocaleString()}
-                    </p>
-                    {evento.ubicacion && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {evento.ubicacion}
-                      </p>
-                    )}
+                    <div className="text-sm" dangerouslySetInnerHTML={{ __html: paso.instruccion }} />
+                    <div className="flex gap-3 mt-1 text-xs text-gray-600">
+                      <span>{paso.distancia}</span>
+                      <span>•</span>
+                      <span>{paso.duracion}</span>
+                    </div>
                   </div>
                 </div>
               ))}
-              
-              {eventos.length === 0 && (
-                <p className="text-center text-muted-foreground py-4">
-                  No hay eventos registrados
-                </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Ubicaciones */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-green-600" />
+              Origen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Dirección:</span> {viajeData.origen}</p>
+              {ubicacionOrigen?.domicilio && (
+                <>
+                  {ubicacionOrigen.domicilio.calle && <p><span className="font-medium">Calle:</span> {ubicacionOrigen.domicilio.calle}</p>}
+                  <p><span className="font-medium">CP:</span> {ubicacionOrigen.domicilio.codigoPostal}</p>
+                  <p><span className="font-medium">Municipio:</span> {ubicacionOrigen.domicilio.municipio}</p>
+                  <p><span className="font-medium">Estado:</span> {ubicacionOrigen.domicilio.estado}</p>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-red-600" />
+              Destino
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Dirección:</span> {viajeData.destino}</p>
+              {ubicacionDestino?.domicilio && (
+                <>
+                  {ubicacionDestino.domicilio.calle && <p><span className="font-medium">Calle:</span> {ubicacionDestino.domicilio.calle}</p>}
+                  <p><span className="font-medium">CP:</span> {ubicacionDestino.domicilio.codigoPostal}</p>
+                  <p><span className="font-medium">Municipio:</span> {ubicacionDestino.domicilio.municipio}</p>
+                  <p><span className="font-medium">Estado:</span> {ubicacionDestino.domicilio.estado}</p>
+                </>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Alertas del viaje */}
-      {viaje.estado === 'retrasado' && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Este viaje presenta retrasos. Contacta al conductor para más información.
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 };

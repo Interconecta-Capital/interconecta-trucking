@@ -93,12 +93,34 @@ function ViajesContent() {
   const handleEditarViaje = (viaje: Viaje) => {
     navigate(`/viajes/editar/${viaje.id}`);
   };
+  
+  // ✅ NUEVO: Filtrar viajes por búsqueda y estado
+  const viajesFiltrados = viajes.filter(viaje => {
+    // Filtro por búsqueda
+    const matchSearch = searchQuery === '' || 
+      viaje.origen.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      viaje.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      viaje.tracking_data?.cliente?.nombre_razon_social?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filtro por estado
+    let matchEstado = false;
+    if (estadoFiltro === 'todos') {
+      matchEstado = true;
+    } else if (estadoFiltro === 'activos') {
+      matchEstado = ['en_transito', 'retrasado'].includes(viaje.estado);
+    } else {
+      matchEstado = viaje.estado === estadoFiltro;
+    }
+    
+    return matchSearch && matchEstado;
+  });
 
-  // Filtrar viajes por estado
-  const viajesActivos = viajes.filter(v => ['en_transito', 'retrasado'].includes(v.estado));
-  const viajesProgramados = viajes.filter(v => v.estado === 'programado');
-  const viajesCancelados = viajes.filter(v => v.estado === 'cancelado');
-  const viajesHistorial = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
+  // Filtrar por estado para las pestañas
+  const viajesActivos = viajesFiltrados.filter(v => ['en_transito', 'retrasado'].includes(v.estado));
+  const viajesProgramados = viajesFiltrados.filter(v => v.estado === 'programado');
+  const viajesCancelados = viajesFiltrados.filter(v => v.estado === 'cancelado');
+  const viajesCompletados = viajesFiltrados.filter(v => v.estado === 'completado');
+  const viajesHistorial = viajesFiltrados.filter(v => ['completado', 'cancelado'].includes(v.estado));
 
   const renderViajesList = (viajesList: Viaje[], emptyMessage: string) => {
     if (viajesList.length === 0) {
@@ -254,6 +276,41 @@ function ViajesContent() {
 
       {/* Sección de Borradores */}
       <BorradoresSection />
+      
+      {/* ✅ NUEVO: Barra de búsqueda y filtros */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Buscar por origen, destino o cliente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <select
+              value={estadoFiltro}
+              onChange={(e) => setEstadoFiltro(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent md:w-[200px]"
+            >
+              <option value="todos">Todos los estados</option>
+              <option value="activos">Activos</option>
+              <option value="programado">Programados</option>
+              <option value="en_transito">En Tránsito</option>
+              <option value="completado">Completados</option>
+              <option value="retrasado">Retrasados</option>
+              <option value="cancelado">Cancelados</option>
+            </select>
+          </div>
+          {searchQuery && (
+            <div className="mt-2 text-sm text-gray-600">
+              {viajesFiltrados.length} resultado{viajesFiltrados.length !== 1 ? 's' : ''} encontrado{viajesFiltrados.length !== 1 ? 's' : ''}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Lista de Viajes con Pestañas */}
       <Card>
@@ -261,12 +318,18 @@ function ViajesContent() {
           <div className="flex items-center gap-2 mb-4">
             <Route className="h-5 w-5 text-blue-600" />
             <h2 className="text-xl font-semibold">Viajes</h2>
-            <Badge variant="secondary">{viajes.length}</Badge>
+            <Badge variant="secondary">{viajesFiltrados.length}</Badge>
           </div>
 
-          <Tabs defaultValue="activos" className="w-full">
+          <Tabs defaultValue="todos" className="w-full">
             <div className="scrollable-tabs-container-wrapper">
-              <TabsList className="grid w-full grid-cols-4 scrollable-tabs-container">
+              <TabsList className="grid w-full grid-cols-5 scrollable-tabs-container">
+                <TabsTrigger value="todos">
+                  Todos
+                  <Badge variant="secondary" className="ml-2">
+                    {viajesFiltrados.length}
+                  </Badge>
+                </TabsTrigger>
                 <TabsTrigger value="activos">
                   Activos
                   <Badge variant="secondary" className="ml-2">
@@ -279,20 +342,24 @@ function ViajesContent() {
                   {viajesProgramados.length}
                 </Badge>
               </TabsTrigger>
+              <TabsTrigger value="completados">
+                Completados
+                <Badge variant="secondary" className="ml-2">
+                  {viajesCompletados.length}
+                </Badge>
+              </TabsTrigger>
               <TabsTrigger value="cancelados">
                 Cancelados
                 <Badge variant="secondary" className="ml-2">
                   {viajesCancelados.length}
                 </Badge>
               </TabsTrigger>
-              <TabsTrigger value="historial">
-                Historial
-                <Badge variant="secondary" className="ml-2">
-                  {viajesHistorial.length}
-                </Badge>
-              </TabsTrigger>
             </TabsList>
             </div>
+            
+            <TabsContent value="todos" className="mt-6">
+              {renderViajesList(viajesFiltrados, "No hay viajes que coincidan con los filtros")}
+            </TabsContent>
 
             <TabsContent value="activos" className="mt-6">
               {renderViajesList(viajesActivos, "No hay viajes activos")}
@@ -300,6 +367,10 @@ function ViajesContent() {
 
             <TabsContent value="programados" className="mt-6">
               {renderViajesList(viajesProgramados, "No hay viajes programados")}
+            </TabsContent>
+            
+            <TabsContent value="completados" className="mt-6">
+              {renderViajesList(viajesCompletados, "No hay viajes completados")}
             </TabsContent>
 
             <TabsContent value="cancelados" className="mt-6">
