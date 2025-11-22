@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect as useEffectReact, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,8 +46,15 @@ export function FormularioDomicilioUnificado({
   className = '',
   usarAPIMexicana = false
 }: FormularioDomicilioUnificadoProps) {
-  const [coloniaSeleccionada, setColoniaSeleccionada] = useState(domicilio.colonia);
+  const [coloniaSeleccionada, setColoniaSeleccionada] = useState(domicilio.colonia || '');
   const [sugerenciasCP, setSugerenciasCP] = useState<Array<{codigo: string, ubicacion: string}>>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Usar ref para evitar re-renders por cambios en onDomicilioChange
+  const onDomicilioChangeRef = useRef(onDomicilioChange);
+  useEffectReact(() => {
+    onDomicilioChangeRef.current = onDomicilioChange;
+  }, [onDomicilioChange]);
 
   const {
     direccionInfo,
@@ -57,6 +64,24 @@ export function FormularioDomicilioUnificado({
     buscarConDebounce,
     usarSugerencia
   } = useCodigoPostalMexicanoNacional();
+
+  // Sincronizar coloniaSeleccionada con prop domicilio.colonia
+  useEffectReact(() => {
+    if (domicilio.colonia && domicilio.colonia !== coloniaSeleccionada) {
+      setColoniaSeleccionada(domicilio.colonia);
+    }
+  }, [domicilio.colonia, coloniaSeleccionada]);
+
+  // Evitar consultas redundantes en carga inicial
+  useEffectReact(() => {
+    if (isInitialLoad && domicilio.codigoPostal) {
+      setIsInitialLoad(false);
+      // Solo buscar si no hay datos de ubicación
+      if (!domicilio.estado || !domicilio.municipio) {
+        buscarConDebounce(domicilio.codigoPostal);
+      }
+    }
+  }, [isInitialLoad, domicilio.codigoPostal, domicilio.estado, domicilio.municipio, buscarConDebounce]);
 
   // Usar las sugerencias del hook nacional
   React.useEffect(() => {
@@ -76,17 +101,26 @@ export function FormularioDomicilioUnificado({
     if (direccionInfo && !isLoading && !error) {
       console.log('[FORM_DOMICILIO] Dirección encontrada:', direccionInfo);
       
-      // Llenar automáticamente todos los campos
-      onDomicilioChange('estado', direccionInfo.estado);
-      onDomicilioChange('municipio', direccionInfo.municipio);
-      if (direccionInfo.localidad) onDomicilioChange('localidad', direccionInfo.localidad);
-      if (direccionInfo.localidad) onDomicilioChange('ciudad', direccionInfo.localidad);
+      const updateDomicilio = onDomicilioChangeRef.current;
+      updateDomicilio('estado', direccionInfo.estado);
+      updateDomicilio('municipio', direccionInfo.municipio);
+      if (direccionInfo.localidad) updateDomicilio('localidad', direccionInfo.localidad);
+      if (direccionInfo.localidad) updateDomicilio('ciudad', direccionInfo.localidad);
       
-      // Resetear colonia para que usuario seleccione
-      setColoniaSeleccionada('');
-      onDomicilioChange('colonia', '');
+      // SOLO resetear colonia si NO hay una ya seleccionada válida
+      if (!coloniaSeleccionada || coloniaSeleccionada === '') {
+        setColoniaSeleccionada('');
+        updateDomicilio('colonia', '');
+      } else {
+        // Verificar si la colonia actual existe en las nuevas opciones
+        const coloniaExiste = direccionInfo.colonias.some(c => c.nombre === coloniaSeleccionada);
+        if (!coloniaExiste) {
+          setColoniaSeleccionada('');
+          updateDomicilio('colonia', '');
+        }
+      }
     }
-  }, [direccionInfo, isLoading, error, onDomicilioChange]);
+  }, [direccionInfo, isLoading, error, coloniaSeleccionada]);
 
   // Manejar error - solo log, NO limpiar campos
   React.useEffect(() => {

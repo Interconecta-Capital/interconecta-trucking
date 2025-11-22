@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSocios } from '@/hooks/useSocios';
 import { SocioBasicFields } from './SocioBasicFields';
@@ -8,6 +8,8 @@ import { FormularioDomicilioUnificado, DomicilioUnificado } from '@/components/c
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SocioSyncWarning } from '../SocioSyncWarning';
+import { validarIntegridadSocio, calcularDocumentosAfectados } from '@/utils/socioDataSync';
 
 interface SocioFormRefactoredProps {
   socioId?: string;
@@ -59,6 +61,9 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
 
   const [usarMismoDomicilio, setUsarMismoDomicilio] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [cambiosImportantes, setCambiosImportantes] = useState<string[]>([]);
+  const [socioOriginal, setSocioOriginal] = useState<any>(null);
+  const [documentosAfectados, setDocumentosAfectados] = useState(0);
 
   // Función helper para extraer dirección de forma segura
   const extractDireccionSafe = (direccionData: any): DomicilioUnificado => {
@@ -97,6 +102,7 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
       const socio = socios.find(s => s.id === socioId);
       if (socio) {
         setFormData(socio);
+        setSocioOriginal(socio); // Guardar original para comparación
         
         if (socio.direccion) {
           const direccionGeneralSafe = extractDireccionSafe(socio.direccion);
@@ -112,6 +118,41 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
     }
   }, [socioId, socios]);
 
+  // Calcular documentos afectados cuando se carga un socio existente
+  useEffect(() => {
+    if (socioId && socioOriginal) {
+      calcularDocumentosAfectados(socioId, socioOriginal.user_id).then(setDocumentosAfectados);
+    }
+  }, [socioId, socioOriginal]);
+
+  // Detectar cambios importantes para mostrar warning
+  useEffect(() => {
+    if (!socioOriginal || !socioId) {
+      setCambiosImportantes([]);
+      return;
+    }
+    
+    const cambios: string[] = [];
+    
+    if (formData.rfc !== socioOriginal.rfc) {
+      cambios.push(`RFC: ${socioOriginal.rfc} → ${formData.rfc}`);
+    }
+    if (formData.regimen_fiscal !== socioOriginal.regimen_fiscal) {
+      cambios.push('Régimen Fiscal actualizado');
+    }
+    if (formData.uso_cfdi !== socioOriginal.uso_cfdi) {
+      cambios.push('Uso CFDI actualizado');
+    }
+    if (JSON.stringify(domicilioFiscal) !== JSON.stringify(extractDireccionSafe(socioOriginal.direccion_fiscal))) {
+      cambios.push('Domicilio Fiscal actualizado');
+    }
+    if (JSON.stringify(domicilioGeneral) !== JSON.stringify(extractDireccionSafe(socioOriginal.direccion))) {
+      cambios.push('Domicilio General actualizado');
+    }
+    
+    setCambiosImportantes(cambios);
+  }, [formData, domicilioFiscal, domicilioGeneral, socioOriginal, socioId]);
+
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -119,16 +160,17 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
     }
   };
 
-  const handleDomicilioGeneralChange = (campo: keyof DomicilioUnificado, valor: string) => {
+  // Memoizar callbacks para evitar re-renders innecesarios
+  const handleDomicilioGeneralChange = useCallback((campo: keyof DomicilioUnificado, valor: string) => {
     setDomicilioGeneral(prev => ({ ...prev, [campo]: valor }));
     if (usarMismoDomicilio) {
       setDomicilioFiscal(prev => ({ ...prev, [campo]: valor }));
     }
-  };
+  }, [usarMismoDomicilio]);
 
-  const handleDomicilioFiscalChange = (campo: keyof DomicilioUnificado, valor: string) => {
+  const handleDomicilioFiscalChange = useCallback((campo: keyof DomicilioUnificado, valor: string) => {
     setDomicilioFiscal(prev => ({ ...prev, [campo]: valor }));
-  };
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -157,13 +199,22 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
       return;
     }
 
-    try {
-      const socioData = {
-        ...formData,
-        direccion: domicilioGeneral,
-        direccion_fiscal: usarMismoDomicilio ? domicilioGeneral : domicilioFiscal
-      };
+    const socioData = {
+      ...formData,
+      direccion: domicilioGeneral,
+      direccion_fiscal: usarMismoDomicilio ? domicilioGeneral : domicilioFiscal
+    };
 
+    // Validar integridad de datos antes de guardar
+    const validacion = validarIntegridadSocio(socioData);
+    if (!validacion.valido) {
+      toast.error('Datos incompletos', {
+        description: validacion.errores[0]
+      });
+      return;
+    }
+
+    try {
       if (socioId) {
         await actualizarSocio({ id: socioId, data: socioData });
       } else {
@@ -180,6 +231,15 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
 
   return (
     <div className="space-y-6">
+      {/* Mostrar warning de sincronización si hay cambios importantes */}
+      {socioId && cambiosImportantes.length > 0 && (
+        <SocioSyncWarning
+          socioId={socioId}
+          cantidadDocumentosAfectados={documentosAfectados}
+          cambiosImportantes={cambiosImportantes}
+        />
+      )}
+
       <SocioBasicFields
         formData={formData}
         onFieldChange={handleFieldChange}

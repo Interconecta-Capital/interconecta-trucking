@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { RFCValidator } from '@/utils/rfcValidation';
+import { propagarCambiosSocio } from '@/utils/socioDataSync';
 
 export interface Socio {
   id: string;
@@ -117,6 +118,13 @@ export const useSocios = () => {
     mutationFn: async ({ id, data }: { id: string; data: Partial<Socio> }) => {
       if (!user?.id) throw new Error('Usuario no autenticado');
 
+      // Obtener datos anteriores del socio para comparación
+      const { data: socioAnterior } = await supabase
+        .from('socios')
+        .select('rfc, direccion, direccion_fiscal, regimen_fiscal, uso_cfdi')
+        .eq('id', id)
+        .single();
+
       // Validar formato de RFC si se está actualizando
       if (data.rfc) {
         const rfcValidation = RFCValidator.validarRFC(data.rfc);
@@ -148,6 +156,39 @@ export const useSocios = () => {
         .single();
 
       if (error) throw error;
+
+      // Propagar cambios a documentos relacionados
+      if (socioAnterior && result) {
+        const cambios = await propagarCambiosSocio({
+          socioId: id,
+          userId: user.id,
+          rfcAnterior: socioAnterior.rfc,
+          rfcNuevo: result.rfc,
+          direccionActualizada: (data as any).direccion,
+          direccionFiscalActualizada: (data as any).direccion_fiscal,
+          regimenFiscalActualizado: (data as any).regimen_fiscal,
+          usoCfdiActualizado: (data as any).uso_cfdi
+        });
+
+        // Notificar sincronización
+        if (cambios.success) {
+          const totalActualizados = 
+            cambios.viajesActualizados + 
+            cambios.facturasBorradorActualizadas + 
+            cambios.cartasPorteBorradorActualizadas;
+          
+          if (totalActualizados > 0) {
+            toast.info(`Se actualizaron ${totalActualizados} documentos relacionados`, {
+              description: `Viajes: ${cambios.viajesActualizados}, Facturas: ${cambios.facturasBorradorActualizadas}, Cartas Porte: ${cambios.cartasPorteBorradorActualizadas}`
+            });
+          }
+        } else if (cambios.errores.length > 0) {
+          toast.warning('Socio actualizado pero hubo errores en sincronización', {
+            description: cambios.errores[0]
+          });
+        }
+      }
+
       return result;
     },
     onSuccess: () => {
