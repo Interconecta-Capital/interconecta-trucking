@@ -414,9 +414,13 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
         <CardContent>
           {loadingVehiculos ? (
             <div className="text-center py-4">Cargando vehículos...</div>
+          ) : vehiculos.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay vehículos disponibles
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {vehiculos.filter(v => v.activo).map(renderVehiculoCard)}
+              {vehiculos.map(renderVehiculoCard)}
             </div>
           )}
         </CardContent>
@@ -480,9 +484,13 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
         <CardContent>
           {loadingConductores ? (
             <div className="text-center py-4">Cargando conductores...</div>
+          ) : conductores.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay conductores disponibles
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {conductores.filter(c => c.activo).map(renderConductorCard)}
+              {conductores.map(renderConductorCard)}
             </div>
           )}
         </CardContent>
