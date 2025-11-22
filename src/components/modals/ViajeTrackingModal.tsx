@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Truck, 
   MapPin, 
@@ -36,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ViajeMercanciasManager } from '@/components/viajes/mercancias/ViajeMercanciasManager';
 import { FacturaPreviewModal } from '@/components/viajes/documentos/FacturaPreviewModal';
+import { ViajeDocumentosGenerator } from '@/services/pdf/ViajeDocumentosGenerator';
 
 interface ViajeTrackingModalProps {
   viaje: Viaje | null;
@@ -51,6 +53,8 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   const [showFacturaPreview, setShowFacturaPreview] = useState(false);
   const [isTimbrando, setIsTimbrando] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showCartaPortePreview, setShowCartaPortePreview] = useState(false);
+  const [isTimbrandoCartaPorte, setIsTimbrandoCartaPorte] = useState(false);
   
   // ✅ NUEVO: Cargar viaje completo con todas sus relaciones usando RPC
   useEffect(() => {
@@ -193,6 +197,49 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
       toast.error(`Error: ${error.message || 'Error desconocido'}`, { id: 'cancelacion' });
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleTimbrarCartaPorte = async () => {
+    if (!viajeCompleto?.carta_porte && !borradorCartaPorteData) {
+      toast.error('No hay Carta Porte para timbrar');
+      return;
+    }
+
+    // Validar que para flete pagado, la factura esté timbrada
+    if (viajeDataSafe.tipo_servicio === 'flete_pagado' && facturaData?.status !== 'timbrado') {
+      toast.error('Para fletes pagados, la factura debe estar timbrada primero');
+      return;
+    }
+
+    try {
+      setIsTimbrandoCartaPorte(true);
+      toast.loading('Timbrando Carta Porte...', { id: 'timbrado-cp' });
+
+      const cartaPorteId = cartaPorteData?.id || borradorCartaPorteData?.id;
+      
+      const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
+        body: {
+          cartaPorteId: cartaPorteId,
+          rfcEmisor: viajeData.rfc_emisor || facturaData?.rfc_emisor,
+          ambiente: 'sandbox'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('✅ Carta Porte timbrada correctamente', { id: 'timbrado-cp' });
+        setShowCartaPortePreview(false);
+        handleViajeUpdate();
+      } else {
+        throw new Error(data?.error || 'Error al timbrar Carta Porte');
+      }
+    } catch (error: any) {
+      console.error('Error timbrando Carta Porte:', error);
+      toast.error(`Error: ${error.message || 'Error desconocido'}`, { id: 'timbrado-cp' });
+    } finally {
+      setIsTimbrandoCartaPorte(false);
     }
   };
 
@@ -784,61 +831,276 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
 
             <TabsContent value="documentos" className="mt-0">
               <div className="space-y-6">
+                {/* Factura - Sección Existente Mejorada */}
+                {facturaData && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Receipt className="h-5 w-5 text-blue-600" />
+                        Factura
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-4 border rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-semibold text-lg">
+                              {facturaData.serie || 'N/A'}-{facturaData.folio || 'N/A'}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {facturaData.tipo_comprobante === 'I' ? 'Ingreso' : 'Traslado'}
+                            </p>
+                          </div>
+                          <Badge className={
+                            facturaData.status === 'timbrado' ? 'bg-green-100 text-green-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }>
+                            {facturaData.status === 'timbrado' ? '✅ Timbrada' : '📝 Borrador'}
+                          </Badge>
+                        </div>
+
+                        {facturaData.uuid_fiscal && (
+                          <p className="text-xs text-gray-600 font-mono mb-3 truncate bg-white p-2 rounded border">
+                            <span className="font-medium">UUID:</span> {facturaData.uuid_fiscal}
+                          </p>
+                        )}
+
+                        <div className="flex gap-2">
+                          {facturaData.status === 'timbrado' ? (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => setShowFacturaPreview(true)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Ver Detalle
+                              </Button>
+                              <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                <Download className="h-4 w-4 mr-1" />
+                                Descargar PDF
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => setShowFacturaPreview(true)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Pre-visualizar
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                onClick={() => setShowFacturaPreview(true)}
+                                disabled={isTimbrando}
+                              >
+                                <Zap className="h-4 w-4 mr-1" />
+                                {isTimbrando ? 'Timbrando...' : 'Timbrar'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Carta Porte - NUEVA SECCIÓN MEJORADA (FASE 5) */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Documentos del Viaje</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-purple-600" />
+                      Carta Porte
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-blue-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-5 w-5 text-purple-600" />
+                          <span className="font-semibold text-lg">Carta Porte CFDI 4.0</span>
+                        </div>
+                        <Badge className={
+                          cartaPorteData?.status === 'timbrada' ? 'bg-green-100 text-green-800' :
+                          cartaPorteData?.status === 'draft' || borradorCartaPorteData ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }>
+                          {cartaPorteData?.status === 'timbrada' ? '✅ Timbrada' :
+                           cartaPorteData?.status === 'draft' || borradorCartaPorteData ? '📝 Borrador' :
+                           '⏳ Pendiente'}
+                        </Badge>
+                      </div>
+                      
+                      {cartaPorteData?.uuid_fiscal ? (
+                        <>
+                          <p className="text-sm text-gray-700 mb-2">
+                            <span className="font-medium">Versión:</span> CFDI 4.0 - Carta Porte 3.1
+                          </p>
+                          <p className="text-xs text-gray-600 font-mono mb-3 truncate bg-white p-2 rounded border">
+                            <span className="font-medium">UUID:</span> {cartaPorteData.uuid_fiscal}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" className="flex-1">
+                              <FileText className="h-4 w-4 mr-1" />
+                              Ver XML
+                            </Button>
+                            <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                              <Download className="h-4 w-4 mr-1" />
+                              Descargar PDF
+                            </Button>
+                          </div>
+                        </>
+                      ) : (cartaPorteData?.status === 'draft' || borradorCartaPorteData) ? (
+                        <>
+                          <p className="text-sm text-gray-700 mb-3">
+                            Borrador listo para timbrar
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => setShowCartaPortePreview(true)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Pre-visualizar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                              onClick={handleTimbrarCartaPorte}
+                              disabled={
+                                isTimbrandoCartaPorte || 
+                                (viajeDataSafe.tipo_servicio === 'flete_pagado' && facturaData?.status !== 'timbrado')
+                              }
+                            >
+                              <Zap className="h-4 w-4 mr-1" />
+                              {isTimbrandoCartaPorte ? 'Timbrando...' : 'Timbrar CCP'}
+                            </Button>
+                          </div>
+                          
+                          {/* Advertencia si es flete pagado y factura no está timbrada */}
+                          {viajeDataSafe.tipo_servicio === 'flete_pagado' && facturaData?.status !== 'timbrado' && (
+                            <Alert className="mt-3 bg-orange-50 border-orange-200">
+                              <AlertCircle className="h-4 w-4 text-orange-600" />
+                              <AlertDescription className="text-xs text-orange-800">
+                                Para fletes pagados, la factura debe estar timbrada antes de timbrar la Carta Porte
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-center py-4">
+                          <p className="text-sm text-gray-500 mb-3">
+                            No hay Carta Porte generada
+                          </p>
+                          <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Generar Carta Porte
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Documentos Operativos - FASE 6: Integración de PDFs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Documentos Operativos</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Documentos Fiscales</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Carta Porte XML</p>
-                              <p className="text-sm text-gray-500">CFDI 4.0 - Carta Porte 3.1</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Descargar</Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Carta Porte PDF</p>
-                              <p className="text-sm text-gray-500">Representación impresa</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Descargar</Button>
-                            </div>
-                          </div>
+                      {/* Hoja de Ruta */}
+                      <div className="p-4 border rounded-lg hover:border-blue-300 transition-colors">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Route className="h-5 w-5 text-blue-600" />
+                          <span className="font-semibold">Hoja de Ruta</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Información completa del viaje con recursos asignados
+                        </p>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              try {
+                                ViajeDocumentosGenerator.generarHojaDeRuta(viajeCompleto);
+                                toast.success('Hoja de Ruta generada correctamente');
+                              } catch (error) {
+                                toast.error('Error generando Hoja de Ruta');
+                              }
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Ver
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => {
+                              try {
+                                ViajeDocumentosGenerator.generarHojaDeRuta(viajeCompleto);
+                                toast.success('Descargando Hoja de Ruta...');
+                              } catch (error) {
+                                toast.error('Error generando PDF');
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Imprimir
+                          </Button>
                         </div>
                       </div>
                       
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Documentos Operativos</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Hoja de Ruta</p>
-                              <p className="text-sm text-gray-500">Instrucciones del viaje</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Imprimir</Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between p-3 border rounded">
-                            <div>
-                              <p className="font-medium">Lista de Verificación</p>
-                              <p className="text-sm text-gray-500">Checklist pre-viaje</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">Ver</Button>
-                              <Button size="sm">Generar</Button>
-                            </div>
-                          </div>
+                      {/* Checklist Pre-Viaje */}
+                      <div className="p-4 border rounded-lg hover:border-green-300 transition-colors">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <span className="font-semibold">Lista de Verificación</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Checklist de seguridad y revisión pre-viaje
+                        </p>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              try {
+                                ViajeDocumentosGenerator.generarChecklistPreViaje(viajeCompleto);
+                                toast.success('Checklist generado correctamente');
+                              } catch (error) {
+                                toast.error('Error generando Checklist');
+                              }
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => {
+                              try {
+                                ViajeDocumentosGenerator.generarChecklistPreViaje(viajeCompleto);
+                                toast.success('Descargando Checklist...');
+                              } catch (error) {
+                                toast.error('Error generando PDF');
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Generar PDF
+                          </Button>
                         </div>
                       </div>
                     </div>
