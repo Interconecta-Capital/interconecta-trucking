@@ -22,6 +22,8 @@ export interface ConfiguracionEmpresarial {
   codigo_postal: string;
   serie_carta_porte: string;
   folio_inicial: number;
+  serie_factura: string;
+  folio_inicial_factura: number;
   seguro_resp_civil_empresa: any;
   seguro_carga_empresa: any;
   seguro_ambiental_empresa: any;
@@ -100,6 +102,8 @@ const mapConfiguracionFromDB = (dbData: any): ConfiguracionEmpresarial => {
     codigo_postal: domicilio.codigo_postal || '',
     serie_carta_porte: dbData.serie_carta_porte || 'CP',
     folio_inicial: dbData.folio_inicial || 1,
+    serie_factura: dbData.serie_factura || 'ZS',
+    folio_inicial_factura: dbData.folio_inicial_factura || 1,
     seguro_resp_civil_empresa: (seguroRespCivil.poliza || seguroRespCivil.aseguradora) ? {
       poliza: seguroRespCivil.poliza || '',
       aseguradora: seguroRespCivil.aseguradora || ''
@@ -324,6 +328,8 @@ export const useConfiguracionEmpresarial = () => {
       if (datos.modo_pruebas !== undefined) updateData.modo_pruebas = datos.modo_pruebas;
       if (datos.serie_carta_porte !== undefined) updateData.serie_carta_porte = datos.serie_carta_porte;
       if (datos.folio_inicial !== undefined) updateData.folio_inicial = datos.folio_inicial;
+      if (datos.serie_factura !== undefined) updateData.serie_factura = datos.serie_factura;
+      if (datos.folio_inicial_factura !== undefined) updateData.folio_inicial_factura = datos.folio_inicial_factura;
 
       console.log('🚀 [guardarConfiguracion] Objeto FINAL a enviar a BD:', JSON.stringify(updateData, null, 2));
 

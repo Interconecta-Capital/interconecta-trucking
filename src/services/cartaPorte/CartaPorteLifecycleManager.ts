@@ -159,11 +159,15 @@ export class CartaPorteLifecycleManager {
 
   /**
    * Convertir borrador a carta porte final
+   * ✅ USA serie_carta_porte y folio_inicial_carta_porte de configuración_empresa
    */
   static async convertirBorradorACartaPorte(
     request: ConvertirBorradorRequest
   ): Promise<CartaPorteCompleta> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+      
       // 1. Cargar el borrador
       const borrador = await this.cargarBorrador(request.borradorId);
       if (!borrador) {
@@ -178,10 +182,31 @@ export class CartaPorteLifecycleManager {
         }
       }
 
-      // 3. Generar IdCCP único
+      // 3. Obtener configuración de empresa para serie y folio
+      const { data: config, error: configError } = await supabase
+        .from('configuracion_empresa')
+        .select('serie_carta_porte, folio_actual_carta_porte, folio_inicial_carta_porte')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (configError) {
+        console.warn('⚠️ No se pudo obtener configuración de empresa, usando valores por defecto');
+      }
+      
+      // Calcular folio a usar
+      const folioAUsar = config?.folio_actual_carta_porte || config?.folio_inicial_carta_porte || 1;
+      const serieAUsar = config?.serie_carta_porte || 'CP';
+      
+      console.log('📄 [CARTA PORTE] Usando configuración:', {
+        serie: serieAUsar,
+        folio: folioAUsar,
+        siguiente_folio: folioAUsar + 1
+      });
+
+      // 4. Generar IdCCP único
       const idCCP = await this.generarIdCCPUnico();
 
-      // 4. Extraer datos principales del formulario (buscar en ambas ubicaciones)
+      // 5. Extraer datos principales del formulario (buscar en ambas ubicaciones)
       const datosFormulario = borrador.datos_formulario;
       const configuracion = datosFormulario.configuracion || {};
       const emisor = configuracion.emisor || {};
@@ -193,7 +218,7 @@ export class CartaPorteLifecycleManager {
       const rfcReceptor = datosFormulario.rfcReceptor || receptor.rfc || '';
       const nombreReceptor = datosFormulario.nombreReceptor || receptor.nombre || '';
 
-      // 5. Crear la carta porte
+      // 6. Crear la carta porte con serie y folio de configuración
       const { data, error } = await supabase
         .from('cartas_porte')
         .insert({
@@ -203,6 +228,8 @@ export class CartaPorteLifecycleManager {
           status: 'active' as const,
           version_documento: 'v1.0',
           datos_formulario: datosFormulario,
+          serie: serieAUsar,
+          folio: folioAUsar.toString().padStart(3, '0'),
           
           // Campos sincronizados para búsqueda
           rfc_emisor: rfcEmisor,
@@ -212,7 +239,8 @@ export class CartaPorteLifecycleManager {
           tipo_cfdi: datosFormulario.tipoCfdi || 'Traslado',
           transporte_internacional: datosFormulario.transporteInternacional || false,
           registro_istmo: datosFormulario.registroIstmo || false,
-          version_carta_porte: '3.1'
+          version_carta_porte: '3.1',
+          usuario_id: user.id
         })
         .select()
         .single();
@@ -222,7 +250,17 @@ export class CartaPorteLifecycleManager {
         throw new Error(`Error convirtiendo borrador: ${error.message}`);
       }
 
-      console.log('Borrador convertido exitosamente:', data.id, 'IdCCP:', idCCP);
+      // 7. Incrementar folio_actual_carta_porte para la siguiente carta porte
+      if (config) {
+        await supabase
+          .from('configuracion_empresa')
+          .update({ folio_actual_carta_porte: folioAUsar + 1 })
+          .eq('user_id', user.id);
+        
+        console.log('✅ [CARTA PORTE] Folio incrementado a:', folioAUsar + 1);
+      }
+
+      console.log('Borrador convertido exitosamente:', data.id, 'Serie-Folio:', `${serieAUsar}-${folioAUsar.toString().padStart(3, '0')}`, 'IdCCP:', idCCP);
       return data as CartaPorteCompleta;
     } catch (error) {
       console.error('Error en convertirBorradorACartaPorte:', error);

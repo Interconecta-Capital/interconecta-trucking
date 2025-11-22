@@ -35,7 +35,9 @@ const datosFiscalesSchema = z.object({
   pais: z.string().default('MEX'),
   codigo_postal: z.string().min(5, 'Código postal inválido').max(5),
   serie_carta_porte: z.string().default('CP'),
-  folio_inicial: z.number().min(1).default(1)
+  folio_inicial: z.number().min(1).default(1),
+  serie_factura: z.string().default('ZS'),
+  folio_inicial_factura: z.number().min(1).default(1)
 });
 
 type DatosFiscalesForm = z.infer<typeof datosFiscalesSchema>;
@@ -62,7 +64,9 @@ export function DatosFiscalesForm() {
       pais: 'MEX',
       codigo_postal: '',
       serie_carta_porte: 'CP',
-      folio_inicial: 1
+      folio_inicial: 1,
+      serie_factura: 'ZS',
+      folio_inicial_factura: 1
     }
   });
 
@@ -91,7 +95,9 @@ export function DatosFiscalesForm() {
         pais: configuracion.pais || 'MEX',
         codigo_postal: configuracion.codigo_postal || '',
         serie_carta_porte: configuracion.serie_carta_porte || 'CP',
-        folio_inicial: configuracion.folio_inicial || 1
+        folio_inicial: configuracion.folio_inicial || 1,
+        serie_factura: configuracion.serie_factura || 'ZS',
+        folio_inicial_factura: configuracion.folio_inicial_factura || 1
       });
 
       // Determinar si hay datos guardados para mostrar modo "solo lectura"
@@ -367,6 +373,29 @@ export function DatosFiscalesForm() {
                 id="folio_inicial"
                 type="number"
                 {...form.register('folio_inicial', { valueAsNumber: true })}
+                placeholder="1"
+                disabled={!isEditing}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="serie_factura">Serie para Facturación</Label>
+              <Input
+                id="serie_factura"
+                {...form.register('serie_factura')}
+                placeholder="ZS"
+                disabled={!isEditing}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="folio_inicial_factura">Folio Inicial Facturación</Label>
+              <Input
+                id="folio_inicial_factura"
+                type="number"
+                {...form.register('folio_inicial_factura', { valueAsNumber: true })}
                 placeholder="1"
                 disabled={!isEditing}
               />
