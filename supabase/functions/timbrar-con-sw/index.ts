@@ -641,26 +641,42 @@ function construirFigurasTransporte(data: any) {
 }
 
 function obtenerCPEmisor(data: any): string {
-  // Manejar ubicaciones como array u objeto
+  // Buscar ubicaciones en múltiples ubicaciones posibles
+  const ubicaciones = data.ubicaciones || data.tracking_data?.ubicaciones;
   let origen: any;
   
-  if (Array.isArray(data.ubicaciones)) {
-    origen = data.ubicaciones.find((u: any) => u.tipo_ubicacion === 'Origen' || u.tipo === 'Origen');
-  } else if (data.ubicaciones?.origen) {
-    origen = data.ubicaciones.origen;
+  if (!ubicaciones) {
+    return data.cpEmisor || "01000";
+  }
+  
+  // Manejar formato array
+  if (Array.isArray(ubicaciones)) {
+    origen = ubicaciones.find((u: any) => u.tipo_ubicacion === 'Origen' || u.tipo === 'Origen');
+  }
+  // Manejar formato objeto
+  else if (ubicaciones.origen) {
+    origen = ubicaciones.origen;
   }
   
   return origen?.domicilio?.codigo_postal || origen?.domicilio?.codigoPostal || data.cpEmisor || "01000";
 }
 
 function obtenerCPReceptor(data: any): string {
-  // Manejar ubicaciones como array u objeto
+  // Buscar ubicaciones en múltiples ubicaciones posibles
+  const ubicaciones = data.ubicaciones || data.tracking_data?.ubicaciones;
   let destino: any;
   
-  if (Array.isArray(data.ubicaciones)) {
-    destino = data.ubicaciones.find((u: any) => u.tipo_ubicacion === 'Destino' || u.tipo === 'Destino');
-  } else if (data.ubicaciones?.destino) {
-    destino = data.ubicaciones.destino;
+  if (!ubicaciones) {
+    return data.cpReceptor || "01000";
+  }
+  
+  // Manejar formato array
+  if (Array.isArray(ubicaciones)) {
+    destino = ubicaciones.find((u: any) => u.tipo_ubicacion === 'Destino' || u.tipo === 'Destino');
+  }
+  // Manejar formato objeto
+  else if (ubicaciones.destino) {
+    destino = ubicaciones.destino;
   }
   
   return destino?.domicilio?.codigo_postal || destino?.domicilio?.codigoPostal || data.cpReceptor || "01000";
