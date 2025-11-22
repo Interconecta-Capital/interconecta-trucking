@@ -218,25 +218,36 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
 
       const cartaPorteId = cartaPorteData?.id || borradorCartaPorteData?.id;
       
-      const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
+      console.log('📄 Invocando edge function timbrar-carta-porte con:', {
+        cartaPorteId: cartaPorteId?.slice(0, 8),
+        viajeId: viajeData.id?.slice(0, 8),
+        ambiente: 'sandbox'
+      });
+
+      const { data, error } = await supabase.functions.invoke('timbrar-carta-porte', {
         body: {
           cartaPorteId: cartaPorteId,
-          rfcEmisor: viajeData.rfc_emisor || facturaData?.rfc_emisor,
+          viajeId: viajeData.id,
           ambiente: 'sandbox'
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error de edge function:', error);
+        throw error;
+      }
+
+      console.log('✅ Respuesta de edge function:', data);
 
       if (data?.success) {
-        toast.success('✅ Carta Porte timbrada correctamente', { id: 'timbrado-cp' });
+        toast.success(`✅ Carta Porte timbrada: ${data.data.uuid?.slice(0, 20)}...`, { id: 'timbrado-cp' });
         setShowCartaPortePreview(false);
         handleViajeUpdate();
       } else {
         throw new Error(data?.error || 'Error al timbrar Carta Porte');
       }
     } catch (error: any) {
-      console.error('Error timbrando Carta Porte:', error);
+      console.error('💥 Error timbrando Carta Porte:', error);
       toast.error(`Error: ${error.message || 'Error desconocido'}`, { id: 'timbrado-cp' });
     } finally {
       setIsTimbrandoCartaPorte(false);

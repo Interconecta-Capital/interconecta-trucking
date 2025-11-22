@@ -156,6 +156,19 @@
       <div class="splash-spinner"></div>
     </div>
     
+    <!-- Google Maps API -->
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_PLACEHOLDER&libraries=places,geometry&callback=initMap">
+    </script>
+    <script>
+      // Callback de inicialización de Google Maps
+      window.initMap = function() {
+        console.log('Google Maps API cargada correctamente');
+        window.googleMapsLoaded = true;
+        window.dispatchEvent(new Event('google-maps-loaded'));
+      };
+    </script>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
