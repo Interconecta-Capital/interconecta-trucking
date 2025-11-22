@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle, Info, CheckCircle2, HelpCircle, FileText } from 'lucide-react';
+import { Save, Shield, Loader2, AlertTriangle, Info, CheckCircle2, HelpCircle } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 import { PermisosSCTEmpresaForm } from './PermisosSCTEmpresaForm';
 import { toast } from 'sonner';
@@ -24,9 +24,6 @@ export function ConfiguracionOperativaForm() {
     seguroCargaAseguradora: '',
     seguroAmbientalPoliza: '',
     seguroAmbientalAseguradora: '',
-    // Timbrado
-    proveedorTimbrado: 'fiscal_api',
-    modoPruebas: true,
   });
 
   // Cargar datos de configuración al iniciar
@@ -39,8 +36,6 @@ export function ConfiguracionOperativaForm() {
         seguroCargaAseguradora: configuracion.seguro_carga_empresa?.aseguradora || '',
         seguroAmbientalPoliza: configuracion.seguro_ambiental_empresa?.poliza || '',
         seguroAmbientalAseguradora: configuracion.seguro_ambiental_empresa?.aseguradora || '',
-        proveedorTimbrado: configuracion.proveedor_timbrado || 'fiscal_api',
-        modoPruebas: configuracion.modo_pruebas !== false,
       });
     }
   }, [configuracion]);
@@ -124,8 +119,6 @@ export function ConfiguracionOperativaForm() {
         seguro_resp_civil_empresa: seguroRespCivil,
         seguro_carga_empresa: seguroCarga,
         seguro_ambiental_empresa: seguroAmbiental,
-        proveedor_timbrado: formData.proveedorTimbrado,
-        modo_pruebas: formData.modoPruebas,
       } as any);
       
       console.log('✅ [ConfiguracionOperativaForm] Seguros guardados exitosamente');
@@ -286,43 +279,6 @@ export function ConfiguracionOperativaForm() {
       </Card>
 
 
-      {/* Configuración de Timbrado */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Cloud className="h-5 w-5" />
-            Configuración de Timbrado
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Proveedor de Timbrado</Label>
-              <Select 
-                value={formData.proveedorTimbrado}
-                onValueChange={(value) => setFormData({ ...formData, proveedorTimbrado: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fiscal_api">FISCAL API</SelectItem>
-                  <SelectItem value="external">PAC Externo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="modo-pruebas" 
-                checked={formData.modoPruebas}
-                onCheckedChange={(checked) => setFormData({ ...formData, modoPruebas: checked })}
-              />
-              <Label htmlFor="modo-pruebas">Modo de Pruebas</Label>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Permisos SCT */}
       <PermisosSCTEmpresaForm />
