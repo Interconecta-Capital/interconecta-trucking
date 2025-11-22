@@ -45,21 +45,30 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   // ✅ NUEVO: Cargar viaje completo con todas sus relaciones usando RPC
   useEffect(() => {
     const cargarViajeCompleto = async () => {
-      if (!viaje?.id || !open) return;
+      if (!viaje?.id || !open) {
+        setViajeCompleto(null);
+        return;
+      }
       
       setLoading(true);
       try {
+        console.log('🔍 Cargando viaje con ID:', viaje.id);
+        
         const { data, error } = await supabase.rpc('get_viaje_con_relaciones', {
           p_viaje_id: viaje.id
         });
         
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error en RPC get_viaje_con_relaciones:', error);
+          throw error;
+        }
         
+        console.log('✅ Viaje completo cargado:', data);
         setViajeCompleto(data);
         setActiveTab('resumen');
-      } catch (error) {
-        console.error('Error cargando viaje completo:', error);
-        toast.error('Error al cargar los datos del viaje');
+      } catch (error: any) {
+        console.error('❌ Error cargando viaje completo:', error);
+        toast.error(`Error al cargar los datos del viaje: ${error.message || 'Error desconocido'}`);
       } finally {
         setLoading(false);
       }

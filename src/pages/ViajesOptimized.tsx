@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MapPin, User, Calendar, Clock, Eye, Edit, Trash2, Route } from 'lucide-react';
 import { useViajes } from '@/hooks/useViajes';
 import { BorradoresSection } from '@/components/viajes/BorradoresSection';
@@ -46,8 +45,10 @@ function ViajesContent() {
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState<string>('todos');
   
-  // ✅ NUEVO: Abrir modal del último viaje creado automáticamente
+  // Abrir modal del último viaje creado automáticamente
   useEffect(() => {
     const ultimoViajeId = sessionStorage.getItem('ultimo_viaje_creado');
     if (ultimoViajeId && viajes.length > 0 && !isLoading) {
@@ -59,6 +60,25 @@ function ViajesContent() {
       }
     }
   }, [viajes, isLoading]);
+
+  // Filtrar viajes por búsqueda y estado
+  const viajesFiltrados = viajes.filter(viaje => {
+    const matchSearch = searchQuery === '' || 
+      viaje.origen.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      viaje.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      viaje.tracking_data?.cliente?.nombre_razon_social?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    let matchEstado = false;
+    if (estadoFiltro === 'todos') {
+      matchEstado = true;
+    } else if (estadoFiltro === 'activos') {
+      matchEstado = ['en_transito', 'retrasado'].includes(viaje.estado);
+    } else {
+      matchEstado = viaje.estado === estadoFiltro;
+    }
+    
+    return matchSearch && matchEstado;
+  });
 
   const handleEliminarViaje = async (viaje: Viaje) => {
     if (!window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {
@@ -78,34 +98,24 @@ function ViajesContent() {
     setShowTrackingModal(true);
   };
 
+  const handleEditarViaje = (viaje: Viaje) => {
+    navigate(`/viajes/editar/${viaje.id}`);
+  };
+
   useEffect(() => {
-    // FASE 3: Ocultar botón FAB durante creación de viaje
-    const isCreating = isLoading; // Usar estado de loading para detectar creación
     setFABConfig({
       icon: <Route className="fab-icon" />,
       text: 'Nuevo',
       onClick: openViajeWizard,
-      isVisible: !isCreating // Ocultar si está creando
-    })
-    return () => setFABConfig({ isVisible: false })
-  }, [isLoading])
-
-  const handleEditarViaje = (viaje: Viaje) => {
-    navigate(`/viajes/editar/${viaje.id}`);
-  };
-  
-  // ✅ NUEVO: Filtrar viajes por búsqueda y estado
-  // Filtrar por estado para las pestañas
-  const viajesActivos = viajes.filter(v => ['en_transito', 'retrasado'].includes(v.estado));
-  const viajesProgramados = viajes.filter(v => v.estado === 'programado');
-  const viajesCancelados = viajes.filter(v => v.estado === 'cancelado');
-  const viajesCompletados = viajes.filter(v => v.estado === 'completado');
-  const viajesHistorial = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
+      isVisible: !isLoading
+    });
+    return () => setFABConfig({ isVisible: false });
+  }, [isLoading]);
 
   const renderViajesList = (viajesList: Viaje[], emptyMessage: string) => {
     if (viajesList.length === 0) {
       return (
-        <div className="empty-state-container text-center">
+        <div className="empty-state-container text-center py-12">
           <Route className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-900 mb-2">{emptyMessage}</p>
           <Button onClick={openViajeWizard} className="flex items-center gap-2">
@@ -119,11 +129,12 @@ function ViajesContent() {
     return (
       <div className="space-y-4">
         {viajesList.map((viaje) => {
-          const conductor = viaje.tracking_data?.conductor;
-          const vehiculo = viaje.tracking_data?.vehiculo;
-          const cliente = viaje.tracking_data?.cliente;
-          const mercancias = viaje.tracking_data?.mercancias || [];
-          const totalMercancias = mercancias.length;
+          const trackingData = viaje.tracking_data || {};
+          const conductorData = trackingData.conductor;
+          const vehiculoData = trackingData.vehiculo;
+          const clienteData = trackingData.cliente;
+          const mercanciasData = trackingData.mercancias || [];
+          const totalMercancias = mercanciasData.length;
           
           return (
             <Card key={viaje.id} className="hover:shadow-md transition-shadow">
@@ -149,7 +160,7 @@ function ViajesContent() {
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900">Conductor</p>
                           <p className="text-gray-600 truncate">
-                            {conductor?.nombre || 'No asignado'}
+                            {conductorData?.nombre || 'No asignado'}
                           </p>
                         </div>
                       </div>
@@ -162,7 +173,9 @@ function ViajesContent() {
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900">Vehículo</p>
                           <p className="text-gray-600 truncate">
-                            {vehiculo ? `${vehiculo.placa} - ${vehiculo.marca || ''} ${vehiculo.modelo || ''}`.trim() : 'No asignado'}
+                            {vehiculoData?.placa || vehiculoData?.id ? 
+                              `${vehiculoData.placa || 'Sin placa'} ${vehiculoData.marca ? `- ${vehiculoData.marca}` : ''}`.trim() : 
+                              'No asignado'}
                           </p>
                         </div>
                       </div>
@@ -175,7 +188,7 @@ function ViajesContent() {
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900">Cliente</p>
                           <p className="text-gray-600 truncate">
-                            {cliente?.nombre_razon_social || 'No especificado'}
+                            {clienteData?.nombre_razon_social || clienteData?.rfc || 'No especificado'}
                           </p>
                         </div>
                       </div>
@@ -228,32 +241,21 @@ function ViajesContent() {
                     )}
                   </div>
 
-                <div className="flex items-center gap-2 ml-4 viaje-card-actions">
-                  <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEliminarViaje(viaje)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  </div>
-
+                  {/* Botones de acción */}
                   <div className="flex items-center gap-2 ml-4 viaje-card-actions">
                     <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/viajes/editar/${viaje.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEliminarViaje(viaje)}>
-                      <Trash2 className="h-4 w-4 text-red-600" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEliminarViaje(viaje)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -325,75 +327,60 @@ function ViajesContent() {
       {/* Sección de Borradores */}
       <BorradoresSection />
 
-      {/* Lista de Viajes con Pestañas */}
+      {/* Barra de búsqueda y filtros */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Buscar por origen, destino o cliente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los estados</SelectItem>
+                <SelectItem value="activos">Activos</SelectItem>
+                <SelectItem value="programado">Programados</SelectItem>
+                <SelectItem value="en_transito">En Tránsito</SelectItem>
+                <SelectItem value="completado">Completados</SelectItem>
+                <SelectItem value="retrasado">Retrasados</SelectItem>
+                <SelectItem value="cancelado">Cancelados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de Viajes */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-6">
             <Route className="h-5 w-5 text-blue-600" />
-            <h2 className="text-xl font-semibold">Viajes</h2>
-            <Badge variant="secondary">{viajes.length}</Badge>
+            <h2 className="text-xl font-semibold">
+              {estadoFiltro === 'todos' ? 'Todos los Viajes' :
+               estadoFiltro === 'activos' ? 'Viajes Activos' :
+               estadoFiltro === 'programado' ? 'Viajes Programados' :
+               estadoFiltro === 'en_transito' ? 'Viajes En Tránsito' :
+               estadoFiltro === 'completado' ? 'Viajes Completados' :
+               estadoFiltro === 'retrasado' ? 'Viajes Retrasados' :
+               estadoFiltro === 'cancelado' ? 'Viajes Cancelados' :
+               'Viajes'}
+            </h2>
+            <Badge variant="secondary">{viajesFiltrados.length}</Badge>
+            {searchQuery && (
+              <Badge variant="outline" className="ml-2">
+                {viajesFiltrados.length} resultado{viajesFiltrados.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
 
-          <Tabs defaultValue="todos" className="w-full">
-            <div className="scrollable-tabs-container-wrapper">
-              <TabsList className="grid w-full grid-cols-5 scrollable-tabs-container">
-              <TabsTrigger value="todos">
-                Todos
-                <Badge variant="secondary" className="ml-2">
-                  {viajes.length}
-                </Badge>
-              </TabsTrigger>
-                <TabsTrigger value="activos">
-                  Activos
-                  <Badge variant="secondary" className="ml-2">
-                    {viajesActivos.length}
-                  </Badge>
-                </TabsTrigger>
-              <TabsTrigger value="programados">
-                Programados
-                <Badge variant="secondary" className="ml-2">
-                  {viajesProgramados.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="completados">
-                Completados
-                <Badge variant="secondary" className="ml-2">
-                  {viajesCompletados.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="cancelados">
-                Cancelados
-                <Badge variant="secondary" className="ml-2">
-                  {viajesCancelados.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
-            </div>
-            
-            <TabsContent value="todos" className="mt-6">
-              {renderViajesList(viajes, "No hay viajes")}
-            </TabsContent>
-
-            <TabsContent value="activos" className="mt-6">
-              {renderViajesList(viajesActivos, "No hay viajes activos")}
-            </TabsContent>
-
-            <TabsContent value="programados" className="mt-6">
-              {renderViajesList(viajesProgramados, "No hay viajes programados")}
-            </TabsContent>
-            
-            <TabsContent value="completados" className="mt-6">
-              {renderViajesList(viajesCompletados, "No hay viajes completados")}
-            </TabsContent>
-
-            <TabsContent value="cancelados" className="mt-6">
-              {renderViajesList(viajesCancelados, "No hay viajes cancelados")}
-            </TabsContent>
-
-            <TabsContent value="historial" className="mt-6">
-              {renderViajesList(viajesHistorial, "No hay viajes en el historial")}
-            </TabsContent>
-          </Tabs>
+          {renderViajesList(viajesFiltrados, "No hay viajes que coincidan con los filtros")}
         </CardContent>
       </Card>
 
@@ -404,7 +391,9 @@ function ViajesContent() {
       />
 
       {showDiagnostic && (
-        <DiagnosticPanel onClose={() => setShowDiagnostic(false)} />
+        <DiagnosticPanel
+          onClose={() => setShowDiagnostic(false)}
+        />
       )}
     </div>
   );
@@ -413,10 +402,8 @@ function ViajesContent() {
 export default function ViajesOptimized() {
   return (
     <ViajeWizardModalProvider>
-      <div className="container mx-auto py-6">
-        <ViajesContent />
-        <ViajeWizardModal />
-      </div>
+      <ViajesContent />
+      <ViajeWizardModal />
     </ViajeWizardModalProvider>
   );
 }
