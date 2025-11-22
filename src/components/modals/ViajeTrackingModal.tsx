@@ -20,7 +20,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Navigation
+  Navigation,
+  DollarSign
 } from 'lucide-react';
 import { useViajesEstados, Viaje } from '@/hooks/useViajesEstados';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,6 +30,7 @@ import { TrackingViajeRealTime } from '@/components/viajes/tracking/TrackingViaj
 import { ViajeEditor } from '@/components/viajes/editor/ViajeEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ViajeMercanciasManager } from '@/components/viajes/mercancias/ViajeMercanciasManager';
 
 interface ViajeTrackingModalProps {
   viaje: Viaje | null;
@@ -195,7 +197,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="resumen" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Resumen
@@ -203,6 +205,14 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             <TabsTrigger value="tracking" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               Tracking
+            </TabsTrigger>
+            <TabsTrigger value="mercancias" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Mercancías
+              <Badge variant="secondary" className="ml-1">
+                {(viajeCompleto?.mercancias?.length || 0) + 
+                 (viajeCompleto?.viaje?.tracking_data?.mercancias?.length || 0)}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="documentos" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -589,6 +599,36 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+            
+            {/* Pestaña de Mercancías */}
+            <TabsContent value="mercancias" className="mt-0">
+              <ViajeMercanciasManager
+                viajeId={viajeCompleto.viaje.id}
+                mercanciasTracking={viajeCompleto.viaje.tracking_data?.mercancias || []}
+                mercanciasCartaPorte={viajeCompleto.mercancias || []}
+                onMercanciasUpdate={async (mercanciasNuevas) => {
+                  try {
+                    const { error } = await supabase
+                      .from('viajes')
+                      .update({
+                        tracking_data: {
+                          ...viajeCompleto.viaje.tracking_data,
+                          mercancias: mercanciasNuevas
+                        }
+                      })
+                      .eq('id', viajeCompleto.viaje.id);
+                    
+                    if (error) throw error;
+                    
+                    toast.success('Mercancías actualizadas correctamente');
+                    handleViajeUpdate();
+                  } catch (error) {
+                    console.error('Error actualizando mercancías:', error);
+                    toast.error('Error actualizando mercancías');
+                  }
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="documentos" className="mt-0">
