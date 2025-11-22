@@ -124,14 +124,19 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // 3. Obtener credenciales de SW
-    const swToken = Deno.env.get('SW_TOKEN');
+    const rawToken = Deno.env.get('SW_TOKEN');
     const swUrl = ambiente === 'production' 
       ? Deno.env.get('SW_PRODUCTION_URL')
       : Deno.env.get('SW_SANDBOX_URL');
 
-    if (!swToken || !swUrl) {
+    if (!rawToken || !swUrl) {
       throw new Error('Credenciales de SW no configuradas');
     }
+
+    // 🔐 Limpiar token: eliminar espacios, saltos de línea y caracteres extra
+    const swToken = rawToken.replace(/[\s\n\r]/g, '').trim();
+    
+    console.log('🔑 Token limpiado - longitud:', swToken.length);
 
     // 4. Construir el CFDI JSON según formato de SW
     const cfdiJson = construirCFDIJson(cartaPorteData || facturaData, esFacturaConCartaPorte);
