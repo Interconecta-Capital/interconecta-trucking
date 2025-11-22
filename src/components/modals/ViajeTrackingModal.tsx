@@ -210,8 +210,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
               <Package className="h-4 w-4" />
               Mercancías
               <Badge variant="secondary" className="ml-1">
-                {(viajeCompleto?.mercancias?.length || 0) + 
-                 (viajeCompleto?.viaje?.tracking_data?.mercancias?.length || 0)}
+                {viajeCompleto?.mercancias?.length || 0}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="documentos" className="flex items-center gap-2">
@@ -613,29 +612,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             <TabsContent value="mercancias" className="mt-0">
               <ViajeMercanciasManager
                 viajeId={viajeCompleto.viaje.id}
-                mercanciasTracking={viajeCompleto.viaje.tracking_data?.mercancias || []}
-                mercanciasCartaPorte={viajeCompleto.mercancias || []}
-                onMercanciasUpdate={async (mercanciasNuevas) => {
-                  try {
-                    const { error } = await supabase
-                      .from('viajes')
-                      .update({
-                        tracking_data: {
-                          ...viajeCompleto.viaje.tracking_data,
-                          mercancias: mercanciasNuevas
-                        }
-                      })
-                      .eq('id', viajeCompleto.viaje.id);
-                    
-                    if (error) throw error;
-                    
-                    toast.success('Mercancías actualizadas correctamente');
-                    handleViajeUpdate();
-                  } catch (error) {
-                    console.error('Error actualizando mercancías:', error);
-                    toast.error('Error actualizando mercancías');
-                  }
-                }}
+                onMercanciasUpdate={handleViajeUpdate}
               />
             </TabsContent>
 

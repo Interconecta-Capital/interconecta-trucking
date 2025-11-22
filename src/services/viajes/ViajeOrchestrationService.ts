@@ -39,6 +39,12 @@ export class ViajeOrchestrationService {
       const viaje = await this.crearViajeMaestro(wizardData);
       console.log('✅ [ORCHESTRATOR] Viaje creado:', viaje.id);
       
+      // ========== PASO 1.5: GUARDAR MERCANCÍAS EN TABLA (UNIFICADO) ==========
+      if (wizardData.mercancias && wizardData.mercancias.length > 0) {
+        await this.guardarMercanciasDirectas(viaje.id, wizardData.mercancias);
+        console.log(`✅ [ORCHESTRATOR] ${wizardData.mercancias.length} mercancías guardadas en tabla`);
+      }
+      
       // ========== PASO 2: CREAR FACTURA (si es flete pagado) ==========
       let facturaId: string | undefined;
       if (esFletePageado && wizardData.facturaData) {
@@ -164,10 +170,10 @@ export class ViajeOrchestrationService {
         pasos: wizardData.rutaCalculada.pasos
       } : null,
       
-      // Mercancía
+      // Mercancía (solo metadata, NO duplicar datos)
       descripcionMercancia: wizardData.descripcionMercancia,
       claveBienesTransp: wizardData.claveBienesTransp,
-      mercancias: wizardData.mercancias || [], // ✅ NUEVO: Guardar mercancías detalladas
+      // ⚠️ ELIMINADO: mercancias array - ahora se guardan en tabla mercancias
       
       // Tipo de servicio
       tipo_servicio: wizardData.tipoServicio
@@ -295,63 +301,56 @@ export class ViajeOrchestrationService {
   }
   
   /**
-   * ✅ NUEVO: Sincronizar mercancías del viaje con la carta porte
-   * Se llama automáticamente cuando se convierte un borrador en carta porte timbrada
+   * ✅ NUEVO: Guardar mercancías directamente en tabla (UNIFICADO)
+   * Ahora hay UNA sola fuente de verdad: tabla mercancias
    */
-  static async sincronizarMercanciasConCartaPorte(viajeId: string, cartaPorteId: string) {
-    try {
-      // Obtener el viaje con sus mercancías en tracking_data
-      const { data: viaje, error: viajeError } = await supabase
-        .from('viajes')
-        .select('tracking_data')
-        .eq('id', viajeId)
-        .single();
-      
-      if (viajeError || !viaje) {
-        console.error('Error obteniendo viaje:', viajeError);
-        return;
-      }
-      
-      const trackingData = viaje.tracking_data as any;
-      const mercanciasViaje = trackingData?.mercancias || [];
-      
-      if (mercanciasViaje.length === 0) {
-        console.log('⚠️ No hay mercancías en el viaje para sincronizar');
-        return;
-      }
-      
-      // Mapear mercancías al formato de la tabla mercancias
-      const mercanciasMapped = mercanciasViaje.map((m: any) => ({
-        carta_porte_id: cartaPorteId,
-        bienes_transp: m.bienes_transp || m.claveProdServ || '',
-        descripcion: m.descripcion || '',
-        cantidad: parseFloat(m.cantidad) || 1,
-        clave_unidad: m.clave_unidad || m.claveUnidad || 'KGM',
-        unidad: m.unidad || 'Kilogramo',
-        peso_kg: parseFloat(m.peso_kg || m.pesoKg) || 0,
-        valor_mercancia: parseFloat(m.valor_mercancia || m.valorMercancia) || 0,
-        material_peligroso: Boolean(m.material_peligroso),
-        moneda: m.moneda || 'MXN',
-        embalaje: m.embalaje || null,
-        fraccion_arancelaria: m.fraccion_arancelaria || null
-      }));
-      
-      // Insertar mercancías en la tabla mercancias
-      const { error: mercError } = await supabase
-        .from('mercancias')
-        .insert(mercanciasMapped);
-      
-      if (mercError) {
-        console.error('❌ Error insertando mercancías:', mercError);
-        throw mercError;
-      }
-      
-      console.log(`✅ ${mercanciasViaje.length} mercancías sincronizadas con carta porte ${cartaPorteId}`);
-      
-    } catch (error) {
-      console.error('Error en sincronización de mercancías:', error);
+  private static async guardarMercanciasDirectas(viajeId: string, mercancias: any[]) {
+    const mercanciasMapped = mercancias.map((m: any) => ({
+      viaje_id: viajeId,
+      estado: 'borrador',
+      bienes_transp: m.bienes_transp || m.claveProdServ || '',
+      descripcion: m.descripcion || '',
+      cantidad: parseFloat(m.cantidad) || 1,
+      clave_unidad: m.clave_unidad || m.claveUnidad || 'KGM',
+      unidad: m.unidad || 'Kilogramo',
+      peso_kg: parseFloat(m.peso_kg || m.pesoKg) || 0,
+      valor_mercancia: parseFloat(m.valor_mercancia || m.valorMercancia) || 0,
+      material_peligroso: Boolean(m.material_peligroso),
+      moneda: m.moneda || 'MXN',
+      embalaje: m.embalaje || null,
+      fraccion_arancelaria: m.fraccion_arancelaria || null
+    }));
+    
+    const { error } = await supabase
+      .from('mercancias')
+      .insert(mercanciasMapped);
+    
+    if (error) {
+      console.error('❌ Error guardando mercancías:', error);
       throw error;
     }
+  }
+  
+  /**
+   * ✅ ACTUALIZADO: Vincular mercancías con carta porte cuando se timbra
+   * Solo actualizamos estado y carta_porte_id, NO duplicamos datos
+   */
+  static async vincularMercanciasConCartaPorte(viajeId: string, cartaPorteId: string) {
+    const { error } = await supabase
+      .from('mercancias')
+      .update({ 
+        carta_porte_id: cartaPorteId,
+        estado: 'timbrada'
+      })
+      .eq('viaje_id', viajeId)
+      .eq('estado', 'borrador');
+    
+    if (error) {
+      console.error('❌ Error vinculando mercancías:', error);
+      throw error;
+    }
+    
+    console.log(`✅ Mercancías vinculadas a carta porte ${cartaPorteId}`);
   }
   
   /**
