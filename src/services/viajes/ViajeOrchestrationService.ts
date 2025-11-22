@@ -229,12 +229,34 @@ export class ViajeOrchestrationService {
   }
   
   /**
+   * ⚡ FASE 6: MEJORADO - Crear pre-factura con validaciones estrictas
    * Crear pre-factura (borrador) vinculada al viaje
    * ✅ USA serie_factura y folio_inicial_factura de configuración_empresa
+   * ✅ VALIDA que el cliente tenga régimen fiscal configurado (ISO 27001 A.18.1.3)
+   * ⚠️ IMPORTANTE: Este campo es OBLIGATORIO para timbrado según normativa SAT
    */
   private static async crearPreFactura(viajeId: string, wizardData: ViajeWizardData): Promise<string> {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('Usuario no autenticado');
+    
+    // ✅ VALIDACIÓN CRÍTICA: Verificar que el cliente tiene régimen fiscal
+    if (!wizardData.cliente?.regimen_fiscal) {
+      console.error('❌ [FACTURA] Cliente sin régimen fiscal:', {
+        cliente_id: wizardData.cliente?.id,
+        nombre: wizardData.cliente?.nombre_razon_social,
+        rfc: wizardData.cliente?.rfc
+      });
+      throw new Error(
+        `⚠️ El cliente "${wizardData.cliente?.nombre_razon_social || 'seleccionado'}" no tiene régimen fiscal configurado. ` +
+        'Por favor, actualiza los datos del cliente en el módulo de Clientes/Proveedores antes de continuar. ' +
+        'Este dato es obligatorio para el timbrado según normativa SAT.'
+      );
+    }
+    
+    console.log('✅ [FACTURA] Régimen fiscal del cliente validado:', {
+      cliente: wizardData.cliente.nombre_razon_social,
+      regimen_fiscal: wizardData.cliente.regimen_fiscal
+    });
     
     // Obtener configuración de empresa para RFC emisor y configuración de folios
     const { data: config, error: configError } = await supabase
@@ -254,7 +276,9 @@ export class ViajeOrchestrationService {
     console.log('📄 [FACTURA] Usando configuración:', {
       serie: serieAUsar,
       folio: folioAUsar,
-      siguiente_folio: folioAUsar + 1
+      siguiente_folio: folioAUsar + 1,
+      regimen_fiscal_emisor: config.regimen_fiscal,
+      regimen_fiscal_receptor: wizardData.cliente.regimen_fiscal
     });
     
     const facturaData = wizardData.facturaData!;
@@ -263,7 +287,7 @@ export class ViajeOrchestrationService {
       .from('facturas')
       .insert({
         user_id: user.user.id,
-        viaje_id: viajeId, // 🔥 Vincular con viaje
+        viaje_id: viajeId, // 🔥 Vincular con viaje (CASCADE on delete)
         tipo_comprobante: 'I', // Ingreso
         serie: serieAUsar,
         folio: folioAUsar.toString().padStart(3, '0'),
@@ -273,7 +297,7 @@ export class ViajeOrchestrationService {
         regimen_fiscal_emisor: config.regimen_fiscal,
         rfc_receptor: wizardData.cliente?.rfc || 'XAXX010101000',
         nombre_receptor: wizardData.cliente?.nombre_razon_social || 'Público General',
-        regimen_fiscal_receptor: wizardData.cliente?.regimen_fiscal || null, // ✅ NUEVO: Régimen fiscal del receptor
+        regimen_fiscal_receptor: wizardData.cliente.regimen_fiscal, // ✅ CRÍTICO: Régimen fiscal validado
         uso_cfdi: facturaData.usoCfdi || 'G03',
         subtotal: facturaData.subtotal || 0,
         total: facturaData.total || 0,
@@ -285,7 +309,10 @@ export class ViajeOrchestrationService {
         metadata: {
           created_from: 'ViajeWizard',
           viaje_id: viajeId,
-          tipo_servicio: wizardData.tipoServicio
+          tipo_servicio: wizardData.tipoServicio,
+          // Auditoría: Registrar que el régimen fiscal fue validado
+          regimen_fiscal_validado: true,
+          fecha_validacion: new Date().toISOString()
         }
       })
       .select()

@@ -88,34 +88,71 @@ export function FacturaPreviewModal({
     }
   };
 
+  /**
+   * ⚡ FASE 3: MEJORADO - Handler de timbrado con logs exhaustivos
+   */
   const handleTimbrar = async () => {
-    console.log('🔥 [Modal] Botón Timbrar presionado');
+    console.group('🎯 [MODAL] Inicio de timbrado desde modal');
+    console.log('📋 [MODAL] Estado actual del modal:', {
+      facturaId: facturaData.id,
+      status: facturaData.status,
+      moneda_actual: facturaData.moneda,
+      moneda_editada: moneda,
+      forma_pago_actual: facturaData.forma_pago,
+      forma_pago_editada: formaPago,
+      metodo_pago_actual: facturaData.metodo_pago,
+      metodo_pago_editado: metodoPago,
+      isTimbrando
+    });
     
     // Limpiar errores previos
     setValidationErrors([]);
     setSatError(null);
 
-    // Validar antes de timbrar
-    console.log('🔍 [Modal] Validando datos de factura...');
-    const errors = validateFacturaForTimbrado(facturaData);
-    if (errors.length > 0) {
-      console.error('❌ [Modal] Errores de validación:', errors);
-      setValidationErrors(errors);
+    // ✅ VALIDACIÓN: Verificar que el botón no está deshabilitado
+    if (isTimbrando) {
+      console.warn('⚠️ [MODAL] Timbrado ya en proceso, ignorando click duplicado');
+      console.groupEnd();
       return;
     }
 
-    console.log('✅ [Modal] Validación exitosa, llamando a onTimbrar...');
+    // ✅ VALIDACIÓN: Datos de factura antes de timbrar
+    console.log('🔍 [MODAL] Validando datos de factura...');
+    console.log('📊 [MODAL] Datos de factura completos:', facturaData);
+    
+    const errors = validateFacturaForTimbrado(facturaData);
+    if (errors.length > 0) {
+      console.error('❌ [MODAL] Errores de validación encontrados:', errors);
+      setValidationErrors(errors);
+      console.groupEnd();
+      return;
+    }
+
+    console.log('✅ [MODAL] Validación local exitosa');
+    console.log('📤 [MODAL] Llamando a onTimbrar del componente padre...');
+    console.log('📦 [MODAL] Datos a enviar:', { moneda, forma_pago: formaPago, metodo_pago: metodoPago });
     
     try {
       await onTimbrar({ moneda, forma_pago: formaPago, metodo_pago: metodoPago });
-      console.log('✅ [Modal] onTimbrar completado exitosamente');
+      console.log('✅ [MODAL] onTimbrar completado exitosamente por el padre');
+      console.groupEnd();
     } catch (error: any) {
-      console.error('❌ [Modal] Error en onTimbrar:', error);
+      console.group('💥 [MODAL] Error capturado desde onTimbrar');
+      console.error('Error:', error);
+      console.error('Tipo:', typeof error);
+      console.error('Mensaje:', error?.message);
+      console.error('Detalles:', error?.details);
+      console.groupEnd();
+      
       // Parsear error del SAT si existe
       if (error?.message || error?.details) {
-        setSatError(parseSatError(error));
+        const parsedError = parseSatError(error);
+        console.log('🔍 [MODAL] Error parseado del SAT:', parsedError);
+        setSatError(parsedError);
       }
-      throw error; // Re-lanzar para que el componente padre también lo maneje
+      
+      // Re-lanzar para que el componente padre también lo maneje
+      throw error;
     }
   };
 
