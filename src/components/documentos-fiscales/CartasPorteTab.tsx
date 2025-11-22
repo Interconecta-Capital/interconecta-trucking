@@ -12,9 +12,11 @@ import { FileText, Download, Eye, Truck, Calendar, FileEdit } from 'lucide-react
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 export function CartasPorteTab() {
   const [filtro, setFiltro] = useState('todos');
+  const navigate = useNavigate();
 
   // ✅ Consulta unificada: borradores + cartas porte timbradas
   const { data: documentos, isLoading } = useQuery({
@@ -222,12 +224,14 @@ export function CartasPorteTab() {
                       </Button>
                     </>
                   )}
-                  {(doc.status === 'borrador' || doc.status === 'auto_guardado') && (
-                    <Button variant="outline" size="sm">
-                      <FileEdit className="h-4 w-4 mr-2" />
-                      Continuar Editando
-                    </Button>
-                  )}
+                  <Button variant="outline" size="sm" onClick={() => {
+                    if (doc.tipo === 'borrador') {
+                      navigate(`/borrador-carta-porte/${doc.id}`);
+                    }
+                  }}>
+                    <FileEdit className="h-4 w-4 mr-2" />
+                    Continuar Editando
+                  </Button>
                   <Button variant="outline" size="sm">
                     <Eye className="h-4 w-4 mr-2" />
                     Ver Detalles

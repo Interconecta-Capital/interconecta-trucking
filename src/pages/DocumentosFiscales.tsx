@@ -1,85 +1,84 @@
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { FileText, Route, Receipt } from 'lucide-react';
-import { ViajesConDocumentosTab } from '@/components/documentos-fiscales/ViajesConDocumentosTab';
-import { FacturasTab } from '@/components/documentos-fiscales/FacturasTab';
-import { CartasPorteTab } from '@/components/documentos-fiscales/CartasPorteTab';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Receipt, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DocumentosFiscales() {
-  const [activeTab, setActiveTab] = useState('viajes');
+  const navigate = useNavigate();
+
+  // Obtener estadísticas rápidas
+  const { data: stats } = useQuery({
+    queryKey: ['documentos-fiscales-stats'],
+    queryFn: async () => {
+      const [facturas, cartasPorte] = await Promise.all([
+        supabase.from('facturas').select('id', { count: 'exact', head: true }),
+        supabase.from('cartas_porte').select('id', { count: 'exact', head: true }),
+      ]);
+      
+      return {
+        facturas: facturas.count || 0,
+        cartasPorte: cartasPorte.count || 0,
+      };
+    },
+    staleTime: 60000,
+  });
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documentos Fiscales</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestiona viajes, facturas y cartas porte desde un solo lugar
-          </p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Documentos Fiscales</h1>
+        <p className="text-muted-foreground mt-1">
+          Gestiona tus documentos fiscales electrónicos
+        </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
-          <TabsTrigger value="viajes" className="gap-2">
-            <Route className="h-4 w-4" />
-            <span>Por Viajes</span>
-          </TabsTrigger>
-          <TabsTrigger value="facturas" className="gap-2">
-            <Receipt className="h-4 w-4" />
-            <span>Facturas</span>
-          </TabsTrigger>
-          <TabsTrigger value="carta-porte" className="gap-2">
-            <FileText className="h-4 w-4" />
-            <span>Carta Porte</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="viajes" className="space-y-4 mt-6">
-          <ViajesConDocumentosTab />
-        </TabsContent>
-
-        <TabsContent value="facturas" className="space-y-4 mt-6">
-          <FacturasTab />
-        </TabsContent>
-
-        <TabsContent value="carta-porte" className="space-y-4 mt-6">
-          <CartasPorteTab />
-        </TabsContent>
-      </Tabs>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Facturas Timbradas</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Facturas */}
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02]"
+          onClick={() => navigate('/documentos-fiscales/facturas')}
+        >
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                  <Receipt className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <CardTitle className="text-xl">Facturas</CardTitle>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            <p className="text-3xl font-bold">{stats?.facturas || 0}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Facturas registradas en el sistema
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cartas Porte</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+        {/* Cartas Porte */}
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02]"
+          onClick={() => navigate('/documentos-fiscales/carta-porte')}
+        >
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20">
+                  <FileText className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <CardTitle className="text-xl">Cartas Porte</CardTitle>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Viajes Completados</CardTitle>
-            <Route className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            <p className="text-3xl font-bold">{stats?.cartasPorte || 0}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Cartas porte CFDI 4.0 - CP 3.1
+            </p>
           </CardContent>
         </Card>
       </div>
