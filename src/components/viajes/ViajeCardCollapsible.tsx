@@ -37,12 +37,31 @@ const estadoLabels = {
 export function ViajeCardCollapsible({ viaje, onVerViaje, onEditarViaje, onEliminarViaje }: ViajeCardCollapsibleProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Debug logging - ISO 27001 A.12.4.1
+  console.log('🔍 [ViajeCard] Viaje completo:', {
+    id: viaje.id?.substring(0, 8),
+    hasTrackingData: !!viaje.tracking_data,
+    trackingDataKeys: viaje.tracking_data ? Object.keys(viaje.tracking_data) : [],
+    origen: viaje.origen,
+    destino: viaje.destino
+  });
+  
   const trackingData = viaje.tracking_data || {};
   const conductor = trackingData.conductor;
   const vehiculo = trackingData.vehiculo;
   const cliente = trackingData.cliente;
   const mercancias = trackingData.mercancias || [];
   const ubicaciones = trackingData.ubicaciones || {};
+  
+  console.log('🔍 [ViajeCard] Datos extraídos:', {
+    hasConductor: !!conductor,
+    conductorNombre: conductor?.nombre,
+    hasVehiculo: !!vehiculo,
+    vehiculoPlaca: vehiculo?.placa,
+    hasUbicaciones: !!ubicaciones,
+    ubicacionesKeys: Object.keys(ubicaciones),
+    origenCP: ubicaciones?.origen?.domicilio?.codigo_postal
+  });
   
   // Extraer CP y Estado del origen/destino con múltiples fallbacks - ISO 27001 A.12.1.1
   const origenCP = ubicaciones?.origen?.domicilio?.codigo_postal 
