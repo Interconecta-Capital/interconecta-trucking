@@ -234,10 +234,26 @@ function construirCFDIJson(cartaPorteData: any) {
   let subtotal = 0;
   let totalImpuestos = 0;
   
-  if (esTipoIngreso) {
-    subtotal = cartaPorteData.mercancias?.reduce((sum: number, m: any) => 
+  // Calcular basado en conceptos directos (factura) o mercancías (carta porte)
+  if (cartaPorteData.conceptos && cartaPorteData.conceptos.length > 0) {
+    // Factura con conceptos directos
+    subtotal = cartaPorteData.conceptos.reduce((sum: number, c: any) => sum + (c.importe || 0), 0);
+  } else if (esTipoIngreso && cartaPorteData.mercancias) {
+    // Carta porte con mercancías
+    subtotal = cartaPorteData.mercancias.reduce((sum: number, m: any) => 
       sum + (m.valor_mercancia || 0), 0
-    ) || 0;
+    );
+  }
+  
+  if (esTipoIngreso && subtotal > 0) {
+    totalImpuestos = subtotal * 0.16; // IVA 16%
+  }
+  
+  // ✅ Verificar si tiene ubicaciones para complemento CartaPorte
+  const tieneUbicaciones = !!(
+    (cartaPorteData.ubicaciones && cartaPorteData.ubicaciones.length >= 2) ||
+    (cartaPorteData.tracking_data?.ubicaciones && cartaPorteData.tracking_data.ubicaciones.length >= 2)
+  );
     totalImpuestos = subtotal * 0.16; // IVA 16%
   }
 
@@ -289,13 +305,32 @@ function construirCFDIJson(cartaPorteData: any) {
     };
   }
 
-  // Agregar complemento Carta Porte
-  cfdi.Complemento = construirComplementoCartaPorte(cartaPorteData);
+  // ✅ Agregar complemento Carta Porte SOLO si tiene ubicaciones
+  if (tieneUbicaciones) {
+    console.log('✅ [CFDI] Agregando complemento CartaPorte (tiene ubicaciones)');
+    cfdi.Complemento = construirComplementoCartaPorte(cartaPorteData);
+  } else {
+    console.log('ℹ️ [CFDI] Factura sin complemento CartaPorte (sin ubicaciones)');
+  }
 
   return cfdi;
 }
 
 function construirConceptos(data: any) {
+  // Si vienen conceptos directos (de factura), usarlos
+  if (data.conceptos && data.conceptos.length > 0) {
+    return data.conceptos.map((c: any) => ({
+      ClaveProdServ: c.clave_prod_serv || "78101800",
+      Cantidad: (c.cantidad || 1).toString(),
+      ClaveUnidad: c.clave_unidad || "E48",
+      Descripcion: c.descripcion || "Servicio",
+      ValorUnitario: (c.valor_unitario || 0).toFixed(4),
+      Importe: (c.importe || 0).toFixed(2),
+      ObjetoImp: "01"
+    }));
+  }
+
+  // Si no hay mercancías, concepto genérico
   if (!data.mercancias || data.mercancias.length === 0) {
     return [{
       ClaveProdServ: "78101800",
@@ -308,6 +343,7 @@ function construirConceptos(data: any) {
     }];
   }
 
+  // Usar mercancías de carta porte
   return data.mercancias.map((m: any) => ({
     ClaveProdServ: m.bienes_transp || "78101800",
     Cantidad: (m.cantidad || 1).toString(),
