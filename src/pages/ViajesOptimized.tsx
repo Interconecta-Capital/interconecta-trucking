@@ -46,8 +46,6 @@ function ViajesContent() {
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [estadoFiltro, setEstadoFiltro] = useState<string>('todos');
   
   // ✅ NUEVO: Abrir modal del último viaje creado automáticamente
   useEffect(() => {
@@ -97,32 +95,12 @@ function ViajesContent() {
   };
   
   // ✅ NUEVO: Filtrar viajes por búsqueda y estado
-  const viajesFiltrados = viajes.filter(viaje => {
-    // Filtro por búsqueda
-    const matchSearch = searchQuery === '' || 
-      viaje.origen.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      viaje.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      viaje.tracking_data?.cliente?.nombre_razon_social?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Filtro por estado
-    let matchEstado = false;
-    if (estadoFiltro === 'todos') {
-      matchEstado = true;
-    } else if (estadoFiltro === 'activos') {
-      matchEstado = ['en_transito', 'retrasado'].includes(viaje.estado);
-    } else {
-      matchEstado = viaje.estado === estadoFiltro;
-    }
-    
-    return matchSearch && matchEstado;
-  });
-
   // Filtrar por estado para las pestañas
-  const viajesActivos = viajesFiltrados.filter(v => ['en_transito', 'retrasado'].includes(v.estado));
-  const viajesProgramados = viajesFiltrados.filter(v => v.estado === 'programado');
-  const viajesCancelados = viajesFiltrados.filter(v => v.estado === 'cancelado');
-  const viajesCompletados = viajesFiltrados.filter(v => v.estado === 'completado');
-  const viajesHistorial = viajesFiltrados.filter(v => ['completado', 'cancelado'].includes(v.estado));
+  const viajesActivos = viajes.filter(v => ['en_transito', 'retrasado'].includes(v.estado));
+  const viajesProgramados = viajes.filter(v => v.estado === 'programado');
+  const viajesCancelados = viajes.filter(v => v.estado === 'cancelado');
+  const viajesCompletados = viajes.filter(v => v.estado === 'completado');
+  const viajesHistorial = viajes.filter(v => ['completado', 'cancelado'].includes(v.estado));
 
   const renderViajesList = (viajesList: Viaje[], emptyMessage: string) => {
     if (viajesList.length === 0) {
@@ -140,60 +118,115 @@ function ViajesContent() {
 
     return (
       <div className="space-y-4">
-        {viajesList.map((viaje) => (
-          <Card key={viaje.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between viaje-card">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <span className="font-medium text-lg address-text">
-                      {viaje.origen} → {viaje.destino}
-                    </span>
-                    <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
-                      {estadoLabels[viaje.estado]}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        Inicio: {new Date(viaje.fecha_inicio_programada).toLocaleDateString('es-MX', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
+        {viajesList.map((viaje) => {
+          const conductor = viaje.tracking_data?.conductor;
+          const vehiculo = viaje.tracking_data?.vehiculo;
+          const cliente = viaje.tracking_data?.cliente;
+          const mercancias = viaje.tracking_data?.mercancias || [];
+          const totalMercancias = mercancias.length;
+          
+          return (
+            <Card key={viaje.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between viaje-card">
+                  <div className="flex-1 min-w-0">
+                    {/* Encabezado con ruta y estado */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium text-lg address-text">
+                        {viaje.origen} → {viaje.destino}
                       </span>
+                      <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
+                        {estadoLabels[viaje.estado]}
+                      </Badge>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        Fin: {new Date(viaje.fecha_fin_programada).toLocaleDateString('es-MX', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </span>
+                    {/* Grid con información detallada */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      {/* Conductor */}
+                      <div className="flex items-start gap-2">
+                        <User className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900">Conductor</p>
+                          <p className="text-gray-600 truncate">
+                            {conductor?.nombre || 'No asignado'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Vehículo */}
+                      <div className="flex items-start gap-2">
+                        <svg className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900">Vehículo</p>
+                          <p className="text-gray-600 truncate">
+                            {vehiculo ? `${vehiculo.placa} - ${vehiculo.marca || ''} ${vehiculo.modelo || ''}`.trim() : 'No asignado'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Cliente */}
+                      <div className="flex items-start gap-2">
+                        <svg className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900">Cliente</p>
+                          <p className="text-gray-600 truncate">
+                            {cliente?.nombre_razon_social || 'No especificado'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Carga/Mercancías */}
+                      <div className="flex items-start gap-2">
+                        <svg className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900">Carga</p>
+                          <p className="text-gray-600 truncate">
+                            {totalMercancias > 0 
+                              ? `${totalMercancias} mercancía${totalMercancias > 1 ? 's' : ''}`
+                              : 'Sin mercancías'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
-                    {viaje.tracking_data?.cliente && (
+                    {/* Fechas en una fila separada */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-100">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span className="truncate">
-                          {viaje.tracking_data.cliente.nombre_razon_social}
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          Inicio: {new Date(viaje.fecha_inicio_programada).toLocaleDateString('es-MX', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
                         </span>
                       </div>
+
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          Fin: {new Date(viaje.fecha_fin_programada).toLocaleDateString('es-MX', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {viaje.observaciones && (
+                      <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                        {viaje.observaciones}
+                      </p>
                     )}
                   </div>
-
-                  {viaje.observaciones && (
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                      {viaje.observaciones}
-                    </p>
-                  )}
-                </div>
 
                 <div className="flex items-center gap-2 ml-4 viaje-card-actions">
                   <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
@@ -210,11 +243,24 @@ function ViajesContent() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-4 viaje-card-actions">
+                    <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/viajes/editar/${viaje.id}`)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEliminarViaje(viaje)}>
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     );
   };
@@ -279,56 +325,24 @@ function ViajesContent() {
       {/* Sección de Borradores */}
       <BorradoresSection />
 
-      {/* Lista de Viajes con Pestañas y Búsqueda Integrada */}
+      {/* Lista de Viajes con Pestañas */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <Route className="h-5 w-5 text-blue-600" />
-              <h2 className="text-xl font-semibold">Viajes</h2>
-              <Badge variant="secondary">{viajesFiltrados.length}</Badge>
-              {searchQuery && (
-                <Badge variant="outline">
-                  {viajesFiltrados.length} resultado{viajesFiltrados.length !== 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
-            
-            {/* Barra de búsqueda y filtros integrados */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <Input
-                  placeholder="Buscar por origen, destino o cliente..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="Filtrar por estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value="programado">Programados</SelectItem>
-                  <SelectItem value="en_transito">En Tránsito</SelectItem>
-                  <SelectItem value="completado">Completados</SelectItem>
-                  <SelectItem value="retrasado">Retrasados</SelectItem>
-                  <SelectItem value="cancelado">Cancelados</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Route className="h-5 w-5 text-blue-600" />
+            <h2 className="text-xl font-semibold">Viajes</h2>
+            <Badge variant="secondary">{viajes.length}</Badge>
           </div>
 
           <Tabs defaultValue="todos" className="w-full">
             <div className="scrollable-tabs-container-wrapper">
               <TabsList className="grid w-full grid-cols-5 scrollable-tabs-container">
-                <TabsTrigger value="todos">
-                  Todos
-                  <Badge variant="secondary" className="ml-2">
-                    {viajesFiltrados.length}
-                  </Badge>
-                </TabsTrigger>
+              <TabsTrigger value="todos">
+                Todos
+                <Badge variant="secondary" className="ml-2">
+                  {viajes.length}
+                </Badge>
+              </TabsTrigger>
                 <TabsTrigger value="activos">
                   Activos
                   <Badge variant="secondary" className="ml-2">
@@ -357,7 +371,7 @@ function ViajesContent() {
             </div>
             
             <TabsContent value="todos" className="mt-6">
-              {renderViajesList(viajesFiltrados, "No hay viajes que coincidan con los filtros")}
+              {renderViajesList(viajes, "No hay viajes")}
             </TabsContent>
 
             <TabsContent value="activos" className="mt-6">
