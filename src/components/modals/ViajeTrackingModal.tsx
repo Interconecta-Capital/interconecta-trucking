@@ -170,6 +170,15 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   
   // Extraer datos del viaje completo
   const viajeData = viajeCompleto.viaje;
+  
+  // ✅ Validación de datos seguros con fallback a tracking_data
+  const viajeDataSafe = {
+    ...viajeData,
+    tipo_servicio: viajeData?.tipo_servicio || 
+                   viajeData?.tracking_data?.tipo_servicio ||
+                   'flete_pagado'  // Default seguro
+  };
+  
   const conductorData = viajeCompleto.conductor;
   const vehiculoData = viajeCompleto.vehiculo;
   const remolqueData = viajeCompleto.remolque;
@@ -804,7 +813,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
           open={showFacturaPreview}
           onOpenChange={setShowFacturaPreview}
           facturaData={facturaData}
-          viajeData={viajeCompleto?.viaje}
+          viajeData={viajeDataSafe}
           onTimbrar={handleTimbrarFactura}
           isTimbrando={isTimbrando}
         />
