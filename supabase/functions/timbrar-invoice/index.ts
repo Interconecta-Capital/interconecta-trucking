@@ -12,29 +12,59 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     // ✅ SW/CONECKTIA: Obtener credenciales desde Vault (ISO 27001 A.10.1)
-    const swToken = Deno.env.get('SW_TOKEN');
+    const swUser = Deno.env.get('SW_USER');
+    const swPassword = Deno.env.get('SW_PASSWORD');
     const ambiente = Deno.env.get('AMBIENTE') || 'sandbox';
     
-    if (!swToken) {
-      console.error('[Timbrar] SW_TOKEN no configurado en Vault');
+    if (!swUser || !swPassword) {
+      console.error('[Timbrar] SW_USER o SW_PASSWORD no configurados en Vault');
       throw new Error('No se pudo obtener credenciales del PAC desde Vault');
     }
 
     console.log(`[Timbrar] Usando PAC SmartWeb/Conecktia en modo: ${ambiente}`);
 
-    const invoiceData = await req.json();
-
     // URL según ambiente (desde secretos del Vault)
     const swUrl = ambiente === 'production' 
       ? Deno.env.get('SW_PRODUCTION_URL') || 'https://api.smartweb.com.mx'
-      : Deno.env.get('SW_SANDBOX_URL') || 'https://sandbox.smartweb.com.mx';
+      : Deno.env.get('SW_SANDBOX_URL') || 'https://services.test.sw.com.mx';
 
+    // Paso 1: Autenticar y obtener token
+    console.log(`[Timbrar] Autenticando con SW API...`);
+    const authResponse = await fetch(`${swUrl}/security/authenticate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user: swUser,
+        password: swPassword
+      }),
+    });
+
+    if (!authResponse.ok) {
+      const authError = await authResponse.text();
+      console.error('[Timbrar] Error de autenticación:', authError);
+      throw new Error(`Error de autenticación con PAC: ${authError}`);
+    }
+
+    const authData = await authResponse.json();
+    const token = authData.data?.token;
+
+    if (!token) {
+      console.error('[Timbrar] Token no recibido en respuesta:', authData);
+      throw new Error('No se recibió token de autenticación del PAC');
+    }
+
+    console.log('[Timbrar] Token obtenido exitosamente');
+
+    // Paso 2: Timbrar factura
+    const invoiceData = await req.json();
     console.log(`[Timbrar] Endpoint: ${swUrl}/v3/cfdi33/issue/json/v4`);
 
     const response = await fetch(`${swUrl}/v3/cfdi33/issue/json/v4`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${swToken}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/jsontoxml',
       },
       body: JSON.stringify(invoiceData),
