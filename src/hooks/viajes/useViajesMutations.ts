@@ -136,6 +136,8 @@ export const useViajesMutations = () => {
       // FASE 6: Validar ANTES de intentar eliminar - ISO 27001 A.18.1.4
       await validarEliminacionViaje(id);
       
+      console.log('🗑️ [ELIMINACIÓN] Iniciando eliminación en cascada para viaje:', id);
+      
       // FASE 3.3: Obtener el viaje para acceder a tracking_data y factura_id
       const { data: viaje, error: viajeError } = await supabase
         .from('viajes')
@@ -148,60 +150,144 @@ export const useViajesMutations = () => {
         throw viajeError;
       }
       
-      // FASE 3.3: Eliminar borrador de carta porte si existe en tracking_data
+      let eliminados = {
+        borradores_cp: 0,
+        cartas_porte: 0,
+        facturas: 0,
+        documentos: 0
+      };
+      
+      // 1. Eliminar borrador de carta porte si existe en tracking_data
       const trackingData = viaje.tracking_data as any;
       const borradorCartaPorteId = trackingData?.borrador_carta_porte_id;
       if (borradorCartaPorteId) {
-        console.log('[FASE 3.3] Eliminando borrador de carta porte:', borradorCartaPorteId);
+        console.log('[ELIMINACIÓN] Eliminando borrador de carta porte:', borradorCartaPorteId);
         const { error: borradorError } = await supabase
           .from('borradores_carta_porte')
           .delete()
           .eq('id', borradorCartaPorteId);
         
         if (borradorError) {
-          console.error('[FASE 3.3] Error eliminando borrador:', borradorError);
-          // No bloqueamos la eliminación si falla el borrador
+          console.error('[ELIMINACIÓN] Error eliminando borrador:', borradorError);
         } else {
-          console.log('[FASE 3.3] ✅ Borrador de carta porte eliminado');
+          eliminados.borradores_cp++;
+          console.log('[ELIMINACIÓN] ✅ Borrador de carta porte eliminado');
         }
       }
       
-      // FASE 3.3: Eliminar factura borrador si existe y no está timbrada
-      if (viaje.factura_id) {
-        const { data: factura } = await supabase
-          .from('facturas')
-          .select('status')
-          .eq('id', viaje.factura_id)
-          .single();
-        
-        if (factura && factura.status === 'draft') {
-          console.log('[FASE 3.3] Eliminando factura borrador:', viaje.factura_id);
-          const { error: facturaError } = await supabase
-            .from('facturas')
-            .delete()
-            .eq('id', viaje.factura_id);
-          
-          if (facturaError) {
-            console.error('[FASE 3.3] Error eliminando factura:', facturaError);
-            // No bloqueamos la eliminación si falla
+      // 2. Eliminar TODAS las cartas porte NO TIMBRADAS asociadas a este viaje
+      const { data: cartasPorte, error: cartasError } = await supabase
+        .from('cartas_porte')
+        .select('id, status, id_ccp, fecha_timbrado')
+        .eq('viaje_id', id);
+      
+      if (!cartasError && cartasPorte && cartasPorte.length > 0) {
+        for (const cp of cartasPorte) {
+          // Solo eliminar si NO está timbrada (sin fecha_timbrado o status diferente a 'timbrada')
+          if (!cp.fecha_timbrado && cp.status !== 'timbrada' && cp.status !== 'timbrado') {
+            console.log('[ELIMINACIÓN] Eliminando carta porte no timbrada:', cp.id, cp.id_ccp);
+            const { error: cpError } = await supabase
+              .from('cartas_porte')
+              .delete()
+              .eq('id', cp.id);
+            
+            if (cpError) {
+              console.error('[ELIMINACIÓN] Error eliminando carta porte:', cpError);
+            } else {
+              eliminados.cartas_porte++;
+              console.log('[ELIMINACIÓN] ✅ Carta porte eliminada:', cp.id_ccp);
+            }
           } else {
-            console.log('[FASE 3.3] ✅ Factura borrador eliminada');
+            console.log('[ELIMINACIÓN] ⏭️ Carta porte timbrada, no se puede eliminar:', cp.id_ccp);
           }
         }
       }
       
-      // Si pasa la validación, proceder con eliminación del viaje
+      // 3. Eliminar TODAS las facturas NO TIMBRADAS asociadas a este viaje
+      const { data: facturas, error: facturasError } = await supabase
+        .from('facturas')
+        .select('id, status, folio, serie, fecha_timbrado')
+        .eq('viaje_id', id);
+      
+      if (!facturasError && facturas && facturas.length > 0) {
+        for (const factura of facturas) {
+          // Solo eliminar si NO está timbrada
+          if (!factura.fecha_timbrado && factura.status !== 'timbrada' && factura.status !== 'timbrado') {
+            console.log('[ELIMINACIÓN] Eliminando factura no timbrada:', factura.id, `${factura.serie}-${factura.folio}`);
+            const { error: facturaError } = await supabase
+              .from('facturas')
+              .delete()
+              .eq('id', factura.id);
+            
+            if (facturaError) {
+              console.error('[ELIMINACIÓN] Error eliminando factura:', facturaError);
+            } else {
+              eliminados.facturas++;
+              console.log('[ELIMINACIÓN] ✅ Factura eliminada:', `${factura.serie}-${factura.folio}`);
+            }
+          } else {
+            console.log('[ELIMINACIÓN] ⏭️ Factura timbrada, no se puede eliminar:', `${factura.serie}-${factura.folio}`);
+          }
+        }
+      }
+      
+      // 4. Eliminar documentos relacionados (hojas de ruta, checklists, etc.)
+      const { data: documentos, error: docsError } = await supabase
+        .from('documentos_entidades')
+        .select('id, tipo_documento, nombre_archivo')
+        .eq('entidad_tipo', 'viaje')
+        .eq('entidad_id', id);
+      
+      if (!docsError && documentos && documentos.length > 0) {
+        for (const doc of documentos) {
+          console.log('[ELIMINACIÓN] Eliminando documento:', doc.tipo_documento, doc.nombre_archivo);
+          const { error: docError } = await supabase
+            .from('documentos_entidades')
+            .delete()
+            .eq('id', doc.id);
+          
+          if (docError) {
+            console.error('[ELIMINACIÓN] Error eliminando documento:', docError);
+          } else {
+            eliminados.documentos++;
+            console.log('[ELIMINACIÓN] ✅ Documento eliminado:', doc.nombre_archivo);
+          }
+        }
+      }
+      
+      // 5. Si pasa la validación, proceder con eliminación del viaje
       const { error } = await supabase
         .from('viajes')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      console.log('[FASE 3.3] ✅ Viaje eliminado correctamente');
+      
+      console.log('[ELIMINACIÓN] ✅ Viaje eliminado correctamente');
+      console.log('[ELIMINACIÓN] 📊 Resumen:', eliminados);
+      
+      return eliminados;
     },
-    onSuccess: () => {
+    onSuccess: (eliminados) => {
       queryClient.invalidateQueries({ queryKey: ['viajes'] });
-      toast.success('Viaje eliminado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['cartas-porte'] });
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      
+      // Mensaje detallado de lo que se eliminó
+      const detalles: string[] = [];
+      if (eliminados.borradores_cp > 0) detalles.push(`${eliminados.borradores_cp} borrador(es) de carta porte`);
+      if (eliminados.cartas_porte > 0) detalles.push(`${eliminados.cartas_porte} carta(s) porte`);
+      if (eliminados.facturas > 0) detalles.push(`${eliminados.facturas} factura(s)`);
+      if (eliminados.documentos > 0) detalles.push(`${eliminados.documentos} documento(s)`);
+      
+      const mensaje = detalles.length > 0 
+        ? `Viaje eliminado junto con: ${detalles.join(', ')}`
+        : 'Viaje eliminado correctamente';
+      
+      toast.success(mensaje, {
+        description: 'Solo se eliminaron documentos no timbrados',
+        duration: 5000
+      });
     },
     onError: (error: any) => {
       console.error('Error eliminando viaje:', error);
