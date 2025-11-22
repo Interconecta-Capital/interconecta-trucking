@@ -61,6 +61,7 @@ export interface CreateBorradorRequest {
   nombre_borrador?: string;
   datos_formulario?: any;
   version_formulario?: string;
+  viaje_id?: string; // ✅ FASE 1: Permitir vincular con viaje al crear
 }
 
 export interface UpdateBorradorRequest {
