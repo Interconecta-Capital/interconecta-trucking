@@ -81,7 +81,27 @@ export default function ViajeDetalle() {
       const parsed = typeof result === 'string' ? JSON.parse(result) : result;
       
       setViaje(parsed.viaje);
-      setFactura(parsed.factura || null);
+      
+      // ✅ MEJORADO: Asegurar que la factura tenga todos los campos fiscales
+      if (parsed.factura) {
+        setFactura({
+          ...parsed.factura,
+          // Asegurar que los campos fiscales estén disponibles
+          rfc_emisor: parsed.factura.rfc_emisor,
+          nombre_emisor: parsed.factura.nombre_emisor,
+          regimen_fiscal_emisor: parsed.factura.regimen_fiscal_emisor,
+          rfc_receptor: parsed.factura.rfc_receptor,
+          nombre_receptor: parsed.factura.nombre_receptor,
+          regimen_fiscal_receptor: parsed.factura.regimen_fiscal_receptor, // ✅ Ahora guardado en BD
+          uso_cfdi: parsed.factura.uso_cfdi,
+          subtotal: parsed.factura.subtotal,
+          total_impuestos_trasladados: parsed.factura.total_impuestos_trasladados,
+          moneda: parsed.factura.moneda,
+          forma_pago: parsed.factura.forma_pago,
+          metodo_pago: parsed.factura.metodo_pago
+        } as any);
+      }
+      
       setCartaPorte(parsed.carta_porte || null);
       setConductor(parsed.conductor || null);
       setVehiculo(parsed.vehiculo || null);
@@ -444,23 +464,23 @@ export default function ViajeDetalle() {
             id: factura.id,
             serie: factura.serie,
             folio: factura.folio,
-            rfc_emisor: viaje?.tracking_data?.cliente?.rfc || '',
-            nombre_emisor: '',
-            regimen_fiscal_emisor: null,
-            rfc_receptor: viaje?.tracking_data?.cliente?.rfc || '',
-            nombre_receptor: viaje?.tracking_data?.cliente?.nombre_razon_social || '',
-            regimen_fiscal_receptor: viaje?.tracking_data?.cliente?.regimen_fiscal || null,
-            uso_cfdi: viaje?.tracking_data?.cliente?.uso_cfdi || null,
-            subtotal: factura.total / 1.16,
+            rfc_emisor: (factura as any).rfc_emisor || '',
+            nombre_emisor: (factura as any).nombre_emisor || '',
+            regimen_fiscal_emisor: (factura as any).regimen_fiscal_emisor || null,
+            rfc_receptor: (factura as any).rfc_receptor || '',
+            nombre_receptor: (factura as any).nombre_receptor || '',
+            regimen_fiscal_receptor: (factura as any).regimen_fiscal_receptor || null, // ✅ Ahora viene de la BD
+            uso_cfdi: (factura as any).uso_cfdi || null,
+            subtotal: (factura as any).subtotal || factura.total / 1.16,
             total: factura.total,
-            total_impuestos_trasladados: factura.total - (factura.total / 1.16),
+            total_impuestos_trasladados: (factura as any).total_impuestos_trasladados || factura.total - (factura.total / 1.16),
             status: factura.status as 'draft' | 'timbrado',
             tiene_carta_porte: true,
             tipo_comprobante: 'I',
             fecha_expedicion: new Date().toISOString(),
-            moneda: 'MXN',
-            forma_pago: '01',
-            metodo_pago: 'PUE',
+            moneda: (factura as any).moneda || 'MXN',
+            forma_pago: (factura as any).forma_pago || '01',
+            metodo_pago: (factura as any).metodo_pago || 'PUE',
             uuid_fiscal: factura.uuid_fiscal
           }}
           viajeData={{
