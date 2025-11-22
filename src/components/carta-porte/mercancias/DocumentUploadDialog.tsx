@@ -35,6 +35,8 @@ interface MercanciaProcessed {
   embalaje?: string;
   fraccion_arancelaria?: string;
   uuid_comercio_ext?: string;
+  dimensiones_embalaje?: string;
+  numero_piezas?: number;
 }
 
 interface DocumentUploadDialogProps {
@@ -102,28 +104,31 @@ export function DocumentUploadDialog({
       );
 
       if (result.success && result.data) {
-        // Mapear los datos procesados al formato esperado
+        // ✅ Mapear los datos procesados al formato esperado con validación
         const mercanciasProcessed: MercanciaProcessed[] = result.data.map((item: any, index: number) => ({
           id: `imported-${Date.now()}-${index}`,
           descripcion: item.descripcion || item.description || '',
-          bienes_transp: item.bienes_transp || item.clave_sat || item.producto_servicio || '',
-          clave_unidad: item.clave_unidad || item.unidad || 'KGM',
+          bienes_transp: item.claveProdServ || item.bienes_transp || item.clave_sat || item.producto_servicio || '',
+          clave_unidad: item.claveUnidad || item.clave_unidad || item.unidad || 'KGM',
           cantidad: parseFloat(item.cantidad || item.quantity || '1') || 1,
           peso_kg: parseFloat(item.peso_kg || item.peso || item.weight || '1') || 1,
           valor_mercancia: parseFloat(item.valor_mercancia || item.valor || item.value || '0') || 0,
-          material_peligroso: Boolean(item.material_peligroso || item.peligroso || false),
+          material_peligroso: Boolean(item.material_peligroso),
           moneda: item.moneda || item.currency || 'MXN',
-          cve_material_peligroso: item.cve_material_peligroso || item.material_peligroso_clave || undefined,
+          cve_material_peligroso: item.material_peligroso || undefined,
           embalaje: item.embalaje || item.packaging || undefined,
           fraccion_arancelaria: item.fraccion_arancelaria || item.fraccion || undefined,
-          uuid_comercio_ext: item.uuid_comercio_ext || undefined
+          uuid_comercio_ext: item.uuid_comercio_ext || undefined,
+          dimensiones_embalaje: item.dimensiones_embalaje || undefined,
+          numero_piezas: item.numero_piezas ? parseInt(item.numero_piezas) : undefined
         }));
 
         setResult({
           success: true,
           mercancias: mercanciasProcessed,
           extractedCount: mercanciasProcessed.length,
-          confidence: result.confidence || 85
+          confidence: result.confidence || 85,
+          suggestions: result.mappingSuggestions || []
         });
       } else {
         setError(result.errors?.join(', ') || 'Error procesando el documento');
@@ -258,28 +263,69 @@ export function DocumentUploadDialog({
               </Alert>
 
               {result.mercancias?.length > 0 && (
-                <div className="max-h-64 overflow-y-auto border rounded-lg">
+                <div className="max-h-80 overflow-y-auto border rounded-lg">
                   <div className="p-4 space-y-3">
-                    <p className="font-medium text-sm">Vista previa de mercancías:</p>
-                    {result.mercancias.slice(0, 3).map((mercancia: MercanciaProcessed, index: number) => (
-                      <div key={index} className="p-3 bg-gray-50 rounded border-l-4 border-l-blue-500">
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium">{mercancia.descripcion}</p>
-                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                            <span>Cantidad: {mercancia.cantidad}</span>
-                            <span>Peso: {mercancia.peso_kg} kg</span>
-                            <span>SAT: {mercancia.bienes_transp}</span>
-                            <span>Unidad: {mercancia.clave_unidad}</span>
+                    <p className="font-medium text-sm">Vista previa de mercancías extraídas:</p>
+                    {result.mercancias.slice(0, 5).map((mercancia: MercanciaProcessed, index: number) => (
+                      <div key={index} className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-l-4 border-l-blue-500">
+                        <div className="space-y-2">
+                          <p className="font-medium text-sm">{mercancia.descripcion}</p>
+                          <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-700">Cantidad</span>
+                              <span>{mercancia.cantidad} {mercancia.clave_unidad}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-700">Peso</span>
+                              <span>{mercancia.peso_kg} kg</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-700">Valor</span>
+                              <span>${mercancia.valor_mercancia.toLocaleString()} {mercancia.moneda}</span>
+                            </div>
                           </div>
+                          {mercancia.bienes_transp && (
+                            <div className="flex items-center gap-2 text-xs bg-white/50 rounded px-2 py-1">
+                              <span className="font-medium">Clave SAT:</span>
+                              <span className="font-mono">{mercancia.bienes_transp}</span>
+                            </div>
+                          )}
+                          {mercancia.cve_material_peligroso && (
+                            <div className="flex items-center gap-2 text-xs bg-red-100 rounded px-2 py-1">
+                              <AlertCircle className="h-3 w-3 text-red-600" />
+                              <span className="font-medium text-red-700">Material Peligroso:</span>
+                              <span className="font-mono text-red-700">{mercancia.cve_material_peligroso}</span>
+                            </div>
+                          )}
+                          {mercancia.embalaje && (
+                            <div className="text-xs text-gray-600">
+                              <span className="font-medium">Embalaje:</span> {mercancia.embalaje}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
-                    {result.mercancias.length > 3 && (
-                      <p className="text-sm text-muted-foreground text-center">
-                        ... y {result.mercancias.length - 3} mercancías más
+                    {result.mercancias.length > 5 && (
+                      <p className="text-sm text-muted-foreground text-center bg-gray-50 rounded p-2">
+                        ... y {result.mercancias.length - 5} mercancías más
                       </p>
                     )}
                   </div>
+                </div>
+              )}
+              
+              {/* Mostrar sugerencias de IA */}
+              {result.suggestions && result.suggestions.length > 0 && (
+                <div className="border-t pt-3">
+                  <p className="text-sm font-medium mb-2">💡 Recomendaciones de IA:</p>
+                  <ul className="space-y-1">
+                    {result.suggestions.map((suggestion: string, index: number) => (
+                      <li key={index} className="text-xs text-muted-foreground flex items-start gap-2">
+                        <span className="text-blue-600">•</span>
+                        <span>{suggestion}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

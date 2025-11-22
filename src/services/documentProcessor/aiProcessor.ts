@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentProcessingResult } from './types';
+import { validateDocumentProcessingResult } from '@/types/mercancia-ccp';
 
 interface GeminiResponse {
   result: {
@@ -29,22 +29,37 @@ export class AIProcessor {
         }
       };
 
+      console.log('[AIProcessor] Invocando Lovable AI para análisis de documento...');
+
       const { data, error } = await supabase.functions.invoke('gemini-assistant', {
         body: requestBody
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AIProcessor] Error en Edge Function:', error);
+        throw error;
+      }
 
       const response = data as GeminiResponse;
 
+      // ✅ ISO 27001: Validación con Zod antes de usar datos
+      const validatedResult = validateDocumentProcessingResult({
+        mercancias: response.result.mercancias || [],
+        confidence: response.result.confidence || 0.5,
+        suggestions: response.result.suggestions || []
+      });
+
+      console.log(`[AIProcessor] ✅ Extraídas ${validatedResult.mercancias.length} mercancías con confianza ${(validatedResult.confidence * 100).toFixed(0)}%`);
+
       return {
         success: true,
-        data: response.result.mercancias || [],
-        confidence: response.result.confidence || 0.5,
+        data: validatedResult.mercancias,
+        confidence: validatedResult.confidence,
         extractedText: text,
-        mappingSuggestions: response.result.suggestions || []
+        mappingSuggestions: validatedResult.suggestions
       };
     } catch (error) {
+      console.error('[AIProcessor] Error en procesamiento:', error);
       return {
         success: false,
         confidence: 0,
