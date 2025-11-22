@@ -356,11 +356,15 @@ function construirUbicaciones(data: any) {
   
   let ubicacionesArray: any[] = [];
   
-  // Intentar obtener ubicaciones de tracking_data primero
-  const ubicacionesSource = data.ubicaciones || data.tracking_data?.ubicaciones;
+  // ✅ CORRECCIÓN: Intentar múltiples fuentes de ubicaciones
+  const ubicacionesSource = data.ubicaciones 
+    || data.tracking_data?.ubicaciones 
+    || data.cartaPorteData?.ubicaciones
+    || data.facturaData?.tracking_data?.ubicaciones;
   
   if (!ubicacionesSource) {
-    console.error('❌ No se encontraron ubicaciones en data.ubicaciones ni en data.tracking_data.ubicaciones');
+    console.error('❌ No se encontraron ubicaciones en ninguna fuente');
+    console.error('📦 Data completa:', JSON.stringify(data).substring(0, 1000));
     throw new Error('Se requieren al menos 2 ubicaciones (origen y destino)');
   }
   
