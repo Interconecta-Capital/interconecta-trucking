@@ -5,12 +5,24 @@ import { TimbrarCartaPorteSchema, createValidationErrorResponse } from "../_shar
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  // 🔐 CORS: Manejar preflight requests SIEMPRE primero
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log('✅ [CORS] Preflight request recibido');
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
+
+  console.log(`📡 [${new Date().toISOString()}] Request recibido: ${req.method} ${req.url}`);
+
+  let user: any = null;
+  let ambiente: 'sandbox' | 'production' = 'sandbox';
 
   try {
     // 1. Autenticación
@@ -20,25 +32,27 @@ const handler = async (req: Request): Promise<Response> => {
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
+    const { data: { user: authUser }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !authUser) {
       console.error('❌ Error de autenticación:', userError);
       return new Response(JSON.stringify({ success: false, error: 'No autorizado' }), { 
         status: 401, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
+    
+    user = authUser; // Asignar para uso en catch block
 
     // 2. Obtener y validar datos del request
     const requestBody = await req.json();
     
-    // 🔐 VALIDACIÓN CON ZOD
     const validationResult = TimbrarCartaPorteSchema.safeParse(requestBody);
     if (!validationResult.success) {
       return createValidationErrorResponse(validationResult.error, corsHeaders);
     }
 
-    const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente } = validationResult.data;
+    const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente: reqAmbiente } = validationResult.data;
+    ambiente = reqAmbiente; // Asignar para uso en catch block
 
     // 🔐 ISO 27001 A.14.2.1 - Validación de entrada robusta
     if (!cartaPorteData && !facturaData) {
