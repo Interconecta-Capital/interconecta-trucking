@@ -25,7 +25,7 @@ async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<strin
   // ISO 27001 A.12.4.1 - Log seguro sin exponer password
   console.log('🔐 Autenticando con SW:', { usuario: swUser.substring(0, 8) + '***', ambiente });
 
-  const authResponse = await fetch(`${swUrl}/security/authenticate`, {
+  const authResponse = await fetch(`${swUrl}/v2/security/authenticate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
