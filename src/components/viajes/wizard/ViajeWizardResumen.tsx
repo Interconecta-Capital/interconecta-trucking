@@ -24,6 +24,7 @@ import { useCalculadoraCostosProfesional } from '@/hooks/useCalculadoraCostosPro
 import { CostBreakdownCard } from './CostBreakdownCard';
 import { useIAPredictiva } from '@/hooks/useIAPredictiva';
 import { AnalisisIA } from '@/types/iaPredictiva';
+import { AnalisisFinancieroCard } from './AnalisisFinancieroCard';
 
 interface ViajeWizardResumenProps {
   data: ViajeWizardData;
@@ -181,74 +182,60 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         </CardContent>
       </Card>
 
-      {/* Análisis Inteligente de Costos - NUEVA SECCIÓN */}
+      {/* Análisis Inteligente de Costos */}
       {costBreakdown && (
         <CostBreakdownCard breakdown={costBreakdown} basicCost={basicCost} />
       )}
 
-      {/* Análisis Predictivo IA */}
+      {/* Análisis Financiero - Solo para Flete Pagado con datos de facturación */}
+      {data.tipoServicio === 'flete_pagado' && data.facturaData?.total && costBreakdown && (
+        <AnalisisFinancieroCard
+          precioFacturado={data.facturaData.total}
+          costoCalculado={costBreakdown.costoTotal}
+          precioSugeridoIA={analisisIA?.sugerencias?.precioOptimo}
+        />
+      )}
+
+      {/* Análisis Predictivo IA - Versión compacta */}
       {analisisIA && analisisIA.precision.totalViajes > 0 && (
         <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-purple-900">
               <Brain className="h-5 w-5 text-purple-600" />
-              Análisis Predictivo IA
+              Insights de IA
               {iaLoading && (
                 <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin ml-2" />
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white/60 p-4 rounded-lg">
-                <label className="text-xs font-medium text-purple-700 uppercase tracking-wide">Precio Óptimo Sugerido</label>
-                <p className="text-3xl font-bold text-purple-900 mt-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/60 p-3 rounded-lg">
+                <label className="text-xs font-medium text-purple-700">Precio Óptimo</label>
+                <p className="text-2xl font-bold text-purple-900">
                   ${analisisIA.sugerencias.precioOptimo.toLocaleString('es-MX')}
                 </p>
-                <Badge className="mt-2 bg-purple-600 hover:bg-purple-700">
+                <p className="text-xs text-purple-600 mt-1">
                   {analisisIA.sugerencias.probabilidadAceptacion}% prob. aceptación
-                </Badge>
-              </div>
-              <div className="bg-white/60 p-4 rounded-lg">
-                <label className="text-xs font-medium text-purple-700 uppercase tracking-wide">Tendencia del Mercado</label>
-                <p className="text-lg font-medium capitalize flex items-center gap-2 mt-2">
-                  {analisisIA.mercado.tendencia === 'subida' && <TrendingUp className="h-6 w-6 text-green-600" />}
-                  {analisisIA.mercado.tendencia === 'bajada' && <TrendingDown className="h-6 w-6 text-red-600" />}
-                  {analisisIA.mercado.tendencia === 'estable' && <span className="text-blue-600">→</span>}
-                  <span className="text-2xl font-bold">{analisisIA.mercado.tendencia}</span>
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  Rango: ${analisisIA.mercado.precioMinimo.toLocaleString()} - ${analisisIA.mercado.precioMaximo.toLocaleString()}
                 </p>
               </div>
-              <div className="bg-white/60 p-4 rounded-lg">
-                <label className="text-xs font-medium text-purple-700 uppercase tracking-wide">Precisión Histórica</label>
-                <p className="text-3xl font-bold text-purple-900 mt-1">
-                  {analisisIA.precision.exactitudCosto.toFixed(1)}%
+              <div className="bg-white/60 p-3 rounded-lg">
+                <label className="text-xs font-medium text-purple-700">Tendencia</label>
+                <p className="text-lg font-medium capitalize flex items-center gap-2 mt-1">
+                  {analisisIA.mercado.tendencia === 'subida' && <TrendingUp className="h-5 w-5 text-green-600" />}
+                  {analisisIA.mercado.tendencia === 'bajada' && <TrendingDown className="h-5 w-5 text-red-600" />}
+                  <span className="text-xl font-bold">{analisisIA.mercado.tendencia}</span>
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  Basado en {analisisIA.precision.totalViajes} viajes similares
+                <p className="text-xs text-purple-600 mt-1">
+                  Basado en {analisisIA.precision.totalViajes} viajes
                 </p>
-                <Badge variant="outline" className="mt-2">
-                  Confianza: {(analisisIA.precision.confianza * 100).toFixed(0)}%
-                </Badge>
               </div>
             </div>
             
-            <Separator className="my-4 bg-purple-200" />
-            
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-purple-900">💡 Recomendaciones IA:</p>
-              <div className="bg-white/60 p-3 rounded-lg space-y-1">
-                {analisisIA.sugerencias.recomendaciones.map((rec, i) => (
-                  <p key={i} className="text-sm text-purple-800 flex items-start gap-2">
-                    <span className="text-purple-600 font-bold">•</span>
-                    {rec}
-                  </p>
-                ))}
-              </div>
-              <p className="text-xs text-purple-700 italic mt-2">
-                {analisisIA.sugerencias.justificacion}
+            <div className="bg-white/60 p-3 rounded-lg mt-3">
+              <p className="text-sm font-medium text-purple-900 mb-2">💡 Recomendación principal:</p>
+              <p className="text-sm text-purple-800">
+                {analisisIA.sugerencias.recomendaciones[0] || analisisIA.sugerencias.justificacion}
               </p>
             </div>
           </CardContent>

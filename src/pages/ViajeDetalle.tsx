@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Viaje } from '@/types/viaje';
 import { ViajeOrchestrationService } from '@/services/viajes/ViajeOrchestrationService';
+import { FacturaPreviewModal } from '@/components/viajes/documentos/FacturaPreviewModal';
 
 interface Factura {
   id: string;
@@ -56,6 +57,8 @@ export default function ViajeDetalle() {
   const [socio, setSocio] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [showFacturaPreview, setShowFacturaPreview] = useState(false);
+  const [isTimbrando, setIsTimbrando] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -92,11 +95,26 @@ export default function ViajeDetalle() {
     }
   };
 
-  const handleTimbrarFactura = async () => {
+  const handlePrepararPreview = () => {
+    if (!factura) return;
+    setShowFacturaPreview(true);
+  };
+
+  const handleTimbrarFactura = async (updatedData: { moneda: string; forma_pago: string; metodo_pago: string }) => {
     if (!factura) return;
     
     try {
-      setProcessing(true);
+      setIsTimbrando(true);
+      
+      // Actualizar datos editables en la factura
+      await supabase
+        .from('facturas')
+        .update({
+          moneda: updatedData.moneda,
+          forma_pago: updatedData.forma_pago,
+          metodo_pago: updatedData.metodo_pago
+        })
+        .eq('id', factura.id);
       
       // Llamar edge function para timbrar
       const { data, error } = await supabase.functions.invoke('timbrar-invoice', {
@@ -114,16 +132,20 @@ export default function ViajeDetalle() {
           .update({ estado: 'programado' })
           .eq('id', id);
         
-        // Recargar datos
+        // Cerrar modal y recargar datos
+        setShowFacturaPreview(false);
         await cargarViajeCompleto();
+      } else {
+        throw new Error(data.error || 'Error desconocido al timbrar');
       }
     } catch (error: any) {
       console.error('Error timbrando factura:', error);
       toast.error('Error al timbrar factura', {
         description: error.message
       });
+      throw error; // Re-lanzar para que el modal también lo maneje
     } finally {
-      setProcessing(false);
+      setIsTimbrando(false);
     }
   };
 
@@ -332,13 +354,13 @@ export default function ViajeDetalle() {
             <div className="flex gap-3">
               {(factura.status === 'draft' || factura.status === 'BORRADOR') && (
                 <Button 
-                  onClick={handleTimbrarFactura} 
+                  onClick={handlePrepararPreview} 
                   disabled={processing}
                   variant="outline"
                   className="flex-1"
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  {processing ? 'Procesando...' : 'Pre-visualizar Factura'}
+                  Pre-visualizar Factura
                 </Button>
               )}
               
@@ -411,6 +433,42 @@ export default function ViajeDetalle() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Modal de Pre-visualización de Factura */}
+      {factura && showFacturaPreview && (
+        <FacturaPreviewModal
+          open={showFacturaPreview}
+          onOpenChange={setShowFacturaPreview}
+          facturaData={{
+            id: factura.id,
+            serie: factura.serie,
+            folio: factura.folio,
+            rfc_emisor: viaje?.tracking_data?.cliente?.rfc || '',
+            nombre_emisor: '',
+            regimen_fiscal_emisor: null,
+            rfc_receptor: viaje?.tracking_data?.cliente?.rfc || '',
+            nombre_receptor: viaje?.tracking_data?.cliente?.nombre_razon_social || '',
+            regimen_fiscal_receptor: viaje?.tracking_data?.cliente?.regimen_fiscal || null,
+            uso_cfdi: viaje?.tracking_data?.cliente?.uso_cfdi || null,
+            subtotal: factura.total / 1.16,
+            total: factura.total,
+            total_impuestos_trasladados: factura.total - (factura.total / 1.16),
+            status: factura.status as 'draft' | 'timbrado',
+            tiene_carta_porte: true,
+            tipo_comprobante: 'I',
+            fecha_expedicion: new Date().toISOString(),
+            moneda: 'MXN',
+            forma_pago: '01',
+            metodo_pago: 'PUE',
+            uuid_fiscal: factura.uuid_fiscal
+          }}
+          viajeData={{
+            tipo_servicio: viaje?.tipo_servicio
+          }}
+          onTimbrar={handleTimbrarFactura}
+          isTimbrando={isTimbrando}
+        />
       )}
     </div>
   );
