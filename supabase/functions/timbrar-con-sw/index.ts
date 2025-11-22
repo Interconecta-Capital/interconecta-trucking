@@ -39,7 +39,10 @@ async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<strin
   if (!authResponse.ok) {
     const errorText = await authResponse.text();
     console.error('❌ Error HTTP al autenticar:', authResponse.status);
-    throw new Error(`Error de autenticación con SmartWeb: HTTP ${authResponse.status}`);
+    console.error('📄 Respuesta de SW:', errorText);
+    console.error('🔍 Debugging - Usuario enviado:', swUser);
+    console.error('🔍 Debugging - URL usada:', swUrl);
+    throw new Error(`Error de autenticación con SmartWeb: HTTP ${authResponse.status} - ${errorText}`);
   }
 
   const authData = await authResponse.json();
