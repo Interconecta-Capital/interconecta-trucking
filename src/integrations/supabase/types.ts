@@ -1373,7 +1373,11 @@ export type Database = {
           domicilio_fiscal: Json
           fecha_ultima_validacion: string | null
           folio_actual: number | null
+          folio_actual_carta_porte: number | null
+          folio_actual_factura: number | null
           folio_inicial: number | null
+          folio_inicial_carta_porte: number | null
+          folio_inicial_factura: number | null
           id: string
           modo_pruebas: boolean | null
           permisos_sct: Json | null
@@ -1396,7 +1400,11 @@ export type Database = {
           domicilio_fiscal?: Json
           fecha_ultima_validacion?: string | null
           folio_actual?: number | null
+          folio_actual_carta_porte?: number | null
+          folio_actual_factura?: number | null
           folio_inicial?: number | null
+          folio_inicial_carta_porte?: number | null
+          folio_inicial_factura?: number | null
           id?: string
           modo_pruebas?: boolean | null
           permisos_sct?: Json | null
@@ -1419,7 +1427,11 @@ export type Database = {
           domicilio_fiscal?: Json
           fecha_ultima_validacion?: string | null
           folio_actual?: number | null
+          folio_actual_carta_porte?: number | null
+          folio_actual_factura?: number | null
           folio_inicial?: number | null
+          folio_inicial_carta_porte?: number | null
+          folio_inicial_factura?: number | null
           id?: string
           modo_pruebas?: boolean | null
           permisos_sct?: Json | null

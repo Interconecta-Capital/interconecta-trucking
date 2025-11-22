@@ -10,6 +10,7 @@ import { useViajes } from '@/hooks/useViajes';
 import { BorradoresSection } from '@/components/viajes/BorradoresSection';
 import { ViajeWizardModalProvider, useViajeWizardModal } from '@/contexts/ViajeWizardModalProvider';
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal';
+import { ViajeCardCollapsible } from '@/components/viajes/ViajeCardCollapsible';
 import { toast } from 'sonner';
 import { Viaje } from '@/types/viaje';
 import { ViajeTrackingModal } from '@/components/modals/ViajeTrackingModal';
@@ -139,141 +140,15 @@ function ViajesContent() {
 
     return (
       <div className="space-y-4">
-        {viajesList.map((viaje) => {
-          const trackingData = viaje.tracking_data || {};
-          const conductorData = trackingData.conductor;
-          const vehiculoData = trackingData.vehiculo;
-          const clienteData = trackingData.cliente;
-          const mercanciasData = trackingData.mercancias || [];
-          const totalMercancias = mercanciasData.length;
-          
-          return (
-            <Card key={viaje.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between viaje-card">
-                  <div className="flex-1 min-w-0">
-                    {/* Encabezado con ruta y estado */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium text-lg address-text">
-                        {viaje.origen} → {viaje.destino}
-                      </span>
-                      <Badge className={`viaje-card-status ${estadoColors[viaje.estado]}`}>
-                        {estadoLabels[viaje.estado]}
-                      </Badge>
-                    </div>
-
-                    {/* Grid con información detallada */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                      {/* Conductor */}
-                      <div className="flex items-start gap-2">
-                        <User className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900">Conductor</p>
-                          <p className="text-gray-600 truncate">
-                            {conductorData?.nombre || 'No asignado'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Vehículo */}
-                      <div className="flex items-start gap-2">
-                        <svg className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900">Vehículo</p>
-                          <p className="text-gray-600 truncate">
-                            {vehiculoData?.placa || vehiculoData?.id ? 
-                              `${vehiculoData.placa || 'Sin placa'} ${vehiculoData.marca ? `- ${vehiculoData.marca}` : ''}`.trim() : 
-                              'No asignado'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Cliente */}
-                      <div className="flex items-start gap-2">
-                        <svg className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900">Cliente</p>
-                          <p className="text-gray-600 truncate">
-                            {clienteData?.nombre_razon_social || clienteData?.rfc || 'No especificado'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Carga/Mercancías */}
-                      <div className="flex items-start gap-2">
-                        <svg className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900">Carga</p>
-                          <p className="text-gray-600 truncate">
-                            {totalMercancias > 0 
-                              ? `${totalMercancias} mercancía${totalMercancias > 1 ? 's' : ''}`
-                              : 'Sin mercancías'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Fechas en una fila separada */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          Inicio: {new Date(viaje.fecha_inicio_programada).toLocaleDateString('es-MX', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          Fin: {new Date(viaje.fecha_fin_programada).toLocaleDateString('es-MX', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    </div>
-
-                    {viaje.observaciones && (
-                      <p className="text-sm text-gray-600 mt-3 line-clamp-2">
-                        {viaje.observaciones}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Botones de acción */}
-                  <div className="flex items-center gap-2 ml-4 viaje-card-actions">
-                    <Button variant="outline" size="sm" onClick={() => handleVerViaje(viaje)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEditarViaje(viaje)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEliminarViaje(viaje)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {viajesList.map((viaje) => (
+          <ViajeCardCollapsible
+            key={viaje.id}
+            viaje={viaje}
+            onVerViaje={handleVerViaje}
+            onEditarViaje={handleEditarViaje}
+            onEliminarViaje={handleEliminarViaje}
+          />
+        ))}
       </div>
     );
   };
