@@ -85,22 +85,25 @@ export function CartasPorteTab() {
         throw cartasPorteResult.error;
       }
 
-      // Mapear borradores
+      // 🔧 FASE 2: Mapear borradores con datos mejorados
       const borradoresFormateados = (borradoresResult.data || []).map((b: any) => {
         const datosForm = b.datos_formulario || {};
+        const emisor = datosForm.emisor || datosForm.configuracion?.emisor || {};
+        const receptor = datosForm.receptor || datosForm.configuracion?.receptor || {};
+        
         return {
           id: b.id,
           tipo: 'borrador' as const,
-          id_ccp: datosForm.cartaPorteId || 'N/A',
-          rfc_emisor: datosForm.rfcEmisor || 'N/A',
-          nombre_emisor: datosForm.nombreEmisor || 'N/A',
-          rfc_receptor: datosForm.rfcReceptor || 'N/A',
-          nombre_receptor: datosForm.nombreReceptor || 'N/A',
+          id_ccp: datosForm.cartaPorteId || datosForm.id_ccp || 'N/A',
+          rfc_emisor: datosForm.rfcEmisor || datosForm.configuracion?.rfcEmisor || emisor.rfc || emisor.rfcEmisor || 'N/A',
+          nombre_emisor: datosForm.nombreEmisor || datosForm.configuracion?.nombreEmisor || emisor.nombre || emisor.razonSocial || 'N/A',
+          rfc_receptor: datosForm.rfcReceptor || datosForm.configuracion?.rfcReceptor || receptor.rfc || receptor.rfcReceptor || 'N/A',
+          nombre_receptor: datosForm.nombreReceptor || datosForm.configuracion?.nombreReceptor || receptor.nombre || receptor.razonSocial || 'N/A',
           status: b.auto_saved ? 'auto_guardado' : 'borrador',
           created_at: b.created_at,
           updated_at: b.updated_at,
           nombre_borrador: b.nombre_borrador,
-          distancia_total: datosForm.datosCalculoRuta?.distanciaTotal || 0,
+          distancia_total: datosForm.datosCalculoRuta?.distanciaTotal || datosForm.distanciaTotal || 0,
           viaje: null,
           uuid_fiscal: null,
           transporte_internacional: datosForm.transporteInternacional || false,
@@ -343,7 +346,11 @@ export function CartasPorteTab() {
                         Continuar Editando
                       </Button>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(doc.tipo === 'borrador' ? `/borrador-carta-porte/${doc.id}` : `/carta-porte/${doc.id}`)}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       Ver Detalles
                     </Button>

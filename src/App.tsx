@@ -52,6 +52,8 @@ import ViajeDetalle from "./pages/ViajeDetalle"
 import DocumentosFiscales from "./pages/DocumentosFiscales"
 import FacturasPage from "./pages/FacturasPage"
 import CartasPortePage from "./pages/CartasPortePage"
+import FacturaDetallePage from "./pages/FacturaDetallePage"
+import FacturaEditPage from "./pages/FacturaEditPage"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -358,6 +360,30 @@ const App = () => (
                   <BaseLayout>
                     <FacturaEditor />
                   </BaseLayout>
+                </AuthGuard>
+              } />
+
+              {/* 🔧 FASE 5: Rutas de edición y detalles de facturas */}
+              <Route path="/factura/:id" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <FacturaDetallePage />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/factura/editar/:id" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <FacturaEditPage />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+              
+              {/* 🔧 FASE 4: Ruta de borradores de carta porte */}
+              <Route path="/borrador-carta-porte/:id" element={
+                <AuthGuard>
+                  <CartaPorteEditor />
                 </AuthGuard>
               } />
               
