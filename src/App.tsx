@@ -50,6 +50,8 @@ import FacturaEditor from "./pages/FacturaEditor"
 import Facturas from "./pages/Facturas"
 import ViajeDetalle from "./pages/ViajeDetalle"
 import DocumentosFiscales from "./pages/DocumentosFiscales"
+import FacturasPage from "./pages/FacturasPage"
+import CartasPortePage from "./pages/CartasPortePage"
 
 // Nuevos componentes
 import { ViajeWizard } from "./components/viajes/ViajeWizard"
@@ -298,6 +300,22 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <DocumentosFiscales />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/documentos-fiscales/facturas" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <FacturasPage />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/documentos-fiscales/carta-porte" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <CartasPortePage />
                   </BaseLayout>
                 </AuthGuard>
               } />
