@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { ViajeMercanciasManager } from '@/components/viajes/mercancias/ViajeMercanciasManager';
 import { FacturaPreviewModal } from '@/components/viajes/documentos/FacturaPreviewModal';
 import { ViajeDocumentosGenerator } from '@/services/pdf/ViajeDocumentosGenerator';
+import { DocumentosOperativosService } from '@/services/documentos/DocumentosOperativosService';
 
 interface ViajeTrackingModalProps {
   viaje: Viaje | null;
@@ -55,6 +56,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCartaPortePreview, setShowCartaPortePreview] = useState(false);
   const [isTimbrandoCartaPorte, setIsTimbrandoCartaPorte] = useState(false);
+  const [isGenerandoBorrador, setIsGenerandoBorrador] = useState(false);
   
   // ✅ NUEVO: Cargar viaje completo con todas sus relaciones usando RPC
   useEffect(() => {
@@ -90,6 +92,109 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
     
     cargarViajeCompleto();
   }, [viaje?.id, open]);
+
+  // Funciones para documentos operativos - ISO 27001 A.12.3.1
+  const handleVerHojaRuta = async () => {
+    try {
+      const blob = await DocumentosOperativosService.generarHojaDeRuta(viajeCompleto);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error generando hoja de ruta:', error);
+      toast.error('Error al generar la hoja de ruta');
+    }
+  };
+
+  const handleImprimirHojaRuta = async () => {
+    try {
+      const blob = await DocumentosOperativosService.generarHojaDeRuta(viajeCompleto);
+      DocumentosOperativosService.imprimirDocumento(blob);
+    } catch (error) {
+      console.error('Error imprimiendo hoja de ruta:', error);
+      toast.error('Error al imprimir la hoja de ruta');
+    }
+  };
+
+  const handleVerChecklist = async () => {
+    try {
+      const blob = await DocumentosOperativosService.generarChecklistPreViaje(viajeCompleto);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error generando checklist:', error);
+      toast.error('Error al generar el checklist');
+    }
+  };
+
+  const handleGenerarChecklistPDF = async () => {
+    try {
+      const blob = await DocumentosOperativosService.generarChecklistPreViaje(viajeCompleto);
+      const fecha = new Date().toISOString().split('T')[0];
+      DocumentosOperativosService.descargarDocumento(
+        blob,
+        `checklist-pre-viaje-${viaje?.id?.substring(0, 8)}-${fecha}.pdf`
+      );
+      toast.success('Checklist generado exitosamente');
+    } catch (error) {
+      console.error('Error generando checklist PDF:', error);
+      toast.error('Error al generar el checklist PDF');
+    }
+  };
+
+  // Función para generar borrador de carta porte - ISO 27001 A.12.1.2
+  const handleGenerarBorradorCartaPorte = async () => {
+    setIsGenerandoBorrador(true);
+    try {
+      const viajeData = viajeCompleto.viaje;
+      const trackingData = viajeData.tracking_data || {};
+
+      const borradorData = {
+        user_id: viajeData.user_id,
+        nombre_borrador: `CP - ${viajeData.origen} a ${viajeData.destino}`,
+        datos_formulario: {
+          ubicaciones: trackingData.ubicaciones || {},
+          mercancias: trackingData.mercancias || [],
+          conductor: trackingData.conductor || null,
+          vehiculo: trackingData.vehiculo || null,
+          cliente: trackingData.cliente || null,
+        },
+        version_formulario: '3.1',
+        auto_saved: false,
+      };
+
+      const { data, error } = await supabase
+        .from('borradores_carta_porte')
+        .insert(borradorData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Vincular borrador con el viaje
+      await supabase
+        .from('viajes')
+        .update({
+          tracking_data: {
+            ...trackingData,
+            borrador_carta_porte_id: data.id,
+          },
+        })
+        .eq('id', viajeData.id);
+
+      toast.success('Borrador de Carta Porte generado exitosamente');
+      
+      // Recargar datos
+      const { data: viajeActualizado } = await supabase.rpc('get_viaje_con_relaciones', {
+        p_viaje_id: viajeData.id,
+      });
+      if (viajeActualizado) setViajeCompleto(viajeActualizado);
+    } catch (error: any) {
+      console.error('Error generando borrador:', error);
+      toast.error('Error al generar borrador de Carta Porte');
+    } finally {
+      setIsGenerandoBorrador(false);
+    }
+  };
 
   const handleTimbrarFactura = async (updatedData: { moneda: string; forma_pago: string; metodo_pago: string }) => {
     const facturaData = viajeCompleto?.factura;
@@ -717,51 +822,86 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                         
                         {/* Carta Porte */}
                         {cartaPorteData ? (
-                          <div className="p-3 border rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium">Carta Porte</span>
+                          <div className="p-4 border rounded-lg bg-gradient-to-br from-green-50 to-emerald-50">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-green-600" />
+                                <span className="font-semibold text-lg">Carta Porte</span>
+                              </div>
                               <Badge className={
                                 cartaPorteData.status === 'timbrada' ? 'bg-green-100 text-green-800' :
                                 'bg-yellow-100 text-yellow-800'
                               }>
-                                {cartaPorteData.status === 'timbrada' ? 'Timbrada' : 'Borrador'}
+                                {cartaPorteData.status === 'timbrada' ? '✅ Timbrada' : '📝 Borrador'}
                               </Badge>
                             </div>
+                            
                             {cartaPorteData.uuid_fiscal ? (
                               <>
-                                <p className="text-sm text-gray-600">CFDI 4.0 - CP 3.1</p>
-                                <p className="text-xs text-gray-500 font-mono mt-1 truncate">
-                                  UUID: {cartaPorteData.uuid_fiscal}
+                                <p className="text-sm text-gray-700 mb-1">
+                                  <span className="font-medium">Tipo:</span> CFDI 4.0 - Carta Porte 3.1
                                 </p>
-                                <div className="flex gap-2 mt-3">
-                                  <Button size="sm" variant="outline" className="flex-1">Ver XML</Button>
-                                  <Button size="sm" className="flex-1">Descargar PDF</Button>
+                                <p className="text-xs text-gray-600 font-mono mb-3 truncate bg-white p-2 rounded border">
+                                  <span className="font-medium">UUID:</span> {cartaPorteData.uuid_fiscal}
+                                </p>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" className="flex-1">
+                                    <FileText className="h-4 w-4 mr-1" />
+                                    Ver XML
+                                  </Button>
+                                  <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                    <Download className="h-4 w-4 mr-1" />
+                                    Descargar PDF
+                                  </Button>
                                 </div>
                               </>
                             ) : (
                               <>
-                                <p className="text-sm text-gray-600">Borrador listo para timbrar</p>
-                                <Button size="sm" className="w-full mt-3">
+                                <p className="text-sm text-gray-600 mb-3">Borrador listo para timbrar</p>
+                                <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                                  <CheckCircle2 className="h-4 w-4 mr-2" />
                                   Timbrar Carta Porte
                                 </Button>
                               </>
                             )}
                           </div>
-                        ) : borradorCartaPorteData && (
-                          <div className="p-3 border rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium">Carta Porte</span>
+                        ) : borradorCartaPorteData ? (
+                          <div className="p-4 border rounded-lg bg-gradient-to-br from-yellow-50 to-amber-50">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-yellow-600" />
+                                <span className="font-semibold text-lg">Carta Porte</span>
+                              </div>
                               <Badge className="bg-yellow-100 text-yellow-800">
-                                Borrador
+                                📝 Borrador
                               </Badge>
                             </div>
-                            <p className="text-sm text-gray-600">{borradorCartaPorteData.nombre_borrador}</p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-sm text-gray-700 mb-1">{borradorCartaPorteData.nombre_borrador}</p>
+                            <p className="text-xs text-gray-500 mb-3">
                               Última edición: {new Date(borradorCartaPorteData.ultima_edicion).toLocaleString('es-MX')}
                             </p>
-                            <Button size="sm" className="w-full mt-3">
+                            <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
                               Timbrar Carta Porte
                             </Button>
+                          </div>
+                        ) : (
+                          <div className="p-4 border border-dashed rounded-lg bg-muted/30">
+                            <div className="text-center">
+                              <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground mb-3">
+                                No hay Carta Porte generada
+                              </p>
+                              <Button 
+                                size="sm" 
+                                onClick={handleGenerarBorradorCartaPorte}
+                                disabled={isGenerandoBorrador}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                {isGenerandoBorrador ? 'Generando...' : 'Generar Borrador'}
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -770,31 +910,67 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                       <div className="space-y-3">
                         <h4 className="font-medium">Documentos Operativos</h4>
                         
-                        <div className="p-3 border rounded-lg">
+                        <div className="p-4 border rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">Hoja de Ruta</span>
+                            <div className="flex items-center gap-2">
+                              <Route className="h-5 w-5 text-blue-600" />
+                              <span className="font-semibold">Hoja de Ruta</span>
+                            </div>
                             <Badge className="bg-blue-100 text-blue-800">
-                              Disponible
+                              ✓ Disponible
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600">Instrucciones del viaje</p>
-                          <div className="flex gap-2 mt-3">
-                            <Button size="sm" variant="outline" className="flex-1">Ver</Button>
-                            <Button size="sm" className="flex-1">Imprimir</Button>
+                          <p className="text-sm text-gray-600 mb-3">Instrucciones detalladas del viaje</p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={handleVerHojaRuta}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={handleImprimirHojaRuta}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Imprimir
+                            </Button>
                           </div>
                         </div>
                         
-                        <div className="p-3 border rounded-lg">
+                        <div className="p-4 border rounded-lg bg-gradient-to-br from-green-50 to-teal-50">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">Checklist Pre-Viaje</span>
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-5 w-5 text-green-600" />
+                              <span className="font-semibold">Checklist Pre-Viaje</span>
+                            </div>
                             <Badge className="bg-green-100 text-green-800">
-                              Disponible
+                              ✓ Disponible
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600">Lista de verificación</p>
-                          <div className="flex gap-2 mt-3">
-                            <Button size="sm" variant="outline" className="flex-1">Ver</Button>
-                            <Button size="sm" className="flex-1">Generar PDF</Button>
+                          <p className="text-sm text-gray-600 mb-3">Lista de verificación de seguridad</p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={handleVerChecklist}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={handleGenerarChecklistPDF}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Descargar
+                            </Button>
                           </div>
                         </div>
                       </div>
