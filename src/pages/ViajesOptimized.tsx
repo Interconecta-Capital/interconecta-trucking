@@ -3,6 +3,8 @@ import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MapPin, User, Calendar, Clock, Eye, Edit, Trash2, Route } from 'lucide-react';
 import { useViajes } from '@/hooks/useViajes';
@@ -276,49 +278,46 @@ function ViajesContent() {
 
       {/* Sección de Borradores */}
       <BorradoresSection />
-      
-      {/* ✅ NUEVO: Barra de búsqueda y filtros */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Buscar por origen, destino o cliente..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <select
-              value={estadoFiltro}
-              onChange={(e) => setEstadoFiltro(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent md:w-[200px]"
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="activos">Activos</option>
-              <option value="programado">Programados</option>
-              <option value="en_transito">En Tránsito</option>
-              <option value="completado">Completados</option>
-              <option value="retrasado">Retrasados</option>
-              <option value="cancelado">Cancelados</option>
-            </select>
-          </div>
-          {searchQuery && (
-            <div className="mt-2 text-sm text-gray-600">
-              {viajesFiltrados.length} resultado{viajesFiltrados.length !== 1 ? 's' : ''} encontrado{viajesFiltrados.length !== 1 ? 's' : ''}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Lista de Viajes con Pestañas */}
+      {/* Lista de Viajes con Pestañas y Búsqueda Integrada */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Route className="h-5 w-5 text-blue-600" />
-            <h2 className="text-xl font-semibold">Viajes</h2>
-            <Badge variant="secondary">{viajesFiltrados.length}</Badge>
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Route className="h-5 w-5 text-blue-600" />
+              <h2 className="text-xl font-semibold">Viajes</h2>
+              <Badge variant="secondary">{viajesFiltrados.length}</Badge>
+              {searchQuery && (
+                <Badge variant="outline">
+                  {viajesFiltrados.length} resultado{viajesFiltrados.length !== 1 ? 's' : ''}
+                </Badge>
+              )}
+            </div>
+            
+            {/* Barra de búsqueda y filtros integrados */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Buscar por origen, destino o cliente..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los estados</SelectItem>
+                  <SelectItem value="programado">Programados</SelectItem>
+                  <SelectItem value="en_transito">En Tránsito</SelectItem>
+                  <SelectItem value="completado">Completados</SelectItem>
+                  <SelectItem value="retrasado">Retrasados</SelectItem>
+                  <SelectItem value="cancelado">Cancelados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <Tabs defaultValue="todos" className="w-full">
