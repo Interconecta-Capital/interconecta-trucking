@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FileText, Route, Receipt } from 'lucide-react';
+import { ViajesConDocumentosTab } from '@/components/documentos-fiscales/ViajesConDocumentosTab';
+import { FacturasTab } from '@/components/documentos-fiscales/FacturasTab';
+import { CartasPorteTab } from '@/components/documentos-fiscales/CartasPorteTab';
 
 export default function DocumentosFiscales() {
   const [activeTab, setActiveTab] = useState('viajes');
@@ -34,48 +37,15 @@ export default function DocumentosFiscales() {
         </TabsList>
 
         <TabsContent value="viajes" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vista por Viajes</CardTitle>
-              <CardDescription>Cada viaje con sus documentos fiscales asociados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Route className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Vista de viajes con documentos - Por implementar</p>
-              </div>
-            </CardContent>
-          </Card>
+          <ViajesConDocumentosTab />
         </TabsContent>
 
         <TabsContent value="facturas" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Facturas</CardTitle>
-              <CardDescription>Todas las facturas ordenadas por fecha</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Lista de facturas - Por implementar</p>
-              </div>
-            </CardContent>
-          </Card>
+          <FacturasTab />
         </TabsContent>
 
         <TabsContent value="carta-porte" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cartas Porte</CardTitle>
-              <CardDescription>Todas las cartas porte ordenadas por fecha</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Lista de cartas porte - Por implementar</p>
-              </div>
-            </CardContent>
-          </Card>
+          <CartasPorteTab />
         </TabsContent>
       </Tabs>
 

@@ -80,9 +80,63 @@ export const useViajesMutations = () => {
     }
   });
 
-  // Eliminar viaje
+  // FASE 6: Validar antes de eliminar - ISO 27001 A.18.1.4
+  const validarEliminacionViaje = async (viajeId: string) => {
+    console.log('🔍 [VALIDACIÓN] Verificando documentos timbrados para viaje:', viajeId);
+    
+    // Verificar si tiene factura timbrada
+    const { data: factura, error: facturaError } = await supabase
+      .from('facturas')
+      .select('status, folio, serie')
+      .eq('viaje_id', viajeId)
+      .eq('status', 'timbrada')
+      .maybeSingle();
+    
+    if (facturaError && facturaError.code !== 'PGRST116') {
+      console.error('Error verificando factura:', facturaError);
+      throw facturaError;
+    }
+      
+    if (factura) {
+      throw new Error(
+        `No se puede eliminar: El viaje tiene una factura timbrada (${factura.serie}-${factura.folio}). ` +
+        `Los documentos fiscales timbrados no pueden ser eliminados por cumplimiento con el SAT.`
+      );
+    }
+    
+    // Verificar si tiene carta porte timbrada
+    const { data: cartaPorte, error: cartaPorteError } = await supabase
+      .from('cartas_porte')
+      .select('status, id_ccp, uuid_fiscal')
+      .eq('viaje_id', viajeId)
+      .eq('status', 'timbrada')
+      .maybeSingle();
+    
+    if (cartaPorteError && cartaPorteError.code !== 'PGRST116') {
+      console.error('Error verificando carta porte:', cartaPorteError);
+      throw cartaPorteError;
+    }
+      
+    if (cartaPorte) {
+      const uuid = cartaPorte.uuid_fiscal || cartaPorte.id_ccp || 'N/A';
+      throw new Error(
+        `No se puede eliminar: El viaje tiene una Carta Porte timbrada. ` +
+        `Los documentos fiscales timbrados no pueden ser eliminados por cumplimiento con el SAT. ` +
+        `UUID: ${uuid}`
+      );
+    }
+    
+    console.log('✅ [VALIDACIÓN] No hay documentos timbrados. Eliminación permitida.');
+    return true;
+  };
+
+  // Eliminar viaje con validación
   const eliminarViajeMutation = useMutation({
     mutationFn: async (id: string) => {
+      // FASE 6: Validar ANTES de intentar eliminar - ISO 27001 A.18.1.4
+      await validarEliminacionViaje(id);
+      
+      // Si pasa la validación, proceder con eliminación
       const { error } = await supabase
         .from('viajes')
         .delete()
@@ -96,7 +150,7 @@ export const useViajesMutations = () => {
     },
     onError: (error: any) => {
       console.error('Error eliminando viaje:', error);
-      toast.error('Error al eliminar el viaje');
+      toast.error(error.message || 'Error al eliminar el viaje', { duration: 7000 });
     }
   });
 

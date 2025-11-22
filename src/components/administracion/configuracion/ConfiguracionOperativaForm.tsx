@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle, Info, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle, Info, CheckCircle2, HelpCircle, FileText } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 import { toast } from 'sonner';
 
@@ -26,6 +26,11 @@ export function ConfiguracionOperativaForm() {
     // Timbrado
     proveedorTimbrado: 'fiscal_api',
     modoPruebas: true,
+    // Documentos Fiscales
+    serieFactura: 'F',
+    folioInicialFactura: 1,
+    serieCartaPorte: 'CP',
+    folioInicialCartaPorte: 1,
   });
 
   // Cargar datos de configuración al iniciar
@@ -40,6 +45,10 @@ export function ConfiguracionOperativaForm() {
         seguroAmbientalAseguradora: configuracion.seguro_ambiental_empresa?.aseguradora || '',
         proveedorTimbrado: configuracion.proveedor_timbrado || 'fiscal_api',
         modoPruebas: configuracion.modo_pruebas !== false,
+        serieFactura: (configuracion as any).serie_factura || 'F',
+        folioInicialFactura: (configuracion as any).folio_inicial_factura || 1,
+        serieCartaPorte: (configuracion as any).serie_carta_porte || 'CP',
+        folioInicialCartaPorte: (configuracion as any).folio_inicial_carta_porte || 1,
       });
     }
   }, [configuracion]);
@@ -125,7 +134,11 @@ export function ConfiguracionOperativaForm() {
         seguro_ambiental_empresa: seguroAmbiental,
         proveedor_timbrado: formData.proveedorTimbrado,
         modo_pruebas: formData.modoPruebas,
-      });
+        ...(formData.serieFactura && { serie_factura: formData.serieFactura }),
+        ...(formData.folioInicialFactura && { folio_inicial_factura: formData.folioInicialFactura }),
+        ...(formData.serieCartaPorte && { serie_carta_porte: formData.serieCartaPorte }),
+        ...(formData.folioInicialCartaPorte && { folio_inicial_carta_porte: formData.folioInicialCartaPorte }),
+      } as any);
       
       console.log('✅ [ConfiguracionOperativaForm] Seguros guardados exitosamente');
     } catch (error) {
@@ -278,6 +291,87 @@ export function ConfiguracionOperativaForm() {
                   value={formData.seguroAmbientalAseguradora}
                   onChange={(e) => setFormData({ ...formData, seguroAmbientalAseguradora: e.target.value })}
                 />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Configuración de Documentos Fiscales - FASE 2 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Configuración de Documentos Fiscales
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Serie y Folio para Facturas */}
+          <div className="p-4 border rounded-lg bg-card">
+            <Label className="text-base font-medium mb-3 block flex items-center gap-2">
+              <Badge variant="default" className="text-xs">FACTURAS</Badge>
+              Serie y Folio
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Serie para Factura</Label>
+                <Input 
+                  placeholder="F" 
+                  value={formData.serieFactura || ''}
+                  onChange={(e) => setFormData({ ...formData, serieFactura: e.target.value })}
+                  maxLength={10}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Máx. 10 caracteres alfanuméricos
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Folio Inicial</Label>
+                <Input 
+                  type="number"
+                  placeholder="1" 
+                  value={formData.folioInicialFactura || ''}
+                  onChange={(e) => setFormData({ ...formData, folioInicialFactura: parseInt(e.target.value) || 1 })}
+                  min={1}
+                />
+                <p className="text-xs text-muted-foreground">
+                  El folio se incrementará automáticamente
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Serie y Folio para Carta Porte */}
+          <div className="p-4 border rounded-lg bg-card">
+            <Label className="text-base font-medium mb-3 block flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">CARTA PORTE</Badge>
+              Serie y Folio
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Serie para Carta Porte</Label>
+                <Input 
+                  placeholder="CP" 
+                  value={formData.serieCartaPorte || ''}
+                  onChange={(e) => setFormData({ ...formData, serieCartaPorte: e.target.value })}
+                  maxLength={10}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Máx. 10 caracteres alfanuméricos
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Folio Inicial</Label>
+                <Input 
+                  type="number"
+                  placeholder="1" 
+                  value={formData.folioInicialCartaPorte || ''}
+                  onChange={(e) => setFormData({ ...formData, folioInicialCartaPorte: parseInt(e.target.value) || 1 })}
+                  min={1}
+                />
+                <p className="text-xs text-muted-foreground">
+                  El folio se incrementará automáticamente
+                </p>
               </div>
             </div>
           </div>

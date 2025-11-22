@@ -1,0 +1,171 @@
+// ============================================
+// FASE 5: Tab de Cartas Porte
+// ISO 27001 A.18.1: Cumplimiento legal
+// ============================================
+
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Download, Eye, Truck, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export function CartasPorteTab() {
+  const [filtro, setFiltro] = useState('todos');
+
+  const { data: cartasPorte, isLoading } = useQuery({
+    queryKey: ['cartas-porte', filtro],
+    queryFn: async () => {
+      let query = supabase
+        .from('cartas_porte')
+        .select(`
+          *,
+          viaje:viajes(id, origen, destino)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (filtro !== 'todos') {
+        query = query.eq('status', filtro);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-muted rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Filtros */}
+      <div className="flex items-center justify-between">
+        <Select value={filtro} onValueChange={setFiltro}>
+          <SelectTrigger className="w-[250px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas</SelectItem>
+            <SelectItem value="timbrada">Timbradas</SelectItem>
+            <SelectItem value="draft">Borradores</SelectItem>
+            <SelectItem value="cancelada">Canceladas</SelectItem>
+          </SelectContent>
+        </Select>
+        <Badge variant="secondary">{cartasPorte?.length || 0} cartas porte</Badge>
+      </div>
+
+      {/* Lista de cartas porte */}
+      <div className="space-y-4">
+        {!cartasPorte || cartasPorte.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No hay cartas porte que coincidan con el filtro seleccionado</p>
+            </CardContent>
+          </Card>
+        ) : (
+          cartasPorte.map((cp: any) => (
+            <Card key={cp.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Truck className="h-5 w-5 text-green-600" />
+                      <span className="text-lg font-bold font-mono">
+                        {cp.id_ccp || 'N/A'}
+                      </span>
+                      <Badge variant={
+                        cp.status === 'timbrada' ? 'default' :
+                        cp.status === 'cancelada' ? 'destructive' :
+                        'secondary'
+                      }>
+                        {cp.status}
+                      </Badge>
+                    </div>
+                    {cp.uuid_fiscal && (
+                      <p className="text-sm text-muted-foreground font-mono mb-2" title={cp.uuid_fiscal}>
+                        UUID: {cp.uuid_fiscal}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline" className="text-xs">
+                      CFDI 4.0 - CP 3.1
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-muted-foreground">RFC Emisor</p>
+                    <p className="font-mono">{cp.rfc_emisor}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">RFC Receptor</p>
+                    <p className="font-mono">{cp.rfc_receptor}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Fecha</p>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(cp.created_at).toLocaleDateString('es-MX')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {cp.distancia_total && (
+                  <div className="mt-3">
+                    <p className="text-sm">
+                      <span className="font-medium">Distancia total:</span> {cp.distancia_total} km
+                    </p>
+                  </div>
+                )}
+
+                {cp.viaje && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-muted-foreground mb-1">Viaje asociado:</p>
+                    <p className="text-sm font-medium">{cp.viaje.origen} → {cp.viaje.destino}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mt-4">
+                  {cp.status === 'timbrada' && (
+                    <>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Ver XML
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Descargar PDF
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Detalles
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
