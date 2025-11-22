@@ -146,7 +146,7 @@ export const ValidadorDisponibilidad = ({
               </div>
 
               {/* Mostrar conflictos si existen */}
-              {validacion.validacion?.conflictos.map((conflicto, index) => (
+              {(validacion.validacion?.conflictos || []).map((conflicto, index) => (
                 <Alert key={index} className="mt-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
