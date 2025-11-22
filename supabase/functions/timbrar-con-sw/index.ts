@@ -40,6 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente } = validationResult.data;
 
+    // 🔐 ISO 27001 A.14.2.1 - Validación de entrada robusta
     if (!cartaPorteData && !facturaData) {
       return new Response(JSON.stringify({ 
         success: false, 
@@ -50,20 +51,61 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // 🔐 Detectar si es factura simple o con complemento CartaPorte
+    const esFacturaConCartaPorte = !!(
+      cartaPorteData?.ubicaciones || 
+      facturaData?.ubicaciones ||
+      cartaPorteData?.tracking_data?.ubicaciones ||
+      facturaData?.tracking_data?.ubicaciones
+    );
+
     const documentoId = cartaPorteId || facturaId;
-    const tipoDocumento = cartaPorteData ? 'Carta Porte' : 'Factura';
-    console.log(`🚀 Timbrando ${tipoDocumento} ${documentoId} para usuario ${user.id} en ${ambiente}`);
+    const tipoDocumento = cartaPorteData ? 'Carta Porte' : esFacturaConCartaPorte ? 'Factura con CartaPorte' : 'Factura Simple';
     
-    // 🔍 DEBUG: Logging detallado de estructura de datos
-    console.log('📦 [DEBUG] Datos recibidos:', {
-      hasCartaPorteData: !!cartaPorteData,
-      hasFacturaData: !!facturaData,
-      facturaDataKeys: facturaData ? Object.keys(facturaData) : null,
-      hasUbicaciones: !!(facturaData?.ubicaciones || cartaPorteData?.ubicaciones),
-      hasTrackingData: !!(facturaData?.tracking_data || cartaPorteData?.tracking_data),
-      ubicacionesType: typeof (facturaData?.ubicaciones || cartaPorteData?.ubicaciones),
-      ubicacionesStructure: JSON.stringify(facturaData?.ubicaciones || cartaPorteData?.ubicaciones || {}).substring(0, 500)
+    // 🔒 Logging seguro (sin exponer datos sensibles)
+    console.log(`🚀 [${new Date().toISOString()}] Timbrando ${tipoDocumento} para usuario ${user.id.substring(0, 8)}... en ${ambiente}`, {
+      documentoId: documentoId?.substring(0, 8),
+      esFacturaConCartaPorte,
+      hasUbicaciones: esFacturaConCartaPorte
     });
+    
+    // 🔐 ISO 27001 A.12.4.1 - Validación de integridad de datos
+    // Validar estructura según tipo de documento
+    if (esFacturaConCartaPorte) {
+      const dataSource = cartaPorteData || facturaData;
+      const ubicaciones = dataSource?.ubicaciones || dataSource?.tracking_data?.ubicaciones;
+      
+      if (!ubicaciones) {
+        console.error('❌ Factura marcada con CartaPorte pero sin ubicaciones');
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Para factura con CartaPorte se requieren ubicaciones (origen y destino)' 
+        }), { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+
+      // Validar formato de ubicaciones
+      const ubicacionesArray = Array.isArray(ubicaciones) ? ubicaciones : 
+        (ubicaciones.origen && ubicaciones.destino ? [ubicaciones.origen, ubicaciones.destino] : []);
+      
+      if (ubicacionesArray.length < 2) {
+        console.error('❌ Se requieren mínimo 2 ubicaciones (origen y destino)');
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Se requieren al menos 2 ubicaciones: origen y destino' 
+        }), { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+
+      console.log('✅ Validación de ubicaciones exitosa:', {
+        cantidadUbicaciones: ubicacionesArray.length,
+        formatoArray: Array.isArray(ubicaciones)
+      });
+    }
 
     // 3. Obtener credenciales de SW
     const swToken = Deno.env.get('SW_TOKEN');
@@ -76,8 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // 4. Construir el CFDI JSON según formato de SW
-    console.log('📦 Data completa:', JSON.stringify(cartaPorteData || facturaData));
-    const cfdiJson = construirCFDIJson(cartaPorteData || facturaData);
+    const cfdiJson = construirCFDIJson(cartaPorteData || facturaData, esFacturaConCartaPorte);
 
     console.log('📦 Enviando CFDI a SW:', JSON.stringify(cfdiJson).substring(0, 500));
 
@@ -214,12 +255,36 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('💥 Error en timbrado:', error);
-    return new Response(JSON.stringify({ 
+    // 🔐 ISO 27001 A.16.1.5 - Respuesta segura a incidentes
+    // No exponer stack traces ni información sensible en producción
+    const userId = user?.id?.substring(0, 8) || 'unknown';
+    
+    console.error('💥 [ERROR] Timbrado fallido:', {
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      userId,
+      ambiente,
+      errorType: error.name
+    });
+    
+    // Solo incluir stack trace en modo sandbox (desarrollo)
+    const isDev = ambiente === 'sandbox';
+    const errorResponse: any = { 
       success: false, 
-      error: error.message || 'Error interno del servidor',
-      stack: error.stack
-    }), { 
+      error: error.message || 'Error interno al procesar el timbrado',
+      timestamp: new Date().toISOString(),
+      support: 'Contacte a soporte si el problema persiste'
+    };
+    
+    // Stack trace solo en desarrollo para debugging
+    if (isDev && error.stack) {
+      errorResponse.debug = {
+        stack: error.stack,
+        name: error.name
+      };
+    }
+    
+    return new Response(JSON.stringify(errorResponse), { 
       status: 500, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
@@ -227,7 +292,7 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 // Función para construir el JSON del CFDI según formato de SW
-function construirCFDIJson(cartaPorteData: any) {
+function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: boolean = false) {
   const fecha = new Date().toISOString().replace('Z', '');
   const esTipoIngreso = cartaPorteData.tipoCfdi === 'Ingreso';
   
@@ -250,9 +315,9 @@ function construirCFDIJson(cartaPorteData: any) {
     totalImpuestos = subtotal * 0.16; // IVA 16%
   }
   
-  // ✅ Verificar si tiene ubicaciones para complemento CartaPorte
-  // Soporta formato array O formato objeto {origen, destino}
-  const tieneUbicaciones = (() => {
+  // 🔐 ISO 27001 A.12.2.1 - Protección contra procesamiento incorrecto
+  // Solo verificar ubicaciones si se requiere complemento de CartaPorte
+  const tieneUbicaciones = requiereComplementoCartaPorte && (() => {
     const ubicaciones = cartaPorteData.ubicaciones || cartaPorteData.tracking_data?.ubicaciones;
     if (!ubicaciones) return false;
     
@@ -265,13 +330,12 @@ function construirCFDIJson(cartaPorteData: any) {
     return false;
   })();
   
-  console.log('🔍 [CFDI] Verificación de ubicaciones:', {
-    tieneUbicaciones,
-    ubicacionesType: typeof cartaPorteData.ubicaciones,
-    isArray: Array.isArray(cartaPorteData.ubicaciones),
-    hasOrigen: !!(cartaPorteData.ubicaciones?.origen || cartaPorteData.tracking_data?.ubicaciones?.origen),
-    hasDestino: !!(cartaPorteData.ubicaciones?.destino || cartaPorteData.tracking_data?.ubicaciones?.destino)
-  });
+  if (requiereComplementoCartaPorte) {
+    console.log('🔍 [CFDI] Verificación de ubicaciones para CartaPorte:', {
+      tieneUbicaciones,
+      requiereComplementoCartaPorte
+    });
+  }
 
   const cfdi: any = {
     Version: "4.0",
@@ -396,28 +460,30 @@ function construirComplementoCartaPorte(data: any) {
 }
 
 function construirUbicaciones(data: any) {
-  // 🔄 ISO 27001 A.12.1 - Validación de estructura de datos
-  console.log('🔍 [construirUbicaciones] Data recibida:', {
-    hasUbicaciones: !!data.ubicaciones,
-    ubicacionesType: typeof data.ubicaciones,
-    isArray: Array.isArray(data.ubicaciones),
-    ubicacionesKeys: data.ubicaciones ? Object.keys(data.ubicaciones) : null,
-    trackingDataUbicaciones: data.tracking_data?.ubicaciones ? Object.keys(data.tracking_data.ubicaciones) : null,
-    fullData: JSON.stringify(data).substring(0, 500)
-  });
+  // 🔐 ISO 27001 A.12.1 - Validación de estructura de datos
+  // Defense in depth: validar antes de procesar
   
   let ubicacionesArray: any[] = [];
   
-  // ✅ CORRECCIÓN: Intentar múltiples fuentes de ubicaciones
+  // ✅ Buscar ubicaciones en múltiples fuentes con prioridad
   const ubicacionesSource = data.ubicaciones 
     || data.tracking_data?.ubicaciones 
     || data.cartaPorteData?.ubicaciones
     || data.facturaData?.tracking_data?.ubicaciones;
   
+  // 🔒 Validación robusta con mensaje claro
   if (!ubicacionesSource) {
-    console.error('❌ No se encontraron ubicaciones en ninguna fuente');
-    console.error('📦 Data completa:', JSON.stringify(data).substring(0, 1000));
-    throw new Error('Se requieren al menos 2 ubicaciones (origen y destino)');
+    console.error('❌ [construirUbicaciones] No se encontraron ubicaciones', {
+      hasData: !!data,
+      hasUbicaciones: !!data.ubicaciones,
+      hasTrackingData: !!data.tracking_data,
+      dataKeys: data ? Object.keys(data).filter(k => !k.includes('password')) : []
+    });
+    
+    throw new Error(
+      'Complemento de Carta Porte requiere ubicaciones. ' +
+      'Proporcione al menos origen y destino en el campo "ubicaciones" o "tracking_data.ubicaciones"'
+    );
   }
   
   // Manejar formato objeto {origen, destino, intermedias}

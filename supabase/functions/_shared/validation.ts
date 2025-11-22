@@ -128,12 +128,33 @@ export const TimbrarCartaPorteSchema = z.object({
       valor_unitario: z.number().positive(),
       importe: z.number().positive(),
     })).min(1),
+    // 🔐 Ubicaciones opcionales para facturas simples, requeridas si hay complemento CartaPorte
+    ubicaciones: z.array(UbicacionSchema).optional(),
+    tracking_data: z.object({
+      ubicaciones: z.array(UbicacionSchema).optional()
+    }).optional(),
   }).optional(),
   facturaId: UUIDSchema.optional(),
   ambiente: AmbienteSchema,
 }).refine(
   data => data.cartaPorteData || data.facturaData,
   { message: "Debe proporcionar cartaPorteData o facturaData" }
+).refine(
+  // 🔐 ISO 27001 A.14.2.1 - Validación de integridad
+  // Si facturaData tiene ubicaciones, validar que sean al menos 2
+  data => {
+    if (data.facturaData?.ubicaciones) {
+      return data.facturaData.ubicaciones.length >= 2;
+    }
+    if (data.facturaData?.tracking_data?.ubicaciones) {
+      return data.facturaData.tracking_data.ubicaciones.length >= 2;
+    }
+    return true; // Si no hay ubicaciones, es factura simple (válido)
+  },
+  { 
+    message: "Si proporciona ubicaciones en facturaData, debe incluir al menos 2 (origen y destino)",
+    path: ["facturaData", "ubicaciones"]
+  }
 );
 
 // ============================================
