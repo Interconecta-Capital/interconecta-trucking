@@ -28,9 +28,11 @@ export default function DocumentosFiscales() {
         borradores: borradoresCartasResult.count
       });
       
+      // ✅ CORREGIDO: Solo contar cartas timbradas, no borradores
+      // Los borradores son documentos en progreso, no documentos fiscales válidos
       return {
         facturas: facturasResult.count || 0,
-        cartasPorte: (cartasPorteResult.count || 0) + (borradoresCartasResult.count || 0),
+        cartasPorte: cartasPorteResult.count || 0,
       };
     },
     staleTime: 30000, // Reducir cache para reflejar cambios más rápido
