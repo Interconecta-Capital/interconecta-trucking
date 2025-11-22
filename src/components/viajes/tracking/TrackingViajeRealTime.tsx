@@ -1,14 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Navigation, Clock, Route as RouteIcon, ExternalLink } from 'lucide-react';
+import { MapPin, Navigation, Clock, Route as RouteIcon, ExternalLink, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useGoogleMapsLoader } from '@/hooks/useGoogleMapsLoader';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TrackingViajeRealTimeProps {
   viaje: any; // Viaje completo con tracking_data desde la función RPC
 }
 
 export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ viaje }) => {
+  // ✅ Cargar Google Maps de forma segura desde Vault (ISO 27001)
+  const { isLoaded: isGoogleMapsLoaded, isLoading: isLoadingGoogleMaps, error: googleMapsError } = useGoogleMapsLoader();
+  
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
@@ -33,9 +38,9 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ vi
     return `${horas}h ${minutos}m`;
   };
   
-  // Inicializar mapa
+  // Inicializar mapa (solo cuando Google Maps esté cargado)
   useEffect(() => {
-    if (!mapRef.current || map || !(window as any).google) return;
+    if (!isGoogleMapsLoaded || !mapRef.current || map || !(window as any).google) return;
     
     if (!ubicacionOrigen?.coordenadas || !ubicacionDestino?.coordenadas) {
       console.warn('No hay coordenadas para mostrar el mapa');
@@ -68,7 +73,7 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ vi
     
     setDirectionsRenderer(renderer);
     setLoadingMap(false);
-  }, [mapRef.current, ubicacionOrigen, ubicacionDestino]);
+  }, [isGoogleMapsLoaded, mapRef.current, ubicacionOrigen, ubicacionDestino]);
   
   // Calcular ruta
   useEffect(() => {
@@ -106,6 +111,33 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ vi
     );
   }, [map, directionsRenderer, ubicacionOrigen, ubicacionDestino]);
   
+  // Mostrar error de Google Maps
+  if (googleMapsError) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <Alert variant="destructive">
+            <AlertDescription>
+              Error al cargar Google Maps: {googleMapsError}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Mostrar loading mientras carga Google Maps
+  if (isLoadingGoogleMaps) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600">Cargando Google Maps de forma segura...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!ubicacionOrigen?.coordenadas || !ubicacionDestino?.coordenadas) {
     return (
       <Card>
