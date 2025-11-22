@@ -11,9 +11,9 @@ interface VehiculoDocumentosSectionProps {
 }
 
 const TIPOS_DOCUMENTO_VEHICULO = [
-  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365, permitirPosponer: false },
-  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: true, vencimiento: 365, permitirPosponer: true },
-  { value: 'permiso_sct', label: 'Permiso SCT', obligatorio: true, vencimiento: 1095, permitirPosponer: true },
+  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: false, vencimiento: 365, permitirPosponer: true },
+  { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: false, vencimiento: 365, permitirPosponer: true },
+  { value: 'permiso_sct', label: 'Permiso SCT', obligatorio: false, vencimiento: 1095, permitirPosponer: true },
   { value: 'verificacion_vehicular', label: 'Verificación Vehicular', obligatorio: false, vencimiento: 180, permitirPosponer: true },
   { value: 'factura_vehiculo', label: 'Factura del Vehículo', obligatorio: false, permitirPosponer: true },
   { value: 'certificado_peso', label: 'Certificado de Peso y Dimensiones', obligatorio: false, vencimiento: 365, permitirPosponer: true },
@@ -77,10 +77,6 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
     return documentos.filter(doc => doc.tipo_documento === tipoDocumento);
   };
 
-  const documentosObligatoriosFaltantes = TIPOS_DOCUMENTO_VEHICULO
-    .filter(tipo => tipo.obligatorio)
-    .filter(tipo => getDocumentosByTipo(tipo.value).length === 0);
-
   return (
     <Card>
       <CardHeader>
@@ -89,7 +85,7 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
           Documentos del Vehículo
         </CardTitle>
         <CardDescription>
-          Documentación legal y técnica del vehículo. Los documentos obligatorios son requeridos para operar.
+          Documentación legal y técnica del vehículo. Todos los documentos son opcionales.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -102,17 +98,6 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
           </Alert>
         )}
 
-        {vehiculoId && documentosObligatoriosFaltantes.length > 0 && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Faltan {documentosObligatoriosFaltantes.length} documento(s) obligatorio(s): {
-                documentosObligatoriosFaltantes.map(d => d.label).join(', ')
-              }
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid gap-4">
           {TIPOS_DOCUMENTO_VEHICULO.map((tipo) => {
             const existentes = getDocumentosByTipo(tipo.value);
@@ -121,14 +106,11 @@ export function VehiculoDocumentosSection({ vehiculoId, onDocumentosChange }: Ve
             return (
               <div 
                 key={tipo.value} 
-                className={`space-y-2 p-3 rounded-lg border ${
-                  tipo.obligatorio && !tieneDocumento ? 'border-red-200 bg-red-50/50' : 'border-border'
-                }`}
+                className="space-y-2 p-3 rounded-lg border border-border"
               >
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">
                     {tipo.label}
-                    {tipo.obligatorio && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   {tipo.vencimiento && (
                     <span className="text-xs text-muted-foreground">
