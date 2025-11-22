@@ -21,12 +21,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   console.log(`📡 [${new Date().toISOString()}] Request recibido: ${req.method} ${req.url}`);
 
+  // Declarar variables fuera del try para uso en catch y en todo el scope
   let user: any = null;
   let ambiente: 'sandbox' | 'production' = 'sandbox';
+  let supabaseClient: any = null;
 
   try {
     // 1. Autenticación
-    const supabaseClient = createClient(
+    supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }

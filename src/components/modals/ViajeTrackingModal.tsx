@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { categorizeError, formatErrorForUser, getErrorIcon } from '@/utils/timbrado/errorCategorization';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -285,7 +286,30 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
       }
     } catch (error: any) {
       console.error('Error timbrando factura:', error);
-      toast.error(`Error: ${error.message}`, { id: 'timbrado' });
+      
+      // 🔐 Categorizar error para feedback útil al usuario
+      const categorizedError = categorizeError(error);
+      const errorIcon = getErrorIcon(categorizedError.type);
+      
+      // Mostrar mensaje categorizado
+      if (categorizedError.userActionable) {
+        toast.error(
+          `${errorIcon} ${categorizedError.title}\n\n${categorizedError.message}\n\n` +
+          `Acciones sugeridas:\n${categorizedError.suggestedActions.map((a, i) => `${i + 1}. ${a}`).join('\n')}`,
+          { 
+            id: 'timbrado',
+            duration: 8000 // Más tiempo para leer las sugerencias
+          }
+        );
+      } else {
+        toast.error(
+          `${errorIcon} ${categorizedError.title}\n\n${categorizedError.message}`,
+          { id: 'timbrado' }
+        );
+      }
+      
+      // Log técnico para debugging
+      console.error('[TIMBRADO] Detalles técnicos:', categorizedError.technicalDetails);
     } finally {
       setIsTimbrando(false);
     }
