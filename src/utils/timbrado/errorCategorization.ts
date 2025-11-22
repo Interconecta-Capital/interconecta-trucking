@@ -57,7 +57,30 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 3. Errores de validación (datos que el usuario puede corregir)
+  // 3. Errores de validación del SAT (CFDI40xxx)
+  if (
+    errorMessage.includes('CFDI40') ||
+    errorMessage.includes('c_RegimenFiscal') ||
+    errorMessage.includes('c_UsoCFDI') ||
+    errorMessage.includes('catálogo') ||
+    errorMessage.includes('no contiene un valor')
+  ) {
+    return {
+      type: 'validation_error',
+      title: 'Error de Validación del SAT',
+      message: 'El SAT rechazó el documento porque algunos campos no cumplen con los catálogos oficiales.',
+      userActionable: true,
+      suggestedActions: [
+        'Verifica que el Régimen Fiscal del receptor esté correctamente configurado en el cliente',
+        'Asegúrate de que el Uso de CFDI sea válido',
+        'Revisa que todos los datos fiscales estén completos',
+        'Edita el cliente/receptor para agregar la información faltante'
+      ],
+      technicalDetails: errorMessage
+    };
+  }
+
+  // 4. Errores de validación de datos
   if (
     errorMessage.includes('Se requieren') ||
     errorMessage.includes('Debe proporcionar') ||
@@ -80,7 +103,7 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 4. Errores de PAC (Proveedor de Certificación)
+  // 5. Errores de PAC (Proveedor de Certificación)
   if (
     errorMessage.includes('PAC') ||
     errorMessage.includes('SW') ||
@@ -104,7 +127,7 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 5. Errores de datos de ubicaciones
+  // 6. Errores de datos de ubicaciones
   if (
     errorMessage.includes('ubicaciones') ||
     errorMessage.includes('origen') ||
@@ -125,7 +148,7 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 6. Errores de mercancías
+  // 7. Errores de mercancías
   if (
     errorMessage.includes('mercancía') ||
     errorMessage.includes('conceptos') ||
@@ -146,7 +169,7 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 7. Errores de CORS (problemas de servidor/configuración)
+  // 8. Errores de CORS (problemas de servidor/configuración)
   if (
     errorMessage.includes('CORS') ||
     errorMessage.includes('Access-Control-Allow-Origin')
@@ -164,7 +187,7 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 8. Errores genéricos del sistema
+  // 9. Errores genéricos del sistema
   if (
     errorMessage.includes('500') ||
     errorMessage.includes('Internal Server Error') ||
@@ -184,7 +207,7 @@ export function categorizeError(error: any): CategorizedError {
     };
   }
 
-  // 9. Error genérico (fallback)
+  // 10. Error genérico (fallback)
   return {
     type: 'system_error',
     title: 'Error Desconocido',

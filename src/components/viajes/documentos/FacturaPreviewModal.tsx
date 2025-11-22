@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { TimbradoValidationErrors } from './TimbradoValidationErrors';
+import { validateFacturaForTimbrado, parseSatError } from '@/utils/timbradoValidation';
 
 interface FacturaPreviewModalProps {
   open: boolean;
@@ -64,6 +66,8 @@ export function FacturaPreviewModal({
   const [formaPago, setFormaPago] = useState(facturaData.forma_pago || '01');
   const [metodoPago, setMetodoPago] = useState(facturaData.metodo_pago || 'PUE');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<any[]>([]);
+  const [satError, setSatError] = useState<any>(null);
 
   // Validaciones de datos seguros
   const formatCurrency = (amount?: number | null) => {
@@ -85,7 +89,26 @@ export function FacturaPreviewModal({
   };
 
   const handleTimbrar = async () => {
-    await onTimbrar({ moneda, forma_pago: formaPago, metodo_pago: metodoPago });
+    // Limpiar errores previos
+    setValidationErrors([]);
+    setSatError(null);
+
+    // Validar antes de timbrar
+    const errors = validateFacturaForTimbrado(facturaData);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    try {
+      await onTimbrar({ moneda, forma_pago: formaPago, metodo_pago: metodoPago });
+    } catch (error: any) {
+      // Parsear error del SAT si existe
+      if (error?.message || error?.details) {
+        setSatError(parseSatError(error));
+      }
+      throw error; // Re-lanzar para que el componente padre también lo maneje
+    }
   };
 
   const handleCancelar = async () => {
@@ -120,6 +143,12 @@ export function FacturaPreviewModal({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* Errores de validación y del SAT */}
+            <TimbradoValidationErrors 
+              errors={validationErrors}
+              satError={satError}
+            />
+
             {/* Alertas importantes */}
             {esFletePageado && (
               <Alert className="border-amber-500 bg-amber-50">
