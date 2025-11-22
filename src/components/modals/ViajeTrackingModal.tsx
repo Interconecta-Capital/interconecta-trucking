@@ -263,8 +263,22 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
           metodoPago: updatedData.metodo_pago,
           conceptos: conceptos,
           ubicaciones: ubicaciones, // ✅ Ubicaciones del viaje
-          tracking_data: trackingData, // ✅ Tracking data completo
-          mercancias: mercancias // ✅ Mercancías del viaje
+          tracking_data: {
+            ...trackingData,
+            conductor: viajeCompleto?.conductor, // ✅ Agregar conductor
+            vehiculo: viajeCompleto?.vehiculo,   // ✅ Agregar vehículo
+            remolque: viajeCompleto?.remolque    // ✅ Agregar remolque
+          },
+          mercancias: mercancias, // ✅ Mercancías del viaje
+          // Autotransporte para CartaPorte
+          autotransporte: viajeCompleto?.vehiculo ? {
+            placa_vm: viajeCompleto.vehiculo.placa,
+            config_vehicular: viajeCompleto.vehiculo.config_vehicular,
+            peso_bruto_vehicular: viajeCompleto.vehiculo.peso_bruto_vehicular || viajeCompleto.vehiculo.capacidad_carga,
+            anio_modelo: viajeCompleto.vehiculo.anio,
+            aseguradora_resp_civil: viajeCompleto.vehiculo.aseguradora || "Sin aseguradora",
+            poliza_resp_civil: viajeCompleto.vehiculo.numero_poliza || "0000000"
+          } : undefined
         },
         ambiente: 'sandbox'
       };
