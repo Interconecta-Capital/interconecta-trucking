@@ -334,31 +334,49 @@ function construirComplementoCartaPorte(data: any) {
 
 function construirUbicaciones(data: any) {
   // 🔄 ISO 27001 A.12.1 - Validación de estructura de datos
+  console.log('🔍 [construirUbicaciones] Data recibida:', {
+    hasUbicaciones: !!data.ubicaciones,
+    ubicacionesType: typeof data.ubicaciones,
+    isArray: Array.isArray(data.ubicaciones),
+    ubicacionesKeys: data.ubicaciones ? Object.keys(data.ubicaciones) : null,
+    trackingDataUbicaciones: data.tracking_data?.ubicaciones ? Object.keys(data.tracking_data.ubicaciones) : null,
+    fullData: JSON.stringify(data).substring(0, 500)
+  });
+  
   let ubicacionesArray: any[] = [];
   
+  // Intentar obtener ubicaciones de tracking_data primero
+  const ubicacionesSource = data.ubicaciones || data.tracking_data?.ubicaciones;
+  
+  if (!ubicacionesSource) {
+    console.error('❌ No se encontraron ubicaciones en data.ubicaciones ni en data.tracking_data.ubicaciones');
+    throw new Error('Se requieren al menos 2 ubicaciones (origen y destino)');
+  }
+  
   // Manejar formato objeto {origen, destino, intermedias}
-  if (data.ubicaciones && !Array.isArray(data.ubicaciones)) {
-    if (data.ubicaciones.origen) {
+  if (ubicacionesSource && !Array.isArray(ubicacionesSource)) {
+    console.log('📍 Procesando ubicaciones en formato objeto');
+    if (ubicacionesSource.origen) {
       ubicacionesArray.push({
-        ...data.ubicaciones.origen,
+        ...ubicacionesSource.origen,
         tipo_ubicacion: 'Origen',
         tipo: 'Origen'
       });
     }
     
-    if (data.ubicaciones.destino) {
+    if (ubicacionesSource.destino) {
       ubicacionesArray.push({
-        ...data.ubicaciones.destino,
+        ...ubicacionesSource.destino,
         tipo_ubicacion: 'Destino',
         tipo: 'Destino'
       });
     }
     
     // Agregar intermedias si existen
-    if (data.ubicaciones.intermedias && Array.isArray(data.ubicaciones.intermedias)) {
+    if (ubicacionesSource.intermedias && Array.isArray(ubicacionesSource.intermedias)) {
       ubicacionesArray = [
         ubicacionesArray[0],
-        ...data.ubicaciones.intermedias.map((u: any) => ({
+        ...ubicacionesSource.intermedias.map((u: any) => ({
           ...u,
           tipo_ubicacion: u.tipo_ubicacion || 'Paso Intermedio',
           tipo: u.tipo || 'Paso Intermedio'
@@ -366,11 +384,16 @@ function construirUbicaciones(data: any) {
         ubicacionesArray[1]
       ];
     }
+    console.log(`✅ Procesadas ${ubicacionesArray.length} ubicaciones desde objeto`);
   } 
   // Manejar formato array
-  else if (Array.isArray(data.ubicaciones)) {
-    ubicacionesArray = data.ubicaciones;
+  else if (Array.isArray(ubicacionesSource)) {
+    console.log('📍 Procesando ubicaciones en formato array');
+    ubicacionesArray = ubicacionesSource;
+    console.log(`✅ Procesadas ${ubicacionesArray.length} ubicaciones desde array`);
   }
+  
+  console.log(`🔍 ubicacionesArray final length: ${ubicacionesArray.length}`);
   
   // Validación: Al menos origen y destino
   if (ubicacionesArray.length < 2) {
