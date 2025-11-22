@@ -296,34 +296,57 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
         setShowFacturaPreview(false);
         handleViajeUpdate();
       } else {
-        throw new Error(data?.error || 'Error al timbrar factura');
+        // Lanzar error con toda la información del SAT
+        const satError: any = new Error(data?.error || 'Error al timbrar factura');
+        satError.codigo = data?.codigo;
+        satError.details = data?.details;
+        throw satError;
       }
     } catch (error: any) {
       console.error('Error timbrando factura:', error);
+      
+      // Extraer error detallado del SAT si existe
+      let satErrorDetails = null;
+      if (error?.codigo || error?.details) {
+        satErrorDetails = {
+          codigo: error.codigo,
+          message: error.message,
+          messageDetail: error.details?.messageDetail || error.details?.message
+        };
+      }
       
       // 🔐 Categorizar error para feedback útil al usuario
       const categorizedError = categorizeError(error);
       const errorIcon = getErrorIcon(categorizedError.type);
       
-      // Mostrar mensaje categorizado
-      if (categorizedError.userActionable) {
-        toast.error(
-          `${errorIcon} ${categorizedError.title}\n\n${categorizedError.message}\n\n` +
-          `Acciones sugeridas:\n${categorizedError.suggestedActions.map((a, i) => `${i + 1}. ${a}`).join('\n')}`,
-          { 
-            id: 'timbrado',
-            duration: 8000 // Más tiempo para leer las sugerencias
-          }
-        );
+      // Mostrar mensaje con detalles del SAT si existen
+      let errorMessage = `${errorIcon} ${categorizedError.title}\n\n`;
+      
+      if (satErrorDetails) {
+        errorMessage += `Código SAT: ${satErrorDetails.codigo}\n\n`;
+        errorMessage += `${satErrorDetails.message}\n\n`;
+        if (satErrorDetails.messageDetail) {
+          errorMessage += `Detalle: ${satErrorDetails.messageDetail}\n\n`;
+        }
       } else {
-        toast.error(
-          `${errorIcon} ${categorizedError.title}\n\n${categorizedError.message}`,
-          { id: 'timbrado' }
-        );
+        errorMessage += `${categorizedError.message}\n\n`;
+      }
+
+      if (categorizedError.userActionable && categorizedError.suggestedActions.length > 0) {
+        errorMessage += `Acciones sugeridas:\n${categorizedError.suggestedActions.map((a, i) => `${i + 1}. ${a}`).join('\n')}`;
+        toast.error(errorMessage, { 
+          id: 'timbrado',
+          duration: 12000 // Más tiempo para leer todo el detalle
+        });
+      } else {
+        toast.error(errorMessage, { id: 'timbrado', duration: 8000 });
       }
       
       // Log técnico para debugging
       console.error('[TIMBRADO] Detalles técnicos:', categorizedError.technicalDetails);
+      if (satErrorDetails) {
+        console.error('[TIMBRADO] Error del SAT:', satErrorDetails);
+      }
     } finally {
       setIsTimbrando(false);
     }

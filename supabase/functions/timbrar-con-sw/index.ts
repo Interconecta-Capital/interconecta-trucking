@@ -362,8 +362,11 @@ const handler = async (req: Request): Promise<Response> => {
       };
     }
     
+    // Determinar status code apropiado
+    const statusCode = error.message?.includes('autenticación') ? 401 : 500;
+    
     return new Response(JSON.stringify(errorResponse), { 
-      status: 500, 
+      status: statusCode, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
   }
@@ -442,8 +445,12 @@ function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: b
       Rfc: cartaPorteData.rfcReceptor,
       Nombre: cartaPorteData.nombreReceptor,
       DomicilioFiscalReceptor: obtenerCPReceptor(cartaPorteData),
-      RegimenFiscalReceptor: cartaPorteData.regimenFiscalReceptor || "601",
-      UsoCFDI: cartaPorteData.usoCfdi || "S01"
+      RegimenFiscalReceptor: (cartaPorteData.regimenFiscalReceptor && cartaPorteData.regimenFiscalReceptor !== 'N/A') 
+        ? cartaPorteData.regimenFiscalReceptor 
+        : "616", // Régimen fiscal por defecto para personas físicas
+      UsoCFDI: (cartaPorteData.usoCfdi && cartaPorteData.usoCfdi !== 'N/A') 
+        ? cartaPorteData.usoCfdi 
+        : "G03" // Gastos en general
     },
     
     Conceptos: construirConceptos(cartaPorteData),
