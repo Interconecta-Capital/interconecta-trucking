@@ -89,20 +89,28 @@ export function FacturaPreviewModal({
   };
 
   const handleTimbrar = async () => {
+    console.log('🔥 [Modal] Botón Timbrar presionado');
+    
     // Limpiar errores previos
     setValidationErrors([]);
     setSatError(null);
 
     // Validar antes de timbrar
+    console.log('🔍 [Modal] Validando datos de factura...');
     const errors = validateFacturaForTimbrado(facturaData);
     if (errors.length > 0) {
+      console.error('❌ [Modal] Errores de validación:', errors);
       setValidationErrors(errors);
       return;
     }
 
+    console.log('✅ [Modal] Validación exitosa, llamando a onTimbrar...');
+    
     try {
       await onTimbrar({ moneda, forma_pago: formaPago, metodo_pago: metodoPago });
+      console.log('✅ [Modal] onTimbrar completado exitosamente');
     } catch (error: any) {
+      console.error('❌ [Modal] Error en onTimbrar:', error);
       // Parsear error del SAT si existe
       if (error?.message || error?.details) {
         setSatError(parseSatError(error));

@@ -116,35 +116,96 @@ export default function ViajeDetalle() {
   };
 
   const handlePrepararPreview = () => {
-    if (!factura) return;
+    if (!factura) {
+      console.error('❌ No hay factura para mostrar');
+      toast.error('No se encontró la factura');
+      return;
+    }
+    
+    console.log('📄 Abriendo preview de factura:', {
+      id: factura.id,
+      serie: factura.serie,
+      folio: factura.folio,
+      status: factura.status,
+      rfc_receptor: (factura as any).rfc_receptor,
+      regimen_fiscal_receptor: (factura as any).regimen_fiscal_receptor
+    });
+    
     setShowFacturaPreview(true);
   };
 
   const handleTimbrarFactura = async (updatedData: { moneda: string; forma_pago: string; metodo_pago: string }) => {
-    if (!factura) return;
+    if (!factura) {
+      console.error('❌ No hay factura para timbrar');
+      toast.error('No se encontró la factura');
+      return;
+    }
+    
+    console.log('🎬 Iniciando proceso de timbrado...', {
+      facturaId: factura.id,
+      updatedData
+    });
     
     try {
       setIsTimbrando(true);
+      toast.loading('Preparando factura...', { id: 'timbrado' });
       
-      // Actualizar datos editables en la factura
-      await supabase
+      // ✅ FASE 1: Cargar socio para obtener regimen_fiscal si falta
+      let regimenFiscalReceptor = (factura as any).regimen_fiscal_receptor;
+      
+      if (!regimenFiscalReceptor && viaje?.socio_id) {
+        console.log('⚠️ Régimen fiscal faltante, cargando desde socio...');
+        const { data: socioData } = await supabase
+          .from('socios')
+          .select('regimen_fiscal')
+          .eq('id', viaje.socio_id)
+          .single();
+        
+        if (socioData?.regimen_fiscal) {
+          regimenFiscalReceptor = socioData.regimen_fiscal;
+          console.log('✅ Régimen fiscal cargado desde socio:', regimenFiscalReceptor);
+        }
+      }
+      
+      // ✅ FASE 2: Actualizar factura con datos editables + régimen fiscal
+      console.log('💾 Actualizando factura con datos editables...');
+      const { error: updateError } = await supabase
         .from('facturas')
         .update({
           moneda: updatedData.moneda,
           forma_pago: updatedData.forma_pago,
-          metodo_pago: updatedData.metodo_pago
+          metodo_pago: updatedData.metodo_pago,
+          regimen_fiscal_receptor: regimenFiscalReceptor || '616' // Default: Sin obligaciones fiscales
         })
         .eq('id', factura.id);
       
-      // Llamar edge function para timbrar
+      if (updateError) {
+        console.error('❌ Error actualizando factura:', updateError);
+        throw updateError;
+      }
+      
+      console.log('✅ Factura actualizada correctamente');
+      toast.loading('Timbrando con el PAC...', { id: 'timbrado' });
+      
+      // ✅ FASE 3: Llamar edge function para timbrar
+      console.log('📤 Llamando a edge function timbrar-invoice...');
       const { data, error } = await supabase.functions.invoke('timbrar-invoice', {
         body: { facturaId: factura.id }
       });
 
-      if (error) throw error;
+      console.log('📥 Respuesta del edge function:', { data, error });
+
+      if (error) {
+        console.error('❌ Error del edge function:', error);
+        throw error;
+      }
       
-      if (data.success) {
-        toast.success('✅ Factura timbrada exitosamente');
+      if (data?.success) {
+        console.log('✅ Factura timbrada exitosamente:', data);
+        toast.success('✅ Factura timbrada exitosamente', { 
+          id: 'timbrado',
+          description: `UUID: ${data.uuid}` 
+        });
         
         // Actualizar estado del viaje a 'programado'
         await supabase
@@ -156,12 +217,14 @@ export default function ViajeDetalle() {
         setShowFacturaPreview(false);
         await cargarViajeCompleto();
       } else {
-        throw new Error(data.error || 'Error desconocido al timbrar');
+        console.error('❌ Timbrado falló:', data);
+        throw new Error(data?.error || 'Error desconocido al timbrar');
       }
     } catch (error: any) {
-      console.error('Error timbrando factura:', error);
+      console.error('❌ Error general en timbrado:', error);
       toast.error('Error al timbrar factura', {
-        description: error.message
+        id: 'timbrado',
+        description: error.message || 'Error desconocido'
       });
       throw error; // Re-lanzar para que el modal también lo maneje
     } finally {
