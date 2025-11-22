@@ -38,7 +38,8 @@ export class CartaPorteLifecycleManager {
             autotransporte: {},
             figuras: []
           },
-          version_formulario: request.version_formulario || '3.1'
+          version_formulario: request.version_formulario || '3.1',
+          viaje_id: request.viaje_id || null // ✅ FASE 1: Vincular con viaje
         })
         .select()
         .single();

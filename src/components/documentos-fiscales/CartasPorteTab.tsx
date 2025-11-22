@@ -41,6 +41,7 @@ export function CartasPorteTab() {
   const { data: documentos, isLoading } = useQuery({
     queryKey: ['cartas-porte-completo', filtro],
     queryFn: async () => {
+      console.log('📋 [CARTAS PORTE] Cargando documentos con filtro:', filtro); // ✅ FASE 5
       const promises: Promise<any>[] = [];
 
       // Solo traer borradores si el filtro lo requiere
@@ -48,7 +49,7 @@ export function CartasPorteTab() {
         promises.push(
           supabase
             .from('borradores_carta_porte')
-            .select('id, nombre_borrador, datos_formulario, auto_saved, created_at, updated_at')
+            .select('id, nombre_borrador, datos_formulario, auto_saved, created_at, updated_at, viaje_id')
             .order('updated_at', { ascending: false })
             .limit(100) as any
         );
@@ -92,13 +93,16 @@ export function CartasPorteTab() {
         const emisor = datosForm.emisor || datosForm.configuracion?.emisor || {};
         const receptor = datosForm.receptor || datosForm.configuracion?.receptor || {};
         
+        const rfcEmisor = datosForm.rfcEmisor || datosForm.configuracion?.rfcEmisor || emisor.rfc || emisor.rfcEmisor || 'N/A';
+        const rfcReceptor = datosForm.rfcReceptor || datosForm.configuracion?.rfcReceptor || receptor.rfc || receptor.rfcReceptor || 'N/A';
+        
         return {
           id: b.id,
           tipo: 'borrador' as const,
           id_ccp: datosForm.cartaPorteId || datosForm.id_ccp || 'N/A',
-          rfc_emisor: datosForm.rfcEmisor || datosForm.configuracion?.rfcEmisor || emisor.rfc || emisor.rfcEmisor || 'N/A',
+          rfc_emisor: rfcEmisor,
           nombre_emisor: datosForm.nombreEmisor || datosForm.configuracion?.nombreEmisor || emisor.nombre || emisor.razonSocial || 'N/A',
-          rfc_receptor: datosForm.rfcReceptor || datosForm.configuracion?.rfcReceptor || receptor.rfc || receptor.rfcReceptor || 'N/A',
+          rfc_receptor: rfcReceptor,
           nombre_receptor: datosForm.nombreReceptor || datosForm.configuracion?.nombreReceptor || receptor.nombre || receptor.razonSocial || 'N/A',
           status: b.auto_saved ? 'auto_guardado' : 'borrador',
           created_at: b.created_at,
@@ -106,8 +110,11 @@ export function CartasPorteTab() {
           nombre_borrador: b.nombre_borrador,
           distancia_total: datosForm.datosCalculoRuta?.distanciaTotal || datosForm.distanciaTotal || 0,
           viaje: null,
+          viaje_id: b.viaje_id, // ✅ FASE 5: Exponer viaje_id
           uuid_fiscal: null,
           transporte_internacional: datosForm.transporteInternacional || false,
+          // ✅ FASE 6: Detectar datos incompletos
+          datos_incompletos: rfcEmisor === 'N/A' || rfcReceptor === 'N/A' || !rfcEmisor || !rfcReceptor
         };
       });
 
@@ -117,11 +124,20 @@ export function CartasPorteTab() {
         tipo: 'timbrada' as const,
         // Mapear el campo viajes al singular viaje (compatibilidad con rest del código)
         viaje: cp.viajes || null,
+        datos_incompletos: false // Cartas timbradas siempre tienen datos completos
       }));
 
       // Combinar y ordenar por fecha
       const todosDocumentos = [...borradoresFormateados, ...cartasPorteFormateadas]
         .sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
+
+      // ✅ FASE 5: Log de resultados
+      console.log('📊 [CARTAS PORTE] Documentos cargados:', {
+        borradores: borradoresFormateados.length,
+        timbradas: cartasPorteFormateadas.length,
+        total: todosDocumentos.length,
+        con_datos_incompletos: borradoresFormateados.filter((b: any) => b.datos_incompletos).length
+      });
 
       return todosDocumentos;
     },
@@ -267,6 +283,13 @@ export function CartasPorteTab() {
                         >
                           {doc.status === 'auto_guardado' ? 'Auto-guardado' : doc.status}
                         </Badge>
+                        {/* ✅ FASE 6: Badge de datos incompletos */}
+                        {doc.datos_incompletos && (
+                          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Datos incompletos
+                          </Badge>
+                        )}
                         {doc.transporte_internacional && (
                           <Badge variant="outline" className="text-xs">Internacional</Badge>
                         )}

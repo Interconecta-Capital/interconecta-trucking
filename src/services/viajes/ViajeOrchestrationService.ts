@@ -75,7 +75,7 @@ export class ViajeOrchestrationService {
       }
       
       // ========== PASO 3: CREAR BORRADOR CARTA PORTE ==========
-      const borradorCP = await this.crearBorradorCartaPorte(viaje.id, wizardData, facturaId);
+      const borradorCP = await this.crearBorradorCartaPorte(viaje.id, wizardData, facturaId); // ✅ FASE 2: Ya es async
       console.log('✅ [ORCHESTRATOR] Borrador CP creado:', borradorCP.id);
       
       // ========== PASO 4: VINCULAR TODO EN TRACKING_DATA (OPTIMIZADO - sin wizard_data) ==========
@@ -335,16 +335,36 @@ export class ViajeOrchestrationService {
   }
   
   /**
+   * ✅ FASE 2 & 5: MEJORADO - Crear borrador de Carta Porte con validación async
    * Crear borrador de Carta Porte vinculado a viaje y factura
-   * ✅ MEJORADO: Sincroniza mercancías del viaje a la tabla mercancias
+   * ✅ CRÍTICO: Usa await para esperar datos del emisor de configuracion_empresa
+   * ✅ Sincroniza mercancías del viaje a la tabla mercancias
    */
   private static async crearBorradorCartaPorte(
     viajeId: string, 
     wizardData: ViajeWizardData,
     facturaId?: string
   ) {
-    // Convertir datos del wizard a formato CartaPorte válido
-    const cartaPorteData = ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardData);
+    console.log('📋 [ORCHESTRATOR] Iniciando creación de borrador Carta Porte...');
+    console.log('📋 [ORCHESTRATOR] Cliente:', {
+      nombre: wizardData.cliente?.nombre_razon_social,
+      rfc: wizardData.cliente?.rfc,
+      regimen_fiscal: wizardData.cliente?.regimen_fiscal
+    });
+    
+    // ✅ FASE 2: AWAIT obligatorio para obtener RFC del emisor
+    const cartaPorteData = await ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardData);
+    
+    // ✅ FASE 5: Logs detallados para debugging
+    console.log('📋 [ORCHESTRATOR] Datos mapeados para borrador:', {
+      rfcEmisor: cartaPorteData.rfcEmisor,
+      nombreEmisor: cartaPorteData.nombreEmisor,
+      rfcReceptor: cartaPorteData.rfcReceptor,
+      nombreReceptor: cartaPorteData.nombreReceptor,
+      ubicaciones: cartaPorteData.ubicaciones?.length || 0,
+      mercancias: cartaPorteData.mercancias?.length || 0,
+      figuras: cartaPorteData.figuras?.length || 0
+    });
     
     // Agregar referencia a factura si existe
     if (facturaId) {
@@ -354,10 +374,18 @@ export class ViajeOrchestrationService {
     // Agregar referencia al viaje
     (cartaPorteData as any).viaje_id = viajeId;
     
+    // ✅ FASE 1: Pasar viaje_id al crear borrador
     const borrador = await CartaPorteLifecycleManager.crearBorrador({
       nombre_borrador: `CP-Viaje-${wizardData.cliente?.nombre_razon_social || 'Cliente'}-${new Date().toLocaleDateString()}`,
       datos_formulario: cartaPorteData,
-      version_formulario: '3.1'
+      version_formulario: '3.1',
+      viaje_id: viajeId // ✅ CRÍTICO: Vincular con viaje desde el inicio
+    });
+    
+    console.log('✅ [ORCHESTRATOR] Borrador CP creado con vínculos:', {
+      borrador_id: borrador.id,
+      viaje_id: viajeId,
+      factura_id: facturaId || 'N/A'
     });
     
     return borrador;
