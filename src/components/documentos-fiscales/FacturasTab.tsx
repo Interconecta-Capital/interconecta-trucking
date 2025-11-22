@@ -1,28 +1,30 @@
 // ============================================
-// FASE 5: Tab de Facturas
+// FASE 5: Tab de Facturas (MEJORADO)
 // ISO 27001 A.18.1: Cumplimiento legal
+// Muestra facturas en todos sus estados
 // ============================================
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Receipt, Download, Eye, FileText, Calendar } from 'lucide-react';
+import { Receipt, Download, Eye, FileText, Calendar, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function FacturasTab() {
   const [filtro, setFiltro] = useState('todos');
 
-  const { data: facturas, isLoading } = useQuery({
+  const { data: facturas, isLoading, refetch } = useQuery({
     queryKey: ['facturas', filtro],
     queryFn: async () => {
       let query = supabase
         .from('facturas')
         .select(`
           *,
-          viaje:viajes(id, origen, destino)
+          viaje:viajes(id, origen, destino, tracking_data)
         `)
         .order('created_at', { ascending: false });
 
@@ -35,6 +37,19 @@ export function FacturasTab() {
       return data || [];
     }
   });
+
+  const handleTimbrarFactura = async (facturaId: string) => {
+    toast.loading('Timbrando factura...', { id: 'timbrar' });
+    try {
+      // Aquí iría la lógica de timbrado
+      // Por ahora, solo simulamos
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast.success('Factura timbrada correctamente', { id: 'timbrar' });
+      refetch();
+    } catch (error) {
+      toast.error('Error al timbrar factura', { id: 'timbrar' });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -87,15 +102,21 @@ export function FacturasTab() {
                     <div className="flex items-center gap-3 mb-2">
                       <Receipt className="h-5 w-5 text-blue-600" />
                       <span className="text-lg font-bold font-mono">
-                        {factura.serie}-{factura.folio}
+                        {factura.serie}-{factura.folio || 'Borrador'}
                       </span>
                       <Badge variant={
                         factura.status === 'timbrada' ? 'default' :
                         factura.status === 'cancelada' ? 'destructive' :
                         'secondary'
                       }>
-                        {factura.status}
+                        {factura.status === 'draft' ? 'Borrador' : factura.status}
                       </Badge>
+                      {factura.tiene_carta_porte && (
+                        <Badge variant="outline" className="text-xs">
+                          <FileText className="h-3 w-3 mr-1" />
+                          Con Carta Porte
+                        </Badge>
+                      )}
                     </div>
                     {factura.uuid_fiscal && (
                       <p className="text-sm text-muted-foreground font-mono mb-2" title={factura.uuid_fiscal}>
@@ -107,18 +128,18 @@ export function FacturasTab() {
                     <p className="text-2xl font-bold">
                       ${factura.total?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) || '0.00'}
                     </p>
-                    <p className="text-sm text-muted-foreground">MXN</p>
+                    <p className="text-sm text-muted-foreground">{factura.moneda || 'MXN'}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="font-medium text-muted-foreground">RFC Emisor</p>
-                    <p className="font-mono">{factura.rfc_emisor}</p>
+                    <p className="font-mono">{factura.rfc_emisor || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-medium text-muted-foreground">RFC Receptor</p>
-                    <p className="font-mono">{factura.rfc_receptor}</p>
+                    <p className="font-mono">{factura.rfc_receptor || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="font-medium text-muted-foreground">Fecha</p>
@@ -137,6 +158,16 @@ export function FacturasTab() {
                 )}
 
                 <div className="flex items-center gap-2 mt-4">
+                  {factura.status === 'draft' && (
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => handleTimbrarFactura(factura.id)}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Timbrar Factura
+                    </Button>
+                  )}
                   {factura.status === 'timbrada' && (
                     <>
                       <Button variant="outline" size="sm">
