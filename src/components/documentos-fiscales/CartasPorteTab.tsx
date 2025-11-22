@@ -56,6 +56,7 @@ export function CartasPorteTab() {
         promises.push(Promise.resolve({ data: [], error: null }));
       }
 
+      // ✅ CORREGIDO: Usar hint de relación específico para evitar ambigüedad
       // Solo traer cartas timbradas/canceladas si el filtro lo requiere
       if (filtro === 'todos' || filtro === 'timbrada' || filtro === 'cancelada') {
         promises.push(
@@ -64,7 +65,7 @@ export function CartasPorteTab() {
             .select(`
               id, id_ccp, uuid_fiscal, status, rfc_emisor, rfc_receptor, nombre_emisor, nombre_receptor,
               created_at, updated_at, distancia_total, transporte_internacional,
-              viaje:viajes(id, origen, destino)
+              viajes!fk_cartas_porte_viaje(id, origen, destino)
             `)
             .order('created_at', { ascending: false })
             .limit(100) as any
@@ -110,10 +111,12 @@ export function CartasPorteTab() {
         };
       });
 
-      // Mapear cartas porte timbradas
+      // ✅ CORREGIDO: Mapear viajes correctamente (el resultado cambia con el hint)
       const cartasPorteFormateadas = (cartasPorteResult.data || []).map((cp: any) => ({
         ...cp,
         tipo: 'timbrada' as const,
+        // Mapear el campo viajes al singular viaje (compatibilidad con rest del código)
+        viaje: cp.viajes || null,
       }));
 
       // Combinar y ordenar por fecha
@@ -132,6 +135,7 @@ export function CartasPorteTab() {
 
     const termino = busqueda.toLowerCase().trim();
     return documentos.filter((doc: any) => {
+      // ✅ CORREGIDO: Usar doc.viaje que fue mapeado desde doc.viajes
       return (
         doc.id_ccp?.toLowerCase().includes(termino) ||
         doc.rfc_emisor?.toLowerCase().includes(termino) ||
