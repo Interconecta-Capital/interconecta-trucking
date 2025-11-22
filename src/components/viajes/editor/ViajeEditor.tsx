@@ -9,20 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { 
   Save, 
-  Truck, 
-  User, 
   MapPin, 
   Calendar, 
   AlertTriangle,
   Package,
-  Edit,
-  Calculator
+  Edit
 } from 'lucide-react';
 import { Viaje, useViajesEstados } from '@/hooks/useViajesEstados';
-import { CostosViajeSmart } from '../costos/CostosViajeSmart';
 import { toast } from 'sonner';
 
 interface ViajeEditorProps {
@@ -39,19 +35,15 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
   const [editedViaje, setEditedViaje] = useState<Partial<Viaje>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
 
   const { actualizarViaje, isUpdatingViaje } = useViajesEstados();
 
   useEffect(() => {
     setEditedViaje({
-      origen: viaje.origen,
-      destino: viaje.destino,
       fecha_inicio_programada: viaje.fecha_inicio_programada,
       fecha_fin_programada: viaje.fecha_fin_programada,
       observaciones: viaje.observaciones || '',
-      conductor_id: viaje.conductor_id,
-      vehiculo_id: viaje.vehiculo_id
+      estado: viaje.estado
     });
   }, [viaje]);
 
@@ -92,13 +84,10 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
     }
     
     setEditedViaje({
-      origen: viaje.origen,
-      destino: viaje.destino,
       fecha_inicio_programada: viaje.fecha_inicio_programada,
       fecha_fin_programada: viaje.fecha_fin_programada,
       observaciones: viaje.observaciones || '',
-      conductor_id: viaje.conductor_id,
-      vehiculo_id: viaje.vehiculo_id
+      estado: viaje.estado
     });
     setHasChanges(false);
     setIsEditing(false);
@@ -150,13 +139,13 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
               <Edit className="h-6 w-6" />
-              Editar Viaje - {viaje.carta_porte_id}
+              Editar Viaje
               <Badge className={getEstadoBadgeColor()}>
                 {viaje.estado.replace('_', ' ').toUpperCase()}
               </Badge>
             </CardTitle>
             <div className="flex gap-2">
-              {!isEditing && canEdit() && activeTab === 'general' && (
+              {!isEditing && canEdit() && (
                 <Button onClick={() => setIsEditing(true)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Editar
@@ -184,7 +173,7 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
           </div>
         </CardHeader>
         
-        {!canEdit() && activeTab === 'general' && (
+        {!canEdit() && (
           <CardContent>
             <Alert>
               <AlertTriangle className="h-4 w-4" />
@@ -196,206 +185,157 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
         )}
       </Card>
 
-      {/* Tabs para organizar secciones */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            General
-          </TabsTrigger>
-          <TabsTrigger value="costos" className="flex items-center gap-2">
-            <Calculator className="h-4 w-4" />
-            Costos
-          </TabsTrigger>
-          <TabsTrigger value="tracking" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Tracking
-          </TabsTrigger>
-        </TabsList>
+      {/* Información de Ruta - Solo Lectura */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Información de Ruta
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Origen</Label>
+              <Input
+                value={viaje.origen || ''}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div>
+              <Label>Destino</Label>
+              <Input
+                value={viaje.destino || ''}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="general" className="space-y-6">
-          {/* Información de Ruta */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Información de Ruta
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
-                <div>
-                  <Label htmlFor="origen">Origen</Label>
-                  <Input
-                    id="origen"
-                    value={editedViaje.origen || ''}
-                    onChange={(e) => handleInputChange('origen', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? 'bg-muted' : ''}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="destino">Destino</Label>
-                  <Input
-                    id="destino"
-                    value={editedViaje.destino || ''}
-                    onChange={(e) => handleInputChange('destino', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? 'bg-muted' : ''}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Programación - EDITABLE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Programación
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="fecha-inicio">Fecha y Hora de Inicio</Label>
+              <Input
+                id="fecha-inicio"
+                type="datetime-local"
+                value={formatDateTimeLocal(editedViaje.fecha_inicio_programada || viaje.fecha_inicio_programada)}
+                onChange={(e) => handleInputChange('fecha_inicio_programada', e.target.value)}
+                disabled={!isEditing}
+                className={!isEditing ? 'bg-muted' : ''}
+              />
+            </div>
+            <div>
+              <Label htmlFor="fecha-fin">Fecha y Hora de Llegada</Label>
+              <Input
+                id="fecha-fin"
+                type="datetime-local"
+                value={formatDateTimeLocal(editedViaje.fecha_fin_programada || viaje.fecha_fin_programada)}
+                onChange={(e) => handleInputChange('fecha_fin_programada', e.target.value)}
+                disabled={!isEditing}
+                className={!isEditing ? 'bg-muted' : ''}
+              />
+            </div>
+          </div>
 
-          {/* Programación */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Programación
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
-                <div>
-                  <Label htmlFor="fecha-inicio">Fecha y Hora de Inicio</Label>
-                  <Input
-                    id="fecha-inicio"
-                    type="datetime-local"
-                    value={formatDateTimeLocal(editedViaje.fecha_inicio_programada || viaje.fecha_inicio_programada)}
-                    onChange={(e) => handleInputChange('fecha_inicio_programada', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? 'bg-muted' : ''}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="fecha-fin">Fecha y Hora de Llegada</Label>
-                  <Input
-                    id="fecha-fin"
-                    type="datetime-local"
-                    value={formatDateTimeLocal(editedViaje.fecha_fin_programada || viaje.fecha_fin_programada)}
-                    onChange={(e) => handleInputChange('fecha_fin_programada', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? 'bg-muted' : ''}
-                  />
-                </div>
-              </div>
-
-              {/* Mostrar fechas reales si existen */}
-              {(viaje.fecha_inicio_real || viaje.fecha_fin_real) && (
-                <>
-                  <Separator />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
-                    {viaje.fecha_inicio_real && (
-                      <div>
-                        <Label>Fecha Real de Inicio</Label>
-                        <Input
-                          value={new Date(viaje.fecha_inicio_real).toLocaleString()}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                    )}
-                    {viaje.fecha_fin_real && (
-                      <div>
-                        <Label>Fecha Real de Finalización</Label>
-                        <Input
-                          value={new Date(viaje.fecha_fin_real).toLocaleString()}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                    )}
+          {/* Mostrar fechas reales si existen */}
+          {(viaje.fecha_inicio_real || viaje.fecha_fin_real) && (
+            <>
+              <Separator />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {viaje.fecha_inicio_real && (
+                  <div>
+                    <Label>Fecha Real de Inicio</Label>
+                    <Input
+                      value={new Date(viaje.fecha_inicio_real).toLocaleString('es-MX')}
+                      disabled
+                      className="bg-muted"
+                    />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recursos Asignados */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Truck className="h-5 w-5" />
-                Recursos Asignados
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 viaje-editor-grid">
-                <div>
-                  <Label htmlFor="vehiculo">Vehículo</Label>
-                  <Input
-                    id="vehiculo"
-                    value={editedViaje.vehiculo_id || 'No asignado'}
-                    onChange={(e) => handleInputChange('vehiculo_id', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? 'bg-muted' : ''}
-                    placeholder="ID del vehículo"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="conductor">Conductor</Label>
-                  <Input
-                    id="conductor"
-                    value={editedViaje.conductor_id || 'No asignado'}
-                    onChange={(e) => handleInputChange('conductor_id', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? 'bg-muted' : ''}
-                    placeholder="ID del conductor"
-                  />
-                </div>
+                )}
+                {viaje.fecha_fin_real && (
+                  <div>
+                    <Label>Fecha Real de Finalización</Label>
+                    <Input
+                      value={new Date(viaje.fecha_fin_real).toLocaleString('es-MX')}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Observaciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Observaciones
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <Label htmlFor="observaciones">Observaciones del Viaje</Label>
-                <Textarea
-                  id="observaciones"
-                  value={editedViaje.observaciones || ''}
-                  onChange={(e) => handleInputChange('observaciones', e.target.value)}
-                  disabled={!isEditing}
-                  className={!isEditing ? 'bg-muted' : ''}
-                  rows={4}
-                  placeholder="Detalles adicionales del viaje..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="costos" className="space-y-6">
-          <CostosViajeSmart viaje={viaje} onCostosUpdate={onViajeUpdate} />
-        </TabsContent>
-
-        <TabsContent value="tracking" className="space-y-6">
-          {/* Información del tracking data si existe */}
-          {viaje.tracking_data && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Datos del Wizard Original</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-muted rounded-lg">
-                  <pre className="text-xs text-muted-foreground overflow-auto max-h-32">
-                    {JSON.stringify(viaje.tracking_data, null, 2)}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
+            </>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Estado - EDITABLE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Estado del Viaje
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="estado">Estado</Label>
+              <Select
+                value={editedViaje.estado || viaje.estado}
+                onValueChange={(value) => handleInputChange('estado', value)}
+                disabled={!isEditing}
+              >
+                <SelectTrigger className={!isEditing ? 'bg-muted' : ''}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="programado">Programado</SelectItem>
+                  <SelectItem value="en_transito">En Tránsito</SelectItem>
+                  <SelectItem value="retrasado">Retrasado</SelectItem>
+                  <SelectItem value="completado">Completado</SelectItem>
+                  <SelectItem value="cancelado">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Observaciones - EDITABLE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Observaciones
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <Label htmlFor="observaciones">Observaciones del Viaje</Label>
+            <Textarea
+              id="observaciones"
+              value={editedViaje.observaciones || ''}
+              onChange={(e) => handleInputChange('observaciones', e.target.value)}
+              disabled={!isEditing}
+              className={!isEditing ? 'bg-muted' : ''}
+              rows={4}
+              placeholder="Detalles adicionales del viaje..."
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Cambios pendientes */}
       {hasChanges && isEditing && (
