@@ -51,16 +51,30 @@ export function FacturaPreviewModal({
   onTimbrar,
   isTimbrando = false
 }: FacturaPreviewModalProps) {
-  const formatCurrency = (amount: number) => {
+  // Validaciones de datos seguros
+  const formatCurrency = (amount?: number | null) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: facturaData.moneda || 'MXN'
-    }).format(amount);
+    }).format(amount || 0);
+  };
+
+  const formatSafeDate = (dateString?: string | null) => {
+    if (!dateString) return 'Sin fecha';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      return format(date, "dd/MM/yyyy", { locale: es });
+    } catch {
+      return 'Fecha inválida';
+    }
   };
 
   const esFletePageado = viajeData?.tipo_servicio === 'flete_pagado';
   const esTipoIngreso = facturaData.tipo_comprobante === 'I';
-  const iva = facturaData.total_impuestos_trasladados || (facturaData.total - facturaData.subtotal);
+  const subtotal = facturaData.subtotal || 0;
+  const total = facturaData.total || 0;
+  const iva = facturaData.total_impuestos_trasladados || (total - subtotal);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,7 +133,7 @@ export function FacturaPreviewModal({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Fecha:</span>
                   <span className="font-medium">
-                    {format(new Date(facturaData.fecha_expedicion), "dd/MM/yyyy", { locale: es })}
+                    {formatSafeDate(facturaData.fecha_expedicion)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -147,7 +161,7 @@ export function FacturaPreviewModal({
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="font-medium">{formatCurrency(facturaData.subtotal)}</span>
+                  <span className="font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 {esTipoIngreso && (
                   <div className="flex justify-between text-sm">
@@ -159,7 +173,7 @@ export function FacturaPreviewModal({
                 <div className="flex justify-between">
                   <span className="font-semibold">Total:</span>
                   <span className="text-xl font-bold text-primary">
-                    {formatCurrency(facturaData.total)}
+                    {formatCurrency(total)}
                   </span>
                 </div>
               </div>
@@ -177,11 +191,11 @@ export function FacturaPreviewModal({
                 Emisor
               </h3>
               <div className="space-y-2">
-                <p className="font-medium">{facturaData.nombre_emisor}</p>
+                <p className="font-medium">{facturaData.nombre_emisor || 'Sin nombre'}</p>
                 <div className="text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">RFC:</span>
-                    <span className="font-mono">{facturaData.rfc_emisor}</span>
+                    <span className="font-mono">{facturaData.rfc_emisor || 'Sin RFC'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Régimen:</span>
@@ -198,11 +212,11 @@ export function FacturaPreviewModal({
                 Receptor
               </h3>
               <div className="space-y-2">
-                <p className="font-medium">{facturaData.nombre_receptor}</p>
+                <p className="font-medium">{facturaData.nombre_receptor || 'Sin nombre'}</p>
                 <div className="text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">RFC:</span>
-                    <span className="font-mono">{facturaData.rfc_receptor}</span>
+                    <span className="font-mono">{facturaData.rfc_receptor || 'Sin RFC'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Régimen:</span>
@@ -237,7 +251,7 @@ export function FacturaPreviewModal({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Importe:</span>
-                <span className="font-medium">{formatCurrency(facturaData.subtotal)}</span>
+                <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
             </div>
           </div>
