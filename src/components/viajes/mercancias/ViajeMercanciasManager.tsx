@@ -1,41 +1,110 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, Upload, Plus, Trash2, Edit, AlertTriangle } from 'lucide-react';
+import { Package, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { DocumentUploadDialog } from '@/components/carta-porte/mercancias/DocumentUploadDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ViajeMercanciasManagerProps {
   viajeId: string;
-  mercanciasTracking: any[];
-  mercanciasCartaPorte: any[];
-  onMercanciasUpdate: (mercancias: any[]) => void;
+  onMercanciasUpdate?: () => void;
 }
 
 export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
   viajeId,
-  mercanciasTracking = [],
-  mercanciasCartaPorte = [],
   onMercanciasUpdate
 }) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [mercancias, setMercancias] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Combinar mercancías de ambas fuentes
-  const todasMercancias = [
-    ...mercanciasCartaPorte.map(m => ({ ...m, fuente: 'carta_porte', editable: false })),
-    ...mercanciasTracking.map(m => ({ ...m, fuente: 'tracking', editable: true }))
-  ];
+  // ⚡ UNIFICADO: Cargar mercancías SOLO de tabla mercancias (UNA fuente de verdad)
+  useEffect(() => {
+    cargarMercancias();
+  }, [viajeId]);
   
-  const handleDocumentProcessed = (mercanciasNuevas: any[]) => {
-    // Agregar mercancías procesadas al viaje
-    onMercanciasUpdate([...mercanciasTracking, ...mercanciasNuevas]);
-    setShowUploadDialog(false);
+  const cargarMercancias = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('mercancias')
+        .select('*')
+        .eq('viaje_id', viajeId)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      setMercancias(data || []);
+    } catch (error) {
+      console.error('Error cargando mercancías:', error);
+      toast.error('Error cargando mercancías');
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleDelete = (index: number) => {
-    const nuevasMercancias = mercanciasTracking.filter((_, i) => i !== index);
-    onMercanciasUpdate(nuevasMercancias);
+  const handleDocumentProcessed = async (mercanciasNuevas: any[]) => {
+    try {
+      // ⚡ UNIFICADO: Guardar directamente en tabla mercancias
+      const { error } = await supabase
+        .from('mercancias')
+        .insert(
+          mercanciasNuevas.map(m => ({
+            viaje_id: viajeId,
+            estado: 'borrador',
+            bienes_transp: m.bienes_transp || '',
+            descripcion: m.descripcion || '',
+            cantidad: m.cantidad || 1,
+            clave_unidad: m.clave_unidad || 'KGM',
+            unidad: 'Kilogramo',
+            peso_kg: m.peso_kg || 0,
+            valor_mercancia: m.valor_mercancia || 0,
+            material_peligroso: m.material_peligroso || false,
+            moneda: m.moneda || 'MXN',
+            embalaje: m.embalaje
+          }))
+        );
+      
+      if (error) throw error;
+      
+      toast.success(`${mercanciasNuevas.length} mercancías importadas`);
+      await cargarMercancias();
+      onMercanciasUpdate?.();
+      setShowUploadDialog(false);
+    } catch (error) {
+      console.error('Error guardando mercancías:', error);
+      toast.error('Error guardando mercancías');
+    }
   };
+  
+  const handleDelete = async (mercanciaId: string) => {
+    try {
+      const { error } = await supabase
+        .from('mercancias')
+        .delete()
+        .eq('id', mercanciaId);
+      
+      if (error) throw error;
+      
+      toast.success('Mercancía eliminada');
+      await cargarMercancias();
+      onMercanciasUpdate?.();
+    } catch (error) {
+      console.error('Error eliminando mercancía:', error);
+      toast.error('Error eliminando mercancía');
+    }
+  };
+  
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-muted-foreground">Cargando mercancías...</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -46,7 +115,7 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Mercancías del Viaje
-              <Badge variant="secondary">{todasMercancias.length}</Badge>
+              <Badge variant="secondary">{mercancias.length}</Badge>
             </CardTitle>
             <div className="flex gap-2">
               <Button
@@ -63,7 +132,7 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
       </Card>
       
       {/* Lista de mercancías */}
-      {todasMercancias.length === 0 ? (
+      {mercancias.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -84,15 +153,15 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
         </Card>
       ) : (
         <div className="grid gap-4">
-          {todasMercancias.map((mercancia, index) => (
-            <Card key={index}>
+          {mercancias.map((mercancia) => (
+            <Card key={mercancia.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-medium">{mercancia.descripcion}</h4>
-                      <Badge variant={mercancia.fuente === 'carta_porte' ? 'default' : 'secondary'}>
-                        {mercancia.fuente === 'carta_porte' ? 'En Carta Porte' : 'Pendiente'}
+                      <Badge variant={mercancia.estado === 'timbrada' ? 'default' : 'secondary'}>
+                        {mercancia.estado === 'timbrada' ? 'Timbrada' : 'Borrador'}
                       </Badge>
                       {mercancia.material_peligroso && (
                         <Badge variant="destructive" className="flex items-center gap-1">
@@ -106,7 +175,7 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
                       <div>
                         <span className="text-muted-foreground">Cantidad:</span>
                         <p className="font-medium">
-                          {mercancia.cantidad} {mercancia.clave_unidad || mercancia.unidad}
+                          {mercancia.cantidad} {mercancia.clave_unidad}
                         </p>
                       </div>
                       <div>
@@ -116,7 +185,7 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
                       <div>
                         <span className="text-muted-foreground">Valor:</span>
                         <p className="font-medium">
-                          ${mercancia.valor_mercancia?.toLocaleString('es-MX')} {mercancia.moneda || 'MXN'}
+                          ${mercancia.valor_mercancia?.toLocaleString('es-MX')} {mercancia.moneda}
                         </p>
                       </div>
                       {mercancia.bienes_transp && (
@@ -128,12 +197,12 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
                     </div>
                   </div>
                   
-                  {mercancia.editable && (
+                  {mercancia.estado === 'borrador' && (
                     <div className="flex gap-2 ml-4">
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => handleDelete(index)}
+                        onClick={() => handleDelete(mercancia.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -155,30 +224,30 @@ export const ViajeMercanciasManager: React.FC<ViajeMercanciasManagerProps> = ({
       />
       
       {/* Resumen */}
-      {todasMercancias.length > 0 && (
+      {mercancias.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-2xl font-bold">{todasMercancias.length}</p>
+                <p className="text-2xl font-bold">{mercancias.length}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Peso Total</p>
                 <p className="text-2xl font-bold">
-                  {todasMercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0).toFixed(2)} kg
+                  {mercancias.reduce((sum, m) => sum + (m.peso_kg || 0), 0).toFixed(2)} kg
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-2xl font-bold">
-                  ${todasMercancias.reduce((sum, m) => sum + (m.valor_mercancia || 0), 0).toLocaleString('es-MX')}
+                  ${mercancias.reduce((sum, m) => sum + (m.valor_mercancia || 0), 0).toLocaleString('es-MX')}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">En Carta Porte</p>
+                <p className="text-sm text-muted-foreground">Timbradas</p>
                 <p className="text-2xl font-bold">
-                  {mercanciasCartaPorte.length}/{todasMercancias.length}
+                  {mercancias.filter(m => m.estado === 'timbrada').length}/{mercancias.length}
                 </p>
               </div>
             </div>

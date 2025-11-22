@@ -2501,6 +2501,7 @@ export type Database = {
           documentacion_aduanera: Json | null
           embalaje: string | null
           especie_protegida: boolean | null
+          estado: string | null
           fraccion_arancelaria: string | null
           id: string
           material_peligroso: boolean | null
@@ -2515,6 +2516,7 @@ export type Database = {
           unidad_peso_bruto: string | null
           uuid_comercio_ext: string | null
           valor_mercancia: number | null
+          viaje_id: string | null
         }
         Insert: {
           bienes_transp: string
@@ -2529,6 +2531,7 @@ export type Database = {
           documentacion_aduanera?: Json | null
           embalaje?: string | null
           especie_protegida?: boolean | null
+          estado?: string | null
           fraccion_arancelaria?: string | null
           id?: string
           material_peligroso?: boolean | null
@@ -2543,6 +2546,7 @@ export type Database = {
           unidad_peso_bruto?: string | null
           uuid_comercio_ext?: string | null
           valor_mercancia?: number | null
+          viaje_id?: string | null
         }
         Update: {
           bienes_transp?: string
@@ -2557,6 +2561,7 @@ export type Database = {
           documentacion_aduanera?: Json | null
           embalaje?: string | null
           especie_protegida?: boolean | null
+          estado?: string | null
           fraccion_arancelaria?: string | null
           id?: string
           material_peligroso?: boolean | null
@@ -2571,6 +2576,7 @@ export type Database = {
           unidad_peso_bruto?: string | null
           uuid_comercio_ext?: string | null
           valor_mercancia?: number | null
+          viaje_id?: string | null
         }
         Relationships: [
           {
@@ -2578,6 +2584,13 @@ export type Database = {
             columns: ["carta_porte_id"]
             isOneToOne: false
             referencedRelation: "cartas_porte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mercancias_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
             referencedColumns: ["id"]
           },
         ]
@@ -4824,6 +4837,26 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_mercancias_viaje: {
+        Row: {
+          cantidad_total: number | null
+          mercancias_peligrosas: number | null
+          mercancias_timbradas: number | null
+          peso_total: number | null
+          total_mercancias: number | null
+          valor_total: number | null
+          viaje_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mercancias_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mv_viajes_dashboard: {
         Row: {
           conductores_activos: number | null
@@ -5090,6 +5123,7 @@ export type Database = {
         Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined
       }
+      refresh_mercancias_viaje_stats: { Args: never; Returns: undefined }
       refresh_viajes_dashboard: { Args: never; Returns: undefined }
       restore_rls_policies_from_backup:
         | { Args: { backup_id: string }; Returns: Json }
