@@ -28,7 +28,8 @@ export const AmbienteSchema = z.enum(['sandbox', 'production']).default('sandbox
 // ============================================
 
 const UbicacionSchema = z.object({
-  tipo_ubicacion: z.enum(['Origen', 'Destino']),
+  tipo_ubicacion: z.enum(['Origen', 'Destino', 'Paso Intermedio']).optional(),
+  tipo: z.enum(['Origen', 'Destino', 'Paso Intermedio']).optional(),
   rfc_remitente_destinatario: RFCSchema.optional(),
   nombre_remitente_destinatario: z.string().min(1).max(254).optional(),
   fecha_hora_salida_llegada: z.string().optional(),
@@ -46,7 +47,17 @@ const UbicacionSchema = z.object({
     pais: z.string().length(3).optional(),
     codigo_postal: z.string().regex(/^\d{5}$/).optional(),
   }).optional(),
-});
+}).passthrough(); // 🔐 Permitir campos adicionales del sistema
+
+// 🔐 Schema flexible: Acepta array O objeto {origen, destino}
+const UbicacionesFlexibleSchema = z.union([
+  z.array(UbicacionSchema).min(2, "Se requieren al menos 2 ubicaciones"),
+  z.object({
+    origen: UbicacionSchema,
+    destino: UbicacionSchema,
+    intermedias: z.array(UbicacionSchema).optional()
+  })
+]);
 
 const MercanciaSchema = z.object({
   bienes_transp: z.string().min(1).max(1000),
@@ -103,7 +114,7 @@ export const TimbrarCartaPorteSchema = z.object({
     nombreEmisor: z.string().min(1).max(254),
     rfcReceptor: RFCSchema,
     nombreReceptor: z.string().min(1).max(254),
-    ubicaciones: z.array(UbicacionSchema).min(2, "Se requieren al menos 2 ubicaciones"),
+    ubicaciones: UbicacionesFlexibleSchema,
     mercancias: z.array(MercanciaSchema).min(1, "Se requiere al menos 1 mercancía"),
     figuras_transporte: z.array(FiguraTransporteSchema).optional(),
     autotransporte: AutotransporteSchema.optional(),
@@ -113,7 +124,7 @@ export const TimbrarCartaPorteSchema = z.object({
     via_entrada_salida: z.string().length(2).optional(),
     peso_bruto_total: z.number().positive(),
     distancia_total: z.number().positive().optional(),
-  }).optional(),
+  }).passthrough().optional(), // 🔐 Permitir campos adicionales del sistema
   cartaPorteId: UUIDSchema.optional(),
   facturaData: z.object({
     rfcEmisor: RFCSchema,
@@ -128,31 +139,38 @@ export const TimbrarCartaPorteSchema = z.object({
       valor_unitario: z.number().positive(),
       importe: z.number().positive(),
     })).min(1),
-    // 🔐 Ubicaciones opcionales para facturas simples, requeridas si hay complemento CartaPorte
-    ubicaciones: z.array(UbicacionSchema).optional(),
+    // 🔐 Ubicaciones flexibles: array OR objeto {origen, destino}
+    ubicaciones: UbicacionesFlexibleSchema.optional(),
     tracking_data: z.object({
-      ubicaciones: z.array(UbicacionSchema).optional()
-    }).optional(),
-  }).optional(),
+      ubicaciones: UbicacionesFlexibleSchema.optional()
+    }).passthrough().optional(), // 🔐 Permitir otros campos de tracking
+  }).passthrough().optional(), // 🔐 Permitir campos adicionales del sistema
   facturaId: UUIDSchema.optional(),
   ambiente: AmbienteSchema,
 }).refine(
   data => data.cartaPorteData || data.facturaData,
   { message: "Debe proporcionar cartaPorteData o facturaData" }
 ).refine(
-  // 🔐 ISO 27001 A.14.2.1 - Validación de integridad
-  // Si facturaData tiene ubicaciones, validar que sean al menos 2
+  // 🔐 ISO 27001 A.14.2.1 - Validación de integridad con formato flexible
   data => {
-    if (data.facturaData?.ubicaciones) {
-      return data.facturaData.ubicaciones.length >= 2;
+    const ubicaciones = data.facturaData?.ubicaciones || data.facturaData?.tracking_data?.ubicaciones;
+    
+    if (!ubicaciones) return true; // Sin ubicaciones = factura simple (válido)
+    
+    // Formato array: requiere mínimo 2
+    if (Array.isArray(ubicaciones)) {
+      return ubicaciones.length >= 2;
     }
-    if (data.facturaData?.tracking_data?.ubicaciones) {
-      return data.facturaData.tracking_data.ubicaciones.length >= 2;
+    
+    // Formato objeto: requiere origen Y destino
+    if (typeof ubicaciones === 'object' && ubicaciones !== null) {
+      return !!(ubicaciones.origen && ubicaciones.destino);
     }
-    return true; // Si no hay ubicaciones, es factura simple (válido)
+    
+    return false; // Formato inválido
   },
   { 
-    message: "Si proporciona ubicaciones en facturaData, debe incluir al menos 2 (origen y destino)",
+    message: "Ubicaciones deben ser: array con 2+ elementos O objeto con {origen, destino}",
     path: ["facturaData", "ubicaciones"]
   }
 );
