@@ -50,14 +50,25 @@ const UbicacionSchema = z.object({
 }).passthrough(); // 🔐 Permitir campos adicionales del sistema
 
 // 🔐 Schema flexible: Acepta array O objeto {origen, destino}
-const UbicacionesFlexibleSchema = z.union([
-  z.array(UbicacionSchema).min(2, "Se requieren al menos 2 ubicaciones"),
-  z.object({
-    origen: UbicacionSchema,
-    destino: UbicacionSchema,
-    intermedias: z.array(UbicacionSchema).optional()
-  })
-]);
+// Usa z.custom() para validación totalmente personalizada
+const UbicacionesFlexibleSchema = z.custom<any>((val) => {
+  // Validar que existe
+  if (!val) return false;
+
+  // Formato array: validar que tenga al menos 2 elementos
+  if (Array.isArray(val)) {
+    return val.length >= 2;
+  }
+
+  // Formato objeto: validar que tenga origen Y destino
+  if (typeof val === 'object' && val !== null) {
+    return !!(val.origen && val.destino);
+  }
+
+  return false;
+}, {
+  message: "Ubicaciones debe ser: array con 2+ elementos O objeto con {origen, destino}"
+});
 
 const MercanciaSchema = z.object({
   bienes_transp: z.string().min(1).max(1000),
