@@ -63,10 +63,21 @@ function ViajesContent() {
 
   // Filtrar viajes por búsqueda y estado
   const viajesFiltrados = viajes.filter(viaje => {
+    const query = searchQuery.toLowerCase();
+    const trackingData = viaje.tracking_data || {};
+    
     const matchSearch = searchQuery === '' || 
-      viaje.origen.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      viaje.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      viaje.tracking_data?.cliente?.nombre_razon_social?.toLowerCase().includes(searchQuery.toLowerCase());
+      viaje.origen.toLowerCase().includes(query) ||
+      viaje.destino.toLowerCase().includes(query) ||
+      trackingData.cliente?.nombre_razon_social?.toLowerCase().includes(query) ||
+      trackingData.cliente?.rfc?.toLowerCase().includes(query) ||
+      trackingData.conductor?.nombre?.toLowerCase().includes(query) ||
+      trackingData.conductor?.num_licencia?.toLowerCase().includes(query) ||
+      trackingData.vehiculo?.placa?.toLowerCase().includes(query) ||
+      trackingData.vehiculo?.marca?.toLowerCase().includes(query) ||
+      trackingData.remolque?.placa?.toLowerCase().includes(query) ||
+      trackingData.socio?.nombre?.toLowerCase().includes(query) ||
+      viaje.id.toLowerCase().includes(query);
     
     let matchEstado = false;
     if (estadoFiltro === 'todos') {
@@ -333,7 +344,7 @@ function ViajesContent() {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Buscar por origen, destino o cliente..."
+                placeholder="Buscar por cliente, operador, conductor, socio, remolque, número de viaje..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full"

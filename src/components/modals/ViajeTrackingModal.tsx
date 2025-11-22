@@ -18,6 +18,7 @@ import {
   Package,
   Route,
   AlertCircle,
+  Eye,
   CheckCircle2,
   Clock,
   Navigation,
@@ -446,9 +447,10 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                               </p>
                             )}
                             <div className="flex gap-2 mt-3">
-                              {facturaData.status === 'draft' ? (
-                                <Button size="sm" className="flex-1">
-                                  Timbrar Factura
+                              {facturaData.status === 'draft' || facturaData.status === 'BORRADOR' ? (
+                                <Button size="sm" variant="outline" className="flex-1">
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Pre-visualizar Factura
                                 </Button>
                               ) : (
                                 <>

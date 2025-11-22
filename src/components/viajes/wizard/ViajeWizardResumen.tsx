@@ -114,13 +114,13 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
 
   return (
     <div className="space-y-6">
-      {/* Validación general */}
-      {validationErrors.length > 0 && (
+      {/* Validación general - solo mostrar si hay errores */}
+      {validationErrors.length > 0 ? (
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-800">
               <AlertTriangle className="h-5 w-5" />
-              Información Incompleta
+              Validaciones Pendientes
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -132,6 +132,15 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
                 </li>
               ))}
             </ul>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-green-800">
+              <CheckCircle className="h-5 w-5" />
+              <span className="font-medium">✅ Todas las validaciones completadas exitosamente</span>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -147,7 +156,7 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-700">{data.distanciaRecorrida || 'N/A'}</div>
+              <div className="text-2xl font-bold text-blue-700">{data.distanciaRecorrida || 0}</div>
               <div className="text-sm text-blue-600">Kilómetros</div>
             </div>
             <div className="text-center">
@@ -273,7 +282,9 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
         <CardContent className="space-y-4">
           <div>
             <label className="font-medium text-gray-700">Cliente:</label>
-            <p className="text-gray-900">{data.cliente?.nombre_razon_social || data.cliente?.nombre || 'No especificado'}</p>
+            <p className="text-gray-900">
+              {data.cliente?.nombre_razon_social || data.cliente?.rfc || 'No especificado'}
+            </p>
             {data.cliente?.rfc && (
               <p className="text-sm text-gray-600">RFC: {data.cliente.rfc}</p>
             )}
@@ -310,9 +321,16 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 Origen:
               </label>
-              <p className="text-gray-900">{data.origen?.nombre || 'No especificado'}</p>
-              {data.origen?.direccion && (
-                <p className="text-sm text-gray-600">{data.origen.direccion}</p>
+              <p className="text-gray-900">
+                {data.origen?.nombre || 
+                 data.origen?.domicilio?.municipio + ', ' + data.origen?.domicilio?.estado || 
+                 'No especificado'}
+              </p>
+              {(data.origen?.direccion || data.origen?.domicilio?.calle) && (
+                <p className="text-sm text-gray-600">
+                  {data.origen.direccion || 
+                   `${data.origen.domicilio?.calle || ''} ${data.origen.domicilio?.numero_exterior || ''}, ${data.origen.domicilio?.colonia || ''}, CP ${data.origen.domicilio?.codigo_postal || ''}`}
+                </p>
               )}
             </div>
             
@@ -321,9 +339,16 @@ export function ViajeWizardResumen({ data, onConfirm }: ViajeWizardResumenProps)
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 Destino:
               </label>
-              <p className="text-gray-900">{data.destino?.nombre || 'No especificado'}</p>
-              {data.destino?.direccion && (
-                <p className="text-sm text-gray-600">{data.destino.direccion}</p>
+              <p className="text-gray-900">
+                {data.destino?.nombre || 
+                 data.destino?.domicilio?.municipio + ', ' + data.destino?.domicilio?.estado || 
+                 'No especificado'}
+              </p>
+              {(data.destino?.direccion || data.destino?.domicilio?.calle) && (
+                <p className="text-sm text-gray-600">
+                  {data.destino.direccion || 
+                   `${data.destino.domicilio?.calle || ''} ${data.destino.domicilio?.numero_exterior || ''}, ${data.destino.domicilio?.colonia || ''}, CP ${data.destino.domicilio?.codigo_postal || ''}`}
+                </p>
               )}
             </div>
           </div>

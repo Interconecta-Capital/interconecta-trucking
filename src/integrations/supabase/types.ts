@@ -1385,6 +1385,7 @@ export type Database = {
           seguro_carga: Json | null
           seguro_resp_civil: Json | null
           serie_carta_porte: string | null
+          serie_factura: string | null
           updated_at: string | null
           user_id: string
           validado_sat: boolean | null
@@ -1407,6 +1408,7 @@ export type Database = {
           seguro_carga?: Json | null
           seguro_resp_civil?: Json | null
           serie_carta_porte?: string | null
+          serie_factura?: string | null
           updated_at?: string | null
           user_id: string
           validado_sat?: boolean | null
@@ -1429,6 +1431,7 @@ export type Database = {
           seguro_carga?: Json | null
           seguro_resp_civil?: Json | null
           serie_carta_porte?: string | null
+          serie_factura?: string | null
           updated_at?: string | null
           user_id?: string
           validado_sat?: boolean | null

@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Package, Search, AlertTriangle, Users, Sparkles, CheckCircle2, CheckCircle, Globe } from 'lucide-react';
+import { Package, Search, AlertTriangle, Users, Sparkles, CheckCircle2, CheckCircle, Globe, Upload } from 'lucide-react';
+import { DocumentUploadDialog } from '@/components/carta-porte/mercancias/DocumentUploadDialog';
+import { toast } from 'sonner';
 import { useSocios } from '@/hooks/useSocios';
 import { useAuth } from '@/hooks/useAuth';
 import { useAIValidation } from '@/hooks/useAIValidation';
@@ -28,6 +30,7 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
   const [alertasMercancia, setAlertasMercancia] = useState<string[]>([]);
   const [sugerenciasIA, setSugerenciasIA] = useState<any>(null);
   const [showComercioExterior, setShowComercioExterior] = useState(false);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [rfcValidation, setRfcValidation] = useState<{ esValido: boolean; errores: string[]; tipo: string | null }>({ 
     esValido: false, 
     errores: [], 
@@ -143,6 +146,22 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
       fraccionArancelaria: suggestion.fraccionArancelaria,
       descripcionMercancia: suggestion.descripcionMejorada || data.descripcionMercancia
     });
+  };
+
+  const handleDocumentoMercanciaProcesado = (mercancias: any[]) => {
+    console.log('📦 Mercancías extraídas del documento:', mercancias);
+    
+    if (mercancias.length > 0) {
+      const primeraMercancia = mercancias[0];
+      updateData({
+        descripcionMercancia: primeraMercancia.descripcion,
+        claveBienesTransp: primeraMercancia.bienes_transp || primeraMercancia.claveProdServ,
+        mercancias: mercancias
+      });
+      toast.success(`${mercancias.length} mercancía(s) extraída(s) del documento`);
+    }
+    
+    setShowDocumentUpload(false);
   };
 
   const clienteValidation = getFieldValidation('cliente_rfc');
@@ -307,11 +326,22 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
       {/* Sección Mercancía con IA */}
       <Card data-onboarding="mercancia-section">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Package className="h-5 w-5" />
-            Descripción de la Mercancía
-            <Sparkles className="h-4 w-4 text-purple-500" />
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Package className="h-5 w-5" />
+              Descripción de la Mercancía
+              <Sparkles className="h-4 w-4 text-purple-500" />
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDocumentUpload(true)}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Cargar Documento
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Label htmlFor="descripcionMercancia">¿Qué vas a transportar?</Label>
@@ -385,6 +415,14 @@ export function ViajeWizardMision({ data, updateData }: ViajeWizardMisionProps) 
           )}
         </CardContent>
       </Card>
+
+      {/* Diálogo de carga de documentos */}
+      <DocumentUploadDialog
+        open={showDocumentUpload}
+        onOpenChange={setShowDocumentUpload}
+        onDocumentProcessed={handleDocumentoMercanciaProcesado}
+        cartaPorteId={undefined}
+      />
 
       {/* Resumen de la sección */}
       {data.cliente && data.tipoServicio && data.descripcionMercancia && (

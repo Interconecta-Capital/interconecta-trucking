@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileText, Info } from 'lucide-react';
 import { ViajeWizardData } from '../ViajeWizard';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ViajeWizardFacturaProps {
   data: ViajeWizardData;
@@ -14,6 +16,41 @@ interface ViajeWizardFacturaProps {
 
 export function ViajeWizardFactura({ data, onChange }: ViajeWizardFacturaProps) {
   const esFletePageado = data.tipoServicio === 'flete_pagado';
+
+  // Auto-llenar serie y folio desde configuración empresarial
+  useEffect(() => {
+    const cargarConfiguracion = async () => {
+      if (!esFletePageado || data.facturaData?.serie) return;
+
+      try {
+        const { data: config, error } = await supabase
+          .from('configuracion_empresa')
+          .select('serie_factura, folio_actual')
+          .single();
+
+        if (error) throw error;
+
+        if (config) {
+          const serieFactura = config.serie_factura || 'ZS';
+          const folioSiguiente = config.folio_actual || 1;
+
+          onChange({
+            facturaData: {
+              ...data.facturaData,
+              serie: serieFactura,
+              folio: String(folioSiguiente).padStart(3, '0')
+            }
+          });
+
+          console.log(`📄 Serie y folio auto-asignados: ${serieFactura}-${folioSiguiente}`);
+        }
+      } catch (error) {
+        console.error('Error cargando configuración:', error);
+      }
+    };
+
+    cargarConfiguracion();
+  }, [esFletePageado, data.facturaData?.serie, onChange]);
 
   if (!esFletePageado) {
     return (
@@ -54,29 +91,31 @@ export function ViajeWizardFactura({ data, onChange }: ViajeWizardFacturaProps) 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Serie y Folio */}
+          {/* Serie y Folio - Auto-generados */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="serie">Serie</Label>
+              <Label htmlFor="serie">Serie (Auto)</Label>
               <Input
                 id="serie"
-                placeholder="A"
                 value={data.facturaData?.serie || ''}
-                onChange={(e) => onChange({
-                  facturaData: { ...data.facturaData, serie: e.target.value }
-                })}
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">
+                Se asigna automáticamente desde configuración
+              </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="folio">Folio</Label>
+              <Label htmlFor="folio">Folio (Auto)</Label>
               <Input
                 id="folio"
-                placeholder="001"
                 value={data.facturaData?.folio || ''}
-                onChange={(e) => onChange({
-                  facturaData: { ...data.facturaData, folio: e.target.value }
-                })}
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">
+                Se incrementa automáticamente
+              </p>
             </div>
           </div>
 
