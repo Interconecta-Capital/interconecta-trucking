@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,22 +11,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // ✅ SEGURO: Obtener API key desde Edge Function environment (ISO 27001 A.10.1)
-    const fiscalApiKey = Deno.env.get('FISCAL_API_KEY');
+    // ✅ CONECKTIA: Obtener credenciales desde environment variables
+    const conecktiaToken = Deno.env.get('CONECKTIA_API_TOKEN');
+    const conecktiaModoSandbox = Deno.env.get('CONECKTIA_SANDBOX') === 'true';
 
-    if (!fiscalApiKey) {
-      console.error('[Timbrar] FISCAL_API_KEY no configurada en Edge Functions');
+    if (!conecktiaToken) {
+      console.error('[Timbrar] CONECKTIA_API_TOKEN no configurada');
       throw new Error('No se pudo obtener credenciales del PAC');
     }
 
-    console.log('[Timbrar] API Key obtenida exitosamente desde environment variables');
+    console.log(`[Timbrar] Usando Conecktia en modo: ${conecktiaModoSandbox ? 'SANDBOX' : 'PRODUCCIÓN'}`);
 
     const invoiceData = await req.json();
 
-    const response = await fetch('https://api.fiscalapi.com/v1/cfdi/stamp', {
+    // URL de Conecktia según el modo
+    const conecktiaUrl = conecktiaModoSandbox
+      ? 'https://sandbox.conecktia.com/api/v1/cfdi/stamp'
+      : 'https://api.conecktia.com/api/v1/cfdi/stamp';
+
+    const response = await fetch(conecktiaUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${fiscalApiKey}`,
+        'Authorization': `Bearer ${conecktiaToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(invoiceData),
@@ -35,6 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('[Timbrar] Error de Conecktia:', errorText);
       return new Response(
         JSON.stringify({ success: false, error: errorText }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
@@ -48,7 +54,10 @@ const handler = async (req: Request): Promise<Response> => {
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'unknown error' }),
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'unknown error' 
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } },
     );
   }

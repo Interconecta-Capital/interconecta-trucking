@@ -18,7 +18,8 @@ import {
   Calendar,
   DollarSign,
   Package,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 import { Viaje } from '@/types/viaje';
 import { ViajeOrchestrationService } from '@/services/viajes/ViajeOrchestrationService';
@@ -329,14 +330,15 @@ export default function ViajeDetalle() {
             )}
             
             <div className="flex gap-3">
-              {factura.status === 'draft' && (
+              {(factura.status === 'draft' || factura.status === 'BORRADOR') && (
                 <Button 
                   onClick={handleTimbrarFactura} 
                   disabled={processing}
+                  variant="outline"
                   className="flex-1"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  {processing ? 'Timbrando...' : 'Timbrar Factura'}
+                  <Eye className="h-4 w-4 mr-2" />
+                  {processing ? 'Procesando...' : 'Pre-visualizar Factura'}
                 </Button>
               )}
               
