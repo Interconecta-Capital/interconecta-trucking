@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.generar-pdf-factura]
 verify_jwt = true
+
+[functions.timbrar-carta-porte]
+verify_jwt = true
