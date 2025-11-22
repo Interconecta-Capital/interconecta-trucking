@@ -76,6 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // 4. Construir el CFDI JSON según formato de SW
+    console.log('📦 Data completa:', JSON.stringify(cartaPorteData || facturaData));
     const cfdiJson = construirCFDIJson(cartaPorteData || facturaData);
 
     console.log('📦 Enviando CFDI a SW:', JSON.stringify(cfdiJson).substring(0, 500));
@@ -250,12 +251,27 @@ function construirCFDIJson(cartaPorteData: any) {
   }
   
   // ✅ Verificar si tiene ubicaciones para complemento CartaPorte
-  const tieneUbicaciones = !!(
-    (cartaPorteData.ubicaciones && cartaPorteData.ubicaciones.length >= 2) ||
-    (cartaPorteData.tracking_data?.ubicaciones && cartaPorteData.tracking_data.ubicaciones.length >= 2)
-  );
-    totalImpuestos = subtotal * 0.16; // IVA 16%
-  }
+  // Soporta formato array O formato objeto {origen, destino}
+  const tieneUbicaciones = (() => {
+    const ubicaciones = cartaPorteData.ubicaciones || cartaPorteData.tracking_data?.ubicaciones;
+    if (!ubicaciones) return false;
+    
+    // Formato array
+    if (Array.isArray(ubicaciones) && ubicaciones.length >= 2) return true;
+    
+    // Formato objeto con origen y destino
+    if (ubicaciones.origen && ubicaciones.destino) return true;
+    
+    return false;
+  })();
+  
+  console.log('🔍 [CFDI] Verificación de ubicaciones:', {
+    tieneUbicaciones,
+    ubicacionesType: typeof cartaPorteData.ubicaciones,
+    isArray: Array.isArray(cartaPorteData.ubicaciones),
+    hasOrigen: !!(cartaPorteData.ubicaciones?.origen || cartaPorteData.tracking_data?.ubicaciones?.origen),
+    hasDestino: !!(cartaPorteData.ubicaciones?.destino || cartaPorteData.tracking_data?.ubicaciones?.destino)
+  });
 
   const cfdi: any = {
     Version: "4.0",
