@@ -12,6 +12,9 @@ export const useViajesData = () => {
         .from('viajes')
         .select('*')
         .in('estado', ['programado', 'en_transito', 'retrasado'])
+        .not('observaciones', 'ilike', '%BORRADOR WIZARD%') // ✅ Excluir borradores del wizard
+        .not('fecha_inicio_programada', 'is', null) // ✅ Excluir viajes sin fecha de inicio
+        .not('fecha_fin_programada', 'is', null) // ✅ Excluir viajes sin fecha de fin
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -108,9 +108,27 @@ export const ViajeEditor: React.FC<ViajeEditorProps> = ({
     return viaje.estado === 'programado' || viaje.estado === 'en_transito';
   };
 
-  const formatDateTimeLocal = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
+  const formatDateTimeLocal = (dateString: string | undefined | null): string => {
+    // ✅ CORRECCIÓN: Validar que la fecha sea válida antes de formatear
+    if (!dateString) {
+      console.warn('⚠️ Fecha inválida recibida en formatDateTimeLocal:', dateString);
+      return ''; // Retornar string vacío para inputs datetime-local
+    }
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        console.warn('⚠️ Fecha inválida después de parsear:', dateString);
+        return '';
+      }
+      
+      return date.toISOString().slice(0, 16);
+    } catch (error) {
+      console.error('❌ Error formateando fecha:', dateString, error);
+      return '';
+    }
   };
 
   const getEstadoBadgeColor = () => {

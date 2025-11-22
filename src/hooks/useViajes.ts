@@ -60,8 +60,10 @@ export const useViajes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('viajes')
-        .select('id, origen, destino, estado, fecha_inicio_programada, conductor_id, vehiculo_id, precio_cobrado, created_at, user_id')
+        .select('id, origen, destino, estado, fecha_inicio_programada, fecha_fin_programada, conductor_id, vehiculo_id, precio_cobrado, created_at, user_id') // ✅ Agregar fecha_fin_programada
         .not('observaciones', 'ilike', '%BORRADOR WIZARD%') // ✅ Excluir borradores del wizard
+        .not('fecha_inicio_programada', 'is', null) // ✅ Excluir viajes sin fecha de inicio
+        .not('fecha_fin_programada', 'is', null) // ✅ Excluir viajes sin fecha de fin
         .order('created_at', { ascending: false })
         .limit(50); // Paginación: solo primeros 50
 
