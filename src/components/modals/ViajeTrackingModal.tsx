@@ -27,6 +27,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EstadosViajeManager } from '@/components/viajes/estados/EstadosViajeManager';
 import { TrackingViajeRealTime } from '@/components/viajes/tracking/TrackingViajeRealTime';
 import { ViajeEditor } from '@/components/viajes/editor/ViajeEditor';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ViajeTrackingModalProps {
   viaje: Viaje | null;
@@ -37,14 +39,34 @@ interface ViajeTrackingModalProps {
 export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingModalProps) => {
   const [activeTab, setActiveTab] = useState('resumen');
   const queryClient = useQueryClient();
-  const [viajeData, setViajeData] = useState<Viaje | null>(viaje);
-
+  const [viajeCompleto, setViajeCompleto] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  
+  // ✅ NUEVO: Cargar viaje completo con todas sus relaciones usando RPC
   useEffect(() => {
-    setViajeData(viaje);
-    if (viaje) {
-      setActiveTab('resumen');
-    }
-  }, [viaje]);
+    const cargarViajeCompleto = async () => {
+      if (!viaje?.id || !open) return;
+      
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.rpc('get_viaje_con_relaciones', {
+          p_viaje_id: viaje.id
+        });
+        
+        if (error) throw error;
+        
+        setViajeCompleto(data);
+        setActiveTab('resumen');
+      } catch (error) {
+        console.error('Error cargando viaje completo:', error);
+        toast.error('Error al cargar los datos del viaje');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    cargarViajeCompleto();
+  }, [viaje?.id, open]);
 
   const handleViajeUpdate = () => {
     // Invalidar queries para obtener datos actualizados
@@ -52,12 +74,38 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
     queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
     queryClient.invalidateQueries({ queryKey: ['eventos-viaje'] });
     
-    // Cerrar modal para que se vuelva a abrir con datos frescos
-    setTimeout(() => {
-      onOpenChange(false);
-    }, 500);
+    // Recargar el viaje completo
+    if (viaje?.id && open) {
+      supabase.rpc('get_viaje_con_relaciones', { p_viaje_id: viaje.id })
+        .then(({ data }) => data && setViajeCompleto(data));
+    }
   };
 
+  if (!viaje) return null;
+  
+  if (loading || !viajeCompleto) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl">
+          <div className="flex items-center justify-center p-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">Cargando información del viaje...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  
+  // Extraer datos del viaje completo
+  const viajeData = viajeCompleto.viaje;
+  const conductorData = viajeCompleto.conductor;
+  const vehiculoData = viajeCompleto.vehiculo;
+  const remolqueData = viajeCompleto.remolque;
+  const facturaData = viajeCompleto.factura;
+  const cartaPorteData = viajeCompleto.carta_porte;
+  const borradorCartaPorteData = viajeCompleto.borrador_carta_porte;
 
   const getEstadoBadge = (estado: string) => {
     const configs = {
@@ -229,7 +277,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                   </CardContent>
                 </Card>
 
-                {/* Recursos Asignados */}
+                {/* Recursos Asignados - CON INFORMACIÓN COMPLETA */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -238,44 +286,245 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {viajeData.vehiculo_id && (
-                      <div className="flex items-center gap-2">
-                        <Truck className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium">Vehículo:</span>
-                        <span className="text-sm">ID: {viajeData.vehiculo_id.slice(-8)}</span>
+                    {conductorData ? (
+                      <div className="p-3 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <User className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium text-lg">Conductor</span>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Nombre:</span> {conductorData.nombre}</p>
+                          {conductorData.telefono && (
+                            <p><span className="font-medium">Teléfono:</span> {conductorData.telefono}</p>
+                          )}
+                          {conductorData.email && (
+                            <p><span className="font-medium">Email:</span> {conductorData.email}</p>
+                          )}
+                          {conductorData.num_licencia && (
+                            <p><span className="font-medium">Licencia:</span> {conductorData.num_licencia} 
+                              {conductorData.tipo_licencia && ` (Tipo ${conductorData.tipo_licencia})`}
+                            </p>
+                          )}
+                          {conductorData.vigencia_licencia && (
+                            <p><span className="font-medium">Vigencia:</span> {new Date(conductorData.vigencia_licencia).toLocaleDateString('es-MX')}</p>
+                          )}
+                          <Badge className={conductorData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                            {conductorData.estado}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : viajeData.conductor_id && (
+                      <div className="p-3 border border-dashed rounded-lg text-center">
+                        <p className="text-sm text-gray-500">Conductor ID: {viajeData.conductor_id.slice(-8)}</p>
+                        <p className="text-xs text-gray-400">Información completa no disponible</p>
                       </div>
                     )}
-                    {viajeData.conductor_id && (
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-green-600" />
-                        <span className="font-medium">Conductor:</span>
-                        <span className="text-sm">ID: {viajeData.conductor_id.slice(-8)}</span>
+                    
+                    {vehiculoData ? (
+                      <div className="p-3 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Truck className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium text-lg">Vehículo</span>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Placas:</span> {vehiculoData.placa}</p>
+                          {vehiculoData.marca && vehiculoData.modelo && (
+                            <p><span className="font-medium">Modelo:</span> {vehiculoData.marca} {vehiculoData.modelo} {vehiculoData.anio && `(${vehiculoData.anio})`}</p>
+                          )}
+                          {vehiculoData.tipo_carroceria && (
+                            <p><span className="font-medium">Tipo:</span> {vehiculoData.tipo_carroceria}</p>
+                          )}
+                          {vehiculoData.capacidad_carga && (
+                            <p><span className="font-medium">Capacidad:</span> {vehiculoData.capacidad_carga} kg</p>
+                          )}
+                          {vehiculoData.numero_serie && (
+                            <p><span className="font-medium">Serie:</span> {vehiculoData.numero_serie}</p>
+                          )}
+                          <Badge className={vehiculoData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                            {vehiculoData.estado}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : viajeData.vehiculo_id && (
+                      <div className="p-3 border border-dashed rounded-lg text-center">
+                        <p className="text-sm text-gray-500">Vehículo ID: {viajeData.vehiculo_id.slice(-8)}</p>
+                        <p className="text-xs text-gray-400">Información completa no disponible</p>
+                      </div>
+                    )}
+                    
+                    {remolqueData && (
+                      <div className="p-3 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Package className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium text-lg">Remolque</span>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Placas:</span> {remolqueData.placa}</p>
+                          {remolqueData.tipo_remolque && (
+                            <p><span className="font-medium">Tipo:</span> {remolqueData.tipo_remolque}</p>
+                          )}
+                          {remolqueData.capacidad_carga_kg && (
+                            <p><span className="font-medium">Capacidad:</span> {remolqueData.capacidad_carga_kg} kg</p>
+                          )}
+                          {remolqueData.numero_serie && (
+                            <p><span className="font-medium">Serie:</span> {remolqueData.numero_serie}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!conductorData && !vehiculoData && !remolqueData && (
+                      <div className="text-center text-gray-500 py-4">
+                        No hay recursos asignados a este viaje
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Documentos Generados */}
-                <Card>
+                {/* Documentos Fiscales - CON ESTADO REAL */}
+                <Card className="lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Documentos
+                      Documentos Fiscales
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">Carta Porte XML</span>
-                        <Button size="sm" variant="outline">Descargar</Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Documentos Fiscales */}
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Documentos Fiscales</h4>
+                        
+                        {/* Factura */}
+                        {facturaData ? (
+                          <div className="p-3 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium">Factura</span>
+                              <Badge className={
+                                facturaData.status === 'timbrada' ? 'bg-green-100 text-green-800' :
+                                facturaData.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }>
+                                {facturaData.status === 'timbrada' ? 'Timbrada' :
+                                 facturaData.status === 'draft' ? 'Borrador' :
+                                 facturaData.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {facturaData.serie}-{facturaData.folio}
+                            </p>
+                            {facturaData.uuid_fiscal && (
+                              <p className="text-xs text-gray-500 font-mono mt-1 truncate">
+                                UUID: {facturaData.uuid_fiscal}
+                              </p>
+                            )}
+                            <div className="flex gap-2 mt-3">
+                              {facturaData.status === 'draft' ? (
+                                <Button size="sm" className="flex-1">
+                                  Timbrar Factura
+                                </Button>
+                              ) : (
+                                <>
+                                  <Button size="sm" variant="outline" className="flex-1">
+                                    Ver XML
+                                  </Button>
+                                  <Button size="sm" className="flex-1">
+                                    Ver PDF
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 border border-dashed rounded-lg text-center">
+                            <p className="text-sm text-gray-500">No se generó factura</p>
+                            <p className="text-xs text-gray-400 mt-1">(Traslado Propio)</p>
+                          </div>
+                        )}
+                        
+                        {/* Carta Porte */}
+                        {cartaPorteData ? (
+                          <div className="p-3 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium">Carta Porte</span>
+                              <Badge className={
+                                cartaPorteData.status === 'timbrada' ? 'bg-green-100 text-green-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }>
+                                {cartaPorteData.status === 'timbrada' ? 'Timbrada' : 'Borrador'}
+                              </Badge>
+                            </div>
+                            {cartaPorteData.uuid_fiscal ? (
+                              <>
+                                <p className="text-sm text-gray-600">CFDI 4.0 - CP 3.1</p>
+                                <p className="text-xs text-gray-500 font-mono mt-1 truncate">
+                                  UUID: {cartaPorteData.uuid_fiscal}
+                                </p>
+                                <div className="flex gap-2 mt-3">
+                                  <Button size="sm" variant="outline" className="flex-1">Ver XML</Button>
+                                  <Button size="sm" className="flex-1">Descargar PDF</Button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-sm text-gray-600">Borrador listo para timbrar</p>
+                                <Button size="sm" className="w-full mt-3">
+                                  Timbrar Carta Porte
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        ) : borradorCartaPorteData && (
+                          <div className="p-3 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium">Carta Porte</span>
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                Borrador
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">{borradorCartaPorteData.nombre_borrador}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Última edición: {new Date(borradorCartaPorteData.ultima_edicion).toLocaleString('es-MX')}
+                            </p>
+                            <Button size="sm" className="w-full mt-3">
+                              Timbrar Carta Porte
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">Carta Porte PDF</span>
-                        <Button size="sm" variant="outline">Ver/Descargar</Button>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span className="text-sm font-medium">Hoja de Ruta</span>
-                        <Button size="sm" variant="outline">Imprimir</Button>
+                      
+                      {/* Documentos Operativos */}
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Documentos Operativos</h4>
+                        
+                        <div className="p-3 border rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Hoja de Ruta</span>
+                            <Badge className="bg-blue-100 text-blue-800">
+                              Disponible
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">Instrucciones del viaje</p>
+                          <div className="flex gap-2 mt-3">
+                            <Button size="sm" variant="outline" className="flex-1">Ver</Button>
+                            <Button size="sm" className="flex-1">Imprimir</Button>
+                          </div>
+                        </div>
+                        
+                        <div className="p-3 border rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Checklist Pre-Viaje</span>
+                            <Badge className="bg-green-100 text-green-800">
+                              Disponible
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">Lista de verificación</p>
+                          <div className="flex gap-2 mt-3">
+                            <Button size="sm" variant="outline" className="flex-1">Ver</Button>
+                            <Button size="sm" className="flex-1">Generar PDF</Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -318,9 +567,19 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             </TabsContent>
 
             <TabsContent value="tracking" className="mt-0">
-              <TrackingViajeRealTime 
-                viaje={viajeData}
-              />
+              {viajeData.tracking_data?.ubicaciones ? (
+                <TrackingViajeRealTime viaje={viajeCompleto} />
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">No hay datos de tracking disponibles</p>
+                    <p className="text-sm text-gray-500">
+                      Este viaje no tiene coordenadas GPS para mostrar el tracking
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="documentos" className="mt-0">
@@ -397,7 +656,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
 
             <TabsContent value="editar" className="mt-0">
               <ViajeEditor 
-                viaje={viajeData}
+                viaje={viaje}
                 onViajeUpdate={handleViajeUpdate}
                 onClose={() => onOpenChange(false)}
               />
