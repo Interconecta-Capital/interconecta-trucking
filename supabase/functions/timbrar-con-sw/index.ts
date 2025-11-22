@@ -9,6 +9,48 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// 🔐 Función para obtener token de SW mediante autenticación
+async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<string> {
+  const swUser = Deno.env.get('SW_USER');
+  const swPassword = Deno.env.get('SW_PASSWORD');
+  const swUrl = ambiente === 'production' 
+    ? Deno.env.get('SW_PRODUCTION_URL')
+    : Deno.env.get('SW_SANDBOX_URL');
+
+  if (!swUser || !swPassword || !swUrl) {
+    throw new Error('Credenciales de SW (usuario/contraseña) no configuradas');
+  }
+
+  console.log('🔐 Obteniendo token de SW para:', swUser);
+
+  const authResponse = await fetch(`${swUrl}/security/authenticate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      user: swUser,
+      password: swPassword
+    }),
+  });
+
+  if (!authResponse.ok) {
+    const errorText = await authResponse.text();
+    console.error('❌ Error autenticando con SW:', errorText);
+    throw new Error(`Error de autenticación con SmartWeb: ${errorText}`);
+  }
+
+  const authData = await authResponse.json();
+  
+  if (authData.status !== 'success' || !authData.data?.token) {
+    console.error('❌ Respuesta de autenticación inválida:', authData);
+    throw new Error('No se pudo obtener token de SmartWeb');
+  }
+
+  console.log('✅ Token obtenido exitosamente de SW');
+  return authData.data.token;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // 🔐 CORS: Manejar preflight requests SIEMPRE primero
   if (req.method === 'OPTIONS') {
@@ -123,20 +165,17 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 3. Obtener credenciales de SW
-    const rawToken = Deno.env.get('SW_TOKEN');
+    // 3. Obtener token dinámico de SW mediante autenticación
+    const swToken = await obtenerTokenSW(ambiente);
     const swUrl = ambiente === 'production' 
       ? Deno.env.get('SW_PRODUCTION_URL')
       : Deno.env.get('SW_SANDBOX_URL');
 
-    if (!rawToken || !swUrl) {
-      throw new Error('Credenciales de SW no configuradas');
+    if (!swUrl) {
+      throw new Error('URL de SW no configurada');
     }
 
-    // 🔐 Limpiar token: eliminar espacios, saltos de línea y caracteres extra
-    const swToken = rawToken.replace(/[\s\n\r]/g, '').trim();
-    
-    console.log('🔑 Token limpiado - longitud:', swToken.length);
+    console.log('🔑 Token obtenido para ambiente:', ambiente);
 
     // 4. Construir el CFDI JSON según formato de SW
     const cfdiJson = construirCFDIJson(cartaPorteData || facturaData, esFacturaConCartaPorte);
