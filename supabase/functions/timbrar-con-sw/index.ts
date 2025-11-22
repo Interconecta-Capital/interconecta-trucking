@@ -621,18 +621,40 @@ function construirAutotransporte(data: any) {
 }
 
 function construirFigurasTransporte(data: any) {
-  if (!data.figuras || data.figuras.length === 0) {
-    throw new Error('Se requiere al menos una figura de transporte');
+  let figuras = data.figuras || [];
+  
+  // Si no hay figuras, intentar generarlas desde conductor en tracking_data
+  if (figuras.length === 0 && data.tracking_data?.conductor) {
+    const conductor = data.tracking_data.conductor;
+    console.log('🚗 [FIGURAS] Generando figura desde conductor:', conductor);
+    
+    figuras = [{
+      tipo_figura: "01", // Operador
+      rfc_figura: conductor.rfc || "XAXX010101000",
+      num_licencia: conductor.num_licencia || conductor.numLicencia,
+      nombre_figura: conductor.nombre,
+      domicilio: conductor.direccion || conductor.domicilio
+    }];
+  }
+  
+  // Si aún no hay figuras, crear una figura por defecto
+  if (figuras.length === 0) {
+    console.log('⚠️ [FIGURAS] No se encontraron figuras, usando figura por defecto');
+    figuras = [{
+      tipo_figura: "01",
+      rfc_figura: "XAXX010101000",
+      nombre_figura: "Operador No Especificado"
+    }];
   }
 
-  return data.figuras.map((f: any) => ({
+  return figuras.map((f: any) => ({
     TipoFigura: f.tipo_figura || "01",
-    RFCFigura: f.rfc_figura,
+    RFCFigura: f.rfc_figura || "XAXX010101000",
     NumLicencia: f.num_licencia || undefined,
-    NombreFigura: f.nombre_figura,
+    NombreFigura: f.nombre_figura || "Sin nombre",
     Domicilio: f.domicilio ? {
       Calle: f.domicilio.calle || "Sin calle",
-      CodigoPostal: f.domicilio.codigo_postal || "01000",
+      CodigoPostal: f.domicilio.codigo_postal || f.domicilio.codigoPostal || "01000",
       Estado: f.domicilio.estado || "CIUDAD DE MEXICO",
       Pais: f.domicilio.pais || "MEX",
       Municipio: f.domicilio.municipio || "CUAUHTEMOC"
