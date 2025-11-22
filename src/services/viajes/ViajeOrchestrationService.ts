@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteLifecycleManager } from '@/services/cartaPorte/CartaPorteLifecycleManager';
 import { ViajeToCartaPorteMapper } from './ViajeToCartaPorteMapper';
+import { DisponibilidadService } from './DisponibilidadService';
 
 interface ViajeCompletoResult {
   viaje_id: string;
@@ -35,9 +36,24 @@ export class ViajeOrchestrationService {
     const esFletePageado = wizardData.tipoServicio === 'flete_pagado';
     
     try {
+      // ========== PASO 0: VALIDAR DISPONIBILIDAD (ISO 27001 A.18.1.3) ==========
+      await this.validarDisponibilidadRecursos(wizardData);
+      
       // ========== PASO 1: CREAR VIAJE (MAESTRO) ==========
       const viaje = await this.crearViajeMaestro(wizardData);
       console.log('✅ [ORCHESTRATOR] Viaje creado:', viaje.id);
+      
+      // Registrar auditoría
+      await this.registrarAuditoria('viaje_created', {
+        viaje_id: viaje.id,
+        tipo_servicio: wizardData.tipoServicio,
+        recursos: {
+          conductor_id: wizardData.conductor?.id,
+          vehiculo_id: wizardData.vehiculo?.id,
+          remolque_id: wizardData.remolque?.id,
+          socio_id: wizardData.socio?.id
+        }
+      });
       
       // ========== PASO 1.5: GUARDAR MERCANCÍAS EN TABLA (UNIFICADO) ==========
       if (wizardData.mercancias && wizardData.mercancias.length > 0) {
@@ -322,10 +338,15 @@ export class ViajeOrchestrationService {
   /**
    * ✅ NUEVO: Guardar mercancías directamente en tabla (UNIFICADO)
    * Ahora hay UNA sola fuente de verdad: tabla mercancias
+   * ISO 27001 A.9.4.1 - Control de acceso a la información
    */
   private static async guardarMercanciasDirectas(viajeId: string, mercancias: any[]) {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Usuario no autenticado');
+    
     const mercanciasMapped = mercancias.map((m: any) => ({
       viaje_id: viajeId,
+      user_id: user.user.id, // ✅ ISO 27001: Asegurar user_id para RLS
       estado: 'borrador',
       bienes_transp: m.bienes_transp || m.claveProdServ || '',
       descripcion: m.descripcion || '',
@@ -348,6 +369,12 @@ export class ViajeOrchestrationService {
       console.error('❌ Error guardando mercancías:', error);
       throw error;
     }
+    
+    // Auditoría
+    await this.registrarAuditoria('mercancias_created', {
+      viaje_id: viajeId,
+      cantidad_mercancias: mercancias.length
+    });
   }
   
   /**
@@ -394,6 +421,67 @@ export class ViajeOrchestrationService {
         }
       })
       .eq('id', viajeId);
+  }
+  
+  /**
+   * ✅ NUEVO: Validar disponibilidad de recursos antes de crear viaje
+   * ISO 27001 A.18.1.3 - Integridad de datos
+   */
+  private static async validarDisponibilidadRecursos(wizardData: ViajeWizardData) {
+    console.log('🔍 [ORCHESTRATOR] Validando disponibilidad de recursos...');
+    
+    const validacion = await DisponibilidadService.validarDisponibilidadCompleta(
+      wizardData.conductor?.id,
+      wizardData.vehiculo?.id,
+      wizardData.remolque?.id,
+      wizardData.socio?.id,
+      wizardData.fechaInicio,
+      wizardData.fechaFin
+    );
+    
+    if (!validacion.todosDisponibles) {
+      const conflictos = Object.entries(validacion.resultados)
+        .filter(([_, resultado]) => !resultado.disponible)
+        .map(([recurso, resultado]) => `${recurso}: ${resultado.conflictos[0]?.motivo}`)
+        .join(', ');
+      
+      throw new Error(`Recursos no disponibles: ${conflictos}`);
+    }
+    
+    // Mostrar advertencias si existen
+    Object.entries(validacion.resultados).forEach(([recurso, resultado]) => {
+      if (resultado.advertencias.length > 0) {
+        console.warn(`⚠️ [${recurso}]:`, resultado.advertencias);
+      }
+    });
+    
+    console.log('✅ [ORCHESTRATOR] Todos los recursos están disponibles');
+  }
+  
+  /**
+   * ✅ NUEVO: Registrar eventos de auditoría
+   * ISO 27001 A.12.4.1 - Registro de eventos
+   */
+  private static async registrarAuditoria(
+    eventoTipo: string,
+    datosEvento: any
+  ) {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      
+      await supabase.from('security_audit_log').insert({
+        user_id: user.user?.id,
+        event_type: eventoTipo,
+        event_data: {
+          ...datosEvento,
+          timestamp: new Date().toISOString(),
+          control: 'ISO 27001 A.12.4.1'
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️ Error registrando auditoría:', error);
+      // No lanzar error para no interrumpir flujo principal
+    }
   }
   
   /**
