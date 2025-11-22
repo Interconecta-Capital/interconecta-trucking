@@ -210,8 +210,12 @@ export class ConfiguracionEmisorService {
 
       // ========== VALIDAR PERMISOS SCT ==========
       if (emisorData.permisosSCT.length === 0) {
-        permisosSCTErrores.push('No hay permisos SCT configurados');
-        warnings.push('No hay permisos SCT configurados (requerido para algunos tipos de transporte)');
+        permisosSCTErrores.push('No hay permisos SCT configurados a nivel empresa');
+        warnings.push(
+          'No hay permisos SCT configurados a nivel empresa. ' +
+          'Estos son permisos generales del transportista, distintos de los permisos de cada vehículo. ' +
+          'Configúralos en Administración > Mi Empresa > Permisos SCT.'
+        );
       }
 
       return {
