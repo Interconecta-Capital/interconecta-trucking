@@ -30,7 +30,13 @@ export default function StableVehiculos() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showRemolqueDialog, setShowRemolqueDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
-  const { setFABConfig } = useFAB()
+  const { setFABConfig, setIsModalOpen } = useFAB()
+  
+  // Notificar al FAB cuando cualquier modal está abierto
+  useEffect(() => {
+    const anyModalOpen = showCreateDialog || showEditDialog || showViewDialog || showRemolqueDialog;
+    setIsModalOpen(anyModalOpen);
+  }, [showCreateDialog, showEditDialog, showViewDialog, showRemolqueDialog, setIsModalOpen]);
 
   const handleNewVehiculo = () => {
     console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');

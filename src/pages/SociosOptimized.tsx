@@ -21,7 +21,13 @@ export default function SociosOptimized() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedSocio, setSelectedSocio] = useState<any>(null);
-  const { setFABConfig } = useFAB();
+  const { setFABConfig, setIsModalOpen } = useFAB();
+  
+  // Notificar al FAB cuando cualquier modal está abierto
+  useEffect(() => {
+    const anyModalOpen = showCreateDialog || showEditDialog;
+    setIsModalOpen(anyModalOpen);
+  }, [showCreateDialog, showEditDialog, setIsModalOpen]);
 
   const handleNewSocio = () => {
     console.log('[Socios] 🆕 Iniciando creación de nuevo socio');

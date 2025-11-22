@@ -25,7 +25,13 @@ export default function ConductoresOptimized() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedConductor, setSelectedConductor] = useState<any>(null);
-  const { setFABConfig } = useFAB();
+  const { setFABConfig, setIsModalOpen } = useFAB();
+  
+  // Notificar al FAB cuando cualquier modal está abierto
+  useEffect(() => {
+    const anyModalOpen = showCreateDialog || showEditDialog || showViewDialog;
+    setIsModalOpen(anyModalOpen);
+  }, [showCreateDialog, showEditDialog, showViewDialog, setIsModalOpen]);
 
   const handleNewConductor = () => {
     console.log('[Conductores] 🆕 Iniciando creación de nuevo conductor');

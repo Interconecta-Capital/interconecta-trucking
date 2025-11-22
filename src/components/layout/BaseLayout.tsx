@@ -16,8 +16,11 @@ interface BaseLayoutProps {
 
 export function BaseLayout({ children, showSidebar = true, className }: BaseLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { fabConfig } = useFAB()
+  const { fabConfig, isModalOpen } = useFAB()
   const isMobile = useIsMobile()
+  
+  // Ocultar FAB cuando hay un modal abierto
+  const shouldShowFAB = fabConfig.isVisible && !isModalOpen
 
   if (!showSidebar) {
     return (
@@ -38,7 +41,7 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
             icon={fabConfig.icon as React.ReactNode}
             text={fabConfig.text ?? ''}
             onClick={fabConfig.onClick ?? (() => {})}
-            isVisible={!!fabConfig.isVisible}
+            isVisible={shouldShowFAB}
           />
         )}
       </div>
@@ -81,7 +84,7 @@ export function BaseLayout({ children, showSidebar = true, className }: BaseLayo
               icon={fabConfig.icon as React.ReactNode}
               text={fabConfig.text ?? ''}
               onClick={fabConfig.onClick ?? (() => {})}
-              isVisible={!!fabConfig.isVisible}
+              isVisible={shouldShowFAB}
             />
           )}
         </div>

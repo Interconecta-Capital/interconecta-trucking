@@ -21,7 +21,13 @@ export default function RemolquesOptimized() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRemolque, setSelectedRemolque] = useState<any>(null);
-  const { setFABConfig } = useFAB();
+  const { setFABConfig, setIsModalOpen } = useFAB();
+  
+  // Notificar al FAB cuando cualquier modal está abierto
+  useEffect(() => {
+    const anyModalOpen = showCreateDialog || showEditDialog;
+    setIsModalOpen(anyModalOpen);
+  }, [showCreateDialog, showEditDialog, setIsModalOpen]);
 
   const handleNewRemolque = () => {
     console.log('[Remolques] 🆕 Iniciando creación de nuevo remolque');

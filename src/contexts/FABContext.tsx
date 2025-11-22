@@ -10,22 +10,27 @@ export interface FABConfig {
 interface FABContextType {
   fabConfig: FABConfig
   setFABConfig: (config: FABConfig) => void
+  isModalOpen: boolean
+  setIsModalOpen: (isOpen: boolean) => void
 }
 
 const FABContext = createContext<FABContextType>({
   fabConfig: { isVisible: false },
-  setFABConfig: () => {}
+  setFABConfig: () => {},
+  isModalOpen: false,
+  setIsModalOpen: () => {}
 })
 
 export function FABProvider({ children }: { children: React.ReactNode }) {
   const [fabConfig, setFabConfig] = useState<FABConfig>({ isVisible: false })
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const setFABConfig = (config: FABConfig) => {
     setFabConfig(prev => ({ ...prev, ...config }))
   }
 
   return (
-    <FABContext.Provider value={{ fabConfig, setFABConfig }}>
+    <FABContext.Provider value={{ fabConfig, setFABConfig, isModalOpen, setIsModalOpen }}>
       {children}
     </FABContext.Provider>
   )
