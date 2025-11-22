@@ -214,21 +214,32 @@ export class ViajeOrchestrationService {
   
   /**
    * Crear pre-factura (borrador) vinculada al viaje
+   * ✅ USA serie_factura y folio_inicial_factura de configuración_empresa
    */
   private static async crearPreFactura(viajeId: string, wizardData: ViajeWizardData): Promise<string> {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('Usuario no autenticado');
     
-    // Obtener configuración de empresa para RFC emisor
-    const { data: config } = await supabase
+    // Obtener configuración de empresa para RFC emisor y configuración de folios
+    const { data: config, error: configError } = await supabase
       .from('configuracion_empresa')
-      .select('rfc_emisor, razon_social, regimen_fiscal')
+      .select('rfc_emisor, razon_social, regimen_fiscal, serie_factura, folio_actual_factura, folio_inicial_factura')
       .eq('user_id', user.user.id)
       .single();
     
-    if (!config || !config.rfc_emisor) {
+    if (configError || !config || !config.rfc_emisor) {
       throw new Error('⚠️ Configura tu empresa en Configuración antes de crear facturas');
     }
+    
+    // Calcular el folio a usar (folio_actual_factura o folio_inicial si no hay actual)
+    const folioAUsar = config.folio_actual_factura || config.folio_inicial_factura || 1;
+    const serieAUsar = config.serie_factura || 'ZS';
+    
+    console.log('📄 [FACTURA] Usando configuración:', {
+      serie: serieAUsar,
+      folio: folioAUsar,
+      siguiente_folio: folioAUsar + 1
+    });
     
     const facturaData = wizardData.facturaData!;
     
@@ -238,8 +249,8 @@ export class ViajeOrchestrationService {
         user_id: user.user.id,
         viaje_id: viajeId, // 🔥 Vincular con viaje
         tipo_comprobante: 'I', // Ingreso
-        serie: facturaData.serie || 'A',
-        folio: facturaData.folio || '001',
+        serie: serieAUsar,
+        folio: folioAUsar.toString().padStart(3, '0'),
         fecha_expedicion: new Date().toISOString(),
         rfc_emisor: config.rfc_emisor,
         nombre_emisor: config.razon_social,
@@ -267,6 +278,14 @@ export class ViajeOrchestrationService {
       console.error('Error creando factura:', error);
       throw new Error(`Error creando factura: ${error.message}`);
     }
+    
+    // Incrementar folio_actual_factura para la siguiente factura
+    await supabase
+      .from('configuracion_empresa')
+      .update({ folio_actual_factura: folioAUsar + 1 })
+      .eq('user_id', user.user.id);
+    
+    console.log('✅ [FACTURA] Folio incrementado a:', folioAUsar + 1);
     
     return factura.id;
   }
