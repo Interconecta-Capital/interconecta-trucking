@@ -54,24 +54,57 @@ export const useViajes = () => {
   const [isCreatingViaje, setIsCreatingViaje] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
-  // ⚡ OPTIMIZACIÓN: Query con paginación y filtros en servidor
+  // ⚡ OPTIMIZACIÓN: Query con joins para traer conductor y vehiculo completos
   const { data: viajes = [], isLoading } = useQuery({
     queryKey: ['viajes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('viajes')
-        .select('id, origen, destino, estado, fecha_inicio_programada, fecha_fin_programada, conductor_id, vehiculo_id, remolque_id, precio_cobrado, created_at, user_id, tracking_data, distancia_km, observaciones') // ✅ INCLUIR tracking_data y otros campos necesarios
-        .not('observaciones', 'ilike', '%BORRADOR WIZARD%') // ✅ Excluir borradores del wizard
-        .not('fecha_inicio_programada', 'is', null) // ✅ Excluir viajes sin fecha de inicio
-        .not('fecha_fin_programada', 'is', null) // ✅ Excluir viajes sin fecha de fin
+        .select(`
+          id, 
+          origen, 
+          destino, 
+          estado, 
+          fecha_inicio_programada, 
+          fecha_fin_programada, 
+          conductor_id, 
+          vehiculo_id, 
+          remolque_id,
+          precio_cobrado, 
+          created_at, 
+          user_id, 
+          tracking_data, 
+          distancia_km, 
+          observaciones,
+          conductores:conductor_id (id, nombre, telefono, num_licencia, rfc),
+          vehiculos:vehiculo_id (id, placa, marca, modelo, config_vehicular),
+          remolques:remolque_id (id, placa, tipo_remolque)
+        `)
+        .not('observaciones', 'ilike', '%BORRADOR WIZARD%')
+        .not('fecha_inicio_programada', 'is', null)
+        .not('fecha_fin_programada', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(50); // Paginación: solo primeros 50
+        .limit(50);
 
       if (error) throw error;
-      return data as Viaje[];
+      
+      // Enriquecer tracking_data con datos de joins
+      return (data as any[]).map((viaje: any) => {
+        const trackingData = viaje.tracking_data || {};
+        
+        return {
+          ...viaje,
+          tracking_data: {
+            ...trackingData,
+            conductor: viaje.conductores || trackingData.conductor,
+            vehiculo: viaje.vehiculos || trackingData.vehiculo,
+            remolque: viaje.remolques || trackingData.remolque,
+          }
+        };
+      }) as Viaje[];
     },
-    staleTime: 30000, // Cache por 30 segundos
-    gcTime: 5 * 60 * 1000 // Mantener en cache 5 minutos
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000
   });
 
   // Obtener borrador activo del usuario (ahora busca por observaciones)

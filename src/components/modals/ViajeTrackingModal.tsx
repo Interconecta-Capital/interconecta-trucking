@@ -38,7 +38,7 @@ import { toast } from 'sonner';
 import { ViajeMercanciasManager } from '@/components/viajes/mercancias/ViajeMercanciasManager';
 import { FacturaPreviewModal } from '@/components/viajes/documentos/FacturaPreviewModal';
 import { ViajeDocumentosGenerator } from '@/services/pdf/ViajeDocumentosGenerator';
-import { DocumentosOperativosService } from '@/services/documentos/DocumentosOperativosService';
+import { DocumentosOperativosService } from '@/services/documentos/DocumentosOperativosServiceMejorado';
 
 interface ViajeTrackingModalProps {
   viaje: Viaje | null;
@@ -934,10 +934,23 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                             <Button 
                               size="sm" 
                               className="flex-1"
-                              onClick={handleImprimirHojaRuta}
+                              onClick={async () => {
+                                try {
+                                  const blob = await DocumentosOperativosService.generarHojaDeRuta(viajeCompleto);
+                                  const fecha = new Date().toISOString().split('T')[0];
+                                  DocumentosOperativosService.descargarDocumento(
+                                    blob,
+                                    `hoja-ruta-${viaje.id?.substring(0, 8)}-${fecha}.pdf`
+                                  );
+                                  toast.success('Hoja de ruta descargada');
+                                } catch (error) {
+                                  console.error('Error descargando hoja de ruta:', error);
+                                  toast.error('Error al descargar la hoja de ruta');
+                                }
+                              }}
                             >
                               <Download className="h-4 w-4 mr-1" />
-                              Imprimir
+                              Descargar
                             </Button>
                           </div>
                         </div>
