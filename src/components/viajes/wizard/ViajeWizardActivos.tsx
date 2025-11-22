@@ -54,16 +54,48 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
-  // Extraer datos del resultado RPC con type assertion
-  const vehiculos = (Array.isArray(recursos?.[0]?.vehiculos_disponibles) 
-    ? recursos[0].vehiculos_disponibles 
-    : []) as any[];
-  const conductores = (Array.isArray(recursos?.[0]?.conductores_disponibles)
-    ? recursos[0].conductores_disponibles
-    : []) as any[];
-  const remolques = (Array.isArray(recursos?.[0]?.remolques_disponibles)
-    ? recursos[0].remolques_disponibles
-    : []) as any[];
+  // ✅ FASE 1: Extracción defensiva con React.useMemo y validación de tipos
+  const vehiculos = React.useMemo(() => {
+    if (!recursos || !Array.isArray(recursos) || recursos.length === 0) return [];
+    const data = recursos[0]?.vehiculos_disponibles;
+    return Array.isArray(data) ? data : [];
+  }, [recursos]) as any[];
+
+  const conductores = React.useMemo(() => {
+    if (!recursos || !Array.isArray(recursos) || recursos.length === 0) return [];
+    const data = recursos[0]?.conductores_disponibles;
+    return Array.isArray(data) ? data : [];
+  }, [recursos]) as any[];
+
+  const remolques = React.useMemo(() => {
+    if (!recursos || !Array.isArray(recursos) || recursos.length === 0) return [];
+    const data = recursos[0]?.remolques_disponibles;
+    return Array.isArray(data) ? data : [];
+  }, [recursos]) as any[];
+
+  // ✅ Logging detallado para debugging
+  React.useEffect(() => {
+    if (recursos) {
+      console.log('📦 [ViajeWizardActivos] Recursos recibidos del RPC:', {
+        raw: recursos,
+        tipoRecursos: typeof recursos,
+        esArray: Array.isArray(recursos),
+        primerElemento: recursos[0],
+        vehiculos: {
+          count: vehiculos.length,
+          data: vehiculos
+        },
+        conductores: {
+          count: conductores.length,
+          data: conductores
+        },
+        remolques: {
+          count: remolques.length,
+          data: remolques
+        }
+      });
+    }
+  }, [recursos, vehiculos, conductores, remolques]);
   
   // Estados de loading unificados
   const loadingVehiculos = loadingRecursos;
