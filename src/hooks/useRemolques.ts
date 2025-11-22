@@ -77,7 +77,7 @@ export const useRemolques = () => {
         .insert({
           placa: data.placa,
           subtipo_rem: data.tipo_remolque || data.subtipo_remolque || data.subtipo_rem,
-          autotransporte_id: data.autotransporte_id
+          autotransporte_id: data.autotransporte_id === 'sin_asignar' || !data.autotransporte_id ? null : data.autotransporte_id
         })
         .select()
         .single();
@@ -111,7 +111,9 @@ export const useRemolques = () => {
       if (data.tipo_remolque !== undefined) updateData.subtipo_rem = data.tipo_remolque;
       if (data.subtipo_remolque !== undefined) updateData.subtipo_rem = data.subtipo_remolque;
       if (data.subtipo_rem !== undefined) updateData.subtipo_rem = data.subtipo_rem;
-      if (data.autotransporte_id !== undefined) updateData.autotransporte_id = data.autotransporte_id;
+      if (data.autotransporte_id !== undefined) {
+        updateData.autotransporte_id = data.autotransporte_id === 'sin_asignar' || !data.autotransporte_id ? null : data.autotransporte_id;
+      }
 
       const { data: result, error } = await supabase
         .from('remolques')
