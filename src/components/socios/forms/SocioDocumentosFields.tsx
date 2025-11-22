@@ -11,18 +11,18 @@ interface SocioDocumentosFieldsProps {
 }
 
 const TIPOS_DOCUMENTO_SOCIO_FISICA = [
-  { value: 'csf', label: 'Constancia de Situación Fiscal (CSF)', obligatorio: true, vencimiento: 365 },
-  { value: 'identificacion_oficial', label: 'Identificación Oficial (INE/IFE)', obligatorio: true },
-  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: true, vencimiento: 90 },
+  { value: 'csf', label: 'Constancia de Situación Fiscal (CSF)', obligatorio: false, vencimiento: 365 },
+  { value: 'identificacion_oficial', label: 'Identificación Oficial (INE/IFE)', obligatorio: false },
+  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: false, vencimiento: 90 },
   { value: 'curp', label: 'CURP', obligatorio: false },
 ];
 
 const TIPOS_DOCUMENTO_SOCIO_MORAL = [
-  { value: 'csf', label: 'Constancia de Situación Fiscal (CSF)', obligatorio: true, vencimiento: 365 },
-  { value: 'acta_constitutiva', label: 'Acta Constitutiva', obligatorio: true },
-  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: true, vencimiento: 90 },
+  { value: 'csf', label: 'Constancia de Situación Fiscal (CSF)', obligatorio: false, vencimiento: 365 },
+  { value: 'acta_constitutiva', label: 'Acta Constitutiva', obligatorio: false },
+  { value: 'comprobante_domicilio', label: 'Comprobante de Domicilio Fiscal', obligatorio: false, vencimiento: 90 },
   { value: 'poder_notarial', label: 'Poder Notarial del Representante Legal', obligatorio: false },
-  { value: 'identificacion_representante', label: 'Identificación del Representante Legal', obligatorio: true },
+  { value: 'identificacion_representante', label: 'Identificación del Representante Legal', obligatorio: false },
 ];
 
 export function SocioDocumentosFields({ socioId, tipoPersona = 'moral', onDocumentosChange }: SocioDocumentosFieldsProps) {
@@ -84,10 +84,6 @@ export function SocioDocumentosFields({ socioId, tipoPersona = 'moral', onDocume
     return documentos.filter(doc => doc.tipo_documento === tipoDocumento);
   };
 
-  const documentosObligatoriosFaltantes = tiposDocumento
-    .filter(tipo => tipo.obligatorio)
-    .filter(tipo => getDocumentosByTipo(tipo.value).length === 0);
-
   return (
     <Card>
       <CardHeader>
@@ -96,7 +92,7 @@ export function SocioDocumentosFields({ socioId, tipoPersona = 'moral', onDocume
           Documentos del Socio ({tipoPersona === 'fisica' ? 'Persona Física' : 'Persona Moral'})
         </CardTitle>
         <CardDescription>
-          Documentación legal y fiscal requerida. Los documentos marcados con * son obligatorios.
+          Documentación legal y fiscal. Todos los documentos son opcionales.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -104,17 +100,6 @@ export function SocioDocumentosFields({ socioId, tipoPersona = 'moral', onDocume
           <div className="bg-muted/50 border border-muted rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-2">
             <Upload className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <p>Primero guarda los datos básicos del socio para poder subir documentos.</p>
-          </div>
-        )}
-
-        {socioId && documentosObligatoriosFaltantes.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-900">
-            <p className="font-medium">Documentos obligatorios faltantes ({documentosObligatoriosFaltantes.length}):</p>
-            <ul className="list-disc list-inside mt-1">
-              {documentosObligatoriosFaltantes.map(doc => (
-                <li key={doc.value}>{doc.label}</li>
-              ))}
-            </ul>
           </div>
         )}
 
@@ -126,14 +111,11 @@ export function SocioDocumentosFields({ socioId, tipoPersona = 'moral', onDocume
             return (
               <div 
                 key={tipo.value} 
-                className={`space-y-2 p-3 rounded-lg border ${
-                  tipo.obligatorio && !tieneDocumento ? 'border-red-200 bg-red-50/50' : 'border-border'
-                }`}
+                className="space-y-2 p-3 rounded-lg border border-border"
               >
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">
                     {tipo.label}
-                    {tipo.obligatorio && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   {tipo.vencimiento && (
                     <span className="text-xs text-muted-foreground">

@@ -10,8 +10,8 @@ interface RemolqueDocumentosFieldsProps {
 }
 
 const TIPOS_DOCUMENTO_REMOLQUE = [
-  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: true, vencimiento: 365, permitirPosponer: false },
-  { value: 'certificado_capacidad', label: 'Certificado de Capacidad de Carga', obligatorio: true, vencimiento: 365, permitirPosponer: true },
+  { value: 'tarjeta_circulacion', label: 'Tarjeta de Circulación', obligatorio: false, vencimiento: 365, permitirPosponer: true },
+  { value: 'certificado_capacidad', label: 'Certificado de Capacidad de Carga', obligatorio: false, vencimiento: 365, permitirPosponer: true },
   { value: 'poliza_seguro', label: 'Póliza de Seguro', obligatorio: false, vencimiento: 365, permitirPosponer: true },
   { value: 'inspeccion_tecnica', label: 'Inspección Técnica', obligatorio: false, vencimiento: 180, permitirPosponer: true },
   { value: 'factura_remolque', label: 'Factura del Remolque', obligatorio: false, permitirPosponer: true },
@@ -83,7 +83,7 @@ export function RemolqueDocumentosFields({ remolqueId, onDocumentosChange }: Rem
           Documentos del Remolque
         </CardTitle>
         <CardDescription>
-          Documentación legal del remolque. Los documentos obligatorios son requeridos para operar.
+          Documentación legal del remolque. Todos los documentos son opcionales.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -103,7 +103,6 @@ export function RemolqueDocumentosFields({ remolqueId, onDocumentosChange }: Rem
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">
                     {tipo.label}
-                    {tipo.obligatorio && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   {tipo.vencimiento && (
                     <span className="text-xs text-muted-foreground">
