@@ -77,7 +77,8 @@ export const useRemolques = () => {
         .insert({
           placa: data.placa,
           subtipo_rem: data.tipo_remolque || data.subtipo_remolque || data.subtipo_rem,
-          autotransporte_id: data.autotransporte_id === 'sin_asignar' || !data.autotransporte_id ? null : data.autotransporte_id
+          autotransporte_id: data.autotransporte_id === 'sin_asignar' || !data.autotransporte_id ? null : data.autotransporte_id,
+          user_id: user.id // ✅ REQUERIDO POR RLS: Asignar el usuario autenticado
         })
         .select()
         .single();
