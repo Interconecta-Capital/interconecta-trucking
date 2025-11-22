@@ -61,7 +61,7 @@ export const useViajes = () => {
       const { data, error } = await supabase
         .from('viajes')
         .select('id, origen, destino, estado, fecha_inicio_programada, conductor_id, vehiculo_id, precio_cobrado, created_at, user_id')
-        .neq('estado', 'borrador')
+        .not('observaciones', 'ilike', '%BORRADOR WIZARD%') // ✅ Excluir borradores del wizard
         .order('created_at', { ascending: false })
         .limit(50); // Paginación: solo primeros 50
 
@@ -72,14 +72,15 @@ export const useViajes = () => {
     gcTime: 5 * 60 * 1000 // Mantener en cache 5 minutos
   });
 
-  // Obtener borrador activo del usuario
+  // Obtener borrador activo del usuario (ahora busca por observaciones)
   const { data: borradorActivo, isLoading: loadingBorrador } = useQuery({
     queryKey: ['borrador-activo'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('viajes')
         .select('*')
-        .eq('estado', 'borrador')
+        .eq('estado', 'programado')
+        .ilike('observaciones', '%BORRADOR WIZARD%') // ✅ Filtrar solo borradores del wizard
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -274,10 +275,10 @@ export const useViajes = () => {
         destino: cleanWizardData.destino?.direccion || cleanWizardData.destino?.nombre || 'Destino por definir',
         conductor_id: cleanWizardData.conductor?.id,
         vehiculo_id: cleanWizardData.vehiculo?.id,
-        estado: 'borrador' as const,
+        estado: 'programado' as const, // ✅ CORRECCIÓN: Usar 'programado' en lugar de 'borrador'
         fecha_inicio_programada: cleanWizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
         fecha_fin_programada: cleanWizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        observaciones: `BORRADOR - ${cleanWizardData.cliente?.nombre_razon_social || 'Viaje en progreso'} - Paso ${cleanWizardData.currentStep || 1}/6`,
+        observaciones: `BORRADOR WIZARD - ${cleanWizardData.cliente?.nombre_razon_social || 'Viaje en progreso'} - Paso ${cleanWizardData.currentStep || 1}/6`,
         tracking_data: cleanWizardData,
         user_id: user.id
       };
@@ -362,14 +363,14 @@ export const useViajes = () => {
     }
   });
 
-  // Cargar borrador - NUEVO
+  // Cargar borrador - ACTUALIZADO para estado 'programado'
   const cargarBorrador = async (borradorId: string): Promise<ViajeWizardData | null> => {
     try {
       const { data, error } = await supabase
         .from('viajes')
         .select('tracking_data')
         .eq('id', borradorId)
-        .eq('estado', 'borrador')
+        .eq('estado', 'programado') // ✅ CORRECCIÓN: Buscar por 'programado'
         .single();
 
       if (error) throw error;
@@ -395,7 +396,8 @@ export const useViajes = () => {
         .from('viajes')
         .delete()
         .eq('id', borradorId)
-        .eq('estado', 'borrador');
+        .eq('estado', 'programado') // ✅ CORRECCIÓN: Buscar por 'programado'
+        .ilike('observaciones', '%BORRADOR WIZARD%'); // Filtrar solo borradores del wizard
       
       if (error) throw error;
       return borradorId;
@@ -411,18 +413,19 @@ export const useViajes = () => {
     }
   });
 
-  // Convertir borrador a viaje - NUEVO
+  // Convertir borrador a viaje - Ya no es necesario, todos son 'programado' desde el inicio
+  // Este mutation ahora solo actualiza metadata y limpia la observación
   const convertirBorradorAViaje = useMutation({
     mutationFn: async (borradorId: string) => {
       const { data, error } = await supabase
         .from('viajes')
         .update({ 
-          estado: 'programado',
-          carta_porte_id: null, // UUID se asignará al crear Carta Porte
+          observaciones: '', // Limpiar la observación de BORRADOR WIZARD
           updated_at: new Date().toISOString()
         })
         .eq('id', borradorId)
-        .eq('estado', 'borrador')
+        .eq('estado', 'programado')
+        .ilike('observaciones', '%BORRADOR WIZARD%')
         .select()
         .single();
 

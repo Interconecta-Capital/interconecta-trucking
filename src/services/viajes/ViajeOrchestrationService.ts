@@ -85,10 +85,19 @@ export class ViajeOrchestrationService {
    * Crear viaje maestro con toda la información
    */
   private static async crearViajeMaestro(wizardData: ViajeWizardData) {
-    const origen = wizardData.ubicaciones?.find(u => u.tipoUbicacion === 'Origen');
-    const destino = wizardData.ubicaciones?.find(u => u.tipoUbicacion === 'Destino');
+    // ✅ CORRECCIÓN: El wizard usa data.origen y data.destino directamente, no un array de ubicaciones
+    const origen = wizardData.origen;
+    const destino = wizardData.destino;
+    
+    console.log('📍 [ORCHESTRATOR] Verificando ubicaciones:', {
+      origen: origen,
+      destino: destino,
+      tieneOrigen: !!origen,
+      tieneDestino: !!destino
+    });
     
     if (!origen || !destino) {
+      console.error('❌ [ORCHESTRATOR] Faltan ubicaciones:', { wizardData });
       throw new Error('Se requiere origen y destino para crear el viaje');
     }
     
@@ -114,7 +123,7 @@ export class ViajeOrchestrationService {
         vehiculo_id: wizardData.vehiculo?.id,
         socio_id: wizardData.socio?.id,
         remolque_id: wizardData.remolque?.id,
-        estado: 'borrador', // Inicia como borrador hasta que se timbre
+        estado: 'programado', // ✅ CORRECCIÓN: Usar 'programado' en lugar de 'borrador'
         fecha_inicio_programada: fechaInicio.toISOString(),
         fecha_fin_programada: fechaFin.toISOString(),
         distancia_km: wizardData.distanciaTotal || 0,
