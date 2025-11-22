@@ -50,6 +50,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   const [loading, setLoading] = useState(false);
   const [showFacturaPreview, setShowFacturaPreview] = useState(false);
   const [isTimbrando, setIsTimbrando] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   
   // ✅ NUEVO: Cargar viaje completo con todas sus relaciones usando RPC
   useEffect(() => {
@@ -86,7 +87,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
     cargarViajeCompleto();
   }, [viaje?.id, open]);
 
-  const handleTimbrarFactura = async () => {
+  const handleTimbrarFactura = async (updatedData: { moneda: string; forma_pago: string; metodo_pago: string }) => {
     const facturaData = viajeCompleto?.factura;
     if (!facturaData?.id) {
       toast.error('No se encontró la factura para timbrar');
@@ -109,9 +110,9 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             importe: facturaData.tipo_comprobante === 'I' ? (m.valor_mercancia || 0) : 0
           }))
         : [{
-            clave_prod_serv: '78101800', // Servicios de transporte
+            clave_prod_serv: '78101800',
             cantidad: 1,
-            clave_unidad: 'E48', // Unidad de servicio
+            clave_unidad: 'E48',
             descripcion: 'Servicio de transporte de carga',
             valor_unitario: facturaData.subtotal || 0,
             importe: facturaData.subtotal || 0
@@ -133,10 +134,10 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             folio: facturaData.folio,
             subtotal: facturaData.subtotal || 0,
             total: facturaData.total || 0,
-            moneda: facturaData.moneda || 'MXN',
-            formaPago: facturaData.forma_pago,
-            metodoPago: facturaData.metodo_pago,
-            conceptos: conceptos // ✅ Campo requerido agregado
+            moneda: updatedData.moneda,
+            formaPago: updatedData.forma_pago,
+            metodoPago: updatedData.metodo_pago,
+            conceptos: conceptos
           },
           ambiente: 'sandbox'
         }
@@ -156,6 +157,42 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
       toast.error(`Error: ${error.message}`, { id: 'timbrado' });
     } finally {
       setIsTimbrando(false);
+    }
+  };
+
+  const handleCancelarFactura = async () => {
+    if (!viajeCompleto?.factura?.uuid_fiscal) {
+      toast.error('No hay UUID para cancelar');
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      toast.loading('Cancelando factura...', { id: 'cancelacion' });
+
+      const { data, error } = await supabase.functions.invoke('cancelar-cfdi-sw', {
+        body: {
+          uuid: viajeCompleto.factura.uuid_fiscal,
+          rfc: viajeCompleto.factura.rfc_emisor,
+          motivo: '02',
+          facturaId: viajeCompleto.factura.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('✅ Factura cancelada exitosamente', { id: 'cancelacion' });
+        setShowFacturaPreview(false);
+        handleViajeUpdate();
+      } else {
+        throw new Error(data?.error || 'Error al cancelar');
+      }
+    } catch (error: any) {
+      console.error('Error al cancelar factura:', error);
+      toast.error(`Error: ${error.message || 'Error desconocido'}`, { id: 'cancelacion' });
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -539,7 +576,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                             <div className="flex gap-2 mt-3">
                               <Button 
                                 size="sm" 
-                                variant="outline" 
+                                variant="outline"
                                 className="flex-1"
                                 onClick={() => setShowFacturaPreview(true)}
                               >
@@ -549,7 +586,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                               <Button 
                                 size="sm" 
                                 className="flex-1 bg-green-600 hover:bg-green-700"
-                                onClick={handleTimbrarFactura}
+                                onClick={() => setShowFacturaPreview(true)}
                                 disabled={isTimbrando}
                               >
                                 <Zap className="h-4 w-4 mr-1" />
@@ -829,14 +866,16 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
       </DialogContent>
 
       {/* Modal de Pre-visualización de Factura */}
-      {facturaData && (facturaData.status === 'draft' || facturaData.status === 'BORRADOR') && (
+      {facturaData && (
         <FacturaPreviewModal
           open={showFacturaPreview}
           onOpenChange={setShowFacturaPreview}
           facturaData={facturaData}
           viajeData={viajeDataSafe}
           onTimbrar={handleTimbrarFactura}
+          onCancelar={handleCancelarFactura}
           isTimbrando={isTimbrando}
+          isCancelling={isCancelling}
         />
       )}
     </Dialog>
