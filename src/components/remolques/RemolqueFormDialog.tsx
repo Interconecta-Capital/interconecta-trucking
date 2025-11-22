@@ -57,7 +57,7 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
         subtipo_remolque: data.subtipo_remolque || '',
         estado: 'disponible',
         activo: true,
-        autotransporte_id: data.autotransporte_id || undefined
+        autotransporte_id: data.autotransporte_id === 'sin_asignar' || !data.autotransporte_id ? null : data.autotransporte_id
       };
 
       let nuevoId = remolque?.id || savedRemolqueId;
@@ -176,7 +176,10 @@ export function RemolqueFormDialog({ open, onOpenChange, remolque, onSuccess }: 
 
           <div className="space-y-2">
             <Label htmlFor="autotransporte_id">Vehículo Asignado</Label>
-            <Select onValueChange={(value) => setValue('autotransporte_id', value || undefined)}>
+            <Select 
+              value={remolque?.autotransporte_id || 'sin_asignar'} 
+              onValueChange={(value) => setValue('autotransporte_id', value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Sin asignar" />
               </SelectTrigger>
