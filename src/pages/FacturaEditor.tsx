@@ -242,8 +242,8 @@ export default function FacturaEditor() {
         facturaId = nuevaFactura.id;
       }
 
-      // 2. Preparar datos para timbrado
-      const facturaData = {
+      // 2. Preparar datos básicos para timbrado
+      let facturaData: any = {
         rfcEmisor,
         nombreEmisor,
         rfcReceptor,
@@ -260,9 +260,49 @@ export default function FacturaEditor() {
         }))
       };
 
-      console.log('🚀 [TIMBRADO FACTURA] Iniciando timbrado...', { facturaId, ambiente: 'sandbox' });
+      // 3. Si hay carta porte vinculada, cargar sus datos completos
+      if (cartaPorteVinculada) {
+        console.log('📦 [FACTURA] Cargando datos de Carta Porte vinculada:', cartaPorteVinculada);
+        
+        const { data: cartaPorte, error: cpError } = await supabase
+          .from('cartas_porte')
+          .select(`
+            *,
+            ubicaciones:ubicaciones(*),
+            mercancias:mercancias(*),
+            autotransporte:autotransporte(*),
+            figuras:figuras(*)
+          `)
+          .eq('id', cartaPorteVinculada)
+          .single();
 
-      // 3. Llamar edge function para timbrar
+        if (!cpError && cartaPorte) {
+          console.log('✅ [FACTURA] Carta Porte cargada con ubicaciones:', cartaPorte.ubicaciones?.length || 0);
+          
+          // Agregar datos de transporte a facturaData
+          facturaData = {
+            ...facturaData,
+            ubicaciones: cartaPorte.ubicaciones || [],
+            mercancias: cartaPorte.mercancias || [],
+            autotransporte: cartaPorte.autotransporte?.[0] || null,
+            figuras: cartaPorte.figuras || [],
+            cartaPorteId: cartaPorte.id_ccp,
+            cartaPorteVersion: cartaPorte.version_carta_porte || '3.1',
+            transporteInternacional: cartaPorte.transporte_internacional || false
+          };
+        } else {
+          console.warn('⚠️ [FACTURA] No se pudo cargar Carta Porte:', cpError);
+        }
+      }
+
+      console.log('🚀 [TIMBRADO FACTURA] Iniciando timbrado...', { 
+        facturaId, 
+        ambiente: 'sandbox',
+        tieneCartaPorte: !!cartaPorteVinculada,
+        ubicaciones: facturaData.ubicaciones?.length || 0
+      });
+
+      // 4. Llamar edge function para timbrar
       const { data: result, error: timbradoError } = await supabase.functions.invoke(
         'timbrar-con-sw',
         {
