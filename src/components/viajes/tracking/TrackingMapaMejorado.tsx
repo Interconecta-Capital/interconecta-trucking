@@ -48,7 +48,7 @@ export const TrackingMapaMejorado: React.FC<TrackingMapaMejoradoProps> = ({
   const paradasData = trackingData.paradasAutorizadas || 
                       trackingData.paradas || 
                       trackingData.ubicacionesIntermedias || 
-                      (trackingData.ubicaciones || []).filter((u: any) => u.tipoUbicacion === 'Paso Intermedio') ||
+                      (Array.isArray(trackingData.ubicaciones) ? trackingData.ubicaciones.filter((u: any) => u.tipoUbicacion === 'Paso Intermedio') : []) ||
                       [];
   
   const rutaCalculada = trackingData.rutaCalculada || {};

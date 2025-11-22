@@ -16,7 +16,38 @@ export interface Viaje {
   fecha_fin_programada: string;
   fecha_fin_real?: string;
   observaciones?: string;
-  tracking_data?: any;
+  
+  // IMPORTANTE: tipo_servicio NO es columna directa, está en tracking_data JSONB
+  // Valores: 'flete_pagado' | 'flete_por_cobrar'
+  tipo_servicio?: string;
+  
+  // Datos de tracking en JSONB: tipo_servicio, cliente, ubicaciones, etc.
+  // ISO 27001 A.18.1.3 - Auditoría completa en JSONB
+  tracking_data?: {
+    tipo_servicio?: string;
+    viaje_id?: string;
+    factura_id?: string;
+    borrador_carta_porte_id?: string;
+    fecha_creacion?: string;
+    flujo_completo_creado?: boolean;
+    created_from?: string;
+    cliente?: {
+      id: string;
+      nombre_razon_social: string;
+      rfc: string;
+      uso_cfdi?: string;
+      regimen_fiscal?: string;
+    };
+    ubicaciones?: {
+      origen: any;
+      destino: any;
+    };
+    descripcionMercancia?: string;
+    ruta?: any;
+    ultima_actualizacion?: string;
+    [key: string]: any;
+  };
+  
   user_id: string;
   created_at: string;
   updated_at: string;
