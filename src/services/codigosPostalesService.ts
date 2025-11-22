@@ -27,9 +27,18 @@ class CodigosPostalesServiceOptimizado {
   ): Promise<DireccionCompleta | null> {
     try {
       console.log('[CP_SERVICE_OPT] Consultando SEPOMEX API para:', codigoPostal);
+      
+      // Timeout de 3 segundos para SEPOMEX
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
       const response = await fetch(
-        `https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`
+        `https://api-sepomex.hckdrk.mx/query/info_cp/${codigoPostal}`,
+        { signal: controller.signal }
       );
+      
+      clearTimeout(timeoutId);
+      
       if (!response.ok) return null;
       const data = await response.json();
       if (!data.error && data.response) {
@@ -46,8 +55,13 @@ class CodigosPostalesServiceOptimizado {
           fuente: 'sepomex_api'
         };
       }
-    } catch (e) {
-      console.error('[CP_SERVICE_OPT] Error SEPOMEX API:', e);
+    } catch (e: any) {
+      // No logear como error si es timeout o fallo de red (es esperado)
+      if (e.name === 'AbortError') {
+        console.log('[CP_SERVICE_OPT] SEPOMEX timeout - usando fallback a BD');
+      } else {
+        console.log('[CP_SERVICE_OPT] SEPOMEX no disponible - usando fallback a BD');
+      }
     }
     return null;
   }

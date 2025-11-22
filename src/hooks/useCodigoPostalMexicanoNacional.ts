@@ -53,9 +53,9 @@ export const useCodigoPostalMexicanoNacional = () => {
     try {
       console.log(`[HOOK_CP_OPT] Consultando CP: ${cp}`);
       
-      // Agregar timeout de 10 segundos
+      // Timeout reducido a 8 segundos (SEPOMEX tiene su propio timeout de 3s)
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Tiempo de espera agotado')), 10000)
+        setTimeout(() => reject(new Error('Tiempo de espera agotado')), 8000)
       );
       
       const searchPromise = codigosPostalesService.buscarDireccionPorCP(cp);
@@ -76,7 +76,7 @@ export const useCodigoPostalMexicanoNacional = () => {
         setDireccionInfo(direccionInfo);
         setError('');
         setSugerencias([]);
-        console.log(`[HOOK_CP_OPT] Éxito - ${data.colonias.length} colonias encontradas`);
+        console.log(`[HOOK_CP_OPT] Éxito - ${data.colonias.length} colonias (${data.fuente})`);
       } else {
         // Manejar error con sugerencias
         const cpsSimilares: SugerenciaCP[] = serviceSugerencias?.map(s => ({
@@ -90,11 +90,7 @@ export const useCodigoPostalMexicanoNacional = () => {
       }
     } catch (error: any) {
       console.error('[HOOK_CP_OPT] Error:', error);
-      if (error.message === 'Tiempo de espera agotado') {
-        setError('El servicio está tardando mucho. Puedes llenar los campos manualmente.');
-      } else {
-        setError('Error al consultar código postal. Puedes llenar los campos manualmente.');
-      }
+      setError('Error al consultar código postal. Puedes llenar los campos manualmente.');
       setDireccionInfo(null);
       setSugerencias([]);
     } finally {

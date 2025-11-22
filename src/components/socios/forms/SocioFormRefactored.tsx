@@ -162,10 +162,15 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
 
   // Memoizar callbacks para evitar re-renders innecesarios
   const handleDomicilioGeneralChange = useCallback((campo: keyof DomicilioUnificado, valor: string) => {
-    setDomicilioGeneral(prev => ({ ...prev, [campo]: valor }));
-    if (usarMismoDomicilio) {
-      setDomicilioFiscal(prev => ({ ...prev, [campo]: valor }));
-    }
+    setDomicilioGeneral(prev => {
+      const updated = { ...prev, [campo]: valor };
+      // Si usar mismo domicilio está activo, sincronizar automáticamente
+      if (usarMismoDomicilio) {
+        setDomicilioFiscal(updated);
+        console.log('[FORM] Sincronizando domicilio fiscal:', campo, valor);
+      }
+      return updated;
+    });
   }, [usarMismoDomicilio]);
 
   const handleDomicilioFiscalChange = useCallback((campo: keyof DomicilioUnificado, valor: string) => {
@@ -275,21 +280,24 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
             <input
               type="checkbox"
               id="usar_mismo_domicilio"
               checked={usarMismoDomicilio}
               onChange={(e) => {
-                setUsarMismoDomicilio(e.target.checked);
-                if (e.target.checked) {
-                  setDomicilioFiscal(domicilioGeneral);
+                const checked = e.target.checked;
+                setUsarMismoDomicilio(checked);
+                if (checked) {
+                  // Copiar TODOS los campos del domicilio general al fiscal
+                  setDomicilioFiscal({...domicilioGeneral});
+                  console.log('[FORM] Usando mismo domicilio - copiado completo');
                 }
               }}
               className="rounded border-gray-300"
             />
-            <label htmlFor="usar_mismo_domicilio" className="text-sm">
-              Usar el mismo domicilio general
+            <label htmlFor="usar_mismo_domicilio" className="text-sm font-medium cursor-pointer">
+              Usar el mismo domicilio general como domicilio fiscal
             </label>
           </div>
 
