@@ -122,6 +122,13 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             importe: facturaData.subtotal || 0
           }];
 
+      // Extraer ubicaciones del viaje
+      const ubicaciones = viajeCompleto?.viaje?.tracking_data?.ubicaciones || 
+                         viajeCompleto?.tracking_data?.ubicaciones || 
+                         null;
+
+      console.log('📍 Ubicaciones extraídas para timbrado:', ubicaciones);
+
       const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
         body: {
           facturaId: facturaData.id,
@@ -141,7 +148,9 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             moneda: updatedData.moneda,
             formaPago: updatedData.forma_pago,
             metodoPago: updatedData.metodo_pago,
-            conceptos: conceptos
+            conceptos: conceptos,
+            ubicaciones: ubicaciones, // ✅ Agregar ubicaciones
+            tracking_data: viajeCompleto?.viaje?.tracking_data // ✅ Agregar tracking_data completo
           },
           ambiente: 'sandbox'
         }
