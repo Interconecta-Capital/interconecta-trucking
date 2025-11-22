@@ -73,7 +73,7 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
     return Array.isArray(data) ? data : [];
   }, [recursos]) as any[];
 
-  // ✅ Logging detallado para debugging
+  // ✅ FASE 1: Logging detallado para debugging
   React.useEffect(() => {
     if (recursos) {
       console.log('📦 [ViajeWizardActivos] Recursos recibidos del RPC:', {
@@ -83,11 +83,17 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
         primerElemento: recursos[0],
         vehiculos: {
           count: vehiculos.length,
-          data: vehiculos
+          data: vehiculos,
+          // NUEVO: Ver estructura individual
+          primer_vehiculo: vehiculos[0],
+          tipo_data: typeof vehiculos[0]
         },
         conductores: {
           count: conductores.length,
-          data: conductores
+          data: conductores,
+          // NUEVO: Ver estructura individual
+          primer_conductor: conductores[0],
+          tipo_data: typeof conductores[0]
         },
         remolques: {
           count: remolques.length,
@@ -124,48 +130,73 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
     validateAssignments();
   }, [selectedVehiculo, selectedConductor, selectedRemolque, capacidadRequerida]);
 
-  // Mostrar validador de disponibilidad cuando tengamos fechas y recursos
+  // FASE 2: Mostrar validador de disponibilidad - calcular fechas dinámicamente
   useEffect(() => {
     const tieneRecursos = selectedVehiculo || selectedConductor || selectedRemolque;
-    const tieneFechas = Boolean(data.fechaInicio && data.fechaFin);
+    
+    // Calcular fechas desde ubicaciones si existen
+    let fechaInicio = data.fechaInicio;
+    let fechaFin = data.fechaFin;
+    
+    if (!fechaInicio && data.origen?.fechaHoraSalidaLlegada) {
+      fechaInicio = data.origen.fechaHoraSalidaLlegada;
+      updateData({ fechaInicio });
+    }
+    
+    if (!fechaFin && data.destino?.fechaHoraSalidaLlegada) {
+      fechaFin = data.destino.fechaHoraSalidaLlegada;
+      updateData({ fechaFin });
+    }
+    
+    const tieneFechas = Boolean(fechaInicio && fechaFin);
+    console.log('📅 [ViajeWizardActivos] Fechas para validación:', { fechaInicio, fechaFin, tieneFechas });
+    
     setShowDisponibilidad(Boolean(tieneRecursos && tieneFechas));
-  }, [selectedVehiculo, selectedConductor, selectedRemolque, data.fechaInicio, data.fechaFin]);
+  }, [selectedVehiculo, selectedConductor, selectedRemolque, data.origen, data.destino, data.fechaInicio, data.fechaFin]);
 
+  // FASE 3: Validaciones - CONVERTIR DOCUMENTACIÓN A ADVERTENCIAS
   const validateAssignments = () => {
     const errors: string[] = [];
 
     if (selectedVehiculo) {
-      // Validar capacidad
+      // ✅ Validación de capacidad (mantener como bloqueante)
       if (selectedVehiculo.capacidad_carga < capacidadRequerida) {
         errors.push(`Vehículo insuficiente: ${selectedVehiculo.capacidad_carga}kg disponible, ${capacidadRequerida}kg requerido`);
       }
 
-      // Validar documentación del vehículo
+      // ⚠️ CAMBIO: Validaciones de documentación como ADVERTENCIAS (no bloqueantes)
       if (!selectedVehiculo.vigencia_tarjeta_circulacion || new Date(selectedVehiculo.vigencia_tarjeta_circulacion) < new Date()) {
-        errors.push('Tarjeta de circulación vencida o inexistente');
+        console.warn('⚠️ Tarjeta de circulación vencida o no registrada para vehículo:', selectedVehiculo.id);
+        // NO agregar a errors[], solo advertir
       }
 
       if (!selectedVehiculo.vigencia_seguro || new Date(selectedVehiculo.vigencia_seguro) < new Date()) {
-        errors.push('Seguro vehicular vencido o inexistente');
+        console.warn('⚠️ Seguro vehicular vencido o no registrado para vehículo:', selectedVehiculo.id);
+        // NO agregar a errors[]
       }
     }
 
     if (selectedConductor) {
-      // Validar licencia del conductor
+      // ⚠️ CAMBIO: Validaciones de licencia como ADVERTENCIAS (no bloqueantes)
       if (!selectedConductor.vigencia_licencia || new Date(selectedConductor.vigencia_licencia) < new Date()) {
-        errors.push('Licencia de conductor vencida o inexistente');
+        console.warn('⚠️ Licencia vencida o no registrada para conductor:', selectedConductor.id);
+        // NO agregar a errors[]
       }
 
-      // Validar disponibilidad
+      // ✅ Validar disponibilidad (mantener como bloqueante)
       if (selectedConductor.estado !== 'disponible') {
         errors.push(`Conductor no disponible: ${selectedConductor.estado}`);
       }
 
-      // Validar tipo de licencia vs tipo de vehículo
+      // ⚠️ CAMBIO: Validar tipo de licencia como ADVERTENCIA (no bloqueante)
       if (selectedVehiculo && selectedConductor.tipo_licencia) {
         const licenciaValida = validateLicenciaVehiculo(selectedConductor.tipo_licencia, selectedVehiculo.tipo_carroceria);
         if (!licenciaValida) {
-          errors.push('Tipo de licencia no compatible con el vehículo');
+          console.warn('⚠️ Tipo de licencia no compatible con vehículo:', {
+            licencia: selectedConductor.tipo_licencia,
+            carroceria: selectedVehiculo.tipo_carroceria
+          });
+          // NO agregar a errors[]
         }
       }
     }
@@ -417,10 +448,17 @@ export function ViajeWizardActivos({ data, updateData }: ViajeWizardActivosProps
           ) : vehiculos.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No hay vehículos disponibles
+              {/* FASE 1: Debugging visual */}
+              <pre className="text-xs mt-4 text-left max-w-2xl mx-auto overflow-auto">
+                {JSON.stringify({ recursos, vehiculos }, null, 2)}
+              </pre>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {vehiculos.map(renderVehiculoCard)}
+              {vehiculos.map((vehiculo, index) => {
+                console.log(`🚛 [ViajeWizardActivos] Renderizando vehículo ${index}:`, vehiculo);
+                return renderVehiculoCard(vehiculo);
+              })}
             </div>
           )}
         </CardContent>

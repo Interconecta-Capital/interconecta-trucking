@@ -220,57 +220,145 @@ export const useViajes = () => {
     }
   });
 
-  // Guardar borrador de viaje - MEJORADO
+  // FASE 5: Guardar borrador de viaje - CON LIMPIEZA DE DATOS
   const guardarBorradorViaje = useMutation({
     mutationFn: async ({ wizardData, borradorId }: { wizardData: ViajeWizardData; borradorId?: string }) => {
+      console.group('💾 [GUARDAR BORRADOR] Iniciando guardado');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
+      if (!user) {
+        console.error('❌ Usuario no autenticado');
+        throw new Error('Usuario no autenticado');
+      }
 
       const viajeId = borradorId || crypto.randomUUID();
+      
+      // ✅ CRÍTICO: Limpiar datos circulares y no serializables
+      const cleanData = (obj: any): any => {
+        if (obj === null || obj === undefined) return obj;
+        if (typeof obj === 'function') return undefined;
+        if (obj instanceof Date) return obj.toISOString();
+        
+        // Evitar objetos de Google Maps/Mapbox
+        if (obj.constructor && 
+            (obj.constructor.name.includes('Map') || 
+             obj.constructor.name.includes('LatLng') ||
+             obj.constructor.name.includes('LngLat'))) {
+          return undefined;
+        }
+        
+        if (Array.isArray(obj)) {
+          return obj.map(item => cleanData(item)).filter(item => item !== undefined);
+        }
+        
+        if (typeof obj === 'object') {
+          const cleaned: any = {};
+          for (const key of Object.keys(obj)) {
+            const value = cleanData(obj[key]);
+            if (value !== undefined) {
+              cleaned[key] = value;
+            }
+          }
+          return cleaned;
+        }
+        
+        return obj;
+      };
+      
+      const cleanWizardData = cleanData(wizardData);
 
       const viajeData = {
         id: viajeId,
-        carta_porte_id: null, // UUID se asignará al crear Carta Porte
-        origen: wizardData.origen?.direccion || wizardData.origen?.nombre || 'Origen por definir',
-        destino: wizardData.destino?.direccion || wizardData.destino?.nombre || 'Destino por definir',
-        conductor_id: wizardData.conductor?.id,
-        vehiculo_id: wizardData.vehiculo?.id,
+        carta_porte_id: null,
+        origen: cleanWizardData.origen?.direccion || cleanWizardData.origen?.nombre || 'Origen por definir',
+        destino: cleanWizardData.destino?.direccion || cleanWizardData.destino?.nombre || 'Destino por definir',
+        conductor_id: cleanWizardData.conductor?.id,
+        vehiculo_id: cleanWizardData.vehiculo?.id,
         estado: 'borrador' as const,
-        fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
-        fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        observaciones: `Borrador - ${wizardData.cliente?.nombre_razon_social || 'Viaje en progreso'} - ${wizardData.origen?.direccion || 'Origen'} → ${wizardData.destino?.direccion || 'Destino'}`,
-        tracking_data: JSON.parse(JSON.stringify(wizardData)),
+        fecha_inicio_programada: cleanWizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
+        fecha_fin_programada: cleanWizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        observaciones: `BORRADOR - ${cleanWizardData.cliente?.nombre_razon_social || 'Viaje en progreso'} - Paso ${cleanWizardData.currentStep || 1}/6`,
+        tracking_data: cleanWizardData,
         user_id: user.id
       };
 
-      if (borradorId) {
+      console.log('📝 Datos del borrador limpiados:', {
+        id: viajeData.id,
+        tracking_data_size: JSON.stringify(viajeData.tracking_data).length,
+        paso: cleanWizardData.currentStep
+      });
+
+      try {
+        if (borradorId) {
+          console.log('🔄 Actualizando borrador existente');
+          const { data, error } = await supabase
+            .from('viajes')
+            .update({
+              origen: viajeData.origen,
+              destino: viajeData.destino,
+              conductor_id: viajeData.conductor_id,
+              vehiculo_id: viajeData.vehiculo_id,
+              observaciones: viajeData.observaciones,
+              tracking_data: viajeData.tracking_data,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', borradorId)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+
+          if (error) {
+            console.error('❌ Error actualizando:', error);
+            throw error;
+          }
+          console.log('✅ Borrador actualizado');
+          console.groupEnd();
+          return data as Viaje;
+        }
+
+        console.log('➕ Creando nuevo borrador');
         const { data, error } = await supabase
           .from('viajes')
-          .update(viajeData)
-          .eq('id', borradorId)
+          .insert(viajeData)
           .select()
           .single();
-        if (error) throw error;
+
+        if (error) {
+          console.error('❌ Error insertando:', error);
+          throw error;
+        }
+
+        console.log('✅ Borrador creado');
+        console.groupEnd();
         return data as Viaje;
+      } catch (error) {
+        console.error('❌ Error crítico:', error);
+        console.groupEnd();
+        throw error;
       }
-
-      const { data, error } = await supabase
-        .from('viajes')
-        .insert(viajeData)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Viaje;
     },
     onSuccess: (viaje) => {
       queryClient.invalidateQueries({ queryKey: ['borrador-activo'] });
       setCurrentDraftId(viaje.id);
-      toast.success('Borrador guardado exitosamente');
+      toast.success('Borrador guardado exitosamente', {
+        description: `Paso ${(viaje.tracking_data as any)?.currentStep || 1}/6`
+      });
     },
-    onError: (error) => {
-      console.error('Error guardando borrador:', error);
-      toast.error('Error al guardar borrador');
+    onError: (error: any) => {
+      console.error('❌ [MUTATION ERROR]:', error);
+      
+      const errorMessages: Record<string, string> = {
+        '23505': 'Ya existe un borrador con ese ID',
+        '42501': 'No tienes permisos para guardar borradores',
+        '23503': 'Referencia inválida a conductor o vehículo'
+      };
+      
+      const errorMessage = errorMessages[error.code] || error.message || 'Error desconocido';
+      
+      toast.error('Error al guardar borrador', {
+        description: errorMessage,
+        duration: 8000
+      });
     }
   });
 

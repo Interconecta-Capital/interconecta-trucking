@@ -316,6 +316,7 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
     }
   };
 
+  // FASE 4: Permitir avanzar desde paso 3 incluso con advertencias
   const canAdvance = () => {
     switch (data.currentStep) {
       case 1:
@@ -328,11 +329,13 @@ export const ViajeWizard = forwardRef<ViajeWizardHandle, ViajeWizardProps>(funct
       case 2:
         return data.origen && data.destino;
       case 3:
-        return data.vehiculo && data.conductor;
+        // ✅ CAMBIO: Permitir avanzar si tiene vehículo y conductor
+        // incluso si hay advertencias de documentación
+        return Boolean(data.vehiculo && data.conductor);
       case 4:
         return true; // Las validaciones se manejan internamente
       case 5:
-        return true;
+        return true; // Datos fiscales opcionales
       default:
         return false;
     }
