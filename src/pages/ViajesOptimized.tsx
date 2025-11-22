@@ -44,6 +44,21 @@ function ViajesContent() {
   const [selectedViaje, setSelectedViaje] = useState<Viaje | null>(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState<string>('todos');
+  
+  // ✅ NUEVO: Abrir modal del último viaje creado automáticamente
+  useEffect(() => {
+    const ultimoViajeId = sessionStorage.getItem('ultimo_viaje_creado');
+    if (ultimoViajeId && viajes.length > 0 && !isLoading) {
+      const viajeCreado = viajes.find(v => v.id === ultimoViajeId);
+      if (viajeCreado) {
+        setSelectedViaje(viajeCreado);
+        setShowTrackingModal(true);
+        sessionStorage.removeItem('ultimo_viaje_creado');
+      }
+    }
+  }, [viajes, isLoading]);
 
   const handleEliminarViaje = async (viaje: Viaje) => {
     if (!window.confirm(`¿Estás seguro de que quieres eliminar el viaje ${viaje.origen} → ${viaje.destino}?`)) {

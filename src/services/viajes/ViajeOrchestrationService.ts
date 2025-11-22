@@ -85,21 +85,32 @@ export class ViajeOrchestrationService {
    * Crear viaje maestro con toda la información
    */
   private static async crearViajeMaestro(wizardData: ViajeWizardData) {
-    // ✅ CORRECCIÓN: El wizard usa data.origen y data.destino directamente, no un array de ubicaciones
     const origen = wizardData.origen;
     const destino = wizardData.destino;
     
-    console.log('📍 [ORCHESTRATOR] Verificando ubicaciones:', {
-      origen: origen,
-      destino: destino,
-      tieneOrigen: !!origen,
-      tieneDestino: !!destino
-    });
-    
     if (!origen || !destino) {
-      console.error('❌ [ORCHESTRATOR] Faltan ubicaciones:', { wizardData });
       throw new Error('Se requiere origen y destino para crear el viaje');
     }
+    
+    // ✅ NUEVO: Construir direcciones completas
+    const construirDireccionCompleta = (ubicacion: any) => {
+      const dom = ubicacion.domicilio || {};
+      const partes = [
+        dom.calle,
+        dom.numeroExterior ? `#${dom.numeroExterior}` : null,
+        dom.numeroInterior ? `Int. ${dom.numeroInterior}` : null,
+        dom.colonia ? `Col. ${dom.colonia}` : null,
+        dom.codigoPostal ? `CP ${dom.codigoPostal}` : null,
+        dom.municipio,
+        dom.estado,
+        dom.pais !== 'MEX' ? dom.pais : null
+      ].filter(Boolean);
+      
+      return partes.join(', ');
+    };
+    
+    const direccionOrigenCompleta = construirDireccionCompleta(origen);
+    const direccionDestinoCompleta = construirDireccionCompleta(destino);
     
     // Calcular fechas
     const fechaInicio = origen.fechaHoraSalidaLlegada 
@@ -113,30 +124,74 @@ export class ViajeOrchestrationService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('Usuario no autenticado');
     
+    // ✅ NUEVO: Guardar estructura completa en tracking_data
+    const trackingDataCompleto = {
+      created_from: 'ViajeWizard',
+      timestamp: new Date().toISOString(),
+      
+      // Cliente completo
+      cliente: wizardData.cliente ? {
+        id: wizardData.cliente.id,
+        nombre_razon_social: wizardData.cliente.nombre_razon_social,
+        rfc: wizardData.cliente.rfc,
+        regimen_fiscal: wizardData.cliente.regimen_fiscal,
+        uso_cfdi: wizardData.cliente.uso_cfdi
+      } : null,
+      
+      // Ubicaciones completas
+      ubicaciones: {
+        origen: {
+          tipo: origen.tipoUbicacion || 'Origen',
+          domicilio: origen.domicilio,
+          coordenadas: origen.coordenadas,
+          fechaHoraSalidaLlegada: origen.fechaHoraSalidaLlegada,
+          distanciaRecorrida: origen.distanciaRecorrida
+        },
+        destino: {
+          tipo: destino.tipoUbicacion || 'Destino',
+          domicilio: destino.domicilio,
+          coordenadas: destino.coordenadas,
+          fechaHoraSalidaLlegada: destino.fechaHoraSalidaLlegada,
+          distanciaRecorrida: destino.distanciaRecorrida
+        }
+      },
+      
+      // Ruta calculada
+      ruta: wizardData.rutaCalculada ? {
+        distanciaTotal: wizardData.rutaCalculada.distanciaTotal,
+        tiempoEstimado: wizardData.rutaCalculada.tiempoEstimado,
+        rutaPolyline: wizardData.rutaCalculada.rutaPolyline,
+        pasos: wizardData.rutaCalculada.pasos
+      } : null,
+      
+      // Mercancía
+      descripcionMercancia: wizardData.descripcionMercancia,
+      claveBienesTransp: wizardData.claveBienesTransp,
+      
+      // Tipo de servicio
+      tipo_servicio: wizardData.tipoServicio
+    };
+    
     const { data: viaje, error } = await supabase
       .from('viajes')
       .insert({
         user_id: user.user.id,
-        origen: `${origen.domicilio?.municipio || 'N/A'}, ${origen.domicilio?.estado || 'N/A'}`,
-        destino: `${destino.domicilio?.municipio || 'N/A'}, ${destino.domicilio?.estado || 'N/A'}`,
+        origen: direccionOrigenCompleta, // ✅ Dirección completa
+        destino: direccionDestinoCompleta, // ✅ Dirección completa
         conductor_id: wizardData.conductor?.id,
         vehiculo_id: wizardData.vehiculo?.id,
         socio_id: wizardData.socio?.id,
         remolque_id: wizardData.remolque?.id,
-        estado: 'programado', // ✅ CORRECCIÓN: Usar 'programado' en lugar de 'borrador'
+        estado: 'programado',
         fecha_inicio_programada: fechaInicio.toISOString(),
         fecha_fin_programada: fechaFin.toISOString(),
         distancia_km: wizardData.distanciaTotal || 0,
-        tiempo_estimado_horas: wizardData.tiempoEstimado || 0,
+        tiempo_estimado_horas: wizardData.tiempoEstimado ? wizardData.tiempoEstimado / 60 : 0,
         precio_cobrado: wizardData.facturaData?.total,
         costo_estimado: wizardData.costos?.costo_total_estimado,
         margen_estimado: (wizardData.facturaData?.total || 0) - (wizardData.costos?.costo_total_estimado || 0),
         observaciones: `Viaje creado desde wizard. Cliente: ${wizardData.cliente?.nombre_razon_social || 'N/A'}`,
-        tracking_data: {
-          created_from: 'ViajeWizard',
-          timestamp: new Date().toISOString(),
-          cliente: wizardData.cliente?.nombre_razon_social
-        }
+        tracking_data: trackingDataCompleto // ✅ Datos completos
       })
       .select()
       .single();
@@ -146,6 +201,7 @@ export class ViajeOrchestrationService {
       throw new Error(`Error creando viaje: ${error.message}`);
     }
     
+    console.log('✅ [ORCHESTRATOR] Viaje maestro creado con datos completos');
     return viaje;
   }
   
