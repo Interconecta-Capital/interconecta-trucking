@@ -136,13 +136,68 @@ export const useViajesMutations = () => {
       // FASE 6: Validar ANTES de intentar eliminar - ISO 27001 A.18.1.4
       await validarEliminacionViaje(id);
       
-      // Si pasa la validación, proceder con eliminación
+      // FASE 3.3: Obtener el viaje para acceder a tracking_data y factura_id
+      const { data: viaje, error: viajeError } = await supabase
+        .from('viajes')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (viajeError) {
+        console.error('[FASE 3.3] Error obteniendo viaje:', viajeError);
+        throw viajeError;
+      }
+      
+      // FASE 3.3: Eliminar borrador de carta porte si existe en tracking_data
+      const trackingData = viaje.tracking_data as any;
+      const borradorCartaPorteId = trackingData?.borrador_carta_porte_id;
+      if (borradorCartaPorteId) {
+        console.log('[FASE 3.3] Eliminando borrador de carta porte:', borradorCartaPorteId);
+        const { error: borradorError } = await supabase
+          .from('borradores_carta_porte')
+          .delete()
+          .eq('id', borradorCartaPorteId);
+        
+        if (borradorError) {
+          console.error('[FASE 3.3] Error eliminando borrador:', borradorError);
+          // No bloqueamos la eliminación si falla el borrador
+        } else {
+          console.log('[FASE 3.3] ✅ Borrador de carta porte eliminado');
+        }
+      }
+      
+      // FASE 3.3: Eliminar factura borrador si existe y no está timbrada
+      if (viaje.factura_id) {
+        const { data: factura } = await supabase
+          .from('facturas')
+          .select('status')
+          .eq('id', viaje.factura_id)
+          .single();
+        
+        if (factura && factura.status === 'draft') {
+          console.log('[FASE 3.3] Eliminando factura borrador:', viaje.factura_id);
+          const { error: facturaError } = await supabase
+            .from('facturas')
+            .delete()
+            .eq('id', viaje.factura_id);
+          
+          if (facturaError) {
+            console.error('[FASE 3.3] Error eliminando factura:', facturaError);
+            // No bloqueamos la eliminación si falla
+          } else {
+            console.log('[FASE 3.3] ✅ Factura borrador eliminada');
+          }
+        }
+      }
+      
+      // Si pasa la validación, proceder con eliminación del viaje
       const { error } = await supabase
         .from('viajes')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      console.log('[FASE 3.3] ✅ Viaje eliminado correctamente');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['viajes'] });
