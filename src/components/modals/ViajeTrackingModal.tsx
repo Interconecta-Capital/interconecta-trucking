@@ -122,38 +122,51 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             importe: facturaData.subtotal || 0
           }];
 
-      // Extraer ubicaciones del viaje
-      const ubicaciones = viajeCompleto?.viaje?.tracking_data?.ubicaciones || 
-                         viajeCompleto?.tracking_data?.ubicaciones || 
-                         null;
+      // 📍 EXTRAER UBICACIONES - ISO 27001 A.12.1 Validación de datos
+      console.log('🔍 [TIMBRADO] Estructura viajeCompleto:', {
+        hasViaje: !!viajeCompleto?.viaje,
+        hasTrackingData: !!viajeCompleto?.viaje?.tracking_data,
+        hasUbicaciones: !!viajeCompleto?.viaje?.tracking_data?.ubicaciones,
+        trackingDataKeys: viajeCompleto?.viaje?.tracking_data ? Object.keys(viajeCompleto.viaje.tracking_data) : null,
+        ubicacionesStructure: viajeCompleto?.viaje?.tracking_data?.ubicaciones
+      });
 
-      console.log('📍 Ubicaciones extraídas para timbrado:', ubicaciones);
+      const trackingData = viajeCompleto?.viaje?.tracking_data;
+      const ubicaciones = trackingData?.ubicaciones;
+
+      console.log('📍 Ubicaciones extraídas:', ubicaciones);
+
+      // Construir payload para timbrado
+      const timbradoPayload = {
+        facturaId: facturaData.id,
+        facturaData: {
+          rfcEmisor: facturaData.rfc_emisor,
+          nombreEmisor: facturaData.nombre_emisor,
+          regimenFiscalEmisor: facturaData.regimen_fiscal_emisor,
+          rfcReceptor: facturaData.rfc_receptor,
+          nombreReceptor: facturaData.nombre_receptor,
+          regimenFiscalReceptor: facturaData.regimen_fiscal_receptor,
+          usoCfdi: facturaData.uso_cfdi,
+          tipoCfdi: facturaData.tipo_comprobante,
+          serie: facturaData.serie,
+          folio: facturaData.folio,
+          subtotal: facturaData.subtotal || 0,
+          total: facturaData.total || 0,
+          moneda: updatedData.moneda,
+          formaPago: updatedData.forma_pago,
+          metodoPago: updatedData.metodo_pago,
+          conceptos: conceptos,
+          ubicaciones: ubicaciones, // ✅ Ubicaciones del viaje
+          tracking_data: trackingData, // ✅ Tracking data completo
+          mercancias: mercancias // ✅ Mercancías del viaje
+        },
+        ambiente: 'sandbox'
+      };
+
+      console.log('📦 [TIMBRADO] Payload completo:', JSON.stringify(timbradoPayload).substring(0, 1000));
 
       const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
-        body: {
-          facturaId: facturaData.id,
-          facturaData: {
-            rfcEmisor: facturaData.rfc_emisor,
-            nombreEmisor: facturaData.nombre_emisor,
-            regimenFiscalEmisor: facturaData.regimen_fiscal_emisor,
-            rfcReceptor: facturaData.rfc_receptor,
-            nombreReceptor: facturaData.nombre_receptor,
-            regimenFiscalReceptor: facturaData.regimen_fiscal_receptor,
-            usoCfdi: facturaData.uso_cfdi,
-            tipoCfdi: facturaData.tipo_comprobante,
-            serie: facturaData.serie,
-            folio: facturaData.folio,
-            subtotal: facturaData.subtotal || 0,
-            total: facturaData.total || 0,
-            moneda: updatedData.moneda,
-            formaPago: updatedData.forma_pago,
-            metodoPago: updatedData.metodo_pago,
-            conceptos: conceptos,
-            ubicaciones: ubicaciones, // ✅ Agregar ubicaciones
-            tracking_data: viajeCompleto?.viaje?.tracking_data // ✅ Agregar tracking_data completo
-          },
-          ambiente: 'sandbox'
-        }
+        body: timbradoPayload
       });
 
       if (error) throw error;

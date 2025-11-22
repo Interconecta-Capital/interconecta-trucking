@@ -53,6 +53,17 @@ const handler = async (req: Request): Promise<Response> => {
     const documentoId = cartaPorteId || facturaId;
     const tipoDocumento = cartaPorteData ? 'Carta Porte' : 'Factura';
     console.log(`🚀 Timbrando ${tipoDocumento} ${documentoId} para usuario ${user.id} en ${ambiente}`);
+    
+    // 🔍 DEBUG: Logging detallado de estructura de datos
+    console.log('📦 [DEBUG] Datos recibidos:', {
+      hasCartaPorteData: !!cartaPorteData,
+      hasFacturaData: !!facturaData,
+      facturaDataKeys: facturaData ? Object.keys(facturaData) : null,
+      hasUbicaciones: !!(facturaData?.ubicaciones || cartaPorteData?.ubicaciones),
+      hasTrackingData: !!(facturaData?.tracking_data || cartaPorteData?.tracking_data),
+      ubicacionesType: typeof (facturaData?.ubicaciones || cartaPorteData?.ubicaciones),
+      ubicacionesStructure: JSON.stringify(facturaData?.ubicaciones || cartaPorteData?.ubicaciones || {}).substring(0, 500)
+    });
 
     // 3. Obtener credenciales de SW
     const swToken = Deno.env.get('SW_TOKEN');
