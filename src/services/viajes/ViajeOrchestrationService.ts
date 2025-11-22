@@ -273,6 +273,7 @@ export class ViajeOrchestrationService {
         regimen_fiscal_emisor: config.regimen_fiscal,
         rfc_receptor: wizardData.cliente?.rfc || 'XAXX010101000',
         nombre_receptor: wizardData.cliente?.nombre_razon_social || 'Público General',
+        regimen_fiscal_receptor: wizardData.cliente?.regimen_fiscal || null, // ✅ NUEVO: Régimen fiscal del receptor
         uso_cfdi: facturaData.usoCfdi || 'G03',
         subtotal: facturaData.subtotal || 0,
         total: facturaData.total || 0,
