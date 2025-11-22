@@ -21,21 +21,21 @@ export function ViajesConDocumentosTab() {
       let query = supabase
         .from('viajes')
         .select(`
-          id,
-          origen,
-          destino,
-          fecha_inicio_programada,
-          estado,
-          tracking_data,
+          id, origen, destino, fecha_inicio_programada, estado,
           facturas:facturas(id, status, serie, folio, uuid_fiscal, total),
           cartas_porte:cartas_porte(id, status, id_ccp, uuid_fiscal)
         `)
-        .order('fecha_inicio_programada', { ascending: false });
+        .order('fecha_inicio_programada', { ascending: false })
+        .limit(50);
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error cargando viajes:', error);
+        throw error;
+      }
       return data || [];
-    }
+    },
+    staleTime: 30000,
   });
 
   const viajesFiltrados = viajes?.filter(viaje => {

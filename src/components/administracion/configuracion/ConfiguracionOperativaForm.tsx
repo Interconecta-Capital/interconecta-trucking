@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Save, Settings, Shield, Cloud, Loader2, AlertTriangle, Info, CheckCircle2, HelpCircle, FileText } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
+import { PermisosSCTEmpresaForm } from './PermisosSCTEmpresaForm';
 import { toast } from 'sonner';
 
 export function ConfiguracionOperativaForm() {
@@ -323,22 +324,8 @@ export function ConfiguracionOperativaForm() {
         </CardContent>
       </Card>
 
-      {/* Configuración General */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Configuración General
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <Settings className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>Configuraciones operativas adicionales en desarrollo</p>
-            <p className="text-sm">Próximamente: permisos SCT, configuraciones avanzadas</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Permisos SCT */}
+      <PermisosSCTEmpresaForm />
 
       {/* Botón de Guardar */}
       <div className="flex justify-end">

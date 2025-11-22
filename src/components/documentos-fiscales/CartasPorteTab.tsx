@@ -20,7 +20,7 @@ export function CartasPorteTab() {
   const { data: documentos, isLoading } = useQuery({
     queryKey: ['cartas-porte-completo', filtro],
     queryFn: async () => {
-      // 1. Obtener borradores
+      // 1. Obtener borradores (solo campos necesarios)
       const { data: borradores, error: errorBorradores } = await supabase
         .from('borradores_carta_porte')
         .select(`
@@ -31,20 +31,29 @@ export function CartasPorteTab() {
           created_at,
           updated_at
         `)
-        .order('updated_at', { ascending: false });
+        .order('updated_at', { ascending: false })
+        .limit(50);
 
-      if (errorBorradores) throw errorBorradores;
+      if (errorBorradores) {
+        console.error('Error cargando borradores:', errorBorradores);
+        throw errorBorradores;
+      }
 
-      // 2. Obtener cartas porte timbradas/canceladas
+      // 2. Obtener cartas porte timbradas/canceladas (solo campos necesarios)
       const { data: cartasPorte, error: errorCP } = await supabase
         .from('cartas_porte')
         .select(`
-          *,
+          id, id_ccp, uuid_fiscal, status, rfc_emisor, rfc_receptor,
+          created_at, updated_at, distancia_total,
           viaje:viajes(id, origen, destino)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      if (errorCP) throw errorCP;
+      if (errorCP) {
+        console.error('Error cargando cartas porte:', errorCP);
+        throw errorCP;
+      }
 
       // 3. Unificar y mapear
       const borradoresFormateados = (borradores || []).map(b => {
@@ -80,7 +89,8 @@ export function CartasPorteTab() {
       if (filtro === 'cancelada') return todosDocumentos.filter(d => d.status === 'cancelada');
 
       return todosDocumentos;
-    }
+    },
+    staleTime: 30000,
   });
 
   if (isLoading) {

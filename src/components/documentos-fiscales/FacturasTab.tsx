@@ -23,19 +23,25 @@ export function FacturasTab() {
       let query = supabase
         .from('facturas')
         .select(`
-          *,
-          viaje:viajes(id, origen, destino, tracking_data)
+          id, serie, folio, uuid_fiscal, status, rfc_emisor, rfc_receptor,
+          total, moneda, created_at, tiene_carta_porte,
+          viaje:viajes(id, origen, destino)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (filtro !== 'todos') {
         query = query.eq('status', filtro);
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error cargando facturas:', error);
+        throw error;
+      }
       return data || [];
-    }
+    },
+    staleTime: 30000,
   });
 
   const handleTimbrarFactura = async (facturaId: string) => {
