@@ -97,6 +97,26 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
       setIsTimbrando(true);
       toast.loading('Timbrando factura...', { id: 'timbrado' });
 
+      // Construir conceptos desde mercancías del viaje o concepto genérico
+      const mercancias = viajeCompleto?.mercancias || [];
+      const conceptos = mercancias.length > 0 
+        ? mercancias.map((m: any) => ({
+            clave_prod_serv: m.bienes_transp || '78101800',
+            cantidad: m.cantidad || 1,
+            clave_unidad: m.clave_unidad || 'E48',
+            descripcion: m.descripcion || 'Servicio de transporte de carga',
+            valor_unitario: facturaData.tipo_comprobante === 'I' ? (m.valor_mercancia || 0) : 0,
+            importe: facturaData.tipo_comprobante === 'I' ? (m.valor_mercancia || 0) : 0
+          }))
+        : [{
+            clave_prod_serv: '78101800', // Servicios de transporte
+            cantidad: 1,
+            clave_unidad: 'E48', // Unidad de servicio
+            descripcion: 'Servicio de transporte de carga',
+            valor_unitario: facturaData.subtotal || 0,
+            importe: facturaData.subtotal || 0
+          }];
+
       const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
         body: {
           facturaId: facturaData.id,
@@ -111,11 +131,12 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             tipoCfdi: facturaData.tipo_comprobante,
             serie: facturaData.serie,
             folio: facturaData.folio,
-            subtotal: facturaData.subtotal,
-            total: facturaData.total,
+            subtotal: facturaData.subtotal || 0,
+            total: facturaData.total || 0,
             moneda: facturaData.moneda || 'MXN',
             formaPago: facturaData.forma_pago,
-            metodoPago: facturaData.metodo_pago
+            metodoPago: facturaData.metodo_pago,
+            conceptos: conceptos // ✅ Campo requerido agregado
           },
           ambiente: 'sandbox'
         }
