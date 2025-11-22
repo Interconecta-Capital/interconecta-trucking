@@ -66,13 +66,19 @@ export class VehicleValidator {
     const permisoNormalizado = permiso.trim().toUpperCase();
     const errores: string[] = [];
 
-    // Formato general: letras y números, mínimo 6 caracteres
+    // Formato: letras, números y guiones, mínimo 6 caracteres
     if (permisoNormalizado.length < 6) {
       errores.push('El número de permiso debe tener al menos 6 caracteres');
     }
 
-    if (!/^[A-Z0-9]+$/.test(permisoNormalizado)) {
-      errores.push('El número de permiso solo puede contener letras y números');
+    // Permitir letras, números y guiones
+    if (!/^[A-Z0-9-]+$/.test(permisoNormalizado)) {
+      errores.push('El número de permiso solo puede contener letras, números y guiones. Ejemplo: SCT-123456');
+    }
+
+    // Validar que no tenga guiones consecutivos
+    if (/--/.test(permisoNormalizado)) {
+      errores.push('El número de permiso no puede tener guiones consecutivos');
     }
 
     return {
