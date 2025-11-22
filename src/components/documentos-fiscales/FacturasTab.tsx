@@ -17,6 +17,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +33,9 @@ export function FacturasTab() {
   const [filtro, setFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [timbrandoIds, setTimbrandoIds] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // ✅ Query optimizada: Solo facturas (no hay tabla de borradores de facturas)
   const { data: facturas, isLoading } = useQuery({
@@ -119,16 +122,40 @@ export function FacturasTab() {
     },
   });
 
+  // 🔧 FASE 3: Handler para timbrar factura con preview
   const handleTimbrarFactura = async (facturaId: string) => {
-    toast.loading('Timbrando factura...', { id: 'timbrar' });
     try {
-      // Aquí iría la lógica de timbrado real
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success('Factura timbrada correctamente', { id: 'timbrar' });
-      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      toast.loading('Preparando factura para timbrado...', { id: `timbrar-${facturaId}` });
+      
+      // Cargar datos completos de la factura
+      const { data: factura, error } = await supabase
+        .from('facturas')
+        .select('*, viaje:viajes(*)')
+        .eq('id', facturaId)
+        .single();
+      
+      if (error) throw error;
+      
+      // Navegar a la página del viaje para usar el modal de preview
+      const viajeId = factura.viaje_id;
+      toast.dismiss(`timbrar-${facturaId}`);
+      toast.info('Abriendo previsualización de factura...');
+      navigate(`/viajes/${viajeId}`);
+      
     } catch (error) {
-      toast.error('Error al timbrar factura', { id: 'timbrar' });
+      console.error('[FacturasTab] Error preparando factura:', error);
+      toast.error('Error al preparar factura para timbrado', { id: `timbrar-${facturaId}` });
     }
+  };
+
+  // 🔧 FASE 3: Handler para editar factura
+  const handleEditarFactura = (facturaId: string) => {
+    navigate(`/factura/editar/${facturaId}`);
+  };
+
+  // 🔧 FASE 3: Handler para ver detalles
+  const handleVerDetalles = (facturaId: string) => {
+    navigate(`/factura/${facturaId}`);
   };
 
   if (isLoading) {
@@ -277,7 +304,11 @@ export function FacturasTab() {
                           <Send className="h-4 w-4 mr-2" />
                           Timbrar Factura
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditarFactura(factura.id)}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </Button>
@@ -295,7 +326,11 @@ export function FacturasTab() {
                         </Button>
                       </>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleVerDetalles(factura.id)}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       Ver Detalles
                     </Button>

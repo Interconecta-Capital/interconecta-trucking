@@ -17,6 +17,20 @@ export const useViajeWizardSubmit = () => {
     mutationFn: async (wizardData: ViajeWizardData) => {
       console.log('🚀 [WIZARD SUBMIT] Iniciando creación de viaje completo...');
       
+      // 🔧 FASE 1: Convertir descripcionMercancia a array si es necesario
+      if ((!wizardData.mercancias || wizardData.mercancias.length === 0) && wizardData.descripcionMercancia) {
+        console.log('🔄 [WIZARD SUBMIT] Convirtiendo descripción a mercancías...');
+        
+        // Importar dinámicamente el mapper
+        const { ViajeToCartaPorteMapper } = await import('@/services/viajes/ViajeToCartaPorteMapper');
+        const mercanciasGeneradas = ViajeToCartaPorteMapper.generateIntelligentMercancia(wizardData);
+        
+        wizardData.mercancias = mercanciasGeneradas;
+        console.log(`✅ [WIZARD SUBMIT] Mercancías generadas: ${mercanciasGeneradas.length}`);
+        
+        toast.info(`📦 ${mercanciasGeneradas.length} mercancía(s) procesada(s)`);
+      }
+      
       // Llamar al orquestador
       const result = await ViajeOrchestrationService.crearViajeCompleto(wizardData);
       
