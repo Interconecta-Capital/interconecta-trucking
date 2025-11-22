@@ -44,21 +44,35 @@ export function ViajeCardCollapsible({ viaje, onVerViaje, onEditarViaje, onElimi
   const mercancias = trackingData.mercancias || [];
   const ubicaciones = trackingData.ubicaciones || {};
   
-  // Extraer CP y Estado del origen/destino - ISO 27001 A.12.1.1
-  const origenCP = ubicaciones.origen?.domicilio?.codigo_postal || ubicaciones.origen?.domicilio?.codigoPostal || 'N/A';
-  const origenEstado = ubicaciones.origen?.domicilio?.estado || 'N/A';
-  const destinoCP = ubicaciones.destino?.domicilio?.codigo_postal || ubicaciones.destino?.domicilio?.codigoPostal || 'N/A';
-  const destinoEstado = ubicaciones.destino?.domicilio?.estado || 'N/A';
+  // Extraer CP y Estado del origen/destino con múltiples fallbacks - ISO 27001 A.12.1.1
+  const origenCP = ubicaciones?.origen?.domicilio?.codigo_postal 
+    || ubicaciones?.origen?.domicilio?.codigoPostal 
+    || viaje.origen_cp
+    || 'N/A';
+  const origenEstado = ubicaciones?.origen?.domicilio?.estado 
+    || ubicaciones?.origen?.estado
+    || viaje.origen_estado
+    || 'N/A';
+  const destinoCP = ubicaciones?.destino?.domicilio?.codigo_postal 
+    || ubicaciones?.destino?.domicilio?.codigoPostal 
+    || viaje.destino_cp
+    || 'N/A';
+  const destinoEstado = ubicaciones?.destino?.domicilio?.estado 
+    || ubicaciones?.destino?.estado
+    || viaje.destino_estado
+    || 'N/A';
 
-  // Formatear nombre completo del conductor
-  const conductorNombre = conductor 
-    ? `${conductor.nombre || ''} ${conductor.apellido || ''}`.trim() || 'No asignado'
-    : 'No asignado';
+  // Formatear nombre completo del conductor con múltiples fallbacks
+  const conductorNombre = conductor?.nombre 
+    ? `${conductor.nombre}${conductor.apellido ? ' ' + conductor.apellido : ''}`.trim()
+    : viaje.conductor_nombre
+    || 'No asignado';
 
-  // Formatear vehículo (placa + modelo)
-  const vehiculoInfo = vehiculo
-    ? `${vehiculo.placa || 'Sin placa'}${vehiculo.modelo ? ` - ${vehiculo.modelo}` : ''}`.trim()
-    : 'No asignado';
+  // Formatear vehículo (placa + modelo) con múltiples fallbacks
+  const vehiculoInfo = vehiculo?.placa
+    ? `${vehiculo.placa}${vehiculo.modelo ? ` - ${vehiculo.modelo}` : ''}${vehiculo.marca ? ` ${vehiculo.marca}` : ''}`.trim()
+    : viaje.vehiculo_placa
+    || 'No asignado';
 
   return (
     <Card className="hover:shadow-md transition-shadow">
