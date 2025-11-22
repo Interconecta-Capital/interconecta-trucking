@@ -641,13 +641,29 @@ function construirFigurasTransporte(data: any) {
 }
 
 function obtenerCPEmisor(data: any): string {
-  const origen = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Origen');
-  return origen?.domicilio?.codigo_postal || data.cpEmisor || "01000";
+  // Manejar ubicaciones como array u objeto
+  let origen: any;
+  
+  if (Array.isArray(data.ubicaciones)) {
+    origen = data.ubicaciones.find((u: any) => u.tipo_ubicacion === 'Origen' || u.tipo === 'Origen');
+  } else if (data.ubicaciones?.origen) {
+    origen = data.ubicaciones.origen;
+  }
+  
+  return origen?.domicilio?.codigo_postal || origen?.domicilio?.codigoPostal || data.cpEmisor || "01000";
 }
 
 function obtenerCPReceptor(data: any): string {
-  const destino = data.ubicaciones?.find((u: any) => u.tipo_ubicacion === 'Destino');
-  return destino?.domicilio?.codigo_postal || data.cpReceptor || "01000";
+  // Manejar ubicaciones como array u objeto
+  let destino: any;
+  
+  if (Array.isArray(data.ubicaciones)) {
+    destino = data.ubicaciones.find((u: any) => u.tipo_ubicacion === 'Destino' || u.tipo === 'Destino');
+  } else if (data.ubicaciones?.destino) {
+    destino = data.ubicaciones.destino;
+  }
+  
+  return destino?.domicilio?.codigo_postal || destino?.domicilio?.codigoPostal || data.cpReceptor || "01000";
 }
 
 function generateCartaPorteId(): string {
