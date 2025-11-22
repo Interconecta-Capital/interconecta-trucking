@@ -134,101 +134,181 @@ export default function ViajeDetalle() {
     setShowFacturaPreview(true);
   };
 
+  /**
+   * ⚡ FASE 3 y 6: MEJORADO - Timbrado con validaciones exhaustivas y logs
+   * Maneja el flujo completo de timbrado con fallbacks y auditoría
+   */
   const handleTimbrarFactura = async (updatedData: { moneda: string; forma_pago: string; metodo_pago: string }) => {
+    console.group('🎯 [TIMBRADO] Inicio del proceso');
+    console.log('📋 Datos de entrada:', {
+      facturaId: factura?.id,
+      viajeId: id,
+      updatedData,
+      facturaStatus: factura?.status
+    });
+    
+    // ✅ VALIDACIÓN 1: Verificar que existe la factura
     if (!factura) {
-      console.error('❌ No hay factura para timbrar');
-      toast.error('No se encontró la factura');
+      console.error('❌ [TIMBRADO] Factura no encontrada');
+      console.groupEnd();
+      toast.error('No se encontró la factura para timbrar');
       return;
     }
     
-    console.log('🎬 Iniciando proceso de timbrado...', {
-      facturaId: factura.id,
-      updatedData
-    });
+    // ✅ VALIDACIÓN 2: Verificar que no está ya timbrada
+    if (factura.status === 'timbrado') {
+      console.warn('⚠️ [TIMBRADO] La factura ya está timbrada');
+      console.groupEnd();
+      toast.warning('Esta factura ya está timbrada');
+      return;
+    }
     
     try {
       setIsTimbrando(true);
-      toast.loading('Preparando factura...', { id: 'timbrado' });
+      toast.loading('Preparando factura para timbrado...', { id: 'timbrado-process' });
       
-      // ✅ FASE 1: Cargar socio para obtener regimen_fiscal si falta
+      // ✅ FASE 1: Cargar régimen fiscal desde socio si falta (FALLBACK)
       let regimenFiscalReceptor = (factura as any).regimen_fiscal_receptor;
+      console.log('🔍 [TIMBRADO] Régimen fiscal actual:', regimenFiscalReceptor);
       
       if (!regimenFiscalReceptor && viaje?.socio_id) {
-        console.log('⚠️ Régimen fiscal faltante, cargando desde socio...');
-        const { data: socioData } = await supabase
+        console.log('⚠️ [TIMBRADO] Régimen fiscal faltante, aplicando fallback desde socio...');
+        const { data: socioData, error: socioError } = await supabase
           .from('socios')
-          .select('regimen_fiscal')
+          .select('regimen_fiscal, nombre_razon_social')
           .eq('id', viaje.socio_id)
           .single();
         
-        if (socioData?.regimen_fiscal) {
+        if (socioError) {
+          console.error('❌ [TIMBRADO] Error cargando socio:', socioError);
+        } else if (socioData?.regimen_fiscal) {
           regimenFiscalReceptor = socioData.regimen_fiscal;
-          console.log('✅ Régimen fiscal cargado desde socio:', regimenFiscalReceptor);
+          console.log('✅ [TIMBRADO] Régimen fiscal obtenido desde socio:', {
+            socio: socioData.nombre_razon_social,
+            regimen: regimenFiscalReceptor
+          });
+        } else {
+          console.warn('⚠️ [TIMBRADO] Socio sin régimen fiscal, usando default');
         }
       }
       
+      // ✅ VALIDACIÓN 3: Asegurar que hay un régimen fiscal válido
+      const regimenFinal = regimenFiscalReceptor || '616'; // 616 = Sin obligaciones fiscales
+      if (!regimenFiscalReceptor) {
+        console.warn('⚠️ [TIMBRADO] Usando régimen fiscal por defecto (616)');
+      }
+      
       // ✅ FASE 2: Actualizar factura con datos editables + régimen fiscal
-      console.log('💾 Actualizando factura con datos editables...');
+      console.log('💾 [TIMBRADO] Actualizando factura en BD...');
+      const updatePayload = {
+        moneda: updatedData.moneda,
+        forma_pago: updatedData.forma_pago,
+        metodo_pago: updatedData.metodo_pago,
+        regimen_fiscal_receptor: regimenFinal
+      };
+      console.log('📦 [TIMBRADO] Payload de actualización:', updatePayload);
+      
       const { error: updateError } = await supabase
         .from('facturas')
-        .update({
-          moneda: updatedData.moneda,
-          forma_pago: updatedData.forma_pago,
-          metodo_pago: updatedData.metodo_pago,
-          regimen_fiscal_receptor: regimenFiscalReceptor || '616' // Default: Sin obligaciones fiscales
-        })
+        .update(updatePayload)
         .eq('id', factura.id);
       
       if (updateError) {
-        console.error('❌ Error actualizando factura:', updateError);
-        throw updateError;
+        console.error('❌ [TIMBRADO] Error actualizando factura:', updateError);
+        throw new Error(`Error al actualizar factura: ${updateError.message}`);
       }
       
-      console.log('✅ Factura actualizada correctamente');
-      toast.loading('Timbrando con el PAC...', { id: 'timbrado' });
+      console.log('✅ [TIMBRADO] Factura actualizada correctamente en BD');
+      toast.loading('Enviando a timbrar con SmartWeb...', { id: 'timbrado-process' });
       
-      // ✅ FASE 3: Llamar edge function para timbrar
-      console.log('📤 Llamando a edge function timbrar-invoice...');
-      const { data, error } = await supabase.functions.invoke('timbrar-invoice', {
-        body: { facturaId: factura.id }
+      // ✅ FASE 3: Llamar edge function para timbrar con el PAC
+      console.log('📤 [TIMBRADO] Invocando edge function timbrar-invoice...');
+      const startTime = Date.now();
+      
+      const { data: timbradoData, error: timbradoError } = await supabase.functions.invoke('timbrar-invoice', {
+        body: { facturaId: factura.id },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      
+      const duration = Date.now() - startTime;
+      console.log(`⏱️ [TIMBRADO] Edge function respondió en ${duration}ms`);
+      console.log('📥 [TIMBRADO] Respuesta completa:', { data: timbradoData, error: timbradoError });
 
-      console.log('📥 Respuesta del edge function:', { data, error });
-
-      if (error) {
-        console.error('❌ Error del edge function:', error);
-        throw error;
+      // ✅ VALIDACIÓN 4: Verificar respuesta del edge function
+      if (timbradoError) {
+        console.error('❌ [TIMBRADO] Error del edge function:', timbradoError);
+        throw new Error(`Error del PAC: ${timbradoError.message || JSON.stringify(timbradoError)}`);
       }
       
-      if (data?.success) {
-        console.log('✅ Factura timbrada exitosamente:', data);
-        toast.success('✅ Factura timbrada exitosamente', { 
-          id: 'timbrado',
-          description: `UUID: ${data.uuid}` 
+      if (!timbradoData) {
+        console.error('❌ [TIMBRADO] Edge function no retornó datos');
+        throw new Error('El servicio de timbrado no retornó una respuesta válida');
+      }
+      
+      // ✅ FASE 4: Verificar resultado del timbrado
+      if (timbradoData.success && timbradoData.uuid) {
+        console.log('✅ [TIMBRADO] Factura timbrada exitosamente');
+        console.log('🎫 [TIMBRADO] UUID generado:', timbradoData.uuid);
+        console.log('📊 [TIMBRADO] Metadatos:', {
+          fecha_timbrado: timbradoData.fecha_timbrado,
+          no_certificado_sat: timbradoData.no_certificado_sat
         });
         
-        // Actualizar estado del viaje a 'programado'
-        await supabase
+        toast.success('✅ Factura timbrada exitosamente', { 
+          id: 'timbrado-process',
+          description: `UUID: ${timbradoData.uuid}`,
+          duration: 5000
+        });
+        
+        // ✅ FASE 5: Actualizar estado del viaje a 'programado'
+        console.log('🔄 [TIMBRADO] Actualizando estado del viaje...');
+        const { error: viajeError } = await supabase
           .from('viajes')
           .update({ estado: 'programado' })
           .eq('id', id);
         
-        // Cerrar modal y recargar datos
+        if (viajeError) {
+          console.warn('⚠️ [TIMBRADO] No se pudo actualizar el viaje:', viajeError);
+        } else {
+          console.log('✅ [TIMBRADO] Viaje actualizado a estado: programado');
+        }
+        
+        // ✅ FASE 6: Cerrar modal y recargar datos
         setShowFacturaPreview(false);
         await cargarViajeCompleto();
+        
+        console.log('🎉 [TIMBRADO] Proceso completado exitosamente');
+        console.groupEnd();
       } else {
-        console.error('❌ Timbrado falló:', data);
-        throw new Error(data?.error || 'Error desconocido al timbrar');
+        // Timbrado falló según el PAC
+        const errorMsg = timbradoData.error || 'Error desconocido del PAC';
+        console.error('❌ [TIMBRADO] PAC rechazó el timbrado:', errorMsg);
+        console.error('📋 [TIMBRADO] Detalles:', timbradoData.details);
+        console.groupEnd();
+        
+        throw new Error(errorMsg);
       }
     } catch (error: any) {
-      console.error('❌ Error general en timbrado:', error);
-      toast.error('Error al timbrar factura', {
-        id: 'timbrado',
-        description: error.message || 'Error desconocido'
+      console.group('💥 [TIMBRADO] Error capturado');
+      console.error('Error completo:', error);
+      console.error('Stack trace:', error.stack);
+      console.groupEnd();
+      
+      // Mostrar error al usuario con contexto
+      const errorMessage = error.message || 'Error desconocido al timbrar';
+      const errorDetails = error.details || error.hint || 'Revisa la consola para más información';
+      
+      toast.error(`Error al timbrar: ${errorMessage}`, { 
+        id: 'timbrado-process',
+        description: errorDetails,
+        duration: 8000
       });
       throw error; // Re-lanzar para que el modal también lo maneje
     } finally {
       setIsTimbrando(false);
+      console.log('🏁 [TIMBRADO] Finalizando proceso');
     }
   };
 

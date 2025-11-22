@@ -210,6 +210,7 @@ export type Database = {
           updated_at: string
           user_id: string
           version_formulario: string
+          viaje_id: string | null
         }
         Insert: {
           auto_saved?: boolean
@@ -221,6 +222,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           version_formulario?: string
+          viaje_id?: string | null
         }
         Update: {
           auto_saved?: boolean
@@ -232,8 +234,24 @@ export type Database = {
           updated_at?: string
           user_id?: string
           version_formulario?: string
+          viaje_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "borradores_carta_porte_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_borradores_viaje"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       calendar_events: {
         Row: {
@@ -581,6 +599,13 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_cartas_porte_viaje"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
             referencedColumns: ["id"]
           },
         ]
@@ -2092,7 +2117,7 @@ export type Database = {
           notas: string | null
           pdf_url: string | null
           regimen_fiscal_emisor: string | null
-          regimen_fiscal_receptor: string | null
+          regimen_fiscal_receptor: string
           rfc_emisor: string
           rfc_receptor: string
           sello_digital: string | null
@@ -2135,7 +2160,7 @@ export type Database = {
           notas?: string | null
           pdf_url?: string | null
           regimen_fiscal_emisor?: string | null
-          regimen_fiscal_receptor?: string | null
+          regimen_fiscal_receptor?: string
           rfc_emisor: string
           rfc_receptor: string
           sello_digital?: string | null
@@ -2178,7 +2203,7 @@ export type Database = {
           notas?: string | null
           pdf_url?: string | null
           regimen_fiscal_emisor?: string | null
-          regimen_fiscal_receptor?: string | null
+          regimen_fiscal_receptor?: string
           rfc_emisor?: string
           rfc_receptor?: string
           sello_digital?: string | null
@@ -2211,6 +2236,13 @@ export type Database = {
           },
           {
             foreignKeyName: "facturas_viaje_id_fkey"
+            columns: ["viaje_id"]
+            isOneToOne: false
+            referencedRelation: "viajes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_facturas_viaje"
             columns: ["viaje_id"]
             isOneToOne: false
             referencedRelation: "viajes"
@@ -5118,6 +5150,14 @@ export type Database = {
       increment_schema_version: { Args: never; Returns: number }
       is_admin_or_superuser: { Args: { _user_id: string }; Returns: boolean }
       is_superuser_secure: { Args: { _user_id: string }; Returns: boolean }
+      limpiar_documentos_huerfanos: {
+        Args: never
+        Returns: {
+          borradores_eliminados: number
+          cartas_eliminadas: number
+          facturas_eliminadas: number
+        }[]
+      }
       log_security_event: {
         Args: {
           p_event_data?: Json
@@ -5129,6 +5169,13 @@ export type Database = {
         Returns: string
       }
       mi_funcion_que_necesita_pac: { Args: never; Returns: undefined }
+      migrar_regimen_fiscal_facturas: {
+        Args: never
+        Returns: {
+          facturas_actualizadas: number
+          facturas_con_default: number
+        }[]
+      }
       migrate_photos_to_encrypted: { Args: never; Returns: Json }
       poblar_datos_viajes_existentes: { Args: never; Returns: string }
       poblar_datos_viajes_existentes_mejorado: { Args: never; Returns: string }
