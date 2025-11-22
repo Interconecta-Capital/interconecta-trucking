@@ -353,11 +353,14 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                           {vehiculoData.tipo_carroceria && (
                             <p><span className="font-medium">Tipo:</span> {vehiculoData.tipo_carroceria}</p>
                           )}
+                          {vehiculoData.config_vehicular && (
+                            <p><span className="font-medium">Config:</span> {vehiculoData.config_vehicular}</p>
+                          )}
                           {vehiculoData.capacidad_carga && (
                             <p><span className="font-medium">Capacidad:</span> {vehiculoData.capacidad_carga} kg</p>
                           )}
-                          {vehiculoData.numero_serie && (
-                            <p><span className="font-medium">Serie:</span> {vehiculoData.numero_serie}</p>
+                          {(vehiculoData.numero_serie_vin || vehiculoData.num_serie) && (
+                            <p><span className="font-medium">Serie:</span> {vehiculoData.numero_serie_vin || vehiculoData.num_serie}</p>
                           )}
                           <Badge className={vehiculoData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                             {vehiculoData.estado}
@@ -382,11 +385,16 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                           {remolqueData.tipo_remolque && (
                             <p><span className="font-medium">Tipo:</span> {remolqueData.tipo_remolque}</p>
                           )}
-                          {remolqueData.capacidad_carga_kg && (
-                            <p><span className="font-medium">Capacidad:</span> {remolqueData.capacidad_carga_kg} kg</p>
+                          {remolqueData.subtipo_rem && (
+                            <p><span className="font-medium">Subtipo:</span> {remolqueData.subtipo_rem}</p>
                           )}
-                          {remolqueData.numero_serie && (
-                            <p><span className="font-medium">Serie:</span> {remolqueData.numero_serie}</p>
+                          {remolqueData.capacidad_carga && (
+                            <p><span className="font-medium">Capacidad:</span> {remolqueData.capacidad_carga} kg</p>
+                          )}
+                          {remolqueData.estado && (
+                            <Badge className={remolqueData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                              {remolqueData.estado}
+                            </Badge>
                           )}
                         </div>
                       </div>
