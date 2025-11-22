@@ -21,6 +21,18 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ vi
   const ubicacionOrigen = trackingData.ubicaciones?.origen;
   const ubicacionDestino = trackingData.ubicaciones?.destino;
   
+  // Helper: Calcular tiempo estimado basado en distancia
+  const calcularTiempoEstimado = (distanciaKm: number): string => {
+    if (!distanciaKm || distanciaKm <= 0) return '0h 0m';
+    
+    const velocidadPromedio = 80; // km/h (velocidad promedio en carretera)
+    const totalMinutos = Math.round((distanciaKm / velocidadPromedio) * 60);
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+    
+    return `${horas}h ${minutos}m`;
+  };
+  
   // Inicializar mapa
   useEffect(() => {
     if (!mapRef.current || map || !(window as any).google) return;
@@ -134,7 +146,7 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ vi
               <div>
                 <p className="text-sm text-gray-600">Tiempo Estimado</p>
                 <p className="text-lg font-semibold">
-                  {rutaInfo?.duracion || `${viajeData.tiempo_estimado_horas || 0}h`}
+                  {rutaInfo?.duracion || calcularTiempoEstimado(viajeData.distancia_km || 0)}
                 </p>
               </div>
             </div>
