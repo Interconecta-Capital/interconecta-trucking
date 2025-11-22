@@ -45,6 +45,13 @@ export interface ViajeWizardData {
   distanciaRecorrida?: number;
   distanciaTotal?: number;
   tiempoEstimado?: number;
+  // ✅ NUEVO: Información de ruta calculada desde Google Maps
+  rutaCalculada?: {
+    distanciaTotal?: number;
+    tiempoEstimado?: number;
+    rutaPolyline?: string;
+    pasos?: any[];
+  };
   // Ubicaciones (CartaPorte)
   ubicaciones?: Array<{
     tipoUbicacion: string;
@@ -93,6 +100,8 @@ export interface ViajeWizardData {
     total?: number;
     observaciones?: string;
   };
+  // Mercancías
+  mercancias?: any[];
   // Estado general
   currentStep: number;
   isValid: boolean;

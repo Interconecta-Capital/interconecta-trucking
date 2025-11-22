@@ -27,23 +27,19 @@ export const useViajeWizardSubmit = () => {
       // Invalidar cache de viajes
       queryClient.invalidateQueries({ queryKey: ['viajes'] });
       queryClient.invalidateQueries({ queryKey: ['viajes-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['viajes-activos'] });
 
       // Toast de éxito
       toast.success('🎉 Viaje programado correctamente', {
         description: result.factura_id 
           ? 'Viaje, factura y carta porte creados exitosamente'
           : 'Viaje y carta porte creados exitosamente',
-        duration: 5000,
-        action: {
-          label: 'Ver Viaje',
-          onClick: () => navigate(`/viajes/${result.viaje_id}`)
-        }
+        duration: 5000
       });
 
-      // Navegar después de un breve delay
-      setTimeout(() => {
-        navigate(`/viajes/${result.viaje_id}`);
-      }, 2000);
+      // ✅ CORRECCIÓN: Navegar a /viajes y guardar ID para abrir modal automáticamente
+      sessionStorage.setItem('ultimo_viaje_creado', result.viaje_id);
+      navigate('/viajes');
     },
     onError: (error: Error) => {
       console.error('❌ [WIZARD SUBMIT] Error creando viaje:', error);
