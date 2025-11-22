@@ -12,21 +12,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // ✅ SEGURO: Obtener API key desde Supabase Vault (ISO 27001 A.10.1)
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // ✅ SEGURO: Obtener API key desde Edge Function environment (ISO 27001 A.10.1)
+    const fiscalApiKey = Deno.env.get('FISCAL_API_KEY');
 
-    const { data: fiscalApiKey, error: secretError } = await supabaseAdmin
-      .rpc('get_secret', { secret_name: 'FISCAL_API_KEY' });
-
-    if (secretError || !fiscalApiKey) {
-      console.error('[Timbrar] Error obteniendo FISCAL_API_KEY del Vault:', secretError);
+    if (!fiscalApiKey) {
+      console.error('[Timbrar] FISCAL_API_KEY no configurada en Edge Functions');
       throw new Error('No se pudo obtener credenciales del PAC');
     }
 
-    console.log('[Timbrar] API Key obtenida exitosamente desde Vault');
+    console.log('[Timbrar] API Key obtenida exitosamente desde environment variables');
 
     const invoiceData = await req.json();
 
