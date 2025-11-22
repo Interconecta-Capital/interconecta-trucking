@@ -7,26 +7,33 @@ import { supabase } from '@/integrations/supabase/client';
 export default function DocumentosFiscales() {
   const navigate = useNavigate();
 
-  // Obtener estadísticas rápidas optimizadas (solo conteos)
+  // Obtener estadísticas rápidas optimizadas (solo conteos respetando RLS)
   const { data: stats } = useQuery({
     queryKey: ['documentos-fiscales-stats'],
     queryFn: async () => {
+      // ✅ Usar select normal para que RLS filtre correctamente por usuario
       const [
         facturasResult,
         cartasPorteResult,
         borradoresCartasResult
       ] = await Promise.all([
-        supabase.from('facturas').select('id', { count: 'exact', head: true }),
-        supabase.from('cartas_porte').select('id', { count: 'exact', head: true }),
-        supabase.from('borradores_carta_porte').select('id', { count: 'exact', head: true }),
+        supabase.from('facturas').select('id', { count: 'exact' }),
+        supabase.from('cartas_porte').select('id', { count: 'exact' }),
+        supabase.from('borradores_carta_porte').select('id', { count: 'exact' }),
       ]);
+      
+      console.log('[DocumentosFiscales] Stats:', {
+        facturas: facturasResult.count,
+        cartasPorte: cartasPorteResult.count,
+        borradores: borradoresCartasResult.count
+      });
       
       return {
         facturas: facturasResult.count || 0,
         cartasPorte: (cartasPorteResult.count || 0) + (borradoresCartasResult.count || 0),
       };
     },
-    staleTime: 60000,
+    staleTime: 30000, // Reducir cache para reflejar cambios más rápido
   });
 
   return (

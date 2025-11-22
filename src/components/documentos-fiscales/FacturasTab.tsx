@@ -45,7 +45,7 @@ export function FacturasTab() {
         .select(`
           id, serie, folio, uuid_fiscal, status, rfc_emisor, rfc_receptor,
           nombre_emisor, nombre_receptor, total, moneda, created_at, tiene_carta_porte,
-          viaje:viajes(id, origen, destino)
+          viaje:viajes!facturas_viaje_id_fkey(id, origen, destino)
         `)
         .order('created_at', { ascending: false })
         .limit(100);
