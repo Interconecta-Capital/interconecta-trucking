@@ -7,18 +7,23 @@ import { supabase } from '@/integrations/supabase/client';
 export default function DocumentosFiscales() {
   const navigate = useNavigate();
 
-  // Obtener estadísticas rápidas
+  // Obtener estadísticas rápidas optimizadas (solo conteos)
   const { data: stats } = useQuery({
     queryKey: ['documentos-fiscales-stats'],
     queryFn: async () => {
-      const [facturas, cartasPorte] = await Promise.all([
+      const [
+        facturasResult,
+        cartasPorteResult,
+        borradoresCartasResult
+      ] = await Promise.all([
         supabase.from('facturas').select('id', { count: 'exact', head: true }),
         supabase.from('cartas_porte').select('id', { count: 'exact', head: true }),
+        supabase.from('borradores_carta_porte').select('id', { count: 'exact', head: true }),
       ]);
       
       return {
-        facturas: facturas.count || 0,
-        cartasPorte: cartasPorte.count || 0,
+        facturas: facturasResult.count || 0,
+        cartasPorte: (cartasPorteResult.count || 0) + (borradoresCartasResult.count || 0),
       };
     },
     staleTime: 60000,
