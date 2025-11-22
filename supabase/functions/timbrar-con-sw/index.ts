@@ -25,23 +25,33 @@ async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<strin
   // ISO 27001 A.12.4.1 - Log seguro sin exponer password
   console.log('🔐 Autenticando con SW:', { usuario: swUser.substring(0, 8) + '***', ambiente });
 
-  const authResponse = await fetch(`${swUrl}/v2/security/authenticate`, {
+  // Probar con endpoint estándar /login en lugar de /v2/security/authenticate
+  const authEndpoint = `${swUrl}/login`;
+  console.log('🔗 Endpoint de autenticación:', authEndpoint);
+
+  const authBody = {
+    user: swUser,
+    password: swPassword
+  };
+  console.log('📦 Body estructura (sin password):', { user: authBody.user });
+
+  const authResponse = await fetch(authEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      user: swUser,
-      password: swPassword
-    }),
+    body: JSON.stringify(authBody),
   });
+
+  console.log('📊 Status de respuesta:', authResponse.status);
+  console.log('📋 Headers de respuesta:', Object.fromEntries(authResponse.headers.entries()));
 
   if (!authResponse.ok) {
     const errorText = await authResponse.text();
     console.error('❌ Error HTTP al autenticar:', authResponse.status);
     console.error('📄 Respuesta de SW:', errorText);
     console.error('🔍 Debugging - Usuario enviado:', swUser);
-    console.error('🔍 Debugging - URL usada:', swUrl);
+    console.error('🔍 Debugging - URL usada:', authEndpoint);
     throw new Error(`Error de autenticación con SmartWeb: HTTP ${authResponse.status} - ${errorText}`);
   }
 
