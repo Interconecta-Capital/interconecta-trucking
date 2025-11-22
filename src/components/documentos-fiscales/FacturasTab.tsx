@@ -38,6 +38,8 @@ export function FacturasTab() {
   const { data: facturas, isLoading } = useQuery({
     queryKey: ['facturas', filtro],
     queryFn: async () => {
+      console.log('[FacturasTab] Cargando facturas con filtro:', filtro);
+      
       let query = supabase
         .from('facturas')
         .select(`
@@ -56,9 +58,13 @@ export function FacturasTab() {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error cargando facturas:', error);
+        console.error('[FacturasTab] Error cargando facturas:', error);
         throw error;
       }
+
+      console.log('[FacturasTab] Facturas cargadas:', data?.length || 0);
+      console.log('[FacturasTab] Primera factura:', data?.[0]);
+      console.log('[FacturasTab] Facturas draft:', data?.filter(f => f.status === 'draft').length || 0);
 
       return (data || []).map((f: any) => ({
         ...f,
@@ -188,9 +194,10 @@ export function FacturasTab() {
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <Receipt className="h-5 w-5 text-blue-600" />
                         <span className="text-lg font-bold font-mono">
-                          {factura.tipo === 'borrador' && factura.nombre_borrador
-                            ? factura.nombre_borrador
-                            : `${factura.serie}-${factura.folio || 'Borrador'}`}
+                          {/* FASE 5: Mostrar serie-folio o 'Borrador' si es draft */}
+                          {factura.status === 'draft' 
+                            ? `Borrador ${factura.serie ? `${factura.serie}-` : ''}${factura.folio || 'Sin Folio'}`
+                            : `${factura.serie || ''}-${factura.folio || 'S/F'}`}
                         </span>
                         <Badge
                           variant={

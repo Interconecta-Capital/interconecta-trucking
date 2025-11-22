@@ -320,6 +320,15 @@ const App = () => (
                 </AuthGuard>
               } />
 
+              {/* FASE 1: Ruta para editar borradores de carta porte */}
+              <Route path="/borrador-carta-porte/:id" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <CartaPorteEditor />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
               <Route path="/administracion/fiscal" element={
                 <AuthGuard>
                   <BaseLayout>

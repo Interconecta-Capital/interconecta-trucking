@@ -36,11 +36,12 @@ import { CartaPortePreviewFull } from '../preview/CartaPortePreviewFull';
 
 interface ModernCartaPorteEditorProps {
   documentId?: string;
+  isBorrador?: boolean; // FASE 1: Flag para indicar si es un borrador
 }
 
 type SectionKey = 'configuracion' | 'ubicaciones' | 'mercancias' | 'autotransporte' | 'figuras' | 'generacion' | 'preview';
 
-export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorProps) {
+export function ModernCartaPorteEditor({ documentId, isBorrador = false }: ModernCartaPorteEditorProps) {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<SectionKey>('configuracion');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -172,13 +173,15 @@ export function ModernCartaPorteEditor({ documentId }: ModernCartaPorteEditorPro
   };
 
   const handleBackToList = () => {
-    navigate('/cartas-porte');
+    // FASE 1: Volver a la página correcta según el contexto
+    navigate(isBorrador ? '/documentos-fiscales/carta-porte' : '/cartas-porte');
   };
 
   const handleSaveAndExit = async () => {
     try {
       await handleGuardarYSalir();
-      navigate('/cartas-porte');
+      // FASE 1: Volver a la página correcta según el contexto
+      navigate(isBorrador ? '/documentos-fiscales/carta-porte' : '/cartas-porte');
     } catch (error) {
       console.error('Error guardando y saliendo:', error);
     }
