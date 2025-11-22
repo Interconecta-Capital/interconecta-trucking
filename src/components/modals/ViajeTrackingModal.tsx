@@ -297,108 +297,113 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                 </Card>
 
                 {/* Recursos Asignados - CON INFORMACIÓN COMPLETA */}
-                <Card>
+                <Card className="lg:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       Recursos Asignados
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {conductorData ? (
-                      <div className="p-3 border rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <User className="h-5 w-5 text-blue-600" />
-                          <span className="font-medium text-lg">Conductor</span>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Nombre:</span> {conductorData.nombre}</p>
-                          {conductorData.telefono && (
-                            <p><span className="font-medium">Teléfono:</span> {conductorData.telefono}</p>
-                          )}
-                          {conductorData.email && (
-                            <p><span className="font-medium">Email:</span> {conductorData.email}</p>
-                          )}
-                          {conductorData.num_licencia && (
-                            <p><span className="font-medium">Licencia:</span> {conductorData.num_licencia} 
-                              {conductorData.tipo_licencia && ` (Tipo ${conductorData.tipo_licencia})`}
-                            </p>
-                          )}
-                          {conductorData.vigencia_licencia && (
-                            <p><span className="font-medium">Vigencia:</span> {new Date(conductorData.vigencia_licencia).toLocaleDateString('es-MX')}</p>
-                          )}
-                          <Badge className={conductorData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                            {conductorData.estado}
-                          </Badge>
-                        </div>
-                      </div>
-                    ) : viajeData.conductor_id && (
-                      <div className="p-3 border border-dashed rounded-lg text-center">
-                        <p className="text-sm text-gray-500">Conductor ID: {viajeData.conductor_id.slice(-8)}</p>
-                        <p className="text-xs text-gray-400">Información completa no disponible</p>
-                      </div>
-                    )}
-                    
-                    {vehiculoData ? (
-                      <div className="p-3 border rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Truck className="h-5 w-5 text-blue-600" />
-                          <span className="font-medium text-lg">Vehículo</span>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Placas:</span> {vehiculoData.placa}</p>
-                          {vehiculoData.marca && vehiculoData.modelo && (
-                            <p><span className="font-medium">Modelo:</span> {vehiculoData.marca} {vehiculoData.modelo} {vehiculoData.anio && `(${vehiculoData.anio})`}</p>
-                          )}
-                          {vehiculoData.tipo_carroceria && (
-                            <p><span className="font-medium">Tipo:</span> {vehiculoData.tipo_carroceria}</p>
-                          )}
-                          {vehiculoData.config_vehicular && (
-                            <p><span className="font-medium">Config:</span> {vehiculoData.config_vehicular}</p>
-                          )}
-                          {vehiculoData.capacidad_carga && (
-                            <p><span className="font-medium">Capacidad:</span> {vehiculoData.capacidad_carga} kg</p>
-                          )}
-                          {(vehiculoData.numero_serie_vin || vehiculoData.num_serie) && (
-                            <p><span className="font-medium">Serie:</span> {vehiculoData.numero_serie_vin || vehiculoData.num_serie}</p>
-                          )}
-                          <Badge className={vehiculoData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                            {vehiculoData.estado}
-                          </Badge>
-                        </div>
-                      </div>
-                    ) : viajeData.vehiculo_id && (
-                      <div className="p-3 border border-dashed rounded-lg text-center">
-                        <p className="text-sm text-gray-500">Vehículo ID: {viajeData.vehiculo_id.slice(-8)}</p>
-                        <p className="text-xs text-gray-400">Información completa no disponible</p>
-                      </div>
-                    )}
-                    
-                    {remolqueData && (
-                      <div className="p-3 border rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Package className="h-5 w-5 text-blue-600" />
-                          <span className="font-medium text-lg">Remolque</span>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Placas:</span> {remolqueData.placa}</p>
-                          {remolqueData.tipo_remolque && (
-                            <p><span className="font-medium">Tipo:</span> {remolqueData.tipo_remolque}</p>
-                          )}
-                          {remolqueData.subtipo_rem && (
-                            <p><span className="font-medium">Subtipo:</span> {remolqueData.subtipo_rem}</p>
-                          )}
-                          {remolqueData.capacidad_carga && (
-                            <p><span className="font-medium">Capacidad:</span> {remolqueData.capacidad_carga} kg</p>
-                          )}
-                          {remolqueData.estado && (
-                            <Badge className={remolqueData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                              {remolqueData.estado}
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Conductor */}
+                      {conductorData ? (
+                        <div className="p-4 border rounded-lg">
+                          <div className="flex items-center gap-2 mb-3">
+                            <User className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium text-lg">Conductor</span>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">Nombre:</span> {conductorData.nombre}</p>
+                            {conductorData.telefono && (
+                              <p><span className="font-medium">Teléfono:</span> {conductorData.telefono}</p>
+                            )}
+                            {conductorData.email && (
+                              <p><span className="font-medium">Email:</span> {conductorData.email}</p>
+                            )}
+                            {conductorData.num_licencia && (
+                              <p><span className="font-medium">Licencia:</span> {conductorData.num_licencia} 
+                                {conductorData.tipo_licencia && ` (Tipo ${conductorData.tipo_licencia})`}
+                              </p>
+                            )}
+                            {conductorData.vigencia_licencia && (
+                              <p><span className="font-medium">Vigencia:</span> {new Date(conductorData.vigencia_licencia).toLocaleDateString('es-MX')}</p>
+                            )}
+                            <Badge className={conductorData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                              {conductorData.estado}
                             </Badge>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : viajeData.conductor_id && (
+                        <div className="p-4 border border-dashed rounded-lg text-center">
+                          <p className="text-sm text-gray-500">Conductor ID: {viajeData.conductor_id.slice(-8)}</p>
+                          <p className="text-xs text-gray-400">Información completa no disponible</p>
+                        </div>
+                      )}
+                      
+                      {/* Vehículo */}
+                      {vehiculoData ? (
+                        <div className="p-4 border rounded-lg">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Truck className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium text-lg">Vehículo</span>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">Placas:</span> {vehiculoData.placa}</p>
+                            {vehiculoData.marca && vehiculoData.modelo && (
+                              <p><span className="font-medium">Modelo:</span> {vehiculoData.marca} {vehiculoData.modelo} {vehiculoData.anio && `(${vehiculoData.anio})`}</p>
+                            )}
+                            {vehiculoData.tipo_carroceria && (
+                              <p><span className="font-medium">Tipo:</span> {vehiculoData.tipo_carroceria}</p>
+                            )}
+                            {vehiculoData.config_vehicular && (
+                              <p><span className="font-medium">Config:</span> {vehiculoData.config_vehicular}</p>
+                            )}
+                            {vehiculoData.capacidad_carga && (
+                              <p><span className="font-medium">Capacidad:</span> {vehiculoData.capacidad_carga} kg</p>
+                            )}
+                            {(vehiculoData.numero_serie_vin || vehiculoData.num_serie) && (
+                              <p><span className="font-medium">Serie:</span> {vehiculoData.numero_serie_vin || vehiculoData.num_serie}</p>
+                            )}
+                            <Badge className={vehiculoData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                              {vehiculoData.estado}
+                            </Badge>
+                          </div>
+                        </div>
+                      ) : viajeData.vehiculo_id && (
+                        <div className="p-4 border border-dashed rounded-lg text-center">
+                          <p className="text-sm text-gray-500">Vehículo ID: {viajeData.vehiculo_id.slice(-8)}</p>
+                          <p className="text-xs text-gray-400">Información completa no disponible</p>
+                        </div>
+                      )}
+                      
+                      {/* Remolque */}
+                      {remolqueData && (
+                        <div className="p-4 border rounded-lg">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Package className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium text-lg">Remolque</span>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">Placas:</span> {remolqueData.placa}</p>
+                            {remolqueData.tipo_remolque && (
+                              <p><span className="font-medium">Tipo:</span> {remolqueData.tipo_remolque}</p>
+                            )}
+                            {remolqueData.subtipo_rem && (
+                              <p><span className="font-medium">Subtipo:</span> {remolqueData.subtipo_rem}</p>
+                            )}
+                            {remolqueData.capacidad_carga && (
+                              <p><span className="font-medium">Capacidad:</span> {remolqueData.capacidad_carga} kg</p>
+                            )}
+                            {remolqueData.estado && (
+                              <Badge className={remolqueData.estado === 'disponible' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                                {remolqueData.estado}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
                     {!conductorData && !vehiculoData && !remolqueData && (
                       <div className="text-center text-gray-500 py-4">
