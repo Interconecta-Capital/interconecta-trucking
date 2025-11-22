@@ -22,7 +22,10 @@ import {
   CheckCircle2,
   Clock,
   Navigation,
-  DollarSign
+  DollarSign,
+  Zap,
+  Download,
+  Receipt
 } from 'lucide-react';
 import { useViajesEstados, Viaje } from '@/hooks/useViajesEstados';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,6 +35,7 @@ import { ViajeEditor } from '@/components/viajes/editor/ViajeEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ViajeMercanciasManager } from '@/components/viajes/mercancias/ViajeMercanciasManager';
+import { FacturaPreviewModal } from '@/components/viajes/documentos/FacturaPreviewModal';
 
 interface ViajeTrackingModalProps {
   viaje: Viaje | null;
@@ -44,6 +48,8 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
   const queryClient = useQueryClient();
   const [viajeCompleto, setViajeCompleto] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [showFacturaPreview, setShowFacturaPreview] = useState(false);
+  const [isTimbrando, setIsTimbrando] = useState(false);
   
   // ✅ NUEVO: Cargar viaje completo con todas sus relaciones usando RPC
   useEffect(() => {
@@ -79,6 +85,58 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
     
     cargarViajeCompleto();
   }, [viaje?.id, open]);
+
+  const handleTimbrarFactura = async () => {
+    const facturaData = viajeCompleto?.factura;
+    if (!facturaData?.id) {
+      toast.error('No se encontró la factura para timbrar');
+      return;
+    }
+
+    try {
+      setIsTimbrando(true);
+      toast.loading('Timbrando factura...', { id: 'timbrado' });
+
+      const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
+        body: {
+          facturaId: facturaData.id,
+          facturaData: {
+            rfcEmisor: facturaData.rfc_emisor,
+            nombreEmisor: facturaData.nombre_emisor,
+            regimenFiscalEmisor: facturaData.regimen_fiscal_emisor,
+            rfcReceptor: facturaData.rfc_receptor,
+            nombreReceptor: facturaData.nombre_receptor,
+            regimenFiscalReceptor: facturaData.regimen_fiscal_receptor,
+            usoCfdi: facturaData.uso_cfdi,
+            tipoCfdi: facturaData.tipo_comprobante,
+            serie: facturaData.serie,
+            folio: facturaData.folio,
+            subtotal: facturaData.subtotal,
+            total: facturaData.total,
+            moneda: facturaData.moneda || 'MXN',
+            formaPago: facturaData.forma_pago,
+            metodoPago: facturaData.metodo_pago
+          },
+          ambiente: 'sandbox'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('✅ Factura timbrada correctamente', { id: 'timbrado' });
+        setShowFacturaPreview(false);
+        handleViajeUpdate();
+      } else {
+        throw new Error(data?.error || 'Error al timbrar factura');
+      }
+    } catch (error: any) {
+      console.error('Error timbrando factura:', error);
+      toast.error(`Error: ${error.message}`, { id: 'timbrado' });
+    } finally {
+      setIsTimbrando(false);
+    }
+  };
 
   const handleViajeUpdate = () => {
     // Invalidar queries para obtener datos actualizados
@@ -429,47 +487,81 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
                         <h4 className="font-medium">Documentos Fiscales</h4>
                         
                         {/* Factura */}
-                        {facturaData ? (
-                          <div className="p-3 border rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium">Factura</span>
-                              <Badge className={
-                                facturaData.status === 'timbrada' ? 'bg-green-100 text-green-800' :
-                                facturaData.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
-                              }>
-                                {facturaData.status === 'timbrada' ? 'Timbrada' :
-                                 facturaData.status === 'draft' ? 'Borrador' :
-                                 facturaData.status}
+                        {facturaData && (facturaData.status === 'draft' || facturaData.status === 'BORRADOR') && (
+                          <div className="p-4 border rounded-lg bg-gradient-to-br from-yellow-50 to-orange-50">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Receipt className="h-5 w-5 text-orange-600" />
+                                <span className="font-semibold text-lg">Factura</span>
+                              </div>
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                📝 Borrador
                               </Badge>
                             </div>
-                            <p className="text-sm text-gray-600">
-                              {facturaData.serie}-{facturaData.folio}
+                            
+                            <p className="text-sm text-gray-700 mb-2">
+                              <span className="font-medium">Serie-Folio:</span> {facturaData.serie}-{facturaData.folio}
                             </p>
-                            {facturaData.uuid_fiscal && (
-                              <p className="text-xs text-gray-500 font-mono mt-1 truncate">
-                                UUID: {facturaData.uuid_fiscal}
-                              </p>
-                            )}
+                            <p className="text-sm text-gray-700 mb-2">
+                              <span className="font-medium">Total:</span> ${facturaData.total?.toLocaleString('es-MX')} MXN
+                            </p>
+                            
                             <div className="flex gap-2 mt-3">
-                              {facturaData.status === 'draft' || facturaData.status === 'BORRADOR' ? (
-                                <Button size="sm" variant="outline" className="flex-1">
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Pre-visualizar Factura
-                                </Button>
-                              ) : (
-                                <>
-                                  <Button size="sm" variant="outline" className="flex-1">
-                                    Ver XML
-                                  </Button>
-                                  <Button size="sm" className="flex-1">
-                                    Ver PDF
-                                  </Button>
-                                </>
-                              )}
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="flex-1"
+                                onClick={() => setShowFacturaPreview(true)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Pre-visualizar
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                onClick={handleTimbrarFactura}
+                                disabled={isTimbrando}
+                              >
+                                <Zap className="h-4 w-4 mr-1" />
+                                {isTimbrando ? 'Timbrando...' : 'Timbrar'}
+                              </Button>
                             </div>
                           </div>
-                        ) : (
+                        )}
+
+                        {facturaData && (facturaData.status === 'timbrada' || facturaData.status === 'timbrado') && (
+                          <div className="p-4 border rounded-lg bg-gradient-to-br from-green-50 to-emerald-50">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Receipt className="h-5 w-5 text-green-600" />
+                                <span className="font-semibold text-lg">Factura</span>
+                              </div>
+                              <Badge className="bg-green-100 text-green-800">
+                                ✅ Timbrada
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-sm text-gray-700 mb-1">
+                              <span className="font-medium">Tipo:</span> CFDI 4.0 - {facturaData.tipo_comprobante}
+                            </p>
+                            <p className="text-xs text-gray-600 font-mono mb-3 truncate bg-white p-2 rounded border">
+                              <span className="font-medium">UUID:</span> {facturaData.uuid_fiscal}
+                            </p>
+                            
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="flex-1">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Ver XML
+                              </Button>
+                              <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                <Download className="h-4 w-4 mr-1" />
+                                Descargar PDF
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {!facturaData && (
                           <div className="p-3 border border-dashed rounded-lg text-center">
                             <p className="text-sm text-gray-500">No se generó factura</p>
                             <p className="text-xs text-gray-400 mt-1">(Traslado Propio)</p>
@@ -705,6 +797,18 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
           </div>
         </Tabs>
       </DialogContent>
+
+      {/* Modal de Pre-visualización de Factura */}
+      {facturaData && (facturaData.status === 'draft' || facturaData.status === 'BORRADOR') && (
+        <FacturaPreviewModal
+          open={showFacturaPreview}
+          onOpenChange={setShowFacturaPreview}
+          facturaData={facturaData}
+          viajeData={viajeCompleto?.viaje}
+          onTimbrar={handleTimbrarFactura}
+          isTimbrando={isTimbrando}
+        />
+      )}
     </Dialog>
   );
 };
