@@ -3159,6 +3159,7 @@ export type Database = {
           capacidad_carga: number | null
           created_at: string | null
           estado: string | null
+          fecha_proxima_disponibilidad: string | null
           id: string
           permiso_sct_encrypted: string | null
           permiso_sct_encrypted_at: string | null
@@ -3177,6 +3178,7 @@ export type Database = {
           capacidad_carga?: number | null
           created_at?: string | null
           estado?: string | null
+          fecha_proxima_disponibilidad?: string | null
           id?: string
           permiso_sct_encrypted?: string | null
           permiso_sct_encrypted_at?: string | null
@@ -3195,6 +3197,7 @@ export type Database = {
           capacidad_carga?: number | null
           created_at?: string | null
           estado?: string | null
+          fecha_proxima_disponibilidad?: string | null
           id?: string
           permiso_sct_encrypted?: string | null
           permiso_sct_encrypted_at?: string | null
