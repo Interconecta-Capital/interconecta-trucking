@@ -333,25 +333,69 @@ function construirComplementoCartaPorte(data: any) {
 }
 
 function construirUbicaciones(data: any) {
-  if (!data.ubicaciones || data.ubicaciones.length === 0) {
+  // 🔄 ISO 27001 A.12.1 - Validación de estructura de datos
+  let ubicacionesArray: any[] = [];
+  
+  // Manejar formato objeto {origen, destino, intermedias}
+  if (data.ubicaciones && !Array.isArray(data.ubicaciones)) {
+    if (data.ubicaciones.origen) {
+      ubicacionesArray.push({
+        ...data.ubicaciones.origen,
+        tipo_ubicacion: 'Origen',
+        tipo: 'Origen'
+      });
+    }
+    
+    if (data.ubicaciones.destino) {
+      ubicacionesArray.push({
+        ...data.ubicaciones.destino,
+        tipo_ubicacion: 'Destino',
+        tipo: 'Destino'
+      });
+    }
+    
+    // Agregar intermedias si existen
+    if (data.ubicaciones.intermedias && Array.isArray(data.ubicaciones.intermedias)) {
+      ubicacionesArray = [
+        ubicacionesArray[0],
+        ...data.ubicaciones.intermedias.map((u: any) => ({
+          ...u,
+          tipo_ubicacion: u.tipo_ubicacion || 'Paso Intermedio',
+          tipo: u.tipo || 'Paso Intermedio'
+        })),
+        ubicacionesArray[1]
+      ];
+    }
+  } 
+  // Manejar formato array
+  else if (Array.isArray(data.ubicaciones)) {
+    ubicacionesArray = data.ubicaciones;
+  }
+  
+  // Validación: Al menos origen y destino
+  if (ubicacionesArray.length < 2) {
     throw new Error('Se requieren al menos 2 ubicaciones (origen y destino)');
   }
 
-  return data.ubicaciones.map((u: any, index: number) => ({
-    TipoUbicacion: u.tipo_ubicacion || (index === 0 ? 'Origen' : 'Destino'),
-    IDUbicacion: u.id_ubicacion || `OR${String(index + 1).padStart(6, '0')}`,
-    RFCRemitenteDestinatario: u.rfc || data.rfcReceptor,
-    NombreRemitenteDestinatario: u.nombre || data.nombreReceptor,
-    FechaHoraSalidaLlegada: u.fecha_llegada_salida || new Date().toISOString(),
-    DistanciaRecorrida: u.distancia_recorrida?.toString() || "0",
-    Domicilio: {
-      Calle: u.domicilio?.calle || "Sin calle",
-      CodigoPostal: u.domicilio?.codigo_postal || "01000",
-      Estado: u.domicilio?.estado || "CIUDAD DE MEXICO",
-      Pais: u.domicilio?.pais || "MEX",
-      Municipio: u.domicilio?.municipio || "CUAUHTEMOC"
-    }
-  }));
+  return ubicacionesArray.map((u: any, index: number) => {
+    const tipoUbicacion = u.tipo_ubicacion || u.tipo || (index === 0 ? 'Origen' : index === ubicacionesArray.length - 1 ? 'Destino' : 'Paso Intermedio');
+    
+    return {
+      TipoUbicacion: tipoUbicacion,
+      IDUbicacion: u.id_ubicacion || u.idUbicacion || `${tipoUbicacion === 'Origen' ? 'OR' : tipoUbicacion === 'Destino' ? 'DE' : 'PI'}${String(index + 1).padStart(6, '0')}`,
+      RFCRemitenteDestinatario: u.rfc || u.rfcRemitenteDestinatario || data.rfcReceptor,
+      NombreRemitenteDestinatario: u.nombre || u.nombreRemitenteDestinatario || data.nombreReceptor,
+      FechaHoraSalidaLlegada: u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || new Date().toISOString(),
+      DistanciaRecorrida: u.distancia_recorrida?.toString() || u.distanciaRecorrida?.toString() || "0",
+      Domicilio: {
+        Calle: u.domicilio?.calle || "Sin calle",
+        CodigoPostal: u.domicilio?.codigo_postal || u.domicilio?.codigoPostal || "01000",
+        Estado: u.domicilio?.estado || "CIUDAD DE MEXICO",
+        Pais: u.domicilio?.pais || "MEX",
+        Municipio: u.domicilio?.municipio || "CUAUHTEMOC"
+      }
+    };
+  });
 }
 
 function construirMercanciasComplemento(data: any) {
