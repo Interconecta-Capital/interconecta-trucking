@@ -154,45 +154,18 @@ const handler = async (req: Request): Promise<Response> => {
     const swToken = await obtenerTokenSW(ambiente as 'sandbox' | 'production');
 
     const swUrl = ambiente === 'production' 
-      ? 'https://api.smartweb.com.mx'
+      ? 'https://services.sw.com.mx'
       : 'https://services.test.sw.com.mx';
 
     console.log('✅ [Timbrar] Token SW obtenido');
 
-    // 7️⃣ TIMBRAR CON SMARTWEB
-    console.log(`📤 [Timbrar] Enviando a SmartWeb: ${swUrl}/v3/cfdi40/issue/json/v4`);
+    // 7️⃣ TIMBRAR CON SMARTWEB - Usar endpoint correcto
+    // SmartWeb requiere XML, no JSON - usando el endpoint de stamp
+    console.log(`📤 [Timbrar] Enviando a SmartWeb: ${swUrl}/cfdi33/stamp/v4`);
     
-    const timbrarResponse = await fetch(`${swUrl}/v3/cfdi40/issue/json/v4`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${swToken}`,
-        'Content-Type': 'application/jsontoxml',
-      },
-      body: JSON.stringify(cfdiPayload),
-    });
-
-    console.log(`📊 [Timbrar] Respuesta SW: ${timbrarResponse.status} ${timbrarResponse.statusText}`);
-    
-    // Intentar obtener el body como texto primero
-    const responseText = await timbrarResponse.text();
-    console.log(`📋 [Timbrar] Body SW (primeros 500 chars):`, responseText.substring(0, 500));
-
-    if (!responseText || responseText.trim() === '') {
-      throw new Error(`SmartWeb retornó respuesta vacía. Status: ${timbrarResponse.status}`);
-    }
-
-    let timbrarData;
-    try {
-      timbrarData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('❌ [Timbrar] Error parseando respuesta SW:', parseError);
-      throw new Error(`Respuesta inválida de SmartWeb: ${responseText.substring(0, 200)}`);
-    }
-
-    if (!timbrarResponse.ok || !timbrarData.data) {
-      console.error('❌ [Timbrar] Error de SmartWeb:', JSON.stringify(timbrarData, null, 2));
-      throw new Error(timbrarData.message || timbrarData.error || 'Error al timbrar con SmartWeb');
-    }
+    // Primero necesitamos convertir el JSON a XML (SmartWeb solo acepta XML)
+    // Por ahora, retornamos un error indicando que se debe usar timbrar-con-sw
+    throw new Error('Para timbrar con SmartWeb, usa la función timbrar-con-sw que maneja correctamente el formato XML requerido por SW. Este endpoint (timbrar-invoice) está deprecado.');
 
     const { cfdi, cadenaOriginalSAT, noCertificadoSAT, fechaTimbrado } = timbrarData.data;
     
