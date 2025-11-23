@@ -398,13 +398,38 @@ export class ViajeToCartaPorteMapper {
    * FASE 1: Integrado con MercanciaMultipleParser para detectar múltiples productos
    */
   static generateIntelligentMercancia(wizardData: ViajeWizardData): MercanciaCompleta[] {
+    // ✅ FASE 1 - PRIORIDAD 1: Si ya hay mercancías detalladas del wizard, usarlas directamente
+    if (wizardData.mercancias && Array.isArray(wizardData.mercancias) && wizardData.mercancias.length > 0) {
+      console.log(`✅ [MAPPER] Usando ${wizardData.mercancias.length} mercancías del wizard (datos completos)`);
+      
+      // Mapear mercancías del wizard al formato CartaPorte
+      return wizardData.mercancias.map((m: any, index: number) => ({
+        id: m.id || `mercancia-${Date.now()}-${index}`,
+        bienes_transp: m.bienes_transp || m.claveProdServ || '99999999',
+        descripcion: m.descripcion || '',
+        cantidad: parseFloat(m.cantidad) || 1,
+        clave_unidad: m.clave_unidad || m.claveUnidad || 'H87',
+        unidad: m.unidad || 'Pieza',
+        peso_kg: parseFloat(m.peso_kg || m.pesoKg) || 0,
+        valor_mercancia: parseFloat(m.valor_mercancia || m.valorMercancia) || 0,
+        moneda: m.moneda || 'MXN',
+        material_peligroso: Boolean(m.material_peligroso),
+        especie_protegida: Boolean(m.especie_protegida),
+        fraccion_arancelaria: m.fraccion_arancelaria || m.fraccionArancelaria || '',
+        embalaje: m.embalaje || null,
+        aiGenerated: false // ← Mercancía ingresada manualmente
+      }));
+    }
+    
+    // ✅ PRIORIDAD 2: Si no hay mercancías, usar descripción + IA
     const descripcion = wizardData.descripcionMercancia || 'Mercancía general';
+    console.log(`⚠️ [MAPPER] No hay mercancías detalladas, generando desde descripción: "${descripcion}"`);
     
     // FASE 1: Primero intentar detectar múltiples productos
     const productosDetectados = MercanciaMultipleParser.analizarDescripcion(descripcion);
 
     if (productosDetectados.length > 1) {
-      console.log(`✅ FASE 1: Detectados ${productosDetectados.length} productos distintos`);
+      console.log(`✅ [MAPPER] Detectados ${productosDetectados.length} productos distintos vía IA`);
       
       // Generar una mercancía por cada producto detectado
       return productosDetectados.map((producto, index) => {
