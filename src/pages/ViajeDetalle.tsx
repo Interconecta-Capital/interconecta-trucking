@@ -234,6 +234,7 @@ export default function ViajeDetalle() {
           nombreEmisor: String(facturaData.nombre_emisor || ''),
           rfcReceptor: String(facturaData.rfc_receptor || ''),
           nombreReceptor: String(facturaData.nombre_receptor || ''),
+          tipoCfdi: 'Ingreso', // Tipo I = Ingreso (con montos)
           total: Number(facturaData.total || 0),
           subtotal: Number(facturaData.subtotal || 0),
           conceptos: [{
