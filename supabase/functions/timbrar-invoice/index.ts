@@ -13,10 +13,34 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     // 1️⃣ OBTENER facturaId DEL BODY
-    const { facturaId } = await req.json();
+    console.log('📨 [Timbrar] Request recibido:', {
+      method: req.method,
+      headers: Object.fromEntries(req.headers.entries()),
+      hasBody: req.body !== null
+    });
+
+    let requestBody;
+    let facturaId;
+    
+    try {
+      const bodyText = await req.text();
+      console.log('📋 [Timbrar] Body crudo recibido:', bodyText);
+      
+      if (!bodyText || bodyText.trim() === '') {
+        throw new Error('Request body está vacío');
+      }
+      
+      requestBody = JSON.parse(bodyText);
+      facturaId = requestBody.facturaId;
+      
+      console.log('✅ [Timbrar] Body parseado correctamente:', requestBody);
+    } catch (parseError) {
+      console.error('❌ [Timbrar] Error parseando JSON:', parseError);
+      throw new Error(`Body inválido: ${parseError instanceof Error ? parseError.message : 'Error desconocido'}`);
+    }
     
     if (!facturaId) {
-      throw new Error('facturaId es requerido');
+      throw new Error('facturaId es requerido en el body');
     }
 
     console.log('🎬 [Timbrar] Iniciando timbrado de factura:', facturaId);
