@@ -2108,8 +2108,10 @@ export type Database = {
           fecha_expedicion: string
           fecha_timbrado: string | null
           folio: string | null
+          forma_pago: string
           id: string
           metadata: Json | null
+          metodo_pago: string
           moneda: string | null
           motivo_cancelacion: string | null
           nombre_emisor: string
@@ -2151,8 +2153,10 @@ export type Database = {
           fecha_expedicion?: string
           fecha_timbrado?: string | null
           folio?: string | null
+          forma_pago?: string
           id?: string
           metadata?: Json | null
+          metodo_pago?: string
           moneda?: string | null
           motivo_cancelacion?: string | null
           nombre_emisor: string
@@ -2194,8 +2198,10 @@ export type Database = {
           fecha_expedicion?: string
           fecha_timbrado?: string | null
           folio?: string | null
+          forma_pago?: string
           id?: string
           metadata?: Json | null
+          metodo_pago?: string
           moneda?: string | null
           motivo_cancelacion?: string | null
           nombre_emisor?: string
