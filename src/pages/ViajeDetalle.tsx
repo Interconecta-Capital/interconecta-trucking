@@ -226,10 +226,7 @@ export default function ViajeDetalle() {
       const startTime = Date.now();
       
       const { data: timbradoData, error: timbradoError } = await supabase.functions.invoke('timbrar-invoice', {
-        body: { facturaId: factura.id },
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        body: { facturaId: factura.id }
       });
       
       const duration = Date.now() - startTime;
