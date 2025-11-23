@@ -231,7 +231,9 @@ export default function ViajeDetalle() {
         facturaId: factura.id,
         facturaData: {
           rfcEmisor: String(facturaData.rfc_emisor || ''),
+          nombreEmisor: String(facturaData.nombre_emisor || ''),
           rfcReceptor: String(facturaData.rfc_receptor || ''),
+          nombreReceptor: String(facturaData.nombre_receptor || ''),
           total: Number(facturaData.total || 0),
           subtotal: Number(facturaData.subtotal || 0),
           conceptos: [{
@@ -245,6 +247,8 @@ export default function ViajeDetalle() {
         },
         ambiente: 'sandbox' as const
       };
+      
+      console.log('📦 [TIMBRADO] Payload completo:', JSON.stringify(timbrarPayload, null, 2));
       
       const { data: timbradoData, error: timbradoError } = await supabase.functions.invoke('timbrar-con-sw', {
         body: timbrarPayload
