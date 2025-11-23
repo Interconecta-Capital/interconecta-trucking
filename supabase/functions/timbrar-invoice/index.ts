@@ -47,15 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('📄 [Timbrar] Cargando factura desde BD...');
     const { data: factura, error: facturaError } = await supabase
       .from('facturas')
-      .select(`
-        *,
-        viaje:viajes!facturas_viaje_id_fkey(
-          id,
-          origen,
-          destino,
-          tracking_data
-        )
-      `)
+      .select('*')
       .eq('id', facturaId)
       .single();
 
@@ -222,14 +214,14 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // 9️⃣ VINCULAR CARTA PORTE SI EXISTE (actualizar viaje)
-    if (factura.viaje?.id) {
+    if (factura.viaje_id) {
       const { error: viajeError } = await supabase
         .from('viajes')
         .update({ 
           factura_id: facturaId,
           estado: 'programado'
         })
-        .eq('id', factura.viaje.id);
+        .eq('id', factura.viaje_id);
 
       if (viajeError) {
         console.warn('⚠️ [Timbrar] Error actualizando viaje:', viajeError);
