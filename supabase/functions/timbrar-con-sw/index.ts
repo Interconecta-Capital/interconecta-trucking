@@ -9,96 +9,21 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-// 🔐 ISO 27001 A.10.1.1 - Autenticación dinámica con credenciales del Vault
+// 🔐 ISO 27001 A.10.1.1 - Usar token estático de SW
 async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<string> {
-  const swUser = Deno.env.get('SW_USER');
-  const swPassword = Deno.env.get('SW_PASSWORD');
-  const swUrl = ambiente === 'production' 
-    ? Deno.env.get('SW_PRODUCTION_URL')
-    : Deno.env.get('SW_SANDBOX_URL');
-
-  if (!swUser || !swPassword || !swUrl) {
-    console.error('❌ Credenciales SW no configuradas');
-    throw new Error('Credenciales de SW no configuradas en Vault');
-  }
-
-  // ISO 27001 A.12.4.1 - Log seguro sin exponer password
-  console.log('🔐 Autenticando con SW:', { usuario: swUser.substring(0, 5) + '***', ambiente, url: swUrl });
-
-  // ✅ FASE 3: Probar múltiples endpoints de autenticación
-  const authEndpoints = [
-    `${swUrl}/api/v2/security/authenticate`,
-    `${swUrl}/security/authentication`,
-    `${swUrl}/v3/security/authenticate`,
-    `${swUrl}/login`
-  ];
-
-  let authResponse: Response | null = null;
-  let lastError = '';
-  let successEndpoint = '';
-
-  // Probar también con diferentes formatos de body
-  const authBodies = [
-    { user: swUser, password: swPassword },
-    { username: swUser, password: swPassword }
-  ];
-
-  console.log('🔍 Probando endpoints de autenticación...');
-
-  for (const endpoint of authEndpoints) {
-    for (const authBody of authBodies) {
-      try {
-        console.log(`🔗 Intentando: ${endpoint} con formato:`, Object.keys(authBody));
-        
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(authBody),
-        });
-
-        console.log(`📊 Respuesta: ${response.status} ${response.statusText}`);
-
-        if (response.ok) {
-          authResponse = response;
-          successEndpoint = endpoint;
-          console.log(`✅ Autenticación exitosa con: ${endpoint}`);
-          break;
-        } else {
-          const errorText = await response.text();
-          lastError = `${response.status}: ${errorText}`;
-          console.warn(`⚠️ Fallo con ${endpoint}: ${lastError.substring(0, 100)}`);
-        }
-      } catch (error) {
-        console.warn(`⚠️ Error de red con ${endpoint}:`, error.message);
-        lastError = error.message;
-      }
-    }
-
-    if (authResponse) break;
-  }
-
-  if (!authResponse || !authResponse.ok) {
-    console.error('❌ Todos los endpoints fallaron. Último error:', lastError);
-    throw new Error(`Error de autenticación con SmartWeb: ${lastError}`);
-  }
-
-  const authData = await authResponse.json();
-  console.log('📋 Estructura de respuesta:', Object.keys(authData));
+  // ✅ SmartWeb usa token estático en lugar de autenticación dinámica
+  const swToken = Deno.env.get('SW_TOKEN');
   
-  // ✅ Extracción flexible de token
-  const token = authData.data?.token || authData.token || authData.access_token;
-  const isSuccess = authData.status === 'success' || authData.success === true || !!token;
-  
-  if (!isSuccess || !token) {
-    console.error('❌ Respuesta de autenticación inválida:', authData);
-    throw new Error(`Autenticación fallida: ${authData.message || authData.error || 'Token no disponible'}`);
+  if (!swToken) {
+    console.error('❌ Token SW no configurado en secretos');
+    throw new Error('SW_TOKEN no configurado. Agrega tu token de SmartWeb en los secretos.');
   }
 
-  // ISO 27001 A.9.4.5 - Token de corta duración obtenido dinámicamente
-  console.log('✅ Token dinámico obtenido exitosamente de SW usando:', successEndpoint);
-  return token;
+  console.log('✅ Usando token estático de SW para ambiente:', ambiente);
+  console.log('🔑 Token (primeros 10 chars):', swToken.substring(0, 10) + '...');
+  
+  // ISO 27001 A.9.4.5 - Token configurado desde Vault
+  return swToken;
 }
 
 const handler = async (req: Request): Promise<Response> => {
