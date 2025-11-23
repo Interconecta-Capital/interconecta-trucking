@@ -171,11 +171,27 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify(cfdiPayload),
     });
 
-    const timbrarData = await timbrarResponse.json();
+    console.log(`📊 [Timbrar] Respuesta SW: ${timbrarResponse.status} ${timbrarResponse.statusText}`);
+    
+    // Intentar obtener el body como texto primero
+    const responseText = await timbrarResponse.text();
+    console.log(`📋 [Timbrar] Body SW (primeros 500 chars):`, responseText.substring(0, 500));
+
+    if (!responseText || responseText.trim() === '') {
+      throw new Error(`SmartWeb retornó respuesta vacía. Status: ${timbrarResponse.status}`);
+    }
+
+    let timbrarData;
+    try {
+      timbrarData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ [Timbrar] Error parseando respuesta SW:', parseError);
+      throw new Error(`Respuesta inválida de SmartWeb: ${responseText.substring(0, 200)}`);
+    }
 
     if (!timbrarResponse.ok || !timbrarData.data) {
       console.error('❌ [Timbrar] Error de SmartWeb:', JSON.stringify(timbrarData, null, 2));
-      throw new Error(timbrarData.message || 'Error al timbrar con SmartWeb');
+      throw new Error(timbrarData.message || timbrarData.error || 'Error al timbrar con SmartWeb');
     }
 
     const { cfdi, cadenaOriginalSAT, noCertificadoSAT, fechaTimbrado } = timbrarData.data;
