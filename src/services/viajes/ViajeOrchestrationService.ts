@@ -77,6 +77,37 @@ export class ViajeOrchestrationService {
       // ========== PASO 3: CREAR BORRADOR CARTA PORTE ==========
       const borradorCP = await this.crearBorradorCartaPorte(viaje.id, wizardData, facturaId); // ✅ FASE 2: Ya es async
       console.log('✅ [ORCHESTRATOR] Borrador CP creado:', borradorCP.id);
+
+      // ✅ FASE 2: Logs de verificación detallados
+      console.log('📋 [ORCHESTRATOR] Verificación de datos del borrador:', {
+        borrador_id: borradorCP.id,
+        viaje_id: viaje.id,
+        rfcEmisor: borradorCP.datos_formulario?.rfcEmisor || '❌ FALTANTE',
+        rfcReceptor: borradorCP.datos_formulario?.rfcReceptor || '❌ FALTANTE',
+        nombreReceptor: borradorCP.datos_formulario?.nombreReceptor || '❌ FALTANTE',
+        numUbicaciones: borradorCP.datos_formulario?.ubicaciones?.length || 0,
+        numMercancias: borradorCP.datos_formulario?.mercancias?.length || 0,
+        numFiguras: borradorCP.datos_formulario?.figuras?.length || 0,
+        tieneAutotransporte: !!borradorCP.datos_formulario?.autotransporte
+      });
+
+      // Verificar y alertar sobre datos faltantes críticos
+      if (!borradorCP.datos_formulario?.mercancias || borradorCP.datos_formulario.mercancias.length === 0) {
+        console.error('❌ [ORCHESTRATOR] ALERTA: Borrador creado sin mercancías!');
+      } else {
+        console.log(`✅ [ORCHESTRATOR] Borrador con ${borradorCP.datos_formulario.mercancias.length} mercancía(s)`);
+        borradorCP.datos_formulario.mercancias.forEach((m: any, i: number) => {
+          console.log(`   ${i + 1}. ${m.descripcion} - ${m.cantidad} ${m.unidad || 'pz'} - ${m.peso_kg} kg`);
+        });
+      }
+
+      if (!borradorCP.datos_formulario?.rfcEmisor) {
+        console.error('❌ [ORCHESTRATOR] ALERTA: RFC del emisor faltante! Configura tu empresa.');
+      }
+
+      if (!borradorCP.datos_formulario?.rfcReceptor) {
+        console.error('❌ [ORCHESTRATOR] ALERTA: RFC del receptor faltante!');
+      }
       
       // ========== PASO 4: VINCULAR TODO EN TRACKING_DATA (OPTIMIZADO - sin wizard_data) ==========
       await this.actualizarTrackingData(viaje.id, {
@@ -351,6 +382,11 @@ export class ViajeOrchestrationService {
       rfc: wizardData.cliente?.rfc,
       regimen_fiscal: wizardData.cliente?.regimen_fiscal
     });
+    console.log('📦 [ORCHESTRATOR] Mercancías del wizard:', {
+      descripcionMercancia: wizardData.descripcionMercancia || 'No especificada',
+      mercanciasArray: wizardData.mercancias ? `${wizardData.mercancias.length} mercancía(s) detallada(s)` : 'No hay array de mercancías',
+      prioridad: wizardData.mercancias && wizardData.mercancias.length > 0 ? 'Usar array detallado' : 'Generar desde descripción'
+    });
     
     // ✅ FASE 2: AWAIT obligatorio para obtener RFC del emisor
     const cartaPorteData = await ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardData);
@@ -365,6 +401,19 @@ export class ViajeOrchestrationService {
       mercancias: cartaPorteData.mercancias?.length || 0,
       figuras: cartaPorteData.figuras?.length || 0
     });
+    
+    // Log detallado de cada mercancía mapeada
+    if (cartaPorteData.mercancias && cartaPorteData.mercancias.length > 0) {
+      console.log('📦 [ORCHESTRATOR] Mercancías mapeadas:');
+      cartaPorteData.mercancias.forEach((m: any, i: number) => {
+        console.log(`   ${i + 1}. ${m.descripcion}`);
+        console.log(`      - Cantidad: ${m.cantidad} ${m.unidad || 'pz'}`);
+        console.log(`      - Peso: ${m.peso_kg} kg`);
+        console.log(`      - Valor: $${m.valor_mercancia} ${m.moneda || 'MXN'}`);
+        console.log(`      - Clave ProdServ: ${m.bienes_transp}`);
+        console.log(`      - AI Generated: ${m.aiGenerated ? 'Sí' : 'No'}`);
+      });
+    }
     
     // Agregar referencia a factura si existe
     if (facturaId) {
