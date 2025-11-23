@@ -78,17 +78,46 @@ export class ViajeOrchestrationService {
       const borradorCP = await this.crearBorradorCartaPorte(viaje.id, wizardData, facturaId); // ✅ FASE 2: Ya es async
       console.log('✅ [ORCHESTRATOR] Borrador CP creado:', borradorCP.id);
 
-      // ✅ FASE 2: Logs de verificación detallados
-      console.log('📋 [ORCHESTRATOR] Verificación de datos del borrador:', {
+      // ✅ FASE 6: Logs de verificación detallados con información completa
+      console.log('📋 [ORCHESTRATOR] Verificación completa de datos del borrador:', {
         borrador_id: borradorCP.id,
         viaje_id: viaje.id,
         rfcEmisor: borradorCP.datos_formulario?.rfcEmisor || '❌ FALTANTE',
         rfcReceptor: borradorCP.datos_formulario?.rfcReceptor || '❌ FALTANTE',
         nombreReceptor: borradorCP.datos_formulario?.nombreReceptor || '❌ FALTANTE',
-        numUbicaciones: borradorCP.datos_formulario?.ubicaciones?.length || 0,
-        numMercancias: borradorCP.datos_formulario?.mercancias?.length || 0,
-        numFiguras: borradorCP.datos_formulario?.figuras?.length || 0,
-        tieneAutotransporte: !!borradorCP.datos_formulario?.autotransporte
+        
+        // Detalle de ubicaciones
+        ubicaciones_detalles: borradorCP.datos_formulario?.ubicaciones?.map(u => ({
+          tipo: u.tipo_ubicacion,
+          direccion: u.direccion || u.domicilio?.calle || 'Sin dirección',
+          tiene_domicilio: !!u.domicilio,
+          campos_domicilio: u.domicilio ? Object.keys(u.domicilio) : [],
+          codigo_postal: u.codigo_postal || u.domicilio?.codigo_postal || '❌ FALTANTE',
+          estado: u.domicilio?.estado || '❌ FALTANTE',
+          municipio: u.domicilio?.municipio || '❌ FALTANTE'
+        })),
+        
+        // Detalle de autotransporte y remolques
+        autotransporte_detalle: {
+          tiene_vehiculo: !!borradorCP.datos_formulario?.autotransporte,
+          placa_vehiculo: borradorCP.datos_formulario?.autotransporte?.placa_vm || '❌ FALTANTE',
+          config_vehicular: borradorCP.datos_formulario?.autotransporte?.config_vehicular || '❌ FALTANTE',
+          num_remolques: borradorCP.datos_formulario?.autotransporte?.remolques?.length || 0,
+          remolques_data: borradorCP.datos_formulario?.autotransporte?.remolques || []
+        },
+        
+        // Detalle de figuras
+        figuras_detalle: borradorCP.datos_formulario?.figuras?.map(f => ({
+          tipo: f.tipo_figura,
+          nombre: f.nombre_figura || '❌ FALTANTE',
+          rfc: f.rfc_figura || '❌ FALTANTE',
+          tiene_domicilio: !!f.domicilio,
+          operador_sct: f.operador_sct,
+          num_licencia: f.num_licencia || '❌ FALTANTE'
+        })),
+        
+        // Detalle de mercancías
+        numMercancias: borradorCP.datos_formulario?.mercancias?.length || 0
       });
 
       // Verificar y alertar sobre datos faltantes críticos

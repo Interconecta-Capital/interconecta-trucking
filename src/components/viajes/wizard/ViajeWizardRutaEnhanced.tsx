@@ -366,6 +366,26 @@ export function ViajeWizardRutaEnhanced({ data, updateData }: ViajeWizardRutaEnh
         </Alert>
       )}
 
+      {/* ✅ FASE 5: Botón de Rutas Frecuentes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-lg">
+            <div className="flex items-center gap-2">
+              <Route className="h-5 w-5 text-primary" />
+              Rutas Frecuentes
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertDescription>
+              🚧 Próximamente: Selecciona rutas guardadas para autocompletar origen y destino. 
+              Por ahora, ingresa las direcciones manualmente abajo.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
       {/* Origen */}
       <Card>
         <CardHeader>

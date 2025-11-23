@@ -30,36 +30,70 @@ export class ViajeToCartaPorteMapper {
       },
     };
 
-    // Mapear ubicaciones (origen y destino)
+    // ✅ FASE 1: Mapear ubicaciones completas con domicilio estructurado
     const ubicaciones = [];
     
     if (wizardData.origen) {
+      const origenDomicilio = wizardData.origen.domicilio || {};
       ubicaciones.push({
         tipoUbicacion: 'Origen',
         idUbicacion: 'OR000001',
-        direccion: wizardData.origen.direccion,
-        codigoPostal: wizardData.origen.codigoPostal,
+        direccion: wizardData.origen.direccion || wizardData.origen.nombre || '',
+        codigoPostal: origenDomicilio.codigoPostal || origenDomicilio.codigo_postal || wizardData.origen.codigoPostal || '',
         coordenadas: wizardData.origen.coordenadas,
-        fechaHoraSalidaLlegada: new Date().toISOString()
+        fechaHoraSalidaLlegada: wizardData.origen.fechaHoraSalidaLlegada || new Date().toISOString(),
+        domicilio: {
+          pais: origenDomicilio.pais || 'MEX',
+          codigoPostal: origenDomicilio.codigoPostal || origenDomicilio.codigo_postal || wizardData.origen.codigoPostal || '',
+          estado: origenDomicilio.estado || '',
+          municipio: origenDomicilio.municipio || '',
+          colonia: origenDomicilio.colonia || '',
+          calle: origenDomicilio.calle || wizardData.origen.direccion || '',
+          numExterior: origenDomicilio.numExterior || origenDomicilio.numeroExterior || '',
+          numInterior: origenDomicilio.numInterior || origenDomicilio.numeroInterior || '',
+          localidad: origenDomicilio.localidad || ''
+        }
+      });
+      console.log('✅ [MAPPER] Origen con domicilio completo:', {
+        cp: origenDomicilio.codigoPostal || origenDomicilio.codigo_postal,
+        estado: origenDomicilio.estado,
+        municipio: origenDomicilio.municipio
       });
     }
 
     if (wizardData.destino) {
+      const destinoDomicilio = wizardData.destino.domicilio || {};
       ubicaciones.push({
         tipoUbicacion: 'Destino',
         idUbicacion: 'DE000001',
-        direccion: wizardData.destino.direccion,
-        codigoPostal: wizardData.destino.codigoPostal,
+        direccion: wizardData.destino.direccion || wizardData.destino.nombre || '',
+        codigoPostal: destinoDomicilio.codigoPostal || destinoDomicilio.codigo_postal || wizardData.destino.codigoPostal || '',
         coordenadas: wizardData.destino.coordenadas,
         distanciaRecorrida: wizardData.distanciaRecorrida,
-        fechaHoraSalidaLlegada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Mañana por defecto
+        fechaHoraSalidaLlegada: wizardData.destino.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        domicilio: {
+          pais: destinoDomicilio.pais || 'MEX',
+          codigoPostal: destinoDomicilio.codigoPostal || destinoDomicilio.codigo_postal || wizardData.destino.codigoPostal || '',
+          estado: destinoDomicilio.estado || '',
+          municipio: destinoDomicilio.municipio || '',
+          colonia: destinoDomicilio.colonia || '',
+          calle: destinoDomicilio.calle || wizardData.destino.direccion || '',
+          numExterior: destinoDomicilio.numExterior || destinoDomicilio.numeroExterior || '',
+          numInterior: destinoDomicilio.numInterior || destinoDomicilio.numeroInterior || '',
+          localidad: destinoDomicilio.localidad || ''
+        }
+      });
+      console.log('✅ [MAPPER] Destino con domicilio completo:', {
+        cp: destinoDomicilio.codigoPostal || destinoDomicilio.codigo_postal,
+        estado: destinoDomicilio.estado,
+        municipio: destinoDomicilio.municipio
       });
     }
 
     // Mapear mercancías con datos inteligentes basados en la descripción
     const mercancias: MercanciaCompleta[] = this.generateIntelligentMercancia(wizardData);
 
-    // Mapear autotransporte completo
+    // ✅ FASE 2: Mapear autotransporte completo con remolques
     const autotransporte = {
       placa: wizardData.vehiculo?.placa || '',
       configVehicular: wizardData.vehiculo?.configuracion_vehicular || 'C2',
@@ -75,17 +109,51 @@ export class ViajeToCartaPorteMapper {
       aseguradora_responsabilidad_civil: wizardData.vehiculo?.aseguradora_responsabilidad_civil || 'SEGUROS SA',
       poliza_responsabilidad_civil: wizardData.vehiculo?.poliza_responsabilidad_civil || 'POL123456',
       aseguradora_medio_ambiente: wizardData.vehiculo?.aseguradora_medio_ambiente || 'SEGUROS SA',
-      poliza_medio_ambiente: wizardData.vehiculo?.poliza_medio_ambiente || 'POL123456'
+      poliza_medio_ambiente: wizardData.vehiculo?.poliza_medio_ambiente || 'POL123456',
+      
+      // ✅ FASE 2: Incluir remolques del wizard
+      remolques: wizardData.remolque ? [{
+        placa: wizardData.remolque.placa || '',
+        subtipo_rem: wizardData.remolque.tipo_remolque || wizardData.remolque.subtipo_rem || 'CTR004'
+      }] : []
     };
+    
+    if (wizardData.remolque) {
+      console.log('✅ [MAPPER] Remolque agregado:', {
+        placa: wizardData.remolque.placa,
+        subtipo: wizardData.remolque.tipo_remolque || wizardData.remolque.subtipo_rem
+      });
+    }
 
-    // Mapear figuras de transporte completas (FASE 2 - MEJORADO)
+    // ✅ FASE 3: Mapear figuras de transporte completas con todos los campos
     // Si ya hay figuras auto-pobladas en wizardData, usarlas
     const figuras = [];
     if (wizardData.figuras && Array.isArray(wizardData.figuras) && wizardData.figuras.length > 0) {
-      console.log('✅ Usando', wizardData.figuras.length, 'figuras auto-pobladas');
-      figuras.push(...wizardData.figuras);
+      console.log('✅ [MAPPER] Usando', wizardData.figuras.length, 'figuras auto-pobladas del wizard');
+      figuras.push(...wizardData.figuras.map(fig => ({
+        ...fig,
+        // Asegurar que todos los campos estén presentes
+        tipoFigura: fig.tipoFigura || fig.tipo_figura || '01',
+        rfcFigura: fig.rfcFigura || fig.rfc_figura || 'XEXX010101000',
+        nombreFigura: fig.nombreFigura || fig.nombre_figura || '',
+        numLicencia: fig.numLicencia || fig.num_licencia || '',
+        tipoLicencia: fig.tipoLicencia || fig.tipo_licencia || '',
+        curp: fig.curp || '',
+        operador_sct: fig.operador_sct || false,
+        residencia_fiscal: fig.residencia_fiscal || fig.residencia_fiscal_figura || 'MEX',
+        vigencia_licencia: fig.vigencia_licencia || '',
+        domicilio: fig.domicilio || {
+          pais: 'MEX',
+          codigo_postal: '06000',
+          estado: '',
+          municipio: '',
+          colonia: '',
+          calle: ''
+        }
+      })));
     } else if (wizardData.conductor) {
-      // Fallback: crear figura del conductor manualmente
+      // Fallback: crear figura del conductor manualmente con todos los campos
+      console.log('⚠️ [MAPPER] No había figuras auto-pobladas, creando figura del conductor manualmente');
       figuras.push({
         tipoFigura: '01', // Operador
         nombreFigura: wizardData.conductor.nombre,
@@ -96,16 +164,15 @@ export class ViajeToCartaPorteMapper {
         operador_sct: wizardData.conductor.operador_sct || false,
         residencia_fiscal: wizardData.conductor.residencia_fiscal || 'MEX',
         vigencia_licencia: wizardData.conductor.vigencia_licencia || '',
-        domicilio: {
+        domicilio: wizardData.conductor.direccion || {
           pais: 'MEX',
-          codigo_postal: wizardData.conductor.direccion?.codigo_postal || '06000',
-          estado: wizardData.conductor.direccion?.estado || 'Ciudad de México',
-          municipio: wizardData.conductor.direccion?.municipio || 'Ciudad de México',
-          colonia: wizardData.conductor.direccion?.colonia || 'Centro',
-          calle: wizardData.conductor.direccion?.calle || 'Calle sin número'
+          codigo_postal: '06000',
+          estado: 'Ciudad de México',
+          municipio: 'Ciudad de México',
+          colonia: 'Centro',
+          calle: 'Calle sin número'
         }
       });
-      console.log('⚠️ No había figuras auto-pobladas, creada figura del conductor manualmente');
     }
 
     return {
@@ -275,19 +342,22 @@ export class ViajeToCartaPorteMapper {
         tipo_carroceria: baseData.autotransporte.tipo_carroceria || '01',
         marca: baseData.autotransporte.marca || '',
         modelo: baseData.autotransporte.modelo || '',
-        remolques: []
+        // ✅ FASE 2: Pasar remolques correctamente
+        remolques: baseData.autotransporte.remolques || []
       },
       figuras: baseData.figuras.map(fig => ({
         id: `figura-${Date.now()}`,
         tipo_figura: fig.tipoFigura,
         rfc_figura: fig.rfcFigura,
         nombre_figura: fig.nombreFigura,
-        num_licencia: fig.numLicencia,
-        tipo_licencia: fig.tipoLicencia,
+        // ✅ FASE 3: Asegurar todos los campos de licencia y operador
+        num_licencia: fig.numLicencia || '',
+        tipo_licencia: fig.tipoLicencia || '',
         curp: fig.curp || '',
         operador_sct: fig.operador_sct || false,
         residencia_fiscal_figura: fig.residencia_fiscal || 'MEX',
         vigencia_licencia: fig.vigencia_licencia || '',
+        // ✅ FASE 3: Domicilio completo
         domicilio: fig.domicilio || {
           pais: 'MEX',
           codigo_postal: '06000',
