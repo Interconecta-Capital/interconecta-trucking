@@ -1,6 +1,21 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
+// 🔐 ISO 27001 A.10.1.1 - Usar token estático de SW
+async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<string> {
+  const swToken = Deno.env.get('SW_TOKEN');
+  
+  if (!swToken) {
+    console.error('❌ Token SW no configurado en secretos');
+    throw new Error('SW_TOKEN no configurado. Agrega tu token de SmartWeb en los secretos.');
+  }
+
+  console.log('✅ Usando token estático de SW para ambiente:', ambiente);
+  console.log('🔑 Token (primeros 10 chars):', swToken.substring(0, 10) + '...');
+  
+  return swToken;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -13,31 +28,8 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     // 1️⃣ OBTENER facturaId DEL BODY
-    console.log('📨 [Timbrar] Request recibido:', {
-      method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
-      hasBody: req.body !== null
-    });
-
-    let requestBody;
-    let facturaId;
-    
-    try {
-      const bodyText = await req.text();
-      console.log('📋 [Timbrar] Body crudo recibido:', bodyText);
-      
-      if (!bodyText || bodyText.trim() === '') {
-        throw new Error('Request body está vacío');
-      }
-      
-      requestBody = JSON.parse(bodyText);
-      facturaId = requestBody.facturaId;
-      
-      console.log('✅ [Timbrar] Body parseado correctamente:', requestBody);
-    } catch (parseError) {
-      console.error('❌ [Timbrar] Error parseando JSON:', parseError);
-      throw new Error(`Body inválido: ${parseError instanceof Error ? parseError.message : 'Error desconocido'}`);
-    }
+    const requestBody = await req.json();
+    const facturaId = requestBody?.facturaId;
     
     if (!facturaId) {
       throw new Error('facturaId es requerido en el body');
@@ -163,40 +155,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('📋 [Timbrar] Payload CFDI construido:', JSON.stringify(cfdiPayload, null, 2));
 
-    // 6️⃣ AUTENTICAR CON SMARTWEB
-    const swUser = Deno.env.get('SW_USER');
-    const swPassword = Deno.env.get('SW_PASSWORD');
+    // 6️⃣ AUTENTICAR CON SMARTWEB usando token estático
     const ambiente = Deno.env.get('AMBIENTE') || 'sandbox';
+    console.log(`🔐 [Timbrar] Usando token estático de SW (${ambiente})...`);
     
-    if (!swUser || !swPassword) {
-      throw new Error('❌ Credenciales de SmartWeb no configuradas en Vault');
-    }
+    const swToken = await obtenerTokenSW(ambiente as 'sandbox' | 'production');
 
     const swUrl = ambiente === 'production' 
       ? 'https://api.smartweb.com.mx'
       : 'https://services.test.sw.com.mx';
 
-    console.log(`🔐 [Timbrar] Autenticando con SmartWeb (${ambiente})...`);
-    
-    const authResponse = await fetch(`${swUrl}/security/authenticate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user: swUser, password: swPassword }),
-    });
-
-    if (!authResponse.ok) {
-      const authError = await authResponse.text();
-      throw new Error(`Error autenticando con SmartWeb: ${authError}`);
-    }
-
-    const authData = await authResponse.json();
-    const token = authData.data?.token;
-
-    if (!token) {
-      throw new Error('No se recibió token de SmartWeb');
-    }
-
-    console.log('✅ [Timbrar] Token SmartWeb obtenido');
+    console.log('✅ [Timbrar] Token SW obtenido');
 
     // 7️⃣ TIMBRAR CON SMARTWEB
     console.log(`📤 [Timbrar] Enviando a SmartWeb: ${swUrl}/v3/cfdi40/issue/json/v4`);
@@ -204,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
     const timbrarResponse = await fetch(`${swUrl}/v3/cfdi40/issue/json/v4`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${swToken}`,
         'Content-Type': 'application/jsontoxml',
       },
       body: JSON.stringify(cfdiPayload),
