@@ -222,11 +222,32 @@ export default function ViajeDetalle() {
       toast.loading('Enviando a timbrar con SmartWeb...', { id: 'timbrado-process' });
       
       // ✅ FASE 3: Llamar edge function para timbrar con el PAC
-      console.log('📤 [TIMBRADO] Invocando edge function timbrar-invoice...');
+      console.log('📤 [TIMBRADO] Invocando edge function timbrar-con-sw...');
       const startTime = Date.now();
       
-      const { data: timbradoData, error: timbradoError } = await supabase.functions.invoke('timbrar-invoice', {
-        body: { facturaId: factura.id }
+      // Construir payload para timbrar-con-sw usando los datos de la factura
+      const facturaData = factura as any; // Type assertion para acceder a propiedades de DB
+      const timbrarPayload = {
+        facturaId: factura.id,
+        facturaData: {
+          rfcEmisor: String(facturaData.rfc_emisor || ''),
+          rfcReceptor: String(facturaData.rfc_receptor || ''),
+          total: Number(facturaData.total || 0),
+          subtotal: Number(facturaData.subtotal || 0),
+          conceptos: [{
+            clave_prod_serv: "78101800",
+            cantidad: 1,
+            clave_unidad: "E48",
+            descripcion: String(facturaData.notas || "Servicio de transporte de carga"),
+            valor_unitario: Number(facturaData.subtotal || 0),
+            importe: Number(facturaData.subtotal || 0)
+          }]
+        },
+        ambiente: 'sandbox' as const
+      };
+      
+      const { data: timbradoData, error: timbradoError } = await supabase.functions.invoke('timbrar-con-sw', {
+        body: timbrarPayload
       });
       
       const duration = Date.now() - startTime;
