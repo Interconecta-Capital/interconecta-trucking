@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from('facturas')
       .select(`
         *,
-        viaje:viajes(
+        viaje:viajes!facturas_viaje_id_fkey(
           id,
           origen,
           destino,
