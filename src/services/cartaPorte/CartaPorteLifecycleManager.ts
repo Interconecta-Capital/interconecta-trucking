@@ -219,7 +219,7 @@ export class CartaPorteLifecycleManager {
       const rfcReceptor = datosFormulario.rfcReceptor || receptor.rfc || '';
       const nombreReceptor = datosFormulario.nombreReceptor || receptor.nombre || '';
 
-      // 6. Crear la carta porte con serie y folio de configuración
+      // 6. Crear la carta porte con folio prefijado (sin columna 'serie' que no existe)
       const { data, error } = await supabase
         .from('cartas_porte')
         .insert({
@@ -229,8 +229,7 @@ export class CartaPorteLifecycleManager {
           status: 'active' as const,
           version_documento: 'v1.0',
           datos_formulario: datosFormulario,
-          serie: serieAUsar,
-          folio: folioAUsar.toString().padStart(3, '0'),
+          folio: `${serieAUsar}-${folioAUsar.toString().padStart(3, '0')}`, // ✅ CP-001, CP-002, etc.
           
           // Campos sincronizados para búsqueda
           rfc_emisor: rfcEmisor,
@@ -261,7 +260,7 @@ export class CartaPorteLifecycleManager {
         console.log('✅ [CARTA PORTE] Folio incrementado a:', folioAUsar + 1);
       }
 
-      console.log('Borrador convertido exitosamente:', data.id, 'Serie-Folio:', `${serieAUsar}-${folioAUsar.toString().padStart(3, '0')}`, 'IdCCP:', idCCP);
+      console.log('Borrador convertido exitosamente:', data.id, 'Folio:', data.folio, 'IdCCP:', idCCP);
       return data as CartaPorteCompleta;
     } catch (error) {
       console.error('Error en convertirBorradorACartaPorte:', error);

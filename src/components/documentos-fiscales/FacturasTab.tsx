@@ -127,10 +127,13 @@ export function FacturasTab() {
     try {
       toast.loading('Preparando factura para timbrado...', { id: `timbrar-${facturaId}` });
       
-      // Cargar datos completos de la factura
+      // Cargar datos completos de la factura (especificando FK para evitar ambigüedad)
       const { data: factura, error } = await supabase
         .from('facturas')
-        .select('*, viaje:viajes(*)')
+        .select(`
+          *,
+          viaje:viajes!facturas_viaje_id_fkey(*)
+        `)
         .eq('id', facturaId)
         .single();
       

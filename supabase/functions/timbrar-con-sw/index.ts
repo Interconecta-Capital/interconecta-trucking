@@ -23,48 +23,82 @@ async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<strin
   }
 
   // ISO 27001 A.12.4.1 - Log seguro sin exponer password
-  console.log('🔐 Autenticando con SW:', { usuario: swUser.substring(0, 8) + '***', ambiente });
+  console.log('🔐 Autenticando con SW:', { usuario: swUser.substring(0, 5) + '***', ambiente, url: swUrl });
 
-  // Probar con endpoint estándar /login en lugar de /v2/security/authenticate
-  const authEndpoint = `${swUrl}/login`;
-  console.log('🔗 Endpoint de autenticación:', authEndpoint);
+  // ✅ FASE 3: Probar múltiples endpoints de autenticación
+  const authEndpoints = [
+    `${swUrl}/api/v2/security/authenticate`,
+    `${swUrl}/security/authentication`,
+    `${swUrl}/v3/security/authenticate`,
+    `${swUrl}/login`
+  ];
 
-  const authBody = {
-    user: swUser,
-    password: swPassword
-  };
-  console.log('📦 Body estructura (sin password):', { user: authBody.user });
+  let authResponse: Response | null = null;
+  let lastError = '';
+  let successEndpoint = '';
 
-  const authResponse = await fetch(authEndpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(authBody),
-  });
+  // Probar también con diferentes formatos de body
+  const authBodies = [
+    { user: swUser, password: swPassword },
+    { username: swUser, password: swPassword }
+  ];
 
-  console.log('📊 Status de respuesta:', authResponse.status);
-  console.log('📋 Headers de respuesta:', Object.fromEntries(authResponse.headers.entries()));
+  console.log('🔍 Probando endpoints de autenticación...');
 
-  if (!authResponse.ok) {
-    const errorText = await authResponse.text();
-    console.error('❌ Error HTTP al autenticar:', authResponse.status);
-    console.error('📄 Respuesta de SW:', errorText);
-    console.error('🔍 Debugging - Usuario enviado:', swUser);
-    console.error('🔍 Debugging - URL usada:', authEndpoint);
-    throw new Error(`Error de autenticación con SmartWeb: HTTP ${authResponse.status} - ${errorText}`);
+  for (const endpoint of authEndpoints) {
+    for (const authBody of authBodies) {
+      try {
+        console.log(`🔗 Intentando: ${endpoint} con formato:`, Object.keys(authBody));
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(authBody),
+        });
+
+        console.log(`📊 Respuesta: ${response.status} ${response.statusText}`);
+
+        if (response.ok) {
+          authResponse = response;
+          successEndpoint = endpoint;
+          console.log(`✅ Autenticación exitosa con: ${endpoint}`);
+          break;
+        } else {
+          const errorText = await response.text();
+          lastError = `${response.status}: ${errorText}`;
+          console.warn(`⚠️ Fallo con ${endpoint}: ${lastError.substring(0, 100)}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error de red con ${endpoint}:`, error.message);
+        lastError = error.message;
+      }
+    }
+
+    if (authResponse) break;
+  }
+
+  if (!authResponse || !authResponse.ok) {
+    console.error('❌ Todos los endpoints fallaron. Último error:', lastError);
+    throw new Error(`Error de autenticación con SmartWeb: ${lastError}`);
   }
 
   const authData = await authResponse.json();
+  console.log('📋 Estructura de respuesta:', Object.keys(authData));
   
-  if (authData.status !== 'success' || !authData.data?.token) {
-    console.error('❌ Respuesta de autenticación inválida:', { status: authData.status });
-    throw new Error(`Autenticación fallida: ${authData.message || 'Token no disponible'}`);
+  // ✅ Extracción flexible de token
+  const token = authData.data?.token || authData.token || authData.access_token;
+  const isSuccess = authData.status === 'success' || authData.success === true || !!token;
+  
+  if (!isSuccess || !token) {
+    console.error('❌ Respuesta de autenticación inválida:', authData);
+    throw new Error(`Autenticación fallida: ${authData.message || authData.error || 'Token no disponible'}`);
   }
 
   // ISO 27001 A.9.4.5 - Token de corta duración obtenido dinámicamente
-  console.log('✅ Token dinámico obtenido exitosamente de SW');
-  return authData.data.token;
+  console.log('✅ Token dinámico obtenido exitosamente de SW usando:', successEndpoint);
+  return token;
 }
 
 const handler = async (req: Request): Promise<Response> => {
