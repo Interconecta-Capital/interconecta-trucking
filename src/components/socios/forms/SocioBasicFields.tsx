@@ -86,8 +86,25 @@ export function SocioBasicFields({ formData, onFieldChange, errors }: SocioBasic
           </div>
 
           <div>
+            <Label htmlFor="curp">CURP {formData.tipo_persona === 'fisica' ? '*' : ''}</Label>
+            <Input
+              id="curp"
+              value={formData.curp || ''}
+              onChange={(e) => onFieldChange('curp', e.target.value.toUpperCase())}
+              placeholder="CURP (18 caracteres)"
+              maxLength={18}
+              className="uppercase"
+            />
+            {formData.tipo_persona === 'fisica' && !formData.curp && (
+              <p className="text-sm text-yellow-600">CURP es obligatorio para personas físicas</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
             <Label htmlFor="tipo_persona">Tipo de Persona *</Label>
-            <Select 
+            <Select
               value={formData.tipo_persona || ''} 
               onValueChange={(value) => onFieldChange('tipo_persona', value)}
             >

@@ -125,7 +125,7 @@ export const useViajes = () => {
     }
   });
 
-  // Crear viaje desde wizard - VERSIÓN ANTI-DUPLICACIÓN MEJORADA
+  // Crear viaje desde wizard - VERSIÓN CON RELACIONES COMPLETAS
   const crearViaje = useMutation({
     mutationFn: async (wizardData: ViajeWizardData) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -192,15 +192,18 @@ export const useViajes = () => {
         // Crear nuevo viaje con UUID válido
         const viajeId = crypto.randomUUID();
         
+        // ✅ CRÍTICO: Guardar TODOS los IDs de relaciones explícitamente
         const viajeData = {
           id: viajeId,
           carta_porte_id: null,
           origen: wizardData.origen?.direccion || wizardData.origen?.nombre || '',
           destino: wizardData.destino?.direccion || wizardData.destino?.nombre || '',
+          
+          // IDs de relaciones
           conductor_id: wizardData.conductor?.id || null,
           vehiculo_id: wizardData.vehiculo?.id || null,
           remolque_id: wizardData.remolque?.id || null,
-          socio_id: wizardData.socio?.id || null,
+          socio_id: wizardData.socio?.id || wizardData.cliente?.id || null,
           cliente_id: wizardData.cliente?.id || null,
           estado: 'programado' as const,
           fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
