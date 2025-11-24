@@ -190,6 +190,40 @@ export default function ViajeDetalle() {
     
     try {
       setIsTimbrando(true);
+      toast.loading('Validando configuración...', { id: 'timbrado-process' });
+      
+      // ✅ FASE NUEVA: VALIDACIÓN PRE-TIMBRADO
+      console.log('🔍 [PRE-VALIDACIÓN] Verificando configuración de empresa...');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      // Importar dinámicamente el servicio de validación
+      const { ValidacionPreTimbradoService } = await import('@/services/validacion/ValidacionPreTimbradoService');
+      
+      const validacion = await ValidacionPreTimbradoService.validarConfiguracionCompleta(user.id);
+      
+      if (!validacion.puede_timbrar) {
+        const erroresFormateados = validacion.errores.join('\n');
+        console.error('❌ [PRE-VALIDACIÓN] Configuración inválida:', validacion);
+        console.groupEnd();
+        
+        toast.error('No puedes timbrar', {
+          id: 'timbrado-process',
+          description: erroresFormateados,
+          duration: 10000,
+          action: {
+            label: 'Ir a Configuración',
+            onClick: () => navigate('/administracion/configuracion')
+          }
+        });
+        
+        return;
+      }
+      
+      console.log('✅ [PRE-VALIDACIÓN] Configuración válida, continuando...');
       toast.loading('Preparando factura para timbrado...', { id: 'timbrado-process' });
       
       // ✅ FASE 1: Cargar régimen fiscal desde socio si falta (FALLBACK)
