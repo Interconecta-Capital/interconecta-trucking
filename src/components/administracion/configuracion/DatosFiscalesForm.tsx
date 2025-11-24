@@ -192,9 +192,9 @@ export function DatosFiscalesForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="razon_social">Razón Social *</Label>
-              <Input
+          <div className="space-y-2">
+            <Label htmlFor="razon_social">Razón Social / Nombre *</Label>
+            <Input
                 id="razon_social"
                 {...form.register('razon_social')}
                 placeholder="EMPRESA EJEMPLO S.A. DE C.V."
@@ -205,9 +205,9 @@ export function DatosFiscalesForm() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="rfc_emisor">RFC *</Label>
-              <Input
+          <div className="space-y-2">
+            <Label htmlFor="rfc_emisor">RFC Emisor *</Label>
+            <Input
                 id="rfc_emisor"
                 {...form.register('rfc_emisor')}
                 onChange={handleRfcChange}
@@ -215,12 +215,37 @@ export function DatosFiscalesForm() {
                 className="uppercase"
                 maxLength={13}
                 disabled={!isEditing}
+                required
               />
               <ValidationIndicator 
                 status={rfcValidationStatus} 
                 message={form.formState.errors.rfc_emisor?.message}
               />
+              {!form.watch('rfc_emisor') && (
+                <p className="text-sm text-red-500">RFC es obligatorio para timbrar</p>
+              )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pais">País *</Label>
+            <Select
+              value={form.watch('pais') || 'MEX'}
+              onValueChange={(value) => form.setValue('pais', value)}
+              disabled={!isEditing}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar país" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MEX">México</SelectItem>
+                <SelectItem value="USA">Estados Unidos</SelectItem>
+                <SelectItem value="CAN">Canadá</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Clave del catálogo SAT (MEX = México)
+            </p>
           </div>
 
           <RegimesFiscalesSelector
@@ -230,6 +255,9 @@ export function DatosFiscalesForm() {
             error={form.formState.errors.regimen_fiscal?.message}
             disabled={!isEditing}
           />
+          {!form.watch('regimen_fiscal') && (
+            <p className="text-sm text-red-500">Régimen fiscal es obligatorio</p>
+          )}
           
           {/* Validación RFC contra SAT */}
           {isEditing && form.watch('rfc_emisor') && form.watch('razon_social') && (

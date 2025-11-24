@@ -5255,6 +5255,10 @@ export type Database = {
         Args: { p_viaje_id: string }
         Returns: Json
       }
+      get_viaje_completo_para_timbrado: {
+        Args: { p_viaje_id: string }
+        Returns: Json
+      }
       get_viaje_con_relaciones: { Args: { p_viaje_id: string }; Returns: Json }
       has_admin_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
@@ -5322,6 +5326,10 @@ export type Database = {
       user_has_tenant_access: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      validar_configuracion_fiscal_completa: {
+        Args: { config_id: string }
+        Returns: Json
       }
       validate_carta_porte_v31: {
         Args: { carta_porte_data: Json }
