@@ -226,6 +226,27 @@ export default function ViajeDetalle() {
       console.log('✅ [PRE-VALIDACIÓN] Configuración válida, continuando...');
       toast.loading('Preparando factura para timbrado...', { id: 'timbrado-process' });
       
+      // ✅ NUEVA FASE: Leer borrador de Carta Porte para obtener datos completos
+      console.log('📋 [TIMBRADO] Leyendo borrador de Carta Porte...');
+      const { data: borrador, error: borradorError } = await supabase
+        .from('borradores_carta_porte')
+        .select('datos_formulario')
+        .eq('viaje_id', id)
+        .single();
+      
+      if (borradorError || !borrador) {
+        console.error('❌ [TIMBRADO] Error leyendo borrador:', borradorError);
+        throw new Error('No se encontró el borrador de Carta Porte. Completa la información del viaje primero.');
+      }
+      
+      const datosCartaPorte = borrador.datos_formulario as any;
+      console.log('✅ [TIMBRADO] Borrador cargado:', {
+        hasUbicaciones: !!datosCartaPorte?.ubicaciones,
+        hasMercancias: !!datosCartaPorte?.mercancias,
+        hasAutotransporte: !!datosCartaPorte?.autotransporte,
+        hasFiguras: !!datosCartaPorte?.figuras
+      });
+      
       // ✅ FASE 1: Cargar régimen fiscal desde socio si falta (FALLBACK)
       let regimenFiscalReceptor = (factura as any).regimen_fiscal_receptor;
       console.log('🔍 [TIMBRADO] Régimen fiscal actual:', regimenFiscalReceptor);
@@ -284,7 +305,7 @@ export default function ViajeDetalle() {
       console.log('📤 [TIMBRADO] Invocando edge function timbrar-con-sw...');
       const startTime = Date.now();
       
-      // Construir payload para timbrar-con-sw usando los datos de la factura
+      // Construir payload para timbrar-con-sw usando los datos de la factura + borrador
       const facturaData = factura as any; // Type assertion para acceder a propiedades de DB
       const timbrarPayload = {
         facturaId: factura.id,
@@ -293,10 +314,16 @@ export default function ViajeDetalle() {
           nombreEmisor: String(facturaData.nombre_emisor || ''),
           rfcReceptor: String(facturaData.rfc_receptor || ''),
           nombreReceptor: String(facturaData.nombre_receptor || ''),
-          tipoCfdi: 'Ingreso', // Tipo I = Ingreso (con montos)
-          tipo_comprobante: 'I', // ✅ FASE 2: Redundancia para asegurar tipo correcto
+          regimenFiscalEmisor: facturaData.regimen_fiscal_emisor || '601',
+          regimenFiscalReceptor: regimenFinal,
+          usoCfdi: facturaData.uso_cfdi || 'S01',
+          tipoCfdi: 'Ingreso',
+          tipo_comprobante: 'I',
           total: Number(facturaData.total || 0),
           subtotal: Number(facturaData.subtotal || 0),
+          moneda: updatedData.moneda,
+          forma_pago: updatedData.forma_pago,
+          metodo_pago: updatedData.metodo_pago,
           conceptos: [{
             clave_prod_serv: "78101800",
             cantidad: 1,
@@ -304,7 +331,20 @@ export default function ViajeDetalle() {
             descripcion: String(facturaData.notas || "Servicio de transporte de carga"),
             valor_unitario: Number(facturaData.subtotal || 0),
             importe: Number(facturaData.subtotal || 0)
-          }]
+          }],
+          
+          // ✅ DATOS DE CARTA PORTE desde el borrador
+          ubicaciones: datosCartaPorte?.ubicaciones || [],
+          mercancias: datosCartaPorte?.mercancias || [],
+          autotransporte: datosCartaPorte?.autotransporte || null,
+          figuras: datosCartaPorte?.figuras || [],
+          
+          // Datos adicionales del viaje para tracking
+          tracking_data: {
+            viaje_id: id,
+            conductor: datosCartaPorte?.conductor,
+            vehiculo: datosCartaPorte?.vehiculo
+          }
         },
         ambiente: 'sandbox' as const
       };
