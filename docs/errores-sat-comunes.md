@@ -1,5 +1,27 @@
 # Errores SAT Comunes y Soluciones
 
+## ✅ Normalización Automática de Fechas
+
+El sistema normaliza automáticamente las fechas para cumplir con el formato SAT:
+
+### Transformaciones Aplicadas:
+
+1. **Sin segundos** → Se agregan automáticamente
+   - `2025-11-22T11:29` → `2025-11-22T11:29:00`
+
+2. **Con milisegundos** → Se eliminan
+   - `2025-11-24T02:26:48.729` → `2025-11-24T02:26:48`
+
+3. **Con zona horaria** → Se elimina
+   - `2025-11-24T02:26:48Z` → `2025-11-24T02:26:48`
+
+### Ventajas:
+- ✅ Los usuarios no necesitan preocuparse por el formato exacto
+- ✅ El sistema acepta múltiples formatos de entrada
+- ✅ Garantiza cumplimiento con especificación SAT CFDI 4.0
+
+---
+
 ## CFDI40101 - El campo Fecha no cumple con el patrón requerido
 
 **Causa:** Formato de fecha incorrecto (con milisegundos o zona horaria)
