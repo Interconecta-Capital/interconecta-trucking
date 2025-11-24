@@ -105,13 +105,14 @@ export class TimbradoService {
   }
 
   /**
-   * Llamada REAL a SW/Conectia PAC
+   * Llamada REAL a SW/Conectia PAC usando V2 (con fallback a legacy)
    */
   private static async llamarFiscalAPI(data: any): Promise<TimbradoResponse> {
     try {
-      console.log('📤 Invocando edge function de SW/Conectia...');
+      console.log('📤 Invocando edge function V2 de SW/Conectia...');
       
-      const { data: result, error } = await supabase.functions.invoke('timbrar-con-sw', {
+      // Intentar con la nueva versión V2 primero
+      const { data: result, error } = await supabase.functions.invoke('timbrar-cfdi-v2', {
         body: {
           cartaPorteData: data,
           cartaPorteId: data.cartaPorteId || crypto.randomUUID(),
@@ -120,8 +121,11 @@ export class TimbradoService {
       });
 
       if (error) {
-        console.error('❌ Error en edge function:', error);
-        throw new Error(error.message || 'Error llamando a función de timbrado');
+        console.error('❌ Error en edge function V2:', error);
+        console.log('🔄 Intentando con versión legacy como fallback...');
+        
+        // Fallback a la versión legacy
+        return await this.llamarFiscalAPILegacy(data);
       }
 
       if (!result.success) {
@@ -133,7 +137,55 @@ export class TimbradoService {
         };
       }
 
-      console.log(`✅ Timbrado exitoso con SW/Conectia - UUID: ${result.uuid}`);
+      console.log(`✅ Timbrado exitoso con V2 - UUID: ${result.data?.uuid}`);
+
+      return {
+        success: true,
+        uuid: result.data.uuid,
+        xmlTimbrado: result.data.xml,
+        cadenaOriginal: result.data.cadenaOriginal,
+        folio: result.data.noCertificadoSAT,
+        fechaTimbrado: result.data.fechaTimbrado,
+        certificadoSAT: result.data.noCertificadoSAT,
+        pac: 'SW_V2'
+      };
+
+    } catch (error) {
+      console.error('💥 Error en llamarFiscalAPI V2, intentando legacy:', error);
+      return await this.llamarFiscalAPILegacy(data);
+    }
+  }
+
+  /**
+   * Fallback a versión legacy de timbrado
+   */
+  private static async llamarFiscalAPILegacy(data: any): Promise<TimbradoResponse> {
+    try {
+      console.log('📤 Invocando edge function legacy (timbrar-con-sw)...');
+      
+      const { data: result, error } = await supabase.functions.invoke('timbrar-con-sw', {
+        body: {
+          cartaPorteData: data,
+          cartaPorteId: data.cartaPorteId || crypto.randomUUID(),
+          ambiente: data.environment || 'sandbox'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error en edge function legacy:', error);
+        throw new Error(error.message || 'Error llamando a función de timbrado legacy');
+      }
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error,
+          codigo: result.codigo,
+          details: result.details
+        };
+      }
+
+      console.log(`✅ Timbrado exitoso con legacy - UUID: ${result.uuid}`);
 
       return {
         success: true,
@@ -146,11 +198,11 @@ export class TimbradoService {
         folio: result.noCertificadoCFDI,
         fechaTimbrado: result.fechaTimbrado,
         certificadoSAT: result.noCertificadoSAT,
-        pac: result.pac
+        pac: 'SW_LEGACY'
       };
 
     } catch (error) {
-      console.error('💥 Error en llamarFiscalAPI:', error);
+      console.error('💥 Error en llamarFiscalAPILegacy:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido al timbrar'

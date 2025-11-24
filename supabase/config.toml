@@ -36,6 +36,9 @@ verify_jwt = true
 [functions.timbrar-con-sw]
 verify_jwt = true
 
+[functions.timbrar-cfdi-v2]
+verify_jwt = true
+
 [functions.consultar-rfc-sat]
 verify_jwt = true
 
