@@ -260,6 +260,7 @@ export default function ViajeDetalle() {
           rfcReceptor: String(facturaData.rfc_receptor || ''),
           nombreReceptor: String(facturaData.nombre_receptor || ''),
           tipoCfdi: 'Ingreso', // Tipo I = Ingreso (con montos)
+          tipo_comprobante: 'I', // ✅ FASE 2: Redundancia para asegurar tipo correcto
           total: Number(facturaData.total || 0),
           subtotal: Number(facturaData.subtotal || 0),
           conceptos: [{

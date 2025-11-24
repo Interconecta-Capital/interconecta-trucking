@@ -55,6 +55,34 @@ function normalizarFechaSAT(fecha: string | Date | undefined): string {
   return fechaStr;
 }
 
+/**
+ * Valida la coherencia entre tipo de comprobante e importes
+ * Según regla SAT CFDI40109
+ */
+function validarCoherenciaTipoComprobante(cfdi: any): { valid: boolean; error?: string } {
+  const tipo = cfdi.TipoDeComprobante;
+  const subtotal = parseFloat(cfdi.SubTotal);
+  const total = parseFloat(cfdi.Total);
+  
+  // Regla SAT: Si TipoDeComprobante es "T" o "P", SubTotal y Total deben ser 0
+  if ((tipo === "T" || tipo === "P") && (subtotal !== 0 || total !== 0)) {
+    return {
+      valid: false,
+      error: `CFDI40109: TipoDeComprobante "${tipo}" requiere SubTotal y Total en 0. Valores actuales: SubTotal=${subtotal}, Total=${total}`
+    };
+  }
+  
+  // Regla: Si es tipo "I" (Ingreso), debe tener importes
+  if (tipo === "I" && subtotal === 0) {
+    return {
+      valid: false,
+      error: `Tipo "I" (Ingreso) requiere SubTotal > 0. Valor actual: ${subtotal}`
+    };
+  }
+  
+  return { valid: true };
+}
+
 // Función de validación exhaustiva pre-timbrado
 function validarCFDIAntesDeTimbrar(cfdi: any) {
   const errores: string[] = [];
@@ -369,7 +397,9 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('✅ Token dinámico obtenido, procesando CFDI...');
 
     // 4. Construir el CFDI JSON según formato de SW
-    const cfdiJson = construirCFDIJson(cartaPorteData || facturaData, esFacturaConCartaPorte);
+    const dataSource = facturaData || cartaPorteData;
+    const tipoDocumento = facturaId ? 'factura' : 'cartaporte';
+    const cfdiJson = construirCFDIJson(dataSource, esFacturaConCartaPorte, tipoDocumento);
 
     // VALIDACIÓN PRE-TIMBRADO EXHAUSTIVA
     console.log('🔍 Iniciando validación pre-timbrado exhaustiva...');
@@ -393,6 +423,20 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('✅ Validación pre-timbrado exitosa');
+
+    // ✅ VALIDACIÓN DE COHERENCIA: Verificar tipo de comprobante vs importes
+    const validacionTipo = validarCoherenciaTipoComprobante(cfdiJson);
+    if (!validacionTipo.valid) {
+      console.error('❌ [VALIDACIÓN] Error de coherencia:', validacionTipo.error);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: validacionTipo.error,
+        codigo: 'CFDI40109'
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
 
     // Logging detallado para debugging
     console.log('📋 CFDI JSON completo a enviar:', JSON.stringify({
@@ -601,21 +645,30 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 // Función para construir el JSON del CFDI según formato de SW
-function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: boolean = false) {
+function construirCFDIJson(
+  documentoData: any, 
+  requiereComplementoCartaPorte: boolean = false,
+  tipoDocumento: 'factura' | 'cartaporte' = 'cartaporte'
+) {
   const fecha = formatFechaSAT(new Date());
-  const esTipoIngreso = cartaPorteData.tipoCfdi === 'Ingreso';
+  
+  // Determinar si es tipo Ingreso o Traslado
+  // Prioridad: 1) Si es factura = Ingreso, 2) tipo_comprobante, 3) tipoCfdi
+  const esTipoIngreso = tipoDocumento === 'factura' 
+    || documentoData.tipo_comprobante === 'I'
+    || documentoData.tipoCfdi === 'Ingreso';
   
   // Calcular subtotal y total
   let subtotal = 0;
   let totalImpuestos = 0;
   
   // Calcular basado en conceptos directos (factura) o mercancías (carta porte)
-  if (cartaPorteData.conceptos && cartaPorteData.conceptos.length > 0) {
+  if (documentoData.conceptos && documentoData.conceptos.length > 0) {
     // Factura con conceptos directos
-    subtotal = cartaPorteData.conceptos.reduce((sum: number, c: any) => sum + (c.importe || 0), 0);
-  } else if (esTipoIngreso && cartaPorteData.mercancias) {
+    subtotal = documentoData.conceptos.reduce((sum: number, c: any) => sum + (c.importe || 0), 0);
+  } else if (esTipoIngreso && documentoData.mercancias) {
     // Carta porte con mercancías
-    subtotal = cartaPorteData.mercancias.reduce((sum: number, m: any) => 
+    subtotal = documentoData.mercancias.reduce((sum: number, m: any) => 
       sum + (m.valor_mercancia || 0), 0
     );
   }
@@ -624,10 +677,31 @@ function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: b
     totalImpuestos = subtotal * 0.16; // IVA 16%
   }
   
+  // Determinar el tipo de comprobante final
+  const tipoComprobante = tipoDocumento === 'factura' ? "I" : (esTipoIngreso ? "I" : "T");
+  
+  // Si es tipo T o P, los importes deben ser 0 según SAT
+  const subtotalFinal = tipoComprobante === "T" || tipoComprobante === "P" ? 0 : subtotal;
+  const totalFinal = tipoComprobante === "T" || tipoComprobante === "P" ? 0 : (subtotal + totalImpuestos);
+
+  console.log('🔍 [CFDI] Configuración del documento:', {
+    tipoDocumento,
+    esFacturaConCartaPorte: requiereComplementoCartaPorte,
+    esTipoIngreso,
+    tipoCfdiRecibido: documentoData.tipoCfdi,
+    tipoComprobanteDB: documentoData.tipo_comprobante,
+    tipoComprobanteCalculado: tipoComprobante,
+    importes: {
+      subtotal: subtotalFinal.toFixed(2),
+      totalImpuestos: totalImpuestos.toFixed(2),
+      total: totalFinal.toFixed(2)
+    }
+  });
+  
   // 🔐 ISO 27001 A.12.2.1 - Protección contra procesamiento incorrecto
   // Solo verificar ubicaciones si se requiere complemento de CartaPorte
   const tieneUbicaciones = requiereComplementoCartaPorte && (() => {
-    const ubicaciones = cartaPorteData.ubicaciones || cartaPorteData.tracking_data?.ubicaciones;
+    const ubicaciones = documentoData.ubicaciones || documentoData.tracking_data?.ubicaciones;
     if (!ubicaciones) return false;
     
     // Formato array
@@ -648,40 +722,42 @@ function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: b
 
   const cfdi: any = {
     Version: "4.0",
-    Serie: cartaPorteData.serie || "CP",
-    Folio: cartaPorteData.folio || "1",
+    Serie: documentoData.serie || "CP",
+    Folio: documentoData.folio || "1",
     Fecha: fecha,
     Sello: "", // SW lo genera automáticamente
     NoCertificado: "", // SW lo genera automáticamente
     Certificado: "", // SW lo genera automáticamente
-    SubTotal: subtotal.toFixed(2),
-    Moneda: cartaPorteData.moneda || "MXN",
-    Total: (subtotal + totalImpuestos).toFixed(2),
-    TipoDeComprobante: esTipoIngreso ? "I" : "T",
-    Exportacion: cartaPorteData.exportacion || "01",
-    LugarExpedicion: obtenerCPEmisor(cartaPorteData),
-    FormaPago: esTipoIngreso ? (cartaPorteData.formaPago || "01") : undefined,
-    MetodoPago: esTipoIngreso ? (cartaPorteData.metodoPago || "PUE") : undefined,
+    SubTotal: subtotalFinal.toFixed(2),
+    Moneda: documentoData.moneda || "MXN",
+    Total: totalFinal.toFixed(2),
+    TipoDeComprobante: tipoComprobante,
+    Exportacion: documentoData.exportacion || "01",
+    LugarExpedicion: obtenerCPEmisor(documentoData),
+    FormaPago: esTipoIngreso ? (documentoData.formaPago || "01") : undefined,
+    MetodoPago: esTipoIngreso ? (documentoData.metodoPago || "PUE") : undefined,
     
     Emisor: {
-      Rfc: cartaPorteData.rfcEmisor,
-      Nombre: cartaPorteData.nombreEmisor,
-      RegimenFiscal: cartaPorteData.regimenFiscalEmisor || "601"
+      Rfc: documentoData.rfcEmisor || documentoData.rfc_emisor,
+      Nombre: documentoData.nombreEmisor || documentoData.nombre_emisor,
+      RegimenFiscal: documentoData.regimenFiscalEmisor || documentoData.regimen_fiscal_emisor || "601"
     },
     
     Receptor: {
-      Rfc: cartaPorteData.rfcReceptor,
-      Nombre: cartaPorteData.nombreReceptor,
-      DomicilioFiscalReceptor: obtenerCPReceptor(cartaPorteData),
-      RegimenFiscalReceptor: (cartaPorteData.regimenFiscalReceptor && cartaPorteData.regimenFiscalReceptor !== 'N/A') 
-        ? cartaPorteData.regimenFiscalReceptor 
+      Rfc: documentoData.rfcReceptor || documentoData.rfc_receptor,
+      Nombre: documentoData.nombreReceptor || documentoData.nombre_receptor,
+      DomicilioFiscalReceptor: obtenerCPReceptor(documentoData),
+      RegimenFiscalReceptor: (documentoData.regimenFiscalReceptor || documentoData.regimen_fiscal_receptor) && 
+                            (documentoData.regimenFiscalReceptor !== 'N/A' && documentoData.regimen_fiscal_receptor !== 'N/A')
+        ? (documentoData.regimenFiscalReceptor || documentoData.regimen_fiscal_receptor)
         : "616", // Régimen fiscal por defecto para personas físicas
-      UsoCFDI: (cartaPorteData.usoCfdi && cartaPorteData.usoCfdi !== 'N/A') 
-        ? cartaPorteData.usoCfdi 
+      UsoCFDI: (documentoData.usoCfdi || documentoData.uso_cfdi) && 
+              (documentoData.usoCfdi !== 'N/A' && documentoData.uso_cfdi !== 'N/A')
+        ? (documentoData.usoCfdi || documentoData.uso_cfdi)
         : "G03" // Gastos en general
     },
     
-    Conceptos: construirConceptos(cartaPorteData),
+    Conceptos: construirConceptos(documentoData),
   };
 
   // Agregar impuestos solo si es tipo Ingreso
@@ -701,7 +777,7 @@ function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: b
   // ✅ Agregar complemento Carta Porte SOLO si tiene ubicaciones
   if (tieneUbicaciones) {
     console.log('✅ [CFDI] Agregando complemento CartaPorte (tiene ubicaciones)');
-    cfdi.Complemento = construirComplementoCartaPorte(cartaPorteData);
+    cfdi.Complemento = construirComplementoCartaPorte(documentoData);
   } else {
     console.log('ℹ️ [CFDI] Factura sin complemento CartaPorte (sin ubicaciones)');
   }
@@ -854,7 +930,7 @@ function construirUbicaciones(data: any) {
       IDUbicacion: u.id_ubicacion || u.idUbicacion || `${tipoUbicacion === 'Origen' ? 'OR' : tipoUbicacion === 'Destino' ? 'DE' : 'PI'}${String(index + 1).padStart(6, '0')}`,
       RFCRemitenteDestinatario: u.rfc || u.rfcRemitenteDestinatario || data.rfcReceptor,
       NombreRemitenteDestinatario: u.nombre || u.nombreRemitenteDestinatario || data.nombreReceptor,
-      FechaHoraSalidaLlegada: normalizarFechaSAT(u.fecha_llegada_salida || u.fechaHoraSalidaLlegada),
+      FechaHoraSalidaLlegada: normalizarFechaSAT(u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || new Date()),
       DistanciaRecorrida: u.distancia_recorrida?.toString() || u.distanciaRecorrida?.toString() || "0",
       Domicilio: {
         Calle: u.domicilio?.calle || "Sin calle",
