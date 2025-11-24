@@ -399,7 +399,24 @@ const handler = async (req: Request): Promise<Response> => {
     // 4. Construir el CFDI JSON según formato de SW
     const dataSource = facturaData || cartaPorteData;
     const tipoDocumento = facturaId ? 'factura' : 'cartaporte';
+    
+    console.log('🎯 [DEBUG] Construyendo CFDI con:', {
+      tipoDocumento,
+      hasFacturaId: !!facturaId,
+      hasFacturaData: !!facturaData,
+      hasCartaPorteData: !!cartaPorteData,
+      dataSourceKeys: Object.keys(dataSource).slice(0, 10)
+    });
+    
     const cfdiJson = construirCFDIJson(dataSource, esFacturaConCartaPorte, tipoDocumento);
+    
+    console.log('🎯 [DEBUG] CFDI construido:', {
+      TipoDeComprobante: cfdiJson.TipoDeComprobante,
+      SubTotal: cfdiJson.SubTotal,
+      Total: cfdiJson.Total,
+      Serie: cfdiJson.Serie,
+      Folio: cfdiJson.Folio
+    });
 
     // VALIDACIÓN PRE-TIMBRADO EXHAUSTIVA
     console.log('🔍 Iniciando validación pre-timbrado exhaustiva...');
