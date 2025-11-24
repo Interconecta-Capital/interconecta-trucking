@@ -339,19 +339,48 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 6: Régimen Fiscal Receptor
-    if (!this.CATALOGOS_SAT.REGIMENES_FISCALES.includes(factura.regimen_fiscal_receptor || '')) {
+  // Validación 6: Régimen Fiscal Receptor
+  if (!this.CATALOGOS_SAT.REGIMENES_FISCALES.includes(factura.regimen_fiscal_receptor || '')) {
+    errores.push({
+      campo: 'regimen_fiscal_receptor',
+      valorActual: factura.regimen_fiscal_receptor || 'NULL',
+      valorEsperado: 'Código del catálogo c_RegimenFiscal del SAT',
+      fuente: 'Catálogo SAT c_RegimenFiscal',
+      accion: 'Usa un código válido (ej: 605, 612, 616, etc.)',
+      severidad: 'error'
+    });
+  }
+  
+  // Validación 7: Domicilio Fiscal Receptor (CRÍTICO - Causa CFDI40147)
+  const domicilioFiscalReceptor = factura.domicilio_fiscal_receptor;
+  if (!domicilioFiscalReceptor) {
+    errores.push({
+      campo: 'domicilio_fiscal_receptor',
+      valorActual: 'NULL',
+      valorEsperado: 'Código postal de 5 dígitos del domicilio fiscal del receptor',
+      fuente: 'CFDI 4.0 - Campo obligatorio',
+      accion: 'Completa el código postal del domicilio fiscal en los datos del receptor/cliente',
+      severidad: 'critico'
+    });
+  } else {
+    // Validar formato de código postal
+    const codigoPostal = typeof domicilioFiscalReceptor === 'object' 
+      ? (domicilioFiscalReceptor as any)?.codigo_postal 
+      : domicilioFiscalReceptor;
+      
+    if (!codigoPostal || !/^\d{5}$/.test(String(codigoPostal))) {
       errores.push({
-        campo: 'regimen_fiscal_receptor',
-        valorActual: factura.regimen_fiscal_receptor || 'NULL',
-        valorEsperado: 'Código del catálogo c_RegimenFiscal del SAT',
-        fuente: 'Catálogo SAT c_RegimenFiscal',
-        accion: 'Usa un código válido (ej: 605, 612, 616, etc.)',
-        severidad: 'error'
+        campo: 'domicilio_fiscal_receptor',
+        valorActual: codigoPostal || 'NULL',
+        valorEsperado: 'Código postal de 5 dígitos',
+        fuente: 'Formato SAT',
+        accion: 'Proporciona un código postal válido de 5 dígitos para el domicilio fiscal del receptor',
+        severidad: 'critico'
       });
     }
-    
-    // Validación 7: Uso CFDI
+  }
+  
+  // Validación 8: Uso CFDI
     if (!this.CATALOGOS_SAT.USOS_CFDI.includes(factura.uso_cfdi || '')) {
       errores.push({
         campo: 'uso_cfdi',
@@ -363,11 +392,11 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // ========================================
-    // VALIDACIONES - IMPORTES
-    // ========================================
-    
-    // Validación 8: Subtotal
+  // ========================================
+  // VALIDACIONES - IMPORTES
+  // ========================================
+  
+  // Validación 9: Subtotal
     const subtotal = Number(factura.subtotal);
     if (isNaN(subtotal) || subtotal < 0) {
       errores.push({
@@ -380,7 +409,7 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 9: Total
+    // Validación 10: Total
     const total = Number(factura.total);
     if (isNaN(total) || total < 0) {
       errores.push({
@@ -393,7 +422,7 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 10: Relación Subtotal-Total
+    // Validación 11: Relación Subtotal-Total
     if (subtotal > 0 && total > 0 && total < subtotal) {
       errores.push({
         campo: 'total',
@@ -405,11 +434,11 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // ========================================
-    // VALIDACIONES - CATÁLOGOS SAT
-    // ========================================
-    
-    // Validación 11: Forma de Pago
+  // ========================================
+  // VALIDACIONES - CATÁLOGOS SAT
+  // ========================================
+  
+  // Validación 12: Forma de Pago
     if (!this.CATALOGOS_SAT.FORMAS_PAGO.includes(factura.forma_pago || '')) {
       errores.push({
         campo: 'forma_pago',
@@ -421,7 +450,7 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 12: Método de Pago
+    // Validación 13: Método de Pago
     if (!this.CATALOGOS_SAT.METODOS_PAGO.includes(factura.metodo_pago || '')) {
       errores.push({
         campo: 'metodo_pago',
@@ -433,7 +462,7 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 13: Moneda
+    // Validación 14: Moneda
     if (!this.CATALOGOS_SAT.MONEDAS.includes(factura.moneda || '')) {
       errores.push({
         campo: 'moneda',
@@ -445,7 +474,7 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 14: Tipo de Cambio (si moneda != MXN)
+    // Validación 15: Tipo de Cambio (si moneda != MXN)
     if (factura.moneda && factura.moneda !== 'MXN' && !factura.tipo_cambio) {
       advertencias.push({
         campo: 'tipo_cambio',
@@ -457,7 +486,7 @@ export class ValidadorFiscalCompleto {
       });
     }
     
-    // Validación 15: Código Postal de Expedición
+    // Validación 16: Código Postal de Expedición
     const domicilioFiscal = config.domicilio_fiscal as any;
     const cpExpedicion = domicilioFiscal?.codigo_postal;
     if (!cpExpedicion || !/^\d{5}$/.test(cpExpedicion)) {

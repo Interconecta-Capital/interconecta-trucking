@@ -79,13 +79,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('[consultar-rfc-sat] Respuesta del PAC:', data);
+    console.log('[consultar-rfc-sat] Respuesta del PAC:', JSON.stringify(data, null, 2));
 
+    // Extraer código postal del domicilio fiscal
+    const codigoPostal = data.codigoPostal || data.codigo_postal || data.cp || null;
+    
     return new Response(
       JSON.stringify({
         encontrado: true,
         rfc: data.rfc,
         razonSocial: data.razonSocial || data.nombre,
+        codigoPostal: codigoPostal, // ✅ Campo crítico para CFDI 4.0
         situacion: data.situacion || 'Activo',
         mensaje: 'RFC validado correctamente'
       }),
