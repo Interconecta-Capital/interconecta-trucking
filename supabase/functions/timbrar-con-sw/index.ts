@@ -302,6 +302,10 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // ✅ DECLARAR DATASOURCE UNA SOLA VEZ AQUÍ (evita duplicaciones)
+    const dataSource = facturaData || cartaPorteData;
+    const tipoDocumentoFinal = facturaId ? 'factura' : 'cartaporte';
+
     // 🔐 Detectar si es factura simple o con complemento CartaPorte
     const esFacturaConCartaPorte = !!(
       cartaPorteData?.ubicaciones || 
@@ -323,7 +327,6 @@ const handler = async (req: Request): Promise<Response> => {
     // 🔐 ISO 27001 A.12.4.1 - Validación de integridad de datos
     // Validar estructura según tipo de documento
     if (esFacturaConCartaPorte) {
-      const dataSource = cartaPorteData || facturaData;
       const ubicaciones = dataSource?.ubicaciones || dataSource?.tracking_data?.ubicaciones;
       
       if (!ubicaciones) {
@@ -360,7 +363,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // 🔍 VALIDACIONES EXHAUSTIVAS PRE-TIMBRADO
     console.log('🔍 Iniciando validación exhaustiva pre-timbrado...');
-    const dataSource = cartaPorteData || facturaData;
     const validacionDatosResult = validarDatosParaTimbrado(dataSource, esFacturaConCartaPorte);
     
     if (!validacionDatosResult.valido) {
@@ -397,18 +399,15 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('✅ Token dinámico obtenido, procesando CFDI...');
 
     // 4. Construir el CFDI JSON según formato de SW
-    const dataSource = facturaData || cartaPorteData;
-    const tipoDocumento = facturaId ? 'factura' : 'cartaporte';
-    
     console.log('🎯 [DEBUG] Construyendo CFDI con:', {
-      tipoDocumento,
+      tipoDocumento: tipoDocumentoFinal,
       hasFacturaId: !!facturaId,
       hasFacturaData: !!facturaData,
       hasCartaPorteData: !!cartaPorteData,
       dataSourceKeys: Object.keys(dataSource).slice(0, 10)
     });
     
-    const cfdiJson = construirCFDIJson(dataSource, esFacturaConCartaPorte, tipoDocumento);
+    const cfdiJson = construirCFDIJson(dataSource, esFacturaConCartaPorte, tipoDocumentoFinal);
     
     console.log('🎯 [DEBUG] CFDI construido:', {
       TipoDeComprobante: cfdiJson.TipoDeComprobante,
