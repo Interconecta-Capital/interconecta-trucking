@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   FileText, Download, Eye, Truck, Calendar, FileEdit, 
-  Search, Trash2, AlertCircle 
+  Search, Trash2, AlertCircle, CheckCircle 
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -198,6 +198,30 @@ export function CartasPorteTab() {
     },
   });
 
+  // ✅ Función para convertir borrador a carta porte activa
+  const handleConvertirACartaPorte = async (borradorId: string) => {
+    try {
+      toast.loading('Activando carta porte...', { id: 'activando-cp' });
+      
+      // Importar el servicio de lifecycle
+      const { CartaPorteLifecycleManager } = await import('@/services/cartaPorte/CartaPorteLifecycleManager');
+      
+      await CartaPorteLifecycleManager.convertirBorradorACartaPorte({
+        borradorId,
+        nombre_documento: 'Carta Porte Activa',
+        validarDatos: true, // ✅ Validará que esté al menos 80% completo
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['cartas-porte-completo'] });
+      queryClient.invalidateQueries({ queryKey: ['documentos-fiscales-stats'] });
+      
+      toast.success('Carta porte activada correctamente', { id: 'activando-cp' });
+    } catch (error: any) {
+      console.error('Error activando carta porte:', error);
+      toast.error(error.message || 'Error al activar la carta porte', { id: 'activando-cp' });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -350,6 +374,30 @@ export function CartasPorteTab() {
                     </div>
                   )}
 
+                  {/* ✅ Mostrar progreso de completitud para borradores */}
+                  {doc.tipo === 'borrador' && (
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                        <span className="font-medium">Progreso de completitud</span>
+                        <span className="font-semibold text-base">{doc.progreso || 0}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full transition-all ${
+                            (doc.progreso || 0) >= 80 ? 'bg-green-500' : 'bg-orange-400'
+                          }`}
+                          style={{ width: `${doc.progreso || 0}%` }}
+                        />
+                      </div>
+                      {(doc.progreso || 0) < 80 && (
+                        <p className="text-xs text-orange-600 mt-2 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Completa al menos 80% para activar la carta porte
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 mt-4 flex-wrap">
                     {doc.status === 'timbrada' && (
                       <>
@@ -364,14 +412,28 @@ export function CartasPorteTab() {
                       </>
                     )}
                     {doc.tipo === 'borrador' && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => navigate(`/borrador-carta-porte/${doc.id}`)}
-                      >
-                        <FileEdit className="h-4 w-4 mr-2" />
-                        Continuar Editando
-                      </Button>
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => navigate(`/borrador-carta-porte/${doc.id}`)}
+                        >
+                          <FileEdit className="h-4 w-4 mr-2" />
+                          Continuar Editando
+                        </Button>
+                        {/* ✅ Solo mostrar "Activar" si está completo al 80% o más */}
+                        {doc.progreso >= 80 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleConvertirACartaPorte(doc.id)}
+                            className="text-green-600 hover:text-green-700 border-green-300 hover:border-green-400"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Activar Carta Porte
+                          </Button>
+                        )}
+                      </>
                     )}
                     <Button
                       variant="outline"

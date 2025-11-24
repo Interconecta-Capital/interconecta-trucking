@@ -159,6 +159,42 @@ export class CartaPorteLifecycleManager {
   }
 
   /**
+   * Calcular porcentaje de completitud del formulario
+   * @returns Porcentaje de 0 a 100
+   */
+  private static calcularPorcentajeCompleto(datosFormulario: any): number {
+    let completedSections = 0;
+    const totalSections = 5;
+    
+    // 1. Configuración (RFC emisor y receptor)
+    if (datosFormulario.rfcEmisor && datosFormulario.rfcReceptor) {
+      completedSections++;
+    }
+    
+    // 2. Ubicaciones (mínimo origen y destino)
+    if (datosFormulario.ubicaciones && datosFormulario.ubicaciones.length >= 2) {
+      completedSections++;
+    }
+    
+    // 3. Mercancías (al menos una)
+    if (datosFormulario.mercancias && datosFormulario.mercancias.length > 0) {
+      completedSections++;
+    }
+    
+    // 4. Autotransporte (placa mínimo)
+    if (datosFormulario.autotransporte?.placa_vm) {
+      completedSections++;
+    }
+    
+    // 5. Figuras (al menos operador)
+    if (datosFormulario.figuras && datosFormulario.figuras.length > 0) {
+      completedSections++;
+    }
+    
+    return Math.round((completedSections / totalSections) * 100);
+  }
+
+  /**
    * Convertir borrador a carta porte final
    * ✅ USA serie_carta_porte y folio_inicial_carta_porte de configuración_empresa
    */
@@ -178,6 +214,18 @@ export class CartaPorteLifecycleManager {
       // 2. Validar datos si se solicita
       if (request.validarDatos) {
         const validacion = await this.validarDatosParaConversion(borrador.datos_formulario);
+        
+        // ✅ VALIDACIÓN ESTRICTA: Requiere al menos 80% de completitud
+        const porcentajeCompleto = this.calcularPorcentajeCompleto(borrador.datos_formulario);
+        
+        if (porcentajeCompleto < 80) {
+          throw new Error(
+            `El borrador está ${porcentajeCompleto}% completo. ` +
+            `Debes completar al menos 80% antes de activar la Carta Porte. ` +
+            `Secciones faltantes: ${validacion.errores.join(', ')}`
+          );
+        }
+        
         if (!validacion.valido) {
           throw new Error(`Datos inválidos: ${validacion.errores.join(', ')}`);
         }

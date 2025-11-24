@@ -24,7 +24,6 @@ import Dashboard from "./pages/Dashboard"
 import DashboardPrincipal from "./pages/DashboardPrincipal"
 import DashboardEjecutivo from "./pages/DashboardEjecutivo"
 import DashboardOperadores from "./pages/DashboardOperadores"
-import CartasPorteUnified from "./pages/CartasPorteUnified"
 import CartaPorteEditor from "./pages/CartaPorteEditor"
 import Vehiculos from "./pages/Vehiculos"
 import Conductores from "./pages/Conductores"
@@ -143,13 +142,7 @@ const App = () => (
                 </AuthGuard>
               } />
               
-              <Route path="/cartas-porte" element={
-                <AuthGuard>
-                  <BaseLayout>
-                    <CartasPorteUnified />
-                  </BaseLayout>
-                </AuthGuard>
-              } />
+              {/* ⚠️ Ruta /cartas-porte ELIMINADA - usar /documentos-fiscales/carta-porte */}
               
               <Route path="/cotizaciones" element={
                 <AuthGuard>
