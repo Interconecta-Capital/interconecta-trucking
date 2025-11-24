@@ -86,7 +86,7 @@ export class XMLGeneratorEnhanced {
       enriched.ubicaciones = enriched.ubicaciones.map((ubicacion, index) => ({
         ...ubicacion,
         id_ubicacion: ubicacion.id_ubicacion || this.generateUbicacionId(ubicacion.tipo_ubicacion, index),
-        fecha_llegada_salida: ubicacion.fecha_llegada_salida || new Date().toISOString()
+        fecha_llegada_salida: ubicacion.fecha_llegada_salida || this.formatFechaSAT(new Date())
       }));
     }
 
@@ -142,7 +142,7 @@ export class XMLGeneratorEnhanced {
   private static buildCompleteXML(data: CartaPorteData, fiscal: any): string {
     const namespaceManager = new XMLNamespaceManager('3.1' as CartaPorteVersion);
     const folio = this.generateFolio();
-    const fecha = new Date().toISOString();
+    const fecha = this.formatFechaSAT(new Date());
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <cfdi:Comprobante ${namespaceManager.getAllNamespaces()}
@@ -237,5 +237,20 @@ export class XMLGeneratorEnhanced {
   private static getCodigoPostalExpedicion(data: CartaPorteData): string {
     const origen = data.ubicaciones?.find(u => u.tipo_ubicacion === 'Origen');
     return origen?.domicilio?.codigo_postal || '01000';
+  }
+
+  /**
+   * Formatea fecha según especificación del SAT para CFDI 4.0
+   * Formato: YYYY-MM-DDTHH:MM:SS (sin milisegundos ni zona horaria)
+   */
+  private static formatFechaSAT(fecha: Date = new Date()): string {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    const hours = String(fecha.getHours()).padStart(2, '0');
+    const minutes = String(fecha.getMinutes()).padStart(2, '0');
+    const seconds = String(fecha.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   }
 }
