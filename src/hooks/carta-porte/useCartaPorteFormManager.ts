@@ -84,21 +84,20 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
   // Recuperación de borrador
   const { showRecoveryDialog, borradorData, acceptBorrador, rejectBorrador } = useBorradorRecovery(cartaPorteId);
 
-  // Generate IdCCP when creating new carta porte
+  // Generate IdCCP SOLO cuando explícitamente estamos creando un NUEVO borrador
   useEffect(() => {
-    if (!currentCartaPorteId && !idCCP) {
+    // ✅ Solo generar si NO hay currentCartaPorteId Y NO estamos esperando cargar uno Y NO hay borrador cargado
+    if (!currentCartaPorteId && !cartaPorteId && !idCCP && !borradorCargado) {
       const newIdCCP = UUIDService.generateValidIdCCP();
       setIdCCP(newIdCCP);
-      console.log('[CartaPorteForm] IdCCP generado automáticamente:', newIdCCP);
+      console.log('✅ [CartaPorteForm] IdCCP generado para NUEVO borrador:', newIdCCP);
       
-      // ✅ FASE 2: Guardar idCCP correctamente (NO como cartaPorteId)
       setFormData(prev => ({
         ...prev,
         idCCP: newIdCCP
       }));
-      console.log('✅ [FASE 2] idCCP asignado correctamente:', newIdCCP);
     }
-  }, [currentCartaPorteId, idCCP]);
+  }, [currentCartaPorteId, cartaPorteId, idCCP, borradorCargado]);
 
   // ✅ FASE 2: Restaurar IdCCP cuando se carga un borrador existente
   useEffect(() => {
@@ -132,21 +131,20 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     try {
       console.log('🔄 Cargando datos desde Supabase:', id);
       
-      // ✅ FASE 3: Limpiar localStorage ANTES de cargar
-      console.log('🧹 Limpiando localStorage antes de cargar...');
+      // ✅ Limpiar idCCP fantasma y localStorage ANTES de cargar
+      setIsClearing(true);
+      setIdCCP(''); // ⚠️ Limpiar idCCP anterior para evitar fantasmas
+      
+      console.log('🧹 Limpiando localStorage y estados locales...');
       try {
-        localStorage.removeItem('carta-porte-ubicaciones');
-        localStorage.removeItem('ubicaciones_frecuentes_cache');
-        localStorage.removeItem('carta-porte-last-calculation');
-        
-        // Limpiar TODOS los items relacionados
+        // Limpiar localStorage completo de carta porte
         Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('carta-porte-') || key.startsWith('carta_porte_')) {
+          if (key.startsWith('carta-porte-') || key.startsWith('carta_porte_') || key.includes('idCCP')) {
             console.log('🗑️ Eliminando:', key);
             localStorage.removeItem(key);
           }
         });
-        console.log('✅ localStorage limpiado');
+        console.log('✅ localStorage limpiado completamente');
       } catch (cleanError) {
         console.warn('⚠️ Error limpiando localStorage:', cleanError);
       }
@@ -251,6 +249,9 @@ export function useCartaPorteFormManager(cartaPorteId?: string) {
     } catch (error) {
       console.error('❌ Error cargando datos:', error);
       toast.error('Error al cargar los datos');
+      setIsClearing(false);
+    } finally {
+      setIsClearing(false);
     }
   }, [saveXML, saveRouteData]);
 
