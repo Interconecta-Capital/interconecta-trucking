@@ -91,7 +91,7 @@ export default function DocumentosFiscales() {
           <CardContent>
             <p className="text-3xl font-bold">{stats?.cartasPorte || 0}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Cartas porte CFDI 4.0 - CP 3.1
+              Documentos timbrados • Ver borradores en la tabla
             </p>
           </CardContent>
         </Card>

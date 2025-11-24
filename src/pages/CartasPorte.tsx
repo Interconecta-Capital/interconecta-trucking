@@ -1,3 +1,25 @@
+/**
+ * ⚠️⚠️⚠️ PÁGINA DEPRECADA - NO USAR ⚠️⚠️⚠️
+ * 
+ * Esta página está obsoleta y ha sido reemplazada por CartasPortePage.tsx
+ * 
+ * NUEVA RUTA: /documentos-fiscales/carta-porte
+ * ARCHIVO: src/pages/CartasPortePage.tsx
+ * 
+ * Esta página permanece solo por compatibilidad temporal y será eliminada.
+ * La ruta antigua ha sido eliminada del router principal (App.tsx).
+ * 
+ * Fecha de deprecación: 2025-01-24
+ * Autor: Sistema de Gestión de Documentos Fiscales
+ * 
+ * RAZONES DE DEPRECACIÓN:
+ * - UI básica sin funcionalidades avanzadas
+ * - No incluye borradores ni gestión de ciclo de vida
+ * - Falta de métricas y analytics
+ * - No cumple con nuevo estándar ISO 27001
+ * 
+ * POR FAVOR USA: CartasPortePage.tsx
+ */
 
 import { useState } from 'react';
 import { Plus, FileText, Filter, Search } from 'lucide-react';
