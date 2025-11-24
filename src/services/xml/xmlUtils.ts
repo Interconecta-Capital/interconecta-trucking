@@ -13,7 +13,16 @@ export class XMLUtils {
   static formatearFecha(fecha: string | Date): string {
     if (!fecha) return '';
     const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
-    return fechaObj.toISOString();
+    
+    // Formato SAT: YYYY-MM-DDTHH:MM:SS (sin milisegundos ni zona horaria)
+    const year = fechaObj.getFullYear();
+    const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaObj.getDate()).padStart(2, '0');
+    const hours = String(fechaObj.getHours()).padStart(2, '0');
+    const minutes = String(fechaObj.getMinutes()).padStart(2, '0');
+    const seconds = String(fechaObj.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   }
 
   static escaparXML(texto: string): string {

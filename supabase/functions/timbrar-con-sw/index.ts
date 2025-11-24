@@ -9,6 +9,113 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// Función para formatear fecha según especificación SAT (sin milisegundos ni zona horaria)
+function formatFechaSAT(fecha: Date = new Date()): string {
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, '0');
+  const day = String(fecha.getDate()).padStart(2, '0');
+  const hours = String(fecha.getHours()).padStart(2, '0');
+  const minutes = String(fecha.getMinutes()).padStart(2, '0');
+  const seconds = String(fecha.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+// Función de validación exhaustiva pre-timbrado
+function validarCFDIAntesDeTimbrar(cfdi: any) {
+  const errores: string[] = [];
+  const advertencias: string[] = [];
+
+  // 1. Validar formato de fecha
+  const fechaPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+  if (!fechaPattern.test(cfdi.Fecha)) {
+    errores.push(`Fecha inválida: "${cfdi.Fecha}". Debe ser YYYY-MM-DDTHH:MM:SS (sin milisegundos)`);
+  }
+
+  // 2. Validar RFCs
+  const rfcPattern = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
+  if (!rfcPattern.test(cfdi.Emisor?.Rfc)) {
+    errores.push(`RFC Emisor inválido: "${cfdi.Emisor?.Rfc}"`);
+  }
+  if (!rfcPattern.test(cfdi.Receptor?.Rfc)) {
+    errores.push(`RFC Receptor inválido: "${cfdi.Receptor?.Rfc}"`);
+  }
+
+  // 3. Validar valores monetarios (2 decimales)
+  const validarMonetario = (valor: string, campo: string) => {
+    if (!/^\d+\.\d{2}$/.test(valor)) {
+      errores.push(`${campo} debe tener exactamente 2 decimales: "${valor}"`);
+    }
+  };
+
+  validarMonetario(cfdi.SubTotal, 'SubTotal');
+  validarMonetario(cfdi.Total, 'Total');
+
+  // 4. Validar catálogos SAT
+  const regimenesFiscales = ['601', '603', '605', '606', '607', '608', '610', '611', '612', '614', '615', '616', '620', '621', '622', '623', '624', '625', '626', '628', '629', '630'];
+  const usosCFDI = ['G01', 'G02', 'G03', 'I01', 'I02', 'I03', 'I04', 'I05', 'I06', 'I07', 'I08', 'D01', 'D02', 'D03', 'D04', 'D05', 'D06', 'D07', 'D08', 'D09', 'D10', 'S01', 'CP01', 'CN01'];
+  
+  if (!regimenesFiscales.includes(cfdi.Emisor?.RegimenFiscal)) {
+    errores.push(`Régimen fiscal emisor inválido: "${cfdi.Emisor?.RegimenFiscal}"`);
+  }
+  if (!regimenesFiscales.includes(cfdi.Receptor?.RegimenFiscalReceptor)) {
+    errores.push(`Régimen fiscal receptor inválido: "${cfdi.Receptor?.RegimenFiscalReceptor}"`);
+  }
+  if (!usosCFDI.includes(cfdi.Receptor?.UsoCFDI)) {
+    errores.push(`Uso CFDI inválido: "${cfdi.Receptor?.UsoCFDI}"`);
+  }
+
+  // 5. Validar códigos postales
+  const cpPattern = /^\d{5}$/;
+  if (!cpPattern.test(cfdi.LugarExpedicion)) {
+    errores.push(`Lugar de expedición (CP) inválido: "${cfdi.LugarExpedicion}"`);
+  }
+  if (!cpPattern.test(cfdi.Receptor?.DomicilioFiscalReceptor)) {
+    errores.push(`Domicilio fiscal receptor (CP) inválido: "${cfdi.Receptor?.DomicilioFiscalReceptor}"`);
+  }
+
+  // 6. Validar conceptos
+  if (!cfdi.Conceptos || cfdi.Conceptos.length === 0) {
+    errores.push('Debe haber al menos un concepto');
+  } else {
+    cfdi.Conceptos.forEach((c: any, i: number) => {
+      if (!c.ClaveProdServ || !/^\d{8}$/.test(c.ClaveProdServ)) {
+        errores.push(`Concepto ${i+1}: ClaveProdServ inválida (debe ser 8 dígitos)`);
+      }
+      if (!c.Cantidad || c.Cantidad === '0') {
+        errores.push(`Concepto ${i+1}: Cantidad debe ser mayor a 0`);
+      }
+      if (!c.Descripcion || c.Descripcion.trim().length < 5) {
+        errores.push(`Concepto ${i+1}: Descripción muy corta`);
+      }
+    });
+  }
+
+  // 7. Validar método y forma de pago (solo para tipo Ingreso)
+  if (cfdi.TipoDeComprobante === 'I') {
+    const formasPago = ['01', '02', '03', '04', '05', '06', '08', '12', '13', '14', '15', '17', '23', '24', '25', '26', '27', '28', '29', '30', '31', '99'];
+    const metodosPago = ['PUE', 'PPD'];
+    
+    if (cfdi.FormaPago && !formasPago.includes(cfdi.FormaPago)) {
+      errores.push(`Forma de pago inválida: "${cfdi.FormaPago}"`);
+    }
+    if (cfdi.MetodoPago && !metodosPago.includes(cfdi.MetodoPago)) {
+      errores.push(`Método de pago inválido: "${cfdi.MetodoPago}"`);
+    }
+  }
+
+  // 8. Advertencias (no bloquean pero se deben revisar)
+  if (cfdi.SubTotal === '0.00' && cfdi.TipoDeComprobante === 'I') {
+    advertencias.push('SubTotal en 0 para comprobante de Ingreso (verificar si es correcto)');
+  }
+
+  return {
+    valido: errores.length === 0,
+    errores,
+    advertencias
+  };
+}
+
 // 🔐 ISO 27001 A.10.1.1 - Usar token estático de SW
 async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<string> {
   // ✅ SmartWeb usa token estático en lugar de autenticación dinámica
@@ -156,6 +263,53 @@ const handler = async (req: Request): Promise<Response> => {
 
     // 4. Construir el CFDI JSON según formato de SW
     const cfdiJson = construirCFDIJson(cartaPorteData || facturaData, esFacturaConCartaPorte);
+
+    // VALIDACIÓN PRE-TIMBRADO EXHAUSTIVA
+    console.log('🔍 Iniciando validación pre-timbrado exhaustiva...');
+    const validacionResult = validarCFDIAntesDeTimbrar(cfdiJson);
+
+    if (!validacionResult.valido) {
+      console.error('❌ Validación pre-timbrado fallida:', validacionResult.errores);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Validación pre-timbrado fallida',
+        errores: validacionResult.errores,
+        advertencias: validacionResult.advertencias
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (validacionResult.advertencias.length > 0) {
+      console.warn('⚠️ Advertencias pre-timbrado:', validacionResult.advertencias);
+    }
+
+    console.log('✅ Validación pre-timbrado exitosa');
+
+    // Logging detallado para debugging
+    console.log('📋 CFDI JSON completo a enviar:', JSON.stringify({
+      fecha: cfdiJson.Fecha,
+      fechaPattern: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(cfdiJson.Fecha),
+      emisor: {
+        rfc: cfdiJson.Emisor?.Rfc,
+        nombre: cfdiJson.Emisor?.Nombre,
+        regimen: cfdiJson.Emisor?.RegimenFiscal
+      },
+      receptor: {
+        rfc: cfdiJson.Receptor?.Rfc,
+        nombre: cfdiJson.Receptor?.Nombre,
+        regimen: cfdiJson.Receptor?.RegimenFiscalReceptor,
+        usoCFDI: cfdiJson.Receptor?.UsoCFDI
+      },
+      importes: {
+        subtotal: cfdiJson.SubTotal,
+        total: cfdiJson.Total,
+        moneda: cfdiJson.Moneda
+      },
+      conceptos: cfdiJson.Conceptos?.length,
+      tieneCartaPorte: !!cfdiJson.Complemento
+    }, null, 2));
 
     console.log('📦 Enviando CFDI a SW con multipart/form-data para mejor rendimiento...');
 
@@ -341,7 +495,7 @@ const handler = async (req: Request): Promise<Response> => {
 
 // Función para construir el JSON del CFDI según formato de SW
 function construirCFDIJson(cartaPorteData: any, requiereComplementoCartaPorte: boolean = false) {
-  const fecha = new Date().toISOString().replace('Z', '');
+  const fecha = formatFechaSAT(new Date());
   const esTipoIngreso = cartaPorteData.tipoCfdi === 'Ingreso';
   
   // Calcular subtotal y total
@@ -746,47 +900,58 @@ function generateCartaPorteId(): string {
   return `CCC${timestamp}${random}`.substring(0, 36);
 }
 
-// Mapeo de errores de SW/SAT
-// Función para convertir JSON a XML string (básica, mejorará progresivamente)
+// Función para convertir JSON a XML string (optimizada con validaciones)
 function jsonToXML(json: any): string {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>';
   
+  // Función para escapar caracteres especiales XML
   function escapeXML(str: string): string {
-    return str
+    if (!str) return '';
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+      .replace(/'/g, '&#39;');
+  }
+  
+  // Función para agregar atributo solo si existe y no está vacío
+  function addAttr(name: string, value: any): string {
+    if (value === undefined || value === null || value === '') return '';
+    return ` ${name}="${escapeXML(String(value))}"`;
   }
   
   const { Version, Serie, Folio, Fecha, Sello, NoCertificado, Certificado, SubTotal, Moneda, Total, 
           TipoDeComprobante, Exportacion, LugarExpedicion, FormaPago, MetodoPago, 
           Emisor, Receptor, Conceptos, Impuestos, Complemento } = json;
   
-  // Construir atributos raíz
-  const rootAttrs = [
-    'xmlns:cfdi="http://www.sat.gob.mx/cfd/4"',
-    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
-    'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"',
-    `Version="${Version}"`,
-    Serie ? `Serie="${escapeXML(Serie)}"` : '',
-    Folio ? `Folio="${escapeXML(Folio)}"` : '',
-    `Fecha="${Fecha}"`,
-    `Sello="${Sello}"`,
-    `NoCertificado="${NoCertificado}"`,
-    `Certificado="${Certificado}"`,
-    `SubTotal="${SubTotal}"`,
-    `Moneda="${Moneda}"`,
-    `Total="${Total}"`,
-    `TipoDeComprobante="${TipoDeComprobante}"`,
-    `Exportacion="${Exportacion}"`,
-    `LugarExpedicion="${LugarExpedicion}"`,
-    FormaPago ? `FormaPago="${FormaPago}"` : '',
-    MetodoPago ? `MetodoPago="${MetodoPago}"` : ''
-  ].filter(Boolean).join(' ');
+  // Validar fecha antes de incluirla
+  const fechaPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+  if (!fechaPattern.test(Fecha)) {
+    console.error(`⚠️ Fecha con formato incorrecto detectada en XML: "${Fecha}"`);
+  }
   
-  xml += `\n<cfdi:Comprobante ${rootAttrs}>`;
+  // Construir elemento raíz con validaciones
+  xml += '\n<cfdi:Comprobante';
+  xml += ' xmlns:cfdi="http://www.sat.gob.mx/cfd/4"';
+  xml += ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"';
+  xml += ' xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"';
+  xml += addAttr('Version', Version);
+  xml += addAttr('Serie', Serie);
+  xml += addAttr('Folio', Folio);
+  xml += addAttr('Fecha', Fecha);
+  xml += addAttr('Sello', Sello);
+  xml += addAttr('NoCertificado', NoCertificado);
+  xml += addAttr('Certificado', Certificado);
+  xml += addAttr('SubTotal', SubTotal);
+  xml += addAttr('Moneda', Moneda);
+  xml += addAttr('Total', Total);
+  xml += addAttr('TipoDeComprobante', TipoDeComprobante);
+  xml += addAttr('Exportacion', Exportacion);
+  xml += addAttr('LugarExpedicion', LugarExpedicion);
+  xml += addAttr('FormaPago', FormaPago);
+  xml += addAttr('MetodoPago', MetodoPago);
+  xml += '>';
   
   // Emisor
   if (Emisor) {
