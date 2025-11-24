@@ -116,6 +116,48 @@ function validarCFDIAntesDeTimbrar(cfdi: any) {
   };
 }
 
+// Función de validación de datos fuente (antes de construir CFDI)
+function validarDatosParaTimbrado(dataSource: any, esFacturaConCartaPorte: boolean) {
+  const errores: string[] = [];
+  const advertencias: string[] = [];
+
+  // Validar fechas en ubicaciones (si hay CartaPorte)
+  if (esFacturaConCartaPorte) {
+    const ubicaciones = dataSource?.ubicaciones || dataSource?.tracking_data?.ubicaciones || [];
+    const ubicacionesArray = Array.isArray(ubicaciones) ? ubicaciones : 
+      (ubicaciones.origen && ubicaciones.destino ? [ubicaciones.origen, ubicaciones.destino] : []);
+    
+    const fechaPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+    ubicacionesArray.forEach((u: any, i: number) => {
+      const fecha = u.fecha_llegada_salida || u.fechaHoraSalidaLlegada;
+      if (fecha && !fechaPattern.test(fecha)) {
+        errores.push(`Ubicación ${i+1}: Fecha inválida "${fecha}". Debe ser YYYY-MM-DDTHH:MM:SS`);
+      }
+    });
+  }
+
+  // Validar RFCs básicos
+  const rfcPattern = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
+  if (dataSource?.rfcEmisor && !rfcPattern.test(dataSource.rfcEmisor)) {
+    errores.push(`RFC Emisor inválido: "${dataSource.rfcEmisor}"`);
+  }
+  if (dataSource?.rfcReceptor && !rfcPattern.test(dataSource.rfcReceptor)) {
+    errores.push(`RFC Receptor inválido: "${dataSource.rfcReceptor}"`);
+  }
+
+  // Validar códigos postales
+  const cpPattern = /^\d{5}$/;
+  if (dataSource?.lugarExpedicion && !cpPattern.test(dataSource.lugarExpedicion)) {
+    errores.push(`Lugar de expedición inválido: "${dataSource.lugarExpedicion}"`);
+  }
+
+  return {
+    valido: errores.length === 0,
+    errores,
+    advertencias
+  };
+}
+
 // 🔐 ISO 27001 A.10.1.1 - Usar token estático de SW
 async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<string> {
   // ✅ SmartWeb usa token estático en lugar de autenticación dinámica
@@ -143,7 +185,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 
-  console.log(`📡 [${new Date().toISOString()}] Request recibido: ${req.method} ${req.url}`);
+  console.log(`📡 [${formatFechaSAT(new Date())}] Request recibido: ${req.method} ${req.url}`);
 
   // Declarar variables fuera del try para uso en catch y en todo el scope
   let user: any = null;
@@ -203,7 +245,7 @@ const handler = async (req: Request): Promise<Response> => {
     const tipoDocumento = cartaPorteData ? 'Carta Porte' : esFacturaConCartaPorte ? 'Factura con CartaPorte' : 'Factura Simple';
     
     // 🔒 Logging seguro (sin exponer datos sensibles)
-    console.log(`🚀 [${new Date().toISOString()}] Timbrando ${tipoDocumento} para usuario ${user.id.substring(0, 8)}... en ${ambiente}`, {
+    console.log(`🚀 [${formatFechaSAT(new Date())}] Timbrando ${tipoDocumento} para usuario ${user.id.substring(0, 8)}... en ${ambiente}`, {
       documentoId: documentoId?.substring(0, 8),
       esFacturaConCartaPorte,
       hasUbicaciones: esFacturaConCartaPorte
@@ -246,6 +288,30 @@ const handler = async (req: Request): Promise<Response> => {
         formatoArray: Array.isArray(ubicaciones)
       });
     }
+
+    // 🔍 VALIDACIONES EXHAUSTIVAS PRE-TIMBRADO
+    console.log('🔍 Iniciando validación exhaustiva pre-timbrado...');
+    const dataSource = cartaPorteData || facturaData;
+    const validacionResult = validarDatosParaTimbrado(dataSource, esFacturaConCartaPorte);
+    
+    if (!validacionResult.valido) {
+      console.error('❌ Validación pre-timbrado fallida:', validacionResult.errores);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Validación pre-timbrado fallida',
+        errores: validacionResult.errores,
+        advertencias: validacionResult.advertencias
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (validacionResult.advertencias.length > 0) {
+      console.warn('⚠️ Advertencias pre-timbrado:', validacionResult.advertencias);
+    }
+
+    console.log('✅ Validación pre-timbrado exitosa');
 
     // 3. 🔐 ISO 27001 A.10.1.1 - Obtener token dinámico mediante autenticación
     console.log('🔐 Obteniendo token dinámico de SW...');
@@ -747,7 +813,7 @@ function construirUbicaciones(data: any) {
       IDUbicacion: u.id_ubicacion || u.idUbicacion || `${tipoUbicacion === 'Origen' ? 'OR' : tipoUbicacion === 'Destino' ? 'DE' : 'PI'}${String(index + 1).padStart(6, '0')}`,
       RFCRemitenteDestinatario: u.rfc || u.rfcRemitenteDestinatario || data.rfcReceptor,
       NombreRemitenteDestinatario: u.nombre || u.nombreRemitenteDestinatario || data.nombreReceptor,
-      FechaHoraSalidaLlegada: u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || new Date().toISOString(),
+      FechaHoraSalidaLlegada: u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || formatFechaSAT(new Date()),
       DistanciaRecorrida: u.distancia_recorrida?.toString() || u.distanciaRecorrida?.toString() || "0",
       Domicilio: {
         Calle: u.domicilio?.calle || "Sin calle",
