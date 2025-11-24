@@ -252,7 +252,12 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
           rfcReceptor: facturaData.rfc_receptor,
           nombreReceptor: facturaData.nombre_receptor,
           regimenFiscalReceptor: facturaData.regimen_fiscal_receptor,
-          usoCfdi: facturaData.uso_cfdi,
+          // ✅ CORREGIDO: Validar uso_cfdi contra catálogo SAT antes de enviar
+          usoCfdi: ['G01', 'G02', 'G03', 'I01', 'I02', 'I03', 'I04', 'I05', 'I06', 'I07', 'I08', 'D01', 'D02', 'D03', 'D04', 'D05', 'D06', 'D07', 'D08', 'D09', 'D10', 'S01', 'CP01', 'CN01'].includes(facturaData.uso_cfdi || '')
+            ? facturaData.uso_cfdi
+            : 'G03', // Valor por defecto seguro
+          // ✅ NUEVO: Agregar domicilio fiscal del receptor (CRÍTICO para SAT)
+          domicilioFiscalReceptor: facturaData.domicilio_fiscal_receptor || viajeCompleto?.cliente?.domicilio_fiscal?.codigo_postal || null,
           tipoCfdi: facturaData.tipo_comprobante,
           serie: facturaData.serie,
           folio: facturaData.folio,
