@@ -83,6 +83,30 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          accion: string | null
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          tabla: string | null
+        }
+        Insert: {
+          accion?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          tabla?: string | null
+        }
+        Update: {
+          accion?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          tabla?: string | null
+        }
+        Relationships: []
+      }
       autotransporte: {
         Row: {
           anio_modelo_vm: number | null
