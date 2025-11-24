@@ -391,6 +391,79 @@ async function timbrarConSW(cfdi: CFDIJson, ambiente: 'sandbox' | 'production'):
 }
 
 // ============================================================================
+// OBTENER DATOS DEL EMISOR VALIDADOS DESDE CACHE
+// ============================================================================
+
+async function obtenerDatosEmisorValidados(
+  rfcOriginal: string,
+  nombreOriginal: string,
+  ambiente: string
+): Promise<{ rfc: string; nombre: string }> {
+  
+  const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  
+  // Si es sandbox, usar RFC de prueba oficial del SAT
+  if (ambiente === 'sandbox') {
+    console.log('🧪 Modo sandbox: usando RFC oficial del SAT');
+    
+    const { data: rfcPrueba } = await supabaseAdmin
+      .from('rfc_pruebas_sat')
+      .select('*')
+      .eq('rfc', 'EKU9003173C9')
+      .maybeSingle();
+    
+    if (rfcPrueba) {
+      return {
+        rfc: rfcPrueba.rfc,
+        nombre: rfcPrueba.nombre
+      };
+    }
+    
+    // Fallback si no existe en BD
+    return {
+      rfc: 'EKU9003173C9',
+      nombre: 'ESCUELA KEMPER URGATE'
+    };
+  }
+  
+  // Producción: buscar en cache de RFCs validados
+  console.log(`🔍 Buscando RFC ${rfcOriginal} en cache...`);
+  
+  const { data: rfcValidado } = await supabaseAdmin
+    .from('rfc_validados_sat')
+    .select('*')
+    .eq('rfc', rfcOriginal.toUpperCase())
+    .eq('ambiente', 'produccion')
+    .gt('fecha_expiracion', new Date().toISOString())
+    .maybeSingle();
+  
+  if (rfcValidado) {
+    console.log('✅ RFC encontrado en cache');
+    
+    // Actualizar contador
+    await supabaseAdmin
+      .from('rfc_validados_sat')
+      .update({
+        numero_validaciones: rfcValidado.numero_validaciones + 1,
+        ultima_actualizacion: new Date().toISOString()
+      })
+      .eq('rfc', rfcOriginal.toUpperCase());
+    
+    return {
+      rfc: rfcValidado.rfc,
+      nombre: rfcValidado.razon_social_normalizada
+    };
+  }
+  
+  // No está en cache y es producción - error
+  console.error(`❌ RFC ${rfcOriginal} no está validado en el sistema`);
+  
+  throw new Error(
+    `RFC ${rfcOriginal} no validado. Por favor, valida tu RFC en Configuración > Mi Empresa antes de timbrar.`
+  );
+}
+
+// ============================================================================
 // HANDLER PRINCIPAL
 // ============================================================================
 
@@ -412,6 +485,40 @@ Deno.serve(async (req) => {
     // Validaciones básicas
     if (!cartaPorteId) {
       throw new Error('cartaPorteId es requerido');
+    }
+
+    // ✅ VALIDAR Y OBTENER DATOS DEL EMISOR DESDE CACHE
+    try {
+      const datosEmisor = await obtenerDatosEmisorValidados(
+        cartaPorteData.rfcEmisor || cartaPorteData.rfc_emisor,
+        cartaPorteData.nombreEmisor || cartaPorteData.nombre_emisor,
+        ambiente
+      );
+      
+      // Sobrescribir con datos validados
+      cartaPorteData.rfcEmisor = datosEmisor.rfc;
+      cartaPorteData.nombreEmisor = datosEmisor.nombre;
+      
+      console.log('✅ Datos del emisor validados:', {
+        rfc: datosEmisor.rfc,
+        nombre: datosEmisor.nombre,
+        ambiente
+      });
+      
+    } catch (validacionError: any) {
+      console.error('❌ Error validando emisor:', validacionError);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: validacionError.message,
+          codigo: 'VALIDACION_EMISOR'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     // Construir CFDI
