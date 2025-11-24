@@ -208,7 +208,7 @@ export class ViajeCartaPorteMapper {
       vehiculo: cartaPorteData.autotransporte ? {
         id: '',
         placa: cartaPorteData.autotransporte.placa_vm,
-        configuracion_vehicular: cartaPorteData.autotransporte.config_vehicular,
+        config_vehicular: cartaPorteData.autotransporte.config_vehicular,
         peso_bruto_vehicular: cartaPorteData.autotransporte.peso_bruto_vehicular,
         anio: cartaPorteData.autotransporte.anio_modelo_vm
       } : undefined,
@@ -367,7 +367,7 @@ export class ViajeCartaPorteMapper {
     return {
       placa_vm: viajeData.vehiculo.placa,
       anio_modelo_vm: viajeData.vehiculo.anio || new Date().getFullYear(),
-      config_vehicular: viajeData.vehiculo.configuracion_vehicular || 'C2',
+      config_vehicular: viajeData.vehiculo.config_vehicular || 'C2',
       perm_sct: 'TPAF03',
       num_permiso_sct: 'SCT-123456',
       asegura_resp_civil: 'SEGUROS SA',

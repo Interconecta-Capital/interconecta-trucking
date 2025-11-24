@@ -194,6 +194,16 @@ export function SocioFormRefactored({ socioId, onSuccess, onCancel }: SocioFormR
       newErrors.tipo_persona = 'Selecciona el tipo de persona';
     }
 
+    // ✅ VALIDAR CURP OBLIGATORIO PARA PERSONAS FÍSICAS
+    if (formData.tipo_persona === 'fisica' && !formData.curp?.trim()) {
+      newErrors.curp = 'CURP es obligatorio para personas físicas';
+    }
+    
+    // Validar formato CURP si está presente
+    if (formData.curp?.trim() && formData.curp.length !== 18) {
+      newErrors.curp = 'CURP debe tener exactamente 18 caracteres';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

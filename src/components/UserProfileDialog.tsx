@@ -181,10 +181,6 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                       user?.tenant?.nombre_empresa || 
                       '';
   
-  const userRFC = user?.profile?.rfc || 
-                  user?.user_metadata?.rfc || 
-                  user?.tenant?.rfc_empresa || 
-                  '';
 
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
@@ -245,14 +241,6 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
               <div className="space-y-2">
                 <Label>Empresa</Label>
                 <Input value={userCompany} disabled className="bg-muted" placeholder="No especificada" />
-              </div>
-
-              <div className="space-y-2">
-                <Label>RFC</Label>
-                <Input value={userRFC} disabled className="bg-muted" placeholder="No especificado" />
-                <p className="text-xs text-muted-foreground">
-                  * El RFC no puede ser modificado. Contacta soporte.
-                </p>
               </div>
 
               <div className="space-y-2">

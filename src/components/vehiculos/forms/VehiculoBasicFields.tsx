@@ -109,7 +109,7 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="config_vehicular">Configuración Vehicular</Label>
           <Select 
@@ -127,6 +127,26 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="peso_bruto_vehicular">
+            Peso Bruto Vehicular (kg) <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="peso_bruto_vehicular"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.peso_bruto_vehicular || ''}
+            onChange={(e) => onFieldChange('peso_bruto_vehicular', e.target.value)}
+            placeholder="Ej: 25000"
+            required
+            className={!formData.peso_bruto_vehicular ? 'border-amber-500' : ''}
+          />
+          {!formData.peso_bruto_vehicular && (
+            <p className="text-xs text-amber-600 mt-1">⚠️ Requerido para timbrado</p>
+          )}
         </div>
       </div>
     </div>
