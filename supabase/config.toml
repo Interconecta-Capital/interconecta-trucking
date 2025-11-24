@@ -44,3 +44,9 @@ verify_jwt = true
 
 [functions.timbrar-carta-porte]
 verify_jwt = true
+
+[functions.cancelar-cfdi-sw]
+verify_jwt = true
+
+[functions.generar-pdf-cfdi]
+verify_jwt = true

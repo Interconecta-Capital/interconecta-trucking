@@ -157,16 +157,24 @@ const handler = async (req: Request): Promise<Response> => {
     // 4. Construir el CFDI JSON según formato de SW
     const cfdiJson = construirCFDIJson(cartaPorteData || facturaData, esFacturaConCartaPorte);
 
-    console.log('📦 Enviando CFDI a SW:', JSON.stringify(cfdiJson).substring(0, 500));
+    console.log('📦 Enviando CFDI a SW con multipart/form-data para mejor rendimiento...');
 
-    // 5. Llamar a la API de SW
-    const swResponse = await fetch(`${swUrl}/v3/cfdi33/issue/json/v4`, {
+    // 5. Convertir JSON a XML string
+    const xmlString = jsonToXML(cfdiJson);
+    console.log('🔄 XML generado (primeros 500 chars):', xmlString.substring(0, 500));
+
+    // 6. Crear FormData con multipart/form-data (método optimizado según docs de SW)
+    const formData = new FormData();
+    formData.append('xml', new Blob([xmlString], { type: 'application/xml' }), 'cfdi.xml');
+
+    // 7. Llamar a la API de SW con multipart/form-data (mejor rendimiento)
+    const swResponse = await fetch(`${swUrl}/cfdi33/issue/v4`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${swToken}`,
-        'Content-Type': 'application/jsontoxml',
+        // No agregar Content-Type, FormData lo maneja automáticamente con boundary correcto
       },
-      body: JSON.stringify(cfdiJson),
+      body: formData,
     });
 
     const responseText = await swResponse.text();
@@ -739,6 +747,91 @@ function generateCartaPorteId(): string {
 }
 
 // Mapeo de errores de SW/SAT
+// Función para convertir JSON a XML string (básica, mejorará progresivamente)
+function jsonToXML(json: any): string {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>';
+  
+  function escapeXML(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+  
+  const { Version, Serie, Folio, Fecha, Sello, NoCertificado, Certificado, SubTotal, Moneda, Total, 
+          TipoDeComprobante, Exportacion, LugarExpedicion, FormaPago, MetodoPago, 
+          Emisor, Receptor, Conceptos, Impuestos, Complemento } = json;
+  
+  // Construir atributos raíz
+  const rootAttrs = [
+    'xmlns:cfdi="http://www.sat.gob.mx/cfd/4"',
+    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
+    'xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd"',
+    `Version="${Version}"`,
+    Serie ? `Serie="${escapeXML(Serie)}"` : '',
+    Folio ? `Folio="${escapeXML(Folio)}"` : '',
+    `Fecha="${Fecha}"`,
+    `Sello="${Sello}"`,
+    `NoCertificado="${NoCertificado}"`,
+    `Certificado="${Certificado}"`,
+    `SubTotal="${SubTotal}"`,
+    `Moneda="${Moneda}"`,
+    `Total="${Total}"`,
+    `TipoDeComprobante="${TipoDeComprobante}"`,
+    `Exportacion="${Exportacion}"`,
+    `LugarExpedicion="${LugarExpedicion}"`,
+    FormaPago ? `FormaPago="${FormaPago}"` : '',
+    MetodoPago ? `MetodoPago="${MetodoPago}"` : ''
+  ].filter(Boolean).join(' ');
+  
+  xml += `\n<cfdi:Comprobante ${rootAttrs}>`;
+  
+  // Emisor
+  if (Emisor) {
+    xml += `\n  <cfdi:Emisor Rfc="${Emisor.Rfc}" Nombre="${escapeXML(Emisor.Nombre)}" RegimenFiscal="${Emisor.RegimenFiscal}"/>`;
+  }
+  
+  // Receptor
+  if (Receptor) {
+    xml += `\n  <cfdi:Receptor Rfc="${Receptor.Rfc}" Nombre="${escapeXML(Receptor.Nombre)}" DomicilioFiscalReceptor="${Receptor.DomicilioFiscalReceptor}" RegimenFiscalReceptor="${Receptor.RegimenFiscalReceptor}" UsoCFDI="${Receptor.UsoCFDI}"/>`;
+  }
+  
+  // Conceptos
+  if (Conceptos && Array.isArray(Conceptos)) {
+    xml += '\n  <cfdi:Conceptos>';
+    Conceptos.forEach(c => {
+      xml += `\n    <cfdi:Concepto ClaveProdServ="${c.ClaveProdServ}" Cantidad="${c.Cantidad}" ClaveUnidad="${c.ClaveUnidad}" Descripcion="${escapeXML(c.Descripcion)}" ValorUnitario="${c.ValorUnitario}" Importe="${c.Importe}" ObjetoImp="${c.ObjetoImp}"/>`;
+    });
+    xml += '\n  </cfdi:Conceptos>';
+  }
+  
+  // Impuestos
+  if (Impuestos && Impuestos.TotalImpuestosTrasladados) {
+    xml += `\n  <cfdi:Impuestos TotalImpuestosTrasladados="${Impuestos.TotalImpuestosTrasladados}">`;
+    if (Impuestos.Traslados) {
+      xml += '\n    <cfdi:Traslados>';
+      Impuestos.Traslados.forEach((t: any) => {
+        xml += `\n      <cfdi:Traslado Base="${t.Base}" Importe="${t.Importe}" Impuesto="${t.Impuesto}" TasaOCuota="${t.TasaOCuota}" TipoFactor="${t.TipoFactor}"/>`;
+      });
+      xml += '\n    </cfdi:Traslados>';
+    }
+    xml += '\n  </cfdi:Impuestos>';
+  }
+  
+  // Complemento CartaPorte (si existe)
+  if (Complemento && Complemento.CartaPorte31) {
+    xml += '\n  <cfdi:Complemento>';
+    xml += '\n    <!-- CartaPorte complemento aquí -->';
+    xml += '\n  </cfdi:Complemento>';
+  }
+  
+  xml += '\n</cfdi:Comprobante>';
+  
+  return xml;
+}
+
 function mapearErrorSW(errorResponse: any) {
   const codigosError: Record<string, any> = {
     // Errores de Carta Porte 3.1
