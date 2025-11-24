@@ -83,6 +83,75 @@ function validarCoherenciaTipoComprobante(cfdi: any): { valid: boolean; error?: 
   return { valid: true };
 }
 
+/**
+ * Valida que el emisor sea correcto contra registros del SAT
+ * CRÍTICO: Previene error CFDI40139
+ */
+async function validarEmisorFinal(
+  rfcEmisor: string,
+  nombreEmisor: string,
+  ambiente: string,
+  supabaseClient: any
+): Promise<void> {
+  
+  console.log(`🔍 [VALIDACIÓN FINAL] Verificando emisor en ${ambiente}:`);
+  console.log(`   RFC: ${rfcEmisor}`);
+  console.log(`   Nombre: ${nombreEmisor}`);
+  
+  // Obtener datos del SAT según ambiente
+  let rfcSAT: any = null;
+  
+  if (ambiente === 'sandbox') {
+    const { data } = await supabaseClient
+      .from('rfc_pruebas_sat')
+      .select('*')
+      .eq('rfc', rfcEmisor)
+      .single();
+    rfcSAT = data;
+  } else {
+    const { data } = await supabaseClient
+      .from('rfc_validados_sat')
+      .select('*')
+      .eq('rfc', rfcEmisor)
+      .eq('ambiente', 'produccion')
+      .gt('fecha_expiracion', new Date().toISOString())
+      .single();
+    rfcSAT = data;
+  }
+  
+  if (!rfcSAT) {
+    const errorMsg = `RFC ${rfcEmisor} no encontrado en registros del SAT`;
+    console.error('❌ [VALIDACIÓN FINAL]', errorMsg);
+    throw new Error(errorMsg);
+  }
+  
+  // Normalizar y comparar nombres
+  const normalizar = (texto: string) => texto
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  const nombreNorm = normalizar(nombreEmisor);
+  const nombreSATNorm = normalizar(rfcSAT.nombre || rfcSAT.razon_social_normalizada);
+  
+  if (nombreNorm !== nombreSATNorm) {
+    console.error('❌ [VALIDACIÓN FINAL] Nombres no coinciden:');
+    console.error(`   Recibido: "${nombreNorm}"`);
+    console.error(`   SAT:      "${nombreSATNorm}"`);
+    
+    throw new Error(
+      `CFDI40139 - El campo Nombre del emisor no coincide con el SAT.\n` +
+      `Configurado: "${nombreEmisor}"\n` +
+      `SAT espera: "${rfcSAT.nombre || rfcSAT.razon_social_normalizada}"\n` +
+      `Actualiza tu configuración en Mi Empresa para que coincida exactamente.`
+    );
+  }
+  
+  console.log('✅ [VALIDACIÓN FINAL] Emisor válido contra SAT');
+}
+
 // Función de validación exhaustiva pre-timbrado
 function validarCFDIAntesDeTimbrar(cfdi: any) {
   const errores: string[] = [];
@@ -398,6 +467,27 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('✅ Token dinámico obtenido, procesando CFDI...');
+    
+    // 🔐 VALIDACIÓN FINAL CRÍTICA: Verificar emisor contra SAT
+    console.log('🔍 [VALIDACIÓN FINAL] Verificando datos del emisor contra SAT...');
+    try {
+      await validarEmisorFinal(
+        dataSource.rfcEmisor || dataSource.rfc_emisor,
+        dataSource.nombreEmisor || dataSource.nombre_emisor,
+        ambiente,
+        supabaseClient
+      );
+    } catch (validacionError: any) {
+      console.error('❌ [VALIDACIÓN FINAL] Error:', validacionError.message);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: validacionError.message,
+        codigo: 'CFDI40139'
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
 
     // 4. Construir el CFDI JSON según formato de SW
     console.log('🎯 [DEBUG] Construyendo CFDI con:', {
