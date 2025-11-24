@@ -310,18 +310,6 @@ export default function ViajeDetalle() {
         }
         
         console.log('✅ [TIMBRADO] Código postal obtenido del SAT:', domicilioFiscalReceptor);
-        
-        // Actualizar la factura con el dato obtenido del SAT
-        const { error: updateError } = await supabase
-          .from('facturas')
-          .update({ domicilio_fiscal_receptor: domicilioFiscalReceptor })
-          .eq('id', factura.id);
-        
-        if (updateError) {
-          console.error('❌ Error actualizando factura con código postal:', updateError);
-        } else {
-          console.log('✅ Factura actualizada con código postal del SAT');
-        }
       }
       
       // Extraer solo el código postal si viene como objeto
@@ -347,13 +335,14 @@ export default function ViajeDetalle() {
         console.warn('⚠️ [TIMBRADO] Usando régimen fiscal por defecto (616)');
       }
       
-      // ✅ FASE 2: Actualizar factura con datos editables + régimen fiscal
+      // ✅ FASE 2: Actualizar factura con datos editables + régimen fiscal + domicilio receptor
       console.log('💾 [TIMBRADO] Actualizando factura en BD...');
       const updatePayload = {
         moneda: updatedData.moneda,
         forma_pago: updatedData.forma_pago,
         metodo_pago: updatedData.metodo_pago,
-        regimen_fiscal_receptor: regimenFinal
+        regimen_fiscal_receptor: regimenFinal,
+        domicilio_fiscal_receptor: codigoPostalReceptor // ✅ CRÍTICO: Siempre guardar CP
       };
       console.log('📦 [TIMBRADO] Payload de actualización:', updatePayload);
       
