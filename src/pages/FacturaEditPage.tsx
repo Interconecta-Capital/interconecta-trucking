@@ -227,7 +227,6 @@ export default function FacturaEditPage() {
                     <SelectItem value="I01">I01 - Construcciones</SelectItem>
                     <SelectItem value="I02">I02 - Mobiliario y equipo de oficina</SelectItem>
                     <SelectItem value="I03">I03 - Equipo de transporte</SelectItem>
-                    <SelectItem value="P01">P01 - Por definir</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
