@@ -103,6 +103,77 @@
 
 > **Si TipoDeComprobante es "T" o "P", el SubTotal DEBE ser 0.00**
 
+---
+
+## 🎯 Determinación Automática de TipoDeComprobante
+
+El sistema determina automáticamente el `TipoDeComprobante` según el valor de las mercancías/servicios, **garantizando cumplimiento de la regla SAT CFDI40109**.
+
+### Algoritmo de Decisión
+
+```typescript
+// PASO 1: Calcular subtotal (sin condicionales)
+let subtotal = 0;
+if (conceptos.length > 0) {
+  subtotal = conceptos.sum(c => c.importe);
+} else if (mercancias.length > 0) {
+  subtotal = mercancias.sum(m => m.valor_mercancia);
+}
+
+// PASO 2: Determinar tipo basado en subtotal
+if (subtotal > 0) {
+  TipoDeComprobante = "I" // Ingreso (Factura con cobro)
+  SubTotal = subtotal
+  Total = subtotal + IVA
+} else {
+  TipoDeComprobante = "T" // Traslado (CartaPorte sin cobro)
+  SubTotal = 0.00
+  Total = 0.00
+}
+```
+
+### Regla de Coherencia Garantizada
+
+El algoritmo **garantiza cumplimiento** porque:
+1. ✅ **Calcula importes primero** (sin asumir el tipo)
+2. ✅ **Decide el tipo después** (basado en importes reales)
+3. ✅ **Imposible violar CFDI40109** (tipo y montos coherentes por construcción)
+
+### Ejemplos de Uso
+
+#### ✅ Factura con CartaPorte ($78,000)
+```json
+{
+  "mercancias": [{ "valor_mercancia": 78000 }],
+  // Sistema calcula automáticamente:
+  "subtotal": 78000,
+  "TipoDeComprobante": "I",  // ← Decidido por el sistema
+  "SubTotal": "78000.00",
+  "Total": "90480.00"  // + IVA 16%
+}
+```
+
+#### ✅ CartaPorte de Traslado ($0)
+```json
+{
+  "mercancias": [{ "valor_mercancia": 0 }],
+  // Sistema calcula automáticamente:
+  "subtotal": 0,
+  "TipoDeComprobante": "T",  // ← Decidido por el sistema
+  "SubTotal": "0.00",
+  "Total": "0.00"
+}
+```
+
+### Beneficios
+
+✅ **Sin errores CFDI40109**: Imposible por diseño  
+✅ **Sin configuración manual**: Sistema decide automáticamente  
+✅ **Cumplimiento SAT garantizado**: Tipo e importes siempre coherentes  
+✅ **Menos errores humanos**: No depende de input del usuario
+
+---
+
 **Validación automática implementada:**
 ```typescript
 if ((tipo === "T" || tipo === "P") && (subtotal !== 0 || total !== 0)) {
