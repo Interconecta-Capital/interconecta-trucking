@@ -582,29 +582,76 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Logging detallado para debugging
-    console.log('📋 CFDI JSON completo a enviar:', JSON.stringify({
+    // 📤 LOGGING DETALLADO PRE-ENVÍO A SMARTWEB
+    console.log('📤 ========================================');
+    console.log('📤 [PRE-TIMBRADO] Datos finales a enviar a SmartWeb');
+    console.log('📤 ========================================');
+    console.log('📤 [AMBIENTE]:', ambiente);
+    console.log('📤 [URL SW]:', swUrl);
+    console.log('📤 [TOKEN] (primeros 10):', swToken.substring(0, 10) + '...');
+    console.log('📤 [TIMESTAMP]:', formatFechaSAT(new Date()));
+    console.log('📤');
+    console.log('📤 [CFDI COMPLETO]:', JSON.stringify({
+      // Datos generales
+      version: cfdiJson.Version,
+      serie: cfdiJson.Serie,
+      folio: cfdiJson.Folio,
       fecha: cfdiJson.Fecha,
-      fechaPattern: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(cfdiJson.Fecha),
+      fechaValida: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(cfdiJson.Fecha),
+      tipoComprobante: cfdiJson.TipoDeComprobante,
+      lugarExpedicion: cfdiJson.LugarExpedicion,
+      exportacion: cfdiJson.Exportacion,
+      
+      // Emisor
       emisor: {
         rfc: cfdiJson.Emisor?.Rfc,
         nombre: cfdiJson.Emisor?.Nombre,
-        regimen: cfdiJson.Emisor?.RegimenFiscal
+        regimenFiscal: cfdiJson.Emisor?.RegimenFiscal
       },
+      
+      // Receptor
       receptor: {
         rfc: cfdiJson.Receptor?.Rfc,
         nombre: cfdiJson.Receptor?.Nombre,
-        regimen: cfdiJson.Receptor?.RegimenFiscalReceptor,
+        domicilioFiscalReceptor: cfdiJson.Receptor?.DomicilioFiscalReceptor,
+        regimenFiscalReceptor: cfdiJson.Receptor?.RegimenFiscalReceptor,
         usoCFDI: cfdiJson.Receptor?.UsoCFDI
       },
+      
+      // Importes
       importes: {
         subtotal: cfdiJson.SubTotal,
         total: cfdiJson.Total,
-        moneda: cfdiJson.Moneda
+        moneda: cfdiJson.Moneda,
+        formaPago: cfdiJson.FormaPago,
+        metodoPago: cfdiJson.MetodoPago
       },
-      conceptos: cfdiJson.Conceptos?.length,
-      tieneCartaPorte: !!cfdiJson.Complemento
+      
+      // Conceptos
+      conceptos: {
+        cantidad: cfdiJson.Conceptos?.length,
+        lista: cfdiJson.Conceptos?.map((c: any) => ({
+          claveProdServ: c.ClaveProdServ,
+          cantidad: c.Cantidad,
+          descripcion: c.Descripcion,
+          valorUnitario: c.ValorUnitario,
+          importe: c.Importe
+        }))
+      },
+      
+      // Impuestos
+      impuestos: cfdiJson.Impuestos ? {
+        totalTrasladados: cfdiJson.Impuestos.TotalImpuestosTrasladados,
+        traslados: cfdiJson.Impuestos.Traslados?.length
+      } : null,
+      
+      // Complemento
+      complemento: {
+        tieneCartaPorte: !!cfdiJson.Complemento,
+        tipo: cfdiJson.Complemento ? Object.keys(cfdiJson.Complemento)[0] : null
+      }
     }, null, 2));
+    console.log('📤 ========================================');
 
     console.log('📦 Enviando CFDI a SW con multipart/form-data para mejor rendimiento...');
 
@@ -617,6 +664,10 @@ const handler = async (req: Request): Promise<Response> => {
     formData.append('xml', new Blob([xmlString], { type: 'application/xml' }), 'cfdi.xml');
 
     // 7. Llamar a la API de SW con multipart/form-data (mejor rendimiento)
+    console.log('🚀 [LLAMADA SW] Enviando petición a:', `${swUrl}/cfdi33/issue/v4`);
+    console.log('🚀 [LLAMADA SW] Método: POST');
+    console.log('🚀 [LLAMADA SW] Content-Type: multipart/form-data (automático)');
+    
     const swResponse = await fetch(`${swUrl}/cfdi33/issue/v4`, {
       method: 'POST',
       headers: {
@@ -626,8 +677,15 @@ const handler = async (req: Request): Promise<Response> => {
       body: formData,
     });
 
+    console.log('📥 ========================================');
+    console.log('📥 [RESPUESTA SW] Status:', swResponse.status);
+    console.log('📥 [RESPUESTA SW] Status Text:', swResponse.statusText);
+    console.log('📥 [RESPUESTA SW] Headers:', JSON.stringify(Object.fromEntries(swResponse.headers), null, 2));
+    console.log('📥 ========================================');
+
     const responseText = await swResponse.text();
-    console.log('📥 Respuesta de SW (raw):', responseText);
+    console.log('📥 [RESPUESTA SW] Body completo (raw):', responseText);
+    console.log('📥 [RESPUESTA SW] Body length:', responseText.length, 'caracteres');
 
     let swData;
     try {
@@ -1208,24 +1266,67 @@ function obtenerCPEmisor(data: any): string {
 }
 
 function obtenerCPReceptor(data: any): string {
-  // Buscar ubicaciones en múltiples ubicaciones posibles
+  // 🔍 VALIDACIÓN CRÍTICA: DomicilioFiscalReceptor es OBLIGATORIO en CFDI 4.0
+  console.log('🔍 [obtenerCPReceptor] Buscando código postal del receptor...');
+  
+  // Prioridad 1: Campo directo domicilioFiscalReceptor
+  if (data.domicilioFiscalReceptor && /^\d{5}$/.test(String(data.domicilioFiscalReceptor))) {
+    console.log('✅ CP encontrado en domicilioFiscalReceptor:', data.domicilioFiscalReceptor);
+    return String(data.domicilioFiscalReceptor);
+  }
+  
+  // Prioridad 2: Buscar en ubicación destino
   const ubicaciones = data.ubicaciones || data.tracking_data?.ubicaciones;
   let destino: any;
   
-  if (!ubicaciones) {
-    return data.cpReceptor || "01000";
+  if (ubicaciones) {
+    // Manejar formato array
+    if (Array.isArray(ubicaciones)) {
+      destino = ubicaciones.find((u: any) => u.tipo_ubicacion === 'Destino' || u.tipo === 'Destino');
+    }
+    // Manejar formato objeto
+    else if (ubicaciones.destino) {
+      destino = ubicaciones.destino;
+    }
+    
+    const cpDestino = destino?.domicilio?.codigo_postal || destino?.domicilio?.codigoPostal;
+    if (cpDestino && /^\d{5}$/.test(String(cpDestino))) {
+      console.log('✅ CP encontrado en ubicación destino:', cpDestino);
+      return String(cpDestino);
+    }
   }
   
-  // Manejar formato array
-  if (Array.isArray(ubicaciones)) {
-    destino = ubicaciones.find((u: any) => u.tipo_ubicacion === 'Destino' || u.tipo === 'Destino');
-  }
-  // Manejar formato objeto
-  else if (ubicaciones.destino) {
-    destino = ubicaciones.destino;
+  // Prioridad 3: Campo directo cpReceptor
+  if (data.cpReceptor && /^\d{5}$/.test(String(data.cpReceptor))) {
+    console.log('✅ CP encontrado en cpReceptor:', data.cpReceptor);
+    return String(data.cpReceptor);
   }
   
-  return destino?.domicilio?.codigo_postal || destino?.domicilio?.codigoPostal || data.cpReceptor || "01000";
+  // Prioridad 4: Datos del socio
+  if (data.socio?.codigo_postal && /^\d{5}$/.test(String(data.socio.codigo_postal))) {
+    console.log('✅ CP encontrado en datos del socio:', data.socio.codigo_postal);
+    return String(data.socio.codigo_postal);
+  }
+  
+  // ❌ ERROR CRÍTICO: Campo obligatorio faltante
+  console.error('❌ [obtenerCPReceptor] DomicilioFiscalReceptor no encontrado o inválido');
+  console.error('   Buscado en: domicilioFiscalReceptor, ubicaciones.destino, cpReceptor, socio.codigo_postal');
+  console.error('   Datos disponibles:', {
+    hasDomicilioFiscalReceptor: !!data.domicilioFiscalReceptor,
+    hasUbicaciones: !!ubicaciones,
+    hasCpReceptor: !!data.cpReceptor,
+    hasSocio: !!data.socio
+  });
+  
+  throw new Error(
+    'CFDI40147 - El campo DomicilioFiscalReceptor es OBLIGATORIO en CFDI 4.0.\n\n' +
+    'Este campo debe contener el código postal (5 dígitos) del domicilio fiscal del receptor registrado en el SAT.\n\n' +
+    'Opciones para corregir:\n' +
+    '1. Proporciona el campo "domicilioFiscalReceptor" con el código postal del receptor\n' +
+    '2. Asegúrate que la ubicación "Destino" tenga el código postal correcto\n' +
+    '3. Completa los datos fiscales del socio/cliente con su código postal\n\n' +
+    'Importante: El código postal debe ser el registrado oficialmente en el SAT para el RFC del receptor.'
+  );
 }
 
 function generateCartaPorteId(): string {

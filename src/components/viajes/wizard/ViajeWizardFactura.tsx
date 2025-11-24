@@ -176,7 +176,6 @@ export function ViajeWizardFactura({ data, onChange }: ViajeWizardFacturaProps) 
                 <SelectItem value="G03">G03 - Gastos en general</SelectItem>
                 <SelectItem value="G01">G01 - Adquisición de mercancías</SelectItem>
                 <SelectItem value="D10">D10 - Pagos por servicios educativos</SelectItem>
-                <SelectItem value="P01">P01 - Por definir</SelectItem>
               </SelectContent>
             </Select>
           </div>

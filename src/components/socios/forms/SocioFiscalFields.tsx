@@ -33,8 +33,7 @@ export function SocioFiscalFields({ formData, onFieldChange }: SocioFiscalFields
     { value: 'D07', label: 'D07 - Primas por seguros de gastos médicos' },
     { value: 'D08', label: 'D08 - Gastos de transportación escolar obligatoria' },
     { value: 'D09', label: 'D09 - Depósitos en cuentas para el ahorro, primas que tengan como base planes de pensiones' },
-    { value: 'D10', label: 'D10 - Pagos por servicios educativos' },
-    { value: 'P01', label: 'P01 - Por definir' }
+    { value: 'D10', label: 'D10 - Pagos por servicios educativos' }
   ];
 
   return (
