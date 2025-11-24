@@ -292,23 +292,23 @@ const handler = async (req: Request): Promise<Response> => {
     // 🔍 VALIDACIONES EXHAUSTIVAS PRE-TIMBRADO
     console.log('🔍 Iniciando validación exhaustiva pre-timbrado...');
     const dataSource = cartaPorteData || facturaData;
-    const validacionResult = validarDatosParaTimbrado(dataSource, esFacturaConCartaPorte);
+    const validacionDatosResult = validarDatosParaTimbrado(dataSource, esFacturaConCartaPorte);
     
-    if (!validacionResult.valido) {
-      console.error('❌ Validación pre-timbrado fallida:', validacionResult.errores);
+    if (!validacionDatosResult.valido) {
+      console.error('❌ Validación pre-timbrado fallida:', validacionDatosResult.errores);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Validación pre-timbrado fallida',
-        errores: validacionResult.errores,
-        advertencias: validacionResult.advertencias
+        errores: validacionDatosResult.errores,
+        advertencias: validacionDatosResult.advertencias
       }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
-    if (validacionResult.advertencias.length > 0) {
-      console.warn('⚠️ Advertencias pre-timbrado:', validacionResult.advertencias);
+    if (validacionDatosResult.advertencias.length > 0) {
+      console.warn('⚠️ Advertencias pre-timbrado:', validacionDatosResult.advertencias);
     }
 
     console.log('✅ Validación pre-timbrado exitosa');
@@ -332,23 +332,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     // VALIDACIÓN PRE-TIMBRADO EXHAUSTIVA
     console.log('🔍 Iniciando validación pre-timbrado exhaustiva...');
-    const validacionResult = validarCFDIAntesDeTimbrar(cfdiJson);
+    const validacionCFDIResult = validarCFDIAntesDeTimbrar(cfdiJson);
 
-    if (!validacionResult.valido) {
-      console.error('❌ Validación pre-timbrado fallida:', validacionResult.errores);
+    if (!validacionCFDIResult.valido) {
+      console.error('❌ Validación pre-timbrado fallida:', validacionCFDIResult.errores);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Validación pre-timbrado fallida',
-        errores: validacionResult.errores,
-        advertencias: validacionResult.advertencias
+        errores: validacionCFDIResult.errores,
+        advertencias: validacionCFDIResult.advertencias
       }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
-    if (validacionResult.advertencias.length > 0) {
-      console.warn('⚠️ Advertencias pre-timbrado:', validacionResult.advertencias);
+    if (validacionCFDIResult.advertencias.length > 0) {
+      console.warn('⚠️ Advertencias pre-timbrado:', validacionCFDIResult.advertencias);
     }
 
     console.log('✅ Validación pre-timbrado exitosa');
