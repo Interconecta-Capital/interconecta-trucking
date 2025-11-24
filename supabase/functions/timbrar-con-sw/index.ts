@@ -758,8 +758,8 @@ function construirCFDIJson(
     TipoDeComprobante: tipoComprobante,
     Exportacion: documentoData.exportacion || "01",
     LugarExpedicion: obtenerCPEmisor(documentoData),
-    FormaPago: esTipoIngreso ? (documentoData.formaPago || "01") : undefined,
-    MetodoPago: esTipoIngreso ? (documentoData.metodoPago || "PUE") : undefined,
+    FormaPago: tipoComprobante === "I" ? (documentoData.formaPago || "01") : undefined,
+    MetodoPago: tipoComprobante === "I" ? (documentoData.metodoPago || "PUE") : undefined,
     
     Emisor: {
       Rfc: documentoData.rfcEmisor || documentoData.rfc_emisor,
@@ -781,11 +781,11 @@ function construirCFDIJson(
         : "G03" // Gastos en general
     },
     
-    Conceptos: construirConceptos(documentoData),
+    Conceptos: construirConceptos(documentoData, tipoComprobante),
   };
 
   // Agregar impuestos solo si es tipo Ingreso
-  if (esTipoIngreso && totalImpuestos > 0) {
+  if (tipoComprobante === "I" && totalImpuestos > 0) {
     cfdi.Impuestos = {
       TotalImpuestosTrasladados: totalImpuestos.toFixed(2),
       Traslados: [{
@@ -809,7 +809,7 @@ function construirCFDIJson(
   return cfdi;
 }
 
-function construirConceptos(data: any) {
+function construirConceptos(data: any, tipoComprobante: string = "T") {
   // Si vienen conceptos directos (de factura), usarlos
   if (data.conceptos && data.conceptos.length > 0) {
     return data.conceptos.map((c: any) => ({
@@ -842,8 +842,8 @@ function construirConceptos(data: any) {
     Cantidad: (m.cantidad || 1).toString(),
     ClaveUnidad: m.clave_unidad || "KGM",
     Descripcion: m.descripcion || "Mercancía",
-    ValorUnitario: data.tipoCfdi === 'Ingreso' ? (m.valor_mercancia || 0).toFixed(4) : "0",
-    Importe: data.tipoCfdi === 'Ingreso' ? (m.valor_mercancia || 0).toFixed(2) : "0",
+    ValorUnitario: tipoComprobante === "I" ? (m.valor_mercancia || 0).toFixed(4) : "0",
+    Importe: tipoComprobante === "I" ? (m.valor_mercancia || 0).toFixed(2) : "0",
     ObjetoImp: "01"
   }));
 }
