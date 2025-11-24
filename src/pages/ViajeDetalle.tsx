@@ -844,7 +844,15 @@ export default function ViajeDetalle() {
               
               <div className="flex gap-3">
                 <Button
-                  onClick={() => navigate(`/carta-porte/editor?borrador=${borradorCartaPorte.id}`)}
+                  onClick={() => {
+                    console.log('🔍 [ViajeDetalle] Navegando a borrador:', {
+                      borradorId: borradorCartaPorte.id,
+                      ruta: `/borrador-carta-porte/${borradorCartaPorte.id}`,
+                      idCCP_en_borrador: borradorCartaPorte.datos_formulario?.idCCP,
+                      progreso: borradorCartaPorte.datos_formulario?.progreso || 0
+                    });
+                    navigate(`/borrador-carta-porte/${borradorCartaPorte.id}`);
+                  }}
                   className="flex-1"
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -870,7 +878,15 @@ export default function ViajeDetalle() {
               
               <div className="flex gap-3">
                 <Button
-                  onClick={() => navigate(`/carta-porte/editor?carta=${cartaPorte.id}`)}
+                  onClick={() => {
+                    console.log('🔍 [ViajeDetalle] Navegando a carta porte activa:', {
+                      cartaPorteId: cartaPorte.id,
+                      ruta: `/borrador-carta-porte/${cartaPorte.id}`,
+                      idCCP: cartaPorte.id_ccp,
+                      status: cartaPorte.status
+                    });
+                    navigate(`/borrador-carta-porte/${cartaPorte.id}`);
+                  }}
                   variant="outline"
                   className="flex-1"
                 >

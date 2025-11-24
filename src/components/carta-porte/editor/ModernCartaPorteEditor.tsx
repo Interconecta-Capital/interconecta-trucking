@@ -67,6 +67,25 @@ export function ModernCartaPorteEditor({ documentId, isBorrador = false }: Moder
     handleGuardarYSalir
   } = useCartaPorteFormManager(documentId);
 
+  // ✅ Validar que tenemos un documentId válido
+  useEffect(() => {
+    if (!documentId) {
+      console.error('❌ [ModernCartaPorteEditor] No se proporcionó documentId');
+      toast.error('Error: ID de documento no válido', {
+        description: 'Redirigiendo a la lista de cartas porte...'
+      });
+      setTimeout(() => {
+        navigate('/documentos-fiscales/carta-porte');
+      }, 1500);
+    } else {
+      console.log('✅ [ModernCartaPorteEditor] Documento cargado:', {
+        documentId,
+        isBorrador,
+        idCCP
+      });
+    }
+  }, [documentId, navigate, isBorrador, idCCP]);
+
   useEffect(() => {
     if (isGuardando) {
       setLastSaved(new Date());
