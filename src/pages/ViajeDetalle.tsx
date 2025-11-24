@@ -250,15 +250,21 @@ export default function ViajeDetalle() {
       // ✅ FASE 1: Cargar datos completos del receptor desde socio o validar contra SAT
       let regimenFiscalReceptor = (factura as any).regimen_fiscal_receptor;
       let domicilioFiscalReceptor = (factura as any).domicilio_fiscal_receptor;
+      
       console.log('🔍 [TIMBRADO] Datos actuales del receptor:', {
         rfc: (factura as any).rfc_receptor,
         regimen: regimenFiscalReceptor,
-        domicilio: domicilioFiscalReceptor
+        domicilio: domicilioFiscalReceptor,
+        dominicilioType: typeof domicilioFiscalReceptor
       });
       
-      // Intentar cargar desde socio si está asociado
-      if ((!regimenFiscalReceptor || !domicilioFiscalReceptor) && viaje?.socio_id) {
-        console.log('📋 [TIMBRADO] Intentando cargar datos desde socio asociado...');
+      // ✅ VALIDAR si el código postal actual es válido (5 dígitos)
+      const cpActualValido = domicilioFiscalReceptor && /^\d{5}$/.test(String(domicilioFiscalReceptor));
+      console.log('🔍 [TIMBRADO] Código postal actual válido:', cpActualValido);
+      
+      // Intentar cargar desde socio si está asociado (solo si CP es inválido o falta)
+      if (!cpActualValido && viaje?.socio_id) {
+        console.log('📋 [TIMBRADO] CP inválido/faltante, intentando cargar desde socio asociado...');
         const { data: socioData, error: socioError } = await supabase
           .from('socios')
           .select('regimen_fiscal, nombre_razon_social, rfc, direccion_fiscal')
@@ -271,17 +277,21 @@ export default function ViajeDetalle() {
             console.log('✅ [TIMBRADO] Régimen fiscal obtenido desde socio:', regimenFiscalReceptor);
           }
           
-          if (!domicilioFiscalReceptor && socioData.direccion_fiscal) {
+          if (!cpActualValido && socioData.direccion_fiscal) {
             const dirFiscal = socioData.direccion_fiscal as any;
-            domicilioFiscalReceptor = dirFiscal?.codigoPostal || dirFiscal?.codigo_postal;
-            console.log('✅ [TIMBRADO] Código postal obtenido desde socio:', domicilioFiscalReceptor);
+            const cpSocio = dirFiscal?.codigoPostal || dirFiscal?.codigo_postal;
+            if (cpSocio && /^\d{5}$/.test(String(cpSocio))) {
+              domicilioFiscalReceptor = cpSocio;
+              console.log('✅ [TIMBRADO] Código postal obtenido desde socio:', domicilioFiscalReceptor);
+            }
           }
         }
       }
       
-      // ✅ CRÍTICO: Si aún falta domicilio fiscal, consultar al SAT
-      if (!domicilioFiscalReceptor) {
-        console.log('🔍 [TIMBRADO] Domicilio fiscal faltante, consultando RFC en el SAT...');
+      // ✅ CRÍTICO: Si aún falta o es inválido el domicilio fiscal, consultar al SAT
+      const cpFinalValido = domicilioFiscalReceptor && /^\d{5}$/.test(String(domicilioFiscalReceptor));
+      if (!cpFinalValido) {
+        console.log('🔍 [TIMBRADO] Domicilio fiscal faltante o inválido, consultando RFC en el SAT...');
         toast.loading('Consultando datos del receptor en el SAT...', { id: 'timbrado-process' });
         
         const rfcReceptor = (factura as any).rfc_receptor;
@@ -301,10 +311,10 @@ export default function ViajeDetalle() {
         // Extraer código postal de la respuesta del SAT
         domicilioFiscalReceptor = consultaSAT.codigoPostal;
         
-        if (!domicilioFiscalReceptor) {
-          console.error('❌ [TIMBRADO] SAT no proporcionó código postal para el RFC');
+        if (!domicilioFiscalReceptor || !/^\d{5}$/.test(String(domicilioFiscalReceptor))) {
+          console.error('❌ [TIMBRADO] SAT no proporcionó código postal válido para el RFC');
           throw new Error(
-            `Error CFDI40147: El SAT no proporcionó código postal para el RFC "${rfcReceptor}".\n\n` +
+            `Error CFDI40147: El SAT no proporcionó un código postal válido para el RFC "${rfcReceptor}".\n\n` +
             'Por favor, completa manualmente el código postal del domicilio fiscal del receptor en los datos del cliente.'
           );
         }
@@ -312,22 +322,13 @@ export default function ViajeDetalle() {
         console.log('✅ [TIMBRADO] Código postal obtenido del SAT:', domicilioFiscalReceptor);
       }
       
-      // Extraer solo el código postal si viene como objeto
+      
+      // Extraer código postal (ya validado en pasos anteriores)
       const codigoPostalReceptor = typeof domicilioFiscalReceptor === 'object'
         ? ((domicilioFiscalReceptor as any)?.codigoPostal || (domicilioFiscalReceptor as any)?.codigo_postal)
         : domicilioFiscalReceptor;
       
-      // Validar formato del código postal
-      if (!/^\d{5}$/.test(String(codigoPostalReceptor))) {
-        console.error('❌ [TIMBRADO] Código postal del receptor inválido:', codigoPostalReceptor);
-        throw new Error(
-          `Error CFDI40147: El código postal del receptor "${codigoPostalReceptor}" no es válido.\n\n` +
-          'Debe ser un código postal de 5 dígitos.\n' +
-          'Por favor, actualiza el código postal en los datos del cliente/socio.'
-        );
-      }
-      
-      console.log('✅ [TIMBRADO] Código postal del receptor validado:', codigoPostalReceptor);
+      console.log('✅ [TIMBRADO] Código postal final del receptor:', codigoPostalReceptor);
       
       // ✅ VALIDACIÓN: Asegurar que hay un régimen fiscal válido
       const regimenFinal = regimenFiscalReceptor || '616'; // 616 = Sin obligaciones fiscales
