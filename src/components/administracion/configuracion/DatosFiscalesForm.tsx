@@ -13,6 +13,7 @@ import { CodigoPostalSelector } from '@/components/catalogos/CodigoPostalSelecto
 import { RegimesFiscalesSelector } from '@/components/shared/RegimesFiscalesSelector';
 import { RFCValidator } from '@/utils/rfcValidation';
 import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
+import { ModoPruebasAlert } from './ModoPruebasAlert';
 
 const datosFiscalesSchema = z.object({
   razon_social: z.string().min(1, 'La razón social es obligatoria').max(254),
@@ -184,6 +185,9 @@ export function DatosFiscalesForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* Alerta de Modo Pruebas */}
+      <ModoPruebasAlert modoPruebas={configuracion?.modo_pruebas || false} />
+      
       {/* Datos de la Empresa */}
       <Card>
         <CardHeader>

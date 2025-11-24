@@ -97,6 +97,36 @@ function obtenerCodigoPostalReceptor(data: any): string {
 }
 
 // ============================================================================
+// VALIDACIÓN PRE-TIMBRADO
+// ============================================================================
+
+function validarEmisorAntesDeTimbrar(rfc: string, nombre: string, ambiente: string): void {
+  console.log(`🔍 Validando emisor - Ambiente: ${ambiente}, RFC: ${rfc}, Nombre: ${nombre}`);
+  
+  if (ambiente === 'sandbox') {
+    const rfcsPruebaValidos: Record<string, string> = {
+      'EKU9003173C9': 'ESCUELA KEMPER URGATE',
+      'CACX7605101P8': 'XOCHILT CASAS CHAVEZ'
+    };
+
+    if (rfc in rfcsPruebaValidos) {
+      const nombreEsperado = rfcsPruebaValidos[rfc];
+      if (nombre !== nombreEsperado) {
+        throw new Error(
+          `CFDI40139: Para RFC ${rfc} en sandbox, debes usar el nombre oficial del SAT: "${nombreEsperado}". ` +
+          `Nombre recibido: "${nombre}". Este RFC es oficial de pruebas del SAT y requiere su nombre exacto.`
+        );
+      }
+      console.log(`✅ Validación exitosa: RFC y nombre coinciden con datos oficiales SAT`);
+    } else {
+      console.warn(`⚠️ RFC ${rfc} no está en la lista de RFCs de prueba oficiales del SAT. Esto podría causar problemas en sandbox.`);
+    }
+  } else {
+    console.log(`✅ Modo producción - validación de nombre omitida`);
+  }
+}
+
+// ============================================================================
 // CONSTRUCCIÓN DE CFDI - Lógica simplificada
 // ============================================================================
 
@@ -316,6 +346,9 @@ async function timbrarConSW(cfdi: CFDIJson, ambiente: 'sandbox' | 'production'):
   if (!swToken) {
     throw new Error('SW_TOKEN no configurado');
   }
+
+  // ✅ VALIDACIÓN PRE-TIMBRADO: Verificar RFC y nombre del emisor
+  validarEmisorAntesDeTimbrar(cfdi.Emisor.Rfc, cfdi.Emisor.Nombre, ambiente);
 
   const baseUrl = ambiente === 'production' 
     ? 'https://services.sw.com.mx'

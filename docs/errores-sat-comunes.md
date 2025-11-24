@@ -22,6 +22,39 @@ El sistema normaliza automáticamente las fechas para cumplir con el formato SAT
 
 ---
 
+## CFDI40139 - Nombre del Emisor No Coincide con RFC
+
+### Causa
+El nombre del emisor enviado no coincide con el nombre registrado oficialmente en el SAT para ese RFC. Este error es especialmente común en ambiente sandbox (pruebas).
+
+### Solución en Modo Pruebas (Sandbox)
+
+**El sistema automáticamente usa los datos oficiales del SAT** cuando tu empresa está en modo pruebas.
+
+#### RFCs de Prueba Oficiales del SAT
+
+| RFC | Nombre Oficial | Tipo | Régimen Fiscal |
+|-----|----------------|------|----------------|
+| EKU9003173C9 | ESCUELA KEMPER URGATE | Moral | 601 |
+| CACX7605101P8 | XOCHILT CASAS CHAVEZ | Física | 605 |
+
+**IMPORTANTE**: 
+- ✅ El sistema automáticamente usa estos datos cuando `modo_pruebas = true`
+- ✅ Verás una alerta amber en la pantalla de configuración indicando qué datos se están usando
+- ✅ Tu configuración real se mantiene intacta y se usará en producción
+
+### Solución en Producción
+
+Verifica que tu RFC y razón social estén registrados correctamente en:
+- **Administración > Mi Empresa > Datos Fiscales**
+- Asegúrate de que el RFC y nombre coincidan EXACTAMENTE con los registrados ante el SAT
+
+### ¿Por qué este error?
+
+El SAT valida que el nombre del emisor coincida con el registrado oficialmente para prevenir suplantación de identidad fiscal. En ambiente sandbox, DEBES usar los RFCs y nombres oficiales de prueba del SAT.
+
+---
+
 ## CFDI40101 - El campo Fecha no cumple con el patrón requerido
 
 **Causa:** Formato de fecha incorrecto (con milisegundos o zona horaria)

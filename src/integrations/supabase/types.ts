@@ -3475,6 +3475,36 @@ export type Database = {
           },
         ]
       }
+      rfc_pruebas_sat: {
+        Row: {
+          codigo_postal: string
+          created_at: string | null
+          descripcion: string | null
+          nombre: string
+          regimen_fiscal: string
+          rfc: string
+          tipo: string
+        }
+        Insert: {
+          codigo_postal: string
+          created_at?: string | null
+          descripcion?: string | null
+          nombre: string
+          regimen_fiscal: string
+          rfc: string
+          tipo: string
+        }
+        Update: {
+          codigo_postal?: string
+          created_at?: string | null
+          descripcion?: string | null
+          nombre?: string
+          regimen_fiscal?: string
+          rfc?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       rls_policies_backup: {
         Row: {
           backup_phase: string | null
