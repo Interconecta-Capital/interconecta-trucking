@@ -411,7 +411,6 @@ function RegisterForm() {
     confirmPassword: '',
     nombre: '',
     empresa: '',
-    rfc: '',
     telefono: ''
   });
   const [loading, setLoading] = useState(false);
@@ -446,7 +445,6 @@ function RegisterForm() {
       const result = await signUp(formData.email, formData.password, {
         nombre: formData.nombre,
         empresa: formData.empresa,
-        rfc: formData.rfc,
         telefono: formData.telefono
       });
       
@@ -551,18 +549,6 @@ function RegisterForm() {
             value={formData.empresa}
             onChange={(e) => handleChange('empresa', e.target.value)}
             required
-            className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="rfc" className="text-gray-300 text-sm md:text-base">RFC de la Empresa</Label>
-          <MobileAuthInput
-            id="rfc"
-            value={formData.rfc}
-            onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
-            required
-            maxLength={13}
             className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:bg-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>

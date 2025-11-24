@@ -27,7 +27,6 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
     empresa: '',
-    rfc: '',
     telefono: '',
   });
 
@@ -36,7 +35,6 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
       setFormData({
         nombre: user.profile.nombre || '',
         empresa: user.profile.empresa || '',
-        rfc: user.profile.rfc || '',
         telefono: user.profile.telefono || '',
       });
     }
@@ -63,32 +61,14 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
       });
 
       // Validar que todos los campos requeridos estén presentes
-      if (!formData.nombre || !formData.empresa || !formData.rfc || !formData.telefono) {
+      if (!formData.nombre || !formData.empresa || !formData.telefono) {
         toast.error('Todos los campos son obligatorios');
         setLoading(false);
         return;
       }
 
-      // Validar RFC único solo si el RFC cambió
-      const currentRFC = user?.profile?.rfc;
-      if (formData.rfc.toUpperCase() !== currentRFC?.toUpperCase()) {
-        console.log('Validando RFC único:', formData.rfc);
-        const rfcValidation = await validateUniqueRFC(formData.rfc);
-        if (!rfcValidation.isValid) {
-          toast.error(rfcValidation.message || 'RFC inválido o ya registrado');
-          await logSecurityEvent('PROFILE_UPDATE_RFC_DUPLICATE', {
-            rfc: formData.rfc
-          });
-          setLoading(false);
-          return;
-        }
-      }
-
       // Actualizar perfil
-      await updateProfile({
-        ...formData,
-        rfc: formData.rfc.toUpperCase()
-      });
+      await updateProfile(formData);
       
       toast.success('Perfil completado exitosamente');
       
@@ -109,7 +89,7 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
     }
   };
 
-  const isFormValid = formData.nombre && formData.empresa && formData.rfc && formData.telefono;
+  const isFormValid = formData.nombre && formData.empresa && formData.telefono;
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
@@ -143,19 +123,6 @@ export function CompleteProfileModal({ open }: CompleteProfileModalProps) {
               placeholder="Nombre de tu empresa"
               required
               maxLength={255}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rfc">RFC *</Label>
-            <Input
-              id="rfc"
-              value={formData.rfc}
-              onChange={(e) => handleInputChange('rfc', e.target.value.toUpperCase())}
-              placeholder="RFC de tu empresa"
-              required
-              maxLength={13}
-              pattern="[A-ZÑ&0-9]{12,13}"
             />
           </div>
 

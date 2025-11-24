@@ -194,21 +194,22 @@ export const useViajes = () => {
         
         const viajeData = {
           id: viajeId,
-          carta_porte_id: null, // UUID se asignará al crear borrador Carta Porte
+          carta_porte_id: null,
           origen: wizardData.origen?.direccion || wizardData.origen?.nombre || '',
           destino: wizardData.destino?.direccion || wizardData.destino?.nombre || '',
-          conductor_id: wizardData.conductor?.id,
-          vehiculo_id: wizardData.vehiculo?.id,
+          conductor_id: wizardData.conductor?.id || null,
+          vehiculo_id: wizardData.vehiculo?.id || null,
+          remolque_id: wizardData.remolque?.id || null,
+          socio_id: wizardData.socio?.id || null,
+          cliente_id: wizardData.cliente?.id || null,
           estado: 'programado' as const,
           fecha_inicio_programada: wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
           fecha_fin_programada: wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           observaciones: `Viaje ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'} - ${wizardData.origen?.direccion || 'Origen'} → ${wizardData.destino?.direccion || 'Destino'} - Distancia: ${wizardData.distanciaRecorrida || 0} km${wizardData.paradasAutorizadas?.length ? ` - ${wizardData.paradasAutorizadas.length} paradas` : ''}`,
           tracking_data: {
             ...JSON.parse(JSON.stringify(wizardData)),
-            // Asegurar que las paradas autorizadas se guarden correctamente
             paradasAutorizadas: wizardData.paradasAutorizadas || [],
             tieneParadasAutorizadas: wizardData.tieneParadasAutorizadas || false,
-            // Información adicional para el tracking
             rutaCalculada: {
               distanciaKm: wizardData.distanciaRecorrida || 0,
               origen: wizardData.origen,

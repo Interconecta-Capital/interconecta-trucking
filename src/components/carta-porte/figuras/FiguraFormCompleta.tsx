@@ -143,6 +143,20 @@ export function FiguraFormCompleta({ figura, onUpdate, onRemove, index }: Figura
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="curp">CURP {figura.tipo_figura === '01' ? '*' : ''}</Label>
+            <Input
+              id="curp"
+              value={figura.curp || ''}
+              onChange={(e) => handleFieldChange('curp', e.target.value.toUpperCase())}
+              placeholder="CURP (18 caracteres)"
+              maxLength={18}
+            />
+            {figura.tipo_figura === '01' && !figura.curp && (
+              <p className="text-sm text-amber-600">CURP es obligatorio para operadores</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="residencia_fiscal_figura">Residencia Fiscal</Label>
             <Select
               value={figura.residencia_fiscal_figura || 'MEX'}
