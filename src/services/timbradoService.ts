@@ -111,12 +111,41 @@ export class TimbradoService {
     try {
       console.log('📤 Invocando edge function V2 de SW/Conectia...');
       
+      // ✅ Obtener configuración de empresa para datos del emisor
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      const { data: config } = await supabase
+        .from('configuracion_empresa')
+        .select('rfc_emisor, razon_social, regimen_fiscal, modo_pruebas')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!config) {
+        throw new Error('Configuración de empresa no encontrada');
+      }
+      
+      // ✅ Construir objeto con formato correcto para timbrar-cfdi-v2
+      const ambiente = config.modo_pruebas ? 'sandbox' : 'produccion';
+      
+      console.log(`🎯 Ambiente detectado: ${ambiente}`);
+      console.log(`📋 RFC Emisor: ${config.rfc_emisor}`);
+      
       // Intentar con la nueva versión V2 primero
       const { data: result, error } = await supabase.functions.invoke('timbrar-cfdi-v2', {
         body: {
-          cartaPorteData: data,
+          cartaPorteData: {
+            xml: data.xml,
+            rfcEmisor: config.rfc_emisor,
+            nombreEmisor: config.razon_social,
+            regimenFiscalEmisor: config.regimen_fiscal,
+            cartaPorteId: data.cartaPorteId
+          },
           cartaPorteId: data.cartaPorteId || crypto.randomUUID(),
-          ambiente: data.environment || 'sandbox'
+          ambiente: ambiente
         }
       });
 
