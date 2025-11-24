@@ -28,6 +28,10 @@ function formatFechaSAT(fecha: Date = new Date()): string {
  * - Remueve milisegundos y zona horaria si existen
  * - Retorna fecha en formato YYYY-MM-DDTHH:MM:SS
  */
+/**
+ * Normaliza fecha para CFDI 4.0 - Formato ISO 8601 con T
+ * Formato requerido: YYYY-MM-DDTHH:MM:SS
+ */
 function normalizarFechaSAT(fecha: string | Date | undefined): string {
   if (!fecha) {
     return formatFechaSAT(new Date());
@@ -51,6 +55,59 @@ function normalizarFechaSAT(fecha: string | Date | undefined): string {
   if (!fechaPattern.test(fechaStr)) {
     console.warn(`⚠️ Fecha inválida "${fechaStr}", usando fecha actual`);
     return formatFechaSAT(new Date());
+  }
+  
+  return fechaStr;
+}
+
+/**
+ * Normaliza fecha para CartaPorte 3.1 - Formato con espacio (sin T)
+ * Formato requerido: YYYY-MM-DD HH:MM:SS
+ * 
+ * ⚠️ IMPORTANTE: CartaPorte requiere formato diferente al CFDI base
+ * CFDI: "2025-11-24T16:30:00" (con T)
+ * CartaPorte: "2025-11-24 16:30:00" (con espacio)
+ */
+function normalizarFechaCartaPorte(fecha: string | Date | undefined): string {
+  if (!fecha) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  let fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString();
+  
+  // Remover zona horaria
+  fechaStr = fechaStr.replace(/Z$/, '').replace(/[+-]\d{2}:\d{2}$/, '');
+  
+  // Remover milisegundos
+  fechaStr = fechaStr.replace(/\.\d{3}/, '');
+  
+  // Reemplazar T con espacio (formato CartaPorte)
+  fechaStr = fechaStr.replace('T', ' ');
+  
+  // Si tiene formato YYYY-MM-DD HH:MM (sin segundos), agregar :00
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(fechaStr)) {
+    fechaStr += ':00';
+  }
+  
+  // Validar formato final
+  const fechaPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+  if (!fechaPattern.test(fechaStr)) {
+    console.warn(`⚠️ Fecha CartaPorte inválida "${fechaStr}", usando fecha actual`);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
   
   return fechaStr;
@@ -1308,7 +1365,7 @@ function construirUbicaciones(data: any) {
       IDUbicacion: u.id_ubicacion || u.idUbicacion || `${tipoUbicacion === 'Origen' ? 'OR' : tipoUbicacion === 'Destino' ? 'DE' : 'PI'}${String(index + 1).padStart(6, '0')}`,
       RFCRemitenteDestinatario: u.rfc || u.rfcRemitenteDestinatario || data.rfcReceptor,
       NombreRemitenteDestinatario: u.nombre || u.nombreRemitenteDestinatario || data.nombreReceptor,
-      FechaHoraSalidaLlegada: normalizarFechaSAT(u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || new Date()),
+      FechaHoraSalidaLlegada: normalizarFechaCartaPorte(u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || new Date()),
       DistanciaRecorrida: u.distancia_recorrida?.toString() || u.distanciaRecorrida?.toString() || "0",
       Domicilio: {
         Calle: u.domicilio?.calle || "Sin calle",
@@ -1471,10 +1528,17 @@ function obtenerCPReceptor(data: any): string {
     return String(data.cpReceptor);
   }
   
-  // Prioridad 4: Datos del socio
-  if (data.socio?.codigo_postal && /^\d{5}$/.test(String(data.socio.codigo_postal))) {
-    console.log('✅ CP encontrado en datos del socio:', data.socio.codigo_postal);
-    return String(data.socio.codigo_postal);
+  // Prioridad 4: Datos del socio (direccion_fiscal en JSONB)
+  // ✅ CORRECCIÓN CRÍTICA: Acceder a codigo_postal desde direccion_fiscal (JSONB en BD)
+  if (data.socio?.direccion_fiscal?.codigoPostal && /^\d{5}$/.test(String(data.socio.direccion_fiscal.codigoPostal))) {
+    console.log('✅ CP encontrado en direccion_fiscal del socio (camelCase):', data.socio.direccion_fiscal.codigoPostal);
+    return String(data.socio.direccion_fiscal.codigoPostal);
+  }
+  
+  // También soportar formato snake_case para compatibilidad
+  if (data.socio?.direccion_fiscal?.codigo_postal && /^\d{5}$/.test(String(data.socio.direccion_fiscal.codigo_postal))) {
+    console.log('✅ CP encontrado en direccion_fiscal del socio (snake_case):', data.socio.direccion_fiscal.codigo_postal);
+    return String(data.socio.direccion_fiscal.codigo_postal);
   }
   
   // ❌ ERROR CRÍTICO: Campo obligatorio faltante
