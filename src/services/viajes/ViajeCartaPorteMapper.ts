@@ -197,44 +197,72 @@ export class ViajeCartaPorteMapper {
   private static mapearUbicaciones(viajeData: ViajeWizardData) {
     const ubicaciones = [];
     
+    // ORIGEN
     if (viajeData.origen) {
       ubicaciones.push({
         id: 'OR000001',
         tipo_ubicacion: 'Origen',
         rfc: viajeData.cliente?.rfc || 'XEXX010101000',
         nombre: viajeData.cliente?.nombre_razon_social || 'Cliente',
-        fecha_llegada_salida: new Date().toISOString(),
-        fecha_hora_salida_llegada: new Date().toISOString(),
+        fecha_llegada_salida: viajeData.fechaInicio || new Date().toISOString(),
+        fecha_hora_salida_llegada: viajeData.fechaInicio || new Date().toISOString(),
         distancia_recorrida: 0,
         coordenadas: viajeData.origen.coordenadas,
         domicilio: {
-          pais: 'MEX',
-          codigo_postal: viajeData.origen.codigoPostal || '00000',
-          estado: 'No especificado',
-          municipio: 'No especificado',
-          colonia: 'No especificada',
-          calle: viajeData.origen.direccion || 'No especificada'
+          pais: viajeData.origen.domicilio?.pais || 'MEX',
+          codigo_postal: viajeData.origen.domicilio?.codigo_postal || viajeData.origen.domicilio?.codigoPostal || '00000',
+          estado: viajeData.origen.domicilio?.estado || 'No especificado',
+          municipio: viajeData.origen.domicilio?.municipio || 'No especificado',
+          colonia: viajeData.origen.domicilio?.colonia || 'No especificada',
+          calle: viajeData.origen.domicilio?.calle || viajeData.origen.direccion || 'No especificada',
+          numero_exterior: viajeData.origen.domicilio?.numero_exterior || viajeData.origen.domicilio?.numExterior || ''
         }
       });
     }
     
+    // PARADAS INTERMEDIAS
+    if (viajeData.paradasAutorizadas && viajeData.paradasAutorizadas.length > 0) {
+      viajeData.paradasAutorizadas.forEach((parada, index) => {
+        ubicaciones.push({
+          id: `PI${String(index + 1).padStart(6, '0')}`,
+          tipo_ubicacion: 'Paso Intermedio',
+          rfc: viajeData.cliente?.rfc || 'XEXX010101000',
+          nombre: parada.nombre || `Parada ${index + 1}`,
+          fecha_llegada_salida: new Date().toISOString(),
+          fecha_hora_salida_llegada: new Date().toISOString(),
+          distancia_recorrida: 0,
+          coordenadas: parada.coordenadas ? `${parada.coordenadas.latitud},${parada.coordenadas.longitud}` : undefined,
+          domicilio: {
+            pais: 'MEX',
+            codigo_postal: parada.codigoPostal || '00000',
+            estado: 'No especificado',
+            municipio: 'No especificado',
+            colonia: 'No especificada',
+            calle: parada.direccion || 'No especificada'
+          }
+        });
+      });
+    }
+    
+    // DESTINO
     if (viajeData.destino) {
       ubicaciones.push({
         id: 'DE000001',
         tipo_ubicacion: 'Destino',
         rfc: viajeData.cliente?.rfc || 'XEXX010101000',
         nombre: viajeData.cliente?.nombre_razon_social || 'Cliente',
-        fecha_llegada_salida: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        fecha_hora_salida_llegada: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        distancia_recorrida: viajeData.distanciaRecorrida || 0,
+        fecha_llegada_salida: viajeData.fechaFin || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        fecha_hora_salida_llegada: viajeData.fechaFin || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        distancia_recorrida: viajeData.distanciaRecorrida || viajeData.distanciaTotal || 0,
         coordenadas: viajeData.destino.coordenadas,
         domicilio: {
-          pais: 'MEX',
-          codigo_postal: viajeData.destino.codigoPostal || '00000',
-          estado: 'No especificado',
-          municipio: 'No especificado',
-          colonia: 'No especificada',
-          calle: viajeData.destino.direccion || 'No especificada'
+          pais: viajeData.destino.domicilio?.pais || 'MEX',
+          codigo_postal: viajeData.destino.domicilio?.codigo_postal || viajeData.destino.domicilio?.codigoPostal || '00000',
+          estado: viajeData.destino.domicilio?.estado || 'No especificado',
+          municipio: viajeData.destino.domicilio?.municipio || 'No especificado',
+          colonia: viajeData.destino.domicilio?.colonia || 'No especificada',
+          calle: viajeData.destino.domicilio?.calle || viajeData.destino.direccion || 'No especificada',
+          numero_exterior: viajeData.destino.domicilio?.numero_exterior || viajeData.destino.domicilio?.numExterior || ''
         }
       });
     }
@@ -277,16 +305,43 @@ export class ViajeCartaPorteMapper {
   }
   
   private static mapearFiguras(viajeData: ViajeWizardData) {
-    if (!viajeData.conductor) return [];
+    const figuras = [];
     
-    return [{
-      id: `figura-${Date.now()}`,
-      tipo_figura: '01', // Operador
-      rfc_figura: viajeData.conductor.rfc || 'XEXX010101000',
-      nombre_figura: viajeData.conductor.nombre,
-      num_licencia: viajeData.conductor.num_licencia || '',
-      tipo_licencia: viajeData.conductor.tipo_licencia || 'C'
-    }];
+    // Operador (Conductor)
+    if (viajeData.conductor) {
+      figuras.push({
+        id: `figura-conductor-${Date.now()}`,
+        tipo_figura: '01', // Operador
+        rfc_figura: viajeData.conductor.rfc || 'XEXX010101000',
+        nombre_figura: viajeData.conductor.nombre,
+        num_licencia: viajeData.conductor.num_licencia || '',
+        tipo_licencia: viajeData.conductor.tipo_licencia || 'C',
+        curp: viajeData.conductor.curp || '',
+        residencia_fiscal_figura: viajeData.conductor.residencia_fiscal || 'MEX'
+      });
+    }
+    
+    // Propietario/Arrendador (Socio o Cliente)
+    if (viajeData.socio) {
+      figuras.push({
+        id: `figura-socio-${Date.now()}`,
+        tipo_figura: '02', // Propietario
+        rfc_figura: viajeData.socio.rfc || 'XEXX010101000',
+        nombre_figura: viajeData.socio.nombre_razon_social,
+        residencia_fiscal_figura: 'MEX'
+      });
+    } else if (viajeData.cliente) {
+      // Si no hay socio, usar cliente como propietario
+      figuras.push({
+        id: `figura-cliente-${Date.now()}`,
+        tipo_figura: '02', // Propietario
+        rfc_figura: viajeData.cliente.rfc,
+        nombre_figura: viajeData.cliente.nombre_razon_social,
+        residencia_fiscal_figura: 'MEX'
+      });
+    }
+    
+    return figuras;
   }
   
   private static extraerUbicacionOrigen(cartaPorteData: CartaPorteData) {

@@ -1429,6 +1429,7 @@ export type Database = {
           folio_inicial_factura: number | null
           id: string
           modo_pruebas: boolean | null
+          pais: string | null
           permisos_sct: Json | null
           proveedor_timbrado: string | null
           razon_social: string
@@ -1456,6 +1457,7 @@ export type Database = {
           folio_inicial_factura?: number | null
           id?: string
           modo_pruebas?: boolean | null
+          pais?: string | null
           permisos_sct?: Json | null
           proveedor_timbrado?: string | null
           razon_social?: string
@@ -1483,6 +1485,7 @@ export type Database = {
           folio_inicial_factura?: number | null
           id?: string
           modo_pruebas?: boolean | null
+          pais?: string | null
           permisos_sct?: Json | null
           proveedor_timbrado?: string | null
           razon_social?: string
@@ -3050,6 +3053,7 @@ export type Database = {
           created_at: string | null
           email: string
           empresa: string | null
+          google_onboarding_completed: boolean | null
           id: string
           nombre: string
           plan_suscripcion: string | null
@@ -3069,6 +3073,7 @@ export type Database = {
           created_at?: string | null
           email: string
           empresa?: string | null
+          google_onboarding_completed?: boolean | null
           id: string
           nombre: string
           plan_suscripcion?: string | null
@@ -3088,6 +3093,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           empresa?: string | null
+          google_onboarding_completed?: boolean | null
           id?: string
           nombre?: string
           plan_suscripcion?: string | null
@@ -3747,6 +3753,7 @@ export type Database = {
           constancia_fiscal_encrypted: string | null
           constancia_fiscal_encrypted_at: string | null
           created_at: string | null
+          curp: string | null
           direccion: Json | null
           direccion_fiscal: Json | null
           email: string | null
@@ -3777,6 +3784,7 @@ export type Database = {
           constancia_fiscal_encrypted?: string | null
           constancia_fiscal_encrypted_at?: string | null
           created_at?: string | null
+          curp?: string | null
           direccion?: Json | null
           direccion_fiscal?: Json | null
           email?: string | null
@@ -3807,6 +3815,7 @@ export type Database = {
           constancia_fiscal_encrypted?: string | null
           constancia_fiscal_encrypted_at?: string | null
           created_at?: string | null
+          curp?: string | null
           direccion?: Json | null
           direccion_fiscal?: Json | null
           email?: string | null

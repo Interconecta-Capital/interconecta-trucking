@@ -31,7 +31,6 @@ export default function Trial() {
     confirmPassword: '',
     nombre: '',
     empresa: '',
-    rfc: '',
     telefono: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +39,7 @@ export default function Trial() {
   const [showVerification, setShowVerification] = useState(false);
   const [showExistingUserAlert, setShowExistingUserAlert] = useState(false);
   const [existingUserEmail, setExistingUserEmail] = useState('');
-  const [rfcValidation, setRfcValidation] = useState({ isValid: true, message: '' });
+  
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   const { secureRegister } = useSecureAuth();
@@ -65,15 +64,6 @@ export default function Trial() {
       return;
     }
 
-    // Validate RFC format if provided
-    if (formData.rfc) {
-      const rfcCheck = validateRFCFormat(formData.rfc);
-      if (!rfcCheck.isValid) {
-        toast.error(rfcCheck.message);
-        return;
-      }
-    }
-
     setLoading(true);
     setShowExistingUserAlert(false);
 
@@ -82,7 +72,7 @@ export default function Trial() {
         formData.email,
         formData.password,
         formData.nombre,
-        formData.rfc,
+        '', // RFC no requerido en registro
         formData.empresa,
         formData.telefono
       );
@@ -147,17 +137,6 @@ export default function Trial() {
     // Clear alerts when user starts typing
     if (field === 'email' && showExistingUserAlert) {
       setShowExistingUserAlert(false);
-    }
-
-    // Real-time RFC validation
-    if (field === 'rfc' && sanitizedValue) {
-      const validation = validateRFCFormat(sanitizedValue);
-      setRfcValidation({ 
-        isValid: validation.isValid, 
-        message: validation.message || '' 
-      });
-    } else if (field === 'rfc' && !sanitizedValue) {
-      setRfcValidation({ isValid: true, message: '' });
     }
   };
 
@@ -277,23 +256,6 @@ export default function Trial() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="rfc" className="text-gray-70 font-medium">RFC de la Empresa</Label>
-                        <Input
-                          id="rfc"
-                          value={formData.rfc}
-                          onChange={(e) => handleChange('rfc', e.target.value.toUpperCase())}
-                          required
-                          maxLength={13}
-                          className={`border-gray-30 focus:border-blue-interconecta ${
-                            !rfcValidation.isValid ? 'border-red-500' : ''
-                          }`}
-                        />
-                        {!rfcValidation.isValid && (
-                          <p className="text-red-500 text-sm">{rfcValidation.message}</p>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
                         <Label htmlFor="email" className="text-gray-70 font-medium">Correo Electrónico</Label>
                         <Input
                           id="email"
@@ -384,7 +346,7 @@ export default function Trial() {
                       <Button 
                         type="submit" 
                         className="w-full bg-blue-interconecta hover:bg-blue-hover text-pure-white py-3 text-base font-semibold" 
-                        disabled={loading || !rfcValidation.isValid || !acceptedTerms}
+                        disabled={loading || !acceptedTerms}
                       >
                         {loading ? 'Creando cuenta...' : 'Comenzar Prueba Gratuita'}
                       </Button>

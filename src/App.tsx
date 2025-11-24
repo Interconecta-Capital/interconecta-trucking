@@ -8,6 +8,7 @@ import { AuthGuard } from "./components/auth/AuthGuard"
 import { BaseLayout } from "./components/layout/BaseLayout"
 import { OnboardingProvider } from '@/contexts/OnboardingProvider'
 import { OnboardingIntegration } from '@/components/onboarding/OnboardingIntegration'
+import { GoogleOnboardingModal } from '@/components/auth/GoogleOnboardingModal'
 import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
 import { FABProvider } from './contexts/FABContext'
@@ -71,6 +72,7 @@ const App = () => (
               <ViajeWizardModalProvider>
                 <OnboardingProvider>
                 <OnboardingIntegration />
+                <GoogleOnboardingModal />
                 <ViajeWizardModal />
                 <Routes>
               {/* Página principal - Landing page para usuarios no autenticados */}

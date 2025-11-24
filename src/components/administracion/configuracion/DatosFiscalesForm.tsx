@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Building2, MapPin } from 'lucide-react';
 import { useConfiguracionEmpresarial } from '@/hooks/useConfiguracionEmpresarial';
 import { CodigoPostalSelector } from '@/components/catalogos/CodigoPostalSelector';
@@ -35,7 +36,7 @@ const datosFiscalesSchema = z.object({
   referencia: z.string().max(250).optional(),
   municipio: z.string().min(1, 'El municipio es obligatorio').max(120),
   estado: z.string().min(1, 'El estado es obligatorio').max(30),
-  pais: z.string().default('MEX'),
+  pais: z.string().min(1, 'Seleccione un país').default('MEX'),
   codigo_postal: z.string().min(5, 'Código postal inválido').max(5),
   serie_carta_porte: z.string().default('CP'),
   folio_inicial: z.number().min(1).default(1),
@@ -360,6 +361,27 @@ export function DatosFiscalesForm() {
               placeholder="Entre calle X y calle Y"
               disabled={!isEditing}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pais">País *</Label>
+            <Select
+              value={form.watch('pais')}
+              onValueChange={(value) => form.setValue('pais', value)}
+              disabled={!isEditing}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar país" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MEX">México</SelectItem>
+                <SelectItem value="USA">Estados Unidos</SelectItem>
+                <SelectItem value="CAN">Canadá</SelectItem>
+              </SelectContent>
+            </Select>
+            {form.formState.errors.pais && (
+              <p className="text-sm text-red-600">{form.formState.errors.pais.message}</p>
+            )}
           </div>
         </CardContent>
       </Card>
