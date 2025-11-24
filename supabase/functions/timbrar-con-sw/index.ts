@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { TimbrarCartaPorteSchema, createValidationErrorResponse } from "../_shared/validation.ts";
+import { validarPreTimbrado } from "../_shared/validadorFiscal.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -431,15 +432,55 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 🔍 VALIDACIONES EXHAUSTIVAS PRE-TIMBRADO
-    console.log('🔍 Iniciando validación exhaustiva pre-timbrado...');
+    // 🔍 VALIDACIÓN FISCAL COMPLETA (100% APEGADA A SAT)
+    console.log('🔍 Iniciando validación fiscal completa contra fuentes oficiales...');
+    const validacionFiscal = await validarPreTimbrado(dataSource, user.id, supabaseClient);
+    
+    if (!validacionFiscal.valido) {
+      console.error('❌ [VALIDACIÓN FISCAL] Errores encontrados:', validacionFiscal.errores);
+      
+      // Formatear errores para respuesta clara
+      const erroresFormateados = validacionFiscal.errores.map(e => 
+        `\n• ${e.campo}:\n` +
+        `  Actual: ${e.valorActual}\n` +
+        `  Esperado: ${e.valorEsperado}\n` +
+        `  Fuente: ${e.fuente}\n` +
+        `  Acción: ${e.accion}`
+      ).join('\n');
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'VALIDACIÓN_FISCAL_FALLIDA',
+          message: 'Los datos fiscales no coinciden con las fuentes oficiales del SAT',
+          errores: validacionFiscal.errores,
+          detalles: erroresFormateados,
+          ambiente: validacionFiscal.ambiente,
+          fuenteVerdad: validacionFiscal.fuenteVerdad
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    if (validacionFiscal.advertencias.length > 0) {
+      console.warn('⚠️ Advertencias fiscales:', validacionFiscal.advertencias);
+    }
+    
+    console.log('✅ [VALIDACIÓN FISCAL] Datos validados contra fuentes oficiales');
+    console.log('   Fuente de verdad:', validacionFiscal.fuenteVerdad);
+    
+    // 🔍 VALIDACIONES TÉCNICAS PRE-TIMBRADO
+    console.log('🔍 Iniciando validaciones técnicas adicionales...');
     const validacionDatosResult = validarDatosParaTimbrado(dataSource, esFacturaConCartaPorte);
     
     if (!validacionDatosResult.valido) {
-      console.error('❌ Validación pre-timbrado fallida:', validacionDatosResult.errores);
+      console.error('❌ Validación técnica fallida:', validacionDatosResult.errores);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Validación pre-timbrado fallida',
+        error: 'Validación técnica fallida',
         errores: validacionDatosResult.errores,
         advertencias: validacionDatosResult.advertencias
       }), { 
@@ -448,11 +489,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    if (validacionDatosResult.advertencias.length > 0) {
-      console.warn('⚠️ Advertencias pre-timbrado:', validacionDatosResult.advertencias);
-    }
-
-    console.log('✅ Validación pre-timbrado exitosa');
+    console.log('✅ Validaciones técnicas exitosas');
 
     // 3. 🔐 ISO 27001 A.10.1.1 - Obtener token dinámico mediante autenticación
     console.log('🔐 Obteniendo token dinámico de SW...');
