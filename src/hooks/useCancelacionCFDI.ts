@@ -37,12 +37,12 @@ export const useCancelacionCFDI = () => {
   // Cancelar CFDI
   const cancelarCFDI = useMutation({
     mutationFn: async ({ uuid, rfc, motivo, folioSustitucion, ambiente = 'sandbox' }: CancelacionCFDI) => {
-      console.log('Iniciando cancelación CFDI:', { uuid, rfc, motivo, folioSustitucion });
+      console.log('🚀 Iniciando cancelación CFDI con SmartWeb:', { uuid: uuid.substring(0, 20) + '...', rfc, motivo });
 
       const { data, error } = await supabase.functions.invoke('cancelar-cfdi-sw', {
         body: {
           uuid,
-          rfc,
+          rfcEmisor: rfc,
           motivo,
           folioSustitucion,
           ambiente
@@ -50,11 +50,16 @@ export const useCancelacionCFDI = () => {
       });
 
       if (error) {
-        console.error('Error en cancelación:', error);
-        throw error;
+        console.error('❌ Error en cancelación:', error);
+        throw new Error(error.message || 'Error al cancelar CFDI');
       }
 
-      console.log('Respuesta de cancelación:', data);
+      if (!data.success) {
+        console.error('❌ Cancelación fallida:', data);
+        throw new Error(data.error || 'Error al cancelar CFDI');
+      }
+
+      console.log('✅ Cancelación exitosa:', data);
       return data;
     },
     onSuccess: (data, variables) => {
