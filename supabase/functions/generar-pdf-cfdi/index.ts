@@ -112,62 +112,73 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 4. OPCIÓN A: Usar SmartWeb para generar PDF (si tienen endpoint)
-    // const swToken = Deno.env.get('SW_TOKEN');
-    // const swUrl = ambiente === 'production' 
-    //   ? Deno.env.get('SW_PRODUCTION_URL')
-    //   : Deno.env.get('SW_SANDBOX_URL');
+    // 4. Generar PDF usando SmartWeb
+    const swToken = Deno.env.get('SW_TOKEN');
+    const swUrl = ambiente === 'production' 
+      ? Deno.env.get('SW_PRODUCTION_URL')
+      : Deno.env.get('SW_SANDBOX_URL');
     
-    // if (!swToken || !swUrl) {
-    //   throw new Error('Configuración de SmartWeb incompleta');
-    // }
+    if (!swToken || !swUrl) {
+      throw new Error('Configuración de SmartWeb incompleta');
+    }
 
-    // console.log('🖨️ Generando PDF con SmartWeb...');
-    // const pdfResponse = await fetch(`${swUrl}/utilities/pdf`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${swToken}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     xml: xmlContent,
-    //     logoUrl: 'https://tu-logo.com/logo.png', // Opcional
-    //     extras: {}
-    //   }),
-    // });
-
-    // if (!pdfResponse.ok) {
-    //   const errorText = await pdfResponse.text();
-    //   throw new Error(`Error generando PDF con SW: ${errorText}`);
-    // }
-
-    // const pdfBuffer = await pdfResponse.arrayBuffer();
-
-    // 4. OPCIÓN B: Por ahora, guardar el XML como archivo de texto
-    // En producción, implementar generación real de PDF con jsPDF u otra biblioteca
-    console.log('⚠️ Generación de PDF - Modo de desarrollo (guardando XML)');
-    console.log('📝 TODO: Implementar generación real de PDF con jsPDF o usar endpoint de SW');
+    console.log('🖨️ Generando PDF con SmartWeb...');
     
-    const pdfBuffer = new TextEncoder().encode(xmlContent);
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+    // Convertir XML a base64
+    const xmlBase64 = btoa(unescape(encodeURIComponent(xmlContent)));
+    
+    const pdfResponse = await fetch(`${swUrl}/utilities/pdf`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${swToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        xmlContent: xmlBase64,
+        templateId: 'cfdi40',
+        extras: {
+          useLogo: false,
+          includeQR: true,
+          includeBarcode: true
+        }
+      }),
+    });
 
-    // 5. Guardar "PDF" (XML por ahora) en Storage
+    if (!pdfResponse.ok) {
+      const errorText = await pdfResponse.text();
+      console.error('❌ Error respuesta PDF SW:', errorText);
+      throw new Error(`Error generando PDF con SW: ${errorText}`);
+    }
+
+    const pdfResult = await pdfResponse.json();
+    
+    if (!pdfResult.success || !pdfResult.data?.contentB64) {
+      throw new Error(pdfResult.message || 'Error generando PDF');
+    }
+    
+    console.log('✅ PDF generado exitosamente por SmartWeb');
+    
+    // Convertir base64 a buffer
+    const pdfBase64 = pdfResult.data.contentB64;
+    const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+
+    // 5. Guardar PDF en Storage
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `pdf_${uuidFiscal || documentId}_${timestamp}.xml`;
+    const fileName = `pdf_${uuidFiscal || documentId}_${timestamp}.pdf`;
     const pdfPath = `${user.id}/${cartaPorteId ? 'cartas-porte' : 'facturas'}/${documentId}/${fileName}`;
     
-    console.log('💾 Guardando archivo en Storage:', pdfPath);
+    console.log('💾 Guardando PDF en Storage:', pdfPath);
     
     const { error: storageError } = await supabaseClient.storage
       .from('documentos')
-      .upload(pdfPath, new Uint8Array(pdfBuffer), {
-        contentType: 'application/xml', // Cambiar a 'application/pdf' cuando se implemente real
+      .upload(pdfPath, pdfBuffer, {
+        contentType: 'application/pdf',
         upsert: true
       });
 
     if (storageError) {
-      console.error('❌ Error guardando archivo en Storage:', storageError);
-      throw new Error(`Error guardando archivo: ${storageError.message}`);
+      console.error('❌ Error guardando PDF en Storage:', storageError);
+      throw new Error(`Error guardando PDF: ${storageError.message}`);
     }
 
     // 6. Obtener URL pública
@@ -176,7 +187,7 @@ const handler = async (req: Request): Promise<Response> => {
       .getPublicUrl(pdfPath);
 
     const pdfUrl = publicUrlData.publicUrl;
-    console.log('✅ Archivo guardado exitosamente:', pdfUrl);
+    console.log('✅ PDF guardado exitosamente:', pdfUrl);
 
     // 7. Actualizar documento en BD con URL del PDF
     if (documentId) {
@@ -192,8 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       pdfUrl: pdfUrl,
       pdfBase64: pdfBase64,
-      message: 'PDF generado exitosamente',
-      warning: 'Modo de desarrollo: Se guardó el XML. Implementar generación real de PDF en producción.',
+      message: 'PDF generado exitosamente con SmartWeb',
       documentId: documentId,
       uuid: uuidFiscal
     }), { 
