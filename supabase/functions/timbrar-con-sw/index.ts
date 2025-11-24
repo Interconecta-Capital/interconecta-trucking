@@ -246,6 +246,7 @@ async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<strin
 
 const handler = async (req: Request): Promise<Response> => {
   // 🔐 CORS: Manejar preflight requests SIEMPRE primero
+  // [v2.0] Lógica corregida para TipoDeComprobante automático
   if (req.method === 'OPTIONS') {
     console.log('✅ [CORS] Preflight request recibido');
     return new Response(null, { 
@@ -291,7 +292,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { cartaPorteData, cartaPorteId, facturaData, facturaId, ambiente: reqAmbiente } = validationResult.data;
     ambiente = reqAmbiente; // Asignar para uso en catch block
 
-    // 🔐 ISO 27001 A.14.2.1 - Validación de entrada robusta
+    // Validar que tengamos al menos uno de los dos
     if (!cartaPorteData && !facturaData) {
       return new Response(JSON.stringify({ 
         success: false, 
@@ -302,7 +303,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // ✅ DECLARAR DATASOURCE UNA SOLA VEZ AQUÍ (evita duplicaciones)
+    // Unificar fuente de datos y tipo de documento
     const dataSource = facturaData || cartaPorteData;
     const tipoDocumentoFinal = facturaId ? 'factura' : 'cartaporte';
 
@@ -668,44 +669,51 @@ function construirCFDIJson(
 ) {
   const fecha = formatFechaSAT(new Date());
   
-  // Determinar si es tipo Ingreso o Traslado
-  // Prioridad: 1) Si es factura = Ingreso, 2) tipo_comprobante, 3) tipoCfdi
-  const esTipoIngreso = tipoDocumento === 'factura' 
-    || documentoData.tipo_comprobante === 'I'
-    || documentoData.tipoCfdi === 'Ingreso';
-  
-  // Calcular subtotal y total
+  // ✅ PASO 1: CALCULAR SUBTOTAL PRIMERO (sin condicionales de tipo)
   let subtotal = 0;
-  let totalImpuestos = 0;
   
   // Calcular basado en conceptos directos (factura) o mercancías (carta porte)
   if (documentoData.conceptos && documentoData.conceptos.length > 0) {
     // Factura con conceptos directos
     subtotal = documentoData.conceptos.reduce((sum: number, c: any) => sum + (c.importe || 0), 0);
-  } else if (esTipoIngreso && documentoData.mercancias) {
-    // Carta porte con mercancías
+  } else if (documentoData.mercancias && documentoData.mercancias.length > 0) {
+    // Carta porte con mercancías - calcular valores independientemente del tipo
     subtotal = documentoData.mercancias.reduce((sum: number, m: any) => 
       sum + (m.valor_mercancia || 0), 0
     );
   }
   
-  if (esTipoIngreso && subtotal > 0) {
+  // ✅ PASO 2: DETERMINAR TIPO DE COMPROBANTE BASADO EN SUBTOTAL
+  // 🎯 REGLA SAT DEFINITIVA: Si subtotal > 0 → SIEMPRE tipo "I" (Ingreso)
+  // Si subtotal = 0 → tipo "T" (Traslado)
+  const tipoComprobante = subtotal > 0 ? "I" : "T";
+  
+  // ✅ PASO 3: CALCULAR IMPUESTOS SOLO SI ES TIPO INGRESO
+  let totalImpuestos = 0;
+  if (tipoComprobante === "I" && subtotal > 0) {
     totalImpuestos = subtotal * 0.16; // IVA 16%
   }
   
-  // Determinar el tipo de comprobante final
-  const tipoComprobante = tipoDocumento === 'factura' ? "I" : (esTipoIngreso ? "I" : "T");
+  // ✅ PASO 4: VALORES FINALES (ya coherentes por construcción)
+  const subtotalFinal = subtotal;
+  const totalFinal = subtotal + totalImpuestos;
   
-  // Si es tipo T o P, los importes deben ser 0 según SAT
-  const subtotalFinal = tipoComprobante === "T" || tipoComprobante === "P" ? 0 : subtotal;
-  const totalFinal = tipoComprobante === "T" || tipoComprobante === "P" ? 0 : (subtotal + totalImpuestos);
+  // 🎯 LOG DE DECISIÓN AUTOMÁTICA
+  console.log('🎯 [DECISIÓN TIPO] Determinación automática de TipoDeComprobante:', {
+    subtotalCalculado: subtotal.toFixed(2),
+    tipoComprobanteDecidido: tipoComprobante,
+    razon: subtotal > 0 
+      ? '✅ Subtotal > 0 → Tipo "I" (Ingreso) - Factura con cobro' 
+      : '✅ Subtotal = 0 → Tipo "T" (Traslado) - CartaPorte sin cobro',
+    cumpleReglaCFDI40109: true,
+    tipoDocumento,
+    hasConceptos: !!documentoData.conceptos?.length,
+    hasMercancias: !!documentoData.mercancias?.length
+  });
 
-  console.log('🔍 [CFDI] Configuración del documento:', {
+  console.log('🔍 [CFDI] Configuración final del documento:', {
     tipoDocumento,
     esFacturaConCartaPorte: requiereComplementoCartaPorte,
-    esTipoIngreso,
-    tipoCfdiRecibido: documentoData.tipoCfdi,
-    tipoComprobanteDB: documentoData.tipo_comprobante,
     tipoComprobanteCalculado: tipoComprobante,
     importes: {
       subtotal: subtotalFinal.toFixed(2),
