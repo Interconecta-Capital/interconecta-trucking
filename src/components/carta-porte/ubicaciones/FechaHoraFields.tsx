@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Clock, Calendar } from 'lucide-react';
 import { Ubicacion } from '@/types/ubicaciones';
+import { normalizarFechaLocal } from '@/utils/dateFormatters';
 
 interface FechaHoraFieldsProps {
   ubicacion: Partial<Ubicacion>;
@@ -66,7 +67,10 @@ export function FechaHoraFields({
       <Input
         type="datetime-local"
         value={ubicacion.fechaHoraSalidaLlegada || ''}
-        onChange={(e) => onFieldChange('fechaHoraSalidaLlegada', e.target.value)}
+        onChange={(e) => {
+          const fechaNormalizada = normalizarFechaLocal(e.target.value);
+          onFieldChange('fechaHoraSalidaLlegada', fechaNormalizada);
+        }}
         min={getMinDateTime}
         max={getMaxDateTime}
         placeholder={getFieldPlaceholder()}

@@ -21,6 +21,40 @@ function formatFechaSAT(fecha: Date = new Date()): string {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
+/**
+ * Normaliza fechas para cumplir con formato SAT
+ * - Agrega segundos (:00) si solo tiene minutos
+ * - Remueve milisegundos y zona horaria si existen
+ * - Retorna fecha en formato YYYY-MM-DDTHH:MM:SS
+ */
+function normalizarFechaSAT(fecha: string | Date | undefined): string {
+  if (!fecha) {
+    return formatFechaSAT(new Date());
+  }
+
+  let fechaStr = typeof fecha === 'string' ? fecha : fecha.toISOString();
+  
+  // Remover zona horaria (Z, +00:00, etc.)
+  fechaStr = fechaStr.replace(/Z$/, '').replace(/[+-]\d{2}:\d{2}$/, '');
+  
+  // Remover milisegundos (.123, .456, etc.)
+  fechaStr = fechaStr.replace(/\.\d{3}/, '');
+  
+  // Si tiene formato YYYY-MM-DDTHH:MM (sin segundos), agregar :00
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(fechaStr)) {
+    fechaStr += ':00';
+  }
+  
+  // Validar formato final
+  const fechaPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+  if (!fechaPattern.test(fechaStr)) {
+    console.warn(`⚠️ Fecha inválida "${fechaStr}", usando fecha actual`);
+    return formatFechaSAT(new Date());
+  }
+  
+  return fechaStr;
+}
+
 // Función de validación exhaustiva pre-timbrado
 function validarCFDIAntesDeTimbrar(cfdi: any) {
   const errores: string[] = [];
@@ -127,11 +161,18 @@ function validarDatosParaTimbrado(dataSource: any, esFacturaConCartaPorte: boole
     const ubicacionesArray = Array.isArray(ubicaciones) ? ubicaciones : 
       (ubicaciones.origen && ubicaciones.destino ? [ubicaciones.origen, ubicaciones.destino] : []);
     
-    const fechaPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
     ubicacionesArray.forEach((u: any, i: number) => {
-      const fecha = u.fecha_llegada_salida || u.fechaHoraSalidaLlegada;
-      if (fecha && !fechaPattern.test(fecha)) {
-        errores.push(`Ubicación ${i+1}: Fecha inválida "${fecha}". Debe ser YYYY-MM-DDTHH:MM:SS`);
+      const fechaOriginal = u.fecha_llegada_salida || u.fechaHoraSalidaLlegada;
+      if (fechaOriginal) {
+        const fechaNormalizada = normalizarFechaSAT(fechaOriginal);
+        // Actualizar la fecha en el objeto para usar la normalizada
+        if (u.fecha_llegada_salida) {
+          u.fecha_llegada_salida = fechaNormalizada;
+        }
+        if (u.fechaHoraSalidaLlegada) {
+          u.fechaHoraSalidaLlegada = fechaNormalizada;
+        }
+        console.log(`✅ Ubicación ${i+1}: Fecha normalizada "${fechaOriginal}" → "${fechaNormalizada}"`);
       }
     });
   }
@@ -813,7 +854,7 @@ function construirUbicaciones(data: any) {
       IDUbicacion: u.id_ubicacion || u.idUbicacion || `${tipoUbicacion === 'Origen' ? 'OR' : tipoUbicacion === 'Destino' ? 'DE' : 'PI'}${String(index + 1).padStart(6, '0')}`,
       RFCRemitenteDestinatario: u.rfc || u.rfcRemitenteDestinatario || data.rfcReceptor,
       NombreRemitenteDestinatario: u.nombre || u.nombreRemitenteDestinatario || data.nombreReceptor,
-      FechaHoraSalidaLlegada: u.fecha_llegada_salida || u.fechaHoraSalidaLlegada || formatFechaSAT(new Date()),
+      FechaHoraSalidaLlegada: normalizarFechaSAT(u.fecha_llegada_salida || u.fechaHoraSalidaLlegada),
       DistanciaRecorrida: u.distancia_recorrida?.toString() || u.distanciaRecorrida?.toString() || "0",
       Domicilio: {
         Calle: u.domicilio?.calle || "Sin calle",
