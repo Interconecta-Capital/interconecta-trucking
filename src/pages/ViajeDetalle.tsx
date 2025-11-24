@@ -588,9 +588,17 @@ export default function ViajeDetalle() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/viajes')}>
+          <Button variant="ghost" onClick={() => {
+            // 🔧 FASE 4: Detectar si vino desde facturas
+            const fromFacturas = window.history.state?.usr?.from === 'facturas';
+            if (fromFacturas) {
+              navigate('/documentos-fiscales/facturas');
+            } else {
+              navigate('/viajes');
+            }
+          }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+            Volver {window.history.state?.usr?.from === 'facturas' ? 'a Facturas' : ''}
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Viaje #{viaje.id.slice(0, 8)}</h1>

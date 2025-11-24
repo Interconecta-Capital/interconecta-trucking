@@ -96,10 +96,46 @@ export function CartasPorteTab() {
         const rfcEmisor = datosForm.rfcEmisor || datosForm.configuracion?.rfcEmisor || emisor.rfc || emisor.rfcEmisor || 'N/A';
         const rfcReceptor = datosForm.rfcReceptor || datosForm.configuracion?.rfcReceptor || receptor.rfc || receptor.rfcReceptor || 'N/A';
         
+        // ✅ FASE 6: Calcular progreso del formulario
+        const calcularProgreso = (): number => {
+          let completedSections = 0;
+          const totalSections = 5;
+          
+          // 1. Configuración (RFC emisor y receptor)
+          if (rfcEmisor && rfcEmisor !== 'N/A' && rfcReceptor && rfcReceptor !== 'N/A') {
+            completedSections++;
+          }
+          
+          // 2. Ubicaciones (mínimo 2)
+          if (datosForm.ubicaciones && datosForm.ubicaciones.length >= 2) {
+            completedSections++;
+          }
+          
+          // 3. Mercancías (al menos 1)
+          if (datosForm.mercancias && datosForm.mercancias.length > 0) {
+            completedSections++;
+          }
+          
+          // 4. Autotransporte (placa mínimo)
+          if (datosForm.autotransporte?.placa_vm || datosForm.autotransporte?.placaVM) {
+            completedSections++;
+          }
+          
+          // 5. Figuras (al menos 1)
+          if (datosForm.figuras && datosForm.figuras.length > 0) {
+            completedSections++;
+          }
+          
+          return Math.round((completedSections / totalSections) * 100);
+        };
+        
+        const progreso = calcularProgreso();
+        const idCCP = datosForm.idCCP || 'Sin generar';
+        
         return {
           id: b.id,
           tipo: 'borrador' as const,
-          id_ccp: datosForm.cartaPorteId || datosForm.id_ccp || 'N/A',
+          id_ccp: idCCP,
           rfc_emisor: rfcEmisor,
           nombre_emisor: datosForm.nombreEmisor || datosForm.configuracion?.nombreEmisor || emisor.nombre || emisor.razonSocial || 'N/A',
           rfc_receptor: rfcReceptor,
@@ -110,11 +146,11 @@ export function CartasPorteTab() {
           nombre_borrador: b.nombre_borrador,
           distancia_total: datosForm.datosCalculoRuta?.distanciaTotal || datosForm.distanciaTotal || 0,
           viaje: null,
-          viaje_id: b.viaje_id, // ✅ FASE 5: Exponer viaje_id
+          viaje_id: b.viaje_id,
           uuid_fiscal: null,
           transporte_internacional: datosForm.transporteInternacional || false,
-          // ✅ FASE 6: Detectar datos incompletos
-          datos_incompletos: rfcEmisor === 'N/A' || rfcReceptor === 'N/A' || !rfcEmisor || !rfcReceptor
+          progreso, // ✅ FASE 6: Progreso calculado
+          datos_incompletos: rfcEmisor === 'N/A' || rfcReceptor === 'N/A' || !rfcEmisor || !rfcReceptor || progreso < 80
         };
       });
 
@@ -307,6 +343,13 @@ export function CartasPorteTab() {
                         >
                           {doc.status === 'auto_guardado' ? 'Auto-guardado' : doc.status}
                         </Badge>
+                        {/* ✅ FASE 6: Mostrar IdCCP para borradores */}
+                        {doc.tipo === 'borrador' && doc.id_ccp && doc.id_ccp !== 'Sin generar' && (
+                          <Badge variant="outline" className="text-xs font-mono bg-green-50 text-green-700 border-green-300">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            IdCCP: {doc.id_ccp.substring(0, 8)}...
+                          </Badge>
+                        )}
                         {/* ✅ FASE 6: Badge de datos incompletos */}
                         {doc.datos_incompletos && (
                           <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
