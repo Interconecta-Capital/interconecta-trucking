@@ -53,3 +53,6 @@ verify_jwt = true
 
 [functions.generar-pdf-cfdi]
 verify_jwt = true
+
+[functions.actualizar-catalogos-sat]
+verify_jwt = false

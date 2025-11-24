@@ -314,6 +314,120 @@ async function obtenerTokenSW(ambiente: 'sandbox' | 'production'): Promise<strin
   return swToken;
 }
 
+/**
+ * 🔍 FASE 1: Validación previa con API de SmartWeb
+ * 
+ * Valida el XML contra la API de validación de SW ANTES de timbrar
+ * Esto previene errores costosos y ahorra timbres
+ * 
+ * Fuente: https://developers.sw.com.mx/knowledge-base/validacion-cfdi/
+ * 
+ * @param xml - XML del CFDI a validar
+ * @param token - Token de autenticación SW
+ * @param ambiente - Ambiente (sandbox/production)
+ * @returns Resultado de validación con errores detallados si aplica
+ */
+async function validarXMLConSW(
+  xml: string,
+  token: string,
+  ambiente: 'sandbox' | 'production'
+): Promise<{ valido: boolean; errores: string[]; detalles: any }> {
+  const urlValidacion = ambiente === 'sandbox'
+    ? 'https://api.test.sw.com.mx/validate-cfdi/v1'
+    : 'https://api.sw.com.mx/validate-cfdi/v1';
+
+  console.log('🔍 ========================================');
+  console.log('🔍 [PRE-VALIDACIÓN SW] Iniciando validación con API SmartWeb...');
+  console.log('🔍 [PRE-VALIDACIÓN SW] URL:', urlValidacion);
+  console.log('🔍 [PRE-VALIDACIÓN SW] Ambiente:', ambiente);
+  console.log('🔍 [PRE-VALIDACIÓN SW] XML size:', xml.length, 'caracteres');
+  console.log('🔍 ========================================');
+
+  try {
+    const response = await fetch(urlValidacion, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ xml }),
+      signal: AbortSignal.timeout(15000) // 15 segundos timeout
+    });
+
+    console.log('📥 [PRE-VALIDACIÓN SW] Status:', response.status);
+    console.log('📥 [PRE-VALIDACIÓN SW] Status Text:', response.statusText);
+
+    const result = await response.json();
+    console.log('📥 [PRE-VALIDACIÓN SW] Respuesta completa:', JSON.stringify(result, null, 2));
+
+    // Caso exitoso: XML válido
+    if (result.status === 'success') {
+      console.log('✅ ========================================');
+      console.log('✅ [PRE-VALIDACIÓN SW] XML VÁLIDO - Estructura correcta según SAT');
+      console.log('✅ [PRE-VALIDACIÓN SW] Compatible con CFDI 4.0 + CartaPorte 3.1');
+      console.log('✅ ========================================');
+      return { valido: true, errores: [], detalles: result };
+    }
+
+    // Caso error: Extraer errores detallados
+    const errores: string[] = [];
+    
+    if (result.detail && Array.isArray(result.detail)) {
+      result.detail.forEach((section: any) => {
+        if (section.detail && Array.isArray(section.detail)) {
+          section.detail.forEach((error: any) => {
+            // Solo agregar errores críticos (type 3 = Error)
+            if (error.type === 3 || error.typeValue === 'Error') {
+              const errorMsg = `[${section.section}] ${error.message}: ${error.messageDetail}`;
+              errores.push(errorMsg);
+              console.error('❌ [PRE-VALIDACIÓN SW]', errorMsg);
+            }
+          });
+        }
+      });
+    }
+
+    // Si no hay errores específicos pero status es error
+    if (errores.length === 0) {
+      if (result.messageDetail) {
+        errores.push(result.messageDetail);
+      } else if (result.message) {
+        errores.push(result.message);
+      } else {
+        errores.push('Error de validación desconocido');
+      }
+    }
+
+    console.error('❌ ========================================');
+    console.error('❌ [PRE-VALIDACIÓN SW] XML INVÁLIDO');
+    console.error('❌ [PRE-VALIDACIÓN SW] Total de errores:', errores.length);
+    console.error('❌ ========================================');
+
+    return { valido: false, errores, detalles: result };
+
+  } catch (error: any) {
+    console.error('💥 ========================================');
+    console.error('💥 [PRE-VALIDACIÓN SW] Error conectando con API:', error.message);
+    console.error('💥 [PRE-VALIDACIÓN SW] Stack:', error.stack);
+    console.error('💥 ========================================');
+    
+    // FAIL-SAFE: Si la API de validación falla (timeout, red, etc.)
+    // NO bloqueamos el timbrado, solo registramos el error
+    console.warn('⚠️ [PRE-VALIDACIÓN SW] FAIL-SAFE: Continuando sin validación previa');
+    console.warn('⚠️ [PRE-VALIDACIÓN SW] El timbrado continuará normalmente');
+    
+    return { 
+      valido: true, // Permitir continuar
+      errores: [], 
+      detalles: { 
+        error: error.message, 
+        failSafe: true,
+        razon: 'API de validación no disponible'
+      } 
+    };
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // 🔐 CORS: Manejar preflight requests SIEMPRE primero
   // [v2.0] Lógica corregida para TipoDeComprobante automático
@@ -658,6 +772,61 @@ const handler = async (req: Request): Promise<Response> => {
     // 5. Convertir JSON a XML string
     const xmlString = jsonToXML(cfdiJson);
     console.log('🔄 XML generado (primeros 500 chars):', xmlString.substring(0, 500));
+
+    // ============================================
+    // 🔍 FASE 1: PRE-VALIDACIÓN CON API DE SMARTWEB
+    // ============================================
+    console.log('🔍 [PRE-VALIDACIÓN] Validando XML con SmartWeb antes de timbrar...');
+    const validacionSW = await validarXMLConSW(xmlString, swToken, ambiente);
+
+    if (!validacionSW.valido) {
+      console.error('❌ [PRE-VALIDACIÓN] XML inválido según SmartWeb');
+      console.error('❌ [PRE-VALIDACIÓN] NO se consumirá ningún timbre');
+      
+      // Guardar errores en BD para análisis posterior
+      if (cartaPorteId) {
+        await supabaseClient
+          .from('cartas_porte')
+          .update({
+            status: 'error_validacion',
+            error_details: {
+              tipo: 'validacion_sw_previa',
+              errores: validacionSW.errores,
+              detalles: validacionSW.detalles,
+              timestamp: new Date().toISOString()
+            }
+          })
+          .eq('id', cartaPorteId);
+      } else if (facturaId) {
+        await supabaseClient
+          .from('facturas')
+          .update({
+            status: 'error',
+            error_message: `Validación XML fallida: ${validacionSW.errores.join('; ')}`
+          })
+          .eq('id', facturaId);
+      }
+      
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'VALIDACIÓN_XML_FALLIDA',
+        message: 'El XML no cumple con los estándares del SAT según SmartWeb',
+        errores: validacionSW.errores,
+        detalles: validacionSW.detalles,
+        recomendacion: 'Revisa los datos del documento y corrige los errores indicados. NO se consumió ningún timbre.',
+        documentoAfectado: {
+          id: documentoId,
+          tipo: tipoDocumento
+        }
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('✅ [PRE-VALIDACIÓN] XML válido, continuando con timbrado...');
+    console.log('✅ [PRE-VALIDACIÓN] Se procederá a consumir 1 timbre');
+    // ============================================
 
     // 6. Crear FormData con multipart/form-data (método optimizado según docs de SW)
     const formData = new FormData();
