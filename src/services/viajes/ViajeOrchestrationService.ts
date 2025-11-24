@@ -358,7 +358,12 @@ export class ViajeOrchestrationService {
         rfc_receptor: wizardData.cliente?.rfc || 'XAXX010101000',
         nombre_receptor: wizardData.cliente?.nombre_razon_social || 'Público General',
         regimen_fiscal_receptor: wizardData.cliente.regimen_fiscal, // ✅ CRÍTICO: Régimen fiscal validado
-        uso_cfdi: facturaData.usoCfdi || 'G03',
+        // ✅ CORREGIDO: Validar uso_cfdi contra catálogo SAT (P01 NO es válido)
+        uso_cfdi: ['G01', 'G02', 'G03', 'I01', 'I02', 'I03', 'I04', 'I05', 'I06', 'I07', 'I08', 'D01', 'D02', 'D03', 'D04', 'D05', 'D06', 'D07', 'D08', 'D09', 'D10', 'S01', 'CP01', 'CN01'].includes(facturaData.usoCfdi) 
+          ? facturaData.usoCfdi 
+          : 'G03', // Gastos en general (valor por defecto seguro)
+        // ✅ NUEVO: Agregar domicilio fiscal del receptor (CRÍTICO para CFDI 4.0)
+        domicilio_fiscal_receptor: wizardData.cliente?.domicilio_fiscal?.codigo_postal || null,
         subtotal: facturaData.subtotal || 0,
         total: facturaData.total || 0,
         total_impuestos_trasladados: facturaData.iva || 0,
