@@ -52,6 +52,7 @@ export default function ViajeDetalle() {
   const [viaje, setViaje] = useState<Viaje | null>(null);
   const [factura, setFactura] = useState<Factura | null>(null);
   const [cartaPorte, setCartaPorte] = useState<CartaPorte | null>(null);
+  const [borradorCartaPorte, setBorradorCartaPorte] = useState<any>(null);
   const [conductor, setConductor] = useState<any>(null);
   const [vehiculo, setVehiculo] = useState<any>(null);
   const [socio, setSocio] = useState<any>(null);
@@ -106,6 +107,30 @@ export default function ViajeDetalle() {
       setConductor(parsed.conductor || null);
       setVehiculo(parsed.vehiculo || null);
       setSocio(parsed.socio || null);
+      
+      // ✅ FASE 1: Cargar borrador de carta porte si existe
+      const borradorId = parsed.viaje?.tracking_data?.borrador_carta_porte_id;
+      if (borradorId) {
+        console.log('🔍 [VIAJE DETALLE] Cargando borrador de carta porte:', borradorId);
+        const { data: borradorData, error: borradorError } = await supabase
+          .from('borradores_carta_porte')
+          .select('*')
+          .eq('id', borradorId)
+          .single();
+        
+        if (!borradorError && borradorData) {
+          setBorradorCartaPorte(borradorData);
+          console.log('✅ [VIAJE DETALLE] Borrador cargado:', {
+            id: borradorData.id,
+            nombre: borradorData.nombre_borrador,
+            ultima_edicion: borradorData.ultima_edicion
+          });
+        } else {
+          console.warn('⚠️ [VIAJE DETALLE] No se pudo cargar el borrador:', borradorError);
+        }
+      } else {
+        setBorradorCartaPorte(null);
+      }
       
     } catch (error) {
       console.error('Error cargando viaje:', error);
@@ -369,6 +394,33 @@ export default function ViajeDetalle() {
     return variants[estado] || 'secondary';
   };
 
+  // ✅ FASE 2: Determinar estado del documento de Carta Porte
+  const getEstadoDocumentoCartaPorte = () => {
+    if (cartaPorte?.status === 'timbrado') {
+      return 'timbrado';
+    }
+    if (cartaPorte?.id) {
+      return 'activa';
+    }
+    if (borradorCartaPorte?.id) {
+      return 'borrador';
+    }
+    return 'sin_documento';
+  };
+
+  const estadoDocCP = getEstadoDocumentoCartaPorte();
+
+  // Log del estado detectado
+  if (viaje) {
+    console.log('📋 [VIAJE DETALLE] Estado del documento Carta Porte:', {
+      tiene_borrador: !!borradorCartaPorte,
+      borrador_id: borradorCartaPorte?.id,
+      tiene_carta_porte: !!cartaPorte,
+      carta_porte_status: cartaPorte?.status,
+      estado_determinado: estadoDocCP
+    });
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -575,51 +627,181 @@ export default function ViajeDetalle() {
         </Card>
       )}
 
-      {/* Sección de Carta Porte */}
-      {cartaPorte && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Carta Porte
-            </CardTitle>
-            <CardDescription>
-              Complemento de transporte de mercancías
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-muted-foreground">ID CCP</Label>
-                <p className="font-semibold">{cartaPorte.id_ccp || 'Pendiente'}</p>
+      {/* Sección de Carta Porte - Adaptable según estado */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Carta Porte
+          </CardTitle>
+          <CardDescription>
+            Complemento de transporte de mercancías
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* CASO 1: Sin documento */}
+          {estadoDocCP === 'sin_documento' && (
+            <>
+              <div className="text-center py-6">
+                <p className="text-muted-foreground mb-4">
+                  No hay Carta Porte generada para este viaje
+                </p>
+                <Button
+                  onClick={async () => {
+                    try {
+                      setProcessing(true);
+                      toast.loading('Generando borrador de Carta Porte...', { id: 'create-borrador' });
+                      
+                      // Llamar al servicio para crear borrador desde viaje
+                      const result = await ViajeOrchestrationService.crearBorradorDesdeViaje(viaje.id);
+                      
+                      if (result.success && result.borradorId) {
+                        toast.success('Borrador creado exitosamente', { id: 'create-borrador' });
+                        await cargarViajeCompleto();
+                      } else {
+                        throw new Error(result.error || 'Error desconocido');
+                      }
+                    } catch (error: any) {
+                      console.error('Error creando borrador:', error);
+                      toast.error('Error al crear borrador: ' + error.message, { id: 'create-borrador' });
+                    } finally {
+                      setProcessing(false);
+                    }
+                  }}
+                  disabled={processing}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generar Borrador de Carta Porte
+                </Button>
               </div>
-              <div>
-                <Label className="text-muted-foreground">Estado</Label>
-                <div className="mt-1">
-                  <Badge variant={cartaPorte.status === 'timbrado' ? 'default' : 'secondary'}>
-                    {cartaPorte.status.toUpperCase()}
-                  </Badge>
+            </>
+          )}
+
+          {/* CASO 2: Borrador en progreso */}
+          {estadoDocCP === 'borrador' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Nombre del Borrador</Label>
+                  <p className="font-semibold">{borradorCartaPorte.nombre_borrador}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Última Edición</Label>
+                  <p className="font-semibold">
+                    {new Date(borradorCartaPorte.ultima_edicion).toLocaleString('es-MX')}
+                  </p>
                 </div>
               </div>
-            </div>
-            
-            {cartaPorte.status === 'draft' && (
+              
               <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  <strong>ℹ️ Información:</strong> La Carta Porte se generará y timbrará automáticamente después de timbrar la factura.
+                  <strong>📝 Borrador en progreso:</strong> Continúa completando la información de la Carta Porte.
                 </p>
               </div>
-            )}
-            
-            {cartaPorte.uuid_fiscal && (
-              <div className="bg-muted p-3 rounded-md">
-                <Label className="text-muted-foreground text-xs">UUID Fiscal</Label>
-                <p className="font-mono text-sm mt-1">{cartaPorte.uuid_fiscal}</p>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate(`/carta-porte/editor?borrador=${borradorCartaPorte.id}`)}
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Continuar Llenado de Carta Porte
+                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </>
+          )}
+
+          {/* CASO 3: Carta Porte activa (no timbrada) */}
+          {estadoDocCP === 'activa' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">ID CCP</Label>
+                  <p className="font-semibold">{cartaPorte.id_ccp || 'Pendiente'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Estado</Label>
+                  <Badge variant="secondary">{cartaPorte.status.toUpperCase()}</Badge>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate(`/carta-porte/editor?carta=${cartaPorte.id}`)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Editar Carta Porte
+                </Button>
+                <Button
+                  onClick={async () => {
+                    toast.info('Funcionalidad de timbrado de Carta Porte en desarrollo');
+                  }}
+                  className="flex-1"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Finalizar y Timbrar
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* CASO 4: Carta Porte timbrada */}
+          {estadoDocCP === 'timbrado' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">ID CCP</Label>
+                  <p className="font-semibold">{cartaPorte.id_ccp}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Estado</Label>
+                  <Badge>TIMBRADO</Badge>
+                </div>
+              </div>
+              
+              {cartaPorte.uuid_fiscal && (
+                <div className="bg-muted p-3 rounded-md">
+                  <Label className="text-muted-foreground text-xs">UUID Fiscal</Label>
+                  <p className="font-mono text-sm mt-1">{cartaPorte.uuid_fiscal}</p>
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate(`/carta-porte/viewer?id=${cartaPorte.id}`)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Visualizar
+                </Button>
+                <Button
+                  onClick={() => {
+                    toast.info('Descarga de PDF en desarrollo');
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar PDF
+                </Button>
+                <Button
+                  onClick={() => {
+                    toast.info('Descarga de XML en desarrollo');
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Descargar XML
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Modal de Pre-visualización de Factura */}
       {factura && showFacturaPreview && (

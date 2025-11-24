@@ -633,4 +633,91 @@ export class ViajeOrchestrationService {
     
     return data?.[0] || null;
   }
+
+  /**
+   * ✅ NUEVO: Crear borrador de Carta Porte desde un viaje existente
+   * Este método es útil cuando el viaje ya está creado pero falta el borrador de CP
+   */
+  static async crearBorradorDesdeViaje(viajeId: string): Promise<{ success: boolean; borradorId?: string; error?: string }> {
+    try {
+      console.log('📋 [ORCHESTRATOR] Creando borrador desde viaje existente:', viajeId);
+      
+      // Obtener viaje completo con tracking_data
+      const { data: viaje, error: viajeError } = await supabase
+        .from('viajes')
+        .select(`
+          *,
+          conductor:conductores(*),
+          vehiculo:vehiculos(*),
+          remolque:remolques(*),
+          socio:socios(*)
+        `)
+        .eq('id', viajeId)
+        .single();
+      
+      if (viajeError || !viaje) {
+        throw new Error('Viaje no encontrado');
+      }
+      
+      // Reconstruir wizardData desde el viaje - Cast para TypeScript
+      const trackingData = (viaje.tracking_data || {}) as any;
+      
+      // Reconstruir wizard data mínimo necesario
+      const wizardData: any = {
+        tipoServicio: trackingData.tipo_servicio || 'flete_pagado',
+        cliente: trackingData.cliente,
+        conductor: viaje.conductor,
+        vehiculo: viaje.vehiculo,
+        remolque: viaje.remolque,
+        socio: viaje.socio,
+        origen: trackingData.ubicaciones?.origen || {
+          direccion: viaje.origen,
+          domicilio: {},
+          tipoUbicacion: 'Origen'
+        },
+        destino: trackingData.ubicaciones?.destino || {
+          direccion: viaje.destino,
+          domicilio: {},
+          tipoUbicacion: 'Destino'
+        },
+        descripcionMercancia: trackingData.descripcionMercancia,
+        claveBienesTransp: trackingData.claveBienesTransp,
+        distanciaTotal: viaje.distancia_km,
+        tiempoEstimado: viaje.tiempo_estimado_horas ? viaje.tiempo_estimado_horas * 60 : 0,
+        rutaCalculada: trackingData.ruta
+      };
+      
+      // Obtener mercancías de la tabla
+      const { data: mercancias } = await supabase
+        .from('mercancias')
+        .select('*')
+        .eq('viaje_id', viajeId);
+      
+      if (mercancias && mercancias.length > 0) {
+        wizardData.mercancias = mercancias;
+      }
+      
+      // Crear borrador usando el método privado
+      const borrador = await this.crearBorradorCartaPorte(viajeId, wizardData, viaje.factura_id);
+      
+      // Actualizar tracking_data
+      await this.actualizarTrackingData(viajeId, {
+        borrador_carta_porte_id: borrador.id,
+        fecha_creacion_borrador: new Date().toISOString()
+      });
+      
+      console.log('✅ [ORCHESTRATOR] Borrador creado desde viaje:', borrador.id);
+      
+      return {
+        success: true,
+        borradorId: borrador.id
+      };
+    } catch (error: any) {
+      console.error('❌ [ORCHESTRATOR] Error creando borrador desde viaje:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
