@@ -170,14 +170,21 @@ export class ViajeCartaPorteService {
         receptor: cartaPorteData.rfcReceptor,
         ubicaciones: cartaPorteData.ubicaciones?.length,
         mercancias: cartaPorteData.mercancias?.length,
-        figuras: figurasAutopopuladas.length // ← CONFIRMAR QUE SE INCLUYERON
+        figuras: figurasAutopopuladas.length
       });
 
-      // 5. Crear borrador
+      // ✅ FASE 1: Asegurar que idCCP se incluya en datos_formulario
+      if (!cartaPorteData.idCCP) {
+        cartaPorteData.idCCP = await CartaPorteLifecycleManager.generarIdCCPUnico();
+        console.log('🆔 IdCCP generado para borrador desde viaje:', cartaPorteData.idCCP);
+      }
+
+      // 5. Crear borrador con idCCP incluido
       const borrador = await CartaPorteLifecycleManager.crearBorrador({
-        nombre_borrador: `Viaje - ${wizardData.cliente?.nombre_razon_social || 'Sin cliente'}`,
+        nombre_borrador: `CP-Viaje-${wizardData.cliente?.nombre_razon_social || 'Sin cliente'}-${new Date().toLocaleDateString()}`,
         datos_formulario: cartaPorteData,
-        version_formulario: '3.1'
+        version_formulario: '3.1',
+        viaje_id: viajeId
       });
 
       console.log('📄 Borrador creado con figuras auto-pobladas:', borrador.id);

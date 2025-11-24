@@ -21,25 +21,31 @@ export class CartaPorteLifecycleManager {
         throw new Error('Usuario no autenticado');
       }
 
+      // ✅ FASE 1: Generar IdCCP si no viene en los datos
+      const idCCP = request.datos_formulario?.idCCP || UUIDService.generateValidIdCCP();
+      console.log('✅ IdCCP generado para nuevo borrador:', idCCP);
+
       const { data, error } = await supabase
         .from('borradores_carta_porte')
         .insert({
           user_id: user.id,
           nombre_borrador: request.nombre_borrador || `Borrador ${new Date().toLocaleDateString()}`,
-          datos_formulario: request.datos_formulario || {
-            configuracion: {
+          datos_formulario: {
+            ...(request.datos_formulario || {}),
+            idCCP, // ✅ CRÍTICO: Guardar idCCP en datos_formulario
+            configuracion: request.datos_formulario?.configuracion || {
               version: '3.1',
               tipoComprobante: 'T',
               emisor: { rfc: '', nombre: '', regimenFiscal: '' },
               receptor: { rfc: '', nombre: '' }
             },
-            ubicaciones: [],
-            mercancias: [],
-            autotransporte: {},
-            figuras: []
+            ubicaciones: request.datos_formulario?.ubicaciones || [],
+            mercancias: request.datos_formulario?.mercancias || [],
+            autotransporte: request.datos_formulario?.autotransporte || {},
+            figuras: request.datos_formulario?.figuras || []
           },
           version_formulario: request.version_formulario || '3.1',
-          viaje_id: request.viaje_id || null // ✅ FASE 1: Vincular con viaje
+          viaje_id: request.viaje_id || null
         })
         .select()
         .single();
@@ -49,7 +55,7 @@ export class CartaPorteLifecycleManager {
         throw new Error(`Error creando borrador: ${error.message}`);
       }
 
-      console.log('Borrador creado exitosamente:', data.id);
+      console.log('Borrador creado exitosamente con IdCCP:', data.id, idCCP);
       return data;
     } catch (error) {
       console.error('Error en crearBorrador:', error);

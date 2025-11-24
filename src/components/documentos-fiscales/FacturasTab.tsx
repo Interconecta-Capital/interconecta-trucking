@@ -143,7 +143,8 @@ export function FacturasTab() {
       const viajeId = factura.viaje_id;
       toast.dismiss(`timbrar-${facturaId}`);
       toast.info('Abriendo previsualización de factura...');
-      navigate(`/viajes/${viajeId}`);
+      // 🔧 FASE 4: Pasar estado para saber de dónde venimos
+      navigate(`/viajes/${viajeId}`, { state: { from: 'facturas' } });
       
     } catch (error) {
       console.error('[FacturasTab] Error preparando factura:', error);
