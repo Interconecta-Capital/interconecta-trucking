@@ -6,11 +6,40 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export class SupabaseFunctionsAdapter {
   /**
-   * Timbrar Carta Porte usando edge function
+   * Timbrar Carta Porte usando edge function V2 (RECOMENDADO)
+   * Versión limpia y simplificada basada en documentación oficial de SW
+   */
+  static async timbrarCartaPorteV2(cartaPorteData: any, cartaPorteId: string, ambiente: 'sandbox' | 'production'): Promise<any> {
+    try {
+      console.log('📡 Llamando a edge function: timbrar-cfdi-v2 (V2 Simplificada)');
+      
+      const { data, error } = await supabase.functions.invoke('timbrar-cfdi-v2', {
+        body: {
+          cartaPorteData,
+          cartaPorteId,
+          ambiente
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error en edge function V2:', error);
+        throw new Error(error.message || 'Error llamando a función de timbrado V2');
+      }
+
+      console.log('✅ Respuesta de V2 recibida:', data);
+      return data;
+    } catch (error) {
+      console.error('💥 Error en timbrado con V2:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Timbrar Carta Porte usando edge function (LEGACY - mantener como backup)
    */
   static async timbrarCartaPorte(cartaPorteData: any, cartaPorteId: string, ambiente: 'sandbox' | 'production'): Promise<any> {
     try {
-      console.log('📡 Llamando a edge function: timbrar-con-sw (Conectia)');
+      console.log('📡 Llamando a edge function: timbrar-con-sw (Legacy)');
       
       const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
         body: {
@@ -21,14 +50,14 @@ export class SupabaseFunctionsAdapter {
       });
 
       if (error) {
-        console.error('❌ Error en edge function Conectia:', error);
-        throw new Error(error.message || 'Error llamando a función de timbrado Conectia');
+        console.error('❌ Error en edge function Legacy:', error);
+        throw new Error(error.message || 'Error llamando a función de timbrado Legacy');
       }
 
-      console.log('✅ Respuesta de Conectia recibida:', data);
+      console.log('✅ Respuesta Legacy recibida:', data);
       return data;
     } catch (error) {
-      console.error('💥 Error en timbrado con Conectia:', error);
+      console.error('💥 Error en timbrado Legacy:', error);
       throw error;
     }
   }
