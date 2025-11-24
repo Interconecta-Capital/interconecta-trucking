@@ -36,7 +36,9 @@ export function VehiculoPermisosSCTFields({ formData, onFieldChange }: VehiculoP
 
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label htmlFor="num_permiso_sct">Número de Permiso SCT</Label>
+              <Label htmlFor="num_permiso_sct">
+                Número de Permiso SCT <span className="text-destructive">*</span>
+              </Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -55,7 +57,12 @@ export function VehiculoPermisosSCTFields({ formData, onFieldChange }: VehiculoP
               onChange={(e) => onFieldChange('num_permiso_sct', e.target.value.toUpperCase())}
               placeholder="Ej: SCT-123456"
               maxLength={50}
+              required
+              className={!formData.num_permiso_sct ? 'border-amber-500' : ''}
             />
+            {!formData.num_permiso_sct && (
+              <p className="text-xs text-amber-600 mt-1">⚠️ Requerido para timbrado</p>
+            )}
           </div>
         </div>
 
