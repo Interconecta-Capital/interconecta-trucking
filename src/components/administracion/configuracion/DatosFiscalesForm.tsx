@@ -14,6 +14,8 @@ import { RegimesFiscalesSelector } from '@/components/shared/RegimesFiscalesSele
 import { RFCValidator } from '@/utils/rfcValidation';
 import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
 import { ModoPruebasAlert } from './ModoPruebasAlert';
+import { DatosFiscalesValidacion } from './DatosFiscalesValidacion';
+import { toast } from 'sonner';
 
 const datosFiscalesSchema = z.object({
   razon_social: z.string().min(1, 'La razón social es obligatoria').max(254),
@@ -47,6 +49,7 @@ export function DatosFiscalesForm() {
   const { configuracion, isSaving, guardarConfiguracion, recargar } = useConfiguracionEmpresarial();
   const [rfcValidationStatus, setRfcValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [isEditing, setIsEditing] = useState(false);
+  const [rfcValidadoSAT, setRfcValidadoSAT] = useState(false);
 
   const form = useForm<DatosFiscalesForm>({
     resolver: zodResolver(datosFiscalesSchema),
@@ -111,35 +114,26 @@ export function DatosFiscalesForm() {
 
   const onSubmit = async (data: DatosFiscalesForm) => {
     console.log('📝 [DatosFiscalesForm] ===== INICIO GUARDADO =====');
+    
+    // Validar que el RFC esté validado en producción
+    if (!configuracion?.modo_pruebas && !rfcValidadoSAT) {
+      toast.error("Por favor valida el RFC contra el SAT antes de guardar");
+      return;
+    }
+    
     console.log('📝 [DatosFiscalesForm] Datos del formulario:', {
       razon_social: data.razon_social,
       rfc_emisor: data.rfc_emisor,
       regimen_fiscal: data.regimen_fiscal,
-      domicilio: {
-        codigo_postal: data.codigo_postal,
-        calle: data.calle,
-        colonia: data.colonia,
-        municipio: data.municipio,
-        estado: data.estado
-      }
+      validado_sat: rfcValidadoSAT
     });
-    
-    // ✅ FASE 6.2: Validación PRE-guardado en formulario
-    if (!data.regimen_fiscal || data.regimen_fiscal.trim() === '') {
-      console.error('❌ [VALIDACIÓN] Régimen fiscal vacío');
-      return; // El form ya muestra el error por Zod
-    }
-
-    if (!data.codigo_postal || !/^\d{5}$/.test(data.codigo_postal)) {
-      console.error('❌ [VALIDACIÓN] Código postal inválido');
-      return; // El form ya muestra el error por Zod
-    }
-
-    console.log('✅ [VALIDACIÓN] Pre-guardado pasado en formulario');
     
     try {
       console.log('🔄 [DatosFiscalesForm] Llamando a guardarConfiguracion...');
-      await guardarConfiguracion(data);
+      
+      // Guardar configuración
+      await guardarConfiguracion(data as any);
+      
       console.log('✅ [DatosFiscalesForm] Guardado exitoso');
       
       console.log('🔄 [DatosFiscalesForm] Recargando configuración desde BD...');
@@ -152,7 +146,6 @@ export function DatosFiscalesForm() {
     } catch (error) {
       console.error('❌ [DatosFiscalesForm] ===== ERROR EN GUARDADO =====');
       console.error('❌ [DatosFiscalesForm] Error completo:', error);
-      console.error('❌ [DatosFiscalesForm] Stack:', error instanceof Error ? error.stack : 'No stack available');
     }
   };
 
@@ -236,6 +229,23 @@ export function DatosFiscalesForm() {
             error={form.formState.errors.regimen_fiscal?.message}
             disabled={!isEditing}
           />
+          
+          {/* Validación RFC contra SAT */}
+          {isEditing && form.watch('rfc_emisor') && form.watch('razon_social') && (
+            <DatosFiscalesValidacion
+              rfc={form.watch('rfc_emisor')}
+              razonSocial={form.watch('razon_social')}
+              modoPruebas={configuracion?.modo_pruebas || false}
+              onValidacionExitosa={(rfcValidado, razonSocialNormalizada, regimenFiscal) => {
+                form.setValue('rfc_emisor', rfcValidado);
+                form.setValue('razon_social', razonSocialNormalizada);
+                if (regimenFiscal) {
+                  form.setValue('regimen_fiscal', regimenFiscal);
+                }
+                setRfcValidadoSAT(true);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 

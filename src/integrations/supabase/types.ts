@@ -3505,6 +3505,48 @@ export type Database = {
         }
         Relationships: []
       }
+      rfc_validados_sat: {
+        Row: {
+          ambiente: string
+          fecha_expiracion: string
+          fecha_validacion: string
+          metadata: Json | null
+          numero_validaciones: number | null
+          razon_social_normalizada: string
+          razon_social_sat: string
+          regimen_fiscal: string | null
+          rfc: string
+          situacion: string | null
+          ultima_actualizacion: string
+        }
+        Insert: {
+          ambiente: string
+          fecha_expiracion?: string
+          fecha_validacion?: string
+          metadata?: Json | null
+          numero_validaciones?: number | null
+          razon_social_normalizada: string
+          razon_social_sat: string
+          regimen_fiscal?: string | null
+          rfc: string
+          situacion?: string | null
+          ultima_actualizacion?: string
+        }
+        Update: {
+          ambiente?: string
+          fecha_expiracion?: string
+          fecha_validacion?: string
+          metadata?: Json | null
+          numero_validaciones?: number | null
+          razon_social_normalizada?: string
+          razon_social_sat?: string
+          regimen_fiscal?: string | null
+          rfc?: string
+          situacion?: string | null
+          ultima_actualizacion?: string
+        }
+        Relationships: []
+      }
       rls_policies_backup: {
         Row: {
           backup_phase: string | null
@@ -5210,6 +5252,7 @@ export type Database = {
       increment_schema_version: { Args: never; Returns: number }
       is_admin_or_superuser: { Args: { _user_id: string }; Returns: boolean }
       is_superuser_secure: { Args: { _user_id: string }; Returns: boolean }
+      limpiar_cache_rfcs_expirado: { Args: never; Returns: undefined }
       limpiar_documentos_huerfanos: {
         Args: never
         Returns: {
