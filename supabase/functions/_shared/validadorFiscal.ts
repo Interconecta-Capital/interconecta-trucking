@@ -207,9 +207,34 @@ export async function validarPreTimbrado(
     });
   }
   
-  // ========================================
-  // VALIDACIONES - CATÁLOGOS SAT
-  // ========================================
+  // Validación 7: Domicilio Fiscal Receptor (CRÍTICO - Causa CFDI40147)
+  const domicilioFiscalReceptor = facturaData.domicilioFiscalReceptor || facturaData.domicilio_fiscal_receptor;
+  if (!domicilioFiscalReceptor) {
+    errores.push({
+      campo: 'domicilio_fiscal_receptor',
+      valorActual: 'NULL',
+      valorEsperado: 'Código postal de 5 dígitos',
+      fuente: 'CFDI 4.0 - Campo obligatorio',
+      accion: 'Completa el código postal del domicilio fiscal en los datos del receptor',
+      severidad: 'critico'
+    });
+  } else {
+    // Validar formato de código postal
+    const codigoPostal = typeof domicilioFiscalReceptor === 'object' 
+      ? (domicilioFiscalReceptor as any)?.codigo_postal 
+      : domicilioFiscalReceptor;
+      
+    if (!codigoPostal || !/^\d{5}$/.test(String(codigoPostal))) {
+      errores.push({
+        campo: 'domicilio_fiscal_receptor',
+        valorActual: codigoPostal || 'NULL',
+        valorEsperado: 'Código postal de 5 dígitos',
+        fuente: 'Formato SAT',
+        accion: 'Proporciona un código postal válido para el domicilio fiscal del receptor',
+        severidad: 'critico'
+      });
+    }
+  }
   
   const formaPago = facturaData.forma_pago;
   if (formaPago && !CATALOGOS_SAT.FORMAS_PAGO.includes(formaPago)) {

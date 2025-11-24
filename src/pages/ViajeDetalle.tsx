@@ -247,32 +247,101 @@ export default function ViajeDetalle() {
         hasFiguras: !!datosCartaPorte?.figuras
       });
       
-      // ✅ FASE 1: Cargar régimen fiscal desde socio si falta (FALLBACK)
+      // ✅ FASE 1: Cargar datos completos del receptor desde socio o validar contra SAT
       let regimenFiscalReceptor = (factura as any).regimen_fiscal_receptor;
-      console.log('🔍 [TIMBRADO] Régimen fiscal actual:', regimenFiscalReceptor);
+      let domicilioFiscalReceptor = (factura as any).domicilio_fiscal_receptor;
+      console.log('🔍 [TIMBRADO] Datos actuales del receptor:', {
+        rfc: (factura as any).rfc_receptor,
+        regimen: regimenFiscalReceptor,
+        domicilio: domicilioFiscalReceptor
+      });
       
-      if (!regimenFiscalReceptor && viaje?.socio_id) {
-        console.log('⚠️ [TIMBRADO] Régimen fiscal faltante, aplicando fallback desde socio...');
+      // Intentar cargar desde socio si está asociado
+      if ((!regimenFiscalReceptor || !domicilioFiscalReceptor) && viaje?.socio_id) {
+        console.log('📋 [TIMBRADO] Intentando cargar datos desde socio asociado...');
         const { data: socioData, error: socioError } = await supabase
           .from('socios')
-          .select('regimen_fiscal, nombre_razon_social')
+          .select('regimen_fiscal, nombre_razon_social, rfc, direccion_fiscal')
           .eq('id', viaje.socio_id)
           .single();
         
-        if (socioError) {
-          console.error('❌ [TIMBRADO] Error cargando socio:', socioError);
-        } else if (socioData?.regimen_fiscal) {
-          regimenFiscalReceptor = socioData.regimen_fiscal;
-          console.log('✅ [TIMBRADO] Régimen fiscal obtenido desde socio:', {
-            socio: socioData.nombre_razon_social,
-            regimen: regimenFiscalReceptor
-          });
-        } else {
-          console.warn('⚠️ [TIMBRADO] Socio sin régimen fiscal, usando default');
+        if (!socioError && socioData) {
+          if (!regimenFiscalReceptor && socioData.regimen_fiscal) {
+            regimenFiscalReceptor = socioData.regimen_fiscal;
+            console.log('✅ [TIMBRADO] Régimen fiscal obtenido desde socio:', regimenFiscalReceptor);
+          }
+          
+          if (!domicilioFiscalReceptor && socioData.direccion_fiscal) {
+            const dirFiscal = socioData.direccion_fiscal as any;
+            domicilioFiscalReceptor = dirFiscal?.codigoPostal || dirFiscal?.codigo_postal;
+            console.log('✅ [TIMBRADO] Código postal obtenido desde socio:', domicilioFiscalReceptor);
+          }
         }
       }
       
-      // ✅ VALIDACIÓN 3: Asegurar que hay un régimen fiscal válido
+      // ✅ CRÍTICO: Si aún falta domicilio fiscal, consultar al SAT
+      if (!domicilioFiscalReceptor) {
+        console.log('🔍 [TIMBRADO] Domicilio fiscal faltante, consultando RFC en el SAT...');
+        toast.loading('Consultando datos del receptor en el SAT...', { id: 'timbrado-process' });
+        
+        const rfcReceptor = (factura as any).rfc_receptor;
+        const { data: consultaSAT, error: satError } = await supabase.functions.invoke('consultar-rfc-sat', {
+          body: { rfc: rfcReceptor }
+        });
+        
+        if (satError || !consultaSAT?.encontrado) {
+          console.error('❌ [TIMBRADO] RFC del receptor no encontrado en el SAT:', rfcReceptor);
+          throw new Error(
+            `Error CFDI40147: No se pudo validar el RFC del receptor "${rfcReceptor}" en el padrón del SAT.\n\n` +
+            'El RFC del receptor debe estar activo y registrado en el SAT.\n' +
+            'Verifica el RFC en: https://www.sat.gob.mx/aplicacion/login/43824/verifica-tu-informacion-fiscal'
+          );
+        }
+        
+        // Extraer código postal de la respuesta del SAT
+        domicilioFiscalReceptor = consultaSAT.codigoPostal;
+        
+        if (!domicilioFiscalReceptor) {
+          console.error('❌ [TIMBRADO] SAT no proporcionó código postal para el RFC');
+          throw new Error(
+            `Error CFDI40147: El SAT no proporcionó código postal para el RFC "${rfcReceptor}".\n\n` +
+            'Por favor, completa manualmente el código postal del domicilio fiscal del receptor en los datos del cliente.'
+          );
+        }
+        
+        console.log('✅ [TIMBRADO] Código postal obtenido del SAT:', domicilioFiscalReceptor);
+        
+        // Actualizar la factura con el dato obtenido del SAT
+        const { error: updateError } = await supabase
+          .from('facturas')
+          .update({ domicilio_fiscal_receptor: domicilioFiscalReceptor })
+          .eq('id', factura.id);
+        
+        if (updateError) {
+          console.error('❌ Error actualizando factura con código postal:', updateError);
+        } else {
+          console.log('✅ Factura actualizada con código postal del SAT');
+        }
+      }
+      
+      // Extraer solo el código postal si viene como objeto
+      const codigoPostalReceptor = typeof domicilioFiscalReceptor === 'object'
+        ? ((domicilioFiscalReceptor as any)?.codigoPostal || (domicilioFiscalReceptor as any)?.codigo_postal)
+        : domicilioFiscalReceptor;
+      
+      // Validar formato del código postal
+      if (!/^\d{5}$/.test(String(codigoPostalReceptor))) {
+        console.error('❌ [TIMBRADO] Código postal del receptor inválido:', codigoPostalReceptor);
+        throw new Error(
+          `Error CFDI40147: El código postal del receptor "${codigoPostalReceptor}" no es válido.\n\n` +
+          'Debe ser un código postal de 5 dígitos.\n' +
+          'Por favor, actualiza el código postal en los datos del cliente/socio.'
+        );
+      }
+      
+      console.log('✅ [TIMBRADO] Código postal del receptor validado:', codigoPostalReceptor);
+      
+      // ✅ VALIDACIÓN: Asegurar que hay un régimen fiscal válido
       const regimenFinal = regimenFiscalReceptor || '616'; // 616 = Sin obligaciones fiscales
       if (!regimenFiscalReceptor) {
         console.warn('⚠️ [TIMBRADO] Usando régimen fiscal por defecto (616)');
@@ -317,6 +386,7 @@ export default function ViajeDetalle() {
           regimenFiscalEmisor: facturaData.regimen_fiscal_emisor || '601',
           regimenFiscalReceptor: regimenFinal,
           usoCfdi: facturaData.uso_cfdi || 'S01',
+          domicilioFiscalReceptor: codigoPostalReceptor, // ✅ CRÍTICO: Campo obligatorio CFDI 4.0
           tipoCfdi: 'Ingreso',
           tipo_comprobante: 'I',
           total: Number(facturaData.total || 0),
