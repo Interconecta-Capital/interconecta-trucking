@@ -5303,6 +5303,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      puede_usar_modo_pruebas: {
+        Args: { p_user_id?: string }
+        Returns: boolean
+      }
       record_rate_limit_attempt: {
         Args: { p_action_type: string; p_identifier: string; p_metadata?: Json }
         Returns: undefined
