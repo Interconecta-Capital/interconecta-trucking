@@ -58,7 +58,7 @@ export class CertificateParserService {
   }
 
   /**
-   * Valida un certificado digital completo
+   * Valida un certificado digital completo usando el edge function
    */
   static async validateCertificate(
     cerFile: File, 
@@ -68,7 +68,9 @@ export class CertificateParserService {
     const errors: string[] = [];
     
     try {
-      // Validar archivos
+      console.log('🔐 Validando certificado con edge function...');
+      
+      // Validar archivos localmente primero
       const fileErrors = this.validateFiles(cerFile, keyFile);
       errors.push(...fileErrors);
       
@@ -76,27 +78,48 @@ export class CertificateParserService {
         return { isValid: false, errors };
       }
       
-      // Parsear certificado
-      const certificateInfo = await this.parseCertificateFile(cerFile);
+      // Llamar al edge function para validación REAL
+      const formData = new FormData();
+      formData.append('cer_file', cerFile);
+      formData.append('key_file', keyFile);
+      formData.append('password', password);
       
-      // Validar vigencia
-      if (!this.isCertificateValid(certificateInfo)) {
-        errors.push('El certificado no está vigente');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validar-certificado`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.isValid) {
+        errors.push(result.error || result.message || 'Error al validar certificado');
+        return { isValid: false, errors };
       }
-      
-      // Validar contraseña (simulado)
-      if (!this.validatePassword(password)) {
-        errors.push('La contraseña de la llave privada es inválida');
-      }
+
+      console.log('✅ Certificado validado exitosamente');
       
       return {
-        isValid: errors.length === 0,
-        errors,
-        certificateInfo
+        isValid: true,
+        errors: [],
+        certificateInfo: {
+          numeroSerie: result.certificateInfo.numeroSerie,
+          rfc: result.certificateInfo.rfc,
+          razonSocial: result.certificateInfo.razonSocial,
+          fechaInicioVigencia: new Date(result.certificateInfo.fechaInicioVigencia),
+          fechaFinVigencia: new Date(result.certificateInfo.fechaFinVigencia),
+          esValido: result.certificateInfo.esValido
+        }
       };
       
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : 'Error desconocido');
+      console.error('❌ Error en validación de certificado:', error);
+      errors.push(error instanceof Error ? error.message : 'Error de red al validar certificado');
       return { isValid: false, errors };
     }
   }

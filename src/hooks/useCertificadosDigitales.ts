@@ -115,6 +115,36 @@ export const useCertificadosDigitales = () => {
     }
   });
 
+  // Mutation para actualizar certificado
+  const updateMutation = useMutation({
+    mutationFn: async (updateData: {
+      certificadoId: string;
+      nombreCertificado?: string;
+      nuevoArchivoCer?: File;
+      nuevoArchivoKey?: File;
+      nuevaPassword?: string;
+    }) => {
+      return await CSDService.updateCertificate(
+        updateData.certificadoId,
+        {
+          nombreCertificado: updateData.nombreCertificado,
+          nuevoArchivoCer: updateData.nuevoArchivoCer,
+          nuevoArchivoKey: updateData.nuevoArchivoKey,
+          nuevaPassword: updateData.nuevaPassword
+        }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['certificados-digitales'] });
+      queryClient.invalidateQueries({ queryKey: ['certificado-activo'] });
+      toast.success('Certificado actualizado exitosamente');
+    },
+    onError: (error: Error) => {
+      console.error('Error updating certificate:', error);
+      toast.error(`Error al actualizar certificado: ${error.message}`);
+    }
+  });
+
   // Mutation para eliminar certificado
   const deleteMutation = useMutation({
     mutationFn: CSDService.deleteCertificate,
@@ -139,6 +169,7 @@ export const useCertificadosDigitales = () => {
     loadingActive,
     isUploading: uploadMutation.isPending,
     isActivating: activateMutation.isPending,
+    isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
 
     // Errores
@@ -147,6 +178,7 @@ export const useCertificadosDigitales = () => {
     // Acciones
     subirCertificado: uploadMutation.mutateAsync,
     activarCertificado: activateMutation.mutateAsync,
+    actualizarCertificado: updateMutation.mutateAsync,
     eliminarCertificado: deleteMutation.mutateAsync,
 
     // Utilidades

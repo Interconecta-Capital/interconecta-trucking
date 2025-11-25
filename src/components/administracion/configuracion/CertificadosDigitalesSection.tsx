@@ -10,25 +10,36 @@ import {
   AlertTriangle, 
   Clock,
   Upload,
-  Download,
   Trash2,
-  Star
+  Star,
+  Edit,
+  FlaskConical
 } from 'lucide-react';
 import { useCertificadosDigitales } from '@/hooks/useCertificadosDigitales';
 import { CertificadoUploadDialog } from './CertificadoUploadDialog';
+import { CertificadoEditDialog, UpdateCertificateData } from './CertificadoEditDialog';
+import { TestCertificateService } from '@/services/csd/TestCertificateService';
 import { toast } from 'sonner';
+import { CertificadoDigital } from '@/types/certificados';
 
 export function CertificadosDigitalesSection() {
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [certificadoAEditar, setCertificadoAEditar] = useState<CertificadoDigital | null>(null);
+  const [cargandoPrueba, setCargandoPrueba] = useState(false);
+  
   const { 
     certificados, 
     certificadoActivo,
     isLoading,
+    subirCertificado,
     activarCertificado,
+    actualizarCertificado,
     eliminarCertificado,
     esCertificadoValido,
     diasHastaVencimiento,
     isActivating,
+    isUpdating,
     isDeleting
   } = useCertificadosDigitales();
 
@@ -37,6 +48,20 @@ export function CertificadosDigitalesSection() {
       await activarCertificado(certificadoId);
     } catch (error) {
       console.error('Error al activar certificado:', error);
+    }
+  };
+
+  const handleEditar = (certificado: CertificadoDigital) => {
+    setCertificadoAEditar(certificado);
+    setShowEditModal(true);
+  };
+
+  const handleActualizarCertificado = async (updateData: UpdateCertificateData) => {
+    try {
+      await actualizarCertificado(updateData);
+    } catch (error) {
+      console.error('Error al actualizar certificado:', error);
+      throw error;
     }
   };
 
@@ -49,6 +74,30 @@ export function CertificadosDigitalesSection() {
       await eliminarCertificado(certificadoId);
     } catch (error) {
       console.error('Error al eliminar certificado:', error);
+    }
+  };
+
+  const handleCargarCertificadoPrueba = async () => {
+    try {
+      setCargandoPrueba(true);
+      const certPrueba = await TestCertificateService.obtenerCertificadoPruebaSAT();
+      
+      toast.info('Cargando certificado de prueba SAT...', {
+        description: `RFC: ${certPrueba.rfc} - Este certificado solo funciona en modo sandbox`
+      });
+
+      await subirCertificado({
+        archivoCer: certPrueba.archivoCer,
+        archivoKey: certPrueba.archivoKey,
+        passwordKey: certPrueba.password,
+        nombreCertificado: certPrueba.nombre
+      });
+
+    } catch (error) {
+      console.error('Error cargando certificado de prueba:', error);
+      toast.error('Error al cargar certificado de prueba');
+    } finally {
+      setCargandoPrueba(false);
     }
   };
 
@@ -80,21 +129,32 @@ export function CertificadosDigitalesSection() {
 
   return (
     <div className="space-y-6">
-      {/* Header con acción */}
-      <div className="flex justify-between items-center">
+      {/* Header con acciones */}
+      <div className="flex justify-between items-start">
         <div>
           <h3 className="text-lg font-semibold">Certificados de Sello Digital</h3>
           <p className="text-sm text-muted-foreground">
             Gestione los certificados digitales para el timbrado de documentos fiscales
           </p>
         </div>
-        <Button 
-          onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2"
-        >
-          <Upload className="h-4 w-4" />
-          Subir Certificado
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleCargarCertificadoPrueba}
+            variant="outline"
+            disabled={cargandoPrueba}
+            className="flex items-center gap-2"
+          >
+            <FlaskConical className="h-4 w-4" />
+            {cargandoPrueba ? 'Cargando...' : 'Certificado Prueba SAT'}
+          </Button>
+          <Button 
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Subir Certificado
+          </Button>
+        </div>
       </div>
 
       {/* Alertas de certificados próximos a vencer */}
@@ -194,6 +254,15 @@ export function CertificadosDigitalesSection() {
                     )}
                     <Button
                       size="sm"
+                      variant="outline"
+                      onClick={() => handleEditar(certificado)}
+                      disabled={isUpdating}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="ghost"
                       onClick={() => handleEliminar(certificado.id)}
                       disabled={isDeleting || esActivo}
@@ -210,11 +279,20 @@ export function CertificadosDigitalesSection() {
         </div>
       )}
 
-      {/* Diálogo de upload */}
+      {/* Diálogos */}
       <CertificadoUploadDialog
         open={showUploadModal}
         onOpenChange={setShowUploadModal}
       />
+      
+      {certificadoAEditar && (
+        <CertificadoEditDialog
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          certificado={certificadoAEditar}
+          onUpdate={handleActualizarCertificado}
+        />
+      )}
     </div>
   );
 }

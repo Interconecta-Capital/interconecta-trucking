@@ -1156,6 +1156,7 @@ export type Database = {
           fecha_fin_vigencia: string
           fecha_inicio_vigencia: string
           id: string
+          modo_pruebas: boolean | null
           nombre_certificado: string
           numero_certificado: string
           password_vault_id: string | null
@@ -1174,6 +1175,7 @@ export type Database = {
           fecha_fin_vigencia: string
           fecha_inicio_vigencia: string
           id?: string
+          modo_pruebas?: boolean | null
           nombre_certificado: string
           numero_certificado: string
           password_vault_id?: string | null
@@ -1192,6 +1194,7 @@ export type Database = {
           fecha_fin_vigencia?: string
           fecha_inicio_vigencia?: string
           id?: string
+          modo_pruebas?: boolean | null
           nombre_certificado?: string
           numero_certificado?: string
           password_vault_id?: string | null
