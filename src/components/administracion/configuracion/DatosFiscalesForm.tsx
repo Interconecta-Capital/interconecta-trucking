@@ -468,13 +468,14 @@ export function DatosFiscalesForm() {
         </CardContent>
       </Card>
 
-      {/* Modo Pruebas (Solo Superusuarios) */}
+      {/* Modo Pruebas (Democratizado para todos los usuarios) */}
       <DatosFiscalesModoPruebas
         modoPruebas={form.watch('modo_pruebas')}
         onModoPruebasChange={(enabled) => {
           form.setValue('modo_pruebas', enabled);
         }}
         disabled={!isEditing}
+        rfcActual={form.watch('rfc_emisor')}
       />
 
       {/* Botones de Acción */}
