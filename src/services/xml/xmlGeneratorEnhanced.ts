@@ -4,6 +4,7 @@ import { XMLNamespaceManager } from './xmlNamespaceManager';
 import { XMLConceptosBuilder } from './xmlConceptos';
 import { XMLComplementoBuilder } from './xmlComplemento';
 import { CartaPorteVersion } from '@/types/cartaPorteVersions';
+import logger from '@/utils/logger';
 
 export interface XMLGenerationResultEnhanced {
   success: boolean;
@@ -22,7 +23,7 @@ export interface XMLGenerationResultEnhanced {
 export class XMLGeneratorEnhanced {
   static async generarXMLCompleto(data: CartaPorteData): Promise<XMLGenerationResultEnhanced> {
     try {
-      console.log('🚀 Generando XML SAT 3.1 completo...');
+      logger.info('xml', 'Generando XML SAT 3.1 completo');
 
       // Validación exhaustiva
       const validationResult = await XMLValidatorSAT31.validateCompleteCartaPorte(data);
@@ -62,7 +63,7 @@ export class XMLGeneratorEnhanced {
       };
 
     } catch (error) {
-      console.error('💥 Error generando XML:', error);
+      logger.error('xml', 'Error generando XML', { error });
       return {
         success: false,
         errors: [`Error interno: ${error instanceof Error ? error.message : 'Error desconocido'}`]
