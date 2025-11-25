@@ -45,14 +45,14 @@ export class TimbradoService {
    */
   static async timbrarCartaPorte(request: TimbradoRequest): Promise<TimbradoResponse> {
     try {
-      console.log('Iniciando proceso de timbrado con FISCAL API...');
+      logger.info('timbrado', 'Iniciando proceso de timbrado con FISCAL API', { cartaPorteId: request.cartaPorteId });
       
       let xmlParaTimbrar = request.xmlContent;
       let certificadoInfo;
 
       // Si se solicita usar CSD, firmar primero el XML
       if (request.usarCSD) {
-        console.log('Firmando XML con CSD antes del timbrado...');
+        logger.info('csd', 'Firmando XML con CSD antes del timbrado');
         const resultadoFirmado = await CSDSigningService.firmarXML(request.xmlContent);
         
         if (!resultadoFirmado.success || !resultadoFirmado.xmlFirmado) {
@@ -64,18 +64,18 @@ export class TimbradoService {
         
         xmlParaTimbrar = resultadoFirmado.xmlFirmado;
         certificadoInfo = resultadoFirmado.certificadoUsado;
-        console.log('XML firmado exitosamente con CSD');
+        logger.info('csd', 'XML firmado exitosamente con CSD');
       }
 
       // Preparar datos para FISCAL API
       const timbradoData = {
         xml: xmlParaTimbrar,
         rfc: request.rfcEmisor,
-        environment: 'test', // Cambiar a 'production' en producción
+        environment: 'test',
         cartaPorteId: request.cartaPorteId
       };
 
-      // Llamar a FISCAL API (simulado por ahora)
+      // Llamar a FISCAL API
       const resultado = await this.llamarFiscalAPI(timbradoData);
       
       if (resultado.success) {
@@ -88,7 +88,10 @@ export class TimbradoService {
           certificado_usado: certificadoInfo
         });
         
-        logger.info('timbrado', 'Carta Porte timbrada exitosamente', { cartaPorteId: request.cartaPorteId });
+        logger.info('timbrado', 'Carta Porte timbrada exitosamente', { 
+          cartaPorteId: request.cartaPorteId,
+          uuid: resultado.uuid 
+        });
       }
 
       return {
@@ -97,7 +100,7 @@ export class TimbradoService {
       };
 
     } catch (error) {
-      console.error('Error en timbrado:', error);
+      logger.error('timbrado', 'Error en timbrado', error);
       return {
         success: false,
         error: `Error en timbrado: ${error instanceof Error ? error.message : 'Error desconocido'}`
@@ -110,9 +113,8 @@ export class TimbradoService {
    */
   private static async llamarFiscalAPI(data: any): Promise<TimbradoResponse> {
     try {
-      console.log('📤 Invocando edge function V2 de SW/Conectia...');
+      logger.info('timbrado', 'Invocando edge function V2 de SW/Conectia');
       
-      // ✅ Obtener configuración de empresa para datos del emisor
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -129,13 +131,13 @@ export class TimbradoService {
         throw new Error('Configuración de empresa no encontrada');
       }
       
-      // ✅ Construir objeto con formato correcto para timbrar-cfdi-v2
       const ambiente = config.modo_pruebas ? 'sandbox' : 'produccion';
       
-      console.log(`🎯 Ambiente detectado: ${ambiente}`);
-      console.log(`📋 RFC Emisor: ${config.rfc_emisor}`);
+      logger.debug('timbrado', 'Configuración de timbrado', { 
+        ambiente, 
+        rfcEmisor: config.rfc_emisor?.substring(0, 3) + '***' 
+      });
       
-      // Intentar con la nueva versión V2 primero
       const { data: result, error } = await supabase.functions.invoke('timbrar-cfdi-v2', {
         body: {
           cartaPorteData: {
@@ -151,10 +153,7 @@ export class TimbradoService {
       });
 
       if (error) {
-        console.error('❌ Error en edge function V2:', error);
-        console.log('🔄 Intentando con versión legacy como fallback...');
-        
-        // Fallback a la versión legacy
+        logger.warn('timbrado', 'Error en edge function V2, intentando legacy', { error: error.message });
         return await this.llamarFiscalAPILegacy(data);
       }
 
@@ -167,7 +166,7 @@ export class TimbradoService {
         };
       }
 
-      console.log(`✅ Timbrado exitoso con V2 - UUID: ${result.data?.uuid}`);
+      logger.info('timbrado', 'Timbrado exitoso con V2', { uuid: result.data?.uuid });
 
       return {
         success: true,
@@ -181,7 +180,7 @@ export class TimbradoService {
       };
 
     } catch (error) {
-      console.error('💥 Error en llamarFiscalAPI V2, intentando legacy:', error);
+      logger.error('timbrado', 'Error en llamarFiscalAPI V2', error);
       return await this.llamarFiscalAPILegacy(data);
     }
   }
@@ -191,7 +190,7 @@ export class TimbradoService {
    */
   private static async llamarFiscalAPILegacy(data: any): Promise<TimbradoResponse> {
     try {
-      console.log('📤 Invocando edge function legacy (timbrar-con-sw)...');
+      logger.info('timbrado', 'Invocando edge function legacy (timbrar-con-sw)');
       
       const { data: result, error } = await supabase.functions.invoke('timbrar-con-sw', {
         body: {
@@ -202,7 +201,7 @@ export class TimbradoService {
       });
 
       if (error) {
-        console.error('❌ Error en edge function legacy:', error);
+        logger.error('timbrado', 'Error en edge function legacy', error);
         throw new Error(error.message || 'Error llamando a función de timbrado legacy');
       }
 
@@ -215,7 +214,7 @@ export class TimbradoService {
         };
       }
 
-      console.log(`✅ Timbrado exitoso con legacy - UUID: ${result.uuid}`);
+      logger.info('timbrado', 'Timbrado exitoso con legacy', { uuid: result.uuid });
 
       return {
         success: true,
@@ -232,7 +231,7 @@ export class TimbradoService {
       };
 
     } catch (error) {
-      console.error('💥 Error en llamarFiscalAPILegacy:', error);
+      logger.error('timbrado', 'Error en llamarFiscalAPILegacy', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido al timbrar'
@@ -246,7 +245,6 @@ export class TimbradoService {
   private static insertarDatosTimbrado(xml: string, uuid: string, folio: string): string {
     const timestampActual = new Date().toISOString();
     
-    // Si ya tiene TimbreFiscalDigital, actualizarlo
     if (xml.includes('tfd:TimbreFiscalDigital')) {
       return xml.replace(
         /UUID="[^"]*"/,
@@ -257,7 +255,6 @@ export class TimbradoService {
       );
     }
     
-    // Si no tiene TimbreFiscalDigital, agregarlo
     const timbreFiscal = `
   <tfd:TimbreFiscalDigital 
     xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" 
@@ -285,7 +282,6 @@ export class TimbradoService {
     const errors: string[] = [];
     
     try {
-      // Validaciones básicas
       if (!xmlContent || xmlContent.trim().length === 0) {
         errors.push('El XML está vacío');
       }
@@ -298,7 +294,6 @@ export class TimbradoService {
         errors.push('El XML no contiene complemento Carta Porte 3.1');
       }
       
-      // Validar estructura básica
       if (!xmlContent.includes('<cfdi:Emisor')) {
         errors.push('Falta información del emisor');
       }
@@ -324,7 +319,6 @@ export class TimbradoService {
    * Formatea XML para timbrado
    */
   static formatearXMLParaTimbrado(xmlContent: string): string {
-    // Limpiar espacios innecesarios y formatear
     return xmlContent
       .replace(/>\s+</g, '><')
       .replace(/\n\s*/g, '')
@@ -336,14 +330,14 @@ export class TimbradoService {
    */
   static async validarConexionPAC(): Promise<{ success: boolean; message: string }> {
     try {
-      console.log('🔍 Validando conexión con PAC usando edge function...');
+      logger.info('timbrado', 'Validando conexión con PAC');
       
       const { data, error } = await supabase.functions.invoke('verificar-pac-config', {
         body: { ambiente: 'test' }
       });
 
       if (error) {
-        console.error('❌ Error invocando edge function:', error);
+        logger.error('timbrado', 'Error invocando edge function', error);
         return {
           success: false,
           message: `Error validando PAC: ${error.message}`
@@ -359,10 +353,10 @@ export class TimbradoService {
 
       return {
         success: true,
-        message: `✅ Conexión con FISCAL API (${data.ambiente}) establecida correctamente`
+        message: `Conexión con FISCAL API (${data.ambiente}) establecida correctamente`
       };
     } catch (error) {
-      console.error('💥 Error validando conexión PAC:', error);
+      logger.error('timbrado', 'Error validando conexión PAC', error);
       return {
         success: false,
         message: 'Error conectando con FISCAL API'
@@ -375,9 +369,8 @@ export class TimbradoService {
    */
   private static async guardarDatosTimbrado(cartaPorteId: string, datos: any) {
     try {
-      console.log('💾 Guardando datos de timbrado para Carta Porte:', cartaPorteId);
+      logger.debug('db', 'Guardando datos de timbrado', { cartaPorteId });
       
-      // 1. Actualizar cartas_porte con datos de timbrado
       const { error: updateError } = await supabase
         .from('cartas_porte')
         .update({
@@ -391,16 +384,13 @@ export class TimbradoService {
         
       if (updateError) throw updateError;
       
-      // 2. Incrementar contador de timbres consumidos
       await this.incrementarContadorTimbres(cartaPorteId);
-      
-      // 3. Guardar XML timbrado en Storage
       await this.guardarXMLEnStorage(cartaPorteId, datos.xml_timbrado);
       
-      console.log('✅ Datos de timbrado guardados exitosamente');
+      logger.info('db', 'Datos de timbrado guardados exitosamente', { cartaPorteId });
       
     } catch (error) {
-      console.error('❌ Error guardando datos de timbrado:', error);
+      logger.error('db', 'Error guardando datos de timbrado', error);
       throw error;
     }
   }
@@ -410,7 +400,6 @@ export class TimbradoService {
    */
   private static async incrementarContadorTimbres(cartaPorteId: string) {
     try {
-      // Obtener user_id de la carta porte
       const { data: carta } = await supabase
         .from('cartas_porte')
         .select('usuario_id')
@@ -419,7 +408,6 @@ export class TimbradoService {
         
       if (!carta) return;
       
-      // ✅ Incrementar contador de timbres
       const { data: profile } = await supabase
         .from('profiles')
         .select('timbres_consumidos')
@@ -433,10 +421,10 @@ export class TimbradoService {
         })
         .eq('id', carta.usuario_id);
       
-      console.log('✅ Contador de timbres incrementado');
+      logger.debug('db', 'Contador de timbres incrementado');
       
     } catch (error) {
-      console.error('❌ Error incrementando contador de timbres:', error);
+      logger.error('db', 'Error incrementando contador de timbres', error);
     }
   }
 
@@ -455,10 +443,10 @@ export class TimbradoService {
         
       if (error) throw error;
       
-      console.log('✅ XML guardado en Storage');
+      logger.debug('storage', 'XML guardado en Storage', { fileName });
       
     } catch (error) {
-      console.error('❌ Error guardando XML en Storage:', error);
+      logger.error('storage', 'Error guardando XML en Storage', error);
     }
   }
 

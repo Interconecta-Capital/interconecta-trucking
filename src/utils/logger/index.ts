@@ -5,7 +5,14 @@
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-type LogCategory = 'mapper' | 'validator' | 'timbrado' | 'db' | 'api' | 'general' | 'csd' | 'xml' | 'validador' | 'sw-validator' | 'sw-error' | 'xml-validator' | 'catalogos';
+type LogCategory = 
+  | 'mapper' | 'validator' | 'timbrado' | 'db' | 'api' | 'general' 
+  | 'csd' | 'xml' | 'validador' | 'sw-validator' | 'sw-error' | 'xml-validator' 
+  | 'catalogos' | 'pdf' | 'viajes' | 'auth' | 'storage' | 'config' 
+  | 'mercancias' | 'ubicaciones' | 'vehiculos' | 'conductores' | 'facturacion'
+  | 'ui' | 'wizard' | 'form' | 'cache' | 'routing' | 'maps';
+
+export type { LogLevel, LogCategory };
 
 interface LogEntry {
   timestamp: string;
