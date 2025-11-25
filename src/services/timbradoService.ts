@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CSDSigningService } from './csd/CSDSigningService';
+import logger from '@/utils/logger';
 
 export interface TimbradoRequest {
   xmlContent: string;
