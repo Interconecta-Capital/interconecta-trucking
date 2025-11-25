@@ -83,11 +83,11 @@ export class TimbradoService {
           uuid: resultado.uuid,
           xml_timbrado: resultado.xmlTimbrado,
           fecha_timbrado: new Date().toISOString(),
-          proveedor_pac: 'FISCAL_API',
+          proveedor_pac: 'smartweb',
           certificado_usado: certificadoInfo
         });
         
-        console.log('Carta Porte timbrada exitosamente');
+        logger.info('timbrado', 'Carta Porte timbrada exitosamente', { cartaPorteId: request.cartaPorteId });
       }
 
       return {

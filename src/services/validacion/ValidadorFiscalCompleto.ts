@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import logger from '@/utils/logger';
 
 /**
  * ✅ VALIDADOR FISCAL COMPLETO
@@ -139,10 +140,11 @@ export class ValidadorFiscalCompleto {
   };
   
   /**
-   * Valida TODOS los datos fiscales contra fuentes oficiales
+   * Valida emisor y receptor contra configuración y fuentes oficiales (SAT/Lista 69)
+   * NO valida estructura CartaPorte (usar ValidadorPreTimbradoCompleto para eso)
    * NO modifica ningún dato - Solo reporta inconsistencias
    */
-  static async validarPreTimbrado(
+  static async validarEmisorReceptor(
     facturaId: string,
     userId: string
   ): Promise<ValidationResult> {
@@ -150,9 +152,7 @@ export class ValidadorFiscalCompleto {
     const errores: ErrorFiscal[] = [];
     const advertencias: ErrorFiscal[] = [];
     
-    console.log('🔍 [VALIDACIÓN FISCAL] Iniciando validación exhaustiva...');
-    console.log(`   Factura ID: ${facturaId.substring(0, 8)}...`);
-    console.log(`   Usuario ID: ${userId.substring(0, 8)}...`);
+    logger.debug('validator', 'Iniciando validación emisor/receptor', { facturaId, userId });
     
     // PASO 1: Cargar configuración del usuario
     const { data: config, error: configError } = await supabase

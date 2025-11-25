@@ -22,7 +22,7 @@ export interface PACResponse {
 
 export interface PACConfig {
   name: string;
-  type: 'finkok' | 'stamped' | 'fiscal_api';
+  type: 'finkok' | 'stamped' | 'smartweb';
   sandboxUrl: string;
   productionUrl: string;
   active: boolean;
@@ -32,8 +32,8 @@ export interface PACConfig {
 export class PACServiceReal {
   private static readonly PAC_CONFIGS: PACConfig[] = [
     {
-      name: 'Conectia (SmartWeb)',
-      type: 'fiscal_api', // Mantener tipo por compatibilidad
+      name: 'SmartWeb PAC',
+      type: 'smartweb',
       sandboxUrl: 'https://services.test.sw.com.mx',
       productionUrl: 'https://services.sw.com.mx',
       active: true,
