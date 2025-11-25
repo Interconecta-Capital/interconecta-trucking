@@ -80,6 +80,92 @@ export class CSDService {
   }
 
   /**
+   * Actualiza un certificado existente
+   */
+  static async updateCertificate(
+    certificateId: string,
+    updateData: {
+      nombreCertificado?: string;
+      nuevoArchivoCer?: File;
+      nuevoArchivoKey?: File;
+      nuevaPassword?: string;
+    }
+  ): Promise<CertificadoDigital> {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) throw new Error('Usuario no autenticado');
+
+    // Obtener certificado actual
+    const { data: certActual } = await supabase
+      .from('certificados_digitales')
+      .select('*')
+      .eq('id', certificateId)
+      .single();
+
+    if (!certActual) throw new Error('Certificado no encontrado');
+
+    let cerPath = certActual.archivo_cer_path;
+    let keyPath = certActual.archivo_key_path;
+
+    // Si hay archivos nuevos, subirlos y eliminar antiguos
+    if (updateData.nuevoArchivoCer && updateData.nuevoArchivoKey) {
+      const timestamp = Date.now();
+      const newCerName = `${user.user.id}/${timestamp}_${updateData.nuevoArchivoCer.name}`;
+      const newKeyName = `${user.user.id}/${timestamp}_${updateData.nuevoArchivoKey.name}`;
+
+      // Subir nuevos archivos
+      const { error: cerError } = await supabase.storage
+        .from('certificados')
+        .upload(newCerName, updateData.nuevoArchivoCer, {
+          contentType: 'application/x-x509-ca-cert',
+          upsert: false
+        });
+
+      if (cerError) throw new Error('Error al subir archivo .cer: ' + cerError.message);
+
+      const { error: keyError } = await supabase.storage
+        .from('certificados')
+        .upload(newKeyName, updateData.nuevoArchivoKey, {
+          contentType: 'application/octet-stream',
+          upsert: false
+        });
+
+      if (keyError) {
+        // Rollback: eliminar .cer si .key falló
+        await supabase.storage.from('certificados').remove([newCerName]);
+        throw new Error('Error al subir archivo .key: ' + keyError.message);
+      }
+
+      // Eliminar archivos antiguos
+      await supabase.storage
+        .from('certificados')
+        .remove([certActual.archivo_cer_path, certActual.archivo_key_path]);
+
+      cerPath = newCerName;
+      keyPath = newKeyName;
+    }
+
+    // Actualizar registro en base de datos
+    const { data, error } = await supabase
+      .from('certificados_digitales')
+      .update({
+        nombre_certificado: updateData.nombreCertificado || certActual.nombre_certificado,
+        archivo_cer_path: cerPath,
+        archivo_key_path: keyPath,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', certificateId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating certificate:', error);
+      throw new Error('Error al actualizar certificado');
+    }
+
+    return data;
+  }
+
+  /**
    * Elimina un certificado
    */
   static async deleteCertificate(certificateId: string): Promise<void> {
