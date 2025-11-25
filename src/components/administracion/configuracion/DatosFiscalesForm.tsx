@@ -14,7 +14,6 @@ import { CodigoPostalSelector } from '@/components/catalogos/CodigoPostalSelecto
 import { RegimesFiscalesSelector } from '@/components/shared/RegimesFiscalesSelector';
 import { RFCValidator } from '@/utils/rfcValidation';
 import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
-import { ModoPruebasAlert } from './ModoPruebasAlert';
 import { DatosFiscalesValidacion } from './DatosFiscalesValidacion';
 import { toast } from 'sonner';
 
@@ -179,9 +178,6 @@ export function DatosFiscalesForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      {/* Alerta de Modo Pruebas */}
-      <ModoPruebasAlert modoPruebas={configuracion?.modo_pruebas || false} />
-      
       {/* Datos de la Empresa */}
       <Card>
         <CardHeader>
@@ -238,9 +234,9 @@ export function DatosFiscalesForm() {
                 <SelectValue placeholder="Seleccionar país" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MEX">México</SelectItem>
-                <SelectItem value="USA">Estados Unidos</SelectItem>
-                <SelectItem value="CAN">Canadá</SelectItem>
+                <SelectItem value="MEX">MEX - México</SelectItem>
+                <SelectItem value="USA">USA - Estados Unidos</SelectItem>
+                <SelectItem value="CAN">CAN - Canadá</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
@@ -402,9 +398,9 @@ export function DatosFiscalesForm() {
                 <SelectValue placeholder="Seleccionar país" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MEX">México</SelectItem>
-                <SelectItem value="USA">Estados Unidos</SelectItem>
-                <SelectItem value="CAN">Canadá</SelectItem>
+                <SelectItem value="MEX">MEX - México</SelectItem>
+                <SelectItem value="USA">USA - Estados Unidos</SelectItem>
+                <SelectItem value="CAN">CAN - Canadá</SelectItem>
               </SelectContent>
             </Select>
             {form.formState.errors.pais && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -67,7 +67,11 @@ export function WizardConfiguracionInicial({ open, onComplete }: WizardConfigura
   const canAdvance = () => {
     switch (step) {
       case 1:
-        return configuracion?.rfc_emisor && configuracion?.razon_social && configuracion?.regimen_fiscal;
+        // Verificar que configuracion tenga los datos guardados incluyendo código postal
+        return !!(configuracion?.rfc_emisor && 
+                configuracion?.razon_social && 
+                configuracion?.regimen_fiscal &&
+                configuracion?.codigo_postal);
       case 2:
         return !!certificadoActivo;
       case 3:
@@ -184,6 +188,9 @@ export function WizardConfiguracionInicial({ open, onComplete }: WizardConfigura
               <div>
                 <p className="text-sm text-muted-foreground mb-4">
                   Ingrese los datos fiscales de su empresa. Esta información se utilizará en todos los documentos fiscales.
+                </p>
+                <p className="text-sm font-medium text-amber-600 mb-4">
+                  💡 Presiona "Guardar Configuración" al final del formulario para continuar
                 </p>
                 <DatosFiscalesForm />
               </div>
