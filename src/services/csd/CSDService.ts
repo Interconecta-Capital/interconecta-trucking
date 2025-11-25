@@ -1,6 +1,11 @@
+/**
+ * CSD Service - Servicio de Certificados Digitales
+ * @version 2.0.0 - Migrado a logger sanitizado
+ */
 
 import { supabase } from '@/integrations/supabase/client';
 import { CertificadoDigital, CertificadoActivo } from '@/types/certificados';
+import logger from '@/utils/logger';
 
 export class CSDService {
   
@@ -14,10 +19,11 @@ export class CSDService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching certificates:', error);
+      logger.error('csd', 'Error al obtener certificados', error);
       throw new Error('Error al obtener certificados');
     }
 
+    logger.debug('csd', `${data?.length || 0} certificados encontrados`);
     return data || [];
   }
 
@@ -33,10 +39,11 @@ export class CSDService {
       .single();
 
     if (error) {
-      console.error('Error fetching active certificate:', error);
+      logger.warn('csd', 'No se encontró certificado activo');
       return null;
     }
 
+    logger.debug('csd', 'Certificado activo obtenido');
     return data || null;
   }
 
@@ -57,10 +64,14 @@ export class CSDService {
       .single();
 
     if (error) {
-      console.error('Error creating certificate:', error);
+      logger.error('csd', 'Error al crear certificado', error);
       throw new Error('Error al crear certificado');
     }
 
+    logger.info('csd', 'Certificado creado exitosamente', { 
+      id: data.id,
+      nombre: data.nombre_certificado 
+    });
     return data;
   }
 
@@ -74,9 +85,11 @@ export class CSDService {
       .eq('id', certificateId);
 
     if (error) {
-      console.error('Error activating certificate:', error);
+      logger.error('csd', 'Error al activar certificado', error);
       throw new Error('Error al activar certificado');
     }
+
+    logger.info('csd', 'Certificado activado', { certificateId });
   }
 
   /**
@@ -112,6 +125,8 @@ export class CSDService {
       const newCerName = `${user.user.id}/${timestamp}_${updateData.nuevoArchivoCer.name}`;
       const newKeyName = `${user.user.id}/${timestamp}_${updateData.nuevoArchivoKey.name}`;
 
+      logger.debug('csd', 'Subiendo nuevos archivos de certificado');
+
       // Subir nuevos archivos
       const { error: cerError } = await supabase.storage
         .from('certificados')
@@ -120,7 +135,10 @@ export class CSDService {
           upsert: false
         });
 
-      if (cerError) throw new Error('Error al subir archivo .cer: ' + cerError.message);
+      if (cerError) {
+        logger.error('csd', 'Error al subir archivo .cer', cerError);
+        throw new Error('Error al subir archivo .cer: ' + cerError.message);
+      }
 
       const { error: keyError } = await supabase.storage
         .from('certificados')
@@ -132,6 +150,7 @@ export class CSDService {
       if (keyError) {
         // Rollback: eliminar .cer si .key falló
         await supabase.storage.from('certificados').remove([newCerName]);
+        logger.error('csd', 'Error al subir archivo .key', keyError);
         throw new Error('Error al subir archivo .key: ' + keyError.message);
       }
 
@@ -158,10 +177,11 @@ export class CSDService {
       .single();
 
     if (error) {
-      console.error('Error updating certificate:', error);
+      logger.error('csd', 'Error al actualizar certificado', error);
       throw new Error('Error al actualizar certificado');
     }
 
+    logger.info('csd', 'Certificado actualizado exitosamente', { certificateId });
     return data;
   }
 
@@ -190,9 +210,11 @@ export class CSDService {
       .eq('id', certificateId);
 
     if (error) {
-      console.error('Error deleting certificate:', error);
+      logger.error('csd', 'Error al eliminar certificado', error);
       throw new Error('Error al eliminar certificado');
     }
+
+    logger.info('csd', 'Certificado eliminado', { certificateId });
   }
 
   /**
@@ -205,9 +227,11 @@ export class CSDService {
       .eq('id', certificateId);
 
     if (error) {
-      console.error('Error validating certificate:', error);
+      logger.error('csd', 'Error al validar certificado', error);
       throw new Error('Error al validar certificado');
     }
+
+    logger.info('csd', 'Certificado validado', { certificateId });
   }
 
   /**

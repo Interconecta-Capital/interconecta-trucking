@@ -4,10 +4,12 @@
  * Implementa validación de correlación CP ↔ Estado ↔ Municipio
  * según recomendaciones de SmartWeb para Carta Porte 3.1
  * 
+ * @version 2.0.0 - Migrado a logger sanitizado + optimizaciones
  * @see FASE_1_IMPLEMENTACION.md
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import logger from '@/utils/logger';
 
 export interface CpLookupResult {
   codigoPostal: string;
@@ -42,17 +44,12 @@ export interface RegimenValidationResult {
 }
 
 class CatalogosServiceImpl {
-  private cache = new Map<string, CpLookupResult>();
+  private cache = new Map<string, { data: CpLookupResult; timestamp: number }>();
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutos
 
   /**
    * Valida la correlación entre código postal, estado y municipio
    * según los catálogos SAT oficiales.
-   * 
-   * @param cp - Código postal (5 dígitos)
-   * @param estado - Clave o nombre del estado
-   * @param municipio - Clave o nombre del municipio
-   * @returns Resultado de validación con detalles
    */
   async validateCpRelation(
     cp: string,
@@ -138,7 +135,7 @@ class CatalogosServiceImpl {
       };
 
     } catch (error: any) {
-      console.error('[CatalogosService] Error validando CP:', error);
+      logger.error('catalogos', 'Error validando CP', error);
       return {
         isValid: false,
         errors: ['Error al validar código postal: ' + (error.message || 'Error desconocido')],
@@ -151,10 +148,10 @@ class CatalogosServiceImpl {
    * Busca información completa de un código postal
    */
   async lookupByCp(cp: string): Promise<CpLookupResult | null> {
-    // Verificar cache
+    // Verificar cache con TTL
     const cached = this.cache.get(cp);
-    if (cached) {
-      return cached;
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
     }
 
     try {
@@ -181,7 +178,7 @@ class CatalogosServiceImpl {
           zona: cpMexico[0].zona
         };
 
-        this.cache.set(cp, result);
+        this.cache.set(cp, { data: result, timestamp: Date.now() });
         this.cleanOldCache();
         return result;
       }
@@ -224,7 +221,7 @@ class CatalogosServiceImpl {
           colonias: coloniasData?.map(c => ({ nombre: c.descripcion })) || []
         };
 
-        this.cache.set(cp, result);
+        this.cache.set(cp, { data: result, timestamp: Date.now() });
         this.cleanOldCache();
         return result;
       }
@@ -247,15 +244,15 @@ class CatalogosServiceImpl {
           zona: edgeResult.zona
         };
 
-        this.cache.set(cp, result);
+        this.cache.set(cp, { data: result, timestamp: Date.now() });
         this.cleanOldCache();
         return result;
       }
 
       return null;
 
-    } catch (error) {
-      console.error('[CatalogosService] Error en lookupByCp:', error);
+    } catch (error: any) {
+      logger.error('catalogos', 'Error en lookupByCp', error);
       return null;
     }
   }
@@ -284,24 +281,21 @@ class CatalogosServiceImpl {
   }
 
   /**
-   * Valida si una clave de unidad es válida
+   * Valida si una clave de unidad es válida (sincrónico para uso rápido)
    */
-  async isValidClaveUnidad(code: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from('cat_clave_unidad')
-        .select('clave_unidad')
-        .eq('clave_unidad', code)
-        .single();
-
-      return !error && !!data;
-    } catch {
-      return false;
-    }
+  isValidClaveUnidad(code: string): boolean {
+    const unidadesComunes = [
+      'KGM', 'H87', 'E48', 'LTR', 'MTR', 'MTK', 'XBX', 'XKI', 'XPK',
+      'TNE', 'GRM', 'XUN', 'DAY', 'HUR', 'MIN', 'SEC', 'MON', 'WEE',
+      'C62', 'DZN', 'EA', 'GLL', 'GLS', 'INH', 'INK', 'INQ', 'KWT',
+      'MGM', 'MLT', 'MMT', 'MT', 'MW', 'ONZ', 'OZA', 'OZI', 'PND',
+      'PR', 'QT', 'ROL', 'SET', 'STK', 'TNE', 'XPK'
+    ];
+    return unidadesComunes.includes(code.toUpperCase());
   }
 
   /**
-   * Valida si una clave de producto/servicio es válida para Carta Porte
+   * Valida si una clave de producto/servicio es válida para Carta Porte (async para DB)
    */
   async isValidClaveProdServ(code: string): Promise<boolean> {
     try {
@@ -309,11 +303,14 @@ class CatalogosServiceImpl {
         .from('cat_clave_prod_serv_cp')
         .select('clave_prod_serv')
         .eq('clave_prod_serv', code)
+        .limit(1)
         .single();
 
       return !error && !!data;
     } catch {
-      return false;
+      // Fallback: claves comunes para transporte
+      const clavesComunes = ['78101800', '78101801', '78101802', '78101803', '78101804'];
+      return clavesComunes.includes(code);
     }
   }
 
@@ -334,8 +331,8 @@ class CatalogosServiceImpl {
         clave: e.clave_estado,
         nombre: e.descripcion
       }));
-    } catch (error) {
-      console.error('[CatalogosService] Error obteniendo estados:', error);
+    } catch (error: any) {
+      logger.error('catalogos', 'Error obteniendo estados', error);
       return [];
     }
   }
@@ -357,10 +354,38 @@ class CatalogosServiceImpl {
         clave: m.clave_municipio,
         nombre: m.descripcion
       }));
-    } catch (error) {
-      console.error('[CatalogosService] Error obteniendo municipios:', error);
+    } catch (error: any) {
+      logger.error('catalogos', 'Error obteniendo municipios', error);
       return [];
     }
+  }
+
+  /**
+   * Obtener estadísticas de catálogos
+   */
+  async getEstadisticas(): Promise<{
+    codigos_postales: number;
+    municipios: number;
+    estados: number;
+    colonias: number;
+    cumpleUmbral: boolean;
+  }> {
+    const [cpCount, munCount, estCount, colCount] = await Promise.all([
+      supabase.from('codigos_postales_mexico').select('*', { count: 'exact', head: true }),
+      supabase.from('cat_municipio').select('*', { count: 'exact', head: true }),
+      supabase.from('cat_estado').select('*', { count: 'exact', head: true }),
+      supabase.from('cat_colonia').select('*', { count: 'exact', head: true })
+    ]);
+
+    const totalCPs = cpCount.count || 0;
+    
+    return {
+      codigos_postales: totalCPs,
+      municipios: munCount.count || 0,
+      estados: estCount.count || 0,
+      colonias: colCount.count || 0,
+      cumpleUmbral: totalCPs >= 5000
+    };
   }
 
   /**
@@ -368,6 +393,7 @@ class CatalogosServiceImpl {
    */
   clearCache(): void {
     this.cache.clear();
+    logger.debug('catalogos', 'Cache limpiado');
   }
 
   // ========== Métodos privados ==========
@@ -386,9 +412,19 @@ class CatalogosServiceImpl {
   }
 
   private cleanOldCache(): void {
-    if (this.cache.size > 200) {
-      const entries = Array.from(this.cache.entries());
-      for (let i = 0; i < 50; i++) {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.cache.delete(key);
+      }
+    }
+    
+    // Limitar tamaño del cache
+    if (this.cache.size > 500) {
+      const entries = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      for (let i = 0; i < 100; i++) {
         this.cache.delete(entries[i][0]);
       }
     }
