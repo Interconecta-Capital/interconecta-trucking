@@ -15,6 +15,7 @@ import { RegimesFiscalesSelector } from '@/components/shared/RegimesFiscalesSele
 import { RFCValidator } from '@/utils/rfcValidation';
 import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
 import { DatosFiscalesValidacion } from './DatosFiscalesValidacion';
+import { DatosFiscalesModoPruebas } from './DatosFiscalesModoPruebas';
 import { toast } from 'sonner';
 
 const datosFiscalesSchema = z.object({
@@ -40,7 +41,8 @@ const datosFiscalesSchema = z.object({
   serie_carta_porte: z.string().default('CP'),
   folio_inicial: z.number().min(1).default(1),
   serie_factura: z.string().default('ZS'),
-  folio_inicial_factura: z.number().min(1).default(1)
+  folio_inicial_factura: z.number().min(1).default(1),
+  modo_pruebas: z.boolean().default(false)
 });
 
 type DatosFiscalesForm = z.infer<typeof datosFiscalesSchema>;
@@ -70,7 +72,8 @@ export function DatosFiscalesForm() {
       serie_carta_porte: 'CP',
       folio_inicial: 1,
       serie_factura: 'ZS',
-      folio_inicial_factura: 1
+      folio_inicial_factura: 1,
+      modo_pruebas: false
     }
   });
 
@@ -101,7 +104,8 @@ export function DatosFiscalesForm() {
         serie_carta_porte: configuracion.serie_carta_porte || 'CP',
         folio_inicial: configuracion.folio_inicial || 1,
         serie_factura: configuracion.serie_factura || 'ZS',
-        folio_inicial_factura: configuracion.folio_inicial_factura || 1
+        folio_inicial_factura: configuracion.folio_inicial_factura || 1,
+        modo_pruebas: configuracion.modo_pruebas || false
       });
 
       // Determinar si hay datos guardados para mostrar modo "solo lectura"
@@ -463,6 +467,15 @@ export function DatosFiscalesForm() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modo Pruebas (Solo Superusuarios) */}
+      <DatosFiscalesModoPruebas
+        modoPruebas={form.watch('modo_pruebas')}
+        onModoPruebasChange={(enabled) => {
+          form.setValue('modo_pruebas', enabled);
+        }}
+        disabled={!isEditing}
+      />
 
       {/* Botones de Acción */}
       <div className="flex justify-end gap-3">

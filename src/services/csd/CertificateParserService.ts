@@ -57,6 +57,20 @@ export class CertificateParserService {
     }
   }
 
+  private static RFC_PRUEBA_SAT = [
+    'EKU9003173C9', // Escuela Kemper Urgate (OFICIAL SAT)
+    'LAN7008173R5', // Lan Cargo S.A. de C.V. (OFICIAL SAT)
+    'LAN8507268IA'  // Lanix S.A. de C.V. (OFICIAL SAT)
+  ];
+
+  /**
+   * Verifica si un RFC pertenece a los certificados de prueba del SAT
+   * Solo los superusuarios pueden usar estos certificados
+   */
+  static esCertificadoDePrueba(rfc: string): boolean {
+    return this.RFC_PRUEBA_SAT.includes(rfc.toUpperCase());
+  }
+
   /**
    * Valida un certificado digital completo usando el edge function
    */

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useAmbienteTimbrado } from '@/hooks/useAmbienteTimbrado';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -48,6 +49,7 @@ interface CartaPorte {
 export default function ViajeDetalle() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { ambiente } = useAmbienteTimbrado();
   
   const [viaje, setViaje] = useState<Viaje | null>(null);
   const [factura, setFactura] = useState<Factura | null>(null);
@@ -406,7 +408,7 @@ export default function ViajeDetalle() {
             vehiculo: datosCartaPorte?.vehiculo
           }
         },
-        ambiente: 'sandbox' as const
+        ambiente
       };
       
       console.log('📦 [TIMBRADO] Payload completo:', JSON.stringify(timbrarPayload, null, 2));

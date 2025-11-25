@@ -4,6 +4,7 @@ import { categorizeError, formatErrorForUser, getErrorIcon } from '@/utils/timbr
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { useAmbienteTimbrado } from '@/hooks/useAmbienteTimbrado';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -50,6 +51,7 @@ interface ViajeTrackingModalProps {
 export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingModalProps) => {
   const [activeTab, setActiveTab] = useState('resumen');
   const queryClient = useQueryClient();
+  const { ambiente } = useAmbienteTimbrado();
   const [viajeCompleto, setViajeCompleto] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showFacturaPreview, setShowFacturaPreview] = useState(false);
@@ -285,7 +287,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
             poliza_resp_civil: viajeCompleto.vehiculo.numero_poliza || "0000000"
           } : undefined
         },
-        ambiente: 'sandbox'
+        ambiente
       };
 
       console.log('📦 [TIMBRADO] Payload completo:', JSON.stringify(timbradoPayload).substring(0, 1000));
@@ -421,7 +423,7 @@ export const ViajeTrackingModal = ({ viaje, open, onOpenChange }: ViajeTrackingM
         body: {
           cartaPorteId: cartaPorteId,
           viajeId: viajeData.id,
-          ambiente: 'sandbox'
+          ambiente
         }
       });
 

@@ -6,8 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export class SupabaseFunctionsAdapter {
   /**
-   * Timbrar Carta Porte usando edge function V2 (RECOMENDADO)
-   * Versión limpia y simplificada basada en documentación oficial de SW
+   * FASE 3: Timbrar Carta Porte con SW (versión simplificada V2)
+   * @param ambiente Debe ser proporcionado dinámicamente desde useAmbienteTimbrado()
    */
   static async timbrarCartaPorteV2(cartaPorteData: any, cartaPorteId: string, ambiente: 'sandbox' | 'production'): Promise<any> {
     try {
@@ -35,7 +35,8 @@ export class SupabaseFunctionsAdapter {
   }
 
   /**
-   * Timbrar Carta Porte usando edge function (LEGACY - mantener como backup)
+   * FASE 3: Timbrar Carta Porte con SW (legacy - mantener como backup)
+   * @param ambiente Debe ser proporcionado dinámicamente desde useAmbienteTimbrado()
    */
   static async timbrarCartaPorte(cartaPorteData: any, cartaPorteId: string, ambiente: 'sandbox' | 'production'): Promise<any> {
     try {
