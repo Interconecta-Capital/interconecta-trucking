@@ -117,7 +117,7 @@ const mapConfiguracionFromDB = (dbData: any): ConfiguracionEmpresarial => {
       aseguradora: seguroAmbiental.aseguradora || ''
     } : null,
     permisos_sct_empresa: dbData.permisos_sct || [],
-    proveedor_timbrado: dbData.proveedor_timbrado || 'fiscal_api',
+    proveedor_timbrado: dbData.proveedor_timbrado || 'smartweb',
     modo_pruebas: dbData.modo_pruebas !== false,
     configuracion_completa: dbData.configuracion_completa || false,
     validado_sat: dbData.validado_sat || false

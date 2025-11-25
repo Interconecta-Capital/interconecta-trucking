@@ -12,13 +12,12 @@ import {
   Upload,
   Trash2,
   Star,
-  Edit,
-  FlaskConical
+  Edit
 } from 'lucide-react';
 import { useCertificadosDigitales } from '@/hooks/useCertificadosDigitales';
 import { CertificadoUploadDialog } from './CertificadoUploadDialog';
 import { CertificadoEditDialog, UpdateCertificateData } from './CertificadoEditDialog';
-import { TestCertificateService } from '@/services/csd/TestCertificateService';
+
 import { toast } from 'sonner';
 import { CertificadoDigital } from '@/types/certificados';
 
@@ -26,7 +25,6 @@ export function CertificadosDigitalesSection() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [certificadoAEditar, setCertificadoAEditar] = useState<CertificadoDigital | null>(null);
-  const [cargandoPrueba, setCargandoPrueba] = useState(false);
   
   const { 
     certificados, 
@@ -77,30 +75,6 @@ export function CertificadosDigitalesSection() {
     }
   };
 
-  const handleCargarCertificadoPrueba = async () => {
-    try {
-      setCargandoPrueba(true);
-      const certPrueba = await TestCertificateService.obtenerCertificadoPruebaSAT();
-      
-      toast.info('Cargando certificado de prueba SAT...', {
-        description: `RFC: ${certPrueba.rfc} - Este certificado solo funciona en modo sandbox`
-      });
-
-      await subirCertificado({
-        archivoCer: certPrueba.archivoCer,
-        archivoKey: certPrueba.archivoKey,
-        passwordKey: certPrueba.password,
-        nombreCertificado: certPrueba.nombre
-      });
-
-    } catch (error) {
-      console.error('Error cargando certificado de prueba:', error);
-      toast.error('Error al cargar certificado de prueba');
-    } finally {
-      setCargandoPrueba(false);
-    }
-  };
-
   const getBadgeEstado = (certificado: any) => {
     if (!esCertificadoValido(certificado)) {
       return <Badge variant="destructive">Vencido</Badge>;
@@ -138,15 +112,6 @@ export function CertificadosDigitalesSection() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleCargarCertificadoPrueba}
-            variant="outline"
-            disabled={cargandoPrueba}
-            className="flex items-center gap-2"
-          >
-            <FlaskConical className="h-4 w-4" />
-            {cargandoPrueba ? 'Cargando...' : 'Certificado Prueba SAT'}
-          </Button>
           <Button 
             onClick={() => setShowUploadModal(true)}
             className="flex items-center gap-2"

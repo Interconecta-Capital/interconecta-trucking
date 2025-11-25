@@ -500,7 +500,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   // Declarar variables fuera del try para uso en catch y en todo el scope
   let user: any = null;
-  let ambiente: 'sandbox' | 'production' = 'sandbox';
+  let ambiente: 'sandbox' | 'production' = 'production'; // ✅ Default SEGURO: producción
   let supabaseClient: any = null;
 
   try {

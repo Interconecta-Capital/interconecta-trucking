@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { CartaPorteData } from '@/types/cartaPorte';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAmbienteTimbrado } from '@/hooks/useAmbienteTimbrado';
 
 export interface TimbradoResult {
   success: boolean;
@@ -19,17 +20,18 @@ export interface TimbradoResult {
 export function useTimbrado() {
   const [isTimbring, setIsTimbring] = useState(false);
   const [datosTimbre, setDatosTimbre] = useState<any>(null);
+  const { ambiente } = useAmbienteTimbrado();
 
   const timbrarCartaPorte = async (cartaPorteData: CartaPorteData): Promise<TimbradoResult> => {
     setIsTimbring(true);
     try {
-      console.log('🚀 Iniciando timbrado con SW/Conectia...');
+      console.log(`🚀 Iniciando timbrado en ambiente: ${ambiente}`);
       
       const { data, error } = await supabase.functions.invoke('timbrar-con-sw', {
         body: {
           cartaPorteData,
           cartaPorteId: crypto.randomUUID(),
-          ambiente: 'sandbox'
+          ambiente // ✅ Usar ambiente dinámico según configuración del usuario
         }
       });
 
@@ -53,7 +55,7 @@ export function useTimbrado() {
         success: true,
         uuid: data.uuid,
         fecha_timbrado: data.fechaTimbrado,
-        ambiente: 'sandbox',
+        ambiente, // ✅ Ambiente dinámico
         xmlTimbrado: data.xmlTimbrado,
         qrCode: data.qrCode,
         cadenaOriginal: data.cadenaOriginal

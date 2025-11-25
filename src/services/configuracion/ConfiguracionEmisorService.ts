@@ -53,62 +53,8 @@ export class ConfiguracionEmisorService {
         throw new Error('No existe configuración empresarial. Por favor, configura tu empresa en Administración > Mi Empresa.');
       }
 
-      // ✅ MODO PRUEBAS: Usar RFC oficial del SAT automáticamente
-      if (configData.modo_pruebas) {
-        console.log('🧪 [ConfiguracionEmisorService] Modo pruebas detectado - usando RFC oficial del SAT');
-        
-        const { data: rfcPrueba, error: rfcError } = await supabase
-          .from('rfc_pruebas_sat')
-          .select('*')
-          .eq('rfc', 'EKU9003173C9')
-          .single();
-
-        if (rfcPrueba && !rfcError) {
-          console.log('✅ [ConfiguracionEmisorService] Datos oficiales SAT cargados:', {
-            rfc: rfcPrueba.rfc,
-            nombre: rfcPrueba.nombre
-          });
-
-          const domicilio = (configData.domicilio_fiscal || {}) as {
-            calle?: string;
-            numero_exterior?: string;
-            numero_interior?: string;
-            colonia?: string;
-            municipio?: string;
-            estado?: string;
-            pais?: string;
-            codigo_postal?: string;
-          };
-
-          return {
-            rfc: rfcPrueba.rfc,
-            nombre: rfcPrueba.nombre,
-            regimenFiscal: rfcPrueba.regimen_fiscal,
-            domicilioFiscal: {
-              calle: domicilio.calle || 'Calle de Prueba',
-              numero_exterior: domicilio.numero_exterior || '123',
-              numero_interior: domicilio.numero_interior,
-              colonia: domicilio.colonia || 'Centro',
-              municipio: domicilio.municipio || 'Centro',
-              estado: domicilio.estado || 'Tabasco',
-              pais: 'MEX',
-              codigo_postal: rfcPrueba.codigo_postal
-            },
-            seguros: {
-              responsabilidadCivil: (configData.seguro_resp_civil as any) || undefined,
-              carga: (configData.seguro_carga as any) || undefined,
-              medioAmbiente: (configData.seguro_ambiental as any) || undefined
-            },
-            permisosSCT: (configData.permisos_sct as any[]) || [],
-            configuracionCompleta: configData.configuracion_completa
-          };
-        }
-
-        console.warn('⚠️ [ConfiguracionEmisorService] No se encontró RFC de prueba oficial - usando datos del usuario');
-      }
-
-      // ⚠️ NO validar configuracion_completa aquí - ese flag se actualiza DESPUÉS de validar
-      // La validación real se hace en validarConfiguracionCompleta()
+      // Configuración limpia - usar SIEMPRE datos reales del usuario
+      // El modo pruebas solo afecta el endpoint de timbrado (sandbox vs production)
 
       const domicilio = (configData.domicilio_fiscal || {}) as {
         calle?: string;
