@@ -5,7 +5,7 @@
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-type LogCategory = 'mapper' | 'validator' | 'timbrado' | 'db' | 'api' | 'general' | 'csd' | 'xml';
+type LogCategory = 'mapper' | 'validator' | 'timbrado' | 'db' | 'api' | 'general' | 'csd' | 'xml' | 'validador' | 'sw-validator' | 'sw-error' | 'xml-validator' | 'catalogos';
 
 interface LogEntry {
   timestamp: string;
