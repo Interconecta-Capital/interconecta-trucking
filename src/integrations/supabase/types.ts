@@ -5296,6 +5296,15 @@ export type Database = {
         }[]
       }
       migrate_photos_to_encrypted: { Args: never; Returns: Json }
+      normalizar_ubicaciones_tracking: {
+        Args: never
+        Returns: {
+          estado_anterior: string
+          estado_nuevo: string
+          normalizado: boolean
+          viaje_id: string
+        }[]
+      }
       poblar_datos_viajes_existentes: { Args: never; Returns: string }
       poblar_datos_viajes_existentes_mejorado: { Args: never; Returns: string }
       process_expired_trials: { Args: never; Returns: undefined }

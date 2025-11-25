@@ -362,23 +362,82 @@ export default function ViajeDetalle() {
       console.log('✅ [TIMBRADO] Factura actualizada correctamente en BD');
       toast.loading('Enviando a timbrar con SmartWeb...', { id: 'timbrado-process' });
       
+      // ✅ FASE 3.1: Obtener datos completos del viaje usando el mapper integral
+      console.log('📤 [TIMBRADO] Mapeando datos completos del viaje desde BD...');
+      toast.loading('Preparando datos para timbrado...', { id: 'timbrado-mapper' });
+      
+      const { ViajeToCartaPorteMapper } = await import('@/services/viajes/ViajeToCartaPorteMapper');
+      const { ValidadorPreTimbradoCompleto } = await import('@/services/validacion/ValidadorPreTimbradoCompleto');
+      
+      // Mapear viaje completo con todas las relaciones
+      let cartaPorteDataCompleta;
+      try {
+        cartaPorteDataCompleta = await ViajeToCartaPorteMapper.mapFromViajeDB(id);
+        console.log('✅ [TIMBRADO] Datos mapeados correctamente:', {
+          ubicaciones: cartaPorteDataCompleta.ubicaciones?.length,
+          mercancias: cartaPorteDataCompleta.mercancias?.length,
+          figuras: cartaPorteDataCompleta.figuras?.length,
+          autotransporte: !!cartaPorteDataCompleta.autotransporte
+        });
+      } catch (mapError) {
+        console.error('❌ [TIMBRADO] Error mapeando viaje:', mapError);
+        toast.error('Error preparando datos del viaje', { id: 'timbrado-mapper' });
+        throw mapError;
+      }
+
+      // ✅ FASE 3.3: Validar datos antes de enviar al PAC
+      console.log('🔍 [TIMBRADO] Validando datos pre-timbrado...');
+      toast.loading('Validando datos...', { id: 'timbrado-validator' });
+      
+      const validacionPreTimbrado = await ValidadorPreTimbradoCompleto.validarCartaPorteCompleta(
+        cartaPorteDataCompleta
+      );
+
+      if (!validacionPreTimbrado.valido) {
+        console.error('❌ [TIMBRADO] Validación falló:', validacionPreTimbrado.errores);
+        toast.error('Datos incompletos para timbrado', { 
+          id: 'timbrado-validator',
+          description: validacionPreTimbrado.errores.slice(0, 3).join(', ')
+        });
+        
+        // Mostrar errores detallados
+        validacionPreTimbrado.errores.forEach(error => {
+          toast.error(error, { duration: 5000 });
+        });
+        
+        return;
+      }
+
+      if (validacionPreTimbrado.advertencias.length > 0) {
+        console.warn('⚠️ [TIMBRADO] Advertencias encontradas:', validacionPreTimbrado.advertencias);
+        validacionPreTimbrado.advertencias.forEach(adv => {
+          toast.warning(adv, { duration: 4000 });
+        });
+      }
+
+      toast.success('Datos validados correctamente', { id: 'timbrado-validator' });
+
       // ✅ FASE 3: Llamar edge function para timbrar con el PAC
       console.log('📤 [TIMBRADO] Invocando edge function timbrar-con-sw...');
       const startTime = Date.now();
+      toast.loading('Enviando a timbrar con SmartWeb...', { id: 'timbrado-process' });
       
-      // Construir payload para timbrar-con-sw usando los datos de la factura + borrador
-      const facturaData = factura as any; // Type assertion para acceder a propiedades de DB
+      // Construir payload usando datos mapeados y validados
+      const facturaData = factura as any;
       const timbrarPayload = {
         facturaId: factura.id,
         facturaData: {
-          rfcEmisor: String(facturaData.rfc_emisor || ''),
-          nombreEmisor: String(facturaData.nombre_emisor || ''),
-          rfcReceptor: String(facturaData.rfc_receptor || ''),
-          nombreReceptor: String(facturaData.nombre_receptor || ''),
-          regimenFiscalEmisor: facturaData.regimen_fiscal_emisor || '601',
+          // Datos básicos del CFDI
+          rfcEmisor: cartaPorteDataCompleta.rfcEmisor,
+          nombreEmisor: cartaPorteDataCompleta.nombreEmisor,
+          regimenFiscalEmisor: cartaPorteDataCompleta.regimenFiscalEmisor || facturaData.regimen_fiscal_emisor || '601',
+          rfcReceptor: cartaPorteDataCompleta.rfcReceptor,
+          nombreReceptor: cartaPorteDataCompleta.nombreReceptor,
           regimenFiscalReceptor: regimenFinal,
-          usoCfdi: facturaData.uso_cfdi || 'S01',
-          domicilioFiscalReceptor: codigoPostalReceptor, // ✅ CRÍTICO: Campo obligatorio CFDI 4.0
+          usoCfdi: cartaPorteDataCompleta.usoCfdi || facturaData.uso_cfdi || 'S01',
+          domicilioFiscalReceptor: codigoPostalReceptor,
+          
+          // Datos de la factura
           tipoCfdi: 'Ingreso',
           tipo_comprobante: 'I',
           total: Number(facturaData.total || 0),
@@ -395,17 +454,17 @@ export default function ViajeDetalle() {
             importe: Number(facturaData.subtotal || 0)
           }],
           
-          // ✅ DATOS DE CARTA PORTE desde el borrador
-          ubicaciones: datosCartaPorte?.ubicaciones || [],
-          mercancias: datosCartaPorte?.mercancias || [],
-          autotransporte: datosCartaPorte?.autotransporte || null,
-          figuras: datosCartaPorte?.figuras || [],
+          // ✅ DATOS DE CARTA PORTE completos y validados
+          ubicaciones: cartaPorteDataCompleta.ubicaciones,
+          mercancias: cartaPorteDataCompleta.mercancias,
+          autotransporte: cartaPorteDataCompleta.autotransporte,
+          figuras: cartaPorteDataCompleta.figuras,
           
-          // Datos adicionales del viaje para tracking
+          // Datos adicionales
           tracking_data: {
             viaje_id: id,
-            conductor: datosCartaPorte?.conductor,
-            vehiculo: datosCartaPorte?.vehiculo
+            validado_pre_timbrado: true,
+            timestamp_validacion: new Date().toISOString()
           }
         },
         ambiente

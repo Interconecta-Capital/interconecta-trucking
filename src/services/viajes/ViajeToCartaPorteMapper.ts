@@ -2,6 +2,8 @@ import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteData, MercanciaCompleta } from '@/types/cartaPorte';
 import { MercanciaMultipleParser } from '@/services/mercancias/MercanciaMultipleParser';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Viaje } from '@/types/viaje';
 
 export class ViajeToCartaPorteMapper {
   static mapToCartaPorteData(wizardData: ViajeWizardData) {
@@ -194,6 +196,99 @@ export class ViajeToCartaPorteMapper {
         }
       } : undefined
     };
+  }
+
+  /**
+   * Mapear viaje desde DB con todas las relaciones enriquecidas
+   * FASE 3.1: Método integral que obtiene datos de BD y los valida
+   */
+  static async mapFromViajeDB(viajeId: string): Promise<CartaPorteData> {
+    console.log('🔍 [MapFromDB] Iniciando mapeo desde BD para viaje:', viajeId);
+    
+    // 1. Obtener viaje con TODAS las relaciones
+    const { data: viaje, error: viajeError } = await supabase
+      .from('viajes')
+      .select(`
+        *,
+        conductores!conductor_id(
+          id, nombre, rfc, curp, num_licencia, tipo_licencia, 
+          operador_sct, residencia_fiscal, vigencia_licencia, direccion
+        ),
+        vehiculos!vehiculo_id(
+          id, placa, marca, modelo, anio, configuracion_vehicular,
+          peso_bruto_vehicular, tipo_carroceria, permiso_sct, 
+          numero_permiso_sct, aseguradora_responsabilidad_civil,
+          poliza_responsabilidad_civil, aseguradora_medio_ambiente,
+          poliza_medio_ambiente
+        ),
+        remolques!remolque_id(
+          id, placa, tipo_remolque
+        ),
+        clientes_proveedores!viajes_cliente_id_fkey(
+          id, nombre_razon_social, rfc, regimen_fiscal, uso_cfdi, domicilio_fiscal
+        )
+      `)
+      .eq('id', viajeId)
+      .single();
+
+    if (viajeError || !viaje) {
+      console.error('❌ [MapFromDB] Error obteniendo viaje:', viajeError);
+      throw new Error(`No se pudo obtener el viaje: ${viajeError?.message}`);
+    }
+
+    console.log('✅ [MapFromDB] Viaje obtenido con relaciones:', {
+      conductor: !!viaje.conductores,
+      vehiculo: !!viaje.vehiculos,
+      remolque: !!viaje.remolques,
+      cliente: !!viaje.clientes_proveedores
+    });
+
+    // 2. Extraer y normalizar tracking_data
+    const trackingData = (viaje.tracking_data as any) || {};
+    
+    // Normalizar ubicaciones si están en formato objeto {origen, destino}
+    let ubicacionesArray = trackingData.ubicaciones || [];
+    if (!Array.isArray(ubicacionesArray) && ubicacionesArray.origen && ubicacionesArray.destino) {
+      console.log('⚠️ [MapFromDB] Normalizando ubicaciones de objeto a array');
+      ubicacionesArray = [ubicacionesArray.origen, ubicacionesArray.destino];
+    }
+
+    // 3. Enriquecer tracking_data con datos de relaciones DB
+    const wizardDataEnriquecido: ViajeWizardData = {
+      tipoServicio: trackingData.tipo_servicio || 'flete_pagado',
+      cliente: viaje.clientes_proveedores || trackingData.cliente,
+      conductor: viaje.conductores || trackingData.conductor,
+      vehiculo: viaje.vehiculos || trackingData.vehiculo,
+      remolque: viaje.remolques || trackingData.remolque,
+      origen: ubicacionesArray[0] || trackingData.origen || {
+        nombre: viaje.origen,
+        direccion: viaje.origen,
+        coordenadas: null,
+        domicilio: {}
+      },
+      destino: ubicacionesArray[1] || trackingData.destino || {
+        nombre: viaje.destino,
+        direccion: viaje.destino,
+        coordenadas: null,
+        domicilio: {}
+      },
+      descripcionMercancia: trackingData.descripcionMercancia || 'Mercancía general',
+      distanciaRecorrida: viaje.distancia_km || trackingData.distanciaTotal || 100,
+      figuras: trackingData.figuras || [],
+      // Propiedades adicionales requeridas por ViajeWizardData
+      currentStep: 6, // Paso final - viaje completo
+      isValid: true
+    };
+
+    console.log('✅ [MapFromDB] Datos enriquecidos:', {
+      cliente: wizardDataEnriquecido.cliente?.nombre_razon_social,
+      conductor: wizardDataEnriquecido.conductor?.nombre,
+      vehiculo: wizardDataEnriquecido.vehiculo?.placa,
+      ubicaciones: ubicacionesArray.length
+    });
+
+    // 4. Usar el mapper existente para generar CartaPorteData validado
+    return await this.mapToValidCartaPorteFormat(wizardDataEnriquecido);
   }
 
   static async mapToValidCartaPorteFormat(wizardData: ViajeWizardData): Promise<CartaPorteData> {
