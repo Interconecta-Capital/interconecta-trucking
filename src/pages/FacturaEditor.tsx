@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAmbienteTimbrado } from '@/hooks/useAmbienteTimbrado';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +25,7 @@ interface Concepto {
 export default function FacturaEditor() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { ambiente } = useAmbienteTimbrado();
   const [loading, setLoading] = useState(false);
 
   const [tipoComprobante, setTipoComprobante] = useState<'I' | 'E' | 'T'>('I');
@@ -309,7 +311,7 @@ export default function FacturaEditor() {
           body: {
             facturaData,
             facturaId,
-            ambiente: 'sandbox'
+            ambiente
           }
         }
       );

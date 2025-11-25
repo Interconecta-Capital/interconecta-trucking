@@ -7,9 +7,11 @@ import { CertificateUploadService } from '@/services/csd/CertificateUploadServic
 import { CertificateParserService } from '@/services/csd/CertificateParserService';
 import { toast } from 'sonner';
 import { useAuth } from './useAuth';
+import { useSuperuser } from './useSuperuser';
 
 export const useCertificadosDigitales = () => {
   const { user } = useAuth();
+  const { isSuperuser } = useSuperuser();
   const queryClient = useQueryClient();
 
   // Query para obtener todos los certificados
@@ -65,6 +67,31 @@ export const useCertificadosDigitales = () => {
 
       if (!validation.isValid) {
         throw new Error(validation.errors.join(', '));
+      }
+
+      // ✅ NUEVO: Validar si es certificado de prueba SAT
+      const esCertificadoPrueba = CertificateParserService.esCertificadoDePrueba(
+        validation.certificateInfo!.rfc
+      );
+      
+      if (esCertificadoPrueba && !isSuperuser) {
+        throw new Error(
+          '❌ Este es un certificado de prueba del SAT (RFC: ' + validation.certificateInfo!.rfc + ').\n\n' +
+          'Los certificados de prueba solo pueden ser usados por administradores en modo desarrollo.\n\n' +
+          'Por favor suba su certificado CSD real para poder timbrar en producción.\n\n' +
+          'Puede obtener su certificado en:\n' +
+          'https://www.sat.gob.mx/aplicacion/login/43824/tramites-del-rfc'
+        );
+      }
+      
+      // Si es superuser con certificado de prueba, mostrar advertencia
+      if (esCertificadoPrueba && isSuperuser) {
+        toast.info(
+          '⚠️ Certificado de prueba SAT detectado.\n\n' +
+          'Este certificado solo es válido en modo sandbox.\n' +
+          'Los timbres generados NO tendrán validez fiscal.',
+          { duration: 8000 }
+        );
       }
 
       // Subir archivos
