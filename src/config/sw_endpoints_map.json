@@ -1,0 +1,231 @@
+{
+  "name": "SmartWeb PAC Endpoints",
+  "version": "1.0.0",
+  "lastUpdated": "2024-11-25",
+  "environments": {
+    "sandbox": {
+      "baseUrl": "https://services.test.sw.com.mx",
+      "description": "Ambiente de pruebas SmartWeb"
+    },
+    "production": {
+      "baseUrl": "https://services.sw.com.mx",
+      "description": "Ambiente de producción SmartWeb"
+    }
+  },
+  "endpoints": {
+    "authentication": {
+      "path": "/security/authenticate",
+      "method": "POST",
+      "description": "Autenticación para obtener token",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "user": "string",
+        "password": "string"
+      },
+      "response": {
+        "status": "string",
+        "token": "string",
+        "expires_in": "number"
+      }
+    },
+    "timbrado": {
+      "path": "/cfdi40/stamp/json/v4",
+      "method": "POST",
+      "description": "Timbrado de CFDI 4.0 con complemento Carta Porte",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "body": "CFDIPayload",
+      "response": {
+        "status": "string",
+        "data": {
+          "uuid": "string",
+          "fechaTimbrado": "string",
+          "cadenaOriginalSAT": "string",
+          "noCertificadoSAT": "string",
+          "selloSAT": "string",
+          "selloCFD": "string",
+          "cfdi": "string (XML Base64)"
+        }
+      },
+      "errorCodes": {
+        "301": "Token inválido o expirado",
+        "401": "No autorizado",
+        "402": "Créditos insuficientes",
+        "500": "Error interno del servidor"
+      }
+    },
+    "validacion": {
+      "path": "/validate",
+      "method": "POST",
+      "description": "Validación de CFDI sin timbrar",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "body": "CFDIPayload",
+      "response": {
+        "status": "string",
+        "valid": "boolean",
+        "errors": "array"
+      }
+    },
+    "cancelacion": {
+      "path": "/cfdi40/cancel",
+      "method": "POST",
+      "description": "Cancelación de CFDI",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "uuid": "string",
+        "rfc": "string",
+        "password": "string (CSD)",
+        "motivo": "string (01-04)",
+        "folioSustitucion": "string (opcional)"
+      },
+      "response": {
+        "status": "string",
+        "acuse": "string (XML)",
+        "uuid": "string",
+        "estatusCancelacion": "string"
+      },
+      "motivosCancelacion": {
+        "01": "Comprobante emitido con errores con relación",
+        "02": "Comprobante emitido con errores sin relación",
+        "03": "No se llevó a cabo la operación",
+        "04": "Operación nominativa relacionada en la factura global"
+      }
+    },
+    "consultaEstatusCancelacion": {
+      "path": "/cfdi40/cancel/status",
+      "method": "POST",
+      "description": "Consultar estatus de cancelación",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "uuid": "string",
+        "rfc": "string"
+      },
+      "response": {
+        "status": "string",
+        "estatusCancelacion": "string",
+        "fechaCancelacion": "string"
+      }
+    },
+    "consultaSaldo": {
+      "path": "/account/balance",
+      "method": "GET",
+      "description": "Consultar saldo de timbres",
+      "headers": {
+        "Authorization": "Bearer {token}"
+      },
+      "response": {
+        "status": "string",
+        "data": {
+          "timbresDisponibles": "number",
+          "timbresUtilizados": "number",
+          "fechaExpiracion": "string"
+        }
+      }
+    },
+    "consultaCFDI": {
+      "path": "/storage/pdf",
+      "method": "POST",
+      "description": "Obtener PDF de CFDI timbrado",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "uuid": "string",
+        "b64": "boolean"
+      },
+      "response": {
+        "status": "string",
+        "data": {
+          "pdf": "string (Base64)"
+        }
+      }
+    },
+    "consultaXML": {
+      "path": "/storage/xml",
+      "method": "POST",
+      "description": "Obtener XML de CFDI timbrado",
+      "headers": {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "uuid": "string"
+      },
+      "response": {
+        "status": "string",
+        "data": {
+          "xml": "string"
+        }
+      }
+    }
+  },
+  "errorCatalog": {
+    "SW001": {
+      "message": "Token de autenticación inválido o expirado",
+      "action": "Renovar token de autenticación"
+    },
+    "SW002": {
+      "message": "Créditos de timbrado insuficientes",
+      "action": "Adquirir más timbres en SmartWeb"
+    },
+    "SW003": {
+      "message": "Servicio temporalmente no disponible",
+      "action": "Reintentar en unos minutos"
+    },
+    "CFDI40100": {
+      "message": "RFC del emisor no está en la LCO del SAT",
+      "action": "Verificar RFC del emisor"
+    },
+    "CFDI40101": {
+      "message": "RFC del receptor no está en la LRFC del SAT",
+      "action": "Verificar RFC del receptor"
+    },
+    "CFDI40999": {
+      "message": "Error genérico de estructura XML",
+      "action": "Revisar estructura completa del CFDI"
+    },
+    "CCP301": {
+      "message": "Código postal no existe en catálogo SAT",
+      "action": "Verificar CP en catálogo SEPOMEX"
+    },
+    "CCP302": {
+      "message": "Estado no corresponde al código postal",
+      "action": "Corregir estado según catálogo SAT"
+    },
+    "CCP303": {
+      "message": "Municipio no corresponde al código postal",
+      "action": "Corregir municipio según catálogo SAT"
+    }
+  },
+  "retryPolicy": {
+    "maxRetries": 3,
+    "initialDelayMs": 1000,
+    "maxDelayMs": 10000,
+    "backoffMultiplier": 2,
+    "retryableStatusCodes": [408, 429, 500, 502, 503, 504]
+  },
+  "rateLimits": {
+    "timbrado": {
+      "requestsPerMinute": 60,
+      "requestsPerHour": 1000
+    },
+    "validacion": {
+      "requestsPerMinute": 100,
+      "requestsPerHour": 5000
+    }
+  }
+}
