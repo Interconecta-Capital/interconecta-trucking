@@ -117,7 +117,12 @@ Deno.serve(async (req) => {
     const { rangoInicio, rangoFin, modo = 'incremental', codigosEspecificos } = body;
 
     console.log('[POBLAR-CP] Iniciando poblado de catálogos');
-    console.log('[POBLAR-CP] Parámetros:', { rangoInicio, rangoFin, modo, codigosEspecificos?.length });
+    console.log('[POBLAR-CP] Parámetros:', { 
+      rangoInicio, 
+      rangoFin, 
+      modo, 
+      totalCodigosEspecificos: codigosEspecificos ? codigosEspecificos.length : 0 
+    });
 
     const resultados = {
       insertados: 0,
