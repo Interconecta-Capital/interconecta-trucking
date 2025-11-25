@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CertificadoDigital } from '@/types/certificados';
 import { CSDService } from './CSDService';
+import logger from '@/utils/logger';
 
 export interface XMLSigningResult {
   success: boolean;
@@ -21,7 +22,7 @@ export class CSDSigningService {
    */
   static async firmarXML(xmlContent: string): Promise<XMLSigningResult> {
     try {
-      console.log('Iniciando proceso de firmado XML...');
+      logger.info('csd', 'Iniciando proceso de firmado XML');
       
       // Obtener certificado activo
       const certificadoActivo = await CSDService.getActiveCertificate();
@@ -52,7 +53,9 @@ export class CSDSigningService {
       // Insertar sello en el XML
       const xmlFirmado = this.insertarSelloEnXML(xmlContent, selloDigital, certificadoActivo);
 
-      console.log('XML firmado exitosamente');
+      logger.info('csd', 'XML firmado exitosamente', { 
+        certificado: certificadoActivo.numero_certificado 
+      });
       
       return {
         success: true,
@@ -65,7 +68,7 @@ export class CSDSigningService {
       };
 
     } catch (error) {
-      console.error('Error en firmado XML:', error);
+      logger.error('csd', 'Error en firmado XML', { error });
       return {
         success: false,
         error: `Error al firmar XML: ${error instanceof Error ? error.message : 'Error desconocido'}`
@@ -113,7 +116,9 @@ export class CSDSigningService {
     const timestamp = new Date().toISOString();
     const mockCadenaOriginal = `||3.1|${timestamp}|${xmlContent.length}||`;
     
-    console.log('Cadena original generada:', mockCadenaOriginal);
+    logger.debug('csd', 'Cadena original generada', { 
+      length: mockCadenaOriginal.length 
+    });
     return mockCadenaOriginal;
   }
 
@@ -127,7 +132,9 @@ export class CSDSigningService {
     // Por ahora simulamos la generación del sello
     const mockSello = btoa(cadenaOriginal + '_' + Date.now()).substring(0, 172);
     
-    console.log('Sello digital generado');
+    logger.debug('csd', 'Sello digital generado', { 
+      length: mockSello.length 
+    });
     return mockSello;
   }
 
