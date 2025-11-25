@@ -59,3 +59,12 @@ verify_jwt = false
 
 [functions.validar-certificado]
 verify_jwt = true
+
+[functions.poblar-catalogos-cp]
+verify_jwt = false
+
+[functions.seed-rfc-pruebas]
+verify_jwt = false
+
+[functions.validar-pre-timbrado]
+verify_jwt = true

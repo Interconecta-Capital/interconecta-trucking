@@ -85,61 +85,25 @@ Deno.serve(async (req) => {
     // 1. Crear tabla rfc_pruebas_sat si no existe
     // (La migración debería haberla creado, pero verificamos)
 
-    // 2. Insertar RFCs de prueba
+    // 2. Insertar RFCs de prueba (usando columnas correctas de la tabla)
     for (const rfcData of RFC_PRUEBAS_SAT) {
       try {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('rfc_pruebas_sat')
           .upsert({
             rfc: rfcData.rfc,
             nombre: rfcData.nombre,
             tipo: rfcData.tipo,
             descripcion: rfcData.descripcion,
-            regimenes_fiscales: rfcData.regimenes,
-            activo: true,
-            updated_at: new Date().toISOString()
+            regimen_fiscal: rfcData.regimenes[0] || '601',
+            codigo_postal: '86991'
           }, {
             onConflict: 'rfc'
           });
 
         if (error) {
-          // Si la tabla no existe, intentar crearla
-          if (error.code === '42P01') {
-            console.log('[SEED-RFC] Creando tabla rfc_pruebas_sat...');
-            
-            await supabase.rpc('exec_sql', {
-              sql: `
-                CREATE TABLE IF NOT EXISTS public.rfc_pruebas_sat (
-                  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                  rfc VARCHAR(13) NOT NULL UNIQUE,
-                  nombre VARCHAR(255) NOT NULL,
-                  tipo VARCHAR(50),
-                  descripcion TEXT,
-                  regimenes_fiscales TEXT[],
-                  activo BOOLEAN DEFAULT true,
-                  created_at TIMESTAMPTZ DEFAULT NOW(),
-                  updated_at TIMESTAMPTZ DEFAULT NOW()
-                );
-                
-                CREATE INDEX IF NOT EXISTS idx_rfc_pruebas_rfc ON public.rfc_pruebas_sat(rfc);
-              `
-            });
-
-            // Reintentar inserción
-            await supabase
-              .from('rfc_pruebas_sat')
-              .upsert({
-                rfc: rfcData.rfc,
-                nombre: rfcData.nombre,
-                tipo: rfcData.tipo,
-                descripcion: rfcData.descripcion,
-                regimenes_fiscales: rfcData.regimenes,
-                activo: true
-              });
-          } else {
-            resultados.errores.push(`Error insertando ${rfcData.rfc}: ${error.message}`);
-            continue;
-          }
+          resultados.errores.push(`Error insertando ${rfcData.rfc}: ${error.message}`);
+          continue;
         }
 
         resultados.rfcInsertados++;

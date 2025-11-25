@@ -104,14 +104,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verificar autorización (solo usuarios autenticados con rol admin)
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // La función ahora es pública (verify_jwt = false) para el poblado inicial
+    // En producción, agregar validación de rol admin si es necesario
 
     const body: PoblarRequest = await req.json();
     const { rangoInicio, rangoFin, modo = 'incremental', codigosEspecificos } = body;
