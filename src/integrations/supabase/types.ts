@@ -5335,6 +5335,7 @@ export type Database = {
           ubicacion: string
         }[]
       }
+      unaccent: { Args: { "": string }; Returns: string }
       update_user_storage_usage: {
         Args: { bytes_delta: number; files_delta?: number; user_uuid: string }
         Returns: undefined
@@ -5345,6 +5346,14 @@ export type Database = {
       }
       validar_configuracion_fiscal_completa: {
         Args: { config_id: string }
+        Returns: Json
+      }
+      validar_correlacion_cp: {
+        Args: {
+          cp_input: string
+          estado_input: string
+          municipio_input: string
+        }
         Returns: Json
       }
       validate_carta_porte_v31: {
