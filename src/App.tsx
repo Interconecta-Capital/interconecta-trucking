@@ -42,6 +42,7 @@ import Cotizaciones from "./pages/Cotizaciones"
 import ReportesGenerales from "./pages/ReportesGenerales"
 import Notificaciones from "./pages/Notificaciones"
 import AdminTimbres from "./pages/admin/AdminTimbres"
+import PobladoCatalogos from "./pages/admin/PobladoCatalogos"
 import SuperuserManagement from "./pages/SuperuserManagement"
 import EncryptionManagement from "./pages/EncryptionManagement"
 import HistorialViajes from "./pages/HistorialViajes"
@@ -273,6 +274,14 @@ const App = () => (
                 <AuthGuard>
                   <BaseLayout>
                     <AdminTimbres />
+                  </BaseLayout>
+                </AuthGuard>
+              } />
+
+              <Route path="/admin/catalogos" element={
+                <AuthGuard>
+                  <BaseLayout>
+                    <PobladoCatalogos />
                   </BaseLayout>
                 </AuthGuard>
               } />
