@@ -22,6 +22,7 @@ export function GoogleOnboardingModal() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
+    empresa: '',
     telefono: '',
     acceptedTerms: false,
   });
@@ -30,15 +31,35 @@ export function GoogleOnboardingModal() {
     const checkOnboardingStatus = async () => {
       if (!user) return;
       
-      // Verificar si el usuario se registró con Google y no ha completado onboarding
-      const isGoogleUser = user.email?.includes('@') && user.app_metadata?.provider === 'google';
-      const needsOnboarding = !user.profile?.google_onboarding_completed;
+      const isGoogleUser = user.app_metadata?.provider === 'google';
       
-      if (isGoogleUser && needsOnboarding) {
-        // Pre-llenar datos disponibles
+      if (!isGoogleUser) return;
+
+      // Consultar directamente la base de datos para verificar
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('google_onboarding_completed, nombre, telefono, empresa')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('[GoogleOnboarding] Error al verificar perfil:', error);
+        return;
+      }
+
+      const needsOnboarding = !profile?.google_onboarding_completed;
+      
+      console.log('[GoogleOnboarding] Status:', {
+        isGoogleUser,
+        needsOnboarding,
+        profile,
+      });
+      
+      if (needsOnboarding) {
         setFormData({
-          nombre: user.profile?.nombre || user.user_metadata?.full_name || '',
-          telefono: user.profile?.telefono || '',
+          nombre: profile?.nombre || user.user_metadata?.full_name || user.user_metadata?.name || '',
+          empresa: profile?.empresa || '',
+          telefono: profile?.telefono || user.user_metadata?.phone || '',
           acceptedTerms: false,
         });
         setOpen(true);
@@ -51,25 +72,34 @@ export function GoogleOnboardingModal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.acceptedTerms) {
-      toast.error('Debes aceptar los términos y condiciones para continuar');
+    if (!formData.nombre || !formData.empresa || !formData.telefono) {
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
-    if (!formData.nombre || !formData.telefono) {
-      toast.error('Por favor completa todos los campos');
+    if (!formData.acceptedTerms) {
+      toast.error('Debes aceptar los términos y condiciones para continuar');
       return;
     }
 
     setLoading(true);
 
     try {
+      console.log('[GoogleOnboarding] Guardando datos:', {
+        nombre: formData.nombre,
+        empresa: formData.empresa,
+        telefono: formData.telefono,
+      });
+
       // Actualizar perfil con datos completos
       await updateProfile({
         nombre: formData.nombre,
+        empresa: formData.empresa,
         telefono: formData.telefono,
         google_onboarding_completed: true,
       });
+
+      console.log('[GoogleOnboarding] Datos guardados exitosamente');
 
       // Guardar consentimientos con IP y User Agent
       const { getUserIP, getUserAgent } = await import('@/utils/getUserIP');
@@ -96,12 +126,16 @@ export function GoogleOnboardingModal() {
           user_agent: userAgent
         }
       ]);
+
+      // Forzar refresh del usuario para actualizar el estado
+      const { data: { user: updatedUser } } = await supabase.auth.getUser();
+      console.log('[GoogleOnboarding] Usuario actualizado:', updatedUser);
       
       toast.success('¡Bienvenido a Interconecta Trucking!');
       setOpen(false);
       
     } catch (error: any) {
-      console.error('Error completing onboarding:', error);
+      console.error('[GoogleOnboarding] Error completing onboarding:', error);
       toast.error('Error al completar el registro: ' + (error.message || 'Error desconocido'));
     } finally {
       setLoading(false);
@@ -146,6 +180,18 @@ export function GoogleOnboardingModal() {
               value={formData.nombre}
               onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
               placeholder="Tu nombre completo"
+              required
+              maxLength={255}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="empresa">Empresa *</Label>
+            <Input
+              id="empresa"
+              value={formData.empresa}
+              onChange={(e) => setFormData(prev => ({ ...prev, empresa: e.target.value }))}
+              placeholder="Nombre de tu empresa"
               required
               maxLength={255}
             />
