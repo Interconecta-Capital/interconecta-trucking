@@ -15,8 +15,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { ViajeWizardData } from '@/components/viajes/ViajeWizard';
 import { CartaPorteLifecycleManager } from '@/services/cartaPorte/CartaPorteLifecycleManager';
 import { ViajeToCartaPorteMapper } from './ViajeToCartaPorteMapper';
+import { ViajeCartaPorteService } from './ViajeCartaPorteService';
 import { DisponibilidadService } from './DisponibilidadService';
 import logger from '@/utils/logger';
+import type { Json } from '@/integrations/supabase/types';
+
+/**
+ * Interface para castear datos_formulario de borradores
+ */
+interface CartaPorteFormData {
+  rfcEmisor?: string;
+  rfcReceptor?: string;
+  ubicaciones?: any[];
+  mercancias?: any[];
+  autotransporte?: any;
+  figuras?: any[];
+}
 
 interface ViajeCompletoResult {
   viaje_id: string;
@@ -82,28 +96,29 @@ export class ViajeOrchestrationService {
       const borradorCP = await this.crearBorradorCartaPorte(viaje.id, wizardData, facturaId);
       logger.info('viajes', 'Borrador CP creado', { borradorId: borradorCP.id });
 
-      // Verificar datos del borrador
+      // Verificar datos del borrador - castear datos_formulario
+      const datosForm = borradorCP.datos_formulario as CartaPorteFormData | null;
       logger.debug('viajes', 'Verificación borrador', {
         borrador_id: borradorCP.id,
         viaje_id: viaje.id,
-        tieneRfcEmisor: !!borradorCP.datos_formulario?.rfcEmisor,
-        tieneRfcReceptor: !!borradorCP.datos_formulario?.rfcReceptor,
-        numUbicaciones: borradorCP.datos_formulario?.ubicaciones?.length || 0,
-        numMercancias: borradorCP.datos_formulario?.mercancias?.length || 0,
-        tieneAutotransporte: !!borradorCP.datos_formulario?.autotransporte,
-        numFiguras: borradorCP.datos_formulario?.figuras?.length || 0
+        tieneRfcEmisor: !!datosForm?.rfcEmisor,
+        tieneRfcReceptor: !!datosForm?.rfcReceptor,
+        numUbicaciones: datosForm?.ubicaciones?.length || 0,
+        numMercancias: datosForm?.mercancias?.length || 0,
+        tieneAutotransporte: !!datosForm?.autotransporte,
+        numFiguras: datosForm?.figuras?.length || 0
       });
 
       // Verificar y alertar sobre datos faltantes críticos
-      if (!borradorCP.datos_formulario?.mercancias || borradorCP.datos_formulario.mercancias.length === 0) {
+      if (!datosForm?.mercancias || datosForm.mercancias.length === 0) {
         logger.warn('viajes', 'Borrador creado sin mercancías');
       }
 
-      if (!borradorCP.datos_formulario?.rfcEmisor) {
+      if (!datosForm?.rfcEmisor) {
         logger.warn('viajes', 'RFC del emisor faltante - Configura tu empresa');
       }
 
-      if (!borradorCP.datos_formulario?.rfcReceptor) {
+      if (!datosForm?.rfcReceptor) {
         logger.warn('viajes', 'RFC del receptor faltante');
       }
       
@@ -370,20 +385,22 @@ export class ViajeOrchestrationService {
       .eq('user_id', user.user.id)
       .single();
     
-    // Mapear wizard data a formato Carta Porte usando mapper
-    const cartaPorteData = await ViajeToCartaPorteMapper.mapearCompleto(wizardData, configEmpresa);
+    // Mapear wizard data a formato Carta Porte usando mapper (método correcto)
+    const cartaPorteData = await ViajeToCartaPorteMapper.mapToValidCartaPorteFormat(wizardData);
     
-    // Crear borrador
+    // Crear borrador - castear datos_formulario a Json
+    const insertData = {
+      user_id: user.user.id,
+      viaje_id: viajeId,
+      nombre_borrador: `CP-${wizardData.cliente?.nombre_razon_social || 'Viaje'}-${new Date().toISOString().slice(0,10)}`,
+      datos_formulario: cartaPorteData as Json,
+      version_formulario: '3.1',
+      auto_saved: false
+    };
+    
     const { data: borrador, error } = await supabase
       .from('borradores_carta_porte')
-      .insert({
-        user_id: user.user.id,
-        viaje_id: viajeId,
-        nombre_borrador: `CP-${wizardData.cliente?.nombre_razon_social || 'Viaje'}-${new Date().toISOString().slice(0,10)}`,
-        datos_formulario: cartaPorteData,
-        version_formulario: '3.1',
-        auto_saved: false
-      })
+      .insert(insertData)
       .select()
       .single();
     
@@ -457,18 +474,109 @@ export class ViajeOrchestrationService {
    */
   private static async validarDisponibilidadRecursos(wizardData: ViajeWizardData): Promise<void> {
     if (wizardData.conductor) {
-      const disponible = await DisponibilidadService.verificarDisponibilidadConductor(
+      const resultado = await DisponibilidadService.validarDisponibilidadConductor(
         wizardData.conductor.id,
         wizardData.origen?.fechaHoraSalidaLlegada || new Date().toISOString(),
         wizardData.destino?.fechaHoraSalidaLlegada || new Date(Date.now() + 86400000).toISOString()
       );
       
-      if (!disponible.disponible) {
+      if (!resultado.disponible) {
         logger.warn('viajes', 'Conductor no disponible', {
           conductorId: wizardData.conductor.id,
-          motivo: disponible.motivo
+          conflictos: resultado.conflictos,
+          advertencias: resultado.advertencias
         });
       }
     }
+  }
+
+  /**
+   * Crear borrador de Carta Porte desde un viaje existente
+   * Método público que delega a ViajeCartaPorteService
+   */
+  static async crearBorradorDesdeViaje(
+    viajeId: string
+  ): Promise<{ success: boolean; borradorId?: string; error?: string }> {
+    try {
+      logger.info('viajes', 'Creando borrador desde viaje existente', { viajeId });
+      
+      // 1. Obtener datos del viaje desde BD usando el mapper
+      const cartaPorteData = await ViajeToCartaPorteMapper.mapFromViajeDB(viajeId);
+      
+      // 2. Construir wizardData desde los datos mapeados
+      const wizardData = await this.construirWizardDataDesdeViaje(viajeId, cartaPorteData);
+      
+      // 3. Delegar a ViajeCartaPorteService
+      const result = await ViajeCartaPorteService.crearBorradorDesdeViaje(viajeId, wizardData);
+      
+      logger.info('viajes', 'Borrador creado exitosamente', { 
+        viajeId, 
+        borradorId: result.borrador_id 
+      });
+      
+      return {
+        success: true,
+        borradorId: result.borrador_id
+      };
+    } catch (error: any) {
+      logger.error('viajes', 'Error creando borrador desde viaje', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Construir ViajeWizardData desde datos de BD
+   */
+  private static async construirWizardDataDesdeViaje(
+    viajeId: string,
+    cartaPorteData: any
+  ): Promise<ViajeWizardData> {
+    // Obtener viaje con relaciones
+    const { data: viaje, error } = await supabase
+      .from('viajes')
+      .select(`
+        *,
+        conductores!conductor_id(*),
+        vehiculos!vehiculo_id(*),
+        remolques!remolque_id(*),
+        clientes_proveedores!viajes_cliente_id_fkey(*)
+      `)
+      .eq('id', viajeId)
+      .single();
+
+    if (error || !viaje) {
+      throw new Error(`No se pudo obtener el viaje: ${error?.message}`);
+    }
+
+    const trackingData = (viaje.tracking_data as any) || {};
+    
+    // Normalizar ubicaciones
+    let origen = trackingData.ubicaciones?.origen || trackingData.origen;
+    let destino = trackingData.ubicaciones?.destino || trackingData.destino;
+    
+    if (!origen) {
+      origen = { nombre: viaje.origen, direccion: viaje.origen, domicilio: {} };
+    }
+    if (!destino) {
+      destino = { nombre: viaje.destino, direccion: viaje.destino, domicilio: {} };
+    }
+
+    return {
+      tipoServicio: trackingData.tipo_servicio || 'flete_pagado',
+      cliente: viaje.clientes_proveedores || trackingData.cliente,
+      conductor: viaje.conductores || trackingData.conductor,
+      vehiculo: viaje.vehiculos || trackingData.vehiculo,
+      remolque: viaje.remolques || trackingData.remolque,
+      origen,
+      destino,
+      descripcionMercancia: trackingData.descripcionMercancia || 'Mercancía general',
+      distanciaRecorrida: viaje.distancia_km || trackingData.distanciaTotal || 100,
+      figuras: trackingData.figuras || [],
+      currentStep: 6,
+      isValid: true
+    };
   }
 }
