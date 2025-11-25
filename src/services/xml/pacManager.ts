@@ -1,7 +1,7 @@
 
 export interface PACConfig {
   nombre: string;
-  tipo: 'finkok' | 'stamped' | 'fiscal_api' | 'demo';
+  tipo: 'finkok' | 'stamped' | 'smartweb' | 'demo';
   urlSandbox: string;
   urlProduccion: string;
   usuario?: string;
@@ -26,10 +26,10 @@ export interface PACResponse {
 export class PACManager {
   private static readonly DEFAULT_CONFIGS: PACConfig[] = [
     {
-      nombre: 'FISCAL API',
-      tipo: 'fiscal_api',
-      urlSandbox: 'https://api.fiscalapi.com/v1/cfdi/stamp',
-      urlProduccion: 'https://api.fiscalapi.com/v1/cfdi/stamp',
+      nombre: 'SmartWeb PAC',
+      tipo: 'smartweb',
+      urlSandbox: 'https://api-sandbox.smartweb.com.mx/v1/cfdi/stamp',
+      urlProduccion: 'https://api.smartweb.com.mx/v1/cfdi/stamp',
       activo: true,
       prioridad: 1
     },
@@ -98,8 +98,8 @@ export class PACManager {
     const url = ambiente === 'sandbox' ? config.urlSandbox : config.urlProduccion;
     
     switch (config.tipo) {
-      case 'fiscal_api':
-        return this.timbrarFiscalAPI(xml, url, ambiente);
+      case 'smartweb':
+        return this.timbrarSmartWeb(xml, url, ambiente);
       case 'demo':
         return this.timbrarDemo(xml);
       default:
@@ -107,15 +107,14 @@ export class PACManager {
     }
   }
 
-  private static async timbrarFiscalAPI(
+  private static async timbrarSmartWeb(
     xml: string, 
     url: string, 
     ambiente: 'sandbox' | 'production'
   ): Promise<PACResponse> {
-    // Esta función se mantiene como wrapper del servicio existente
-    // pero con mejor manejo de errores y logging
+    // Timbrado con SmartWeb PAC
     
-    const fiscalApiData = {
+    const smartwebData = {
       xml: xml,
       ambiente: ambiente,
       tipo_documento: 'carta_porte'
@@ -127,7 +126,7 @@ export class PACManager {
         'Content-Type': 'application/json',
         // Nota: En producción esto debe venir de variables de entorno
       },
-      body: JSON.stringify(fiscalApiData),
+      body: JSON.stringify(smartwebData),
     });
 
     if (!response.ok) {
@@ -140,7 +139,7 @@ export class PACManager {
     if (!result.success) {
       return {
         success: false,
-        error: result.error || 'Error en FISCAL API'
+        error: result.error || 'Error en SmartWeb PAC'
       };
     }
 

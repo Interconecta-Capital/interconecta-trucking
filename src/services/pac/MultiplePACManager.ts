@@ -2,7 +2,7 @@
 export interface PACProvider {
   id: string;
   name: string;
-  type: 'finkok' | 'ecodex' | 'timbox' | 'fiscal_api' | 'demo';
+  type: 'finkok' | 'ecodex' | 'timbox' | 'smartweb' | 'demo';
   priority: number;
   isActive: boolean;
   config: {
@@ -55,9 +55,9 @@ export class MultiplePACManager {
   private initializeDefaultProviders() {
     const defaultProviders: PACProvider[] = [
       {
-        id: 'fiscal_api',
-        name: 'FISCAL API',
-        type: 'fiscal_api',
+        id: 'smartweb',
+        name: 'SmartWeb PAC',
+        type: 'smartweb',
         priority: 1,
         isActive: true,
         config: {
@@ -224,8 +224,8 @@ export class MultiplePACManager {
       : provider.config.urlProduction;
 
     switch (provider.type) {
-      case 'fiscal_api':
-        return this.timbrarFiscalAPI(xml, url, options.ambiente);
+      case 'smartweb':
+        return this.timbrarSmartWeb(xml, url, options.ambiente);
       case 'demo':
         return this.timbrarDemo(xml);
       case 'finkok':
@@ -237,7 +237,7 @@ export class MultiplePACManager {
     }
   }
 
-  private async timbrarFiscalAPI(
+  private async timbrarSmartWeb(
     xml: string, 
     url: string, 
     ambiente: 'sandbox' | 'production'
