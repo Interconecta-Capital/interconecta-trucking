@@ -3912,6 +3912,48 @@ export type Database = {
           },
         ]
       }
+      subscriptions_meta: {
+        Row: {
+          created_at: string | null
+          id: string
+          included_timbres: number | null
+          interval: string | null
+          json_meta: Json | null
+          last_reset: string | null
+          plan_key: string | null
+          status: string | null
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          included_timbres?: number | null
+          interval?: string | null
+          json_meta?: Json | null
+          last_reset?: string | null
+          plan_key?: string | null
+          status?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          included_timbres?: number | null
+          interval?: string | null
+          json_meta?: Json | null
+          last_reset?: string | null
+          plan_key?: string | null
+          status?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       suscripciones: {
         Row: {
           cleanup_warning_sent: boolean | null
@@ -4100,6 +4142,66 @@ export type Database = {
           tipo_documento?: string
           user_id?: string
           uuid?: string | null
+        }
+        Relationships: []
+      }
+      timbres_prepaid: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          purchase_id: string | null
+          quantity: number
+          remaining: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          purchase_id?: string | null
+          quantity: number
+          remaining: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          purchase_id?: string | null
+          quantity?: number
+          remaining?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      timbres_usage_log: {
+        Row: {
+          carta_porte_id: string | null
+          created_at: string | null
+          id: string
+          pack_id: string | null
+          quantity: number | null
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          carta_porte_id?: string | null
+          created_at?: string | null
+          id?: string
+          pack_id?: string | null
+          quantity?: number | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          carta_porte_id?: string | null
+          created_at?: string | null
+          id?: string
+          pack_id?: string | null
+          quantity?: number | null
+          source?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
