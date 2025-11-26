@@ -16,6 +16,7 @@ import { RFCValidator } from '@/utils/rfcValidation';
 import { ValidationIndicator } from '@/components/forms/ValidationIndicator';
 import { DatosFiscalesValidacion } from './DatosFiscalesValidacion';
 import { DatosFiscalesModoPruebas } from './DatosFiscalesModoPruebas';
+import { ConfiguracionFiscalStatus } from './ConfiguracionFiscalStatus';
 import { toast } from 'sonner';
 
 const datosFiscalesSchema = z.object({
@@ -182,6 +183,9 @@ export function DatosFiscalesForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* Indicador de Estado Fiscal (estilo Zoho) */}
+      <ConfiguracionFiscalStatus />
+
       {/* Datos de la Empresa */}
       <Card>
         <CardHeader>
