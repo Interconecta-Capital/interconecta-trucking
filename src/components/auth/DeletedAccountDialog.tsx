@@ -45,19 +45,26 @@ export function DeletedAccountDialog({ open, email, deletedAt, onClose }: Delete
             <p>
               Para reactivar tu cuenta o crear una nueva, por favor contacta a nuestro equipo de soporte:
             </p>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            <div className="bg-muted p-4 rounded-lg space-y-2">
               <p className="font-medium">📧 Email:</p>
               <a 
-                href="mailto:soporte@interconecta.capital" 
-                className="text-blue-600 hover:underline block"
+                href="mailto:hola@interconecta.capital" 
+                className="text-primary hover:underline block"
               >
-                soporte@interconecta.capital
+                hola@interconecta.capital
               </a>
-              <p className="text-sm text-gray-600 mt-3">
+              <p className="font-medium mt-2">📞 Teléfono:</p>
+              <a 
+                href="tel:+525651622408" 
+                className="text-primary hover:underline block"
+              >
+                +52 56 5162 2408
+              </a>
+              <p className="text-sm text-muted-foreground mt-3">
                 Normalmente respondemos en menos de 24 horas.
               </p>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Si deseas crear una cuenta completamente nueva, las cuentas eliminadas se purgan 
               automáticamente después de 30 días.
             </p>

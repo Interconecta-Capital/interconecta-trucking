@@ -258,9 +258,9 @@ export default function Privacy() {
                 Para ejercer tus derechos ARCO o consultas sobre privacidad, contacta a:
               </p>
               <div className="space-y-2 text-muted-foreground">
-                <p><strong>Nombre:</strong> Alan Soto</p>
-                <p><strong>Email:</strong> arrebolcorporation@gmail.com</p>
-                <p><strong>Teléfono:</strong> +52 55 1968 6023</p>
+                <p><strong>Nombre:</strong> Jahir Miranda</p>
+                <p><strong>Email:</strong> hola@interconecta.capital</p>
+                <p><strong>Teléfono:</strong> +52 56 5162 2408</p>
                 <p><strong>Horario:</strong> Lunes a Viernes, 9:00 AM - 6:00 PM (Hora del Centro de México)</p>
               </div>
             </CardContent>
@@ -295,8 +295,8 @@ export default function Privacy() {
 
         {/* Footer Info */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>Última actualización: 11 de enero de 2025</p>
-          <p className="mt-2">Versión 1.0</p>
+          <p>Última actualización: 27 de noviembre de 2025</p>
+          <p className="mt-2">Versión 1.1</p>
           <div className="mt-4 space-x-4">
             <Link to="/terms" className="text-primary hover:underline">
               Términos y Condiciones

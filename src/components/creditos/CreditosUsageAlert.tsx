@@ -32,12 +32,13 @@ export function CreditosUsageAlert() {
         .in('status', ['active', 'trial'])
         .single();
 
-      if (!creditosData || !suscripcion?.planes_suscripcion?.timbres_mensuales) {
+      // Si no hay plan o el límite es 0 o null, no mostrar alerta
+      const limite = suscripcion?.planes_suscripcion?.timbres_mensuales;
+      if (!creditosData || !limite || limite <= 0) {
         return null;
       }
 
-      const timbres = creditosData.timbres_mes_actual;
-      const limite = suscripcion.planes_suscripcion.timbres_mensuales;
+      const timbres = creditosData.timbres_mes_actual ?? limite;
       const porcentajeUsado = ((limite - timbres) / limite) * 100;
 
       return {
@@ -46,15 +47,15 @@ export function CreditosUsageAlert() {
         porcentajeUsado,
       };
     },
-    refetchInterval: 30000, // Refrescar cada 30 segundos
+    refetchInterval: 30000,
   });
 
   if (!alertData) return null;
 
   const { timbres, limite, porcentajeUsado } = alertData;
 
-  // Alerta roja: 100% de timbres agotados
-  if (timbres === 0) {
+  // Alerta roja: 100% de timbres agotados (timbres restantes = 0)
+  if (timbres <= 0) {
     return (
       <Alert variant="destructive" className="mb-4 border-2">
         <AlertTriangle className="h-5 w-5" />
