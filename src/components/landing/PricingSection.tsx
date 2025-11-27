@@ -6,7 +6,6 @@ import { Check, Star, Ticket } from "lucide-react";
 const PricingSection = () => {
   const [isAnnual, setIsAnnual] = useState(false);
 
-  // Precios nuevos con timbres renovables incluidos
   const basePrices = {
     gratuito: 0,
     operador: 349,
@@ -102,7 +101,7 @@ const PricingSection = () => {
             Planes para cada flota.
           </h2>
           <p className="mt-4 md:mt-6 text-base md:text-lg text-gray-400">
-            Paga solo por el software. Los timbres se compran por separado según tu uso.
+            Timbres renovables incluidos cada mes. Sin cargos adicionales sorpresa.
           </p>
         </div>
         
@@ -130,7 +129,7 @@ const PricingSection = () => {
           </span>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto scroll-animation">
+        <div className="grid lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto scroll-animation">
           {plans.map((plan) => (
             <div 
               key={plan.name}
@@ -194,27 +193,6 @@ const PricingSection = () => {
               </Link>
             </div>
           ))}
-        </div>
-
-        {/* Nueva sección explicando el modelo */}
-        <div className="text-center space-y-6 mt-16 scroll-animation max-w-3xl mx-auto">
-          <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-8">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Ticket className="w-8 h-8 text-primary" />
-              <h3 className="text-2xl font-bold">💡 Modelo de Timbres Renovables</h3>
-            </div>
-            <div className="space-y-4 text-left">
-              <p className="text-muted-foreground">
-                ✅ <strong>Tus timbres se renuevan automáticamente cada mes</strong> - Siempre tendrás tu límite completo disponible el día 1.
-              </p>
-              <p className="text-muted-foreground">
-                📅 <strong>Si no los usas, se pierden</strong> - Como un plan de datos celular, los timbres no se acumulan.
-              </p>
-              <p className="text-muted-foreground">
-                🚀 <strong>¿Necesitas más timbres?</strong> - Simplemente haz upgrade a un plan superior para obtener más capacidad mensual.
-              </p>
-            </div>
-          </div>
         </div>
 
         <div className="text-center space-y-4 mt-16 scroll-animation">
