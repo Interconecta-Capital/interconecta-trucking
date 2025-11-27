@@ -18,7 +18,7 @@ serve(async (req) => {
       action: z.string().optional(),
       data: z.any().optional(),
       message: z.string().max(10000, 'Message too long').optional(),
-      context: z.string().optional()
+      context: z.union([z.string(), z.record(z.any())]).optional()
     }).refine(data => data.operation || data.action, {
       message: 'Either operation or action must be provided'
     });

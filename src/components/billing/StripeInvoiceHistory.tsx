@@ -62,7 +62,12 @@ export function StripeInvoiceHistory() {
 
   const isActive = suscripcionEstado === 'active';
   const isTrial = suscripcionEstado === 'trial';
-  const isInactive = !isActive && !isTrial;
+  const isInactive = !suscripcion || (!isActive && !isTrial);
+  
+  // Determinar el nombre del plan correcto
+  const planNombre = suscripcion?.plan?.nombre || 
+    (isTrial ? 'Plan de Prueba' : 
+    (isInactive ? 'Plan Gratuito' : 'Sin plan'));
 
   return (
     <div className="space-y-6">
@@ -78,48 +83,42 @@ export function StripeInvoiceHistory() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {suscripcion ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm text-muted-foreground">Plan Actual</div>
-                <div className="font-semibold">{suscripcion.plan?.nombre || 'Sin plan'}</div>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm text-muted-foreground">Estado</div>
-                <div className="flex items-center gap-2">
-                  {isActive ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span className="font-semibold text-green-600">Activa</span>
-                    </>
-                  ) : isTrial ? (
-                    <>
-                      <Clock className="h-4 w-4 text-amber-600" />
-                      <span className="font-semibold text-amber-600">En prueba</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-4 w-4 text-red-600" />
-                      <span className="font-semibold text-red-600">Inactiva</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm text-muted-foreground">Fecha fin período</div>
-                <div className="font-semibold">
-                  {fechaFinPeriodo ? 
-                    format(new Date(fechaFinPeriodo), 'dd MMM yyyy', { locale: es }) :
-                    'N/A'
-                  }
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Plan Actual</div>
+              <div className="font-semibold">{planNombre}</div>
+            </div>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Estado</div>
+              <div className="flex items-center gap-2">
+                {isActive ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span className="font-semibold text-green-600">Activa</span>
+                  </>
+                ) : isTrial ? (
+                  <>
+                    <Clock className="h-4 w-4 text-amber-600" />
+                    <span className="font-semibold text-amber-600">En prueba</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold text-muted-foreground">Gratuito</span>
+                  </>
+                )}
               </div>
             </div>
-          ) : (
-            <div className="text-center py-4 text-muted-foreground">
-              No tienes una suscripción activa
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Fecha fin período</div>
+              <div className="font-semibold">
+                {fechaFinPeriodo ? 
+                  format(new Date(fechaFinPeriodo), 'dd MMM yyyy', { locale: es }) :
+                  'N/A'
+                }
+              </div>
             </div>
-          )}
+          </div>
 
           <Button 
             onClick={handlePortalAccess}
