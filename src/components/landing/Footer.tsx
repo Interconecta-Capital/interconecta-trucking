@@ -56,7 +56,6 @@ const Footer = () => {
         {/* Copyright */}
         <div className="pt-8 border-t border-gray-800 text-sm text-gray-400 text-center">
           <p>&copy; 2025 Interconecta. Todos los derechos reservados.</p>
-          <p className="mt-2">Responsable: Jahir Miranda</p>
         </div>
       </div>
     </footer>
