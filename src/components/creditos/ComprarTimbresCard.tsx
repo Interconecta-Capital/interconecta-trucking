@@ -160,7 +160,7 @@ export function ComprarTimbresCard() {
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
           <h4 className="font-medium text-sm mb-2">¿Cómo funcionan los timbres?</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Los timbres comprados se consumen <strong>antes</strong> que los timbres de tu plan mensual</li>
+            <li>• ¿Te quedaste sin timbres? <strong>Aquiere</strong> timbres adicionales a tu plan mensual</li>
             <li>• Los timbres de tu plan se renuevan automáticamente cada mes</li>
             <li>• Pago seguro procesado por Stripe</li>
           </ul>
