@@ -1,19 +1,17 @@
-
 import { useState } from 'react';
-import { CreditCard, Check, Star, Ticket } from 'lucide-react';
+import { CreditCard, Check, Star, Ticket, Receipt } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlanSummaryCard } from '@/components/suscripcion/PlanSummaryCard';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
-import { PlanesCard } from '@/components/suscripcion/PlanesCard';
 import { PlanCardDetallado } from '@/components/suscripcion/PlanCardDetallado';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { useSuscripcion } from '@/hooks/useSuscripcion';
 import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 import { CreditosBalance } from '@/components/creditos/CreditosBalance';
 import { CreditosUsageAlert } from '@/components/creditos/CreditosUsageAlert';
+import { ComprarTimbresCard } from '@/components/creditos/ComprarTimbresCard';
+import { StripeInvoiceHistory } from '@/components/billing/StripeInvoiceHistory';
 
 export default function Planes() {
   const [activeTab, setActiveTab] = useState('plan');
@@ -76,7 +74,7 @@ export default function Planes() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <CreditCard className="h-6 w-6 text-blue-600" />
+            <CreditCard className="h-6 w-6 text-primary" />
             <h1 className="text-3xl font-bold">Planes y Suscripción</h1>
           </div>
           <CreditosBalance />
@@ -165,11 +163,18 @@ export default function Planes() {
         {/* Detalles y gestión */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="scrollable-tabs-container-wrapper">
-            <TabsList className="grid w-full grid-cols-4 scrollable-tabs-container">
+            <TabsList className="grid w-full grid-cols-5 scrollable-tabs-container">
               <TabsTrigger value="plan">Plan Actual</TabsTrigger>
               <TabsTrigger value="uso">Uso de Recursos</TabsTrigger>
               <TabsTrigger value="cambiar">Cambiar Plan</TabsTrigger>
-              <TabsTrigger value="facturacion">Facturación</TabsTrigger>
+              <TabsTrigger value="timbres" className="flex items-center gap-1">
+                <Ticket className="h-4 w-4" />
+                Timbres
+              </TabsTrigger>
+              <TabsTrigger value="facturacion" className="flex items-center gap-1">
+                <Receipt className="h-4 w-4" />
+                Facturación
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -235,24 +240,12 @@ export default function Planes() {
             </div>
           </TabsContent>
 
+          <TabsContent value="timbres" className="space-y-6">
+            <ComprarTimbresCard />
+          </TabsContent>
+
           <TabsContent value="facturacion" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de Facturación</CardTitle>
-                <CardDescription>
-                  Consulta tus facturas y pagos realizados
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Próximamente</h3>
-                  <p className="text-muted-foreground">
-                    La sección de facturación estará disponible pronto
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <StripeInvoiceHistory />
           </TabsContent>
         </Tabs>
       </div>

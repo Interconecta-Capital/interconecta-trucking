@@ -183,8 +183,6 @@ export function DatosFiscalesForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      {/* Indicador de Estado Fiscal (estilo Zoho) */}
-      <ConfiguracionFiscalStatus />
 
       {/* Datos de la Empresa */}
       <Card>
@@ -232,7 +230,10 @@ export function DatosFiscalesForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pais">País *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="pais">País *</Label>
+              <ConfiguracionFiscalStatus />
+            </div>
             <Select
               value={form.watch('pais') || 'MEX'}
               onValueChange={(value) => form.setValue('pais', value)}
