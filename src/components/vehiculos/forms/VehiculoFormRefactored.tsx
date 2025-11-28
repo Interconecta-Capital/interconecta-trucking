@@ -189,6 +189,14 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
       };
 
       console.log('[VehiculoForm] ===== SUBMITTING VEHICLE =====');
+      console.log('[VehiculoForm] Form data types:', {
+        capacidad_carga: typeof formData.capacidad_carga,
+        peso_bruto_vehicular: typeof formData.peso_bruto_vehicular,
+        rendimiento: typeof formData.rendimiento,
+        costo_mantenimiento_km: typeof formData.costo_mantenimiento_km,
+        factor_peajes: typeof formData.factor_peajes,
+      });
+      console.log('[VehiculoForm] Raw form data:', formData);
       console.log('[VehiculoForm] Cleaned data:', vehiculoData);
 
       // Si no estamos en la tab de documentos, guardar y cambiar a documentos

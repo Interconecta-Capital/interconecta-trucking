@@ -32,7 +32,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="0.01"
                 value={formData.capacidad_carga || ''}
-                onChange={(e) => onFieldChange('capacidad_carga', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) => onFieldChange('capacidad_carga', e.target.value)}
                 placeholder="Ej: 25000"
               />
             </div>
@@ -45,7 +45,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="0.01"
                 value={formData.peso_bruto_vehicular || ''}
-                onChange={(e) => onFieldChange('peso_bruto_vehicular', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) => onFieldChange('peso_bruto_vehicular', e.target.value)}
                 placeholder="Ej: 40000"
               />
             </div>
@@ -116,7 +116,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="0.1"
                 value={formData.rendimiento || ''}
-                onChange={(e) => onFieldChange('rendimiento', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) => onFieldChange('rendimiento', e.target.value)}
                 placeholder="Ej: 3.5"
               />
             </div>
@@ -142,7 +142,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="0.01"
                 value={formData.costo_mantenimiento_km || ''}
-                onChange={(e) => onFieldChange('costo_mantenimiento_km', e.target.value ? parseFloat(e.target.value) : 2.07)}
+                onChange={(e) => onFieldChange('costo_mantenimiento_km', e.target.value)}
                 placeholder="2.07"
               />
             </div>
@@ -155,7 +155,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="0.01"
                 value={formData.costo_llantas_km || ''}
-                onChange={(e) => onFieldChange('costo_llantas_km', e.target.value ? parseFloat(e.target.value) : 1.08)}
+                onChange={(e) => onFieldChange('costo_llantas_km', e.target.value)}
                 placeholder="1.08"
               />
             </div>
@@ -168,7 +168,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="0.1"
                 value={formData.factor_peajes || ''}
-                onChange={(e) => onFieldChange('factor_peajes', e.target.value ? parseFloat(e.target.value) : 2.0)}
+                onChange={(e) => onFieldChange('factor_peajes', e.target.value)}
                 placeholder="2.0"
               />
             </div>
@@ -181,7 +181,7 @@ export function VehiculoEspecificacionesFields({ formData, onFieldChange }: Vehi
                 min="0"
                 step="1000"
                 value={formData.valor_vehiculo || ''}
-                onChange={(e) => onFieldChange('valor_vehiculo', e.target.value ? parseFloat(e.target.value) : undefined)}
+                onChange={(e) => onFieldChange('valor_vehiculo', e.target.value)}
                 placeholder="800000"
               />
             </div>
