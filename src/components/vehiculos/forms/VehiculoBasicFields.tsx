@@ -75,7 +75,7 @@ export function VehiculoBasicFields({ formData, onFieldChange, errors }: Vehicul
             min="1990"
             max={new Date().getFullYear() + 1}
             value={formData.anio || ''}
-            onChange={(e) => onFieldChange('anio', parseInt(e.target.value) || '')}
+            onChange={(e) => onFieldChange('anio', e.target.value)}
           />
         </div>
 

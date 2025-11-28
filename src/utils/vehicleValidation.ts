@@ -14,19 +14,18 @@ export class VehicleValidator {
       };
     }
 
-    const placaNormalizada = placa.trim().toUpperCase().replace(/\s+/g, '');
+    const placaNormalizada = placa.trim().toUpperCase().replace(/\s+/g, '').replace(/-/g, '');
     const errores: string[] = [];
 
-    // Formato de placa mexicana: 3 letras + 3 números o 3 letras + guión + 4 números
-    const formatoPlaca = /^[A-Z]{3}[-]?[0-9]{3,4}$/;
-    
-    if (!formatoPlaca.test(placaNormalizada)) {
-      errores.push('Formato de placa no válido. Use el formato ABC-1234 o ABC1234');
-    }
-
-    // Verificar que no sean caracteres prohibidos
-    if (placaNormalizada.includes('0') && placaNormalizada.includes('O')) {
-      errores.push('La placa no puede contener tanto el número 0 como la letra O');
+    // Validación flexible para placas mexicanas:
+    // - Mínimo 5 caracteres, máximo 10
+    // - Solo letras, números (guiones ya removidos para validación)
+    if (placaNormalizada.length < 5) {
+      errores.push('La placa debe tener al menos 5 caracteres');
+    } else if (placaNormalizada.length > 10) {
+      errores.push('La placa no puede tener más de 10 caracteres');
+    } else if (!/^[A-Z0-9]+$/.test(placaNormalizada)) {
+      errores.push('La placa solo puede contener letras y números');
     }
 
     return {
