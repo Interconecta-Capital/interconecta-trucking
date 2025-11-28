@@ -181,6 +181,34 @@ export function DatosFiscalesForm() {
     }
   };
 
+  const [cpWarning, setCpWarning] = useState("");
+
+const handleCodigoPostalBlur = async (cp: string) => {
+  if (!cp || cp.length < 5) return;
+
+  try {
+    setCpWarning("");
+
+    const res = await fetch(`/api/codigos-postales?cp=${cp}`);
+    const data = await res.json();
+
+    // Si API no devolvió estado/municipio
+    if (!data || !data.estado) {
+      setCpWarning("No se pudo verificar este código postal. Puedes continuar manualmente.");
+      return;
+    }
+
+    // Autocompletar SOLO si la API respondió
+    form.setValue("estado", data.estado);
+    form.setValue("municipio", data.municipio);
+
+  } catch (error) {
+    // La API falló → NO bloquear
+    setCpWarning("No se pudo validar el CP. Puedes continuar manualmente.");
+  }
+};
+
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
@@ -284,140 +312,157 @@ export function DatosFiscalesForm() {
       </Card>
 
       {/* Domicilio Fiscal */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Domicilio Fiscal
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Código Postal con Autocompletado */}
-          <div className="space-y-2">
-            <Label>Código Postal *</Label>
-            <CodigoPostalSelector
-              value={form.watch('codigo_postal')}
-              onValueChange={handleCodigoPostalSelect}
-              placeholder="Buscar código postal..."
-              disabled={!isEditing}
-            />
-            {form.formState.errors.codigo_postal && (
-              <p className="text-sm text-red-600">{form.formState.errors.codigo_postal.message}</p>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="estado">Estado *</Label>
-              <Input
-                id="estado"
-                {...form.register('estado')}
-                placeholder="Se autocompleta con el C.P."
-                readOnly
-              />
-            </div>
+     <Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <MapPin className="h-5 w-5" />
+      Domicilio Fiscal
+    </CardTitle>
+  </CardHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="municipio">Municipio *</Label>
-              <Input
-                id="municipio"
-                {...form.register('municipio')}
-                placeholder="Se autocompleta con el C.P."
-                readOnly
-              />
-            </div>
-          </div>
+  <CardContent className="space-y-4">
+    {/* Código Postal como input normal */}
+    <div className="space-y-2">
+      <Label htmlFor="codigo_postal">Código Postal *</Label>
+      <Input
+        id="codigo_postal"
+        {...form.register('codigo_postal')}
+        placeholder="Ej. 44100"
+        disabled={!isEditing}
+        onBlur={(e) => handleCodigoPostalBlur(e.target.value)}
+      />
 
-          <div className="space-y-2">
-            <Label htmlFor="colonia">Colonia *</Label>
-            <Input
-              id="colonia"
-              {...form.register('colonia')}
-              placeholder="Centro"
-              disabled={!isEditing}
-            />
-            {form.formState.errors.colonia && (
-              <p className="text-sm text-red-600">{form.formState.errors.colonia.message}</p>
-            )}
-          </div>
+      {form.formState.errors.codigo_postal && (
+        <p className="text-sm text-red-600">
+          {form.formState.errors.codigo_postal.message}
+        </p>
+      )}
 
-          <div className="space-y-2">
-            <Label htmlFor="calle">Calle *</Label>
-            <Input
-              id="calle"
-              {...form.register('calle')}
-              placeholder="Av. Principal"
-              disabled={!isEditing}
-            />
-            {form.formState.errors.calle && (
-              <p className="text-sm text-red-600">{form.formState.errors.calle.message}</p>
-            )}
-          </div>
+      {cpWarning && (
+        <p className="text-sm text-yellow-600">{cpWarning}</p>
+      )}
+    </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="numero_exterior">Número Exterior</Label>
-              <Input
-                id="numero_exterior"
-                {...form.register('numero_exterior')}
-                placeholder="123"
-                disabled={!isEditing}
-              />
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="estado">Estado *</Label>
+        <Input
+          id="estado"
+          {...form.register('estado')}
+          placeholder="Se autocompleta si la API responde"
+          readOnly
+        />
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="numero_interior">Número Interior</Label>
-              <Input
-                id="numero_interior"
-                {...form.register('numero_interior')}
-                placeholder="A"
-                disabled={!isEditing}
-              />
-            </div>
+      <div className="space-y-2">
+        <Label htmlFor="municipio">Municipio *</Label>
+        <Input
+          id="municipio"
+          {...form.register('municipio')}
+          placeholder="Se autocompleta si la API responde"
+          readOnly
+        />
+      </div>
+    </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="localidad">Localidad</Label>
-              <Input
-                id="localidad"
-                {...form.register('localidad')}
-                placeholder="Guadalajara"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
+    <div className="space-y-2">
+      <Label htmlFor="colonia">Colonia *</Label>
+      <Input
+        id="colonia"
+        {...form.register('colonia')}
+        placeholder="Centro"
+        disabled={!isEditing}
+      />
+      {form.formState.errors.colonia && (
+        <p className="text-sm text-red-600">
+          {form.formState.errors.colonia.message}
+        </p>
+      )}
+    </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="referencia">Referencias</Label>
-            <Input
-              id="referencia"
-              {...form.register('referencia')}
-              placeholder="Entre calle X y calle Y"
-              disabled={!isEditing}
-            />
-          </div>
+    <div className="space-y-2">
+      <Label htmlFor="calle">Calle *</Label>
+      <Input
+        id="calle"
+        {...form.register('calle')}
+        placeholder="Av. Principal"
+        disabled={!isEditing}
+      />
+      {form.formState.errors.calle && (
+        <p class="text-sm text-red-600">
+          {form.formState.errors.calle.message}
+        </p>
+      )}
+    </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="pais">País *</Label>
-            <Select
-              value={form.watch('pais')}
-              onValueChange={(value) => form.setValue('pais', value)}
-              disabled={!isEditing}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar país" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MEX">MEX - México</SelectItem>
-                <SelectItem value="USA">USA - Estados Unidos</SelectItem>
-                <SelectItem value="CAN">CAN - Canadá</SelectItem>
-              </SelectContent>
-            </Select>
-            {form.formState.errors.pais && (
-              <p className="text-sm text-red-600">{form.formState.errors.pais.message}</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="numero_exterior">Número Exterior</Label>
+        <Input
+          id="numero_exterior"
+          {...form.register('numero_exterior')}
+          placeholder="123"
+          disabled={!isEditing}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="numero_interior">Número Interior</Label>
+        <Input
+          id="numero_interior"
+          {...form.register('numero_interior')}
+          placeholder="A"
+          disabled={!isEditing}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="localidad">Localidad</Label>
+        <Input
+          id="localidad"
+          {...form.register('localidad')}
+          placeholder="Guadalajara"
+          disabled={!isEditing}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="referencia">Referencias</Label>
+      <Input
+        id="referencia"
+        {...form.register('referencia')}
+        placeholder="Entre calle X y calle Y"
+        disabled={!isEditing}
+      />
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="pais">País *</Label>
+      <Select
+        value={form.watch('pais')}
+        onValueChange={(value) => form.setValue('pais', value)}
+        disabled={!isEditing}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Seleccionar país" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="MEX">MEX - México</SelectItem>
+          <SelectItem value="USA">USA - Estados Unidos</SelectItem>
+          <SelectItem value="CAN">CAN - Canadá</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {form.formState.errors.pais && (
+        <p className="text-sm text-red-600">
+          {form.formState.errors.pais.message}
+        </p>
+      )}
+    </div>
+  </CardContent>
+</Card>
 
       {/* Configuración de Documentos */}
       <Card>
