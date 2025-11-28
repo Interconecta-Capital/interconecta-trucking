@@ -206,6 +206,20 @@ export const useVehiculos = () => {
       }
 
       console.log('[useVehiculos] SUCCESS! Created vehicle:', result.id);
+      
+      // Post-insert verification
+      const { data: verificacion, error: verifyError } = await supabase
+        .from('vehiculos')
+        .select('id, placa, user_id, activo')
+        .eq('id', result.id)
+        .single();
+      
+      if (verifyError) {
+        console.error('[useVehiculos] POST-INSERT VERIFICATION FAILED:', verifyError);
+      } else {
+        console.log('[useVehiculos] POST-INSERT VERIFICATION SUCCESS:', verificacion);
+      }
+      
       return result;
     },
     onSuccess: (data) => {
