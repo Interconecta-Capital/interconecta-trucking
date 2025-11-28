@@ -345,26 +345,26 @@ const handleCodigoPostalBlur = async (cp: string) => {
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="estado">Estado *</Label>
-        <Input
-          id="estado"
-          {...form.register('estado')}
-          placeholder="Se autocompleta si la API responde"
-          readOnly
-        />
-      </div>
+  <div className="space-y-2">
+    <Label htmlFor="estado">Estado *</Label>
+    <Input
+      id="estado"
+      {...form.register('estado')}
+      placeholder="Se autocompleta si la API responde"
+      disabled={!isEditing}   // ← Ya NO es readOnly, solo sigue la edición normal
+    />
+  </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="municipio">Municipio *</Label>
-        <Input
-          id="municipio"
-          {...form.register('municipio')}
-          placeholder="Se autocompleta si la API responde"
-          readOnly
-        />
-      </div>
-    </div>
+  <div className="space-y-2">
+    <Label htmlFor="municipio">Municipio *</Label>
+    <Input
+      id="municipio"
+      {...form.register('municipio')}
+      placeholder="Se autocompleta si la API responde"
+      disabled={!isEditing}   // ← Igual aquí
+    />
+  </div>
+</div>
 
     <div className="space-y-2">
       <Label htmlFor="colonia">Colonia *</Label>
