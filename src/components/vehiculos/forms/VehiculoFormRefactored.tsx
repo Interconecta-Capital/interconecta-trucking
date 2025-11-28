@@ -143,20 +143,50 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
     }
 
     try {
+      // Helper para limpiar valores vacíos - convertir "" a null
+      const cleanString = (val: string | undefined): string | null => {
+        const trimmed = val?.trim();
+        return trimmed && trimmed.length > 0 ? trimmed : null;
+      };
+      
+      const cleanNumber = (val: string | undefined): number | null => {
+        if (!val || val.trim() === '') return null;
+        const num = parseFloat(val);
+        return isNaN(num) ? null : num;
+      };
+
       const vehiculoData = {
-        ...formData,
-        anio: formData.anio ? parseInt(formData.anio) : undefined,
-        capacidad_carga: formData.capacidad_carga ? parseFloat(formData.capacidad_carga) : undefined,
-        peso_bruto_vehicular: formData.peso_bruto_vehicular ? parseFloat(formData.peso_bruto_vehicular) : undefined,
-        rendimiento: formData.rendimiento ? parseFloat(formData.rendimiento) : undefined,
-        tipo_combustible: formData.tipo_combustible || undefined,
-        costo_mantenimiento_km: parseFloat(formData.costo_mantenimiento_km) || 2.07,
-        costo_llantas_km: parseFloat(formData.costo_llantas_km) || 1.08,
-        valor_vehiculo: formData.valor_vehiculo ? parseFloat(formData.valor_vehiculo) : undefined,
-        factor_peajes: parseFloat(formData.factor_peajes) || 2.0,
+        placa: formData.placa?.toUpperCase().trim() || '',
+        marca: cleanString(formData.marca),
+        modelo: cleanString(formData.modelo),
+        anio: formData.anio ? parseInt(formData.anio) : null,
+        numero_serie_vin: cleanString(formData.numero_serie_vin),
+        config_vehicular: cleanString(formData.config_vehicular),
+        perm_sct: cleanString(formData.perm_sct),
+        num_permiso_sct: cleanString(formData.num_permiso_sct),
+        vigencia_permiso: cleanString(formData.vigencia_permiso),
+        asegura_resp_civil: cleanString(formData.asegura_resp_civil),
+        poliza_resp_civil: cleanString(formData.poliza_resp_civil),
+        asegura_med_ambiente: cleanString(formData.asegura_med_ambiente),
+        poliza_med_ambiente: cleanString(formData.poliza_med_ambiente),
+        vigencia_seguro: cleanString(formData.vigencia_seguro),
+        capacidad_carga: cleanNumber(formData.capacidad_carga),
+        tipo_carroceria: cleanString(formData.tipo_carroceria),
+        peso_bruto_vehicular: cleanNumber(formData.peso_bruto_vehicular),
+        verificacion_vigencia: cleanString(formData.verificacion_vigencia),
         estado: (formData.estado as 'disponible' | 'en_viaje' | 'mantenimiento' | 'revision' | 'fuera_servicio') || 'disponible',
+        tipo_combustible: formData.tipo_combustible || null,
+        rendimiento: cleanNumber(formData.rendimiento),
+        costo_mantenimiento_km: cleanNumber(formData.costo_mantenimiento_km) || 2.07,
+        costo_llantas_km: cleanNumber(formData.costo_llantas_km) || 1.08,
+        valor_vehiculo: cleanNumber(formData.valor_vehiculo),
+        configuracion_ejes: formData.configuracion_ejes || 'T3S2',
+        factor_peajes: cleanNumber(formData.factor_peajes) || 2.0,
         activo: true
       };
+
+      console.log('[VehiculoForm] ===== SUBMITTING VEHICLE =====');
+      console.log('[VehiculoForm] Cleaned data:', vehiculoData);
 
       // Si no estamos en la tab de documentos, guardar y cambiar a documentos
       if (activeTab !== 'documentos') {
