@@ -149,9 +149,12 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         return trimmed && trimmed.length > 0 ? trimmed : null;
       };
       
-      const cleanNumber = (val: string | undefined): number | null => {
-        if (!val || val.trim() === '') return null;
-        const num = parseFloat(val);
+      const cleanNumber = (val: string | number | undefined | null): number | null => {
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'number') return isNaN(val) ? null : val;
+        const trimmed = String(val).trim();
+        if (trimmed === '') return null;
+        const num = parseFloat(trimmed);
         return isNaN(num) ? null : num;
       };
 
