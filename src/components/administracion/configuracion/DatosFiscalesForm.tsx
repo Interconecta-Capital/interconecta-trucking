@@ -390,7 +390,7 @@ const handleCodigoPostalBlur = async (cp: string) => {
         disabled={!isEditing}
       />
       {form.formState.errors.calle && (
-        <p class="text-sm text-red-600">
+        <p className="text-sm text-destructive">
           {form.formState.errors.calle.message}
         </p>
       )}

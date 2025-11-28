@@ -86,7 +86,7 @@ export const useDashboardCounts = () => {
           countTable('vehiculos', user.id, { activo: true }),
           countTable('conductores', user.id, { activo: true }),
           countTable('socios', user.id, { activo: true }),
-          countTable('remolques_ccp', user.id, { activo: true }),
+          countTable('remolques', user.id, { activo: true }),
           countTable('cartas_porte', user.id, { userIdField: 'usuario_id' }),
           countTable('cartas_porte', user.id, { userIdField: 'usuario_id', dateStart: start, dateEnd: end }),
           countTable('viajes', user.id),

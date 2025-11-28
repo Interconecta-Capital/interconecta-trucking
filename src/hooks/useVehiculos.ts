@@ -143,13 +143,15 @@ export const useVehiculos = () => {
         }
       }
 
-      // Step 5: Validate vigencia seguro
+      // Step 5: Validate vigencia seguro (solo advertencia, no bloquear)
       if (data.vigencia_seguro) {
         const fechaVigencia = new Date(data.vigencia_seguro);
         const hoy = new Date();
         
         if (fechaVigencia < hoy) {
-          throw new Error('La póliza de seguro está vencida');
+          console.warn('[useVehiculos] ADVERTENCIA: La póliza de seguro está vencida');
+          // Solo advertir, no bloquear el guardado
+          toast.warning('Advertencia: La póliza de seguro está vencida');
         }
       }
 
@@ -264,7 +266,8 @@ export const useVehiculos = () => {
         const hoy = new Date();
         
         if (fechaVigencia < hoy) {
-          throw new Error('La póliza de seguro está vencida');
+          console.warn('[useVehiculos] ADVERTENCIA: La póliza de seguro está vencida');
+          toast.warning('Advertencia: La póliza de seguro está vencida');
         }
       }
 
