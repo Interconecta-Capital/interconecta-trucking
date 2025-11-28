@@ -47,47 +47,36 @@ export const useStableVehiculos = (userId?: string) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
+      // Verify session first
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData?.session) {
+        console.error('[StableVehiculos] No active session');
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+          initialized: true,
+        }));
+        return;
+      }
+
       const loadData = async () => {
-        // Query using correct column names from database - REMOVED tarjeta_circulacion and aseguradora
         const { data, error } = await supabase
           .from('vehiculos')
-          .select(`
-            id,
-            user_id,
-            placa,
-            num_serie,
-            modelo,
-            marca,
-            anio,
-            config_vehicular,
-            peso_bruto_vehicular,
-            capacidad_carga,
-            numero_ejes,
-            numero_llantas,
-            perm_sct,
-            num_permiso_sct,
-            poliza_seguro,
-            vigencia_seguro,
-            estado,
-            activo,
-            created_at,
-            updated_at
-          `)
+          .select('*')
           .eq('user_id', userId)
+          .eq('activo', true)
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('[StableVehiculos] Database error:', error);
           
-          // Handle specific error types for better user experience
           if (error.code === 'PGRST301') {
-            // Table doesn't exist or permission denied
-            throw new Error('No tienes permisos para ver los vehículos o la tabla no existe');
+            throw new Error('No tienes permisos para ver los vehículos');
           } else if (error.code === '406') {
-            // Not acceptable - likely RLS issue or column permission problem
             throw new Error('Error de permisos en la base de datos');
           } else if (error.code === 'PGRST116') {
-            // Row not found - this is actually OK for an empty table
             return [];
           }
           
@@ -119,7 +108,6 @@ export const useStableVehiculos = (userId?: string) => {
           initialized: true,
         }));
         
-        // Only show toast on final failure after all retries
         if (retryCountRef.current >= MAX_RETRIES) {
           toast.error(`Error cargando vehículos: ${errorMessage}`);
         }
@@ -129,13 +117,37 @@ export const useStableVehiculos = (userId?: string) => {
   }, [userId, retryWithBackoff]);
 
   const agregarVehiculo = useCallback(async (vehiculoData: Omit<Vehiculo, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!userId) throw new Error('Usuario no autenticado');
+    console.log('[StableVehiculos] ===== ADDING VEHICLE =====');
+    console.log('[StableVehiculos] User ID:', userId);
+    console.log('[StableVehiculos] Data:', vehiculoData);
+
+    if (!userId) {
+      const error = new Error('Usuario no autenticado');
+      toast.error(error.message);
+      throw error;
+    }
+
+    // Verify session before insert
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !sessionData?.session) {
+      const error = new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      toast.error(error.message);
+      throw error;
+    }
+
+    console.log('[StableVehiculos] Session verified:', sessionData.session.user.id);
 
     try {
       const dataToInsert = {
         ...vehiculoData,
         user_id: userId,
+        activo: true,
+        estado: vehiculoData.estado || 'disponible',
+        placa: vehiculoData.placa?.toUpperCase().trim(),
       };
+
+      console.log('[StableVehiculos] Inserting:', dataToInsert);
 
       const { data, error } = await retryWithBackoff(async () => {
         return await supabase
@@ -145,14 +157,29 @@ export const useStableVehiculos = (userId?: string) => {
           .single();
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[StableVehiculos] Insert error:', error);
+        
+        if (error.code === '23505') {
+          throw new Error('Ya existe un vehículo con esa placa o número de serie');
+        }
+        
+        throw new Error(`Error al guardar: ${error.message}`);
+      }
+
+      if (!data) {
+        console.error('[StableVehiculos] CRITICAL: No data returned from insert!');
+        throw new Error('El vehículo no se guardó correctamente');
+      }
+
+      console.log('[StableVehiculos] SUCCESS! Vehicle created:', data.id);
 
       if (mountedRef.current && data) {
         setState(prev => ({
           ...prev,
           vehiculos: [data, ...prev.vehiculos],
         }));
-        toast.success('Vehículo agregado exitosamente');
+        toast.success(`Vehículo ${data.placa} agregado exitosamente`);
       }
 
       return data;
@@ -165,17 +192,23 @@ export const useStableVehiculos = (userId?: string) => {
   }, [userId, retryWithBackoff]);
 
   const actualizarVehiculo = useCallback(async (id: string, vehiculoData: Partial<Vehiculo>) => {
+    if (!userId) throw new Error('Usuario no autenticado');
+
     try {
       const { data, error } = await retryWithBackoff(async () => {
         return await supabase
           .from('vehiculos')
-          .update(vehiculoData)
+          .update({
+            ...vehiculoData,
+            placa: vehiculoData.placa?.toUpperCase().trim(),
+          })
           .eq('id', id)
+          .eq('user_id', userId) // Security check
           .select()
           .single();
       });
 
-      if (error) throw error;
+      if (error) throw new Error(`Error al actualizar: ${error.message}`);
 
       if (mountedRef.current && data) {
         setState(prev => ({
@@ -192,18 +225,22 @@ export const useStableVehiculos = (userId?: string) => {
       toast.error(errorMessage);
       throw error;
     }
-  }, [retryWithBackoff]);
+  }, [userId, retryWithBackoff]);
 
   const eliminarVehiculo = useCallback(async (id: string) => {
+    if (!userId) throw new Error('Usuario no autenticado');
+
     try {
+      // Soft delete
       const { error } = await retryWithBackoff(async () => {
         return await supabase
           .from('vehiculos')
-          .delete()
-          .eq('id', id);
+          .update({ activo: false })
+          .eq('id', id)
+          .eq('user_id', userId); // Security check
       });
 
-      if (error) throw error;
+      if (error) throw new Error(`Error al eliminar: ${error.message}`);
 
       if (mountedRef.current) {
         setState(prev => ({
@@ -218,9 +255,9 @@ export const useStableVehiculos = (userId?: string) => {
       toast.error(errorMessage);
       throw error;
     }
-  }, [retryWithBackoff]);
+  }, [userId, retryWithBackoff]);
 
-  // Load vehicles when userId changes with enhanced error recovery
+  // Load vehicles when userId changes
   useEffect(() => {
     if (userId) {
       retryCountRef.current = 0;
@@ -237,6 +274,7 @@ export const useStableVehiculos = (userId?: string) => {
 
   // Cleanup
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };

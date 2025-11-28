@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 export interface DashboardCounts {
@@ -15,78 +15,113 @@ export interface DashboardCounts {
   viajes_mes_actual: number;
 }
 
+type CountResult = { count: number | null; error: any };
+
+async function countTable(
+  table: string, 
+  userId: string, 
+  filters?: { activo?: boolean; dateStart?: string; dateEnd?: string; userIdField?: string }
+): Promise<number> {
+  try {
+    const userIdField = filters?.userIdField || 'user_id';
+    let query = supabase.from(table as any).select('*', { count: 'exact', head: true });
+    
+    query = query.eq(userIdField, userId);
+    
+    if (filters?.activo !== undefined) {
+      query = query.eq('activo', filters.activo);
+    }
+    
+    if (filters?.dateStart) {
+      query = query.gte('created_at', filters.dateStart);
+    }
+    
+    if (filters?.dateEnd) {
+      query = query.lte('created_at', filters.dateEnd);
+    }
+    
+    const result = await query;
+    
+    if (result.error) {
+      console.error(`[DashboardCounts] Error counting ${table}:`, result.error);
+      return 0;
+    }
+    
+    return (result as any).count ?? 0;
+  } catch (error) {
+    console.error(`[DashboardCounts] Unexpected error counting ${table}:`, error);
+    return 0;
+  }
+}
+
 export const useDashboardCounts = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useUnifiedAuth();
 
   return useQuery<DashboardCounts | null>({
     queryKey: ['dashboard-counts', user?.id],
     queryFn: async (): Promise<DashboardCounts | null> => {
-      if (!user?.id) return null;
+      if (!user?.id) {
+        console.warn('[DashboardCounts] No user ID available');
+        return null;
+      }
 
-      console.log('[DashboardCounts] Consultando datos para usuario:', user.id);
+      console.log('[DashboardCounts] Fetching counts for user:', user.id);
 
-      const now = new Date();
-      const start = startOfMonth(now);
-      const end = endOfMonth(now);
+      try {
+        const now = new Date();
+        const start = startOfMonth(now).toISOString();
+        const end = endOfMonth(now).toISOString();
 
-      // Contar vehículos (todos los tiempos)
-      const { count: vehiculosCount } = (await (supabase.from('vehiculos') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)) as { count: number | null };
+        // Execute all counts in parallel for better performance
+        const [
+          vehiculosCount,
+          conductoresCount,
+          sociosCount,
+          remolquesCount,
+          cartasCount,
+          cartasMesCount,
+          viajesCount,
+          viajesMesCount,
+        ] = await Promise.all([
+          countTable('vehiculos', user.id, { activo: true }),
+          countTable('conductores', user.id, { activo: true }),
+          countTable('socios', user.id, { activo: true }),
+          countTable('remolques_ccp', user.id, { activo: true }),
+          countTable('cartas_porte', user.id, { userIdField: 'usuario_id' }),
+          countTable('cartas_porte', user.id, { userIdField: 'usuario_id', dateStart: start, dateEnd: end }),
+          countTable('viajes', user.id),
+          countTable('viajes', user.id, { dateStart: start, dateEnd: end }),
+        ]);
 
-      // Contar conductores (todos los tiempos)
-      const { count: conductoresCount } = (await (supabase.from('conductores') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)) as { count: number | null };
+        const resultado = {
+          vehiculos: vehiculosCount,
+          conductores: conductoresCount,
+          socios: sociosCount,
+          remolques: remolquesCount,
+          cartas_porte: cartasCount,
+          viajes: viajesCount,
+          cartas_porte_mes_actual: cartasMesCount,
+          viajes_mes_actual: viajesMesCount,
+        };
 
-      // Contar socios (todos los tiempos)
-      const { count: sociosCount } = (await (supabase.from('socios') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)) as { count: number | null };
-
-      // Contar remolques (todos los tiempos)
-      const { count: remolquesCount } = (await (supabase.from('remolques_ccp') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)) as { count: number | null };
-
-      // Contar cartas porte (todos los tiempos)
-      const { count: cartasCount } = (await (supabase.from('cartas_porte') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('usuario_id', user.id)) as { count: number | null };
-
-      // Contar cartas porte del mes actual
-      const { count: cartasMesCount } = (await (supabase.from('cartas_porte') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('usuario_id', user.id)
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())) as { count: number | null };
-
-      // Contar viajes (todos los tiempos)
-      const { count: viajesCount } = (await (supabase.from('viajes') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)) as { count: number | null };
-
-      // Contar viajes del mes actual
-      const { count: viajesMesCount } = (await (supabase.from('viajes') as any)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())) as { count: number | null };
-
-      const resultado = {
-        vehiculos: vehiculosCount ?? 0,
-        conductores: conductoresCount ?? 0,
-        socios: sociosCount ?? 0,
-        remolques: remolquesCount ?? 0,
-        cartas_porte: cartasCount ?? 0,
-        viajes: viajesCount ?? 0,
-        cartas_porte_mes_actual: cartasMesCount ?? 0,
-        viajes_mes_actual: viajesMesCount ?? 0,
-      };
-
-      console.log('[DashboardCounts] Resultado:', resultado);
-      return resultado;
+        console.log('[DashboardCounts] Result:', resultado);
+        return resultado;
+      } catch (error) {
+        console.error('[DashboardCounts] Unexpected error:', error);
+        return {
+          vehiculos: 0,
+          conductores: 0,
+          socios: 0,
+          remolques: 0,
+          cartas_porte: 0,
+          viajes: 0,
+          cartas_porte_mes_actual: 0,
+          viajes_mes_actual: 0,
+        };
+      }
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && initialized,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
