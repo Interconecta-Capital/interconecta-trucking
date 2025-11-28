@@ -1,5 +1,6 @@
 
 import { CertificadoInfo, CSDValidationResult } from '@/types/certificados';
+import { supabase } from '@/integrations/supabase/client';
 
 export class CertificateParserService {
   
@@ -92,6 +93,14 @@ export class CertificateParserService {
         return { isValid: false, errors };
       }
       
+      // Obtener JWT del usuario autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        errors.push('Sesión expirada. Por favor inicia sesión nuevamente.');
+        return { isValid: false, errors };
+      }
+
       // Llamar al edge function para validación REAL
       const formData = new FormData();
       formData.append('cer_file', cerFile);
@@ -99,11 +108,11 @@ export class CertificateParserService {
       formData.append('password', password);
       
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validar-certificado`,
+        `https://qulhweffinppyjpfkknh.supabase.co/functions/v1/validar-certificado`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: formData,
         }

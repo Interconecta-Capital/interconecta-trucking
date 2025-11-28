@@ -204,11 +204,15 @@ export function VehiculoFormRefactored({ vehiculoId, onSuccess, onCancel }: Vehi
         if (vehiculoId) {
           await actualizarVehiculo({ id: vehiculoId, data: vehiculoData });
           toast.success('Vehículo actualizado');
+          // Refrescar lista después de actualizar
+          if (onSuccess) onSuccess();
         } else {
           const nuevoVehiculo = await crearVehiculo(vehiculoData);
           // Guardar el ID del vehículo recién creado para documentos
           setSavedVehiculoId(nuevoVehiculo.id);
-          toast.success('Vehículo creado. Ahora puedes subir documentos.');
+          toast.success('Vehículo creado exitosamente');
+          // ✅ CRÍTICO: Llamar onSuccess inmediatamente para refrescar la lista
+          if (onSuccess) onSuccess();
         }
         setActiveTab('documentos');
         return;

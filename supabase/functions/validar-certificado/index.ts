@@ -188,7 +188,7 @@ async function validateKeyPassword(keyBytes: Uint8Array, password: string): Prom
     
     // Por ahora, validamos estructura y longitud de contraseña
     const hasValidStructure = keyBytes.length > 100 && keyBytes.length < 10000;
-    const hasValidPassword = password.length >= 8 && password.length <= 100;
+    const hasValidPassword = password.length >= 4 && password.length <= 100;
 
     console.log('🔍 Validación de contraseña:', {
       hasValidStructure,
