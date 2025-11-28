@@ -13,6 +13,7 @@ import { ViajeWizardModalProvider } from '@/contexts/ViajeWizardModalProvider'
 import { ViajeWizardModal } from '@/components/viajes/ViajeWizardModal'
 import { FABProvider } from './contexts/FABContext'
 import { GlobalUpgradeModalProvider } from './components/common/GlobalUpgradeModalProvider'
+import { BetaBanner } from './components/common/BetaBanner'
 
 // Páginas públicas
 import Index from "./pages/Index"
@@ -75,6 +76,7 @@ const App = () => (
                 <OnboardingIntegration />
                 <GoogleOnboardingModal />
                 <ViajeWizardModal />
+                <BetaBanner />
                 <Routes>
               {/* Página principal - Landing page para usuarios no autenticados */}
               <Route path="/" element={<Index />} />
