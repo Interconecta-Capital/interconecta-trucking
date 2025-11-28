@@ -27,13 +27,18 @@ export interface Conductor {
 }
 
 export const useConductores = () => {
-  const { user } = useUnifiedAuth(); // ✅ Directo desde UnifiedAuth, sin provider adicional
+  const { user, session, initialized } = useUnifiedAuth();
   const queryClient = useQueryClient();
 
-  const { data: conductores = [], isLoading: loading } = useQuery({
+  const { data: conductores = [], isLoading: loading, refetch } = useQuery({
     queryKey: ['conductores', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.warn('[useConductores] No user ID available for query');
+        return [];
+      }
+      
+      console.log('[useConductores] Fetching conductores for user:', user.id);
       
       const { data, error } = await supabase
         .from('conductores')
@@ -42,40 +47,109 @@ export const useConductores = () => {
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useConductores] Query error:', error);
+        throw error;
+      }
+      
+      console.log('[useConductores] Fetched', data?.length || 0, 'conductores');
       return data || [];
     },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    // ✅ Retry con backoff exponencial para evitar fallos transitorios
+    enabled: !!user?.id && initialized,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: Omit<Conductor, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      if (!user?.id) throw new Error('Usuario no autenticado');
+      console.log('[useConductores] ===== CREATING CONDUCTOR =====');
+      console.log('[useConductores] User ID:', user?.id);
+      console.log('[useConductores] Session exists:', !!session);
+      console.log('[useConductores] Data to insert:', data);
+
+      // Step 1: Verify user authentication
+      if (!user?.id) {
+        console.error('[useConductores] CRITICAL: No user ID available!');
+        throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Step 2: Verify active session
+      const { data: currentSession, error: sessionError } = await supabase.auth.getSession();
       
-      // Validar licencia si se proporciona
+      if (sessionError) {
+        console.error('[useConductores] Session verification failed:', sessionError);
+        throw new Error('Error verificando sesión. Por favor, recarga la página.');
+      }
+
+      if (!currentSession?.session) {
+        console.error('[useConductores] CRITICAL: No active session!');
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Step 3: Validate RFC uniqueness
+      if (data.rfc && data.rfc.trim() !== '') {
+        const rfcNormalizado = data.rfc.toUpperCase().trim();
+        console.log('[useConductores] Checking RFC uniqueness:', rfcNormalizado);
+        
+        const { data: existingConductor, error: checkError } = await supabase
+          .from('conductores')
+          .select('id, nombre, rfc')
+          .eq('user_id', user.id)
+          .eq('rfc', rfcNormalizado)
+          .eq('activo', true)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('[useConductores] Error checking RFC:', checkError);
+          // Don't throw, continue with insert
+        }
+        
+        if (existingConductor) {
+          console.warn('[useConductores] Duplicate RFC detected:', rfcNormalizado);
+          throw new Error(
+            `Ya existe un conductor con el RFC ${rfcNormalizado}: "${existingConductor.nombre}". ` +
+            `Puedes editar ese conductor en lugar de crear uno nuevo.`
+          );
+        }
+      }
+
+      // Step 4: Validate CURP uniqueness
+      if (data.curp && data.curp.trim() !== '') {
+        const curpNormalizado = data.curp.toUpperCase().trim();
+        
+        const { data: existingCurp, error: curpError } = await supabase
+          .from('conductores')
+          .select('id, nombre')
+          .eq('user_id', user.id)
+          .eq('curp', curpNormalizado)
+          .eq('activo', true)
+          .maybeSingle();
+
+        if (!curpError && existingCurp) {
+          throw new Error(
+            `Ya existe un conductor con el CURP ${curpNormalizado}: "${existingCurp.nombre}".`
+          );
+        }
+      }
+
+      // Step 5: Validate licencia
       if (data.num_licencia && data.tipo_licencia) {
-        const licenciaValidation = LicenseValidator.validarLicencia(
-          data.num_licencia,
-          '01' // Tipo figura operador
-        );
+        const licenciaValidation = LicenseValidator.validarLicencia(data.num_licencia, '01');
         
         if (!licenciaValidation.esValida) {
           throw new Error(licenciaValidation.errores[0] || 'Licencia inválida');
         }
       }
 
-      // Validar vigencia de licencia
+      // Step 6: Validate vigencia licencia
       if (data.vigencia_licencia) {
         const fechaVigencia = new Date(data.vigencia_licencia);
         const hoy = new Date();
         
         if (fechaVigencia < hoy) {
-          // Crear notificación de licencia vencida
+          // Create notification for expired license
           try {
             await supabase
               .from('notificaciones')
@@ -83,7 +157,7 @@ export const useConductores = () => {
                 user_id: user.id,
                 tipo: 'error',
                 titulo: 'Licencia de conductor vencida',
-                mensaje: `No puedes registrar al conductor "${data.nombre}" porque su licencia está vencida desde el ${fechaVigencia.toLocaleDateString('es-MX')}. Solicita renovación.`,
+                mensaje: `No puedes registrar al conductor "${data.nombre}" porque su licencia está vencida desde el ${fechaVigencia.toLocaleDateString('es-MX')}.`,
                 urgente: true,
                 metadata: {
                   link: '/conductores',
@@ -95,13 +169,13 @@ export const useConductores = () => {
                 }
               });
           } catch (notifError) {
-            console.warn('Error creando notificación de licencia vencida:', notifError);
+            console.warn('[useConductores] Error creating notification:', notifError);
           }
           
           throw new Error('La licencia de conducir está vencida');
         }
 
-        // Advertencia si la licencia vence pronto (dentro de 30 días)
+        // Warning if license expires soon
         const diasRestantes = Math.ceil((fechaVigencia.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
         if (diasRestantes <= 30 && diasRestantes > 0) {
           try {
@@ -110,64 +184,121 @@ export const useConductores = () => {
               .insert({
                 user_id: user.id,
                 tipo: 'warning',
-                titulo: 'Licencia de conductor próxima a vencer',
-                mensaje: `La licencia del conductor "${data.nombre}" vencerá en ${diasRestantes} días (${fechaVigencia.toLocaleDateString('es-MX')}). Planifica su renovación.`,
+                titulo: 'Licencia próxima a vencer',
+                mensaje: `La licencia del conductor "${data.nombre}" vencerá en ${diasRestantes} días.`,
                 urgente: diasRestantes <= 7,
                 metadata: {
                   link: '/conductores',
                   entityType: 'licencia',
-                  actionRequired: true,
-                  icon: 'Clock',
                   conductorNombre: data.nombre,
-                  numLicencia: data.num_licencia,
                   diasRestantes
                 }
               });
           } catch (notifError) {
-            console.warn('Error creando notificación de licencia próxima a vencer:', notifError);
+            console.warn('[useConductores] Error creating warning notification:', notifError);
           }
         }
       }
 
+      // Step 7: Insert with explicit user_id and defaults
+      const insertData = {
+        ...data,
+        user_id: user.id,
+        rfc: data.rfc?.toUpperCase().trim() || null,
+        curp: data.curp?.toUpperCase().trim() || null,
+        activo: true,
+        estado: data.estado || 'disponible'
+      };
+
+      console.log('[useConductores] Inserting data:', insertData);
+
       const { data: result, error } = await supabase
         .from('conductores')
-        .insert({
-          ...data,
-          user_id: user.id,
-          activo: data.activo ?? true,
-          estado: data.estado || 'disponible'
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useConductores] INSERT ERROR:', error);
+        console.error('[useConductores] Error code:', error.code);
+        console.error('[useConductores] Error message:', error.message);
+        
+        // Handle specific error codes
+        if (error.code === '23505') {
+          if (error.message.includes('rfc')) {
+            throw new Error('Ya existe un conductor con ese RFC');
+          }
+          if (error.message.includes('curp')) {
+            throw new Error('Ya existe un conductor con ese CURP');
+          }
+          throw new Error('Ya existe un conductor con esos datos');
+        }
+        if (error.code === '42501') {
+          throw new Error('No tienes permisos para crear conductores');
+        }
+        
+        throw new Error(`Error al guardar: ${error.message}`);
+      }
+
+      if (!result) {
+        console.error('[useConductores] CRITICAL: Insert returned no result!');
+        throw new Error('El conductor no se guardó correctamente. Intenta nuevamente.');
+      }
+
+      console.log('[useConductores] SUCCESS! Created conductor:', result.id);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[useConductores] Mutation success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['conductores'] });
-      toast.success('Conductor creado exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['dashboard-counts'] });
+      toast.success(`Conductor "${data.nombre}" creado exitosamente`);
     },
     onError: (error: any) => {
-      console.error('Error creating conductor:', error);
-      toast.error(`Error al crear conductor: ${error.message}`);
+      console.error('[useConductores] Mutation error:', error);
+      toast.error(error.message || 'Error al crear conductor');
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Conductor> }) => {
-      // Validar licencia si se está actualizando
+      console.log('[useConductores] Updating conductor:', id, data);
+      
+      if (!user?.id) throw new Error('Usuario no autenticado');
+
+      // Verify session
+      const { data: currentSession } = await supabase.auth.getSession();
+      if (!currentSession?.session) {
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Validate RFC uniqueness if updating
+      if (data.rfc && data.rfc.trim() !== '') {
+        const rfcNormalizado = data.rfc.toUpperCase().trim();
+        
+        const { data: existingConductor } = await supabase
+          .from('conductores')
+          .select('id, nombre')
+          .eq('user_id', user.id)
+          .eq('rfc', rfcNormalizado)
+          .eq('activo', true)
+          .neq('id', id)
+          .maybeSingle();
+        
+        if (existingConductor) {
+          throw new Error(`Ya existe otro conductor con el RFC ${rfcNormalizado}`);
+        }
+      }
+
+      // Validate licencia if updating
       if (data.num_licencia && data.tipo_licencia) {
-        const licenciaValidation = LicenseValidator.validarLicencia(
-          data.num_licencia,
-          '01' // Tipo figura operador
-        );
+        const licenciaValidation = LicenseValidator.validarLicencia(data.num_licencia, '01');
         
         if (!licenciaValidation.esValida) {
           throw new Error(licenciaValidation.errores[0] || 'Licencia inválida');
         }
       }
 
-      // Validar vigencia de licencia
       if (data.vigencia_licencia) {
         const fechaVigencia = new Date(data.vigencia_licencia);
         const hoy = new Date();
@@ -177,14 +308,33 @@ export const useConductores = () => {
         }
       }
 
+      const updateData = {
+        ...data,
+        rfc: data.rfc?.toUpperCase().trim(),
+        curp: data.curp?.toUpperCase().trim(),
+      };
+
       const { data: result, error } = await supabase
         .from('conductores')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
+        .eq('user_id', user.id) // Security: ensure user owns the conductor
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useConductores] Update error:', error);
+        if (error.code === '23505') {
+          throw new Error('Ya existe otro conductor con ese RFC o CURP');
+        }
+        throw new Error(`Error al actualizar: ${error.message}`);
+      }
+
+      if (!result) {
+        throw new Error('No se pudo actualizar el conductor');
+      }
+
+      console.log('[useConductores] Conductor updated:', result.id);
       return result;
     },
     onSuccess: () => {
@@ -192,27 +342,34 @@ export const useConductores = () => {
       toast.success('Conductor actualizado exitosamente');
     },
     onError: (error: any) => {
-      console.error('Error updating conductor:', error);
-      toast.error(`Error al actualizar conductor: ${error.message}`);
+      console.error('[useConductores] Update mutation error:', error);
+      toast.error(error.message || 'Error al actualizar conductor');
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+
       const { error } = await supabase
         .from('conductores')
         .update({ activo: false })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useConductores] Delete error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conductores'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-counts'] });
       toast.success('Conductor eliminado exitosamente');
     },
     onError: (error: any) => {
-      console.error('Error deleting conductor:', error);
-      toast.error(`Error al eliminar conductor: ${error.message}`);
+      console.error('[useConductores] Delete mutation error:', error);
+      toast.error(error.message || 'Error al eliminar conductor');
     }
   });
 
@@ -223,6 +380,7 @@ export const useConductores = () => {
   return { 
     conductores, 
     loading,
+    refetch,
     createConductor: createMutation.mutateAsync,
     updateConductor: updateMutation.mutateAsync,
     eliminarConductor: deleteMutation.mutateAsync,

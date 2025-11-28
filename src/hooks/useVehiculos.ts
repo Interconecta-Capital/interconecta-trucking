@@ -13,7 +13,7 @@ export interface Vehiculo {
   modelo?: string;
   anio?: number;
   numero_serie_vin?: string;
-  num_serie?: string; // alias for numero_serie_vin
+  num_serie?: string;
   config_vehicular?: string;
   tipo_carroceria?: string;
   capacidad_carga?: number;
@@ -21,7 +21,7 @@ export interface Vehiculo {
   rendimiento?: number;
   tipo_combustible?: 'diesel' | 'gasolina';
   poliza_resp_civil?: string;
-  poliza_seguro?: string; // alias for poliza_resp_civil
+  poliza_seguro?: string;
   asegura_resp_civil?: string;
   poliza_med_ambiente?: string;
   asegura_med_ambiente?: string;
@@ -30,11 +30,9 @@ export interface Vehiculo {
   perm_sct?: string;
   num_permiso_sct?: string;
   vigencia_permiso?: string;
-  // GPS fields
   id_equipo_gps?: string;
   fecha_instalacion_gps?: string;
   acta_instalacion_gps?: string;
-  // Nuevos campos de costos
   costo_mantenimiento_km: number;
   costo_llantas_km: number;
   valor_vehiculo?: number;
@@ -47,13 +45,18 @@ export interface Vehiculo {
 }
 
 export const useVehiculos = () => {
-  const { user } = useUnifiedAuth(); // ✅ Directo desde UnifiedAuth, sin provider adicional
+  const { user, session, initialized } = useUnifiedAuth();
   const queryClient = useQueryClient();
 
-  const { data: vehiculos = [], isLoading: loading } = useQuery({
+  const { data: vehiculos = [], isLoading: loading, refetch } = useQuery({
     queryKey: ['vehiculos', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.warn('[useVehiculos] No user ID available for query');
+        return [];
+      }
+      
+      console.log('[useVehiculos] Fetching vehicles for user:', user.id);
       
       const { data, error } = await supabase
         .from('vehiculos')
@@ -62,66 +65,77 @@ export const useVehiculos = () => {
         .eq('activo', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useVehiculos] Query error:', error);
+        throw error;
+      }
+      
+      console.log('[useVehiculos] Fetched', data?.length || 0, 'vehicles');
       return data || [];
     },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    // ✅ Retry con backoff exponencial para evitar fallos transitorios
+    enabled: !!user?.id && initialized,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: true,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: Omit<Vehiculo, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      if (!user?.id) throw new Error('Usuario no autenticado');
+      console.log('[useVehiculos] ===== CREATING VEHICLE =====');
+      console.log('[useVehiculos] User ID:', user?.id);
+      console.log('[useVehiculos] Session exists:', !!session);
+      console.log('[useVehiculos] Initialized:', initialized);
+      console.log('[useVehiculos] Data to insert:', data);
 
-      // Validar placa
+      // Step 1: Verify user authentication
+      if (!user?.id) {
+        console.error('[useVehiculos] CRITICAL: No user ID available!');
+        throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Step 2: Verify active session
+      const { data: currentSession, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('[useVehiculos] Session verification failed:', sessionError);
+        throw new Error('Error verificando sesión. Por favor, recarga la página.');
+      }
+
+      if (!currentSession?.session) {
+        console.error('[useVehiculos] CRITICAL: No active session!');
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+
+      console.log('[useVehiculos] Session verified, user:', currentSession.session.user.id);
+
+      // Step 3: Validate placa
       if (data.placa) {
         const placaValidation = VehicleValidator.validarPlaca(data.placa);
         if (!placaValidation.esValido) {
           throw new Error(placaValidation.errores[0] || 'Placa inválida');
         }
 
-        // Verificar placa única
+        // Check for duplicate placa
         const { data: existingVehiculos, error: checkError } = await supabase
           .from('vehiculos')
-          .select('id')
+          .select('id, placa')
           .eq('user_id', user.id)
-          .eq('placa', data.placa)
+          .eq('placa', data.placa.toUpperCase().trim())
           .eq('activo', true);
 
-        if (checkError) throw checkError;
+        if (checkError) {
+          console.error('[useVehiculos] Error checking duplicate placa:', checkError);
+          throw checkError;
+        }
         
         if (existingVehiculos && existingVehiculos.length > 0) {
-          // Crear notificación de placa duplicada
-          try {
-            await supabase
-              .from('notificaciones')
-              .insert({
-                user_id: user.id,
-                tipo: 'error',
-                titulo: 'Placa duplicada detectada',
-                mensaje: `Ya existe un vehículo registrado con la placa: ${data.placa}. No puedes crear duplicados.`,
-                urgente: false,
-                metadata: {
-                  link: '/vehiculos',
-                  entityType: 'vehiculo',
-                  actionRequired: true,
-                  icon: 'AlertTriangle',
-                  placa: data.placa
-                }
-              });
-          } catch (notifError) {
-            console.warn('Error creando notificación de placa duplicada:', notifError);
-          }
-          
-          throw new Error('Ya existe un vehículo con esta placa');
+          console.warn('[useVehiculos] Duplicate placa detected:', data.placa);
+          throw new Error(`Ya existe un vehículo con la placa ${data.placa}`);
         }
       }
 
-      // Validar año del modelo
+      // Step 4: Validate año
       if (data.anio) {
         const anioValidation = VehicleValidator.validarAnioModelo(data.anio);
         if (!anioValidation.esValido) {
@@ -129,7 +143,7 @@ export const useVehiculos = () => {
         }
       }
 
-      // Validar vigencia del seguro
+      // Step 5: Validate vigencia seguro
       if (data.vigencia_seguro) {
         const fechaVigencia = new Date(data.vigencia_seguro);
         const hoy = new Date();
@@ -139,53 +153,95 @@ export const useVehiculos = () => {
         }
       }
 
-      // Validar permiso SCT
+      // Step 6: Validate permiso SCT
       if (data.num_permiso_sct) {
         const permisoValidation = VehicleValidator.validarPermisoSCT(data.num_permiso_sct);
         if (!permisoValidation.esValido) {
           throw new Error(permisoValidation.errores[0] || 'Permiso SCT inválido');
         }
       }
+
+      // Step 7: Insert with explicit user_id and default values
+      const insertData = {
+        ...data,
+        user_id: user.id,
+        placa: data.placa?.toUpperCase().trim(),
+        activo: true,
+        estado: data.estado || 'disponible',
+      };
+
+      console.log('[useVehiculos] Inserting data:', insertData);
       
       const { data: result, error } = await supabase
         .from('vehiculos')
-        .insert({
-          ...data,
-          user_id: user.id,
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useVehiculos] INSERT ERROR:', error);
+        console.error('[useVehiculos] Error code:', error.code);
+        console.error('[useVehiculos] Error message:', error.message);
+        console.error('[useVehiculos] Error details:', error.details);
+        
+        // Handle specific error codes
+        if (error.code === '23505') {
+          throw new Error('Ya existe un vehículo con esa placa o número de serie');
+        }
+        if (error.code === '23503') {
+          throw new Error('Error de referencia en la base de datos');
+        }
+        if (error.code === '42501') {
+          throw new Error('No tienes permisos para crear vehículos');
+        }
+        
+        throw new Error(`Error al guardar: ${error.message}`);
+      }
+
+      if (!result) {
+        console.error('[useVehiculos] CRITICAL: Insert returned no result!');
+        throw new Error('El vehículo no se guardó correctamente. Intenta nuevamente.');
+      }
+
+      console.log('[useVehiculos] SUCCESS! Created vehicle:', result.id);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[useVehiculos] Mutation success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
-      toast.success('Vehículo creado exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['dashboard-counts'] });
+      toast.success(`Vehículo ${data.placa} creado exitosamente`);
     },
     onError: (error: any) => {
-      console.error('Error creating vehicle:', error);
-      toast.error(`Error al crear vehículo: ${error.message}`);
+      console.error('[useVehiculos] Mutation error:', error);
+      toast.error(error.message || 'Error al crear vehículo');
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Vehiculo> }) => {
+      console.log('[useVehiculos] Updating vehicle:', id, data);
+      
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      // Validar placa si se está actualizando
+      // Verify session
+      const { data: currentSession } = await supabase.auth.getSession();
+      if (!currentSession?.session) {
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+
+      // Validate placa if updating
       if (data.placa) {
         const placaValidation = VehicleValidator.validarPlaca(data.placa);
         if (!placaValidation.esValido) {
           throw new Error(placaValidation.errores[0] || 'Placa inválida');
         }
 
-        // Verificar placa única (excepto el vehículo actual)
         const { data: existingVehiculos, error: checkError } = await supabase
           .from('vehiculos')
           .select('id')
           .eq('user_id', user.id)
-          .eq('placa', data.placa)
+          .eq('placa', data.placa.toUpperCase().trim())
           .eq('activo', true)
           .neq('id', id);
 
@@ -196,7 +252,6 @@ export const useVehiculos = () => {
         }
       }
 
-      // Validar año del modelo
       if (data.anio) {
         const anioValidation = VehicleValidator.validarAnioModelo(data.anio);
         if (!anioValidation.esValido) {
@@ -204,7 +259,6 @@ export const useVehiculos = () => {
         }
       }
 
-      // Validar vigencia del seguro
       if (data.vigencia_seguro) {
         const fechaVigencia = new Date(data.vigencia_seguro);
         const hoy = new Date();
@@ -214,7 +268,6 @@ export const useVehiculos = () => {
         }
       }
 
-      // Validar permiso SCT
       if (data.num_permiso_sct) {
         const permisoValidation = VehicleValidator.validarPermisoSCT(data.num_permiso_sct);
         if (!permisoValidation.esValido) {
@@ -222,14 +275,29 @@ export const useVehiculos = () => {
         }
       }
 
+      const updateData = {
+        ...data,
+        placa: data.placa?.toUpperCase().trim(),
+      };
+
       const { data: result, error } = await supabase
         .from('vehiculos')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
+        .eq('user_id', user.id) // Security: ensure user owns the vehicle
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useVehiculos] Update error:', error);
+        throw new Error(`Error al actualizar: ${error.message}`);
+      }
+
+      if (!result) {
+        throw new Error('No se pudo actualizar el vehículo');
+      }
+
+      console.log('[useVehiculos] Vehicle updated:', result.id);
       return result;
     },
     onSuccess: () => {
@@ -237,33 +305,41 @@ export const useVehiculos = () => {
       toast.success('Vehículo actualizado exitosamente');
     },
     onError: (error: any) => {
-      console.error('Error updating vehicle:', error);
-      toast.error(`Error al actualizar vehículo: ${error.message}`);
+      console.error('[useVehiculos] Update mutation error:', error);
+      toast.error(error.message || 'Error al actualizar vehículo');
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      if (!user?.id) throw new Error('Usuario no autenticado');
+
       const { error } = await supabase
         .from('vehiculos')
         .update({ activo: false })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // Security: ensure user owns the vehicle
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useVehiculos] Delete error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehiculos'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-counts'] });
       toast.success('Vehículo eliminado exitosamente');
     },
     onError: (error: any) => {
-      console.error('Error deleting vehicle:', error);
-      toast.error(`Error al eliminar vehículo: ${error.message}`);
+      console.error('[useVehiculos] Delete mutation error:', error);
+      toast.error(error.message || 'Error al eliminar vehículo');
     }
   });
 
   return { 
     vehiculos, 
     loading,
+    refetch,
     crearVehiculo: createMutation.mutateAsync,
     actualizarVehiculo: updateMutation.mutateAsync,
     eliminarVehiculo: deleteMutation.mutateAsync,

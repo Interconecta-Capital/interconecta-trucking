@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Plus, Car, Filter, Search, Truck } from 'lucide-react';
+import { Plus, Car, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { VehiculoViewDialog } from '@/components/vehiculos/VehiculoViewDialog';
 import { RemolqueFormDialog } from '@/components/vehiculos/RemolqueFormDialog';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useStableVehiculos } from '@/hooks/useStableVehiculos';
-import { useStableAuth } from '@/hooks/useStableAuth';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { ProtectedContent } from '@/components/ProtectedContent';
 import { useUnifiedPermissionsV2 } from '@/hooks/useUnifiedPermissionsV2';
 import { LimitUsageIndicator } from '@/components/common/LimitUsageIndicator';
@@ -20,7 +20,8 @@ import { toast } from 'sonner';
 import { useFAB } from '@/contexts/FABContext';
 
 export default function StableVehiculos() {
-  const { user } = useStableAuth();
+  // ✅ Use unified auth hook for consistency
+  const { user, initialized, loading: authLoading } = useUnifiedAuth();
   const { vehiculos, loading, error, eliminarVehiculo, recargar } = useStableVehiculos(user?.id);
   const permissions = useUnifiedPermissionsV2();
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,9 +31,19 @@ export default function StableVehiculos() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showRemolqueDialog, setShowRemolqueDialog] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<any>(null);
-  const { setFABConfig, setIsModalOpen } = useFAB()
+  const { setFABConfig, setIsModalOpen } = useFAB();
   
-  // Notificar al FAB cuando cualquier modal está abierto
+  // Debug logging
+  useEffect(() => {
+    console.log('[StableVehiculos] Auth state:', { 
+      userId: user?.id, 
+      initialized, 
+      authLoading,
+      vehiculosCount: vehiculos.length 
+    });
+  }, [user?.id, initialized, authLoading, vehiculos.length]);
+  
+  // Notify FAB when any modal is open
   useEffect(() => {
     const anyModalOpen = showCreateDialog || showEditDialog || showViewDialog || showRemolqueDialog;
     setIsModalOpen(anyModalOpen);
@@ -40,8 +51,14 @@ export default function StableVehiculos() {
 
   const handleNewVehiculo = () => {
     console.log('[Vehiculos] 🆕 Iniciando creación de nuevo vehículo');
+    console.log('[Vehiculos] User ID:', user?.id);
     
-    // Verificar permisos antes de abrir el diálogo
+    if (!user?.id) {
+      toast.error('Debes iniciar sesión para crear un vehículo');
+      return;
+    }
+    
+    // Check permissions before opening dialog
     const permissionCheck = permissions.canCreateVehiculo;
     if (!permissionCheck.allowed) {
       toast.error(permissionCheck.reason || 'No tienes permisos para crear vehículos');
@@ -58,9 +75,9 @@ export default function StableVehiculos() {
       text: 'Nuevo',
       onClick: handleNewVehiculo,
       isVisible: true
-    })
-    return () => setFABConfig({ isVisible: false })
-  }, [])
+    });
+    return () => setFABConfig({ isVisible: false });
+  }, [user?.id]);
 
   const handleEdit = (vehiculo: any) => {
     setSelectedVehiculo(vehiculo);
@@ -73,7 +90,7 @@ export default function StableVehiculos() {
   };
 
   const handleDelete = async (vehiculo: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.num_serie}?`)) {
+    if (window.confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.placa || vehiculo.num_serie}?`)) {
       try {
         await eliminarVehiculo(vehiculo.id);
       } catch (error) {
@@ -87,6 +104,20 @@ export default function StableVehiculos() {
     vehiculo.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Show loading while auth initializes
+  if (!initialized || authLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -107,16 +138,13 @@ export default function StableVehiculos() {
     );
   }
 
-  // Verificar si se puede crear vehículo
   const canCreateVehiculo = permissions.canCreateVehiculo;
 
   return (
     <ProtectedContent requiredFeature="vehiculos">
       <div className="container mx-auto py-8 space-y-8 max-w-7xl">
-        {/* Notificaciones de plan */}
         <PlanNotifications />
 
-        {/* Header con botón de Nueva Carta Porte estilo */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-blue-light">
@@ -145,12 +173,10 @@ export default function StableVehiculos() {
           </div>
         )}
 
-        {/* Indicador de límites */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <LimitUsageIndicator resourceType="vehiculos" className="md:col-span-2" />
         </div>
 
-        {/* Filtros y búsqueda estilo Apple */}
         <div className="flex flex-col sm:flex-row gap-4 bg-gray-05 p-4 rounded-2xl">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-50 h-4 w-4" />
@@ -179,14 +205,12 @@ export default function StableVehiculos() {
           </Button>
         </div>
 
-        {/* Filtros adicionales */}
         {showFilters && (
           <div className="bg-pure-white rounded-2xl border border-gray-20 shadow-sm p-6">
             <VehiculosFilters />
           </div>
         )}
 
-        {/* Stats estilo Apple */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-gradient-to-br from-blue-light to-blue-interconecta/10 border-blue-200">
             <CardHeader className="pb-3">
@@ -218,7 +242,6 @@ export default function StableVehiculos() {
           </Card>
         </div>
 
-        {/* Tabla */}
         <VehiculosTable 
           vehiculos={filteredVehiculos}
           loading={loading}
@@ -227,7 +250,6 @@ export default function StableVehiculos() {
           onDelete={handleDelete}
         />
 
-        {/* Diálogos */}
         <VehiculoFormDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
