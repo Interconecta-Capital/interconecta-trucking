@@ -258,6 +258,14 @@ Para instrucciones detalladas, ver [docs/00-instalacion-local.md](docs/00-instal
 | [flujo-timbrado.md](docs/flujo-timbrado.md) | Proceso de timbrado CFDI |
 | [errores-sat-comunes.md](docs/errores-sat-comunes.md) | Errores SAT y soluciones |
 
+### Guías para Desarrolladores
+
+| Documento | Descripción |
+|-----------|-------------|
+| [HOOKS_REFERENCE.md](docs/HOOKS_REFERENCE.md) | Referencia completa de hooks con ejemplos |
+| [EDGE_FUNCTIONS.md](docs/EDGE_FUNCTIONS.md) | Documentación de todas las Edge Functions |
+| [FLUJOS_NEGOCIO.md](docs/FLUJOS_NEGOCIO.md) | Diagramas de flujos de negocio |
+
 ---
 
 ## 🤝 Contribuir
