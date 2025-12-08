@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Navigation, Clock, Route as RouteIcon, ExternalLink, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -244,7 +245,7 @@ export const TrackingViajeRealTime: React.FC<TrackingViajeRealTimeProps> = ({ vi
                     {index + 1}
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm" dangerouslySetInnerHTML={{ __html: paso.instruccion }} />
+                    <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paso.instruccion || '') }} />
                     <div className="flex gap-3 mt-1 text-xs text-gray-600">
                       <span>{paso.distancia}</span>
                       <span>•</span>
