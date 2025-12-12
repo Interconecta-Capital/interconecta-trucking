@@ -5425,8 +5425,8 @@ export type Database = {
       refresh_mercancias_viaje_stats: { Args: never; Returns: undefined }
       refresh_viajes_dashboard: { Args: never; Returns: undefined }
       restore_rls_policies_from_backup:
-        | { Args: { backup_id: string }; Returns: Json }
         | { Args: never; Returns: undefined }
+        | { Args: { backup_id: string }; Returns: Json }
       run_automated_tasks: { Args: never; Returns: undefined }
       sanitize_pii_from_logs: { Args: never; Returns: Json }
       send_cleanup_warnings: { Args: never; Returns: undefined }
