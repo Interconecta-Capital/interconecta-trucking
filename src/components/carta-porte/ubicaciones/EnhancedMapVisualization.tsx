@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Maximize2, Minimize2, Navigation } from 'lucide-react';
@@ -87,14 +88,23 @@ export function EnhancedMapVisualization({
     validUbicaciones.forEach((ubicacion, index) => {
       const coords = getCoordinatesForCP(ubicacion.domicilio.codigoPostal);
       
+      // Sanitize user-provided data to prevent XSS
+      const sanitizedTipo = DOMPurify.sanitize(ubicacion.tipoUbicacion || '');
+      const sanitizedName = DOMPurify.sanitize(ubicacion.nombreRemitenteDestinatario || 'Sin nombre');
+      const sanitizedCalle = DOMPurify.sanitize(ubicacion.domicilio?.calle || '');
+      const sanitizedNumExterior = DOMPurify.sanitize(ubicacion.domicilio?.numExterior || '');
+      const sanitizedMunicipio = DOMPurify.sanitize(ubicacion.domicilio?.municipio || '');
+      const sanitizedEstado = DOMPurify.sanitize(ubicacion.domicilio?.estado || '');
+      const sanitizedCP = DOMPurify.sanitize(ubicacion.domicilio?.codigoPostal || '');
+
       // Crear popup con información
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div class="p-2">
-          <h4 class="font-semibold text-sm">${ubicacion.tipoUbicacion}</h4>
-          <p class="text-xs">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
-          <p class="text-xs text-gray-600">${ubicacion.domicilio.calle} ${ubicacion.domicilio.numExterior || ''}</p>
-          <p class="text-xs text-gray-600">${ubicacion.domicilio.municipio}, ${ubicacion.domicilio.estado}</p>
-          <p class="text-xs text-gray-600">CP: ${ubicacion.domicilio.codigoPostal}</p>
+          <h4 class="font-semibold text-sm">${sanitizedTipo}</h4>
+          <p class="text-xs">${sanitizedName}</p>
+          <p class="text-xs text-gray-600">${sanitizedCalle} ${sanitizedNumExterior}</p>
+          <p class="text-xs text-gray-600">${sanitizedMunicipio}, ${sanitizedEstado}</p>
+          <p class="text-xs text-gray-600">CP: ${sanitizedCP}</p>
           ${ubicacion.distanciaRecorrida ? `<p class="text-xs text-blue-600">Distancia: ${ubicacion.distanciaRecorrida} km</p>` : ''}
         </div>
       `);
