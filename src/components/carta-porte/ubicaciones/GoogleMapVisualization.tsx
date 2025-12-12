@@ -1,5 +1,5 @@
-
 import React, { useEffect, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,12 +66,18 @@ export function GoogleMapVisualization({ ubicaciones, routeData, isVisible }: Go
         }
       });
 
+      // Sanitize user-provided data to prevent XSS
+      const sanitizedTipo = DOMPurify.sanitize(ubicacion.tipoUbicacion || '');
+      const sanitizedName = DOMPurify.sanitize(ubicacion.nombreRemitenteDestinatario || 'Sin nombre');
+      const sanitizedCalle = DOMPurify.sanitize(ubicacion.domicilio?.calle || '');
+      const sanitizedMunicipio = DOMPurify.sanitize(ubicacion.domicilio?.municipio || '');
+
       const infoWindow = new window.google.maps.InfoWindow({
         content: `
           <div style="padding: 8px; max-width: 200px;">
-            <h3 style="margin: 0 0 4px 0; font-weight: bold;">${ubicacion.tipoUbicacion}</h3>
-            <p style="margin: 0 0 4px 0;">${ubicacion.nombreRemitenteDestinatario || 'Sin nombre'}</p>
-            <p style="margin: 0; font-size: 12px; color: #666;">${ubicacion.domicilio?.calle || ''}, ${ubicacion.domicilio?.municipio || ''}</p>
+            <h3 style="margin: 0 0 4px 0; font-weight: bold;">${sanitizedTipo}</h3>
+            <p style="margin: 0 0 4px 0;">${sanitizedName}</p>
+            <p style="margin: 0; font-size: 12px; color: #666;">${sanitizedCalle}, ${sanitizedMunicipio}</p>
           </div>
         `
       });
