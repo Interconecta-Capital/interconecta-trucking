@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -51,11 +52,18 @@ export function MapVisualization({ ubicaciones, rutaCalculada, isVisible }: MapV
 
     ubicaciones.forEach((ubicacion, index) => {
       if (ubicacion.coordenadas) {
+        // Sanitize user-provided data to prevent XSS
+        const sanitizedName = DOMPurify.sanitize(ubicacion.nombreRemitenteDestinatario || '');
+        const sanitizedCalle = DOMPurify.sanitize(ubicacion.domicilio?.calle || '');
+        const sanitizedNumExterior = DOMPurify.sanitize(ubicacion.domicilio?.numExterior || '');
+        const sanitizedMunicipio = DOMPurify.sanitize(ubicacion.domicilio?.municipio || '');
+        const sanitizedEstado = DOMPurify.sanitize(ubicacion.domicilio?.estado || '');
+
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
           `<div>
-            <h4>${ubicacion.nombreRemitenteDestinatario}</h4>
-            <p>${ubicacion.domicilio.calle} ${ubicacion.domicilio.numExterior}</p>
-            <p>${ubicacion.domicilio.municipio}, ${ubicacion.domicilio.estado}</p>
+            <h4>${sanitizedName}</h4>
+            <p>${sanitizedCalle} ${sanitizedNumExterior}</p>
+            <p>${sanitizedMunicipio}, ${sanitizedEstado}</p>
           </div>`
         );
 
